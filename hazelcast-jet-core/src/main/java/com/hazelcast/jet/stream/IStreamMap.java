@@ -17,6 +17,10 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedPredicate;
+
+import javax.annotation.Nonnull;
 
 /**
  * A decorator for {@link IMap} for supporting distributed {@link java.util.stream.Stream}
@@ -28,7 +32,7 @@ import com.hazelcast.core.IMap;
 public interface IStreamMap<K, V> extends IMap<K, V> {
 
     /**
-     * Returns a parallel and distributed {@code Stream} with this list as its source.
+     * Returns a parallel and distributed {@code Stream} with this map as its source.
      * <p>
      * If the underlying map is concurrently being modified, there are no guarantees
      * given with respect to missing or duplicate items in a stream operation.
@@ -37,5 +41,18 @@ public interface IStreamMap<K, V> extends IMap<K, V> {
      * @since 1.8
      */
     DistributedStream<Entry<K, V>> stream();
+
+    /**
+     * Returns a parallel and distributed {@code Stream} with this map as its source.
+     * Entries will be filtered and mapped according to the given predicate and projection.
+     * <p>
+     * If the underlying map is concurrently being modified, there are no guarantees
+     * given with respect to missing or duplicate items in a stream operation.
+     *
+     * @return a parallel {@code Stream} over the elements in this collection
+     * @since 1.8
+     */
+    <T> DistributedStream<T> stream(@Nonnull DistributedPredicate<Entry<K, V>> predicate,
+                                    @Nonnull DistributedFunction<Entry<K, V>, T> projectionF);
 
 }

@@ -20,6 +20,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
@@ -30,6 +32,7 @@ import com.hazelcast.jet.impl.connector.StreamSocketP;
 import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -52,8 +55,9 @@ public final class Sources {
      * {@code localParallelism * clusterSize}, otherwise some processors will have
      * no partitions assigned to them.
      * <p>
-     * If the underlying map is concurrently being modified, there are no guarantees
-     * given with respect to missing or duplicate items.
+     * Iterating the map should be done only when the {@link com.hazelcast.core.IMap} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
      */
     @Nonnull
     public static ProcessorMetaSupplier readMap(@Nonnull String mapName) {
@@ -61,16 +65,59 @@ public final class Sources {
     }
 
     /**
+     * Returns a meta-supplier of processor that will fetch entries from the
+     * Hazelcast {@code IMap} with the specified name. Entries will be filtered
+     * according to the given predicate and the result of the projection will be
+     * emitted to downstream. The processors will only access data local to the
+     * member and, if {@code localParallelism} for the vertex is above one,
+     * processors will divide the labor within the member so that each one gets
+     * a subset of all local partitions to read.
+     * <p>
+     * The number of Hazelcast partitions should be configured to at least
+     * {@code localParallelism * clusterSize}, otherwise some processors will have
+     * no partitions assigned to them.
+     * <p>
+     * Iterating the map should be done only when the {@link com.hazelcast.core.IMap} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
+     */
+    @Nonnull
+    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName,
+                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF) {
+        return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionF);
+    }
+
+    /**
      * Returns a meta-supplier of processor that will fetch entries from a
      * Hazelcast {@code IMap} in a remote cluster. Processor will emit the
      * entries as {@code Map.Entry}.
      * <p>
-     * If the underlying map is concurrently modified, there may be missing or
-     * duplicate items.
+     * Iterating the map should be done only when the {@link com.hazelcast.core.IMap} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
      */
     @Nonnull
     public static ProcessorMetaSupplier readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return ReadWithPartitionIteratorP.readMap(mapName, clientConfig);
+    }
+
+    /**
+     * Returns a meta-supplier of processor that will fetch entries from a
+     * Hazelcast {@code IMap} in a remote cluster.
+     * Entries will be filtered according to the given predicate and the result of the
+     * projection will be emitted to downstream.
+     * <p>
+     * Iterating the map should be done only when the {@link com.hazelcast.core.IMap} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
+     */
+    @Nonnull
+    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName,
+                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
+                                                          @Nonnull ClientConfig clientConfig) {
+        return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionF, clientConfig);
     }
 
     /**
@@ -85,8 +132,9 @@ public final class Sources {
      * {@code localParallelism * clusterSize}, otherwise some processors will
      * have no partitions assigned to them.
      * <p>
-     * If the underlying cache is concurrently modified, there may be missing
-     * or duplicate items.
+     * Iterating the map should be done only when the {@link com.hazelcast.cache.ICache} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
      */
     @Nonnull
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
@@ -98,8 +146,9 @@ public final class Sources {
      * Hazelcast {@code ICache} in a remote cluster. Processor will emit the
      * entries as {@code Cache.Entry}.
      * <p>
-     * If the underlying cache is concurrently modified, there may be missing
-     * or duplicate items.
+     * Iterating the map should be done only when the {@link com.hazelcast.cache.ICache} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
      */
     @Nonnull
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
@@ -148,8 +197,8 @@ public final class Sources {
      * The processor will complete when the socket is closed by the server.
      * No reconnection is attempted.
      *
-     * @param host The host name to connect to
-     * @param port The port number to connect to
+     * @param host    The host name to connect to
+     * @param port    The port number to connect to
      * @param charset Character set used to decode the stream
      */
     @Nonnull
@@ -189,10 +238,10 @@ public final class Sources {
      * performance if there aren't enough files to read.
      *
      * @param directory parent directory of the files
-     * @param charset charset to use to decode the files
-     * @param glob the globbing mask, see {@link
-     *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     *             Use {@code "*"} for all files.
+     * @param charset   charset to use to decode the files
+     * @param glob      the globbing mask, see {@link
+     *                  java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
+     *                  Use {@code "*"} for all files.
      */
     @Nonnull
     public static ProcessorSupplier readFiles(
@@ -244,7 +293,7 @@ public final class Sources {
      * an {@code IOException}. The directory must be deleted on all nodes.
      * <p>
      * Any {@code IOException} will cause the job to fail.
-     *
+     * <p>
      * <h3>Limitation on Windows</h3>
      * On Windows the {@code WatchService} is not notified of appended lines
      * until the file is closed. If the writer keeps the file open while
@@ -253,7 +302,7 @@ public final class Sources {
      * such as looking at the file in Explorer. This holds for Windows 10 with
      * the NTFS file system and might change in future. You are advised to do
      * your own testing on your target Windows platform.
-     *
+     * <p>
      * <h3>Use the latest JRE</h3>
      * The underlying JDK API ({@link java.nio.file.WatchService}) has a
      * history of unreliability and this processor may experience infinite
@@ -261,10 +310,10 @@ public final class Sources {
      * resolved by upgrading the JRE to the latest version.
      *
      * @param watchedDirectory The directory where we watch files
-     * @param charset charset to use to decode the files
-     * @param glob the globbing mask, see {@link
-     *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     *             Use {@code "*"} for all files.
+     * @param charset          charset to use to decode the files
+     * @param glob             the globbing mask, see {@link
+     *                         java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
+     *                         Use {@code "*"} for all files.
      */
     public static ProcessorSupplier streamFiles(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob

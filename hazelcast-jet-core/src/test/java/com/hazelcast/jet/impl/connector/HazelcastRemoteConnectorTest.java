@@ -23,8 +23,9 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.processor.Sinks;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.processor.Sinks;
+import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,13 +41,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sources.readList;
-import static com.hazelcast.jet.processor.Sources.readMap;
 import static com.hazelcast.jet.processor.Sinks.writeList;
 import static com.hazelcast.jet.processor.Sinks.writeMap;
+import static com.hazelcast.jet.processor.Sources.readList;
+import static com.hazelcast.jet.processor.Sources.readMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
@@ -107,16 +110,21 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_mapReaderConfiguredWithClientConfig_then_readFromRemoteCluster() throws Exception {
+    public void when_mapReaderConfiguredWithClientConfig_then_readFromRemoteCluster_withProjectionAndPredicate()
+            throws Exception {
         populateMap(hz.getMap("source"));
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readMap("source", clientConfig)).localParallelism(4);
+        Vertex source = dag.newVertex("source", readMap("source",
+                e -> !e.getKey().equals(0), Map.Entry::getKey, clientConfig)).localParallelism(4);
         Vertex sink = dag.newVertex("sink", Sinks.writeList("sink")).localParallelism(1);
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, jet.getList("sink").size());
+        IStreamList<Object> list = jet.getList("sink");
+        assertEquals(ITEM_COUNT - 1, list.size());
+        assertFalse(list.contains(0));
+        assertTrue(list.contains(1));
     }
 
     @Test
@@ -132,15 +140,15 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         assertEquals(ITEM_COUNT, hz.getMap("consumer").size());
     }
 
+    private void executeAndWait(DAG dag) {
+        assertCompletesEventually(jet.newJob(dag).getFuture());
+    }
+
     private static void populateList(List<Object> list) {
         list.addAll(range(0, ITEM_COUNT).boxed().collect(toList()));
     }
 
     private static void populateMap(Map<Object, Object> map) {
         map.putAll(IntStream.range(0, ITEM_COUNT).boxed().collect(Collectors.toMap(m -> m, m -> m)));
-    }
-
-    private void executeAndWait(DAG dag) {
-        assertCompletesEventually(jet.newJob(dag).getFuture());
     }
 }

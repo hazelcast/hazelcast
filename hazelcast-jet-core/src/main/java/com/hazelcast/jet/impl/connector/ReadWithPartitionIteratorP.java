@@ -27,12 +27,14 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.util.CircularListCursor;
+import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.projection.Projection;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -76,41 +78,73 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         };
     }
 
-    public static ProcessorMetaSupplier readMap(String mapName) {
+    public static ProcessorMetaSupplier readMap(@Nonnull String mapName) {
         return readMap(mapName, DEFAULT_FETCH_SIZE);
     }
 
-    public static <T> ProcessorMetaSupplier readMap(String mapName, int fetchSize) {
+    public static <T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize) {
         return new LocalClusterMetaSupplier<T>(
                 instance -> partition -> ((MapProxyImpl) instance.getMap(mapName))
                         .iterator(fetchSize, partition, PREFETCH_VALUES));
     }
 
-    public static ProcessorMetaSupplier readMap(String mapName, ClientConfig clientConfig) {
+    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName,
+                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF) {
+        return readMap(mapName, DEFAULT_FETCH_SIZE, predicate, projectionF);
+    }
+
+    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize,
+                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF) {
+        return new LocalClusterMetaSupplier<T>(
+                instance -> partition -> ((MapProxyImpl) instance.getMap(mapName))
+                        .iterator(fetchSize, partition, toProjection(projectionF), predicate::test));
+    }
+
+    public static ProcessorMetaSupplier readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return readMap(mapName, DEFAULT_FETCH_SIZE, clientConfig);
     }
 
-    public static <T> ProcessorMetaSupplier readMap(String mapName, int fetchSize, ClientConfig clientConfig) {
+    public static <T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize,
+                                                    @Nonnull ClientConfig clientConfig) {
         return new RemoteClusterMetaSupplier<T>(clientConfig,
                 instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
                         .iterator(fetchSize, partition, PREFETCH_VALUES));
     }
 
-    public static ProcessorMetaSupplier readCache(String cacheName) {
+    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName,
+                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
+                                                          @Nonnull ClientConfig clientConfig) {
+        return readMap(mapName, DEFAULT_FETCH_SIZE, predicate, projectionF, clientConfig);
+    }
+
+    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize,
+                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
+                                                          @Nonnull ClientConfig clientConfig) {
+        return new RemoteClusterMetaSupplier<T>(clientConfig,
+                instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
+                        .iterator(fetchSize, partition, toProjection(projectionF), predicate::test));
+    }
+
+    public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
         return readCache(cacheName, DEFAULT_FETCH_SIZE);
     }
 
-    public static <T> ProcessorMetaSupplier readCache(String cacheName, int fetchSize) {
+    public static <T> ProcessorMetaSupplier readCache(@Nonnull String cacheName, int fetchSize) {
         return new LocalClusterMetaSupplier<T>(
                 instance -> partition -> ((CacheProxy) instance.getCacheManager().getCache(cacheName))
                         .iterator(fetchSize, partition, PREFETCH_VALUES));
     }
 
-    public static ProcessorMetaSupplier readCache(String cacheName, ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
         return readCache(cacheName, DEFAULT_FETCH_SIZE, clientConfig);
     }
 
-    public static <T> ProcessorMetaSupplier readCache(String cacheName, int fetchSize, ClientConfig clientConfig) {
+    public static <T> ProcessorMetaSupplier readCache(@Nonnull String cacheName, int fetchSize,
+                                                      @Nonnull ClientConfig clientConfig) {
         return new RemoteClusterMetaSupplier<T>(clientConfig,
                 instance -> partition -> ((ClientCacheProxy) instance.getCacheManager().getCache(cacheName))
                         .iterator(fetchSize, partition, PREFETCH_VALUES));
@@ -141,6 +175,14 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                         : Processors.noop().get()
                 )
                 .collect(toList());
+    }
+
+    private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionF) {
+        return new Projection<I, O>() {
+            @Override public O transform(I input) {
+                return projectionF.apply(input);
+            }
+        };
     }
 
     private static class RemoteClusterMetaSupplier<T> implements ProcessorMetaSupplier {

@@ -32,18 +32,21 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sources.readCache;
-import static com.hazelcast.jet.processor.Sources.readList;
-import static com.hazelcast.jet.processor.Sources.readMap;
 import static com.hazelcast.jet.processor.Sinks.writeCache;
 import static com.hazelcast.jet.processor.Sinks.writeList;
 import static com.hazelcast.jet.processor.Sinks.writeMap;
+import static com.hazelcast.jet.processor.Sources.readCache;
+import static com.hazelcast.jet.processor.Sources.readList;
+import static com.hazelcast.jet.processor.Sources.readMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -81,6 +84,25 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
         jetInstance.newJob(dag).join();
 
         assertEquals(ENTRY_COUNT, jetInstance.getMap(sinkName).size());
+    }
+
+    @Test
+    public void testMap_withProjectionAndPredicate() throws ExecutionException, InterruptedException {
+        IStreamMap<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
+        range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
+
+        DAG dag = new DAG();
+        Vertex source = dag.newVertex("source", readMap(sourceName, e -> !e.getKey().equals(0), Map.Entry::getKey));
+        Vertex sink = dag.newVertex("sink", writeList(sinkName));
+
+        dag.edge(between(source, sink));
+
+        jetInstance.newJob(dag).execute().get();
+
+        IStreamList<Object> list = jetInstance.getList(sinkName);
+        assertEquals(ENTRY_COUNT - 1, list.size());
+        assertFalse(list.contains(0));
+        assertTrue(list.contains(1));
     }
 
     @Test
