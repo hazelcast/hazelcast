@@ -141,6 +141,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
@@ -1150,7 +1151,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         }
 
         ClientMessage request = MapKeySetWithPredicateCodec.encodeRequest(name, toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
         MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
 
         InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
@@ -1185,7 +1186,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         }
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
 
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
         InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
@@ -1225,10 +1226,21 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         }
 
         ClientMessage request = MapValuesWithPredicateCodec.encodeRequest(name, toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
         MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
 
         return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+    }
+
+    private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
+        ClientMessage response;
+        if (predicate instanceof PartitionPredicate) {
+            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            response = invoke(request, partitionPredicate.getPartitionKey());
+        } else {
+            response = invoke(request);
+        }
+        return response;
     }
 
     @SuppressWarnings("unchecked")
