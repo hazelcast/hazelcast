@@ -18,6 +18,7 @@ package com.hazelcast.spi.properties;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
@@ -235,11 +236,20 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.operation.call.timeout.millis", 60000, MILLISECONDS);
 
     /**
-     * If an operation has backups and the backups don't complete in time, then some cleanup logic can be executed.
-     * This property specifies that timeout for backups to complete.
+     * If an operation has backups, this property specifies how long the invocation will wait for acks from the backup replicas.
+     * If acks are not received from some backups, there will not be any rollback on other successful replicas.
      */
     public static final HazelcastProperty OPERATION_BACKUP_TIMEOUT_MILLIS
             = new HazelcastProperty("hazelcast.operation.backup.timeout.millis", 5000, MILLISECONDS);
+
+    /**
+     * When this configuration is enabled, if an operation has sync backups and acks are not received from backup replicas
+     * in time, or the member which owns primary replica of the target partition leaves the cluster, then the invocation fails
+     * with {@link IndeterminateOperationStateException}. However, even if the invocation fails,
+     * there will not be any rollback on other successful replicas.
+     */
+    public static final HazelcastProperty FAIL_ON_INDETERMINATE_OPERATION_STATE
+            = new HazelcastProperty("hazelcast.operation.fail.on.indeterminate.state", false);
 
     /**
      * Maximum number of retries for an invocation. After threshold is reached, invocation is assumed as failed.
