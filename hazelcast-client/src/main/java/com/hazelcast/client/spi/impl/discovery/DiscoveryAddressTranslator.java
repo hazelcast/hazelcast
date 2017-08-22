@@ -61,7 +61,7 @@ public class DiscoveryAddressTranslator
 
         privateToPublic = this.privateToPublic;
         Address publicAddress = privateToPublic.get(address);
-        if (!alreadyRefreshed) {
+        if (publicAddress == null && !alreadyRefreshed) {
             refresh();
             privateToPublic = this.privateToPublic;
             publicAddress = privateToPublic.get(address);
