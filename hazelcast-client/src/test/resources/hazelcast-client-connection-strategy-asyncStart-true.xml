@@ -23,10 +23,6 @@
 
 <network>
     <connection-attempt-limit>9999</connection-attempt-limit>
-    <cluster-members>
-        <address>8.8.8.8</address>
-        <address>localhost</address>
-    </cluster-members>
 </network>
     <listeners>
         <listener>com.hazelcast.client.connectionstrategy.ConfiguredBehaviourTestXmlConfig$AsyncStartListener</listener>
