@@ -68,6 +68,17 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
+*3.8.5 Fixes*
+
+- CacheDestroyOperation must be invoked from generic operation thread. [#11165]
+- RemoveOperation returns old value causing SerializationException in WAN replication when sources are not available and the store type is binary. [#11157]
+- Error in Spring configuration: "${hazelcast.queue.capacity} is not a valid value for 'integer". The property queue-capacity's type should be changed. [#11150]
+- The Javadoc for the method MapEvictionPolicy.compare is not correct. [#11074]
+- When handling multiple migration requests on the same source, NullPointerException can be thrown due to the null future reference from the previous migration processing. [#11067]
+- An exception can't be rethrown from a different thread; it will lead to exceptions with very obscure stacktraces. [#11022]
+- Wrong property name partition.count in XSD files. [#10544]
+- Hazelcast 3.7: PollOperation invocation fails to complete due to operation-heartbeat-timeout. [#8831]
+
 *3.8.4. Fixes*
 
 - Added timeout option for the get operation when Hazelcast is used within the Spring context. [#11001]
