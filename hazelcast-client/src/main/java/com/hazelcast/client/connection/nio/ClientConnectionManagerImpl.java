@@ -756,7 +756,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         int attempt = 0;
         Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
 
-        mainLoop:
         while (attempt < connectionAttemptLimit) {
             attempt++;
             long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
@@ -764,15 +763,20 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress inetSocketAddress : socketAddresses) {
                 if (!client.getLifecycleService().isRunning()) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Giving up on retrying to connect to cluster since client is shutdown.");
-                    }
-                    break mainLoop;
+                    throw new IllegalStateException("Giving up on retrying to connect to cluster since client is shutdown.");
                 }
                 triedAddresses.add(inetSocketAddress);
                 if (connectAsOwner(inetSocketAddress) != null) {
                     return;
                 }
+            }
+
+            /**
+             * If the address providers load no addresses (which seems to be possible), then the above loop is not entered
+             * and the lifecycle check is missing, hence we need to repeat the same check at this point.
+             */
+            if (!client.getLifecycleService().isRunning()) {
+                throw new IllegalStateException("Client is being shutdown.");
             }
 
             final long remainingTime = nextTry - Clock.currentTimeMillis();
@@ -800,7 +804,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 try {
                     connectToClusterInternal();
                 } catch (Exception e) {
-                    logger.warning("Could not connect to cluster, shutting down the client" + e.getMessage());
+                    logger.warning("Could not connect to cluster, shutting down the client. " + e.getMessage());
                     new Thread(new Runnable() {
                         @Override
                         public void run() {

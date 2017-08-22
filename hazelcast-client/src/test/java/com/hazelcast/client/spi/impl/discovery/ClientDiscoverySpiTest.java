@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl.discovery;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientClasspathXmlConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
@@ -52,6 +53,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -87,6 +89,12 @@ import static org.mockito.Mockito.when;
 public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientDiscoverySpiTest.class);
+
+    @After
+    public void cleanup() {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
 
     @Test
     public void testSchema() throws Exception {
@@ -373,6 +381,40 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         verify(discoveryService).discoverNodes();
     }
 
+    @Test (expected = IllegalStateException.class)
+    public void testDiscoveryEnabledNoLocalhost() {
+        Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        networkConfig.setConnectionAttemptLimit(1);
+        networkConfig.setConnectionAttemptPeriod(1);
+        networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(
+                new DiscoveryStrategyConfig(new NoMemberDiscoveryStrategyFactory(), Collections.<String, Comparable>emptyMap()));
+
+        HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testDiscoveryDisabledLocalhost() {
+        Hazelcast.newHazelcastInstance();
+
+        // should not throw any exception, localhost is added into the list of addresses
+        HazelcastClient.newHazelcastClient();
+    }
+
+    @Test (expected = IllegalStateException.class)
+    public void testMulticastDiscoveryEnabledNoLocalhost() {
+        Hazelcast.newHazelcastInstance();
+
+        ClientClasspathXmlConfig clientConfig = new ClientClasspathXmlConfig(
+                "hazelcast-client-dummy-multicast-discovery-test.xml");
+
+        HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {
         return new DiscoveryServiceSettings().setConfigClassLoader(ClientDiscoverySpiTest.class.getClassLoader())
                 .setDiscoveryConfig(config).setDiscoveryMode(DiscoveryMode.Client).setLogger(LOGGER);
@@ -593,6 +635,36 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
         private List<DiscoveryNode> getNodes() {
             return nodes;
+        }
+    }
+
+    private static class NoMemberDiscoveryStrategy extends AbstractDiscoveryStrategy {
+        public NoMemberDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+            super(logger, properties);
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return null;
+        }
+    }
+
+    public static class NoMemberDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return NoMemberDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
+            return new NoMemberDiscoveryStrategy(logger, properties);
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return null;
         }
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -68,8 +69,13 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         final CountDownLatch connectedLatch = new CountDownLatch(1);
 
         ClientConfig clientConfig = new ClientConfig();
+
+        // reserve a member address so that the client can be configured to look for it
+        Address memberAddress = hazelcastFactory.nextAddress();
+
         // trying 8.8.8.8 address will delay the initial connection since no such server exist
-        clientConfig.getNetworkConfig().addAddress("8.8.8.8", "localhost").setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getNetworkConfig().addAddress("8.8.8.8", memberAddress.getHost() + ":" + memberAddress.getPort())
+                    .setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -84,7 +90,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         assertTrue(client.getLifecycleService().isRunning());
 
-        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance(memberAddress, null);
 
         assertOpenEventually(connectedLatch);
 
