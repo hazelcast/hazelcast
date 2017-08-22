@@ -78,13 +78,6 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         return "Value-" + key;
     }
 
-    protected static String getFromNearCache(NearCacheTestContext nearCacheTestContext, Object key) {
-        if (nearCacheTestContext.nearCache.getInMemoryFormat() == InMemoryFormat.NATIVE) {
-            key = nearCacheTestContext.serializationService.toData(key);
-        }
-        return nearCacheTestContext.nearCache.get(key);
-    }
-
     public static class TestCacheLoader implements CacheLoader<Integer, String> {
 
         @Override
