@@ -59,6 +59,7 @@ import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListen
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -402,7 +403,9 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
             }
         };
 
+        assertTrueEventually(assertTask);
         assertTrueAllTheTime(assertTask, TIMEOUT);
+        testContext.invalidationListener.resetInvalidationCount();
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -411,12 +414,14 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 long invalidationCount = testContext.invalidationListener.getInvalidationCount();
-                assertTrue("invalidationCount = [" + invalidationCount + "] " +
-                        "but should be >= [" + leastInvalidationCount + "]", invalidationCount >= leastInvalidationCount);
+                assertTrue(format("invalidationCount is %d, but should be >= %d", invalidationCount, leastInvalidationCount),
+                        invalidationCount >= leastInvalidationCount);
             }
         };
 
+        assertTrueEventually(assertTask);
         assertTrueAllTheTime(assertTask, TIMEOUT);
+        testContext.invalidationListener.resetInvalidationCount();
     }
 
     protected ClientConfig createClientConfig() {
