@@ -33,14 +33,19 @@ import java.util.List;
 public class DefaultAddressProvider implements AddressProvider {
 
     private ClientNetworkConfig networkConfig;
+    private boolean noOtherAddressProviderExist;
 
-    public DefaultAddressProvider(ClientNetworkConfig networkConfig) {
+    public DefaultAddressProvider(ClientNetworkConfig networkConfig, boolean noOtherAddressProviderExist) {
         this.networkConfig = networkConfig;
+        this.noOtherAddressProviderExist = noOtherAddressProviderExist;
     }
 
     @Override
     public Collection<InetSocketAddress> loadAddresses() {
         final List<String> addresses = networkConfig.getAddresses();
+        if (addresses.isEmpty() && noOtherAddressProviderExist) {
+            addresses.add("localhost");
+        }
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
 
         for (String address : addresses) {

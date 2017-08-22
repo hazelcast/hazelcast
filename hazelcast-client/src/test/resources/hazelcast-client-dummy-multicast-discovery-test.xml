@@ -19,12 +19,25 @@
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-<connection-strategy async-start="true" />
+    <properties>
+        <property name="hazelcast.discovery.enabled">true</property>
+    </properties>
 
-<network>
-    <connection-attempt-limit>9999</connection-attempt-limit>
-</network>
-    <listeners>
-        <listener>com.hazelcast.client.connectionstrategy.ConfiguredBehaviourTestXmlConfig$AsyncStartListener</listener>
-    </listeners>
+    <network>
+        <aws enabled="false"/>
+        <connection-timeout>5000</connection-timeout>
+        <connection-attempt-period>500</connection-attempt-period>
+        <connection-attempt-limit>1</connection-attempt-limit>
+        <smart-routing>true</smart-routing>
+        <redo-operation>true</redo-operation>
+        <discovery-strategies>
+            <discovery-strategy class="com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy" enabled="true">
+                <properties>
+                    <property name="port">9999</property>
+                    <property name="group">230.18.0.255</property>
+                </properties>
+            </discovery-strategy>
+        </discovery-strategies>
+    </network>
+
 </hazelcast-client>

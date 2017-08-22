@@ -212,9 +212,6 @@ public class ClientNetworkConfig {
      * @return list of addresses
      */
     public List<String> getAddresses() {
-        if (addressList.size() == 0) {
-            addAddress("localhost");
-        }
         return addressList;
     }
 
