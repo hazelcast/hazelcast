@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
@@ -204,6 +205,10 @@ public abstract class Invocation implements OperationResponseHandler {
     public final InvocationFuture invokeAsync() {
         invoke0(true);
         return future;
+    }
+
+    protected boolean shouldFailOnIndeterminateOperationState() {
+        return false;
     }
 
     protected abstract Address getTarget();
@@ -436,6 +441,11 @@ public abstract class Invocation implements OperationResponseHandler {
 
         if (backupsCompleted || !responseReceived || !timeout) {
             return false;
+        }
+
+        if (shouldFailOnIndeterminateOperationState()) {
+            complete(new IndeterminateOperationStateException(this + " failed because backup acks missed."));
+            return true;
         }
 
         boolean targetDead = context.clusterService.getMember(invTarget) == null;
@@ -746,6 +756,7 @@ public abstract class Invocation implements OperationResponseHandler {
         final ConnectionManager connectionManager;
         final InternalExecutionService executionService;
         final long defaultCallTimeoutMillis;
+        final boolean failOnIndeterminateOperationState;
         final InvocationRegistry invocationRegistry;
         final InvocationMonitor invocationMonitor;
         final ILogger logger;
@@ -766,6 +777,7 @@ public abstract class Invocation implements OperationResponseHandler {
                 ConnectionManager connectionManager,
                 InternalExecutionService executionService,
                 long defaultCallTimeoutMillis,
+                boolean failOnIndeterminateOperationState,
                 InvocationRegistry invocationRegistry,
                 InvocationMonitor invocationMonitor,
                 ILogger logger,
@@ -784,6 +796,7 @@ public abstract class Invocation implements OperationResponseHandler {
             this.connectionManager = connectionManager;
             this.executionService = executionService;
             this.defaultCallTimeoutMillis = defaultCallTimeoutMillis;
+            this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
             this.invocationRegistry = invocationRegistry;
             this.invocationMonitor = invocationMonitor;
             this.logger = logger;

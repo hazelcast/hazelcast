@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
@@ -46,7 +47,16 @@ final class PartitionInvocation extends Invocation {
     }
 
     @Override
+    protected boolean shouldFailOnIndeterminateOperationState() {
+        return context.failOnIndeterminateOperationState;
+    }
+
+    @Override
     ExceptionAction onException(Throwable t) {
+        if (shouldFailOnIndeterminateOperationState() && (t instanceof MemberLeftException)) {
+            return THROW_EXCEPTION;
+        }
+
         ExceptionAction action = op.onInvocationException(t);
         return action != null ? action : THROW_EXCEPTION;
     }

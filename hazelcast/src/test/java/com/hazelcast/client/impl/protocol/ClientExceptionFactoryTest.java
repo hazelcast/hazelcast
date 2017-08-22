@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
@@ -264,7 +265,8 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new RuntimeException("fun", new RuntimeException("codec \n is \n not \n pwned"))},
                 new Object[]{new RuntimeException("fun",
                         new RuntimeException("!@#$%^&*()'][/.,l;§!|`]:\\ľščťž /sᵻˈrɪlɪk/ Áзбука 中华民族 \n \r \t \r\n"))},
-                new Object[]{new LocalMemberResetException(randomString())}
+                new Object[]{new LocalMemberResetException(randomString())},
+                new Object[]{new IndeterminateOperationStateException(randomString())}
         );
 
     }
