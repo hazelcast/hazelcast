@@ -20,10 +20,14 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -54,15 +58,17 @@ public class HTTPCommunicator {
         this.instance = instance;
 
         SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
-        if (sslConfig == null || !sslConfig.isEnabled()) {
-            this.address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
-        } else {
-            this.address = "https:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
-        }
+        String protocol = sslConfig == null || !sslConfig.isEnabled() ? "http:/" : "https:/";
+        this.address = protocol + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
     }
 
     public HTTPCommunicator setTlsProtocol(String tlsProtocol) {
         this.tlsProtocol = tlsProtocol;
+        return this;
+    }
+
+    public HTTPCommunicator setClientTrustManagers(TrustManagerFactory factory) {
+        this.clientTrustManagers = factory == null ? null : factory.getTrustManagers();
         return this;
     }
 
@@ -73,6 +79,11 @@ public class HTTPCommunicator {
 
     public HTTPCommunicator setClientKeyManagers(KeyManager... clientKeyManagers) {
         this.clientKeyManagers = clientKeyManagers;
+        return this;
+    }
+
+    public HTTPCommunicator setClientKeyManagers(KeyManagerFactory factory) {
+        this.clientKeyManagers = factory == null ? null : factory.getKeyManagers();
         return this;
     }
 
@@ -233,28 +244,7 @@ public class HTTPCommunicator {
     }
 
     private HttpURLConnection setupConnection(String url, String method) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) (new URL(url)).openConnection();
-        if (connection instanceof HttpsURLConnection) {
-            System.out.println("Configuring TLS connection");
-
-            HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
-
-            SSLContext sslContext;
-            try {
-                sslContext = SSLContext.getInstance(tlsProtocol);
-            } catch (NoSuchAlgorithmException e) {
-                throw new IOException(e);
-            }
-
-            try {
-                sslContext.init(clientKeyManagers, clientTrustManagers, new SecureRandom());
-            } catch (KeyManagementException e) {
-                throw new IOException(e);
-            }
-
-            httpsConnection.setSSLSocketFactory(sslContext.getSocketFactory());
-        }
-
+        HttpURLConnection connection = newConnection(url);
         connection.setRequestMethod(method);
         connection.setDoOutput(true);
         connection.setDoInput(true);
@@ -304,11 +294,39 @@ public class HTTPCommunicator {
     }
 
     private HttpURLConnection newConnection(String url) throws IOException {
-        return (HttpURLConnection) (new URL(url)).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) (new URL(url)).openConnection();
+
+        if (connection instanceof HttpsURLConnection) {
+            HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+
+            // Install the all-trusting host verifier
+            httpsConnection.setHostnameVerifier(new HostnameVerifier() {
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            });
+
+            SSLContext sslContext;
+            try {
+                sslContext = SSLContext.getInstance(tlsProtocol);
+            } catch (NoSuchAlgorithmException e) {
+                throw new IOException(e);
+            }
+
+            try {
+                sslContext.init(clientKeyManagers, clientTrustManagers, new SecureRandom());
+            } catch (KeyManagementException e) {
+                throw new IOException(e);
+            }
+
+            httpsConnection.setSSLSocketFactory(sslContext.getSocketFactory());
+        }
+
+        return connection;
     }
 
     private ConnectionResponse doHead(String url) throws IOException {
-        HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+        HttpURLConnection httpUrlConnection = newConnection(url);
         try {
             httpUrlConnection.setRequestMethod("HEAD");
             return new ConnectionResponse(null, httpUrlConnection.getResponseCode(), httpUrlConnection.getHeaderFields());
