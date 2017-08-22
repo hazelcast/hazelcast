@@ -24,6 +24,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -132,6 +133,9 @@ public class TimedMemberStateFactory {
         SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
         timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
         timedMemberState.setLite(instance.node.isLiteMember());
+
+        SocketInterceptorConfig interceptorConfig = instance.getConfig().getNetworkConfig().getSocketInterceptorConfig();
+        timedMemberState.setSocketInterceptorEnabled(interceptorConfig != null && interceptorConfig.isEnabled());
 
         return timedMemberState;
     }
