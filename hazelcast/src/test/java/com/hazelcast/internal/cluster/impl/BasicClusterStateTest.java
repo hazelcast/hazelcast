@@ -20,10 +20,12 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.SilentOperation;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -45,6 +47,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
@@ -387,6 +390,32 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
                 assertEquals(1, getNodeEngineImpl(other).getProxyService().getProxyCount());
             }
         });
+    }
+
+    @Test
+    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_PASSIVE() throws Exception {
+         pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.PASSIVE);
+    }
+
+    @Test
+    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_FROZEN() throws Exception {
+        pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.FROZEN);
+    }
+
+    private void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState state)
+            throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        warmUpPartitions(hz1, hz2);
+
+        Future<Object> future = getOperationService(hz2).invokeOnTarget(null, new SilentOperation(), getAddress(hz1));
+
+        changeClusterStateEventually(hz2, state);
+        hz1.shutdown();
+
+        expectedException.expect(MemberLeftException.class);
+        future.get();
     }
 
     private static void assertNodeState(HazelcastInstance[] instances, NodeState expectedState) {

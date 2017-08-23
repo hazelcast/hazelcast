@@ -26,7 +26,6 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -572,12 +571,9 @@ public class MembershipManager {
                 membersRemovedInNotJoinableStateRef
                         .set(MemberMap.cloneAdding(membersRemovedInNotJoinableState, removedMember));
             }
-
-            InternalPartitionServiceImpl partitionService = node.partitionService;
-            partitionService.cancelReplicaSyncRequestsTo(removedMember.getAddress());
-        } else {
-            onMemberRemove(removedMember);
         }
+
+        onMemberRemove(removedMember);
 
         // async events
         sendMembershipEventNotifications(removedMember,

@@ -374,31 +374,30 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public void memberRemoved(final MemberImpl member) {
         logger.fine("Removing " + member);
-        final Address deadAddress = member.getAddress();
-        final Address thisAddress = node.getThisAddress();
-
         lock.lock();
         try {
-            partitionStateManager.updateMemberGroupsSize();
             migrationManager.onMemberRemove(member);
+            replicaManager.cancelReplicaSyncRequestsTo(member.getAddress());
 
-            boolean isThisNodeNewMaster = node.isMaster() && !thisAddress.equals(lastMaster);
+            if (!node.getClusterService().getClusterState().isJoinAllowed()) {
+                // If join is not allowed, partition table cannot be modified and we should have
+                // the most recent partition table already. Because cluster state cannot be changed
+                // when our partition table is stale.
+                return;
+            }
+
+            partitionStateManager.updateMemberGroupsSize();
+
+            boolean isThisNodeNewMaster = node.isMaster() && !node.getThisAddress().equals(lastMaster);
             if (isThisNodeNewMaster) {
                 assert !shouldFetchPartitionTables : "SOMETHING IS WRONG! Removed member: " + member;
                 shouldFetchPartitionTables = true;
             }
 
             lastMaster = node.getClusterService().getMasterAddress();
-
-            migrationManager.pauseMigration();
-
-            replicaManager.cancelReplicaSyncRequestsTo(deadAddress);
-
             if (node.isMaster()) {
                 migrationManager.triggerControlTask();
             }
-
-            migrationManager.resumeMigration();
         } finally {
             lock.unlock();
         }
@@ -429,15 +428,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public void onClusterVersionChange(Version newVersion) {
         // required for 3.8 -> 3.9 upgrade
         replicaManager.setClusterVersion(newVersion);
-    }
-
-    public void cancelReplicaSyncRequestsTo(Address deadAddress) {
-        lock.lock();
-        try {
-            replicaManager.cancelReplicaSyncRequestsTo(deadAddress);
-        } finally {
-            lock.unlock();
-        }
     }
 
     @Override
