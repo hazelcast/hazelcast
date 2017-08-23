@@ -31,6 +31,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -176,7 +177,8 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
     private List<Integer> getOwnedPartitions() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
-        return memberPartitionsMap.get(getNodeEngine().getThisAddress());
+        List<Integer> ownedPartitions = memberPartitionsMap.get(getNodeEngine().getThisAddress());
+        return ownedPartitions == null ? Collections.<Integer>emptyList() : ownedPartitions;
     }
 
     private MetaDataGenerator getPartitionMetaDataGenerator() {
