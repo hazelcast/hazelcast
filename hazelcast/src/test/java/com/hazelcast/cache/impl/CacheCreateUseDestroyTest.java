@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheUtil;
-import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -35,7 +34,7 @@ import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assume;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,18 +55,20 @@ import javax.cache.spi.CachingProvider;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeThat;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -78,7 +79,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
 
     @Parameters(name = "{0}")
     public static Collection parameters() {
-        return Arrays.asList(
+        return asList(
                 new Object[]{OBJECT},
                 new Object[]{BINARY},
                 new Object[]{NATIVE}
@@ -98,37 +99,44 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance member = factory.newHazelcastInstance(getConfig());
         CachingProvider provider = Caching.getCachingProvider();
-        defaultCacheManager = provider.getCacheManager(null, null,
-                HazelcastCachingProvider.propertiesByInstanceItself(member));
+        defaultCacheManager = provider.getCacheManager(null, null, propertiesByInstanceItself(member));
         cacheService = getNode(member).getNodeEngine().getService(ICacheService.SERVICE_NAME);
         CacheEntryListenerFactory.listener = null;
     }
 
+    @After
+    public void tearDown() {
+        Caching.getCachingProvider().close();
+    }
+
     protected void assumptions() {
-        Assume.assumeThat(inMemoryFormat, not(NATIVE));
+        assumeThat(inMemoryFormat, not(NATIVE));
     }
 
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
+
         CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
         entryListenerConfig.setCacheEntryListenerFactory("com.hazelcast.cache.impl.CacheCreateUseDestroyTest$CacheEntryListenerFactory");
         entryListenerConfig.setOldValueRequired(true);
         entryListenerConfig.setSynchronous(true);
+
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setName("cache*")
                 .setInMemoryFormat(inMemoryFormat)
                 .setStatisticsEnabled(true)
                 .setManagementEnabled(true)
                 .setCacheEntryListeners(Collections.singletonList(entryListenerConfig));
+
         if (inMemoryFormat == NATIVE) {
             EvictionConfig evictionConfig = new EvictionConfig(90, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LFU);
             cacheSimpleConfig.setEvictionConfig(evictionConfig);
 
-            NativeMemoryConfig memoryConfig = new NativeMemoryConfig();
-            memoryConfig.setEnabled(true);
-            memoryConfig.setSize(NATIVE_MEMORY_SIZE);
-            memoryConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
+            NativeMemoryConfig memoryConfig = new NativeMemoryConfig()
+                    .setEnabled(true)
+                    .setSize(NATIVE_MEMORY_SIZE)
+                    .setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
             config.setNativeMemoryConfig(memoryConfig);
         }
 
@@ -194,8 +202,8 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
                 cacheName), expectedStatus, MXBeanUtil.isRegistered(cacheManagerName, cacheName, forStats));
     }
 
-    public static class CacheEntryListener implements CacheEntryCreatedListener<String, String>,
-                                                      Serializable, Closeable {
+    public static class CacheEntryListener implements CacheEntryCreatedListener<String, String>, Serializable, Closeable {
+
         volatile boolean closed;
 
         @Override
@@ -218,6 +226,5 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
             listener = new CacheEntryListener();
             return listener;
         }
-
     }
 }
