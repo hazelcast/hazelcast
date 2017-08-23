@@ -122,7 +122,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         stats = getStats(client, clientEngine);
         mapHits = stats.get(MAP_HITS_KEY);
         assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
-        assertEquals("Expected 0 map hits", "0", mapHits);
+        assertEquals(format("Expected 0 map hits (%s)", stats), "0", mapHits);
         cacheHits = stats.get(CACHE_HITS_KEY);
         assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
 
@@ -138,10 +138,10 @@ public class ClientStatisticsTest extends ClientTestSupport {
         stats = getStats(client, clientEngine);
         mapHits = stats.get(MAP_HITS_KEY);
         assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
-        assertEquals("Expected 1 map hits", "1", mapHits);
+        assertEquals(format("Expected 1 map hits (%s)", stats), "1", mapHits);
         cacheHits = stats.get(CACHE_HITS_KEY);
         assertNotNull(format("%s should not be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
-        assertEquals("Expected 1 cache hits", "1", cacheHits);
+        assertEquals(format("Expected 1 cache hits (%s)", stats), "1", cacheHits);
     }
 
     @Test
