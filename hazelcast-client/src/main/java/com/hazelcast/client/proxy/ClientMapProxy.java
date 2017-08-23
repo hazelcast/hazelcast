@@ -1660,15 +1660,4 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
     }
-
-    @Override
-    protected void onDestroy() {
-        try {
-            SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
-            QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
-            provider.removeQueryCachesOfMap(name);
-        } finally {
-            super.onDestroy();
-        }
-    }
 }
