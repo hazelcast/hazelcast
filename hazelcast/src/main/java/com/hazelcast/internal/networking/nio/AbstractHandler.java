@@ -22,6 +22,7 @@ import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -30,7 +31,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 public abstract class AbstractHandler
-        implements SelectionHandler, MigratableHandler {
+        implements SelectionHandler, MigratableHandler, Closeable {
 
     protected static final int LOAD_BALANCING_HANDLE = 0;
     protected static final int LOAD_BALANCING_BYTE = 1;
