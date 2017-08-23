@@ -17,16 +17,19 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
@@ -84,9 +87,18 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     }
 
     private AddressProvider createAddressProvider(ClientConfig config) {
+        boolean discoveryEnabled = new HazelcastProperties(config.getProperties())
+                .getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED);
+
+        ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
+
         List<String> userConfiguredAddresses = config.getNetworkConfig().getAddresses();
-        if (!userConfiguredAddresses.contains("localhost")) {
-            // addresses are set explicitly, don't add more addresses
+
+        boolean isAtLeastAProviderConfigured =
+                discoveryEnabled || (awsConfig != null ? awsConfig.isEnabled() : false) || !userConfiguredAddresses.isEmpty();
+
+        if (isAtLeastAProviderConfigured) {
+            // address providers or addresses are configured explicitly, don't add more addresses
             return null;
         }
 
@@ -96,7 +108,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 Collection<InetSocketAddress> inetAddresses = new ArrayList<InetSocketAddress>();
                 for (Address address : getKnownAddresses()) {
                     Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
-                            address.getHost(), 3);
+                            address.getHost(), 1);
                     inetAddresses.addAll(addresses);
                 }
                 return inetAddresses;

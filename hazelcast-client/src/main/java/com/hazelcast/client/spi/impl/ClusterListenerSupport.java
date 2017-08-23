@@ -147,12 +147,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         int attempt = 0;
         Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
         while (attempt < connectionAttemptLimit) {
-            if (!client.getLifecycleService().isRunning()) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Giving up on retrying to connect to cluster since client is shutdown");
-                }
-                break;
-            }
+            checkIfClientStillRuning("Giving up on retrying to connect to cluster since client is shutdown.");
             attempt++;
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
 
@@ -161,6 +156,12 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             if (isConnected) {
                 return;
             }
+
+            /**
+             * If the address providers load no addresses (which seems to be possible), then the above loop is not entered
+             * and the lifecycle check is missing, hence we need to repeat the same check at this point.
+             */
+            checkIfClientStillRuning("Client is being shutdown.");
 
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             logger.warning(
@@ -177,6 +178,14 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         }
         throw new IllegalStateException("Unable to connect to any address in the config!"
                 + " The following addresses were tried: " + triedAddresses);
+    }
+
+    private void checkIfClientStillRuning(String shutdownMessage) {
+        if (!client.getLifecycleService().isRunning()) {
+            if (!client.getLifecycleService().isRunning()) {
+                throw new IllegalStateException(shutdownMessage);
+            }
+        }
     }
 
     private boolean connect(Set<InetSocketAddress> triedAddresses) throws Exception {
