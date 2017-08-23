@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.CacheCreateUseDestroyTest;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -27,19 +26,20 @@ import org.junit.Before;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+
 public class ClientCacheCreateUseDestroyTest extends CacheCreateUseDestroyTest {
 
     private TestHazelcastFactory factory;
 
-    @Override
     @Before
+    @Override
     public void setup() {
         assumptions();
         factory = new TestHazelcastFactory();
         HazelcastInstance member = factory.newHazelcastInstance(getConfig());
         CachingProvider provider = Caching.getCachingProvider();
-        defaultCacheManager = provider.getCacheManager(null, null,
-                HazelcastCachingProvider.propertiesByInstanceItself(factory.newHazelcastClient()));
+        defaultCacheManager = provider.getCacheManager(null, null, propertiesByInstanceItself(factory.newHazelcastClient()));
         cacheService = getNode(member).getNodeEngine().getService(ICacheService.SERVICE_NAME);
         CacheEntryListenerFactory.listener = null;
     }
@@ -49,7 +49,6 @@ public class ClientCacheCreateUseDestroyTest extends CacheCreateUseDestroyTest {
         if (factory != null) {
             factory.terminateAll();
         }
+        Caching.getCachingProvider().close();
     }
-
-
 }
