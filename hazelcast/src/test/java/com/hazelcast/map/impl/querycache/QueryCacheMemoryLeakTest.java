@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@Ignore("Enable this test after fix of this issue: https://github.com/hazelcast/hazelcast/issues/11145")
 public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
 
     @Test
@@ -47,6 +49,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
 
         for (int j = 0; j < 10; j++) {
             map.getQueryCache(j + "-test-QC", TruePredicate.INSTANCE, true);
+
         }
 
         map.destroy();
