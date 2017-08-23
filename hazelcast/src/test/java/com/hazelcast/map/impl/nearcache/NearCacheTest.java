@@ -48,7 +48,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -456,44 +455,6 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testGetAllIssue1863() {
-        int mapSize = 1000;
-        String mapName = "testGetAllWithNearCacheIssue1863";
-
-        Config config = getConfig();
-        NearCacheConfig nearCacheConfig = newNearCacheConfig().setInvalidateOnChange(true);
-        nearCacheConfig.setCacheLocalEntries(true);
-        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
-
-        int nodeCount = 3;
-        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(nodeCount);
-        HazelcastInstance[] instances = hazelcastInstanceFactory.newInstances(config);
-        assertClusterSizeEventually(nodeCount, instances);
-
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        HashSet<Integer> keys = new HashSet<Integer>();
-
-        // populate Near Cache with nulls (cache local entries mode on)
-        for (int i = 0; i < mapSize; i++) {
-            map.get(i);
-            keys.add(i);
-        }
-
-        assertEquals(mapSize, getNearCacheSize(map));
-
-        // generate Near Cache hits
-        Map<Integer, Integer> allEntries = map.getAll(keys);
-        assertEquals(0, allEntries.size());
-
-        // check Near Cache hits
-        NearCacheStats nearCacheStats = getNearCacheStats(map);
-        long hits = nearCacheStats.getHits();
-
-        String message = format("Near Cache hits should be %d but were %d. All stats = [%s]", mapSize, hits, nearCacheStats);
-        assertEquals(message, mapSize, hits);
-    }
-
-    @Test
     public void testGetAsync() {
         int mapSize = 1000;
         int expectedHits = 400;
@@ -544,40 +505,6 @@ public class NearCacheTest extends NearCacheTestSupport {
         long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
         assertTrue(format("Near Cache should be populated but current size is %d", ownedEntryCount), ownedEntryCount > 0);
     }
-
-    @Test
-    public void testGetAsyncIssue1863() throws Exception {
-        int nodeCount = 2;
-        int mapSize = 1000;
-        String mapName = "testGetAsyncWithNearCacheIssue1863";
-
-        Config config = getConfig();
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setCacheLocalEntries(true);
-        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
-
-        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(nodeCount);
-        HazelcastInstance hz = hazelcastInstanceFactory.newHazelcastInstance(config);
-        hazelcastInstanceFactory.newHazelcastInstance(config);
-
-        assertClusterSizeEventually(nodeCount, hz);
-
-        IMap<Integer, Integer> map = hz.getMap(mapName);
-        populateNearCache(map, mapSize);
-
-        assertEquals(mapSize, getNearCacheSize(map));
-
-        for (int i = 0; i < mapSize; i++) {
-            Future<Integer> future = map.getAsync(i);
-            assertNull(future.get());
-        }
-
-        NearCacheStats nearCacheStats = getNearCacheStats(map);
-        long hits = nearCacheStats.getHits();
-        assertEquals(format("Near Cache hits should be %d but were %d. All stats are here = [%s]",
-                mapSize, hits, nearCacheStats), mapSize, hits);
-    }
-
 
     @Test
     public void testAfterLoadAllWithDefinedKeysNearCacheIsInvalidated() {
