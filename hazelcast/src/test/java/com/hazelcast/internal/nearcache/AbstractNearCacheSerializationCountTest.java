@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isInvalidateOnChange;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -55,6 +56,14 @@ import static org.junit.Assert.fail;
 
 /**
  * Contains the logic code for unified Near Cache serialization count tests.
+ * <p>
+ * This test has some requirements to deliver stable results:
+ * <ul>
+ * <li>no backups should be created, since backup operations cause additional serializations</li>
+ * <li>no migrations should happen, since migration operations cause additional serializations</li>
+ * <li>no eviction or expiration should happen, since that causes additional serializations</li>
+ * <li>no custom invalidation listeners should be registered, since they cause additional serializations</li>
+ * </ul>
  *
  * @param <NK> key type of the tested Near Cache
  * @param <NV> value type of the tested Near Cache
@@ -136,6 +145,15 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      */
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext();
 
+    /**
+     * Creates the {@link NearCacheTestContext} with only a Near Cache instance used by the Near Cache tests.
+     *
+     * @param <K> key type of the created {@link DataStructureAdapter}
+     * @param <V> value type of the created {@link DataStructureAdapter}
+     * @return a {@link NearCacheTestContext} used by the Near Cache tests
+     */
+    protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createNearCacheContext();
+
     @Before
     public final void initStates() {
         KEY_SERIALIZE_COUNT.set(0);
@@ -189,6 +207,7 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         KeySerializationCountingData key = new KeySerializationCountingData(executeEqualsAndHashCode);
         ValueSerializationCountingData value = new ValueSerializationCountingData(executeEqualsAndHashCode);
+        NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, ?, ?> nearCacheContext = context;
 
         switch (testMethod) {
             case GET:
@@ -200,13 +219,19 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 }
                 assertAndResetSerializationCounts(context, "put()", 0);
 
-                resultValue = context.nearCacheAdapter.get(key);
-                assertResultValue("first get()", value, resultValue);
-                assertAndResetSerializationCounts(context, "first get()", 1);
+                if (!isCacheOnUpdate(nearCacheConfig) && isInvalidateOnChange(nearCacheConfig)) {
+                    // create a new Near Cache instance to have a race free setup, when invalidation is configured
+                    nearCacheContext = createNearCacheContext();
+                    waitAllForSafeState(context.dataInstance, context.nearCacheInstance, nearCacheContext.nearCacheInstance);
+                }
 
-                resultValue = context.nearCacheAdapter.get(key);
+                resultValue = nearCacheContext.nearCacheAdapter.get(key);
+                assertResultValue("first get()", value, resultValue);
+                assertAndResetSerializationCounts(nearCacheContext, "first get()", 1);
+
+                resultValue = nearCacheContext.nearCacheAdapter.get(key);
                 assertResultValue("second get()", value, resultValue);
-                assertAndResetSerializationCounts(context, "second get()", 2);
+                assertAndResetSerializationCounts(nearCacheContext, "second get()", 2);
                 break;
 
             case GET_ALL:
@@ -219,13 +244,19 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 }
                 assertAndResetSerializationCounts(context, "putAll()", 0);
 
-                resultMap = context.nearCacheAdapter.getAll(keySet);
-                assertResultMap("first getAll()", value, resultMap);
-                assertAndResetSerializationCounts(context, "first getAll()", 1);
+                if (!isCacheOnUpdate(nearCacheConfig) && isInvalidateOnChange(nearCacheConfig)) {
+                    // create a new Near Cache instance to have a race free setup, when invalidation is configured
+                    nearCacheContext = createNearCacheContext();
+                    waitAllForSafeState(context.dataInstance, context.nearCacheInstance, nearCacheContext.nearCacheInstance);
+                }
 
-                resultMap = context.nearCacheAdapter.getAll(keySet);
+                resultMap = nearCacheContext.nearCacheAdapter.getAll(keySet);
+                assertResultMap("first getAll()", value, resultMap);
+                assertAndResetSerializationCounts(nearCacheContext, "first getAll()", 1);
+
+                resultMap = nearCacheContext.nearCacheAdapter.getAll(keySet);
                 assertResultMap("second getAll()", value, resultMap);
-                assertAndResetSerializationCounts(context, "second getAll()", 2);
+                assertAndResetSerializationCounts(nearCacheContext, "second getAll()", 2);
                 break;
         }
     }

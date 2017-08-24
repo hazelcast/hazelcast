@@ -189,6 +189,16 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
+     * Checks if the {@link NearCacheConfig#isInvalidateOnChange()} of a {@link NearCacheConfig} is {@code true}.
+     *
+     * @param nearCacheConfig the {@link NearCacheConfig} to check
+     * @return {@code true} if the {@code LocalUpdatePolicy} is {@code CACHE_ON_UPDATE}, {@code false} otherwise
+     */
+    static boolean isInvalidateOnChange(NearCacheConfig nearCacheConfig) {
+        return nearCacheConfig != null && nearCacheConfig.isInvalidateOnChange();
+    }
+
+    /**
      * Checks if the given {@link DataStructureAdapter} implements a specified {@link DataStructureMethods}.
      *
      * @param adapter the {@link DataStructureAdapter} to test

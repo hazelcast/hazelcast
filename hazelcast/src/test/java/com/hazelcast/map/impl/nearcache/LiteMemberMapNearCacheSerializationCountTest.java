@@ -33,6 +33,7 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -152,26 +153,25 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, false));
-        HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, true));
-
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
-        IMap<K, V> liteMemberMap = liteMember.getMap(DEFAULT_NEAR_CACHE_NAME);
 
-        NearCacheManager nearCacheManager = getMapNearCacheManager(liteMember);
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
-                .setNearCacheInstance(liteMember)
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder
                 .setDataInstance(member)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
                 .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
                 .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder.build();
     }
 
     protected Config createConfig(NearCacheConfig nearCacheConfig, boolean liteMember) {
         Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1")
                 .setLiteMember(liteMember);
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(mapInMemoryFormat)
@@ -182,5 +182,19 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
         }
         prepareSerializationConfig(config.getSerializationConfig());
         return config;
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
+        HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, true));
+        IMap<K, V> liteMemberMap = liteMember.getMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = getMapNearCacheManager(liteMember);
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(liteMember))
+                .setNearCacheInstance(liteMember)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager);
     }
 }
