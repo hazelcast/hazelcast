@@ -24,9 +24,12 @@ import javax.cache.Cache;
 import javax.cache.Caching;
 
 /**
- * utility class responsible for setup/cleanup client jsr tests
+ * Utility class responsible for setup/cleanup of client JSR tests.
  */
-public class JsrClientTestUtil {
+public final class JsrClientTestUtil {
+
+    private JsrClientTestUtil() {
+    }
 
     static {
         System.setProperty("javax.management.builder.initial", "com.hazelcast.cache.impl.TCKMBeanServerBuilder");

@@ -29,6 +29,6 @@ public class PutTest
 
     @AfterClass
     public static void cleanup() {
-        JstTestUtil.cleanup();
+        JsrTestUtil.cleanup();
     }
 }

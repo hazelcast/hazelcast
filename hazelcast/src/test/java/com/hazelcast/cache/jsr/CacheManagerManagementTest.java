@@ -29,6 +29,6 @@ public class CacheManagerManagementTest
 
     @AfterClass
     public static void cleanup() {
-        JstTestUtil.cleanup();
+        JsrTestUtil.cleanup();
     }
 }

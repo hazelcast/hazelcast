@@ -29,6 +29,6 @@ public class CacheWriterTest
 
     @AfterClass
     public static void cleanupJsr() {
-        JstTestUtil.cleanup();
+        JsrTestUtil.cleanup();
     }
 }

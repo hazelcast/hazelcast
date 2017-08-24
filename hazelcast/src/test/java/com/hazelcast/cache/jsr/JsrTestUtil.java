@@ -21,9 +21,12 @@ import com.hazelcast.core.Hazelcast;
 import javax.cache.Caching;
 
 /**
- * utility class responsible for cleanup jsr tests
+ * Utility class responsible for setup/cleanup or member JSR tests.
  */
-public class JstTestUtil {
+public final class JsrTestUtil {
+
+    private JsrTestUtil() {
+    }
 
     public static void cleanup() {
         Caching.getCachingProvider().close();

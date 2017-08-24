@@ -29,6 +29,6 @@ public class EntryProcessorExceptionTest
 
     @AfterClass
     public static void cleanup() {
-        JstTestUtil.cleanup();
+        JsrTestUtil.cleanup();
     }
 }
