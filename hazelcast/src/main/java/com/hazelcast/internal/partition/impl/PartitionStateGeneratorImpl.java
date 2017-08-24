@@ -51,6 +51,14 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     @Override
     public Address[][] arrange(Collection<MemberGroup> memberGroups, InternalPartition[] currentState) {
+        return arrange(memberGroups, currentState, null);
+    }
+
+    @Override
+    public Address[][] arrange(Collection<MemberGroup> memberGroups, InternalPartition[] currentState,
+            Collection<Integer> partitions) {
+
+
         Queue<NodeGroup> groups = createNodeGroups(memberGroups);
         if (groups.isEmpty()) {
             return null;
@@ -58,12 +66,12 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
         int partitionCount = currentState.length;
         Address[][] state = new Address[partitionCount][InternalPartition.MAX_REPLICA_COUNT];
-        initialize(currentState, state);
+        initialize(currentState, state, partitions);
 
         int tryCount = 0;
         do {
             boolean aggressive = tryCount >= AGGRESSIVE_RETRY_THRESHOLD;
-            tryArrange(state, groups, partitionCount, aggressive);
+            tryArrange(state, groups, partitionCount, aggressive, partitions);
             if (tryCount++ > 0) {
                 if (LOGGER.isFineEnabled()) {
                     LOGGER.fine("Re-trying partition arrangement. Count: " + tryCount);
@@ -74,7 +82,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return state;
     }
 
-    private void initialize(InternalPartition[] currentState, Address[][] state) {
+    private void initialize(InternalPartition[] currentState, Address[][] state, Collection<Integer> partitions) {
         int partitionCount = currentState.length;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
@@ -87,7 +95,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 empty &= replicas[index] == null;
             }
 
-            if (empty) {
+            if (empty || partitions != null && !partitions.contains(partitionId)) {
                 continue;
             }
 
@@ -108,16 +116,26 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
-    private void tryArrange(Address[][] state, Queue<NodeGroup> groups, int partitionCount, boolean aggressive) {
+    private void tryArrange(Address[][] state, Queue<NodeGroup> groups, int partitionCount, boolean aggressive,
+            Collection<Integer> toBeArrangedPartitions) {
+
         int groupSize = groups.size();
         int replicaCount = Math.min(groupSize, InternalPartition.MAX_REPLICA_COUNT);
         int avgPartitionPerGroup = partitionCount / groupSize;
+
         // clear unused replica owners
         // initialize partition registry for each group
-        initializeGroupPartitions(state, groups, replicaCount, aggressive);
+        initializeGroupPartitions(state, groups, replicaCount, aggressive, toBeArrangedPartitions);
+
         for (int index = 0; index < replicaCount; index++) {
             // partitions those are not bound to any node/group
             Queue<Integer> freePartitions = getUnownedPartitions(state, index);
+
+            // retain only to-be-arranged partitions
+            if (toBeArrangedPartitions != null) {
+                freePartitions.retainAll(toBeArrangedPartitions);
+            }
+
             // groups having partitions under average
             Queue<NodeGroup> underLoadedGroups = new LinkedList<NodeGroup>();
             // groups having partitions over average
@@ -145,9 +163,11 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             assert freePartitions.isEmpty() : "There are partitions not-owned yet: " + freePartitions;
 
-            // iterate through over-loaded groups' partitions and distribute them to under-loaded groups.
-            transferPartitionsBetweenGroups(underLoadedGroups, overLoadedGroups, index,
-                    avgPartitionPerGroup, plusOneGroupCount);
+            if (toBeArrangedPartitions == null) {
+                // iterate through over-loaded groups' partitions and distribute them to under-loaded groups.
+                transferPartitionsBetweenGroups(underLoadedGroups, overLoadedGroups, index, avgPartitionPerGroup,
+                        plusOneGroupCount);
+            }
             // post process each group's partition table (distribute partitions added to group to nodes
             // and balance load of partition ownership s in group) and save partition ownerships to
             // cluster partition state table.
@@ -289,7 +309,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return freePartitions;
     }
 
-    private void initializeGroupPartitions(Address[][] state, Queue<NodeGroup> groups, int replicaCount, boolean aggressive) {
+    private void initializeGroupPartitions(Address[][] state, Queue<NodeGroup> groups, int replicaCount,
+            boolean aggressive, Collection<Integer> toBeArrangedPartitions) {
         // reset partition before reuse
         for (NodeGroup nodeGroup : groups) {
             nodeGroup.resetPartitions();
@@ -310,7 +331,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
                 if (!valid) {
                     replicas[replicaIndex] = null;
-                } else if (aggressive && replicaIndex < AGGRESSIVE_INDEX_THRESHOLD) {
+                } else if (aggressive && replicaIndex < AGGRESSIVE_INDEX_THRESHOLD
+                        && (toBeArrangedPartitions == null || toBeArrangedPartitions.contains(partitionId))) {
                     for (int i = AGGRESSIVE_INDEX_THRESHOLD; i < replicaCount; i++) {
                         replicas[i] = null;
                     }

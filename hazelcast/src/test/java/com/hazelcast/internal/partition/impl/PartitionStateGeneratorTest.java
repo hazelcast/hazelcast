@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -161,6 +162,51 @@ public class PartitionStateGeneratorTest {
         assertTrue(partitionGroupConfig.isEnabled());
         assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, partitionGroupConfig.getGroupType());
         assertEquals(2, partitionGroupConfig.getMemberGroupConfigs().size());
+    }
+
+    @Test
+    public void testOnlyUnassignedArrangement() throws Exception {
+        List<Member> memberList = createMembers(10, 1);
+        MemberGroupFactory memberGroupFactory = new SingleMemberGroupFactory();
+        Collection<MemberGroup> groups = memberGroupFactory.createMemberGroups(memberList);
+
+        PartitionStateGenerator generator = new PartitionStateGeneratorImpl();
+        Address[][] state = generator.arrange(groups, emptyPartitionArray(100));
+
+        // unassign some partitions entirely
+        Collection<Integer> unassignedPartitions = new ArrayList<Integer>();
+        for (int i = 0; i < state.length; i++) {
+            if (i % 3 == 0) {
+                state[i] = new Address[InternalPartition.MAX_REPLICA_COUNT];
+                unassignedPartitions.add(i);
+            }
+        }
+
+        // unassign only backup replicas of some partitions
+        for (int i = 0; i < state.length; i++) {
+            if (i % 10 == 0) {
+                Arrays.fill(state[i], 1, InternalPartition.MAX_REPLICA_COUNT, null);
+            }
+        }
+
+        InternalPartition[] partitions = toPartitionArray(state);
+
+        state = generator.arrange(groups, partitions, unassignedPartitions);
+
+        for (int pid = 0; pid < state.length; pid++) {
+            Address[] addresses = state[pid];
+
+            if (unassignedPartitions.contains(pid)) {
+                for (Address address : addresses) {
+                    assertNotNull(address);
+                }
+            } else {
+                InternalPartition partition = partitions[pid];
+                for (int replicaIx = 0; replicaIx < InternalPartition.MAX_REPLICA_COUNT; replicaIx++) {
+                    assertEquals(partition.getReplicaAddress(replicaIx), addresses[replicaIx]);
+                }
+            }
+        }
     }
 
     private void test(MemberGroupFactory memberGroupFactory) throws Exception {
