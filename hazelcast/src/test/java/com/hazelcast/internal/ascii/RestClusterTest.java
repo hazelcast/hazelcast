@@ -30,6 +30,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
+import org.apache.http.NoHttpResponseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
@@ -79,7 +79,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         try {
             communicator.getClusterInfo();
             fail("Rest is disabled. Not expected to reach here!");
-        } catch (SocketException ignored) {
+        } catch (NoHttpResponseException ignored) {
         }
     }
 
@@ -248,7 +248,7 @@ public class RestClusterTest extends HazelcastTestSupport {
                 "Hazelcast::ClusterSize=1\n", result);
     }
 
-    @Test(expected = SocketException.class)
+    @Test(expected = NoHttpResponseException.class)
     public void fail_with_deactivatedHealthCheck() throws Exception {
         // Healthcheck REST URL is deactivated by default - no passed config on purpose
         HazelcastInstance instance = Hazelcast.newHazelcastInstance();
