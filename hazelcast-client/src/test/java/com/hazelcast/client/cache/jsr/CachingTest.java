@@ -24,15 +24,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CachingTest
-        extends org.jsr107.tck.CachingTest {
+public class CachingTest extends org.jsr107.tck.CachingTest {
 
     @BeforeClass
     public static void setupInstance() {
-        JsrClientTestUtil.setup();
+        JsrClientTestUtil.setupWithHazelcastInstance();
     }
 
     @AfterClass
@@ -44,5 +42,4 @@ public class CachingTest
     @Override
     public void dummyTest() {
     }
-
 }

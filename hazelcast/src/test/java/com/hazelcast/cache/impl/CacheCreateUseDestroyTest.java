@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
@@ -72,10 +73,10 @@ import static org.junit.Assume.assumeThat;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@Category(QuickTest.class)
 public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
 
-    public static final MemorySize NATIVE_MEMORY_SIZE = new MemorySize(32, MemoryUnit.MEGABYTES);
+    private static final MemorySize NATIVE_MEMORY_SIZE = new MemorySize(32, MemoryUnit.MEGABYTES);
 
     @Parameters(name = "{0}")
     public static Collection parameters() {
@@ -96,6 +97,8 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         assumptions();
+        JsrTestUtil.setup();
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance member = factory.newHazelcastInstance(getConfig());
         CachingProvider provider = Caching.getCachingProvider();
@@ -106,7 +109,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        Caching.getCachingProvider().close();
+        JsrTestUtil.cleanup();
     }
 
     protected void assumptions() {

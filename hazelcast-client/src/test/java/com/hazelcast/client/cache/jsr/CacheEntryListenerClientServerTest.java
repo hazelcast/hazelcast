@@ -23,25 +23,13 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheEntryListenerClientServerTest
-        extends org.jsr107.tck.event.CacheEntryListenerClientServerTest {
-
-    /*
-    These system propreties are necessary if you run jsr tests from IDEA
-    static {
-        System.setProperty("javax.management.builder.initial", "com.hazelcast.cache.impl.TCKMBeanServerBuilder");
-        System.setProperty("org.jsr107.tck.management.agentId", "TCKMbeanServer");
-        System.setProperty(Cache.class.getName(), "com.hazelcast.cache.ICache");
-        System.setProperty(Cache.Entry.class.getCanonicalName(), "com.hazelcast.cache.impl.CacheEntry");
-    }
-    */
+public class CacheEntryListenerClientServerTest extends org.jsr107.tck.event.CacheEntryListenerClientServerTest {
 
     @BeforeClass
     public static void setupInstance() {
-        JsrClientTestUtil.setup();
+        JsrClientTestUtil.setupWithHazelcastInstance();
     }
 
     @AfterClass
