@@ -19,14 +19,19 @@ package com.hazelcast.cache.jsr;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CachingTest
-        extends org.jsr107.tck.CachingTest {
+public class CachingTest extends org.jsr107.tck.CachingTest {
+
+    @BeforeClass
+    public static void init() {
+        JsrTestUtil.setup();
+    }
 
     @AfterClass
     public static void cleanup() {
@@ -37,5 +42,4 @@ public class CachingTest
     @Override
     public void dummyTest() {
     }
-
 }

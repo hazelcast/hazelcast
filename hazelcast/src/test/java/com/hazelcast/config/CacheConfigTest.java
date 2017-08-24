@@ -20,6 +20,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
@@ -81,10 +82,14 @@ public class CacheConfigTest extends HazelcastTestSupport {
     private final URL configUrl2 = getClass().getClassLoader().getResource("test-hazelcast-jcache2.xml");
 
     @Before
+    public void setUp() {
+        JsrTestUtil.setup();
+    }
+
     @After
     public void cleanup() {
         HazelcastInstanceFactory.terminateAll();
-        Caching.getCachingProvider().close();
+        JsrTestUtil.cleanup();
     }
 
     @Test

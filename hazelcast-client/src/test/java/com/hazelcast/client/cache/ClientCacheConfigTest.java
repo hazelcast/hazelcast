@@ -20,13 +20,13 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
+import com.hazelcast.client.cache.jsr.JsrClientTestUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -58,6 +58,8 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
 
     @Before
     public void init() {
+        JsrClientTestUtil.setup();
+
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().setPort(5701);
@@ -77,8 +79,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        HazelcastClient.shutdownAll();
-        HazelcastInstanceFactory.terminateAll();
+        JsrClientTestUtil.cleanup();
     }
 
     @Test
@@ -120,7 +121,6 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         assertNotNull(cacheManager2);
 
         assertEquals(2, HazelcastClient.getAllHazelcastClients().size());
-        Caching.getCachingProvider().close();
     }
 
     @Test
@@ -144,8 +144,6 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
 
         assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
         client.shutdown();
-
-        Caching.getCachingProvider().close();
     }
 
     @Test

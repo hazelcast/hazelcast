@@ -19,17 +19,21 @@ package com.hazelcast.cache.jsr;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ReplaceTest
-        extends org.jsr107.tck.ReplaceTest {
+public class ReplaceTest extends org.jsr107.tck.ReplaceTest {
+
+    @BeforeClass
+    public static void init() {
+        JsrTestUtil.setup();
+    }
 
     @AfterClass
     public static void cleanup() {
         JsrTestUtil.cleanup();
     }
-
 }
