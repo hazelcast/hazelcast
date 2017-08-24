@@ -79,6 +79,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected static final int TEST_TIMEOUT = 10 * 60 * 1000;
     protected static final int KEY_COUNT = 10023;
     protected static final int THREAD_COUNT = 10;
+    protected static final int CREATE_AND_DESTROY_RUNS = 5000;
 
     protected final String defaultNearCache = randomName();
 
@@ -335,6 +336,32 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         assertOpenEventually(finishLatch);
         pool.shutdownNow();
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    public void testCreateAndDestroyDataStructure_withSameName() {
+        nearCacheConfig.setName("createDestroyNearCache");
+
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true, KEY_COUNT, INTEGER);
+        DataStructureAdapter<Object, String> adapter = context.nearCacheAdapter;
+
+        for (int i = 0; i < CREATE_AND_DESTROY_RUNS; i++) {
+            adapter.destroy();
+            adapter = getDataStructure(context, "createDestroyNearCache");
+        }
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    public void testCreateAndDestroyDataStructure_withDifferentNames() {
+        nearCacheConfig.setName("createDestroyNearCache-*");
+
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true, KEY_COUNT, INTEGER);
+        DataStructureAdapter<Object, String> adapter = context.nearCacheAdapter;
+
+        for (int i = 0; i < CREATE_AND_DESTROY_RUNS; i++) {
+            adapter.destroy();
+            adapter = getDataStructure(context, "createDestroyNearCache-" + i);
+        }
     }
 
     protected final NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
