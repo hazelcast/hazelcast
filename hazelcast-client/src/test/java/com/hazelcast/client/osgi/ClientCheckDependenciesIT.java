@@ -6,6 +6,6 @@ public class ClientCheckDependenciesIT extends CheckDependenciesIT {
 
     @Override
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-client-") && urlString.contains("target");
+        return urlString.contains("hazelcast-client/target/classes/META-INF/MANIFEST.MF");
     }
 }
