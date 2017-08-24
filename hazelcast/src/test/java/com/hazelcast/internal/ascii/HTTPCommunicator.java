@@ -19,26 +19,38 @@ package com.hazelcast.internal.ascii;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
+import com.hazelcast.nio.IOUtil;
+import org.apache.http.Consts;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +61,8 @@ public class HTTPCommunicator {
 
     private final HazelcastInstance instance;
     private final String address;
-    private int chunkedStreamingLength;
+    private final boolean sslEnabled;
+    private boolean enableChunkedStreaming;
     private TrustManager[] clientTrustManagers;
     private KeyManager[] clientKeyManagers;
     private String tlsProtocol = "TLSv1.1";
@@ -58,7 +71,8 @@ public class HTTPCommunicator {
         this.instance = instance;
 
         SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
-        String protocol = sslConfig == null || !sslConfig.isEnabled() ? "http:/" : "https:/";
+        sslEnabled = sslConfig != null && sslConfig.isEnabled();
+        String protocol = sslEnabled ? "https:/" : "http:/";
         this.address = protocol + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
     }
 
@@ -89,72 +103,54 @@ public class HTTPCommunicator {
 
     public String queuePoll(String queueName, long timeout) throws IOException {
         String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
-        return doGet(url);
+        return doGet(url).response;
     }
 
     public int queueSize(String queueName) throws IOException {
         String url = address + "queues/" + queueName + "/size";
-        return Integer.parseInt(doGet(url));
+        return Integer.parseInt(doGet(url).response);
     }
 
     public int queueOffer(String queueName, String data) throws IOException {
         final String url = address + "queues/" + queueName;
-        final HttpURLConnection urlConnection = setupConnection(url, "POST");
-
-        // post the data
-        OutputStream out = urlConnection.getOutputStream();
-        Writer writer = new OutputStreamWriter(out, "UTF-8");
-        writer.write(data);
-        writer.close();
-        out.close();
-
-        return urlConnection.getResponseCode();
+        return doPost(url, data).responseCode;
     }
 
     public String mapGet(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
-        return doGet(url);
+        return doGet(url).response;
     }
 
     public String getClusterInfo() throws IOException {
         String url = address + "cluster";
-        return doGet(url);
+        return doGet(url).response;
     }
 
-    public String getFailingClusterHealthWithTrailingGarbage() throws IOException {
+    public int getFailingClusterHealthWithTrailingGarbage() throws IOException {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
-        return doGet(url);
+        return doGet(url).responseCode;
     }
 
     public String getClusterHealth() throws IOException {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;
-        return doGet(url);
+        return doGet(url).response;
     }
 
     public int mapPut(String mapName, String key, String value) throws IOException {
         final String url = address + "maps/" + mapName + "/" + key;
-        final HttpURLConnection urlConnection = setupConnection(url, "POST");
-
-        // post the data
-        OutputStream out = urlConnection.getOutputStream();
-        Writer writer = new OutputStreamWriter(out, "UTF-8");
-        writer.write(value);
-        writer.close();
-        out.close();
-
-        return urlConnection.getResponseCode();
+        return doPost(url, value).responseCode;
     }
 
     public int mapDeleteAll(String mapName) throws IOException {
         String url = address + "maps/" + mapName;
-        return setupConnection(url, "DELETE").getResponseCode();
+        return doDelete(url);
     }
 
     public int mapDelete(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
-        return setupConnection(url, "DELETE").getResponseCode();
+        return doDelete(url);
     }
 
     public int shutdownCluster(String groupName, String groupPassword) throws IOException {
@@ -179,7 +175,7 @@ public class HTTPCommunicator {
 
     public String getClusterVersion() throws IOException {
         String url = address + "management/cluster/version";
-        return doGet(url);
+        return doGet(url).response;
     }
 
     public ConnectionResponse changeClusterVersion(String groupName, String groupPassword, String version) throws IOException {
@@ -243,24 +239,10 @@ public class HTTPCommunicator {
         return doPost(url, groupName, groupPassword, permConfJson).response;
     }
 
-    private HttpURLConnection setupConnection(String url, String method) throws IOException {
-        HttpURLConnection connection = newConnection(url);
-        connection.setRequestMethod(method);
-        connection.setDoOutput(true);
-        connection.setDoInput(true);
-        connection.setUseCaches(false);
-        connection.setAllowUserInteraction(false);
-        connection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-        if (chunkedStreamingLength > 0) {
-            connection.setChunkedStreamingMode(chunkedStreamingLength);
-        }
-        return connection;
-    }
-
     static class ConnectionResponse {
-        public final String response;
-        public final int responseCode;
-        public final Map<String, List<String>> responseHeaders;
+        final String response;
+        final int responseCode;
+        final Map<String, List<String>> responseHeaders;
 
         private ConnectionResponse(String response, int responseCode) {
             this(response, responseCode, null);
@@ -277,35 +259,103 @@ public class HTTPCommunicator {
         }
     }
 
-    private String doGet(String url) throws IOException {
-        HttpURLConnection httpUrlConnection = newConnection(url);
+    private ConnectionResponse doHead(String url) throws IOException {
+        CloseableHttpClient client = newClient();
+        CloseableHttpResponse response = null;
         try {
-            InputStream inputStream = httpUrlConnection.getInputStream();
-            StringBuilder builder = new StringBuilder();
-            byte[] buffer = new byte[1024];
-            int readBytes;
-            while ((readBytes = inputStream.read(buffer)) > -1) {
-                builder.append(new String(buffer, 0, readBytes));
+            HttpHead request = new HttpHead(url);
+            response = client.execute(request);
+
+            int responseCode = response.getStatusLine().getStatusCode();
+
+            Header[] headers = response.getAllHeaders();
+            Map<String, List<String>> responseHeaders = new HashMap<String, List<String>>();
+            for (Header header : headers) {
+                List<String> values = responseHeaders.get(header.getName());
+                if (values == null) {
+                    values = new ArrayList<String>();
+                    responseHeaders.put(header.getName(), values);
+                }
+                values.add(header.getValue());
             }
-            return builder.toString();
+
+            return new ConnectionResponse(null, responseCode, responseHeaders);
         } finally {
-            httpUrlConnection.disconnect();
+            IOUtil.closeResource(response);
+            IOUtil.closeResource(client);
         }
     }
 
-    private HttpURLConnection newConnection(String url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) (new URL(url)).openConnection();
+    private ConnectionResponse doGet(String url) throws IOException {
+        CloseableHttpClient client = newClient();
+        CloseableHttpResponse response = null;
+        try {
+            HttpGet request = new HttpGet(url);
+            request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
+            response = client.execute(request);
+            int responseCode = response.getStatusLine().getStatusCode();
+            HttpEntity entity = response.getEntity();
+            String responseStr = entity != null ? EntityUtils.toString(entity, "UTF-8") : "";
+            return new ConnectionResponse(responseStr, responseCode);
+        } finally {
+            IOUtil.closeResource(response);
+            IOUtil.closeResource(client);
+        }
+    }
 
-        if (connection instanceof HttpsURLConnection) {
-            HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+    private ConnectionResponse doPost(String url, String... params) throws IOException {
+        CloseableHttpClient client = newClient();
 
-            // Install the all-trusting host verifier
-            httpsConnection.setHostnameVerifier(new HostnameVerifier() {
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                }
-            });
+        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(params.length);
+        for (String param : params) {
+            nameValuePairs.add(new BasicNameValuePair(param, null));
+        }
+        String data = URLEncodedUtils.format(nameValuePairs, Consts.UTF_8);
 
+        HttpEntity entity;
+        ContentType contentType = ContentType.create("text/xml", Consts.UTF_8);
+        if (enableChunkedStreaming) {
+            ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes(Consts.UTF_8));
+            InputStreamEntity streamEntity = new InputStreamEntity(stream, contentType);
+            streamEntity.setChunked(true);
+            entity = streamEntity;
+        } else {
+            entity = new StringEntity(data, contentType);
+        }
+
+        CloseableHttpResponse response = null;
+        try {
+            HttpPost request = new HttpPost(url);
+            request.setEntity(entity);
+            response = client.execute(request);
+
+            int responseCode = response.getStatusLine().getStatusCode();
+            String responseStr = response.getEntity() != null ? EntityUtils.toString(response.getEntity(), "UTF-8") : "";
+            return new ConnectionResponse(responseStr, responseCode);
+        } finally {
+            IOUtil.closeResource(response);
+            IOUtil.closeResource(client);
+        }
+    }
+
+    private int doDelete(String url) throws IOException {
+        CloseableHttpClient client = newClient();
+        CloseableHttpResponse response = null;
+        try {
+            HttpDelete request = new HttpDelete(url);
+            request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
+            response = client.execute(request);
+            return response.getStatusLine().getStatusCode();
+        } finally {
+            IOUtil.closeResource(response);
+            IOUtil.closeResource(client);
+        }
+    }
+
+    private CloseableHttpClient newClient() throws IOException {
+        HttpClientBuilder builder = HttpClients.custom();
+
+        if (sslEnabled) {
             SSLContext sslContext;
             try {
                 sslContext = SSLContext.getInstance(tlsProtocol);
@@ -319,43 +369,11 @@ public class HTTPCommunicator {
                 throw new IOException(e);
             }
 
-            httpsConnection.setSSLSocketFactory(sslContext.getSocketFactory());
+            builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
+                    SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
         }
 
-        return connection;
-    }
-
-    private ConnectionResponse doHead(String url) throws IOException {
-        HttpURLConnection httpUrlConnection = newConnection(url);
-        try {
-            httpUrlConnection.setRequestMethod("HEAD");
-            return new ConnectionResponse(null, httpUrlConnection.getResponseCode(), httpUrlConnection.getHeaderFields());
-        } finally {
-            httpUrlConnection.disconnect();
-        }
-    }
-
-    private ConnectionResponse doPost(String url, String... params) throws IOException {
-        HttpURLConnection urlConnection = setupConnection(url, "POST");
-        // post the data
-        OutputStream out = urlConnection.getOutputStream();
-        Writer writer = new OutputStreamWriter(out, "UTF-8");
-        StringBuilder data = new StringBuilder();
-        for (String param : params) {
-            data.append(URLEncoder.encode(param, "UTF-8")).append("&");
-        }
-        writer.write(data.toString());
-        writer.close();
-        out.close();
-        try {
-            InputStream inputStream = urlConnection.getInputStream();
-            byte[] buffer = new byte[4096];
-            int readBytes = inputStream.read(buffer);
-            return new ConnectionResponse(readBytes == -1 ? "" : new String(buffer, 0, readBytes),
-                    urlConnection.getResponseCode());
-        } finally {
-            urlConnection.disconnect();
-        }
+        return builder.build();
     }
 
     public ConnectionResponse headRequestToMapURI() throws IOException {
@@ -396,7 +414,7 @@ public class HTTPCommunicator {
         return doHead(url);
     }
 
-    public void setChunkedStreamingLength(int chunkedStreamingLength) {
-        this.chunkedStreamingLength = chunkedStreamingLength;
+    public void enableChunkedStreaming() {
+        this.enableChunkedStreaming = true;
     }
 }
