@@ -623,12 +623,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                         membersRemovedInNotActiveStateRef
                                 .set(MemberMap.cloneAdding(membersRemovedInNotActiveState, deadMember));
                     }
-
-                    InternalPartitionServiceImpl partitionService = node.partitionService;
-                    partitionService.cancelReplicaSyncRequestsTo(deadAddress);
-                } else {
-                    onMemberRemove(deadMember, newMembers);
                 }
+
+                onMemberRemove(deadMember, newMembers);
 
                 // async events
                 sendMembershipEventNotifications(deadMember,
