@@ -113,10 +113,14 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    protected void onDestroy() {
-        if (nearCache != null) {
-            removeNearCacheInvalidationListener();
-            getContext().getNearCacheManager().destroyNearCache(name);
+    protected void postDestroy() {
+        try {
+            if (nearCache != null) {
+                removeNearCacheInvalidationListener();
+                getContext().getNearCacheManager().destroyNearCache(name);
+            }
+        } finally {
+            super.postDestroy();
         }
     }
 

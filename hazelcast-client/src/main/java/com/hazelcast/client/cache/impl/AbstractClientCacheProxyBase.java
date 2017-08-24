@@ -131,6 +131,10 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
+        closeInternal();
+    }
+
+    protected void closeInternal() {
         waitOnGoingLoadAllCallsToFinish();
         closeListeners();
     }
@@ -153,10 +157,10 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
     @Override
     protected boolean preDestroy() {
-        close();
         if (!isDestroyed.compareAndSet(false, true)) {
             return false;
         }
+        closeInternal();
         isClosed.set(true);
         return true;
     }

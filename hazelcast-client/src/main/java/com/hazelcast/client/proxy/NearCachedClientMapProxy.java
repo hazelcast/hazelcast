@@ -554,11 +554,13 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void onDestroy() {
-        removeNearCacheInvalidationListener();
-        getContext().getNearCacheManager().destroyNearCache(name);
-
-        super.onDestroy();
+    protected void postDestroy() {
+        try {
+            removeNearCacheInvalidationListener();
+            getContext().getNearCacheManager().destroyNearCache(name);
+        } finally {
+            super.postDestroy();
+        }
     }
 
     @Override

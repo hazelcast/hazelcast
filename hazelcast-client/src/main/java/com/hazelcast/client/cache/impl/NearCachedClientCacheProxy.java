@@ -461,11 +461,13 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected void onDestroy() {
-        removeInvalidationListener();
-        nearCacheManager.destroyNearCache(nearCache.getName());
-
-        super.onDestroy();
+    protected void postDestroy() {
+        try {
+            removeInvalidationListener();
+            nearCacheManager.destroyNearCache(nearCache.getName());
+        } finally {
+            super.postDestroy();
+        }
     }
 
     private Object getCachedValue(Object key, boolean deserializeValue) {
