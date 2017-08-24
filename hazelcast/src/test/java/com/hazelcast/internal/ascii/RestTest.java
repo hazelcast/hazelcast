@@ -109,7 +109,7 @@ public class RestTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPutGet_chunked() throws Exception {
-        communicator.setChunkedStreamingLength(32);
+        communicator.enableChunkedStreaming();
         testMapPutGet0();
     }
 
@@ -230,7 +230,7 @@ public class RestTest extends HazelcastTestSupport {
 
     @Test
     public void testMap_PutGet_withLargeValue_chunked() throws IOException {
-        communicator.setChunkedStreamingLength(1024);
+        communicator.enableChunkedStreaming();
         testMap_PutGet_withLargeValue0();
     }
 
@@ -258,7 +258,7 @@ public class RestTest extends HazelcastTestSupport {
 
     @Test
     public void testMap_PutGet_withLargeKey_chunked() throws IOException {
-        communicator.setChunkedStreamingLength(1024);
+        communicator.enableChunkedStreaming();
         testMap_PutGet_withLargeKey0();
     }
 
