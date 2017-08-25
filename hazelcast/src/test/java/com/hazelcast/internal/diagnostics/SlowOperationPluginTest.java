@@ -79,7 +79,7 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
                 assertContains("stackTrace");
                 assertContains("invocations=1");
                 assertContains("startedAt=");
-                assertContains("durationNs=");
+                assertContains("duration(ms)=");
                 assertContains("operationDetails=");
             }
         });

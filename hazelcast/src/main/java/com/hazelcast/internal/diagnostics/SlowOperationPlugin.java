@@ -106,7 +106,8 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
         writer.startSection("slowInvocations");
         for (SlowOperationInvocationDTO invocation : slowOperation.invocations) {
             writer.writeKeyValueEntry("startedAt", invocation.startedAt);
-            writer.writeKeyValueEntry("durationNs", invocation.durationMs);
+            writer.writeKeyValueEntryAsDateTime("started(date-time)", invocation.startedAt);
+            writer.writeKeyValueEntry("duration(ms)", invocation.durationMs);
             writer.writeKeyValueEntry("operationDetails", invocation.operationDetails);
         }
         writer.endSection();
