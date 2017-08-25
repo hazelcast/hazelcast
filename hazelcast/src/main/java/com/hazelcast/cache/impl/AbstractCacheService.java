@@ -311,8 +311,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     public void deleteCache(String name, String callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(name);
         if (destroy) {
-            destroySegments(name);
             cacheEventHandler.destroy(name, SOURCE_NOT_AVAILABLE);
+            destroySegments(name);
         } else {
             closeSegments(name);
         }
