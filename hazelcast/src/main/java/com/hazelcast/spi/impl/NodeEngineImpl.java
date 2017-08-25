@@ -32,6 +32,7 @@ import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.OperationHeartbeatPlugin;
 import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
+import com.hazelcast.internal.diagnostics.EventQueuePlugin;
 import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
 import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
@@ -247,6 +248,7 @@ public class NodeEngineImpl implements NodeEngine {
 
         // periodic loggers
         diagnostics.register(new OverloadedConnectionsPlugin(this));
+        diagnostics.register(new EventQueuePlugin(this, eventService.getEventExecutor()));
         diagnostics.register(new PendingInvocationsPlugin(this));
         diagnostics.register(new MetricsPlugin(this));
         diagnostics.register(new SlowOperationPlugin(this));
