@@ -182,9 +182,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     private void checkIfClientStillRuning(String shutdownMessage) {
         if (!client.getLifecycleService().isRunning()) {
-            if (!client.getLifecycleService().isRunning()) {
-                throw new IllegalStateException(shutdownMessage);
-            }
+            throw new IllegalStateException(shutdownMessage);
         }
     }
 
