@@ -265,7 +265,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
         Collection<AddressProvider> addressProviders = new LinkedList<AddressProvider>();
 
-        addressProviders.add(new DefaultAddressProvider(networkConfig));
         if (externalAddressProvider != null) {
             addressProviders.add(externalAddressProvider);
         }
@@ -283,6 +282,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 throw e;
             }
         }
+
+        addressProviders.add(new DefaultAddressProvider(networkConfig, addressProviders.isEmpty()));
         return addressProviders;
     }
 
