@@ -370,13 +370,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client-protocol</artifactId>
-            <version>${client.protocol.version}</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
             <groupId>javax.servlet.jsp</groupId>
             <artifactId>javax.servlet.jsp-api</artifactId>
             <version>${jsp.api.version}</version>
