@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
@@ -28,7 +27,6 @@ import com.hazelcast.nio.serialization.Data;
  * Codec that read and writes QueryCacheEventData(event of continous query cache) to client message
  * Used by generated code only.
  */
-@Codec(QueryCacheEventData.class)
 public final class QueryCacheEventDataCodec {
 
     private QueryCacheEventDataCodec() {

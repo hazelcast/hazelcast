@@ -16,16 +16,14 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
-@Codec(CacheEventData.class)
 public final class CacheEventDataCodec {
 
     private CacheEventDataCodec() {

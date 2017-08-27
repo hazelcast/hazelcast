@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.config.MapAttributeConfig;
@@ -25,8 +23,6 @@ import com.hazelcast.config.MapAttributeConfig;
 /**
  * MapAttributeConfig codec
  */
-@Codec(MapAttributeConfig.class)
-@Since("1.5")
 public final class MapAttributeConfigCodec {
 
     private MapAttributeConfigCodec() {

@@ -16,14 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.nio.Address;
 
-@Codec(JobPartitionState.class)
 public final class JobPartitionStateCodec {
 
     private JobPartitionStateCodec() {

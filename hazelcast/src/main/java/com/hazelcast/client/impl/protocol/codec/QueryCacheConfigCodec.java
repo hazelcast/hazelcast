@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
@@ -28,8 +26,6 @@ import com.hazelcast.nio.Bits;
 import java.util.ArrayList;
 import java.util.List;
 
-@Codec(QueryCacheConfigHolder.class)
-@Since("1.5")
 public final class QueryCacheConfigCodec {
 
     private static final int ENCODED_BOOLEANS = 5;

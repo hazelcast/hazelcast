@@ -16,15 +16,11 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.nio.Bits;
 
-@Codec(CacheSimpleEntryListenerConfig.class)
-@Since("1.5")
 public final class CacheSimpleEntryListenerConfigCodec {
 
     private static final int ENCODED_BOOLEANS = 4;

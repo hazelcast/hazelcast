@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
@@ -27,8 +25,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.util.Properties;
 
-@Codec(RingbufferStoreConfigHolder.class)
-@Since("1.5")
 public final class RingbufferStoreConfigCodec {
 
     private static final byte CONFIG_TYPE_CLASS_NAME = 0;

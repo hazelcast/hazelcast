@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
@@ -26,8 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import static com.hazelcast.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
-@Codec(EvictionConfigHolder.class)
-@Since("1.5")
 public final class EvictionConfigCodec {
 
     private EvictionConfigCodec() {

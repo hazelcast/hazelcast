@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder;
@@ -25,8 +23,6 @@ import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.nio.Bits;
 
-@Codec(NearCacheConfigHolder.class)
-@Since("1.5")
 public final class NearCacheConfigCodec {
 
     private static final int ENCODED_BOOLEANS = 4;

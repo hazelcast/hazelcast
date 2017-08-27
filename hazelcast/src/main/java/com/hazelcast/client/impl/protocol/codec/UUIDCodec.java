@@ -16,16 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.UUID;
 
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 
-@Since("1.4")
-@Codec(UUID.class)
 public final class UUIDCodec {
 
     private static final int UUID_LONG_FIELD_COUNT = 2;

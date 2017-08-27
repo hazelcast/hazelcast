@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.core.HazelcastException;
@@ -25,7 +24,6 @@ import com.hazelcast.nio.Bits;
 
 import java.net.UnknownHostException;
 
-@Codec(Address.class)
 public final class AddressCodec {
 
     private AddressCodec() {

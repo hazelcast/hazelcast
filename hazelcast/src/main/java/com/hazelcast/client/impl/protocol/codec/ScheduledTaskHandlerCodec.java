@@ -1,6 +1,5 @@
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Address;
@@ -8,7 +7,6 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 
-@Codec(ScheduledTaskHandler.class)
 public final class ScheduledTaskHandlerCodec {
 
     private ScheduledTaskHandlerCodec() {

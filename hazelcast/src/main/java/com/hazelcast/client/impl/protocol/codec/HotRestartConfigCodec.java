@@ -16,14 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.nio.Bits;
 
-@Codec(HotRestartConfig.class)
-@Since("1.5")
 public final class HotRestartConfigCodec {
 
     private HotRestartConfigCodec() {

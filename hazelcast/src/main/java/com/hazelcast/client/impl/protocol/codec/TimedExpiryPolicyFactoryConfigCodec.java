@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.Since;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
@@ -26,8 +24,6 @@ import com.hazelcast.nio.Bits;
 
 import java.util.concurrent.TimeUnit;
 
-@Codec(TimedExpiryPolicyFactoryConfig.class)
-@Since("1.5")
 public final class TimedExpiryPolicyFactoryConfigCodec {
 
     private TimedExpiryPolicyFactoryConfigCodec() {

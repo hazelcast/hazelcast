@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
@@ -24,7 +23,6 @@ import com.hazelcast.transaction.impl.xa.SerializableXID;
 
 import javax.transaction.xa.Xid;
 
-@Codec(Xid.class)
 public final class XIDCodec {
 
     private XIDCodec() {

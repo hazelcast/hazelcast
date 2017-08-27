@@ -66,7 +66,7 @@ public class MapMessageEncodeDecodeTest {
         ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0);
         MapPutCodec.RequestParameters decodeParams = MapPutCodec.decodeRequest(cmDecode);
 
-        assertEquals(MapPutCodec.REQUEST_TYPE.id(), cmDecode.getMessageType());
+        assertEquals(MapPutCodec.REQUEST_TYPE, cmDecode.getMessageType());
         assertEquals(3, cmDecode.getVersion());
         assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.getFlags());
         assertEquals(Long.MAX_VALUE, cmDecode.getCorrelationId());

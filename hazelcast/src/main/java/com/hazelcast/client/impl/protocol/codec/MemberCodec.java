@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.core.Member;
@@ -26,7 +25,6 @@ import com.hazelcast.nio.Bits;
 import java.util.HashMap;
 import java.util.Map;
 
-@Codec(Member.class)
 public final class MemberCodec {
 
     private MemberCodec() {

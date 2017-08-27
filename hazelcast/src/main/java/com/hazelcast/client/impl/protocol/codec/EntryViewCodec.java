@@ -16,14 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
-@Codec(SimpleEntryView.class)
 public final class EntryViewCodec {
 
     private static final int DATA_SIZE_FACTOR = 10;
