@@ -397,6 +397,7 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionFinalizeCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
+import com.hazelcast.client.impl.protocol.codec.*;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
@@ -429,6 +430,8 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.query
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strings;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.taskHandlers;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
+import static org.junit.Assert.assertTrue;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 
 public class BinaryCompatibilityNullFileGenerator {

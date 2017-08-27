@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec;
@@ -398,6 +397,8 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionFinalizeCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.*;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
@@ -445,6 +446,8 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.taskH
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.timedExpiryPolicyFactoryConfig;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.wanReplicationRef;
+import static org.junit.Assert.assertTrue;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 
 public class BinaryCompatibilityFileGenerator {
