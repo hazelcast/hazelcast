@@ -105,6 +105,11 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     MapEntries getAll(Set<Data> keySet);
 
+    /**
+     * Checks if the key exist in memory without trying to load data from map-loader
+     */
+    boolean existInMemory(Data key);
+
     boolean containsKey(Data dataKey);
 
     int getLockedEntryCount();
