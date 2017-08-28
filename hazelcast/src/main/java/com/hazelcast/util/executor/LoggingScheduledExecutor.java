@@ -66,12 +66,12 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Runnable runnable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(runnable, task);
+        return new LoggingDelegatingFuture<V>(runnable, task, this);
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Callable<V> callable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(callable, task);
+        return new LoggingDelegatingFuture<V>(callable, task, this);
     }
 
     @Override
@@ -117,10 +117,12 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         private final Object task;
         private final RunnableScheduledFuture<V> delegate;
+        private final LoggingScheduledExecutor executor;
 
-        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate) {
+        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate, LoggingScheduledExecutor executor) {
             this.task = task;
             this.delegate = delegate;
+            this.executor = executor;
         }
 
         @Override
@@ -162,7 +164,11 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            return delegate.cancel(mayInterruptIfRunning);
+            boolean cancelled = delegate.cancel(mayInterruptIfRunning);
+            if (cancelled) {
+                executor.remove(this);
+            }
+            return cancelled;
         }
 
         @Override
