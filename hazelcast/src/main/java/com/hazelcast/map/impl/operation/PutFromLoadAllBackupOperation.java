@@ -60,6 +60,10 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
             final Data value = keyValueSequence.get(i + 1);
             final Object object = mapServiceContext.toObject(value);
             recordStore.putFromLoadBackup(key, object);
+            if (!recordStore.existInMemory(key)) {
+                continue;
+            }
+
             publishWanReplicationEvent(key, value, recordStore.getRecord(key));
         }
     }

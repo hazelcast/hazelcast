@@ -735,6 +735,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public boolean existInMemory(Data key) {
+        return storage.containsKey(key);
+    }
+
+    @Override
     public boolean containsKey(Data key) {
         checkIfLoaded();
         final long now = getNow();
