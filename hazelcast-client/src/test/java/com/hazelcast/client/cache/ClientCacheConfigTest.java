@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -56,11 +55,6 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     private final URL configUrl1 = getClass().getClassLoader().getResource("hazelcast-client-c1.xml");
     private final URL configUrl2 = getClass().getClassLoader().getResource("hazelcast-client-c2.xml");
     private final CacheSimpleConfig simpleConfig = new CacheSimpleConfig().setName("pre-configured-cache");
-
-    @BeforeClass
-    public static void setupClass() {
-        HazelcastClient.shutdownAll();
-    }
 
     @Before
     public void init() {
@@ -88,7 +82,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void cacheManagerByLocationClasspathTest() throws URISyntaxException {
+    public void cacheManagerByLocationClasspathTest() throws Exception {
         assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
         URI uri = new URI("MY-SCOPE");
 
@@ -106,7 +100,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void cacheManagerByLocationFileTest() throws URISyntaxException {
+    public void cacheManagerByLocationFileTest() throws Exception {
         assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
         URI uri = new URI("MY-SCOPE");
 
@@ -227,7 +221,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private ICacheService getCacheService(HazelcastInstance instance) {
+    private static ICacheService getCacheService(HazelcastInstance instance) {
         return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 }
