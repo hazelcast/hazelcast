@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
@@ -70,6 +72,27 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             executor.shutdownNow();
             executor.awaitTermination(5, SECONDS);
         }
+    }
+
+    @Test
+    public void no_remaining_task_after_cancel() throws Exception {
+        executor = new LoggingScheduledExecutor(logger, 1, factory);
+
+        for (int i = 0; i < 10; i++) {
+            Future<Integer> future = executor.submit(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    TimeUnit.HOURS.sleep(1);
+                    return null;
+                }
+            });
+
+            future.cancel(true);
+        }
+
+        BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
+
+        assertEquals(0, workQueue.size());
     }
 
     @Test
