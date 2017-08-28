@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EventJournalConfig;
@@ -37,11 +37,11 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.OperationParker;
 
-import static com.hazelcast.cache.impl.CacheEventType.CREATED;
-import static com.hazelcast.cache.impl.CacheEventType.EVICTED;
-import static com.hazelcast.cache.impl.CacheEventType.EXPIRED;
-import static com.hazelcast.cache.impl.CacheEventType.REMOVED;
-import static com.hazelcast.cache.impl.CacheEventType.UPDATED;
+import static com.hazelcast.cache.CacheEventType.CREATED;
+import static com.hazelcast.cache.CacheEventType.EVICTED;
+import static com.hazelcast.cache.CacheEventType.EXPIRED;
+import static com.hazelcast.cache.CacheEventType.REMOVED;
+import static com.hazelcast.cache.CacheEventType.UPDATED;
 
 
 /**

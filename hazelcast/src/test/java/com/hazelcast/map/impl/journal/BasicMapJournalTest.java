@@ -28,6 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;

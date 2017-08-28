@@ -14,36 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.event;
-
-import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.core.Member;
-
 /**
- * Cache events common contract.
- * @since 3.6
+ * Contains {@link com.hazelcast.journal.EventJournal} event interface for ICache.
+ * @since 3.9
  */
-public interface ICacheEvent {
-
-    /**
-     * Returns the member that fired this event.
-     *
-     * @return the member that fired this event.
-     */
-    Member getMember();
-
-    /**
-     * Return the event type
-     *
-     * @return event type
-     */
-    CacheEventType getEventType();
-
-    /**
-     * Returns the name of the cache for this event.
-     *
-     * @return name of the cache for this event.
-     */
-    String getName();
-
-}
+package com.hazelcast.cache.journal;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.event;
 
-import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.Member;
 

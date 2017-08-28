@@ -35,7 +35,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
-import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
 import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
 import com.hazelcast.map.impl.query.AggregationResult;

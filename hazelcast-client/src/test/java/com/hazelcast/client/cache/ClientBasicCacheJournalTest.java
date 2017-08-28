@@ -18,7 +18,7 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.journal.BasicCacheJournalTest;
-import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;

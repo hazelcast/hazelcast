@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.journal;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -59,7 +60,7 @@ public class InternalEventJournalCacheEvent implements IdentifiedDataSerializabl
 
     /**
      * Return the integer defining the event type. It can be turned into an
-     * enum value by calling {@link com.hazelcast.cache.impl.CacheEventType#getByType(int)}.
+     * enum value by calling {@link CacheEventType#getByType(int)}.
      *
      * @return the integer defining the event type
      */

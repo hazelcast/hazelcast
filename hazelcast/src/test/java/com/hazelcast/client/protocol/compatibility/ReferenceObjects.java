@@ -19,7 +19,7 @@ package com.hazelcast.client.protocol.compatibility;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.client.AuthenticationException;

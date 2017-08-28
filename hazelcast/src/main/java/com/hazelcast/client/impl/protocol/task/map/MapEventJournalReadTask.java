@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapEventJournalReadCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;

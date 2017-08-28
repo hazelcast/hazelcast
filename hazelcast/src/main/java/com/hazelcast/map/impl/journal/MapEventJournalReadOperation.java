@@ -20,6 +20,7 @@ import com.hazelcast.journal.EventJournal;
 import com.hazelcast.journal.EventJournalReadOperation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.projection.Projection;
