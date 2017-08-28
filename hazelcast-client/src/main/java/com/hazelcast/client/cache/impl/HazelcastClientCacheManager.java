@@ -97,9 +97,9 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
-    protected void removeCacheConfigFromLocal(String cacheName) {
-        configs.remove(cacheName);
-        clientCacheProxyFactory.removeCacheConfig(cacheName);
+    protected void removeCacheConfigFromLocal(String cacheNameWithPrefix) {
+        configs.remove(cacheNameWithPrefix);
+        clientCacheProxyFactory.removeCacheConfig(cacheNameWithPrefix);
     }
 
     @Override
