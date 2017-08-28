@@ -256,7 +256,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public ClientConnection getConnection(Address target) {
-        target = addressTranslator.translate(target);
         if (target == null) {
             return null;
         }
@@ -271,7 +270,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (connection != null) {
                     return connection;
                 }
-                AuthenticationFuture firstCallback = triggerConnect(addressTranslator.translate(address), asOwner);
+                AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
                 connection = firstCallback.get(connectionTimeout);
                 if (!asOwner) {
                     return connection;
@@ -329,8 +328,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (!asOwner) {
             ensureOwnerConnectionAvailable();
         }
-
-        target = addressTranslator.translate(target);
 
         if (target == null) {
             throw new IllegalStateException("Address can not be null");
@@ -645,7 +642,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             ClientConnection connection = activeConnections.get(target);
             if (connection == null) {
                 try {
-                    connection = createSocketConnection(target);
+                    connection = createSocketConnection(addressTranslator.translate(target));
                 } catch (Exception e) {
                     logger.finest(e);
                     callback.onFailure(e);
@@ -665,8 +662,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void onAuthenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection =
-                activeConnections.put(addressTranslator.translate(connection.getEndPoint()), connection);
+        ClientConnection oldConnection = activeConnections.put(connection.getEndPoint(), connection);
         if (oldConnection == null) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Authentication succeeded for " + connection
