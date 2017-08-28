@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.SynchronizeIndexesForPartitionTask;
@@ -110,7 +111,8 @@ class MapIndexSynchronizer {
         OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
         for (int partitionId : internalPartitionService.getMemberPartitions(nodeEngine.getThisAddress())) {
             SynchronizeIndexesForPartitionTask task = new SynchronizeIndexesForPartitionTask(partitionId, mapIndexInfos,
-                    mapServiceContext.getService(), serializationService);
+                    mapServiceContext.getService(), serializationService,
+                    (InternalPartitionService) nodeEngine.getPartitionService());
             operationServiceImpl.execute(task);
         }
     }

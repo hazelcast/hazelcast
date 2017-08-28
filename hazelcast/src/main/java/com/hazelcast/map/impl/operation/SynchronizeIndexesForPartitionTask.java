@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -57,17 +59,25 @@ public class SynchronizeIndexesForPartitionTask implements PartitionSpecificRunn
 
     private final MapService mapService;
     private final SerializationService serializationService;
+    private final InternalPartitionService partitionService;
 
-    public SynchronizeIndexesForPartitionTask(int partitionId, List<MapIndexInfo> mapIndexInfos,
-                                              MapService mapService, SerializationService serializationService) {
+    public SynchronizeIndexesForPartitionTask(int partitionId, List<MapIndexInfo> mapIndexInfos, MapService mapService,
+                                              SerializationService serializationService,
+                                              InternalPartitionService partitionService) {
         this.partitionId = partitionId;
         this.mapIndexInfos = mapIndexInfos;
         this.mapService = mapService;
         this.serializationService = serializationService;
+        this.partitionService = partitionService;
     }
 
     @Override
     public void run() {
+        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        if (!partition.isLocal() || partition.isMigrating()) {
+            return;
+        }
+
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         long now = Clock.currentTimeMillis();
 
