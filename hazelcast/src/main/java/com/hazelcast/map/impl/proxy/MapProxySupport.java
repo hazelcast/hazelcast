@@ -509,7 +509,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected void deleteInternal(Data key) {
-        MapOperation operation = operationProvider.createDeleteOperation(name, key);
+        MapOperation operation = operationProvider.createDeleteOperation(name, key, false);
         invokeOperation(key, operation);
     }
 

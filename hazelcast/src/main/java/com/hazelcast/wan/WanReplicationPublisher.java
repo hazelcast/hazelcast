@@ -44,7 +44,8 @@ public interface WanReplicationPublisher {
     void publishReplicationEvent(WanReplicationEvent wanReplicationEvent);
 
     /**
-     * Check the capacity of the WAN replication queues.
+     * Checks the size of the WAN replication queue and throws an
+     * exception if it has been reached or crossed.
      *
      * @throws WANReplicationQueueFullException if queue capacity has been reached and
      *                                          {@link WanPublisherConfig#getQueueFullBehavior()} is

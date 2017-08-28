@@ -88,8 +88,8 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createDeleteOperation(String name, Data key) {
-        return getDelegate().createDeleteOperation(name, key);
+    public MapOperation createDeleteOperation(String name, Data key, boolean disableWanReplicationEvent) {
+        return getDelegate().createDeleteOperation(name, key, disableWanReplicationEvent);
     }
 
     @Override

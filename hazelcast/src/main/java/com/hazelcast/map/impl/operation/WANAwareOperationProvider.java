@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.wan.WANReplicationQueueFullException;
 
 import java.util.List;
 import java.util.Set;
@@ -107,9 +108,9 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
     }
 
     @Override
-    public MapOperation createDeleteOperation(String name, Data key) {
+    public MapOperation createDeleteOperation(String name, Data key, boolean disableWanReplicationEvent) {
         checkWanReplicationQueues(name);
-        return getDelegate().createDeleteOperation(name, key);
+        return getDelegate().createDeleteOperation(name, key, disableWanReplicationEvent);
     }
 
     @Override
@@ -169,6 +170,14 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
         return getDelegate().createMultipleEntryOperationFactory(name, keys, entryProcessor);
     }
 
+    /**
+     * Checks if WAN replication is enabled for the provided map {@code name}
+     * and if the WAN queues have reached their capacity.
+     *
+     * @param name the map name
+     * @throws WANReplicationQueueFullException if WAN replication is enabled and queue
+     *                                          capacity has been reached
+     */
     private void checkWanReplicationQueues(String name) {
         mapServiceContext.getMapContainer(name).checkWanReplicationQueues();
     }

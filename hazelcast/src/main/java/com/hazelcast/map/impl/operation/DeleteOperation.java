@@ -26,6 +26,10 @@ public class DeleteOperation extends BaseRemoveOperation {
         super(name, dataKey);
     }
 
+    public DeleteOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
+        super(name, dataKey, disableWanReplicationEvent);
+    }
+
     public DeleteOperation() {
     }
 

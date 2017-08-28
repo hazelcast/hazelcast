@@ -45,6 +45,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.wan.WANReplicationQueueFullException;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -196,6 +197,11 @@ public class MapContainer {
         return true;
     }
 
+    /**
+     * Checks if WAN replication is enabled and if the WAN queues have reached their capacity.
+     *
+     * @throws WANReplicationQueueFullException if WAN replication is enabled and queue capacity has been reached
+     */
     public void checkWanReplicationQueues() {
         if (isWanReplicationEnabled()) {
             wanReplicationPublisher.checkWanReplicationQueues();
