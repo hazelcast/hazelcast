@@ -18,6 +18,7 @@ package com.hazelcast.spi.discovery;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.util.StringUtil;
 
@@ -37,6 +38,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
 
     private final ILogger logger;
     private final Map<String, Comparable> properties;
+    private DiscoveryMode discoveryMode;
 
     public AbstractDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         this.logger = logger;
@@ -207,5 +209,13 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
             sb.append('.');
         }
         return sb.append(property.key()).toString();
+    }
+
+    public DiscoveryMode getDiscoveryMode() {
+        return discoveryMode;
+    }
+
+    public void setDiscoveryMode(DiscoveryMode discoveryMode) {
+        this.discoveryMode = discoveryMode;
     }
 }

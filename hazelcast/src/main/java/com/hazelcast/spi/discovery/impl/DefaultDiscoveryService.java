@@ -25,10 +25,12 @@ import com.hazelcast.config.properties.ValueValidator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.util.ServiceLoader;
@@ -52,9 +54,11 @@ public class DefaultDiscoveryService
     private final ILogger logger;
     private final Iterable<DiscoveryStrategy> discoveryStrategies;
     private final NodeFilter nodeFilter;
+    private final DiscoveryMode discoveryMode;
 
     public DefaultDiscoveryService(DiscoveryServiceSettings settings) {
         this.discoveryNode = settings.getDiscoveryNode();
+        this.discoveryMode = settings.getDiscoveryMode();
         this.logger = settings.getLogger();
         this.nodeFilter = getNodeFilter(settings);
         this.discoveryStrategies = loadDiscoveryStrategies(settings);
@@ -214,7 +218,10 @@ public class DefaultDiscoveryService
             String factoryClassName = getFactoryClassName(config);
             if (className.equals(factoryClassName)) {
                 Map<String, Comparable> properties = buildProperties(factory, config, className);
-                return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
+                AbstractDiscoveryStrategy discoveryStrategy =
+                        (AbstractDiscoveryStrategy) factory.newDiscoveryStrategy(discoveryNode, logger, properties);
+                discoveryStrategy.setDiscoveryMode(discoveryMode);
+                return discoveryStrategy;
             }
         }
         return null;

@@ -23,6 +23,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.multicast.impl.MulticastDiscoveryReceiver;
 import com.hazelcast.spi.discovery.multicast.impl.MulticastDiscoverySender;
 import com.hazelcast.spi.discovery.multicast.impl.MulticastMemberInfo;
@@ -79,9 +80,7 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
             multicastSocket.joinGroup(InetAddress.getByName(group));
             multicastDiscoverySender = new MulticastDiscoverySender(discoveryNode, multicastSocket, logger, group, port);
             multicastDiscoveryReceiver = new MulticastDiscoveryReceiver(multicastSocket, logger);
-            if (discoveryNode != null) {
-                isClient = false;
-            }
+            isClient = getDiscoveryMode() == DiscoveryMode.Client;
         } catch (Exception e) {
             logger.finest(e.getMessage());
             rethrow(e);
