@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl;
+package com.hazelcast.cache;
 
 import javax.cache.event.EventType;
 

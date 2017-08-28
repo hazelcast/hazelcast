@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.journal;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.journal.EventJournal;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
@@ -46,7 +47,7 @@ import com.hazelcast.spi.ObjectNamespace;
 public interface CacheEventJournal extends EventJournal<InternalEventJournalCacheEvent> {
 
     /**
-     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#UPDATED} to the event journal.
+     * Writes an {@link CacheEventType#UPDATED} to the event journal.
      * If there is no event journal configured for this cache, the method will do nothing.
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
@@ -60,7 +61,7 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
     void writeUpdateEvent(ObjectNamespace namespace, int partitionId, Data key, Object oldValue, Object newValue);
 
     /**
-     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#CREATED} to the event journal.
+     * Writes an {@link CacheEventType#CREATED} to the event journal.
      * If there is no event journal configured for this cache, the method will do nothing.
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
@@ -73,7 +74,7 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
     void writeCreatedEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
-     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#REMOVED} to the event journal.
+     * Writes an {@link CacheEventType#REMOVED} to the event journal.
      * If there is no event journal configured for this cache, the method will do nothing.
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
@@ -86,7 +87,7 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
     void writeRemoveEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
-     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#EVICTED} to the event journal.
+     * Writes an {@link CacheEventType#EVICTED} to the event journal.
      * If there is no event journal configured for this cache, the method will do nothing.
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
@@ -99,7 +100,7 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
     void writeEvictEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
-     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#EXPIRED} to the event journal.
+     * Writes an {@link CacheEventType#EXPIRED} to the event journal.
      * If there is no event journal configured for this cache, the method will do nothing.
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.

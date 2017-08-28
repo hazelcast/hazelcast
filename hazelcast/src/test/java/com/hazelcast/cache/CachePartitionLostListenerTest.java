@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CachePartitionEventData;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;

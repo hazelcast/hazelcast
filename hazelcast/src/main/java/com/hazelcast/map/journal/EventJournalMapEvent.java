@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.journal;
+package com.hazelcast.map.journal;
 
-import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.core.EntryEventType;
 
 /**
- * The event for the cache event journal.
+ * The event for the map event journal.
  *
  * @param <K> the entry key type
  * @param <V> the entry value type
  */
-public interface EventJournalCacheEvent<K, V> {
+public interface EventJournalMapEvent<K, V> {
     /**
      * Returns the key for the event entry.
      *
@@ -35,8 +35,8 @@ public interface EventJournalCacheEvent<K, V> {
     /**
      * Returns the new value for the event entry. In some cases this
      * is {@code null} while in other cases it may be non-{@code null}. For instance,
-     * when the event is of type {@link CacheEventType#CREATED}, the new
-     * value is non-{@code null} but when it is of type {@link CacheEventType#REMOVED},
+     * when the event is of type {@link EntryEventType#ADDED}, the new
+     * value is non-{@code null} but when it is of type {@link EntryEventType#REMOVED},
      * the value is {@code null}.
      *
      * @return the entry new value
@@ -46,8 +46,8 @@ public interface EventJournalCacheEvent<K, V> {
     /**
      * Returns the old value for the event entry. In some cases this
      * is {@code null} while in other cases it may be non-{@code null}. For instance,
-     * when the event is of type {@link CacheEventType#CREATED}, the old
-     * value is {@code null} but when it is of type {@link CacheEventType#REMOVED},
+     * when the event is of type {@link EntryEventType#ADDED}, the old
+     * value is {@code null} but when it is of type {@link EntryEventType#REMOVED},
      * the value is non-{@code null}.
      *
      * @return the entry old value
@@ -59,5 +59,5 @@ public interface EventJournalCacheEvent<K, V> {
      *
      * @return the event type
      */
-    CacheEventType getType();
+    EntryEventType getType();
 }

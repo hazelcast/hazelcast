@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -42,7 +43,7 @@ public interface CacheEventData
     /**
      * Gets cache event type of this event data.
      * @return Cache event type.
-     * @see com.hazelcast.cache.impl.CacheEventType
+     * @see CacheEventType
      */
     CacheEventType getCacheEventType();
 
