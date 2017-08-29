@@ -17,9 +17,11 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
@@ -33,6 +35,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -62,6 +65,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
@@ -603,6 +607,36 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertEquals(1, map.size());
     }
 
+    @Test
+    public void testMapLoaderHittingEvictionOnInitialLoad() throws InterruptedException {
+        final String mapName = "testMapLoaderHittingEvictionOnInitialLoad";
+        int sizePerPartition = 1;
+        int partitionCount = 10;
+        Config cfg = getConfig();
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        final MapConfig mc = cfg.getMapConfig(mapName);
+        mc.setEvictionPolicy(EvictionPolicy.LRU);
+        mc.setEvictionPercentage(50);
+        mc.setMinEvictionCheckMillis(0);
+        final MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(PER_PARTITION);
+        msc.setSize(sizePerPartition);
+        mc.setMaxSizeConfig(msc);
+
+        final int entriesCount = 1000000;
+        MapStoreConfig storeConfig = new MapStoreConfig();
+        storeConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        storeConfig.setImplementation(new SimpleLoader(entriesCount));
+        storeConfig.setEnabled(true);
+        mc.setMapStoreConfig(storeConfig);
+
+        final HazelcastInstance instance = createHazelcastInstance(cfg);
+        IMap imap = instance.getMap(mapName);
+        imap.addInterceptor(new MyIntercepter());
+
+        assertEquals(sizePerPartition * partitionCount , imap.size());
+    }
+
     private MapStore<Integer, Integer> createMapLoader(final AtomicInteger loadAllCounter) {
         return new MapStoreAdapter<Integer, Integer>() {
             @Override
@@ -623,6 +657,40 @@ public class MapLoaderTest extends HazelcastTestSupport {
             }
         };
     }
+
+    private static final class SimpleLoader implements MapLoader<Integer, Integer> {
+
+        private final int entriesCount;
+
+        public SimpleLoader(int entriesCount) {
+            this.entriesCount = entriesCount;
+        }
+
+        @Override
+        public Integer load(Integer key) {
+            return key;
+        }
+
+        @Override
+        public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+            Map<Integer, Integer> entries = new HashMap<Integer, Integer>(keys.size());
+            for (Integer key : keys) {
+                entries.put(key, key);
+            }
+            return entries;
+        }
+
+        @Override
+        public Iterable<Integer> loadAllKeys() {
+            Collection<Integer> keys = new ArrayList<Integer>();
+            for (int i = 0; i < entriesCount; i++) {
+                keys.add(i);
+            }
+            return keys;
+        }
+    }
+
+    ;
 
     private Config createMapConfig(String mapName, SampleIndexableObjectMapLoader loader) {
         Config config = getConfig();

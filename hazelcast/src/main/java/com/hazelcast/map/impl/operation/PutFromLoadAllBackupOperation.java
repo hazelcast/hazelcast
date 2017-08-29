@@ -60,6 +60,12 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
             final Data value = keyValueSequence.get(i + 1);
             final Object object = mapServiceContext.toObject(value);
             recordStore.putFromLoadBackup(key, object);
+            // the following check is for the case when the putFromLoad does not put the data due to various reasons
+            // one of the reasons may be size eviction threshold has been reached
+            if (!recordStore.existInMemory(key)) {
+                continue;
+            }
+
             publishWanReplicationEvent(key, value, recordStore.getRecord(key));
         }
     }
