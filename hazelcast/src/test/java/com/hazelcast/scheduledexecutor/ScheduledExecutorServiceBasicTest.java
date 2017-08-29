@@ -138,7 +138,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertTrue("Got wrong RejectedExecutionException",
-                    ex.getMessage().equals("Maximum capacity of tasks reached."));
+                    ex.getMessage().equals("Maximum capacity (100) of tasks reached, for scheduled executor (foobar)"));
         }
     }
 
@@ -169,7 +169,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertTrue("Got wrong RejectedExecutionException",
-                    ex.getMessage().equals("Maximum capacity of tasks reached."));
+                    ex.getMessage().equals("Maximum capacity (10) of tasks reached, for scheduled executor (foobar)"));
         }
     }
 
@@ -200,7 +200,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertTrue("Got wrong RejectedExecutionException",
-                    ex.getMessage().equals("Maximum capacity of tasks reached."));
+                    ex.getMessage().equals("Maximum capacity (10) of tasks reached, for scheduled executor (foobar)"));
         }
     }
 
