@@ -206,7 +206,7 @@ public class ClientInvocation implements Runnable {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
             }
             clientInvocationFuture.complete(new OperationTimeoutException(this + " timed out by "
-                    + Math.abs(remainingMillis) + " ms"));
+                    + Math.abs(remainingMillis) + " ms", exception));
             return;
         }
 
