@@ -70,6 +70,15 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 *3.8.5 Fixes*
 
+- Fix for map-loader put in case of size-based eviction NPE. [#11253]
+- Checked existence of key in-memory before proceeding. [#11251]
+- Registration objects cause memory leak while using ScheduledExecutor. [#11227]
+- Implement HTTPCommunicator using Apache HttpClient. [#11214]
+- Notify invocations when a member leaves in FROZEN/PASSIVE cluster state. [#11202]
+- The client should not use localhost if it is not explicitly configured and the discovery is configured. [#11199]
+- Query cache fix for map destroy. [#11197]
+- Add system property to process WAN map remove events as delete. [#11178]
+- Add forgotten public address check from cache. [#11169]
 - CacheDestroyOperation must be invoked from generic operation thread. [#11165]
 - RemoveOperation returns old value causing SerializationException in WAN replication when sources are not available and the store type is binary. [#11157]
 - Error in Spring configuration: "${hazelcast.queue.capacity} is not a valid value for 'integer". The property queue-capacity's type should be changed. [#11150]
