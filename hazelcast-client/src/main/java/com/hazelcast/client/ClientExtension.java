@@ -22,6 +22,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.SocketInterceptor;
 
 /**
@@ -80,4 +81,11 @@ public interface ClientExtension {
      * @throws java.lang.IllegalArgumentException if service is not known
      */
     <T> ClientProxyFactory createServiceProxyFactory(Class<T> service);
+
+    /**
+     * Returns MemoryStats of for the JVM and current HazelcastInstance.
+     *
+     * @return memory statistics
+     */
+    MemoryStats getMemoryStats();
 }
