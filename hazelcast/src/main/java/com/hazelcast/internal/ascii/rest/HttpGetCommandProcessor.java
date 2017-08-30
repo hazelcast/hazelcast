@@ -88,6 +88,15 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
+    /**
+     * Sets the HTTP response to a string containing basic cluster information:
+     * <ul>
+     *     <li>Member list</li>
+     *     <li>Client connection count</li>
+     *     <li>Connection count</li>
+     * </ul>
+     * @param command the HTTP request
+     */
     private void handleCluster(HttpGetCommand command) {
         Node node = textCommandService.getNode();
         StringBuilder res = new StringBuilder(node.getClusterService().getMemberListString());
