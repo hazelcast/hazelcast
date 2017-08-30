@@ -85,7 +85,7 @@ public class DefaultGarbageCollectorStats implements GarbageCollectorStats {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("GarbageCollectorStats {");
+        sb.append("GarbageCollectorStats{");
         sb.append("MinorGC -> Count: ").append(minorCount).append(", Time (ms): ").append(minorTime)
                 .append(", MajorGC -> Count: ").append(majorCount).append(", Time (ms): ").append(majorTime);
         if (unknownCount > 0) {
