@@ -118,7 +118,7 @@
             <hz:wan-replication name="testWan2">
                 <hz:wan-consumer implementation="wanConsumer"/>
             </hz:wan-replication>
-            <hz:network port="${cluster.port}" port-auto-increment="false">
+            <hz:network port="${cluster.port}" port-auto-increment="false" port-count="42">
                 <hz:outbound-ports>
                     <hz:ports>35000-35100</hz:ports>
                     <hz:ports>36000,36100</hz:ports>
