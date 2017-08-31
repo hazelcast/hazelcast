@@ -48,6 +48,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.CacheException;
+import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryListener;
 import javax.cache.expiry.ExpiryPolicy;
@@ -61,6 +62,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateConfiguredTypes;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -134,7 +136,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     };
 
-    protected HazelcastClientCacheManager cacheManager;
+    protected final AtomicReference<HazelcastClientCacheManager> cacheManagerRef
+            = new AtomicReference<HazelcastClientCacheManager>();
     protected int partitionCount;
 
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
@@ -162,11 +165,18 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     public void setCacheManager(HazelcastCacheManager cacheManager) {
         assert cacheManager instanceof HazelcastClientCacheManager;
 
-        this.cacheManager = (HazelcastClientCacheManager) cacheManager;
+        if (cacheManagerRef.get() == cacheManager) {
+            return;
+        }
+
+        if (!cacheManagerRef.compareAndSet(null, (HazelcastClientCacheManager) cacheManager)) {
+            throw new IllegalStateException("Cannot overwrite a Cache's CacheManager.");
+        }
     }
 
     @Override
     protected void postDestroy() {
+        CacheManager cacheManager = cacheManagerRef.get();
         if (cacheManager != null) {
             cacheManager.destroyCache(getName());
         }
