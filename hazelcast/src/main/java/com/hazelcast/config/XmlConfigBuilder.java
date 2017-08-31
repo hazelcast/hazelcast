@@ -100,6 +100,7 @@ import static com.hazelcast.config.XmlElements.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -1346,6 +1347,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("disable-per-entry-invalidation-events".equals(nodeName)) {
                 cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(value));
             }
+        }
+        try {
+            checkCacheConfig(cacheConfig);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException(e.getMessage());
         }
         this.config.addCacheConfig(cacheConfig);
     }

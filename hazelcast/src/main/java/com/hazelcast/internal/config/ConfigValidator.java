@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -23,6 +24,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -187,6 +189,42 @@ public final class ConfigValidator {
                     throw new IllegalArgumentException(
                             "Only one of the `eviction policy` and `comparator` can be configured!");
                 }
+            }
+        }
+    }
+
+    /**
+     * Validates {@link CacheSimpleConfig}.
+     *
+     * @param cacheSimpleConfig
+     */
+    public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig) {
+        checkCacheConfig(cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig());
+    }
+
+    /**
+     * Validates given {@link InMemoryFormat} and {@link EvictionConfig} in the context of a {@code Cache} config.
+     *
+     * @param inMemoryFormat the in-memory format the {@code Cache} is configured with
+     * @param evictionConfig eviction configuration of {@code Cache}
+     */
+    public static void checkCacheConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
+        boolean enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
+        if (inMemoryFormat == NATIVE) {
+            if (!enterprise) {
+                throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only. "
+                        + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
+            }
+
+            EvictionConfig.MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
+            if (maxSizePolicy == EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
+                throw new IllegalArgumentException("Invalid max-size policy "
+                        + '(' + maxSizePolicy + ") for NATIVE in-memory format! Only "
+                        + EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE + ", "
+                        + EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE + ", "
+                        + EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE + ", "
+                        + EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE
+                        + " are supported.");
             }
         }
     }

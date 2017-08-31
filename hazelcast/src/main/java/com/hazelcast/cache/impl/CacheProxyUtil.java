@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.config.ConfigValidator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.EmptyStatement;
@@ -235,5 +236,9 @@ public final class CacheProxyUtil {
                 throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
             }
         }
+    }
+
+    public static <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
+        ConfigValidator.checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig());
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -37,6 +38,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
@@ -257,6 +259,22 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test
     public void checkEvictionConfig_whenNoneOfTheComparatorAndComparatorClassNameAreSetIfEvictionPolicyIsNull_forNearCache() {
         checkEvictionConfig(null, null, null, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void checkCacheConfig_whenNATIVEAndEntryCountMaxSizePolicy() {
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
+        cacheSimpleConfig.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        cacheSimpleConfig.setInMemoryFormat(NATIVE);
+        checkCacheConfig(cacheSimpleConfig);
+    }
+
+    @Test
+    public void checkCacheConfig_whenOBJECTAndEntryCountMaxSizePolicy() {
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
+        cacheSimpleConfig.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        cacheSimpleConfig.setInMemoryFormat(OBJECT);
+        checkCacheConfig(cacheSimpleConfig);
     }
 
     @Test

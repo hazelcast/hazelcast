@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -112,6 +113,7 @@ public abstract class AbstractHazelcastCacheManager
         checkNotNull(configuration, "configuration must not be null");
 
         CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
+        validateCacheConfig(newCacheConfig);
         if (caches.containsKey(newCacheConfig.getNameWithPrefix())) {
             throw new CacheException("A cache named " + cacheName + " already exists.");
         }
