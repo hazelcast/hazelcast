@@ -1072,4 +1072,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
     }
 
+    @Test
+    public void testExplicitPortCountConfiguration() {
+        int portCount = instance.getConfig().getNetworkConfig().getPortCount();
+        assertEquals(42, portCount);
+    }
+
 }
