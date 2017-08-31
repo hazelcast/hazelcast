@@ -17,6 +17,11 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MembershipAdapter;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.partition.PartitionLostEvent;
+import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -28,9 +33,16 @@ import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.util.ExceptionUtil.peel;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.synchronizedSet;
 
 /**
  * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
@@ -51,7 +63,14 @@ public class DistributedScheduledExecutorService
     private final ConcurrentMap<String, Boolean> shutdownExecutors
             = new ConcurrentHashMap<String, Boolean>();
 
+    private final Set<ScheduledFutureProxy> lossListeners =
+            synchronizedSet(newSetFromMap(new WeakHashMap<ScheduledFutureProxy, Boolean>()));
+
     private final AtomicBoolean migrationMode = new AtomicBoolean();
+
+    private String partitionLostRegistration;
+
+    private String membershipListenerRegistration;
 
     public DistributedScheduledExecutorService() {
     }
@@ -86,6 +105,14 @@ public class DistributedScheduledExecutorService
 
         memberBin = new ScheduledExecutorMemberBin(nodeEngine);
 
+        if (partitionLostRegistration == null) {
+            registerPartitionListener();
+        }
+
+        if (membershipListenerRegistration == null) {
+            registerMembershipListener();
+        }
+
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
             if (partitions[partitionId] != null) {
                 partitions[partitionId].destroy();
@@ -100,13 +127,22 @@ public class DistributedScheduledExecutorService
 
         if (memberBin != null) {
             memberBin.destroy();
-         }
+        }
+
+        lossListeners.clear();
+
+        unRegisterPartitionListenerIfExists();
+        unRegisterMembershipListenerIfExists();
 
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
             if (partitions[partitionId] != null) {
                 partitions[partitionId].destroy();
             }
         }
+    }
+
+    void addLossListener(ScheduledFutureProxy future) {
+        this.lossListeners.add(future);
     }
 
     @Override
@@ -182,5 +218,63 @@ public class DistributedScheduledExecutorService
         for (ScheduledExecutorPartition partition : partitions) {
             partition.destroyContainer(name);
         }
+    }
+
+    private void registerPartitionListener() {
+        this.partitionLostRegistration = getNodeEngine().getPartitionService().addPartitionLostListener(
+                new PartitionLostListener() {
+                    @Override
+                    public void partitionLost(PartitionLostEvent event) {
+                        for (ScheduledFutureProxy future : lossListeners) {
+                            future.notifyPartitionLost(event);
+                        }
+                    }
+                }
+        );
+    }
+
+    private void unRegisterPartitionListenerIfExists() {
+        if (this.partitionLostRegistration == null) {
+            return;
+        }
+
+        try {
+            getNodeEngine().getPartitionService().removePartitionLostListener(this.partitionLostRegistration);
+        } catch (Exception ex) {
+            if (peel(ex, HazelcastInstanceNotActiveException.class, null)
+                    instanceof HazelcastInstanceNotActiveException) {
+                throw rethrow(ex);
+            }
+        }
+
+        this.partitionLostRegistration = null;
+    }
+
+    private void registerMembershipListener() {
+        this.membershipListenerRegistration = getNodeEngine().getClusterService().addMembershipListener(new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent event) {
+                for (ScheduledFutureProxy future : lossListeners) {
+                    future.notifyMemberLost(event);
+                }
+            }
+        });
+    }
+
+    private void unRegisterMembershipListenerIfExists() {
+        if (this.membershipListenerRegistration == null) {
+            return;
+        }
+
+        try {
+            getNodeEngine().getClusterService().removeMembershipListener(membershipListenerRegistration);
+        } catch (Exception ex) {
+            if (peel(ex, HazelcastInstanceNotActiveException.class, null)
+                    instanceof HazelcastInstanceNotActiveException) {
+                throw rethrow(ex);
+            }
+        }
+
+        this.membershipListenerRegistration = null;
     }
 }

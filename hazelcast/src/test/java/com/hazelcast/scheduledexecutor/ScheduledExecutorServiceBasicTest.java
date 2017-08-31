@@ -658,13 +658,18 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test()
-    public void schedule_whenPartitionLost()
+    public void schedule_testPartitionLostEvent()
             throws ExecutionException, InterruptedException {
         int delay = 1;
 
-        HazelcastInstance[] instances = createClusterWithCount(2);
+        HazelcastInstance[] instances = createClusterWithCount(1);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         final IScheduledFuture future = executorService.schedule(new PlainCallableTask(), delay, SECONDS);
+
+        // Used to make sure both futures (on the same handler) get the event. Catching possible equal/hashcode issues in the Map
+        final IScheduledFuture futureCopeInstance = (IScheduledFuture) ((List) executorService.getAllScheduledFutures()
+                                                                                              .values().toArray()[0]).get(0);
+
         ScheduledTaskHandler handler = future.getHandler();
 
         int partitionOwner = handler.getPartitionId();
@@ -677,8 +682,46 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                     throws Exception {
                 try {
                     future.get();
+                    fail();
                 } catch (IllegalStateException ex) {
-                    assertEquals("Partition holding this Scheduled task was lost along with all backups.",
+                    try {
+                        futureCopeInstance.get();
+                        fail();
+                    } catch (IllegalStateException ex2) {
+                        assertEquals("Partition holding this Scheduled task was lost along with all backups.",
+                                ex.getMessage());
+                        assertEquals("Partition holding this Scheduled task was lost along with all backups.",
+                                ex2.getMessage());
+                    }
+
+                }
+            }
+        });
+    }
+
+    @Test()
+    public void scheduleOnMember_testMemberLostEvent()
+            throws ExecutionException, InterruptedException {
+        int delay = 1;
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        Member member = instances[1].getCluster().getLocalMember();
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        final IScheduledFuture future = executorService.scheduleOnMember(new PlainCallableTask(),
+                member, delay, SECONDS);
+
+        instances[1].getLifecycleService().terminate();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                try {
+                    future.get();
+                    fail();
+                } catch (IllegalStateException ex) {
+                    assertEquals("Member holding this Scheduled task was removed from the cluster.",
                             ex.getMessage());
                 }
             }
@@ -926,7 +969,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ScheduledTaskHandler handler = first.getHandler();
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
-        assertEquals(first, copy);
+        assertEquals(first.getHandler(), copy.getHandler());
     }
 
     @Test
@@ -1020,6 +1063,13 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         expected.expect(ExecutionException.class);
         expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
         future.get();
+    }
+
+    @Test
+    public void managedContext_whenLocalExecution() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IScheduledExecutorService s = instance.getScheduledExecutorService("s");
+        s.schedule(new PlainCallableTask(), 0, SECONDS);
     }
 
 }

@@ -18,12 +18,10 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
-import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
@@ -38,48 +36,41 @@ import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
+@SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 @SuppressWarnings({"checkstyle:methodcount"})
 public final class ScheduledFutureProxy<V>
         implements IScheduledFuture<V>,
-                   HazelcastInstanceAware,
-                   PartitionLostListener {
+                   HazelcastInstanceAware {
 
     private transient HazelcastInstance instance;
 
-    private transient String partitionLostRegistration;
+    private final transient AtomicBoolean partitionLost = new AtomicBoolean(false);
 
-    private transient String membershipListenerRegistration;
+    private final transient AtomicBoolean memberLost = new AtomicBoolean(false);
 
-    private transient boolean partitionLost;
+    // Single writer, many readers (see partition & member listener)
+    private volatile ScheduledTaskHandler handler;
 
-    private transient boolean memberLost;
-
-    private ScheduledTaskHandler handler;
-
-    public ScheduledFutureProxy() {
-    }
-
-    public ScheduledFutureProxy(ScheduledTaskHandler handler) {
+    ScheduledFutureProxy(ScheduledTaskHandler handler, ScheduledExecutorServiceProxy executor) {
+        checkNotNull(handler);
         this.handler = handler;
+        executor.getService().addLossListener(this);
     }
 
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        unRegisterPartitionListenerIfExists();
-        unRegisterMembershipListenerIfExists();
-
         this.instance = hazelcastInstance;
-        registerPartitionListener();
-        registerMembershipListener();
     }
 
     @Override
@@ -179,82 +170,49 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleHandler();
         checkAccessibleOwner();
 
-        unRegisterPartitionListenerIfExists();
-        unRegisterMembershipListenerIfExists();
-
         Operation op = new DisposeTaskOperation(handler);
         InternalCompletableFuture future = invoke(op);
         handler = null;
         future.join();
     }
 
-    @Override
-    public void partitionLost(PartitionLostEvent event) {
-        if (handler.getPartitionId() == event.getPartitionId()
-                && event.getLostBackupCount() == instance.getConfig().getScheduledExecutorConfig(
-                        handler.getSchedulerName()).getDurability()) {
-            unRegisterPartitionListenerIfExists();
-            this.partitionLost = true;
+    void notifyMemberLost(MembershipEvent event) {
+        ScheduledTaskHandler handler = this.handler;
+        if (handler == null) {
+            // Already disposed future
+            return;
+        }
+
+        if (handler.isAssignedToMember() && handler.getAddress().equals(event.getMember().getAddress())) {
+            this.memberLost.set(true);
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
+    void notifyPartitionLost(PartitionLostEvent event) {
+        ScheduledTaskHandler handler = this.handler;
+        if (handler == null) {
+            // Already disposed future
+            return;
         }
 
-        ScheduledFutureProxy<?> proxy = (ScheduledFutureProxy<?>) o;
+        int durability = instance.getConfig()
+                                 .getScheduledExecutorConfig(handler.getSchedulerName())
+                                 .getDurability();
 
-        return handler != null ? handler.equals(proxy.handler) : proxy.handler == null;
-    }
-
-    @Override
-    public int hashCode() {
-        return handler != null ? handler.hashCode() : 0;
-    }
-
-    private void registerPartitionListener() {
-        if (handler.isAssignedToPartition()) {
-            this.partitionLostRegistration = this.instance.getPartitionService().addPartitionLostListener(this);
-        }
-    }
-
-    private void unRegisterPartitionListenerIfExists() {
-        if (partitionLostRegistration != null) {
-            this.instance.getPartitionService().removePartitionLostListener(this.partitionLostRegistration);
-        }
-    }
-
-    private void registerMembershipListener() {
-        if (handler.isAssignedToMember()) {
-            this.membershipListenerRegistration = this.instance.getCluster().addMembershipListener(new MembershipAdapter() {
-                @Override
-                public void memberRemoved(MembershipEvent membershipEvent) {
-                    if (membershipEvent.getMember().getAddress().equals(handler.getAddress())) {
-                        ScheduledFutureProxy.this.memberLost = true;
-                    }
-                }
-            });
-        }
-    }
-
-    private void unRegisterMembershipListenerIfExists() {
-        if (membershipListenerRegistration != null) {
-            this.instance.getCluster().removeMembershipListener(membershipListenerRegistration);
+        if (handler.isAssignedToPartition()
+                && handler.getPartitionId() == event.getPartitionId()
+                && event.getLostBackupCount() == durability) {
+            this.partitionLost.set(true);
         }
     }
 
     private void checkAccessibleOwner() {
         if (handler.isAssignedToPartition()) {
-            if (partitionLost) {
+            if (partitionLost.get()) {
                 throw new IllegalStateException("Partition holding this Scheduled task was lost along with all backups.");
             }
         } else {
-            if (memberLost) {
+            if (memberLost.get()) {
                 throw new IllegalStateException("Member holding this Scheduled task was removed from the cluster.");
             }
         }

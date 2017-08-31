@@ -63,7 +63,7 @@ public class ClientScheduledFutureProxy<V>
 
     private ScheduledTaskHandler handler;
 
-    public ClientScheduledFutureProxy(ScheduledTaskHandler handler, ClientContext context) {
+    ClientScheduledFutureProxy(ScheduledTaskHandler handler, ClientContext context) {
         super(DistributedScheduledExecutorService.SERVICE_NAME, handler.getSchedulerName(), context);
         this.handler = handler;
     }
