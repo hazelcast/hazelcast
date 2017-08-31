@@ -74,9 +74,16 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Gets the capacity of the event journal.
-     * The capacity is the total number of items that the event journal can hold at any moment.
-     * The actual number of items contained in the journal can be lower.
+     * Gets the capacity of the event journal. The capacity is the total number of items
+     * that the event journal can hold at any moment. The actual number of items
+     * contained in the journal can be lower.
+     * <p>
+     * <b>NOTE</b>
+     * The capacity is shared equally between all partitions.
+     * This is done by assigning each partition {@code getCapacity() / partitionCount}
+     * available slots in the event journal. Because of this, the effective total
+     * capacity may be somewhat lower and you must take into account that the
+     * configured capacity is at least greater than the partition count.
      *
      * @return the capacity.
      */
@@ -85,7 +92,16 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the capacity of the event journal.
+     * Sets the capacity of the event journal. The capacity is the total number of items
+     * that the event journal can hold at any moment. The actual number of items
+     * contained in the journal can be lower.
+     * <p>
+     * <b>NOTE</b>
+     * The capacity is shared equally between all partitions.
+     * This is done by assigning each partition {@code getCapacity() / partitionCount}
+     * available slots in the event journal. Because of this, the effective total
+     * capacity may be somewhat lower and you must take into account that the
+     * configured capacity is at least greater than the partition count.
      *
      * @param capacity the capacity.
      * @return the updated config.

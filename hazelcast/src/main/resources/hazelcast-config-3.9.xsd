@@ -3183,10 +3183,13 @@
             <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of items in the event journal. If no time-to-live-seconds
-                        is set, the size will always be equal to capacity after the event
-                        journal has been filled. This is because no items are getting retired.
-                        The default value is 10000.
+                        The capacity of the event journal. The capacity is the total number of items that the event journal
+                        can hold at any moment. The actual number of items contained in the journal can be lower.
+                        Its default value is 10000. The capacity is shared equally between all partitions.
+                        This is done by assigning each partition {@code getCapacity() / partitionCount}
+                        available slots in the event journal. Because of this, the effective total
+                        capacity may be somewhat lower and you must take into account that the
+                        configured capacity is at least greater than the partition count.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

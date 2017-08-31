@@ -1240,16 +1240,20 @@ It has the following sub-elements:
     	event journal config as enabled then all caches which don't have specific event journal
     	will be also enabled.
     * <capacity>:
-    * Gets the capacity of the event journal.
-    * The capacity is the total number of items that the event journal can hold at any moment.
-    * The actual number of items contained in the journal can be lower. Its default value is 10000.
+    	The capacity of the event journal. The capacity is the total number of items that the event journal
+    	can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
+    	The capacity is shared equally between all partitions.
+    	This is done by assigning each partition {@code getCapacity() / partitionCount}
+    	available slots in the event journal. Because of this, the effective total
+    	capacity may be somewhat lower and you must take into account that the
+    	configured capacity is at least greater than the partition count.
     * <time-to-live-seconds>:
-    * Sets the time to live in seconds.
-    * Time to live is the time the event journal retains items before removing them from the journal.
-    * The events are removed on journal read and write actions, not while the journal is idle.
-    * Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
-    * events never expire but they can be overwritten when the capacity of the journal is exceeed.
-    * Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
+    	Sets the time to live in seconds.
+    	Time to live is the time the event journal retains items before removing them from the journal.
+    	The events are removed on journal read and write actions, not while the journal is idle.
+    	Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
+    	events never expire but they can be overwritten when the capacity of the journal is exceeed.
+    	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
 -->
 
     <event-journal enabled="false">

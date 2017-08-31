@@ -36,6 +36,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -109,7 +110,9 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         final Config config = super.getConfig();
-        config.addEventJournalConfig(new EventJournalConfig().setMapName("default").setEnabled(true));
+        final int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        config.addEventJournalConfig(new EventJournalConfig().setCapacity(500 * defaultPartitionCount)
+                                                             .setMapName("default").setEnabled(true));
 
         final MapConfig mapConfig = new MapConfig("mappy");
         final MapConfig expiringMap = new MapConfig("expiring").setTimeToLiveSeconds(1);

@@ -135,11 +135,12 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     @Override
     public RingbufferConfig toRingbufferConfig(EventJournalConfig config) {
+        final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new RingbufferConfig()
                 .setAsyncBackupCount(0)
                 .setBackupCount(0)
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setCapacity(config.getCapacity())
+                .setCapacity(config.getCapacity() / partitionCount)
                 .setTimeToLiveSeconds(config.getTimeToLiveSeconds());
     }
 
