@@ -53,6 +53,7 @@ import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -132,6 +133,24 @@ public class CacheEntryProcessorTest extends HazelcastTestSupport {
         }
 
         assertEquals(ENTRY_COUNT / 2, cache.size());
+    }
+
+    @Test
+    public void givenEntryExists_whenCallsGetValue_thenSubsequentExistsStillReturnTrue() {
+        String cacheName = randomName();
+        int key = 1;
+
+        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        CompleteConfiguration<Integer, String> config =
+                new MutableConfiguration<Integer, String>()
+                        .setTypes(Integer.class, String.class);
+        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
+
+        cache.put(key, "foo");
+
+        boolean result = cache.invoke(key, new GetAndCheckEntry());
+        assertTrue(result);
     }
 
     private void executeTestInternal(EntryProcessor<Integer, String, Void> entryProcessor) {
@@ -302,4 +321,11 @@ public class CacheEntryProcessorTest extends HazelcastTestSupport {
         serializationService = impl1.node.getNodeEngine().getSerializationService();
     }
 
+    private static class GetAndCheckEntry implements EntryProcessor<Integer, String, Boolean>, Serializable {
+        @Override
+        public Boolean process(MutableEntry<Integer, String> entry, Object... arguments) throws EntryProcessorException {
+            entry.getValue();
+            return entry.exists();
+        }
+    }
 }

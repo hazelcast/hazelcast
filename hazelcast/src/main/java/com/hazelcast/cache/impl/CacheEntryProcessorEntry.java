@@ -112,7 +112,8 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         }
         if (record != null) {
             state = State.ACCESS;
-            return getRecordValue(record);
+            value = getRecordValue(record);
+            return value;
         }
         if (recordLoaded == null) {
             //LOAD IT
