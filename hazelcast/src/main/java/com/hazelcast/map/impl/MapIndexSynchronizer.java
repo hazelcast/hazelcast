@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.SynchronizeIndexesForPartitionTask;
 import com.hazelcast.query.impl.IndexInfo;
@@ -26,7 +25,6 @@ import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.version.Version;
 
@@ -37,14 +35,16 @@ import java.util.Map;
 // RU_COMPAT_V38
 
 /**
- * This class is responsible for tracking cluster version changes and synchronized indexes if needed.
+ * This class is responsible for tracking cluster version changes and synchronizes indexes if needed.
  * The synchronization will happen only on 3.8 to 3.9 cluster version change.
  *
- * It is a last-chance anit-entropy that guards the situation where the index definitions arrive after the map data.
+ * It is a last-chance anti-entropy that guards the situation where the index definitions arrive after the map data.
  * In this case the MapContainer.indexesToAdd indexes will be send to each partition and the indexes will be populated.
  *
  * IMPORTANT: The synchronization applies to runtime partitioned indexes only.
- * It is impossible to apply this fix for global indexes to the their global nature. It would require re-adding all data.
+ * It is impossible to apply this fix for global indexes due to the their global nature.
+ * It would require re-adding all data, since you don't know if the data from this partition has been added
+ * to the index just by checking if the index exists or not.
  *
  * @see com.hazelcast.map.impl.operation.SynchronizeIndexesForPartitionTask
  * @see com.hazelcast.map.impl.operation.PostJoinMapOperation
@@ -54,20 +54,16 @@ class MapIndexSynchronizer {
 
     protected MapServiceContext mapServiceContext;
     protected OperationService operationService;
-    protected IPartitionService partitionService;
     protected SerializationService serializationService;
     protected NodeEngine nodeEngine;
 
     private ILogger logger;
     private Version currentVersion;
 
-    public MapIndexSynchronizer(MapServiceContext mapServiceContext, OperationService operationService,
-                                IPartitionService partitionService, SerializationService serializationService,
-                                NodeEngine nodeEngine) {
+    public MapIndexSynchronizer(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
         this.mapServiceContext = mapServiceContext;
-        this.operationService = operationService;
-        this.partitionService = partitionService;
-        this.serializationService = serializationService;
+        this.operationService = nodeEngine.getOperationService();
+        this.serializationService = nodeEngine.getSerializationService();
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -90,26 +86,25 @@ class MapIndexSynchronizer {
     private List<MapIndexInfo> getIndexesToSynchronize() {
         List<MapIndexInfo> mapIndexInfos = new ArrayList<MapIndexInfo>();
         for (Map.Entry<String, MapContainer> entry : mapServiceContext.getMapContainers().entrySet()) {
-            String mapName = entry.getKey();
             MapContainer mapContainer = entry.getValue();
-            MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
-            int indexesToSynchronize = mapContainer.getIndexesToAdd().size();
+            int indexesToSynchronize = mapContainer.getPartitionIndexesToAdd().size();
             if (indexesToSynchronize > 0) {
-                logger.info("Scheduling " + indexesToSynchronize + " indexes sync for map " + entry.getKey());
+                String mapName = entry.getKey();
+                logger.info("Scheduling " + indexesToSynchronize + " indexes sync for map " + mapName);
+                MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
+                for (IndexInfo indexInfo : mapContainer.getPartitionIndexesToAdd()) {
+                    mapIndexInfo.addIndexInfo(indexInfo.getAttributeName(), indexInfo.isOrdered());
+                }
+                mapIndexInfos.add(mapIndexInfo);
             }
-            for (IndexInfo indexInfo : mapContainer.getIndexesToAdd()) {
-                mapIndexInfo.addIndexInfo(indexInfo.getAttributeName(), indexInfo.isOrdered());
-            }
-            mapIndexInfos.add(mapIndexInfo);
-            mapContainer.clearIndexesToAdd();
+            mapContainer.clearPartitionIndexesToAdd();
         }
         return mapIndexInfos;
     }
 
     private void executeIndexSync(List<MapIndexInfo> mapIndexInfos) {
-        InternalPartitionServiceImpl internalPartitionService = ((InternalPartitionServiceImpl) partitionService);
         OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
-        for (int partitionId : internalPartitionService.getMemberPartitions(nodeEngine.getThisAddress())) {
+        for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             SynchronizeIndexesForPartitionTask task = new SynchronizeIndexesForPartitionTask(partitionId, mapIndexInfos,
                     mapServiceContext.getService(), serializationService,
                     (InternalPartitionService) nodeEngine.getPartitionService());

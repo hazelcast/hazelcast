@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -55,6 +56,7 @@ import java.util.List;
 public class SynchronizeIndexesForPartitionTask implements PartitionSpecificRunnable {
 
     private final int partitionId;
+    // list is reused by multiple tasks, should not be modified.
     private final List<MapIndexInfo> mapIndexInfos;
 
     private final MapService mapService;
@@ -85,23 +87,27 @@ public class SynchronizeIndexesForPartitionTask implements PartitionSpecificRunn
             MapContainer mapContainer = mapServiceContext.getMapContainer(mapIndexInfo.getMapName());
             Indexes indexes = mapContainer.getIndexes(partitionId);
 
-            // recreate missing indexes and
-            for (IndexInfo indexInfo : mapIndexInfo.getLsIndexes()) {
-                Index index = indexes.getIndex(indexInfo.getAttributeName());
-                if (index == null) {
-                    index = indexes.addOrGetIndex(indexInfo.getAttributeName(), indexInfo.isOrdered());
-                    RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapIndexInfo.getMapName());
-                    final Iterator<Record> iterator = recordStore.iterator(now, false);
-                    while (iterator.hasNext()) {
-                        final Record record = iterator.next();
-                        Data key = record.getKey();
-                        Object value = Records.getValueOrCachedValue(record, serializationService);
-                        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-                        index.saveEntryIndex(queryEntry, null);
-                    }
+            // identify missing indexes
+            List<IndexInfo> missingIndexes = new ArrayList<IndexInfo>();
+            for (IndexInfo indexInfo : mapIndexInfo.getIndexInfos()) {
+                if (indexes.getIndex(indexInfo.getAttributeName()) == null) {
+                    missingIndexes.add(indexInfo);
                 }
             }
 
+            // recreate missing indexes
+            RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapIndexInfo.getMapName());
+            Iterator<Record> iterator = recordStore.iterator(now, false);
+            while (iterator.hasNext()) {
+                Record record = iterator.next();
+                Data key = record.getKey();
+                Object value = Records.getValueOrCachedValue(record, serializationService);
+                QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
+                for (IndexInfo missingIndex : missingIndexes) {
+                    Index index = indexes.addOrGetIndex(missingIndex.getAttributeName(), missingIndex.isOrdered());
+                    index.saveEntryIndex(queryEntry, null);
+                }
+            }
         }
     }
 

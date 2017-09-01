@@ -36,8 +36,8 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -125,12 +125,10 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 }
             } else {
                 // partitioned-index
-                for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-                    final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                    if (indexes != null && indexes.hasIndex()) {
-                        for (Index index : indexes.getIndexes()) {
-                            indexInfos.add(new IndexInfo(index.getAttributeName(), index.isOrdered()));
-                        }
+                final Indexes indexes = mapContainer.getIndexes(container.getPartitionId());
+                if (indexes != null && indexes.hasIndex()) {
+                    for (Index index : indexes.getIndexes()) {
+                        indexInfos.add(new IndexInfo(index.getAttributeName(), index.isOrdered()));
                     }
                 }
             }
@@ -142,12 +140,12 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     }
 
     void applyState() {
-        assert Thread.currentThread() instanceof PartitionOperationThread;
+        ThreadUtil.assertRunningOnPartitionThread();
 
         // the null check can be removed in 3.10+ codebase
         if (mapIndexInfos != null) {
             for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getLsIndexes());
+                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexInfos());
             }
         }
 
@@ -158,9 +156,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         for (String mapName : data.keySet()) {
             RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
             MapContainer mapContainer = recordStore.getMapContainer();
-            addIndexes(mapName, mapContainer.getIndexesToAdd());
+            addIndexes(mapName, mapContainer.getPartitionIndexesToAdd());
         }
-
 
         if (data != null) {
             for (Map.Entry<String, Set<RecordReplicationInfo>> dataEntry : data.entrySet()) {
@@ -195,16 +192,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
         RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
         MapContainer mapContainer = recordStore.getMapContainer();
-
-        if (mapContainer.isGlobalIndexEnabled()) {
-            for (IndexInfo indexInfo : indexInfos) {
-                Indexes indexes = mapContainer.getIndexes();
-                // optimisation not to synchronize each partition thread on the addOrGetIndex method
-                if (indexes.getIndex(indexInfo.getAttributeName()) == null) {
-                    indexes.addOrGetIndex(indexInfo.getAttributeName(), indexInfo.isOrdered());
-                }
-            }
-        } else {
+        if (!mapContainer.isGlobalIndexEnabled()) {
             Indexes indexes = mapContainer.getIndexes(mapReplicationOperation.getPartitionId());
             for (IndexInfo indexInfo : indexInfos) {
                 indexes.addOrGetIndex(indexInfo.getAttributeName(), indexInfo.isOrdered());

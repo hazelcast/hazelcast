@@ -40,9 +40,7 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         mapServiceContext = mapService.getMapServiceContext();
 
-        synchronizer = new MapIndexSynchronizer(mapServiceContext, nodeEngine.getOperationService(),
-                nodeEngine.getPartitionService(), nodeEngine.getSerializationService(),
-                nodeEngine);
+        synchronizer = new MapIndexSynchronizer(mapServiceContext, nodeEngine);
     }
 
     @Test
@@ -107,7 +105,7 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
     }
 
     private void add(IndexInfo... indexInfo) {
-        mapServiceContext.getMapContainer(MAP_NAME).getIndexesToAdd().addAll(asList(indexInfo));
+        mapServiceContext.getMapContainer(MAP_NAME).getPartitionIndexesToAdd().addAll(asList(indexInfo));
     }
 
     private IndexInfo index(String path, boolean ordered) {

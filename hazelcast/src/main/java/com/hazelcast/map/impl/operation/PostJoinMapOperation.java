@@ -87,6 +87,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
                     }
                 }
             }
+            indexInfos.addAll(mapContainer.getPartitionIndexesToAdd());
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
             mapIndexInfo.addIndexInfos(indexInfos);
             indexInfoList.add(mapIndexInfo);
@@ -165,7 +166,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         // Can be removed in 3.10 master, since the indexes will be populated in the MapReplicationOperation
         for (MapIndexInfo mapIndex : indexInfoList) {
             MapContainer mapContainer = mapServiceContext.getMapContainer(mapIndex.getMapName());
-            for (IndexInfo indexInfo : mapIndex.getLsIndexes()) {
+            for (IndexInfo indexInfo : mapIndex.getIndexInfos()) {
                 if (mapContainer.isGlobalIndexEnabled()) {
                     // GLOBAL-INDEX
                     // we may add the index directly, since it's a global non-HD index, so adding it on a non-partition
@@ -180,7 +181,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
                     // That is the reason why we gather all the dynamic post-join index infos for a map in the
                     // map-container. Later on they are picked up by the MapReplicationOperation which is spawned
                     // for each migrated partition, and the index is added by it for each partition.
-                    mapContainer.addIndexToAdd(indexInfo);
+                    mapContainer.addPartitionIndexToAdd(indexInfo);
                 }
             }
         }

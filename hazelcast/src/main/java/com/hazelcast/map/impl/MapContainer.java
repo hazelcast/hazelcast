@@ -95,7 +95,7 @@ public class MapContainer {
      * @see com.hazelcast.map.impl.operation.PostJoinMapOperation
      * @see com.hazelcast.map.impl.operation.MapReplicationStateHolder
      */
-    protected final Set<IndexInfo> indexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
+    protected final Set<IndexInfo> partitionIndexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
 
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -335,7 +335,7 @@ public class MapContainer {
 
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
-        indexesToAdd.clear();
+        partitionIndexesToAdd.clear();
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
@@ -362,16 +362,16 @@ public class MapContainer {
         return definitions;
     }
 
-    public void addIndexToAdd(IndexInfo indexInfo) {
-        indexesToAdd.add(indexInfo);
+    public void addPartitionIndexToAdd(IndexInfo indexInfo) {
+        partitionIndexesToAdd.add(indexInfo);
     }
 
-    public Set<IndexInfo> getIndexesToAdd() {
-        return indexesToAdd;
+    public Set<IndexInfo> getPartitionIndexesToAdd() {
+        return partitionIndexesToAdd;
     }
 
-    public void clearIndexesToAdd() {
-        indexesToAdd.clear();
+    public void clearPartitionIndexesToAdd() {
+        partitionIndexesToAdd.clear();
     }
 
     @SerializableByConvention

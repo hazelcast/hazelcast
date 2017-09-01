@@ -29,7 +29,7 @@ import java.util.List;
 public class MapIndexInfo implements IdentifiedDataSerializable {
 
     private String mapName;
-    private List<IndexInfo> lsIndexes = new LinkedList<IndexInfo>();
+    private List<IndexInfo> indexInfos = new LinkedList<IndexInfo>();
 
     public MapIndexInfo(String mapName) {
         this.mapName = mapName;
@@ -39,26 +39,26 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
     }
 
     public void addIndexInfo(String attributeName, boolean ordered) {
-        lsIndexes.add(new IndexInfo(attributeName, ordered));
+        indexInfos.add(new IndexInfo(attributeName, ordered));
     }
 
     public void addIndexInfos(Collection<IndexInfo> indexInfos) {
-        lsIndexes.addAll(indexInfos);
+        this.indexInfos.addAll(indexInfos);
     }
 
     public String getMapName() {
         return mapName;
     }
 
-    public List<IndexInfo> getLsIndexes() {
-        return lsIndexes;
+    public List<IndexInfo> getIndexInfos() {
+        return indexInfos;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeInt(lsIndexes.size());
-        for (IndexInfo indexInfo : lsIndexes) {
+        out.writeInt(indexInfos.size());
+        for (IndexInfo indexInfo : indexInfos) {
             indexInfo.writeData(out);
         }
     }
@@ -70,7 +70,7 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             IndexInfo indexInfo = new IndexInfo();
             indexInfo.readData(in);
-            lsIndexes.add(indexInfo);
+            indexInfos.add(indexInfo);
         }
     }
 

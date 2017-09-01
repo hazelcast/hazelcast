@@ -191,8 +191,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         mapService.partitionAwareService = partitionAwareService;
         mapService.quorumAwareService = quorumAwareService;
         mapService.clientAwareService = clientAwareService;
-        mapService.mapIndexSynchronizer = new MapIndexSynchronizer(mapServiceContext, nodeEngine.getOperationService(),
-                nodeEngine.getPartitionService(), nodeEngine.getSerializationService(), nodeEngine);
+        mapService.mapIndexSynchronizer = new MapIndexSynchronizer(mapServiceContext, nodeEngine);
         mapServiceContext.setService(mapService);
         return mapService;
     }
