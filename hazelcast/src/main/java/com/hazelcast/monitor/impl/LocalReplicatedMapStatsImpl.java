@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
 
@@ -66,23 +67,40 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     //CHECKSTYLE:ON
 
     // These fields are only accessed through the updaters
+    @Probe
     private volatile long lastAccessTime;
+    @Probe
     private volatile long lastUpdateTime;
+    @Probe
     private volatile long hits;
+    @Probe
     private volatile long numberOfOtherOperations;
+    @Probe
     private volatile long numberOfEvents;
+    @Probe
     private volatile long getCount;
+    @Probe
     private volatile long putCount;
+    @Probe
     private volatile long removeCount;
+    @Probe
     private volatile long totalGetLatencies;
+    @Probe
     private volatile long totalPutLatencies;
+    @Probe
     private volatile long totalRemoveLatencies;
+    @Probe
     private volatile long maxGetLatency;
+    @Probe
     private volatile long maxPutLatency;
+    @Probe
     private volatile long maxRemoveLatency;
 
+    @Probe
     private volatile long creationTime;
+    @Probe
     private volatile long ownedEntryCount;
+    @Probe
     private volatile long ownedEntryMemoryCost;
 
     public LocalReplicatedMapStatsImpl() {
@@ -184,6 +202,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void setDirtyEntryCount(long dirtyEntryCount) {
     }
 
+    @Probe
     @Override
     public long total() {
         return putCount + getCount + removeCount + numberOfOtherOperations;
@@ -270,6 +289,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
+    @Probe
     public long getHeapCost() {
         return 0;
     }
@@ -278,6 +298,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void setHeapCost(long heapCost) {
     }
 
+    @Probe
     @Override
     public long getReplicationEventCount() {
         return 0;

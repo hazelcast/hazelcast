@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.util.Clock;
 
@@ -41,19 +42,31 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
 
+    @Probe
     private int ownedItemCount;
+    @Probe
     private int backupItemCount;
+    @Probe
     private long minAge;
+    @Probe
     private long maxAge;
+    @Probe
     private long aveAge;
+    @Probe
     private long creationTime;
 
     // These fields are only accessed through the updater
+    @Probe
     private volatile long numberOfOffers;
+    @Probe
     private volatile long numberOfRejectedOffers;
+    @Probe
     private volatile long numberOfPolls;
+    @Probe
     private volatile long numberOfEmptyPolls;
+    @Probe
     private volatile long numberOfOtherOperations;
+    @Probe
     private volatile long numberOfEvents;
 
     public LocalQueueStatsImpl() {
@@ -110,6 +123,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         return creationTime;
     }
 
+    @Probe
     public long total() {
         return numberOfOffers + numberOfPolls + numberOfOtherOperations;
     }
@@ -163,6 +177,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
+    @Probe
     @Override
     public long getEventOperationCount() {
         return numberOfEvents;
