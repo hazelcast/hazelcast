@@ -92,9 +92,11 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
         MAP_COMMAND_PARSERS.put("HEAD", new HttpHeadCommandParser());
     }
 
+
     private ByteBuffer commandLineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
     private boolean commandLineRead;
     private TextCommand command;
+    private final boolean sslEnabled;
     private final TextCommandService textCommandService;
     private final TextChannelOutboundHandler outboundHandler;
     private final TcpIpConnection connection;
@@ -107,6 +109,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
 
     public TextChannelInboundHandler(TcpIpConnection connection, TextChannelOutboundHandler outboundHandler) {
         IOService ioService = connection.getConnectionManager().getIoService();
+        this.sslEnabled = ioService.getSSLConfig() == null ? false : ioService.getSSLConfig().isEnabled();
         this.textCommandService = ioService.getTextCommandService();
         this.outboundHandler = outboundHandler;
         this.connection = connection;
@@ -214,13 +217,15 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
                 boolean isHealthCheck = healthcheckEnabled && uri.startsWith(HttpCommandProcessor.URI_HEALTH_URL);
                 boolean forceRequestHandling = isClusterManagementRequest || isMancenterRequest || isHealthCheck;
                 if (!restEnabled && !forceRequestHandling) {
-                    connection.close("REST not enabled", null);
+                    String msg = sslEnabled ? "REST not enabled" : "REST or SSL not enabled";
+                    connection.close(msg, null);
                     return false;
                 }
                 connection.setType(ConnectionType.REST_CLIENT);
             } else {
                 if (!memcacheEnabled) {
-                    connection.close("Memcached not enabled", null);
+                    String msg = sslEnabled ? "Memcached not enabled" : "Memcached or SSL not enabled";
+                    connection.close(msg, null);
                     return false;
                 }
                 connection.setType(ConnectionType.MEMCACHE_CLIENT);
