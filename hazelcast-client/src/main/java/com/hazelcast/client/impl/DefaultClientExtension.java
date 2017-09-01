@@ -40,6 +40,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.memory.DefaultMemoryStats;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -56,6 +58,8 @@ public class DefaultClientExtension implements ClientExtension {
     protected static final ILogger LOGGER = Logger.getLogger(ClientExtension.class);
 
     protected volatile HazelcastClientInstanceImpl client;
+
+    private final MemoryStats memoryStats = new DefaultMemoryStats();
 
     @Override
     public void beforeStart(HazelcastClientInstanceImpl client) {
@@ -126,6 +130,11 @@ public class DefaultClientExtension implements ClientExtension {
             return createClientMapProxyFactory();
         }
         throw new IllegalArgumentException("Proxy factory cannot be created. Unknown service: " + service);
+    }
+
+    @Override
+    public MemoryStats getMemoryStats() {
+        return memoryStats;
     }
 
     private ClientProxyFactory createClientMapProxyFactory() {
