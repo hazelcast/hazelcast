@@ -62,7 +62,7 @@ public class MapEventJournalReadTask<K, V, T>
     protected Operation prepareOperation() {
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
             throw new UnsupportedOperationException(
-                    "Event journal actions are not available when cluster version is 3.9 or higher");
+                    "Event journal actions are available when cluster version is 3.9 or higher");
         }
         final Projection<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalMapEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);

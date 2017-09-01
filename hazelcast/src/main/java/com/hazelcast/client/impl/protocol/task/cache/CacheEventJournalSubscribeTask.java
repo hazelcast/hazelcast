@@ -51,7 +51,7 @@ public class CacheEventJournalSubscribeTask
     protected Operation prepareOperation() {
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
             throw new UnsupportedOperationException(
-                    "Event journal actions are not available when cluster version is 3.9 or higher");
+                    "Event journal actions are available when cluster version is 3.9 or higher");
         }
         return new CacheEventJournalSubscribeOperation(parameters.name);
     }

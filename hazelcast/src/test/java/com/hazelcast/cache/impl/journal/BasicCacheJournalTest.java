@@ -35,6 +35,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -100,7 +101,9 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         final Config config = super.getConfig();
-        config.addEventJournalConfig(new EventJournalConfig().setCacheName("default").setEnabled(true));
+        final int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        config.addEventJournalConfig(new EventJournalConfig().setCapacity(200 * defaultPartitionCount)
+                                                             .setCacheName("default").setEnabled(true));
         final CacheSimpleConfig nonEvictingCache = new CacheSimpleConfig().setName("cache");
         nonEvictingCache.getEvictionConfig().setSize(Integer.MAX_VALUE);
 
