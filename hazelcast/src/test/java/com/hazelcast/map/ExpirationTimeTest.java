@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -31,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -40,127 +40,168 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ExpirationTimeTest extends HazelcastTestSupport {
 
+    private static final long ONE_MINUTE_IN_MILLIS = MINUTES.toMillis(1);
+
     @Test
-    public void testExpirationTime_withTTL() throws Exception {
+    public void testExpirationTime_withTTL() {
         IMap<Integer, Integer> map = createMap();
 
-        map.put(1, 1, 1, MINUTES);
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
-
-        long TTL = MINUTES.toMillis(1);
         long creationTime = entryView.getCreationTime();
 
-        long expectedExpirationTime = creationTime + TTL;
-
+        long expectedExpirationTime = creationTime + ONE_MINUTE_IN_MILLIS;
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
     @Test
-    public void testExpirationTime_withTTL_afterMultipleUpdates() throws Exception {
+    public void testExpirationTime_withZeroTTL() {
         IMap<Integer, Integer> map = createMap();
 
-        map.put(1, 1, 1, MINUTES);
+        map.put(1, 1, 0, MILLISECONDS);
 
-        sleepMillis(1);
+        assertEquals(Long.MAX_VALUE, getExpirationTime(map, 1));
+    }
 
-        map.put(1, 1, 1, MINUTES);
+    @Test
+    public void testExpirationTime_withNegativeTTL() {
+        IMap<Integer, Integer> map = createMap();
 
-        sleepMillis(1);
+        map.put(1, 1, -1, MILLISECONDS);
 
-        map.put(1, 1, 1, MINUTES);
+        assertEquals(Long.MAX_VALUE, getExpirationTime(map, 1));
+    }
+
+    @Test
+    public void testExpirationTime_withTTL_andMapConfigTTL() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds(5553152);
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
+        long creationTime = entryView.getCreationTime();
 
-        long TTL = MINUTES.toMillis(1);
-        long lastUpdateTime = entryView.getLastUpdateTime();
-
-        long expectedExpirationTime = lastUpdateTime + TTL;
-
+        long expectedExpirationTime = creationTime + ONE_MINUTE_IN_MILLIS;
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
     @Test
-    public void testExpirationTime_withMaxIdleTime() throws Exception {
+    public void testExpirationTime_withZeroTTL_andMapConfigTTL() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds((int) TimeUnit.MINUTES.toSeconds(1));
+
+        map.put(1, 1, 0, MILLISECONDS);
+
+        assertEquals(Long.MAX_VALUE, getExpirationTime(map, 1));
+    }
+
+    @Test
+    public void testExpirationTime_withNegativeTTL_andMapConfigTTL() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds((int) TimeUnit.MINUTES.toSeconds(1));
+
+        map.put(1, 1, -1, MILLISECONDS);
+
+        EntryView<Integer, Integer> entryView = map.getEntryView(1);
+        long creationTime = entryView.getCreationTime();
+
+        long expectedExpirationTime = creationTime + ONE_MINUTE_IN_MILLIS;
+        assertEquals(expectedExpirationTime, entryView.getExpirationTime());
+    }
+
+    @Test
+    public void testExpirationTime_withTTL_afterMultipleUpdates() {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        sleepMillis(1);
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+        sleepMillis(1);
+
+        map.put(1, 1, ONE_MINUTE_IN_MILLIS, MILLISECONDS);
+
+        EntryView<Integer, Integer> entryView = map.getEntryView(1);
+        long lastUpdateTime = entryView.getLastUpdateTime();
+
+        long expectedExpirationTime = lastUpdateTime + ONE_MINUTE_IN_MILLIS;
+        assertEquals(expectedExpirationTime, entryView.getExpirationTime());
+    }
+
+    @Test
+    public void testExpirationTime_withMaxIdleTime() {
         IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(10);
 
         map.put(1, 1);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
-
         long creationTime = entryView.getCreationTime();
         long expirationTime = entryView.getExpirationTime();
 
         long expectedExpirationTime = creationTime + TimeUnit.SECONDS.toMillis(10);
-
         assertEquals(expectedExpirationTime, expirationTime);
     }
 
     @Test
-    public void testExpirationTime_withMaxIdleTime_afterMultipleAccesses() throws Exception {
+    public void testExpirationTime_withMaxIdleTime_afterMultipleAccesses() {
         IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(10);
 
         map.put(1, 1);
-
         sleepMillis(999);
 
         map.get(1);
-
         sleepMillis(23);
 
-        map.containsKey(1);
+        assertTrue(map.containsKey(1));
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
-
         long lastAccessTime = entryView.getLastAccessTime();
-        long expectedExpirationTime = lastAccessTime + TimeUnit.SECONDS.toMillis(10);
 
+        long expectedExpirationTime = lastAccessTime + TimeUnit.SECONDS.toMillis(10);
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
     @Test
-    public void testExpirationTime_whenMaxIdleTime_isSmallerThan_TTL() throws Exception {
+    public void testExpirationTime_whenMaxIdleTime_isSmallerThan_TTL() {
         IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(10);
 
         map.put(1, 1, 100, TimeUnit.SECONDS);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
-
         long lastAccessTime = entryView.getLastAccessTime();
         long delayToExpiration = lastAccessTime + TimeUnit.SECONDS.toMillis(10);
 
-        // lastAccessTime is zero after put, we can find expiration by this calculation.
+        // lastAccessTime is zero after put, we can find expiration by this calculation
         long expectedExpirationTime = delayToExpiration + entryView.getCreationTime();
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
     @Test
-    public void testExpirationTime_whenMaxIdleTime_isBiggerThan_TTL() throws Exception {
+    public void testExpirationTime_whenMaxIdleTime_isBiggerThan_TTL() {
         IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(10);
 
         map.put(1, 1, 5, TimeUnit.SECONDS);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
-
         long creationTime = entryView.getCreationTime();
         long expirationTime = entryView.getExpirationTime();
 
         long expectedExpirationTime = creationTime + TimeUnit.SECONDS.toMillis(5);
-
         assertEquals(expectedExpirationTime, expirationTime);
     }
 
     @Test
-    public void testLastAccessTime_isZero_afterFirstPut() throws Exception {
+    public void testLastAccessTime_isZero_afterFirstPut() {
         IMap<Integer, Integer> map = createMap();
+
         map.put(1, 1);
+
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
 
         assertEquals(0L, entryView.getLastAccessTime());
     }
 
     @Test
-    public void testExpirationTime_calculated_against_lastUpdateTime_after_PutWithNoTTL() throws Exception {
+    public void testExpirationTime_calculated_against_lastUpdateTime_after_PutWithNoTTL() {
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, 1, MINUTES);
@@ -168,45 +209,38 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         map.put(1, 1);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
-        long expectedExpirationTime = entryView.getLastUpdateTime() + MINUTES.toMillis(1);
 
+        long expectedExpirationTime = entryView.getLastUpdateTime() + MINUTES.toMillis(1);
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
 
     @Test
-    public void replace_shifts_expiration_time_when_succeeded() throws Exception {
+    public void replace_shifts_expiration_time_when_succeeded() {
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, 100, SECONDS);
-        long expirationTimeAfterPut = getExpirationTime(1, map);
-
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
         sleepAtLeastMillis(3);
 
         map.replace(1, 1, 2);
-        long expirationTimeAfterReplace = getExpirationTime(1, map);
 
+        long expirationTimeAfterReplace = getExpirationTime(map, 1);
         assertTrue(expirationTimeAfterReplace > expirationTimeAfterPut);
     }
 
     @Test
-    public void replace_does_not_shift_expiration_time_when_failed() throws Exception {
-        int wrongOldValue = -1;
+    public void replace_does_not_shift_expiration_time_when_failed() {
         IMap<Integer, Integer> map = createMap();
 
         map.put(1, 1, 100, SECONDS);
-        long expirationTimeAfterPut = getExpirationTime(1, map);
-
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
         sleepAtLeastMillis(3);
 
+        int wrongOldValue = -1;
         map.replace(1, wrongOldValue, 2);
-        long expirationTimeAfterReplace = getExpirationTime(1, map);
 
+        long expirationTimeAfterReplace = getExpirationTime(map, 1);
         assertEquals(expirationTimeAfterReplace, expirationTimeAfterPut);
-    }
-
-    private long getExpirationTime(int key, IMap<Integer, Integer> map) {
-        EntryView<Integer, Integer> entryView = map.getEntryView(key);
-        return entryView.getExpirationTime();
     }
 
     private IMap<Integer, Integer> createMap() {
@@ -215,14 +249,31 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         return node.getMap(mapName);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private IMap<Integer, Integer> createMapWithMaxIdleSeconds(int maxIdleSeconds) {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
+        config.getMapConfig(mapName).setMaxIdleSeconds(maxIdleSeconds);
 
         HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private IMap<Integer, Integer> createMapWithTTLSeconds(int ttlSeconds) {
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setTimeToLiveSeconds(ttlSeconds);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        return node.getMap(mapName);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private static long getExpirationTime(IMap<Integer, Integer> map, int key) {
+        EntryView<Integer, Integer> entryView = map.getEntryView(key);
+        return entryView.getExpirationTime();
     }
 }
