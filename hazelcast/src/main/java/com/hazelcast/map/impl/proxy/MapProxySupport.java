@@ -977,9 +977,6 @@ abstract class MapProxySupport<K, V>
 
     public String addMapInterceptorInternal(MapInterceptor interceptor) {
         NodeEngine nodeEngine = getNodeEngine();
-        if (interceptor instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) interceptor).setHazelcastInstance(nodeEngine.getHazelcastInstance());
-        }
         String id = mapServiceContext.generateInterceptorId(name, interceptor);
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         for (Member member : members) {
