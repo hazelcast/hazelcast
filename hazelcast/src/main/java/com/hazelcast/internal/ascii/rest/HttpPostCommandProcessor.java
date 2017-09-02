@@ -86,13 +86,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleListNodes(command);
             } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
                 handleShutdownNode(command);
-            } else if (uri.startsWith(URI_WAN_SYNC_MAP)) {
+            } else if (uri.startsWith(URI_WAN_SYNC_MAP) || uri.startsWith(LEGACY_URI_WAN_SYNC_MAP)) {
                 handleWanSyncMap(command);
-            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS)) {
+            } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS) || uri.startsWith(LEGACY_URI_WAN_SYNC_ALL_MAPS)) {
                 handleWanSyncAllMaps(command);
-            } else if (uri.startsWith(URI_MANCENTER_WAN_CLEAR_QUEUES)) {
+            } else if (uri.startsWith(URI_MANCENTER_WAN_CLEAR_QUEUES) || uri.startsWith(LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES)) {
                 handleWanClearQueues(command);
-            } else if (uri.startsWith(URI_ADD_WAN_CONFIG)) {
+            } else if (uri.startsWith(URI_ADD_WAN_CONFIG) || uri.startsWith(LEGACY_URI_ADD_WAN_CONFIG)) {
                 handleAddWanConfig(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
@@ -372,13 +372,20 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         command.send200();
     }
 
+    /**
+     * Initiates a WAN sync for a single map and the wan replication name and target group defined
+     * by the command parameters.
+     *
+     * @param command the HTTP command
+     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
+     *                                      named character encoding is not supported
+     */
     private void handleWanSyncMap(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
-        byte[] data = command.getData();
-        String[] strList = bytesToString(data).split("&");
-        String wanRepName = URLDecoder.decode(strList[0], "UTF-8");
-        String targetGroup = URLDecoder.decode(strList[1], "UTF-8");
-        String mapName = URLDecoder.decode(strList[2], "UTF-8");
+        final String[] params = decodeParams(command, 3);
+        final String wanRepName = params[0];
+        final String targetGroup = params[1];
+        final String mapName = params[2];
         try {
             textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, targetGroup, mapName);
             res = response(ResponseType.SUCCESS, "message", "Sync initiated");
@@ -389,12 +396,19 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
+    /**
+     * Initiates WAN sync for all maps and the wan replication name and target group defined
+     * by the command parameters.
+     *
+     * @param command the HTTP command
+     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
+     *                                      named character encoding is not supported
+     */
     private void handleWanSyncAllMaps(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
-        byte[] data = command.getData();
-        String[] strList = bytesToString(data).split("&");
-        String wanRepName = URLDecoder.decode(strList[0], "UTF-8");
-        String targetGroup = URLDecoder.decode(strList[1], "UTF-8");
+        final String[] params = decodeParams(command, 2);
+        final String wanRepName = params[0];
+        final String targetGroup = params[1];
         try {
             textCommandService.getNode().getNodeEngine().getWanReplicationService().syncAllMaps(wanRepName, targetGroup);
             res = response(ResponseType.SUCCESS, "message", "Sync initiated");
@@ -405,12 +419,19 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
+    /**
+     * Clears the WAN queues for the wan replication name and target group defined
+     * by the command parameters.
+     *
+     * @param command the HTTP command
+     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
+     *                                      named character encoding is not supported
+     */
     private void handleWanClearQueues(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
-        byte[] data = command.getData();
-        String[] strList = bytesToString(data).split("&");
-        String wanRepName = URLDecoder.decode(strList[0], "UTF-8");
-        String targetGroup = URLDecoder.decode(strList[1], "UTF-8");
+        final String[] params = decodeParams(command, 2);
+        final String wanRepName = params[0];
+        final String targetGroup = params[1];
         try {
             textCommandService.getNode().getNodeEngine().getWanReplicationService().clearQueues(wanRepName, targetGroup);
             res = response(ResponseType.SUCCESS, "message", "WAN replication queues are cleared.");
@@ -421,11 +442,18 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
+    /**
+     * Broadcasts a new {@link WanReplicationConfig} to all members. The config is defined
+     * by an encoded JSON as a first parameter of the HTTP command.
+     *
+     * @param command the HTTP command
+     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
+     *                                      named character encoding is not supported
+     */
     private void handleAddWanConfig(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
-        byte[] data = command.getData();
-        String[] strList = bytesToString(data).split("&");
-        String wanConfigJson = URLDecoder.decode(strList[0], "UTF-8");
+        final String[] params = decodeParams(command, 1);
+        final String wanConfigJson = params[0];
         try {
             OperationService opService = textCommandService.getNode().getNodeEngine().getOperationService();
             final Set<Member> members = textCommandService.getNode().getClusterService().getMembers();
@@ -475,6 +503,26 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         public String toString() {
             return super.toString().toLowerCase();
         }
+    }
+
+    /**
+     * Decodes HTTP post params contained in {@link HttpPostCommand#getData()}. The data
+     * should be encoded in UTF-8 and joined together with an ampersand (&).
+     *
+     * @param command    the HTTP post command
+     * @param paramCount the number of parameters expected in the command
+     * @return the decoded params
+     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
+     *                                      named character encoding is not supported
+     */
+    private static String[] decodeParams(HttpPostCommand command, int paramCount) throws UnsupportedEncodingException {
+        final byte[] data = command.getData();
+        final String[] encoded = bytesToString(data).split("&");
+        final String[] decoded = new String[encoded.length];
+        for (int i = 0; i < paramCount; i++) {
+            decoded[i] = URLDecoder.decode(encoded[i], "UTF-8");
+        }
+        return decoded;
     }
 
     private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
