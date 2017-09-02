@@ -26,7 +26,6 @@ import java.util.Properties;
 public class LoginModuleConfig {
 
     private String className;
-    private Object implementation;
     private LoginModuleUsage usage;
     private Properties properties = new Properties();
 
@@ -73,8 +72,13 @@ public class LoginModuleConfig {
         return className;
     }
 
+    @Deprecated
+    /**
+     * @deprecated Not supported, to be removed in 4.0. Use {@link #getClassName()} instead
+     * @since 3.9
+     */
     public Object getImplementation() {
-        return implementation;
+        throw new UnsupportedOperationException("Deprecated operation. Use getClassName instead.");
     }
 
     public Properties getProperties() {
@@ -90,9 +94,13 @@ public class LoginModuleConfig {
         return this;
     }
 
+    @Deprecated
+    /**
+     * @deprecated Not supported, to be removed in 4.0. User {@link #setClassName(String)} instead
+     * @since 3.9
+     */
     public LoginModuleConfig setImplementation(Object implementation) {
-        this.implementation = implementation;
-        return this;
+        throw new UnsupportedOperationException("Deprecated operation. Use setClassName instead.");
     }
 
     public LoginModuleConfig setUsage(LoginModuleUsage usage) {
@@ -108,6 +116,6 @@ public class LoginModuleConfig {
     @Override
     public String toString() {
         return "LoginModuleConfig{className='" + className + "', usage=" + usage
-                + ", implementation=" + implementation + ", properties=" + properties + '}';
+                + ", properties=" + properties + '}';
     }
 }

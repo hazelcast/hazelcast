@@ -55,11 +55,6 @@
                         <hz:property name="property">value</hz:property>
                     </hz:properties>
                 </hz:login-module>
-                <hz:login-module implementation="dummyLoginModule" usage="OPTIONAL">
-                    <hz:properties>
-                        <hz:property name="property">value2</hz:property>
-                    </hz:properties>
-                </hz:login-module>
             </hz:member-login-modules>
             <hz:client-login-modules>
                 <hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
