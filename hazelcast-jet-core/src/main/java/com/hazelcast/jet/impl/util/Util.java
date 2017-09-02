@@ -43,11 +43,17 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 
 public final class Util {
 
@@ -173,7 +179,7 @@ public final class Util {
      * correctly serializable by actually trying to serialize it. This will
      * reveal some non-serializable field early.
      *
-     * @param object object to check
+     * @param object     object to check
      * @param objectName object description for the exception
      * @throws IllegalArgumentException if {@code object} is not serializable
      */
@@ -182,7 +188,7 @@ public final class Util {
             if (!(object instanceof Serializable)) {
                 throw new IllegalArgumentException("\"" + objectName + "\" must be serializable");
             }
-            try  (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+            try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
                 os.writeObject(object);
             } catch (NotSerializableException | InvalidClassException e) {
                 throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
@@ -191,6 +197,23 @@ public final class Util {
                 throw new JetException(e);
             }
         }
+    }
+
+    /**
+     * Distributes the owned partitions to processors in a round-robin fashion
+     * If owned partition size is smaller than processor count
+     * an empty list is put for the rest of the processors
+     * @param count count of processors
+     * @param ownedPartitions list of owned partitions
+     * @return a map of which has partition index as key and list of partition ids as value
+     */
+    public static Map<Integer, List<Integer>> processorToPartitions(int count, List<Integer> ownedPartitions) {
+        Map<Integer, List<Integer>> processorToPartitions = range(0, ownedPartitions.size())
+                .mapToObj(i -> entry(i, ownedPartitions.get(i)))
+                .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
+
+        range(0, count).forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
+        return processorToPartitions;
     }
 
     private static class NullOutputStream extends OutputStream {

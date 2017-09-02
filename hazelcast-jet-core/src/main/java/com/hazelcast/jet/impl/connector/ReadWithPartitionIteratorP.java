@@ -45,12 +45,10 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static com.hazelcast.jet.Util.entry;
-import static java.util.Collections.emptyList;
+import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.IntStream.range;
 
 public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
@@ -162,13 +160,8 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     private static <T> List<Processor> getProcessors(int count, List<Integer> ownedPartitions,
                                                      Function<Integer, Iterator<T>> partitionToIterator) {
-        Map<Integer, List<Integer>> processorToPartitions = range(0, ownedPartitions.size())
-                .mapToObj(i -> entry(i, ownedPartitions.get(i)))
-                .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
 
-        range(0, count).forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
-
-        return processorToPartitions
+        return processorToPartitions(count, ownedPartitions)
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
                         ? new ReadWithPartitionIteratorP<>(partitionToIterator, partitions)

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.processor;
 
+import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -26,8 +27,10 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
+import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
@@ -41,6 +44,160 @@ import java.util.Map;
  */
 public final class Sources {
     private Sources() {
+    }
+
+    /**
+     * Convenience for {@link #streamMap(String, DistributedPredicate, DistributedFunction, boolean)}
+     * emitting output as a {@link EventJournalMapEvent}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier streamMap(@Nonnull String mapName) {
+        return StreamEventJournalP.streamMap(mapName, null, null, false);
+    }
+
+    /**
+     * Returns a meta-supplier of processor that will stream the
+     * {@link com.hazelcast.journal.EventJournal} events
+     * of the Hazelcast {@code IMap} with the specified name.
+     * Given predicate and projection will be applied to the events on the source.
+     * <p>
+     * The processors will only access data local to the
+     * member and, if {@code localParallelism} for the vertex is above one,
+     * processors will divide the labor within the member so that each one gets
+     * a subset of all local partitions to stream.
+     * <p>
+     * The number of Hazelcast partitions should be configured to at least
+     * {@code localParallelism * clusterSize}, otherwise some processors will have
+     * no partitions assigned to them.
+     * <p>
+     * In order to stream from a map, event-journal should be configured
+     * Please see {@link com.hazelcast.config.EventJournalConfig}
+     *
+     * @param mapName                 The name of the map
+     * @param predicate               The predicate to filter the events
+     * @param projection              The projection to map the events
+     * @param startFromLatestSequence starting point of the events in event journal
+     *                                {@code true} to start from latest, {@code false} to start from oldest
+     * @param <T>                     type of emitted item
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier streamMap(@Nonnull String mapName,
+                                                      DistributedPredicate<EventJournalMapEvent> predicate,
+                                                      DistributedFunction<EventJournalMapEvent, T> projection,
+                                                      boolean startFromLatestSequence) {
+        return StreamEventJournalP.streamMap(mapName, predicate, projection, startFromLatestSequence);
+    }
+
+    /**
+     * Convenience for {@link #streamMap(String, ClientConfig, DistributedPredicate, DistributedFunction, boolean)}
+     * emitting output as a {@link EventJournalMapEvent}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier streamMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+        return StreamEventJournalP.streamMap(mapName, clientConfig, null, null, false);
+    }
+
+    /**
+     * Returns a meta-supplier of processor that will stream the
+     * {@link com.hazelcast.journal.EventJournal} events
+     * of the Hazelcast {@code IMap} with the specified name from a remote cluster.
+     * Given predicate and projection will be applied to the events on the source.
+     * <p>
+     * In order to stream from a map, event-journal should be configured
+     * Please see {@link com.hazelcast.config.EventJournalConfig}
+     *
+     * @param mapName                 The name of the map
+     * @param clientConfig            configuration for the client to connect to the remote cluster
+     * @param predicate               The predicate to filter the events
+     * @param projection              The projection to map the events
+     * @param startFromLatestSequence starting point of the events in event journal
+     *                                {@code true} to start from latest, {@code false} to start from oldest
+     * @param <T>                     type of emitted item
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier streamMap(@Nonnull String mapName,
+                                                      @Nonnull ClientConfig clientConfig,
+                                                      DistributedPredicate<EventJournalMapEvent> predicate,
+                                                      DistributedFunction<EventJournalMapEvent, T> projection,
+                                                      boolean startFromLatestSequence) {
+        return StreamEventJournalP.streamMap(mapName, clientConfig, predicate, projection, startFromLatestSequence);
+    }
+
+    /**
+     * Convenience for {@link #streamCache(String, DistributedPredicate, DistributedFunction, boolean)}
+     * emitting output as a {@link EventJournalCacheEvent}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier streamCache(@Nonnull String cacheName) {
+        return StreamEventJournalP.streamCache(cacheName, null, null, false);
+    }
+
+    /**
+     * Returns a meta-supplier of processor that will stream the
+     * {@link com.hazelcast.journal.EventJournal} events
+     * of the Hazelcast {@code ICache} with the specified name.
+     * Given predicate and projection will be applied to the events on the source.
+     * <p>
+     * The processors will only access data local to the
+     * member and, if {@code localParallelism} for the vertex is above one,
+     * processors will divide the labor within the member so that each one gets
+     * a subset of all local partitions to stream.
+     * <p>
+     * The number of Hazelcast partitions should be configured to at least
+     * {@code localParallelism * clusterSize}, otherwise some processors will have
+     * no partitions assigned to them.
+     * <p>
+     * In order to stream from a cache, event-journal should be configured
+     * Please see {@link com.hazelcast.config.EventJournalConfig}
+     *
+     * @param cacheName               The name of the cache
+     * @param predicate               The predicate to filter the events
+     * @param projection              The projection to map the events
+     * @param startFromLatestSequence starting point of the events in event journal
+     *                                {@code true} to start from latest, {@code false} to start from oldest
+     * @param <T>                     type of emitted item
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier streamCache(@Nonnull String cacheName,
+                                                        DistributedPredicate<EventJournalCacheEvent> predicate,
+                                                        DistributedFunction<EventJournalCacheEvent, T> projection,
+                                                        boolean startFromLatestSequence) {
+        return StreamEventJournalP.streamCache(cacheName, predicate, projection, startFromLatestSequence);
+    }
+
+    /**
+     * Convenience for {@link #streamCache(String, ClientConfig, DistributedPredicate, DistributedFunction, boolean)}
+     * emitting output as a {@link EventJournalCacheEvent}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier streamCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+        return StreamEventJournalP.streamCache(cacheName, clientConfig, null, null, false);
+    }
+
+    /**
+     * Returns a meta-supplier of processor that will stream the
+     * {@link com.hazelcast.journal.EventJournal} events
+     * of the Hazelcast {@code ICache} with the specified name from a remote cluster.
+     * Given predicate and projection will be applied to the events on the source.
+     * <p>
+     * In order to stream from a cache, event-journal should be configured
+     * Please see {@link com.hazelcast.config.EventJournalConfig}
+     *
+     * @param cacheName               The name of the cache
+     * @param clientConfig            configuration for the client to connect to the remote cluster
+     * @param predicate               The predicate to filter the events
+     * @param projection              The projection to map the events
+     * @param startFromLatestSequence starting point of the events in event journal
+     *                                {@code true} to start from latest, {@code false} to start from oldest
+     * @param <T>                     type of emitted item
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier streamCache(@Nonnull String cacheName,
+                                                        @Nonnull ClientConfig clientConfig,
+                                                        DistributedPredicate<EventJournalCacheEvent> predicate,
+                                                        DistributedFunction<EventJournalCacheEvent, T> projection,
+                                                        boolean startFromLatestSequence) {
+        return StreamEventJournalP.streamCache(cacheName, clientConfig, predicate, projection, startFromLatestSequence);
     }
 
     /**
