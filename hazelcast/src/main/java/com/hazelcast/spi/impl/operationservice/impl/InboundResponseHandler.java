@@ -140,7 +140,7 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
 
         if (invocation == null) {
             responsesMissing.inc();
-            if (nodeEngine.isRunning()) {
+            if (nodeEngine.isRunning() && callId != 0) {
                 logger.warning("No Invocation found for error response with callId: " + callId + " sent from " + sender);
             }
             return;
