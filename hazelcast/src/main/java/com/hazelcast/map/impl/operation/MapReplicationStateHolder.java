@@ -192,7 +192,16 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
         RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
         MapContainer mapContainer = recordStore.getMapContainer();
-        if (!mapContainer.isGlobalIndexEnabled()) {
+        if (mapContainer.isGlobalIndexEnabled()) {
+            // creating global indexes on partition thread in case they do not exist
+            for (IndexInfo indexInfo : indexInfos) {
+                Indexes indexes = mapContainer.getIndexes();
+                // optimisation not to synchronize each partition thread on the addOrGetIndex method
+                if (indexes.getIndex(indexInfo.getAttributeName()) == null) {
+                    indexes.addOrGetIndex(indexInfo.getAttributeName(), indexInfo.isOrdered());
+                }
+            }
+        } else {
             Indexes indexes = mapContainer.getIndexes(mapReplicationOperation.getPartitionId());
             for (IndexInfo indexInfo : indexInfos) {
                 indexes.addOrGetIndex(indexInfo.getAttributeName(), indexInfo.isOrdered());
