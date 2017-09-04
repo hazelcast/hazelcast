@@ -131,15 +131,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
-        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
-        loadingFutures.add(loadingKeysFuture);
+        loadingFutures.add(keyLoader.startLoading(mapStoreContext, replaceExistingValues));
     }
 
     @Override
     public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
         if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
-            loadingFutures.add(f);
+            loadingFutures.add(recordStoreLoader.loadValues(keys, replaceExistingValues));
         }
 
         // We should not track key loading here. IT's not key loading but values loading.
