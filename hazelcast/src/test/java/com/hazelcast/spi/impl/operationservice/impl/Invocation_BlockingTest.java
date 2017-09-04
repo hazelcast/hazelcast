@@ -446,7 +446,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
     @Test
     public void sync_testWaitingIndefinitely() throws InterruptedException {
-        final Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+        final Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "6000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
@@ -463,7 +463,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         new Thread() {
             public void run() {
                 try {
-                    // because max timeout=3000 we get timeout exception which we should not
+                    // because max timeout=6000 we get timeout exception which we should not
                     instances[1].getLock(name).lock();
                     latch.countDown();
                 } catch (Exception ignored) {
@@ -472,7 +472,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
             }
         }.start();
 
-        // wait for enough time which is greater than max-timeout (3000)
+        // wait for enough time which is greater than max-timeout (6000)
         sleepSeconds(10);
         lock.unlock();
 
@@ -481,7 +481,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
     @Test
     public void sync_testWaitingInfinitelyForTryLock() throws InterruptedException {
-        final Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+        final Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "6000");
         final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
 
