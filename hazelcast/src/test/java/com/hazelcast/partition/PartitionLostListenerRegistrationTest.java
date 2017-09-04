@@ -59,7 +59,8 @@ public class PartitionLostListenerRegistrationTest
         final String id = instance.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
         assertNotNull(id);
 
-        assertRegistrationsSizeEventually(instance, 1);
+        // Expected = 2 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        assertRegistrationsSizeEventually(instance, 2);
     }
 
     @Test
@@ -68,7 +69,8 @@ public class PartitionLostListenerRegistrationTest
         config.addListenerConfig(new ListenerConfig(mock(PartitionLostListener.class)));
 
         final HazelcastInstance instance = createHazelcastInstance(config);
-        assertRegistrationsSizeEventually(instance, 1);
+        // Expected = 2 -> 1 from config + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        assertRegistrationsSizeEventually(instance, 2);
     }
 
     private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final int expectedSize) {
@@ -99,7 +101,8 @@ public class PartitionLostListenerRegistrationTest
         final String id2 = partitionService.addPartitionLostListener(listener);
 
         assertNotEquals(id1, id2);
-        assertRegistrationsSizeEventually(instance, 2);
+        // Expected = 3 -> 2 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        assertRegistrationsSizeEventually(instance, 3);
     }
 
     @Test
@@ -113,7 +116,8 @@ public class PartitionLostListenerRegistrationTest
         final boolean result = partitionService.removePartitionLostListener(id1);
 
         assertTrue(result);
-        assertRegistrationsSizeEventually(instance, 0);
+        // Expected = 1 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        assertRegistrationsSizeEventually(instance, 1);
     }
 
 

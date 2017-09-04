@@ -63,7 +63,6 @@ public class ScheduledExecutorServiceProxy
         extends AbstractDistributedObject<DistributedScheduledExecutorService>
         implements IScheduledExecutorService {
 
-    private static final int GET_ALL_SCHEDULED_TIMEOUT = 10;
     private static final int SHUTDOWN_TIMEOUT = 10;
 
     private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
@@ -283,7 +282,7 @@ public class ScheduledExecutorServiceProxy
     public IScheduledFuture<?> getScheduledFuture(ScheduledTaskHandler handler) {
         checkNotNull(handler, "Handler is null");
 
-        ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
+        ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler, this);
         attachHazelcastInstance(proxy);
         return proxy;
     }
@@ -357,7 +356,7 @@ public class ScheduledExecutorServiceProxy
             List<IScheduledFuture<V>> futures = new ArrayList<IScheduledFuture<V>>();
 
             for (ScheduledTaskHandler handler : handlers) {
-                IScheduledFuture future = new ScheduledFutureProxy(handler);
+                IScheduledFuture future = new ScheduledFutureProxy(handler, this);
                 attachHazelcastInstance(future);
                 futures.add(future);
             }
@@ -379,14 +378,14 @@ public class ScheduledExecutorServiceProxy
 
     private <V> IScheduledFuture<V> createFutureProxy(int partitionId, String taskName) {
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(
-                ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName));
+                ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName), this);
         proxy.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         return proxy;
     }
 
     private <V> IScheduledFuture<V> createFutureProxy(Address address, String taskName) {
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(
-                ScheduledTaskHandlerImpl.of(address, getName(), taskName));
+                ScheduledTaskHandlerImpl.of(address, getName(), taskName), this);
         proxy.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         return proxy;
     }
