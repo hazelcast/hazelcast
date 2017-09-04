@@ -16,6 +16,8 @@
 
 package com.hazelcast.scheduledexecutor;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
@@ -27,7 +29,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static java.lang.String.valueOf;
@@ -398,4 +403,54 @@ public class ScheduledExecutorServiceSlowTest
 
         assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 1));
     }
+
+    @Test(timeout = 600000)
+    public void schedule_thenDisposeLeakTest() throws Exception {
+        Config config = new Config();
+        config.addScheduledExecutorConfig(new ScheduledExecutorConfig().setName("s").setCapacity(10000));
+
+        HazelcastInstance[] instances = createClusterWithCount(2, config);
+        final IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+
+        final AtomicBoolean running = new AtomicBoolean(true);
+        long counter = 0;
+        long limit = 2000000;
+
+        Executors.newSingleThreadExecutor().submit(new Runnable() {
+            @Override
+            public void run() {
+                while (running.get()) {
+                    for (Collection<IScheduledFuture<Object>> collection : executorService.getAllScheduledFutures().values()) {
+                        for (IScheduledFuture future : collection) {
+                            if (future.getStats().getTotalRuns() >= 1) {
+                                future.dispose();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        while (running.get()) {
+            try {
+                executorService.schedule(new PlainCallableTask(), 1, SECONDS);
+                Thread.yield();
+
+                if (counter++ % 1000 == 0) {
+                    System.out.println("Tasks: " + counter);
+                }
+
+                if (counter >= limit) {
+                    running.set(false);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                running.set(false);
+            }
+        }
+
+        // Wait for running tasks to finish, keeping log clean of PassiveMode exceptions
+        sleepSeconds(5);
+    }
+
 }

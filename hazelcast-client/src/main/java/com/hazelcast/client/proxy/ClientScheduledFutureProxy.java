@@ -63,10 +63,10 @@ public class ClientScheduledFutureProxy<V>
 
     private ScheduledTaskHandler handler;
 
-    public ClientScheduledFutureProxy(ScheduledTaskHandler handler, ClientContext context) {
+    ClientScheduledFutureProxy(ScheduledTaskHandler handler, ClientContext context) {
         super(DistributedScheduledExecutorService.SERVICE_NAME, handler.getSchedulerName());
-        setContext(context);
         this.handler = handler;
+        setContext(context);
     }
 
     @Override
