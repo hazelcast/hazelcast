@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.Result;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.projection.Projection;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -88,6 +89,12 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         Collection<AccumulatedResults> result = new LinkedList<AccumulatedResults>();
         try {
             Predicate predicate = getPredicate();
+            if (predicate instanceof PartitionPredicate) {
+                int partitionId = getPartitionId();
+                QueryResult queryResult = invokeOnPartition((PartitionPredicate) predicate, partitionId);
+                extractAndAppendResult(result, queryResult);
+                return reduce(result);
+            }
             int partitionCount = clientEngine.getPartitionService().getPartitionCount();
 
             BitSet finishedPartitions = invokeOnMembers(result, predicate, partitionCount);
@@ -96,6 +103,22 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             throw rethrow(t);
         }
         return reduce(result);
+    }
+
+    private QueryResult invokeOnPartition(PartitionPredicate predicate, int partitionId) {
+        final InternalOperationService operationService = nodeEngine.getOperationService();
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        MapService mapService = nodeEngine.getService(getServiceName());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+
+        Query query = buildQuery(predicate);
+        MapOperation queryPartitionOperation = createQueryPartitionOperation(query, clusterVersion, mapServiceContext);
+        queryPartitionOperation.setPartitionId(partitionId);
+        try {
+            return (QueryResult) operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, partitionId).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     private BitSet invokeOnMembers(Collection<AccumulatedResults> result, Predicate predicate, int partitionCount)
@@ -148,11 +171,9 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     }
 
     private Query buildQuery(Predicate predicate) {
-        Query.QueryBuilder builder =
-                Query.of().mapName(getDistributedObjectName())
-                        .predicate(predicate)
-                        .iterationType(getIterationType());
-
+        Query.QueryBuilder builder = Query.of().mapName(getDistributedObjectName()).predicate(
+                predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate)
+                                          .iterationType(getIterationType());
         if (getAggregator() != null) {
             builder = builder.aggregator(getAggregator());
         }
