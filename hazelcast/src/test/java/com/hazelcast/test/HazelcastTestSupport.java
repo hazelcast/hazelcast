@@ -47,19 +47,21 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
+import org.junit.experimental.categories.Category;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +84,7 @@ import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -788,7 +791,7 @@ public abstract class HazelcastTestSupport {
             actual.add(object);
         }
 
-        List expected = Arrays.asList(values);
+        List expected = asList(values);
 
         assertEquals("size should match", expected.size(), actual.size());
         assertEquals(expected, actual);
@@ -1073,6 +1076,10 @@ public abstract class HazelcastTestSupport {
         return (OperationParkerImpl) getNodeEngineImpl(instance).getOperationParker();
     }
 
+    public static void assertThatIsNoParallelTest() {
+        assertFalse("Test cannot be a ParallelTest", hasTestCategory(ParallelTest.class));
+    }
+
     // ###################################
     // ########## reflection utils #######
     // ###################################
@@ -1089,6 +1096,46 @@ public abstract class HazelcastTestSupport {
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
+    }
+
+    /**
+     * Checks if the calling test has a given {@link Category}.
+     *
+     * @see #getTestCategories() getTestCategories() for limitations of this method
+     */
+    public static boolean hasTestCategory(Class<?> testCategory) {
+        for (Class<?> category : getTestCategories()) {
+            if (category.isAssignableFrom(testCategory)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the value of the {@link Category} annotation of the calling test class.
+     * <p>
+     * This method doesn't cover {@link Category} annotations on a test method.
+     * It may also fail on test class hierarchies (the annotated class has to be in the stack trace).
+     */
+    public static HashSet<Class<?>> getTestCategories() {
+        HashSet<Class<?>> testCategories = new HashSet<Class<?>>();
+        for (StackTraceElement stackTraceElement : new Exception().getStackTrace()) {
+            String className = stackTraceElement.getClassName();
+            try {
+                Class<?> clazz = Class.forName(className);
+                Category annotation = clazz.getAnnotation(Category.class);
+                if (annotation != null) {
+                    List<Class<?>> categoryList = asList(annotation.value());
+                    testCategories.addAll(categoryList);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        if (testCategories.isEmpty()) {
+            fail("Could not find any classes with a @Category annotation in the stack trace");
+        }
+        return testCategories;
     }
 
     // ###################################
