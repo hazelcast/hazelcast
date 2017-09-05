@@ -24,6 +24,7 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearSystemProperties;
 import static com.hazelcast.cache.jsr.JsrTestUtil.setSystemProperties;
+import static com.hazelcast.test.HazelcastTestSupport.assertThatIsNoParallelTest;
 
 /**
  * Utility class responsible for setup/cleanup of client JSR tests.
@@ -34,10 +35,12 @@ public final class JsrClientTestUtil {
     }
 
     public static void setup() {
+        assertThatIsNoParallelTest();
         setSystemProperties("client");
     }
 
     public static void setupWithHazelcastInstance() {
+        assertThatIsNoParallelTest();
         setSystemProperties("client");
 
         Config config = new Config();
