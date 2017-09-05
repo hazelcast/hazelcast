@@ -363,7 +363,8 @@ public class Statistics {
             addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                    .append(ownerConnection.getInetAddress().getHostAddress()).append(":").append(ownerConnection.getPort());
+                 .append(ownerConnection.getLocalSocketAddress().getAddress().getHostAddress()).append(":")
+                 .append(ownerConnection.getLocalSocketAddress().getPort());
 
             addStat(stats, "clientName", client.getName());
 
