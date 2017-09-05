@@ -82,7 +82,16 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
     public void testCache_delay50() {
         String key = createRandomKey();
         long start = System.nanoTime();
-        delay50.get(key);
+        try {
+            delay50.get(key);
+        } catch (OperationTimeoutException e) {
+            //the exception can be thrown when the call is really slower than 50ms
+            //it not that uncommon due non-determinism of JVM
+
+            long deltaMs =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+            assertTrue(deltaMs >= 50);
+            return;
+        }
         long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 2L);
     }
@@ -105,7 +114,16 @@ public abstract class AbstractHazelcastCacheReadTimeoutTest extends HazelcastTes
     public void testBean_delay50() {
         String key = createRandomKey();
         long start = System.nanoTime();
-        dummyTimeoutBean.getDelay50(key);
+        try {
+            dummyTimeoutBean.getDelay50(key);
+        } catch (OperationTimeoutException e) {
+            //the exception can be thrown when the call is really slower than 50ms
+            //it not that uncommon due non-determinism of JVM
+
+            long deltaMs =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+            assertTrue(deltaMs >= 50);
+            return;
+        }
         long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 2L);
     }
