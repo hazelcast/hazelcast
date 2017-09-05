@@ -421,15 +421,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
 
         diagnostics.start();
-        diagnostics.register(
-                new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
-                        properties));
+
+        // static loggers at beginning of file
         diagnostics.register(
                 new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
         diagnostics.register(
                 new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
         diagnostics.register(
                 new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
+
+        // periodic loggers
         diagnostics.register(
                 new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
         diagnostics.register(
@@ -437,6 +438,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new NetworkingImbalancePlugin(properties, connectionManager.getEventLoopGroup(),
                         loggingService.getLogger(NetworkingImbalancePlugin.class)));
+        diagnostics.register(
+                new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
+                        properties));
 
         metricsRegistry.collectMetrics(listenerService);
 
