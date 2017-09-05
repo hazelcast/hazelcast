@@ -154,7 +154,6 @@ public abstract class HazelcastTestSupport {
         } else {
             return factory = new TestHazelcastInstanceFactory(addresses);
         }
-
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory() {
@@ -173,6 +172,23 @@ public abstract class HazelcastTestSupport {
                     "Cannot start a factory with specific addresses when running compatibility tests");
         } else {
             return factory = new TestHazelcastInstanceFactory(initialPort, addresses);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
+        if (isRunningCompatibilityTest() && BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            try {
+                String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
+                Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass
+                        = (Class<? extends TestHazelcastInstanceFactory>) Class.forName(className);
+                // nodeCount is ignored when constructing compatibility test factory
+                return compatibilityTestFactoryClass.getConstructor().newInstance();
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        } else {
+            return nodeCount == null ? new TestHazelcastInstanceFactory() : new TestHazelcastInstanceFactory(nodeCount);
         }
     }
 
@@ -1230,22 +1246,5 @@ public abstract class HazelcastTestSupport {
 
     protected MapOperationProvider getMapOperationProvider() {
         return new DefaultMapOperationProvider();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
-        if (isRunningCompatibilityTest() && BuildInfoProvider.getBuildInfo().isEnterprise()) {
-            try {
-                String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
-                Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass
-                        = (Class<? extends TestHazelcastInstanceFactory>) Class.forName(className);
-                // nodeCount is ignored when constructing compatibility test factory
-                return compatibilityTestFactoryClass.getConstructor().newInstance();
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        } else {
-            return nodeCount == null ? new TestHazelcastInstanceFactory() : new TestHazelcastInstanceFactory(nodeCount);
-        }
     }
 }
