@@ -19,6 +19,7 @@ package com.hazelcast.client.statistics;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.statistics.Statistics;
@@ -97,6 +98,11 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertNotNull(format("clusterConnectionTimestamp should not be null (%s)", stats), connStat);
         Long connectionTimeStat = Long.valueOf(connStat);
         assertNotNull(format("connectionTimeStat should not be null (%s)", stats), connStat);
+
+        ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
+        String expectedClientAddress = format("%s:%d", ownerConnection.getLocalSocketAddress().getAddress().getHostAddress(),
+                ownerConnection.getLocalSocketAddress().getPort());
+        assertEquals(expectedClientAddress, stats.get("clientAddress"));
 
         // time measured by us after client connection should be greater than the connection time reported by the statistics
         assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
