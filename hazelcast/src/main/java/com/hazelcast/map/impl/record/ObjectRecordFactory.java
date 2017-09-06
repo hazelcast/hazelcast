@@ -51,17 +51,14 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
 
     @Override
     public boolean isEquals(Object value1, Object value2) {
-        Object v1 = value1 instanceof Data ? serializationService.toObject(value1) : value1;
-        Object v2 = value2 instanceof Data ? serializationService.toObject(value2) : value2;
-        if (v1 == null && v2 == null) {
+        if (value1 == value2) {
             return true;
         }
-        if (v1 == null) {
+        if (value1 == null || value2 == null) {
             return false;
         }
-        if (v2 == null) {
-            return false;
-        }
-        return v1.equals(v2);
+        Object v1 = value1 instanceof Data ? serializationService.toObject(value1) : value1;
+        Object v2 = value2 instanceof Data ? serializationService.toObject(value2) : value2;
+        return v1 != null ? v1.equals(v2) : v2 == null;
     }
 }

@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
+public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
 
     @Override
     void newRecordFactory(boolean isStatisticsEnabled, CacheDeserializedValues cacheDeserializedValues) {
@@ -35,31 +35,31 @@ public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
                 .setStatisticsEnabled(isStatisticsEnabled)
                 .setCacheDeserializedValues(cacheDeserializedValues);
 
-        factory = new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
+        factory = new ObjectRecordFactory(mapConfig, serializationService);
     }
 
     @Override
     Class<?> getRecordClass() {
-        return DataRecord.class;
+        return ObjectRecord.class;
     }
 
     @Override
     Class<?> getRecordWithStatsClass() {
-        return DataRecordWithStats.class;
+        return ObjectRecordWithStats.class;
     }
 
     @Override
     Class<?> getCachedRecordClass() {
-        return CachedDataRecord.class;
+        return ObjectRecord.class;
     }
 
     @Override
     Class<?> getCachedRecordWithStatsClass() {
-        return CachedDataRecordWithStats.class;
+        return ObjectRecordWithStats.class;
     }
 
     @Override
     Object getValue(Data dataValue, Object objectValue) {
-        return dataValue;
+        return objectValue;
     }
 }

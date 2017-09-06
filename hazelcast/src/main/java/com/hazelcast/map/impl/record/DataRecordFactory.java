@@ -65,16 +65,15 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     @Override
     public boolean isEquals(Object value1, Object value2) {
-        if (value1 == null && value2 == null) {
+        if (value1 == value2) {
             return true;
         }
-        if (value1 == null) {
+        if (value1 == null || value2 == null) {
             return false;
         }
-        if (value2 == null) {
-            return false;
-        }
-
-        return serializationService.toData(value1).equals(serializationService.toData(value2));
+        // the PartitioningStrategy is not needed here, since `Data.equals()` only checks the payload, not the partitionHash
+        Data data1 = serializationService.toData(value1);
+        Data data2 = serializationService.toData(value2);
+        return data1.equals(data2);
     }
 }
