@@ -72,6 +72,11 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             // here object conversion is for interceptors.
             Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
             Object previousValue = recordStore.putFromLoad(key, value);
+            // the following check is for the case when the putFromLoad does not put the data due to various reasons
+            // one of the reasons may be size eviction threshold has been reached
+            if (value != null && !recordStore.existInMemory(key)) {
+                continue;
+            }
 
             // do not run interceptors in case the put was skipped due to null value
             if (value != null) {
