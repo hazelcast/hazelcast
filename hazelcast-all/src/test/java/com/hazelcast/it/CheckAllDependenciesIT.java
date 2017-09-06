@@ -6,6 +6,6 @@ public class CheckAllDependenciesIT extends CheckDependenciesIT {
 
     @Override
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-all-") && urlString.contains("target");
+        return urlString.contains("hazelcast/hazelcast/") && !urlString.contains("test");
     }
 }
