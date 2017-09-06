@@ -16,14 +16,38 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.*;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
+import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import java.lang.reflect.Array;
+import java.net.UnknownHostException;
+import javax.transaction.xa.Xid;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
@@ -276,6 +300,27 @@ public class EncodeDecodeCompatibilityTest {
 {
     ClientMessage clientMessage = ClientDeployClassesCodec.encodeResponse( );
     ClientDeployClassesCodec.ResponseParameters params = ClientDeployClassesCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest( );
+    ClientAddPartitionListenerCodec.RequestParameters params = ClientAddPartitionListenerCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeResponse( );
+    ClientAddPartitionListenerCodec.ResponseParameters params = ClientAddPartitionListenerCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    class ClientAddPartitionListenerCodecHandler extends ClientAddPartitionListenerCodec.AbstractEventHandler {
+        @Override
+        public void handle(  java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>> partitions   ) {
+                          assertTrue(isEqual(aPartitionTable, partitions));
+        }
+    }
+    ClientAddPartitionListenerCodecHandler handler = new ClientAddPartitionListenerCodecHandler();
+    {
+        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent( aPartitionTable   );
+        handler.handle(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+     }
 }
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
