@@ -23,15 +23,13 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CachingProviderClassLoaderTest
-        extends org.jsr107.tck.spi.CachingProviderClassLoaderTest {
+public class CachingProviderClassLoaderTest extends org.jsr107.tck.spi.CachingProviderClassLoaderTest {
 
     @BeforeClass
     public static void setupInstance() {
-        JsrClientTestUtil.setup();
+        JsrClientTestUtil.setupWithHazelcastInstance();
     }
 
     @AfterClass
