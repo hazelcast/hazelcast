@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.journal;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxy;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -377,11 +378,11 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
     }
 
     private void assertJournalSize(ICache<?, ?> cache, int size) {
-        assertJournalSize(partitionId, new DistributedObjectNamespace(cache.getServiceName(), cache.getPrefixedName()), size);
+        assertJournalSize(partitionId, CacheService.getObjectNamespace(cache.getPrefixedName()), size);
     }
 
     private void assertJournalSize(int partitionId, ICache<?, ?> cache, int size) {
-        assertJournalSize(partitionId, new DistributedObjectNamespace(cache.getServiceName(), cache.getName()), size);
+        assertJournalSize(partitionId, CacheService.getObjectNamespace(cache.getName()), size);
     }
 
     private void assertJournalSize(int partitionId, ObjectNamespace namespace, int size) {

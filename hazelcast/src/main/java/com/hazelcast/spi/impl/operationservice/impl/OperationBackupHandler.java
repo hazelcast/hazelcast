@@ -281,19 +281,19 @@ final class OperationBackupHandler {
         if (service instanceof FragmentedMigrationAwareService) {
             assert backupAwareOp instanceof ServiceNamespaceAware
                     : service + " is instance of FragmentedMigrationAwareService, "
-                    + backupAwareOp + " should implement ReplicaFragmentAware!";
+                    + backupAwareOp + " should implement ServiceNamespaceAware!";
 
             assert backupOp instanceof ServiceNamespaceAware
                     : service + " is instance of FragmentedMigrationAwareService, "
-                    + backupOp + " should implement ReplicaFragmentAware!";
+                    + backupOp + " should implement ServiceNamespaceAware!";
         } else {
             assert !(backupAwareOp instanceof ServiceNamespaceAware)
                     : service + " is NOT instance of FragmentedMigrationAwareService, "
-                    + backupAwareOp + " should NOT implement ReplicaFragmentAware!";
+                    + backupAwareOp + " should NOT implement ServiceNamespaceAware!";
 
             assert !(backupOp instanceof ServiceNamespaceAware)
                     : service + " is NOT instance of FragmentedMigrationAwareService, "
-                    + backupOp + " should NOT implement ReplicaFragmentAware!";
+                    + backupOp + " should NOT implement ServiceNamespaceAware!";
         }
     }
 

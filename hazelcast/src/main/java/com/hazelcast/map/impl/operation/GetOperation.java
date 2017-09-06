@@ -19,10 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
@@ -50,7 +48,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DistributedObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+        return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
     }
 
     @Override

@@ -42,8 +42,8 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
@@ -289,8 +289,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            final DistributedObjectNamespace namespace
-                    = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
+            final ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);
         }
 

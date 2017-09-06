@@ -41,7 +41,6 @@ import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -126,7 +125,7 @@ public class MapContainer {
         this.serializationService = nodeEngine.getSerializationService();
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
-        this.objectNamespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
+        this.objectNamespace = MapService.getObjectNamespace(name);
         initWanReplication(nodeEngine);
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
         if (shouldUseGlobalIndex(mapConfig)) {

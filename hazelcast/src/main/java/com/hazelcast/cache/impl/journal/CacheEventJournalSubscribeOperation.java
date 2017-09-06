@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
@@ -39,7 +39,7 @@ public class CacheEventJournalSubscribeOperation
         extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable, ReadonlyOperation {
     private EventJournalInitialSubscriberState response;
-    private DistributedObjectNamespace namespace;
+    private ObjectNamespace namespace;
 
     public CacheEventJournalSubscribeOperation() {
     }
@@ -58,7 +58,7 @@ public class CacheEventJournalSubscribeOperation
                     "Event journal actions are not available when cluster version is " + clusterVersion);
         }
 
-        namespace = new DistributedObjectNamespace(CacheService.SERVICE_NAME, name);
+        namespace = CacheService.getObjectNamespace(name);
         final CacheService service = getService();
         if (!service.getEventJournal().hasEventJournal(namespace)) {
             throw new UnsupportedOperationException(

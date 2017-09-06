@@ -23,9 +23,9 @@ import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -210,7 +210,7 @@ public class PartitionContainer {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            final DistributedObjectNamespace namespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
+            final ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);
         }
     }

@@ -27,6 +27,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
@@ -418,11 +419,11 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
     }
 
     private void assertJournalSize(DistributedObject object, int size) {
-        assertJournalSize(partitionId, new DistributedObjectNamespace(object.getServiceName(), object.getName()), size);
+        assertJournalSize(partitionId, MapService.getObjectNamespace(object.getName()), size);
     }
 
     private void assertJournalSize(int partitionId, DistributedObject object, int size) {
-        assertJournalSize(partitionId, new DistributedObjectNamespace(object.getServiceName(), object.getName()), size);
+        assertJournalSize(partitionId, MapService.getObjectNamespace(object.getName()), size);
     }
 
     private void assertJournalSize(int partitionId, ObjectNamespace namespace, int size) {
