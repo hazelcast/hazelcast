@@ -59,7 +59,7 @@ public abstract class AbstractRecordComparatorTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testIsEquals() {
+    public void testIsEqual() {
         newRecordComparator();
 
         assertTrue(comparator.isEqual(null, null));
@@ -86,13 +86,13 @@ public abstract class AbstractRecordComparatorTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testIsEquals_withCustomPartitioningStrategy() {
+    public void testIsEqual_withCustomPartitioningStrategy() {
         partitioningStrategy = new PersonPartitioningStrategy();
 
         data1 = serializationService.toData(object1, partitioningStrategy);
         data2 = serializationService.toData(object2, partitioningStrategy);
 
-        testIsEquals();
+        testIsEqual();
     }
 
     abstract void newRecordComparator();
