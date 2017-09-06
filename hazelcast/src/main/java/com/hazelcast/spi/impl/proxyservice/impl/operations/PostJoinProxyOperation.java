@@ -16,12 +16,11 @@
 
 package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
@@ -57,12 +56,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
             final ProxyRegistry registry = proxyService.getOrCreateRegistry(proxy.getServiceName());
 
             try {
-                executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-                    @Override
-                    public void run() {
-                        registry.createProxy(proxy.getObjectName(), false, true);
-                    }
-                });
+                executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new CreateProxyTask(registry, proxy));
             } catch (Throwable t) {
                 getLogger().warning("Cannot create proxy [" + proxy.getServiceName() + ":"
                         + proxy.getObjectName() + "]!", t);
@@ -117,19 +111,25 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         return SpiDataSerializerHook.POST_JOIN_PROXY;
     }
 
-    private class InitializeRunnable implements Runnable {
-        private final DistributedObject object;
+    private class CreateProxyTask implements Runnable {
+        private final ProxyRegistry registry;
+        private final ProxyInfo proxyInfo;
 
-        public InitializeRunnable(DistributedObject object) {
-            this.object = object;
+        CreateProxyTask(ProxyRegistry registry, ProxyInfo proxyInfo) {
+            this.registry = registry;
+            this.proxyInfo = proxyInfo;
         }
 
         @Override
         public void run() {
             try {
-                ((InitializingObject) object).initialize();
-            } catch (Exception e) {
-                getLogger().warning("Error while initializing proxy: " + object, e);
+                registry.createProxy(proxyInfo.getObjectName(), false, true);
+            } catch (CacheNotExistsException e) {
+                // This can happen when cache destroy event is received
+                // after cache config is replicated during join (pre-join)
+                // but before cache proxy is created (post-join).
+                getLogger().fine("Could not create Cache[" + proxyInfo.getObjectName()
+                        + "]. It is already destroyed.", e);
             }
         }
     }
