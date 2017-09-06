@@ -26,6 +26,7 @@ import com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,22 +38,28 @@ import java.io.InputStream;
 @Category(QuickTest.class)
 public class ClientToMemberDiscoveryTest extends HazelcastTestSupport {
 
+    public final TestHazelcastFactory factory = new TestHazelcastFactory();
+
     Config serverConfig;
     ClientConfig clientConfig;
     HazelcastInstance instance1;
     HazelcastInstance instance2;
-    public final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Before
     public void setup() {
         String serverXmlFileName = "hazelcast-multicast-plugin.xml";
         String clientXmlFileName = "hazelcast-client-multicast-plugin.xml";
+
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(serverXmlFileName);
         serverConfig = new XmlConfigBuilder(xmlResource).build();
 
         InputStream xmlClientResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(clientXmlFileName);
         clientConfig = new XmlClientConfigBuilder(xmlClientResource).build();
+    }
 
+    @After
+    public void tearDown() {
+        factory.terminateAll();
     }
 
     @Test
@@ -62,6 +69,5 @@ public class ClientToMemberDiscoveryTest extends HazelcastTestSupport {
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         assertClusterSizeEventually(2, client);
-        factory.shutdownAll();
     }
 }
