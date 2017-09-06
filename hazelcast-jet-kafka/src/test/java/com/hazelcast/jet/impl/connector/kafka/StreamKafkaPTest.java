@@ -35,7 +35,7 @@ import java.util.Properties;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sinks.writeList;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.processor.KafkaProcessors.streamKafka;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;

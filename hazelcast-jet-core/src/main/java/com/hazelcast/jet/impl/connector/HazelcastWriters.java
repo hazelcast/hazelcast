@@ -27,6 +27,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.processor.SinkProcessors;
 
 import javax.annotation.Nonnull;
 import java.util.AbstractMap;
@@ -44,9 +45,9 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Instead of methods in this class use:<ul>
- * <li>{@link com.hazelcast.jet.processor.Sinks#writeMap(String)}</li>
- * <li>{@link com.hazelcast.jet.processor.Sinks#writeCache(String)}</li>
- * <li>{@link com.hazelcast.jet.processor.Sinks#writeList(String)}</li>
+ * <li>{@link SinkProcessors#writeMap(String)}</li>
+ * <li>{@link SinkProcessors#writeCache(String)}</li>
+ * <li>{@link SinkProcessors#writeList(String)}</li>
  * </ul>
  */
 public final class HazelcastWriters {

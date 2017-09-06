@@ -20,7 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.processor.Sources;
+import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
@@ -46,9 +46,9 @@ public class MapSourcePipeline<K, V, T> extends AbstractSourcePipeline<T> {
     @Override
     protected ProcessorMetaSupplier getSourceMetaSupplier() {
         if (projectionF != null) {
-            return Sources.readMap(map.getName(), predicate, projectionF);
+            return SourceProcessors.readMap(map.getName(), predicate, projectionF);
         }
-        return Sources.readMap(map.getName());
+        return SourceProcessors.readMap(map.getName());
     }
 
     @Override

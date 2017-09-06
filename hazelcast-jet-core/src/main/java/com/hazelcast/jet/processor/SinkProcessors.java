@@ -44,8 +44,8 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
  * of the DAG data flow). For other kinds of processors refer to the {@link
  * com.hazelcast.jet.processor package-level documentation}.
  */
-public final class Sinks {
-    private Sinks() {
+public final class SinkProcessors {
+    private SinkProcessors() {
     }
 
     /**

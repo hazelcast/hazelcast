@@ -19,9 +19,9 @@
  * factories are organized into several categories according to the role
  * of the vertex they implement:
  * <ul><li>
- *     {@link com.hazelcast.jet.processor.Sources} (have no inbound edges)
+ *     {@link com.hazelcast.jet.processor.SourceProcessors} (have no inbound edges)
  * </li><li>
- *     {@link com.hazelcast.jet.processor.Sinks} (have no outbound edges)
+ *     {@link com.hazelcast.jet.processor.SinkProcessors} (have no outbound edges)
  * </li><li>
  *     {@link com.hazelcast.jet.processor.Processors Internal vertices}
  *     (have both inbound and outbound edges)

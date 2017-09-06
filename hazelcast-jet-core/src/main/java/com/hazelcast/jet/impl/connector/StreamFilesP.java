@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.processor.Sources;
+import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -58,7 +58,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * @see Sources#streamFiles(String, Charset, String)
+ * @see SourceProcessors#streamFiles(String, Charset, String)
  */
 public class StreamFilesP extends AbstractProcessor implements Closeable {
 
@@ -309,7 +309,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
     }
 
     /**
-     * @see Sources#streamFiles(String, Charset, String)
+     * @see SourceProcessors#streamFiles(String, Charset, String)
      */
     public static ProcessorSupplier supplier(@Nonnull String watchedDirectory, @Nonnull String charset,
                                              @Nonnull String glob

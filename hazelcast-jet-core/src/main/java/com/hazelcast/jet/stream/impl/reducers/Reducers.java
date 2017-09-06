@@ -33,7 +33,7 @@ import java.util.function.BinaryOperator;
 
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sinks.writeList;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 

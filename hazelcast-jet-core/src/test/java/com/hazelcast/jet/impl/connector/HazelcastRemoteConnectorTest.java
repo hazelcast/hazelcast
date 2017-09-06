@@ -30,7 +30,7 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.processor.Sinks;
+import com.hazelcast.jet.processor.SinkProcessors;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Address;
@@ -49,14 +49,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sinks.writeCache;
-import static com.hazelcast.jet.processor.Sinks.writeList;
-import static com.hazelcast.jet.processor.Sinks.writeMap;
-import static com.hazelcast.jet.processor.Sources.readCache;
-import static com.hazelcast.jet.processor.Sources.readList;
-import static com.hazelcast.jet.processor.Sources.readMap;
-import static com.hazelcast.jet.processor.Sources.streamCache;
-import static com.hazelcast.jet.processor.Sources.streamMap;
+import static com.hazelcast.jet.processor.SinkProcessors.writeCache;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.processor.SinkProcessors.writeMap;
+import static com.hazelcast.jet.processor.SourceProcessors.readCache;
+import static com.hazelcast.jet.processor.SourceProcessors.readList;
+import static com.hazelcast.jet.processor.SourceProcessors.readMap;
+import static com.hazelcast.jet.processor.SourceProcessors.streamCache;
+import static com.hazelcast.jet.processor.SourceProcessors.streamMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -136,7 +136,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMap("source",
                 e -> !e.getKey().equals(0), Map.Entry::getKey, clientConfig)).localParallelism(4);
-        Vertex sink = dag.newVertex("sink", Sinks.writeList("sink")).localParallelism(1);
+        Vertex sink = dag.newVertex("sink", SinkProcessors.writeList("sink")).localParallelism(1);
         dag.edge(between(source, sink));
 
         executeAndWait(dag);

@@ -44,7 +44,7 @@ import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
 import static com.hazelcast.jet.processor.Processors.aggregateToSlidingWindow;
 import static com.hazelcast.jet.processor.Processors.combineToSlidingWindow;
 import static com.hazelcast.jet.processor.Processors.insertWatermarks;
-import static com.hazelcast.jet.processor.Sinks.writeList;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;

@@ -49,7 +49,7 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.processor.Processors.noop;
-import static com.hazelcast.jet.processor.Sinks.writeMap;
+import static com.hazelcast.jet.processor.SinkProcessors.writeMap;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;

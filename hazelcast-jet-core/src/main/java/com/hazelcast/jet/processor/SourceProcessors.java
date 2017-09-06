@@ -42,8 +42,8 @@ import java.util.Map;
  * entry points). For other kinds of processors refer to the {@link
  * com.hazelcast.jet.processor package-level documentation}.
  */
-public final class Sources {
-    private Sources() {
+public final class SourceProcessors {
+    private SourceProcessors() {
     }
 
     /**

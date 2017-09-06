@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.processor.Sinks;
+import com.hazelcast.jet.processor.SinkProcessors;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -33,14 +33,14 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
- * @see Sinks#writeFile(String, DistributedFunction, Charset, boolean)
+ * @see SinkProcessors#writeFile(String, DistributedFunction, Charset, boolean)
  */
 public final class WriteFileP {
 
     private WriteFileP() { }
 
     /**
-     * Use {@link Sinks#writeFile(String, DistributedFunction, Charset, boolean)}
+     * Use {@link SinkProcessors#writeFile(String, DistributedFunction, Charset, boolean)}
      */
     public static <T> ProcessorSupplier supplier(
             @Nonnull String directoryName,
@@ -48,7 +48,7 @@ public final class WriteFileP {
             @Nonnull String charset,
             boolean append) {
 
-        return Sinks.writeBuffered(
+        return SinkProcessors.writeBuffered(
                 globalIndex -> createBufferedWriter(Paths.get(directoryName), globalIndex,
                         charset, append),
                 (fileWriter, item) -> uncheckRun(() -> {

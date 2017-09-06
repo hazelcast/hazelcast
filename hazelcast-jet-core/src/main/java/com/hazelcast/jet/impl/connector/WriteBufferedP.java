@@ -56,10 +56,10 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     /**
-     * Use {@link
-     * com.hazelcast.jet.processor.Sinks#writeBuffered(DistributedIntFunction,
-     * DistributedBiConsumer, DistributedConsumer, DistributedConsumer)
-     * Sinks.writeBuffered()} instead of this one.
+     * This is private API. Use {@link
+     * com.hazelcast.jet.processor.SinkProcessors#writeBuffered(
+     * DistributedIntFunction, DistributedBiConsumer, DistributedConsumer,
+     * DistributedConsumer) Sinks.writeBuffered()} instead.
      */
     @Nonnull
     public static <B, T> ProcessorSupplier supplier(

@@ -34,7 +34,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sinks.writeList;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 

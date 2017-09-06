@@ -39,8 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static com.hazelcast.jet.processor.Sinks.writeSocket;
-import static com.hazelcast.jet.processor.Sources.readMap;
+import static com.hazelcast.jet.processor.SinkProcessors.writeSocket;
+import static com.hazelcast.jet.processor.SourceProcessors.readMap;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

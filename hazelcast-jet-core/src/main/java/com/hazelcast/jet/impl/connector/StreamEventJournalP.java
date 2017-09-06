@@ -30,7 +30,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.processor.Processors;
-import com.hazelcast.jet.processor.Sources;
+import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.journal.EventJournalReader;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -64,7 +64,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
 
 /**
- * @see Sources#streamMap(String, DistributedPredicate, DistributedFunction, boolean)
+ * @see SourceProcessors#streamMap(String, DistributedPredicate, DistributedFunction, boolean)
  */
 public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 

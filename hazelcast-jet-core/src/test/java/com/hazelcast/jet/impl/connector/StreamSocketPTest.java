@@ -21,7 +21,7 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
-import com.hazelcast.jet.processor.Sources;
+import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -72,7 +72,7 @@ public class StreamSocketPTest extends JetTestSupport {
             }));
             thread.start();
 
-            Processor processor = Sources.streamSocket("localhost", serverSocket.getLocalPort()).get();
+            Processor processor = SourceProcessors.streamSocket("localhost", serverSocket.getLocalPort()).get();
             processor.init(outbox, context);
 
             assertTrue(processor.complete());

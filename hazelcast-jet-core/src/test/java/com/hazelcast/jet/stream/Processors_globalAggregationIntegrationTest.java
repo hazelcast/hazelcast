@@ -43,7 +43,7 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.processor.Processors.accumulate;
 import static com.hazelcast.jet.processor.Processors.aggregate;
 import static com.hazelcast.jet.processor.Processors.combine;
-import static com.hazelcast.jet.processor.Sinks.writeList;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;

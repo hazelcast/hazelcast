@@ -37,7 +37,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Edge.from;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
-import static com.hazelcast.jet.processor.Sinks.writeList;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;

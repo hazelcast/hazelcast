@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.processor.Sinks;
+import com.hazelcast.jet.processor.SinkProcessors;
 
 import java.util.function.Consumer;
 
@@ -42,7 +42,7 @@ class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         String listName = uniqueListName();
         IList<T> list = context.getJetInstance().getList(listName);
         Vertex previous = upstream.buildDAG(dag);
-        Vertex writer = dag.newVertex("write-list-" + listName, Sinks.writeList(listName));
+        Vertex writer = dag.newVertex("write-list-" + listName, SinkProcessors.writeList(listName));
         if (upstream.isOrdered()) {
             writer.localParallelism(1);
         }
