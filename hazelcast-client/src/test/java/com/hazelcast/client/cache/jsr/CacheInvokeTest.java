@@ -25,12 +25,11 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheInvokeTest
-        extends org.jsr107.tck.processor.CacheInvokeTest {
+public class CacheInvokeTest extends org.jsr107.tck.processor.CacheInvokeTest {
 
     @BeforeClass
     public static void setupInstance() {
-        JsrClientTestUtil.setup();
+        JsrClientTestUtil.setupWithHazelcastInstance();
     }
 
     @AfterClass

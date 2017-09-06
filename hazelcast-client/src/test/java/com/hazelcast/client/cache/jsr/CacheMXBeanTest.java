@@ -23,15 +23,13 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheMXBeanTest
-        extends org.jsr107.tck.management.CacheMXBeanTest {
+public class CacheMXBeanTest extends org.jsr107.tck.management.CacheMXBeanTest {
 
     @BeforeClass
     public static void setupInstance() {
-        JsrClientTestUtil.setup();
+        JsrClientTestUtil.setupWithHazelcastInstance();
     }
 
     @AfterClass

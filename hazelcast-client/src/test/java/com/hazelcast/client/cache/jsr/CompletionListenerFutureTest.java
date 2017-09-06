@@ -23,15 +23,13 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CompletionListenerFutureTest
-        extends javax.cache.integration.CompletionListenerFutureTest {
+public class CompletionListenerFutureTest extends javax.cache.integration.CompletionListenerFutureTest {
 
     @BeforeClass
     public static void setupInstance() {
-        JsrClientTestUtil.setup();
+        JsrClientTestUtil.setupWithHazelcastInstance();
     }
 
     @AfterClass
