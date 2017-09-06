@@ -23,11 +23,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
@@ -60,7 +58,7 @@ public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
     private static Config initConfig(Config config) {
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
-        
+
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
 

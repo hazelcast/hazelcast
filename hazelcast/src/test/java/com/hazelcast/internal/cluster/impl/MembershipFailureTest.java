@@ -46,6 +46,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
@@ -639,7 +640,11 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         dropOperationsFrom(member1, F_ID, asList(MEMBER_INFO_UPDATE, HEARTBEAT));
         dropOperationsFrom(member2, F_ID, singletonList(FETCH_MEMBER_LIST_STATE));
-        dropOperationsFrom(member3, F_ID, singletonList(FETCH_MEMBER_LIST_STATE));
+
+        // If we allow explicit suspicions from member3, when member4 sends a heartbeat to member3
+        // after member3 splits from the cluster, member3 will send an explicit suspicion to member4
+        // and member4 will start its own mastership claim.
+        dropOperationsFrom(member3, F_ID, asList(FETCH_MEMBER_LIST_STATE, EXPLICIT_SUSPICION));
 
         suspectMember(member2, member3);
         suspectMember(member3, member2);
@@ -681,7 +686,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         dropOperationsFrom(member1, F_ID, asList(MEMBER_INFO_UPDATE, HEARTBEAT));
         dropOperationsFrom(member2, F_ID, asList(FETCH_MEMBER_LIST_STATE, HEARTBEAT));
-        dropOperationsFrom(member3, F_ID, asList(FETCH_MEMBER_LIST_STATE));
+        dropOperationsFrom(member3, F_ID, singletonList(FETCH_MEMBER_LIST_STATE));
 
         suspectMember(member2, member3);
         suspectMember(member3, member2);
