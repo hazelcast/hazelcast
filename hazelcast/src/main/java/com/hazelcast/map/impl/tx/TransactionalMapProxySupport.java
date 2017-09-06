@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
@@ -63,24 +63,25 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     protected final OperationService operationService;
     protected final SerializationService serializationService;
 
-    private final RecordFactory recordFactory;
+    private final RecordComparator recordComparator;
     private final boolean nearCacheEnabled;
     private final boolean serializeKeys;
 
     TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
+
         this.name = name;
         this.mapServiceContext = mapService.getMapServiceContext();
         this.mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        this.operationProvider = mapServiceContext.getMapOperationProvider(name);
-        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        this.partitionStrategy = mapContainer.getPartitioningStrategy();
+        MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
+        this.operationProvider = mapServiceContext.getMapOperationProvider(mapConfig);
+        this.partitionStrategy = mapServiceContext.getPartitioningStrategy(name, mapConfig.getPartitioningStrategyConfig());
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = nodeEngine.getSerializationService();
-        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
-        this.nearCacheEnabled = mapContainer.getMapConfig().isNearCacheEnabled();
-        this.serializeKeys = nearCacheEnabled && mapContainer.getMapConfig().getNearCacheConfig().isSerializeKeys();
+        this.recordComparator = mapServiceContext.getRecordComparator(mapConfig.getInMemoryFormat());
+        this.nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        this.serializeKeys = nearCacheEnabled && mapConfig.getNearCacheConfig().isSerializeKeys();
     }
 
     @Override
@@ -94,7 +95,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     }
 
     boolean isEquals(Object value1, Object value2) {
-        return recordFactory.isEquals(value1, value2);
+        return recordComparator.isEqual(value1, value2);
     }
 
     void checkTransactionState() {

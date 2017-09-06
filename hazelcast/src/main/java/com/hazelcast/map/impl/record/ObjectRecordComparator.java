@@ -16,36 +16,27 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class ObjectRecordFactory implements RecordFactory<Object> {
+public class ObjectRecordComparator implements RecordComparator {
 
     private final SerializationService serializationService;
-    private final boolean statisticsEnabled;
 
-    public ObjectRecordFactory(MapConfig config, SerializationService serializationService) {
+    public ObjectRecordComparator(SerializationService serializationService) {
         this.serializationService = serializationService;
-        this.statisticsEnabled = config.isStatisticsEnabled();
     }
 
     @Override
-    public Record<Object> newRecord(Object value) {
-        assert value != null : "value can not be null";
-
-        Object objectValue = serializationService.toObject(value);
-        return statisticsEnabled ? new ObjectRecordWithStats(objectValue) : new ObjectRecord(objectValue);
-    }
-
-    @Override
-    public void setValue(Record<Object> record, Object value) {
-        assert value != null : "value can not be null";
-
-        Object v = value;
-        if (value instanceof Data) {
-            v = serializationService.toObject(value);
+    public boolean isEqual(Object value1, Object value2) {
+        if (value1 == value2) {
+            return true;
         }
-        record.setValue(v);
+        if (value1 == null || value2 == null) {
+            return false;
+        }
+        Object v1 = value1 instanceof Data ? serializationService.toObject(value1) : value1;
+        Object v2 = value2 instanceof Data ? serializationService.toObject(value2) : value2;
+        return v1 != null ? v1.equals(v2) : v2 == null;
     }
 }

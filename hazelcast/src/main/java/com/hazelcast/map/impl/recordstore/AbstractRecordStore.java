@@ -27,8 +27,8 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.serialization.Data;
@@ -53,15 +53,16 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected final String name;
-    protected final LockStore lockStore;
-    protected final RecordFactory recordFactory;
     protected final MapContainer mapContainer;
+    protected final int partitionId;
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
-    protected final MapDataStore<Data, Object> mapDataStore;
-    protected final MapStoreContext mapStoreContext;
     protected final InMemoryFormat inMemoryFormat;
-    protected final int partitionId;
+    protected final RecordFactory recordFactory;
+    protected final RecordComparator recordComparator;
+    protected final MapStoreContext mapStoreContext;
+    protected final MapDataStore<Data, Object> mapDataStore;
+    protected final LockStore lockStore;
     protected final MapEventJournal eventJournal;
 
     protected Storage<Data, Record> storage;
@@ -71,17 +72,16 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     private long lastUpdate;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
+        this.name = mapContainer.getName();
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
         this.mapServiceContext = mapContainer.getMapServiceContext();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        this.serializationService = nodeEngine.getSerializationService();
-        this.name = mapContainer.getName();
-        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
+        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.recordComparator = mapServiceContext.getRecordComparator(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
-        MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
-        this.mapDataStore = mapStoreManager.getMapDataStore(name, partitionId);
+        this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
         this.eventJournal = mapServiceContext.getEventJournal();
     }
