@@ -99,7 +99,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
 
     @Test(expected = InvalidConfigurationException.class)
-    public void test_discoveryStrategyFailFastWhenStrategyClassnameDoesNotExist() {
+    public void whenStrategyClassNameNotExist_thenFailFast() {
         Config config = new Config();
         config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
