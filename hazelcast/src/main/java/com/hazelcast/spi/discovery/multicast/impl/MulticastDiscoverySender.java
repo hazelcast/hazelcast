@@ -67,15 +67,22 @@ public class MulticastDiscoverySender implements Runnable {
     public void run() {
         while (!stop) {
             try {
-                Thread.sleep(SLEEP_DURATION);
-            } catch (InterruptedException e) {
-                logger.finest("Thread sleeping interrupted. This may due to graceful shutdown.");
-            }
-            try {
                 send();
             } catch (IOException e) {
                 logger.finest(e.getMessage());
             }
+            sleepUnlessStopped();
+        }
+    }
+
+    private void sleepUnlessStopped() {
+        if (stop) {
+            return;
+        }
+        try {
+            Thread.sleep(SLEEP_DURATION);
+        } catch (InterruptedException e) {
+            logger.finest("Thread sleeping interrupted. This may due to graceful shutdown.");
         }
     }
 
