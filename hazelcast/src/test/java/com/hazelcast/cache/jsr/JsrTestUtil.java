@@ -17,6 +17,7 @@
 package com.hazelcast.cache.jsr;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 
 import javax.cache.Caching;
@@ -26,6 +27,7 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.lang.String.format;
 import static org.junit.Assert.fail;
 
 /**
@@ -99,7 +101,11 @@ public final class JsrTestUtil {
     public static void clearCachingProviderRegistry() {
         try {
             for (CachingProvider cachingProvider : Caching.getCachingProviders()) {
-                cachingProvider.close();
+                try {
+                    cachingProvider.close();
+                } catch (HazelcastInstanceNotActiveException ignored) {
+                    // this is fine, since the instances can already be stopped
+                }
             }
 
             // retrieve the CachingProviderRegistry instance
@@ -128,7 +134,7 @@ public final class JsrTestUtil {
             classLoaderField.set(providerRegistryInstance, null);
         } catch (Exception e) {
             e.printStackTrace();
-            fail("Could not cleanup CachingProvider registry: " + e.getMessage());
+            fail(format("Could not cleanup CachingProvider registry: [%s] %s", e.getClass().getSimpleName(), e.getMessage()));
         }
     }
 
