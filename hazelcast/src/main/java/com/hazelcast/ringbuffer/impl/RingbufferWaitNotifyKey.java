@@ -22,15 +22,20 @@ import com.hazelcast.spi.WaitNotifyKey;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * A {@link com.hazelcast.spi.AbstractWaitNotifyKey} to make it possible to wait for an item to be published in the ringbuffer.
+ * A {@link com.hazelcast.spi.AbstractWaitNotifyKey} to make it possible to wait
+ * for an item to be published in the ringbuffer.
+ * The exact ringbuffer is specified by the partition ID and namespace as those
+ * two parameters uniquely identify a single ringbuffer inside the ringbuffer service.
  */
 public class RingbufferWaitNotifyKey implements WaitNotifyKey {
 
     private final ObjectNamespace namespace;
+    private final int partitionId;
 
-    public RingbufferWaitNotifyKey(ObjectNamespace namespace) {
+    public RingbufferWaitNotifyKey(ObjectNamespace namespace, int partitionId) {
         checkNotNull(namespace);
         this.namespace = namespace;
+        this.partitionId = partitionId;
     }
 
     @Override
@@ -44,12 +49,22 @@ public class RingbufferWaitNotifyKey implements WaitNotifyKey {
 
         RingbufferWaitNotifyKey that = (RingbufferWaitNotifyKey) o;
 
-        return namespace.equals(that.namespace);
+        return partitionId == that.partitionId && namespace.equals(that.namespace);
     }
 
     @Override
     public int hashCode() {
-        return namespace.hashCode();
+        int result = namespace.hashCode();
+        result = 31 * result + partitionId;
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "RingbufferWaitNotifyKey{"
+                + "namespace=" + namespace
+                + ", partitionId=" + partitionId
+                + '}';
     }
 
     @Override

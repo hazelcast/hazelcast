@@ -118,7 +118,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
     @Override
     public WaitNotifyKey getWaitNotifyKey(ObjectNamespace namespace, int partitionId) {
-        return new RingbufferWaitNotifyKey(namespace);
+        return new RingbufferWaitNotifyKey(namespace, partitionId);
     }
 
     @Override

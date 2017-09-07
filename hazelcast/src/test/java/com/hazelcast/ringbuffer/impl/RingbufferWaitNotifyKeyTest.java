@@ -34,27 +34,35 @@ public class RingbufferWaitNotifyKeyTest {
 
     @Test
     public void test_equals() {
-        test_equals(
-                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter"),
-                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter"), true);
-        test_equals(
-                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter"),
-                waitNotifyKey(RingbufferService.SERVICE_NAME, "talip"), false);
-        test_equals(
-                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter"),
-                waitNotifyKey(MapService.SERVICE_NAME, "peter"), false);
-        test_equals(
-                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter"),
-                waitNotifyKey(MapService.SERVICE_NAME, "talip"), false);
-        test_equals(waitNotifyKey(RingbufferService.SERVICE_NAME, "peter"), "", false);
-        test_equals(waitNotifyKey(RingbufferService.SERVICE_NAME, "peter"), null, false);
+        test_equals(waitNotifyKey("peter"), waitNotifyKey("peter"), true);
+        test_equals(waitNotifyKey("peter"), waitNotifyKey("talip"), false);
+        test_equals(waitNotifyKey("peter"), waitNotifyKey(MapService.SERVICE_NAME, "peter"), false);
+        test_equals(waitNotifyKey("peter"), waitNotifyKey(MapService.SERVICE_NAME, "talip"), false);
+        test_equals(waitNotifyKey("peter"), "", false);
+        test_equals(waitNotifyKey("peter"), null, false);
 
-        RingbufferWaitNotifyKey key = waitNotifyKey(RingbufferService.SERVICE_NAME, "peter");
+        test_equals(
+                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter", 1),
+                waitNotifyKey(MapService.SERVICE_NAME, "peter", 1), false);
+
+        test_equals(
+                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter", 1),
+                waitNotifyKey(RingbufferService.SERVICE_NAME, "peter", 2), false);
+
+        final RingbufferWaitNotifyKey key = waitNotifyKey("peter");
         test_equals(key, key, true);
     }
 
+    private RingbufferWaitNotifyKey waitNotifyKey(String object) {
+        return waitNotifyKey(RingbufferService.SERVICE_NAME, object);
+    }
+
     private RingbufferWaitNotifyKey waitNotifyKey(String service, String object) {
-        return new RingbufferWaitNotifyKey(new DistributedObjectNamespace(service, object));
+        return waitNotifyKey(service, object, 0);
+    }
+
+    private RingbufferWaitNotifyKey waitNotifyKey(String service, String object, int partitionId) {
+        return new RingbufferWaitNotifyKey(new DistributedObjectNamespace(service, object), partitionId);
     }
 
     public void test_equals(Object key1, Object key2, boolean equals) {

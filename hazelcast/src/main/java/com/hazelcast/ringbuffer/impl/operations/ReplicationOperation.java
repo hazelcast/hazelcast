@@ -122,7 +122,7 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
             final ObjectNamespace namespace = isGreaterOrEqualV39(in)
                     ? (ObjectNamespace) in.readObject()
                     : RingbufferService.getRingbufferNamespace(in.readUTF());
-            final RingbufferContainer container = new RingbufferContainer(namespace);
+            final RingbufferContainer container = new RingbufferContainer(namespace, getPartitionId());
             container.readData(in);
             migrationData.put(namespace, container);
         }
