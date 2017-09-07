@@ -138,7 +138,7 @@ public class DefaultDiscoveryService
             Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(
                     discoveryConfig.getDiscoveryStrategyConfigs());
 
-            List<DiscoveryStrategyFactory> factories = collectDiscoveryFactories(configClassLoader, discoveryStrategyConfigs);
+            List<DiscoveryStrategyFactory> factories = collectFactories(discoveryStrategyConfigs, configClassLoader);
 
             List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
             for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
@@ -155,16 +155,17 @@ public class DefaultDiscoveryService
         }
     }
 
-    private List<DiscoveryStrategyFactory> collectDiscoveryFactories(ClassLoader configClassLoader, Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs) throws Exception {
+    private List<DiscoveryStrategyFactory> collectFactories(Collection<DiscoveryStrategyConfig> strategyConfigs,
+                                                            ClassLoader classloader) throws Exception {
         Iterator<DiscoveryStrategyFactory> iterator = ServiceLoader
-                .iterator(DiscoveryStrategyFactory.class, SERVICE_LOADER_TAG, configClassLoader);
+                .iterator(DiscoveryStrategyFactory.class, SERVICE_LOADER_TAG, classloader);
 
         // Collect possible factories
         List<DiscoveryStrategyFactory> factories = new ArrayList<DiscoveryStrategyFactory>();
         while (iterator.hasNext()) {
             factories.add(iterator.next());
         }
-        for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
+        for (DiscoveryStrategyConfig config : strategyConfigs) {
             DiscoveryStrategyFactory factory = config.getDiscoveryStrategyFactory();
             if (factory != null) {
                 factories.add(factory);
