@@ -104,6 +104,61 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${project.build.finalName}</finalName>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <shadeTestJar>true</shadeTestJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
+                                    <include>com.hazelcast:hazelcast-client-protocol</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.eclipsesource.json</pattern>
+                                    <shadedPattern>com.hazelcast.com.eclipsesource.json</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-hazelcast</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>${project.artifactId}</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.felix</groupId>
@@ -112,7 +167,7 @@
                 <executions>
                     <execution>
                         <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>manifest</goal>
                         </goals>
@@ -144,38 +199,39 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
-                <configuration>
-                    <archive>
-                        <index>true</index>
-                        <compress>true</compress>
-                        <manifest>
-                            <mainClass>com.hazelcast.core.server.StartServer</mainClass>
-                            <!--<addClasspath>true</addClasspath>-->
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                        </manifest>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                    <excludes>
-                        <exclude>**/*.html</exclude>
-                        <exclude>**/*.sh</exclude>
-                        <exclude>**/*.bat</exclude>
-                        <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                            <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-jar-plugin</artifactId>-->
+                <!--<version>${maven.jar.plugin.version}</version>-->
+                <!--<configuration>-->
+                    <!--<archive>-->
+                        <!--<index>true</index>-->
+                        <!--<compress>true</compress>-->
+                        <!--<manifest>-->
+                            <!--<mainClass>com.hazelcast.core.server.StartServer</mainClass>-->
+                            <!--&lt;!&ndash;<addClasspath>true</addClasspath>&ndash;&gt;-->
+                            <!--<addDefaultImplementationEntries>true</addDefaultImplementationEntries>-->
+                            <!--<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>-->
+                        <!--</manifest>-->
+                        <!--<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>-->
+                    <!--</archive>-->
+                    <!--<excludes>-->
+                        <!--<exclude>**/*.html</exclude>-->
+                        <!--<exclude>**/*.sh</exclude>-->
+                        <!--<exclude>**/*.bat</exclude>-->
+                        <!--<exclude>META-INF/services/javax.annotation.processing.Processor</exclude>-->
+                    <!--</excludes>-->
+                <!--</configuration>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<phase>package</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>test-jar</goal>-->
+                            <!--&lt;!&ndash;Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. &ndash;&gt;-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -195,37 +251,6 @@
                                 <copy file="${basedir}/src/main/resources/hazelcast-full-example.xml"
                                       tofile="${basedir}/target/hazelcast-full-example.xml"/>
                             </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>${project.build.finalName}</finalName>
-                            <createSourcesJar>true</createSourcesJar>
-                            <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>true</shadeTestJar>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
-                                    <include>com.hazelcast:hazelcast-client-protocol</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.eclipsesource.json</pattern>
-                                    <shadedPattern>com.hazelcast.com.eclipsesource.json</shadedPattern>
-                                </relocation>
-                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
