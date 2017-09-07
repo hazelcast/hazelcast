@@ -91,10 +91,6 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         eventHandlerMap.remove(callId);
     }
 
-    protected EventHandler getEventHandler(long callId) {
-        return eventHandlerMap.get(callId);
-    }
-
     public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
         try {
             eventExecutor.execute(new ClientEventProcessor(clientMessage, (ClientConnection) connection));
