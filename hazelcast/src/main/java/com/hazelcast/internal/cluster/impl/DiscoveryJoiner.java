@@ -22,13 +22,17 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Integer.getInteger;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class DiscoveryJoiner
         extends TcpIpJoiner {
@@ -40,6 +44,9 @@ public class DiscoveryJoiner
 
     private final DiscoveryService discoveryService;
     private final boolean usePublicAddress;
+    private final IdleStrategy idleStrategy =
+            new BackoffIdleStrategy(0, 0, MILLISECONDS.toNanos(10),
+                    MILLISECONDS.toNanos(500));
 
     public DiscoveryJoiner(Node node, DiscoveryService discoveryService, boolean usePublicAddress) {
         super(node);
@@ -49,12 +56,15 @@ public class DiscoveryJoiner
 
     @Override
     protected Collection<Address> getPossibleAddressesForInitialJoin() {
-        Collection<Address> possibleAddresses;
         long deadLine = System.nanoTime() + TimeUnit.SECONDS.toNanos(MAXIMUM_WAITING_FOR_INITIAL_MEMBERS_SECONDS);
-        do {
-            possibleAddresses = getPossibleAddresses();
-        } while (possibleAddresses.isEmpty() && System.nanoTime() < deadLine);
-        return possibleAddresses;
+        for (int i = 0; System.nanoTime() < deadLine; i++) {
+            Collection<Address> possibleAddresses = getPossibleAddresses();
+            if (!possibleAddresses.isEmpty()) {
+                return possibleAddresses;
+            }
+            idleStrategy.idle(i);
+        }
+        return Collections.emptyList();
     }
 
     @Override
