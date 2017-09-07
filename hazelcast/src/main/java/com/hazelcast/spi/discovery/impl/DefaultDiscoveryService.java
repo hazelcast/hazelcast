@@ -164,7 +164,7 @@ public class DefaultDiscoveryService
             if (!discoveryStrategyConfigs.isEmpty()) {
                 throw new ValidationException("There is no factory to create these strategies: '"
                         + discoveryStrategyConfigs + "' Is it a typo in a strategy classname? "
-                        + "Perhaps you forgot to include implementation is not present on a classpath?");
+                        + "Perhaps you forgot to include implementation on a classpath?");
             }
             return discoveryStrategies;
         } catch (Exception e) {
