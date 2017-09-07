@@ -88,15 +88,15 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      *
      * @param namespace the namespace of the ring buffer container
      */
-    public RingbufferContainer(ObjectNamespace namespace) {
+    public RingbufferContainer(ObjectNamespace namespace, int partitionId) {
         this.namespace = namespace;
-        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(namespace);
+        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(namespace, partitionId);
     }
 
     public RingbufferContainer(ObjectNamespace namespace, RingbufferConfig config,
                                SerializationService serializationService,
-                               ClassLoader configClassLoader) {
-        this(namespace);
+                               ClassLoader configClassLoader, int partitionId) {
+        this(namespace, partitionId);
 
         this.inMemoryFormat = config.getInMemoryFormat();
         this.ringbuffer = new ArrayRingbuffer(config.getCapacity());

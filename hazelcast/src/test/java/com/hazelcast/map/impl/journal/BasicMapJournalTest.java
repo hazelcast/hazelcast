@@ -128,27 +128,31 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
         final Integer value = RANDOM.nextInt();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        readFromEventJournal(m, 0, 100, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION)
-                .andThen(new ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>>() {
-                    @Override
-                    public void onResponse(ReadResultSet<EventJournalMapEvent<String, Integer>> response) {
-                        assertEquals(1, response.size());
-                        final EventJournalMapEvent<String, Integer> e = response.get(0);
+        final ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>> ec = new ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>>() {
+            @Override
+            public void onResponse(ReadResultSet<EventJournalMapEvent<String, Integer>> response) {
+                assertEquals(1, response.size());
+                final EventJournalMapEvent<String, Integer> e = response.get(0);
 
-                        assertEquals(EntryEventType.ADDED, e.getType());
-                        assertEquals(e.getKey(), key);
-                        assertEquals(e.getNewValue(), value);
-                        latch.countDown();
-                    }
+                assertEquals(EntryEventType.ADDED, e.getType());
+                assertEquals(e.getKey(), key);
+                assertEquals(e.getNewValue(), value);
+                latch.countDown();
+            }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        t.printStackTrace();
-                    }
-                });
+            @Override
+            public void onFailure(Throwable t) {
+                t.printStackTrace();
+            }
+        };
+        readFromEventJournal(m, 0, 100, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
+        readFromEventJournal(m, 0, 100, partitionId + 1, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
+        readFromEventJournal(m, 0, 100, partitionId + 2, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
+        readFromEventJournal(m, 0, 100, partitionId + 3, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
+        readFromEventJournal(m, 0, 100, partitionId + 4, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
 
         m.put(key, value);
-        latch.await();
+        assertOpenEventually(latch, 30);
         assertJournalSize(m, 1);
     }
 

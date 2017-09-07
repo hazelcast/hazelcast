@@ -104,9 +104,11 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     }
 
     private RingbufferContainer getRingbufferContainer(RingbufferConfig config) {
+        // partitionId is irrelevant for this test
         return new RingbufferContainer(
                 RingbufferService.getRingbufferNamespace(config.getName()), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader(),
+                0);
     }
 
     @Test

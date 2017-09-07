@@ -166,7 +166,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
                 namespace,
                 config,
                 nodeEngine.getSerializationService(),
-                nodeEngine.getConfigClassLoader());
+                nodeEngine.getConfigClassLoader(), partitionId);
         ringbuffer.getStore().instrument(nodeEngine);
         partitionContainers.put(namespace, ringbuffer);
         return ringbuffer;
