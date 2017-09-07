@@ -20,6 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 
 import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
@@ -97,7 +98,9 @@ public final class JsrTestUtil {
      */
     public static void clearCachingProviderRegistry() {
         try {
-            Caching.getCachingProvider().close();
+            for (CachingProvider cachingProvider : Caching.getCachingProviders()) {
+                cachingProvider.close();
+            }
 
             // retrieve the CachingProviderRegistry instance
             Field providerRegistryField = Caching.class.getDeclaredField("CACHING_PROVIDERS");
