@@ -25,11 +25,18 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Integer.getInteger;
 
 public class DiscoveryJoiner
         extends TcpIpJoiner {
+    private static final int DEFAULT_MAXIMUM_WAITING_FOR_INITIAL_MEMBERS_SECONDS = 5;
+    private static final String WAITING_FOR_INITIAL_MEMBERS_SECONDS_PROP = "hazelcast.discovery.initial.join.seconds";
+
+    private static final int MAXIMUM_WAITING_FOR_INITIAL_MEMBERS_SECONDS =
+            getInteger(WAITING_FOR_INITIAL_MEMBERS_SECONDS_PROP, DEFAULT_MAXIMUM_WAITING_FOR_INITIAL_MEMBERS_SECONDS);
 
     private final DiscoveryService discoveryService;
     private final boolean usePublicAddress;
@@ -38,6 +45,16 @@ public class DiscoveryJoiner
         super(node);
         this.discoveryService = discoveryService;
         this.usePublicAddress = usePublicAddress;
+    }
+
+    @Override
+    protected Collection<Address> getPossibleAddressesForInitialJoin() {
+        Collection<Address> possibleAddresses;
+        long deadLine = System.nanoTime() + TimeUnit.SECONDS.toNanos(MAXIMUM_WAITING_FOR_INITIAL_MEMBERS_SECONDS);
+        do {
+            possibleAddresses = getPossibleAddresses();
+        } while (possibleAddresses.isEmpty() && System.nanoTime() < deadLine);
+        return possibleAddresses;
     }
 
     @Override
