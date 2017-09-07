@@ -21,9 +21,11 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -44,6 +46,8 @@ public class ClientNetworkConfig {
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
     private DiscoveryConfig discoveryConfig;
+    private Collection<String> outboundPortDefinitions;
+    private Collection<Integer> outboundPorts;
 
     /**
      * Returns the configuration of the Hazelcast Discovery SPI and configured discovery providers
@@ -185,6 +189,11 @@ public class ClientNetworkConfig {
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig addAddress(String... addresses) {
+        isNotNull(addresses, "addresses");
+        for (String address : addresses) {
+            isNotNull(address, "address");
+            checkHasText(address.trim(), "address must contain text");
+        }
         Collections.addAll(addressList, addresses);
         return this;
     }
