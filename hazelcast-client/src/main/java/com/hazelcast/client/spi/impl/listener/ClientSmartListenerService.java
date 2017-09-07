@@ -33,7 +33,6 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -192,7 +191,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
                 for (Member member : memberList) {
                     try {
                         clientConnectionManager.getOrTriggerConnect(member.getAddress());
-                    } catch (IOException e) {
+                    } catch (HazelcastException e) {
                         return;
                     }
                 }
@@ -256,16 +255,13 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
         try {
             invoke(registrationKey, connection);
-        } catch (IOException e) {
+        } catch (Exception e) {
             Collection<ClientRegistrationKey> failedRegsToConnection = failedRegistrations.get(connection);
             if (failedRegsToConnection == null) {
                 failedRegsToConnection = Collections.newSetFromMap(new HashMap<ClientRegistrationKey, Boolean>());
                 failedRegistrations.put(connection, failedRegsToConnection);
             }
             failedRegsToConnection.add(registrationKey);
-        } catch (Exception e) {
-            logger.warning("Listener " + registrationKey + " can not be added to a new connection: "
-                    + connection + ", reason: " + e.getMessage());
         }
     }
 

@@ -235,8 +235,7 @@ public class ClientNetworkConfig {
      * application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
      * retrying can cause to undesirable effects. Note that the redo can perform on any member.
      * <p/>
-     * If false, the operation will throw {@link RuntimeException} that is wrapping {@link java.io.IOException}.
-     * TODO clear what is the exception here
+     * If false, the operation will throw {@link com.hazelcast.spi.exception.RetryableHazelcastException}
      *
      * @param redoOperation true if redo operations are enabled
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining

@@ -31,10 +31,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
@@ -156,8 +156,7 @@ final class ClientCacheHelper {
     }
 
     private static <K, V> Object resolveCacheConfig(HazelcastClientInstanceImpl client, CacheConfig<K, V> newCacheConfig,
-                                                    int partitionId)
-            throws IOException {
+                                                    int partitionId) {
 
         Address address = getSendAddress(client, partitionId);
         ClientConnection sendConnection = (ClientConnection) client.getConnectionManager().getOrConnect(address);
@@ -170,17 +169,17 @@ final class ClientCacheHelper {
         return newCacheConfig;
     }
 
-    private static Address getSendAddress(HazelcastClientInstanceImpl client, int partitionId) throws IOException {
+    private static Address getSendAddress(HazelcastClientInstanceImpl client, int partitionId) {
         Address address;
         if (client.getClientConfig().getNetworkConfig().isSmartRouting()) {
             address = client.getClientPartitionService().getPartitionOwner(partitionId);
             if (address == null) {
-                throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
+                throw new RetryableHazelcastException("Partition does not have an owner. partitionId: " + partitionId);
             }
         } else {
             address = client.getConnectionManager().getOwnerConnectionAddress();
             if (address == null) {
-                throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
+                throw new RetryableHazelcastException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
             }
         }
         return address;

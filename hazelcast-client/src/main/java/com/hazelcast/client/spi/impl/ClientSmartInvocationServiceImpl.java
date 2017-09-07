@@ -22,9 +22,8 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-
-import java.io.IOException;
 
 public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceImpl {
 
@@ -36,10 +35,10 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     }
 
     @Override
-    public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
+    public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) {
         final Address owner = partitionService.getPartitionOwner(partitionId);
         if (owner == null) {
-            throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
+            throw new RetryableHazelcastException("Partition does not have an owner. partitionId: " + partitionId);
         }
         invocation.getClientMessage().setPartitionId(partitionId);
         Connection connection = getOrTriggerConnect(owner);
@@ -47,17 +46,17 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     }
 
     @Override
-    public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
+    public void invokeOnRandomTarget(ClientInvocation invocation) {
         final Address randomAddress = getRandomAddress();
         if (randomAddress == null) {
-            throw new IOException("No address found to invoke");
+            throw new RetryableHazelcastException("No address found to invoke");
         }
         Connection connection = getOrTriggerConnect(randomAddress);
         send(invocation, (ClientConnection) connection);
     }
 
     @Override
-    public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
+    public void invokeOnTarget(ClientInvocation invocation, Address target) {
         assert (target != null);
         if (!isMember(target)) {
             throw new TargetNotMemberException("Target '" + target + "' is not a member.");
@@ -66,16 +65,16 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
-    private Connection getOrTriggerConnect(Address target) throws IOException {
+    private Connection getOrTriggerConnect(Address target) {
         Connection connection = connectionManager.getOrTriggerConnect(target);
         if (connection == null) {
-            throw new IOException("No available connection to address " + target);
+            throw new RetryableHazelcastException("No available connection to address " + target);
         }
         return connection;
     }
 
     @Override
-    public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException {
+    public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) {
         send(invocation, connection);
     }
 

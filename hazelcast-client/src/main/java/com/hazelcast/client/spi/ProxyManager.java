@@ -86,12 +86,12 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Iterator;
@@ -365,7 +365,7 @@ public final class ProxyManager {
     private void initialize(ClientProxy clientProxy) throws Exception {
         Address initializationTarget = findNextAddressToSendCreateRequest();
         if (initializationTarget == null) {
-            throw new IOException("Not able to find a member to create proxy on!");
+            throw new RetryableHazelcastException("Not able to find a member to create proxy on!");
         }
         ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getDistributedObjectName(),
                 clientProxy.getServiceName(), initializationTarget);

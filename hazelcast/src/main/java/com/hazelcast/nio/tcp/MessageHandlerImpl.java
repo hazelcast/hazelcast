@@ -21,8 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
 import com.hazelcast.nio.Connection;
 
-import java.io.IOException;
-
 /**
  * A {@link com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler.MessageHandler} implementation
  * that passes the message to the {@link ClientEngine}.
@@ -32,7 +30,7 @@ public class MessageHandlerImpl implements ClientMessageChannelInboundHandler.Me
     private final Connection connection;
     private final ClientEngine clientEngine;
 
-    public MessageHandlerImpl(Connection connection, ClientEngine clientEngine) throws IOException {
+    public MessageHandlerImpl(Connection connection, ClientEngine clientEngine) {
         this.connection = connection;
         this.clientEngine = clientEngine;
     }

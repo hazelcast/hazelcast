@@ -57,8 +57,8 @@ public abstract class ClientConnectionStrategy {
      * The purpose of this method is to validate a connection request by target, and exit the blocking invocation.
      * For all connection requests on {@link ClientConnectionManager} this method will be called.
      *
-     * The build in retry mechanism can be stopped by throwing an instance of non retryable exceptions;
-     * {@link java.io.IOException}, {@link com.hazelcast.core.HazelcastInstanceNotActiveException} or
+     * The build in retry mechanism can be stopped by throwing an instance of
+     * {@link com.hazelcast.core.HazelcastInstanceNotActiveException} or
      * {@link com.hazelcast.spi.exception.RetryableException}
      *
      * The thrown exception will be received on the blocking user. Any blocking invocation will exit by that exception.
@@ -70,8 +70,8 @@ public abstract class ClientConnectionStrategy {
      * If a new connection is required to open by {@link ClientConnectionManager},
      * this method will be called.
      *
-     * This request can be rejected by throwing an instance of non retryable exceptions;
-     * {@link java.io.IOException}, {@link com.hazelcast.core.HazelcastInstanceNotActiveException} or
+     * This request can be rejected by throwing an instance of
+     * {@link com.hazelcast.core.HazelcastInstanceNotActiveException} or
      * {@link com.hazelcast.spi.exception.RetryableException}
      * @param target address of the requested connection
      */
