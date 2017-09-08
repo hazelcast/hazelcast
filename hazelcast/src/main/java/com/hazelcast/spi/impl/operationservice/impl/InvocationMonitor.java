@@ -186,8 +186,11 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     void onMemberLeft(MemberImpl member) {
+        // Member list version at the time of member removal. Since version is read after member removal,
+        // this is guaranteed to be greater than version in invocations whose target was left member.
+        int memberListVersion = nodeEngine.getClusterService().getMemberListVersion();
         // postpone notifying invocations since real response may arrive in the mean time.
-        scheduler.schedule(new OnMemberLeftTask(member), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
+        scheduler.schedule(new OnMemberLeftTask(member, memberListVersion), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
     }
 
     void execute(Runnable runnable) {
@@ -341,9 +344,11 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private final class OnMemberLeftTask extends MonitorTask {
         private final MemberImpl leftMember;
+        private final int memberListVersion;
 
-        private OnMemberLeftTask(MemberImpl leftMember) {
+        private OnMemberLeftTask(MemberImpl leftMember, int memberListVersion) {
             this.leftMember = leftMember;
+            this.memberListVersion = memberListVersion;
         }
 
         @Override
@@ -351,7 +356,21 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
             heartbeatPerMember.remove(leftMember.getAddress());
 
             for (Invocation invocation : invocationRegistry) {
-                if (hasMemberLeft(invocation)) {
+                // Notify only if invocation's target is left member and invocation's member-list-version
+                // is lower than member-list-version at time of member removal.
+                //
+                // Comparison of invocation's target and left member is done using member uuid.
+                // Normally Hazelcast does not support crash-recover, a left member cannot rejoin
+                // with the same uuid. Hence uuid comparison is enough.
+                //
+                // But Hot-Restart breaks this limitation and when Hot-Restart is enabled a member
+                // can restore its uuid and it's allowed to rejoin when cluster state is FROZEN or PASSIVE.
+                //
+                // That's why another ordering property is needed. Invocation keeps member-list-version before
+                // operation is submitted to the target. If a member restarts with the same identity (uuid),
+                // by comparing member-list-version during member removal with the invocation's member-list-version
+                // we can determine whether invocation is submitted before member left or after restart.
+                if (hasMemberLeft(invocation) && invocation.memberListVersion < memberListVersion) {
                     invocation.notifyError(new MemberLeftException(leftMember));
                 }
             }

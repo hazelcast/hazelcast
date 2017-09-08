@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IndeterminateOperationStateException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
@@ -154,6 +155,11 @@ public abstract class Invocation implements OperationResponseHandler {
     boolean remote;
     Address invTarget;
     MemberImpl targetMember;
+    /**
+     * Member list version read before operation is invoked on target. This version is used while notifying
+     * invocation during a member left event.
+     */
+    int memberListVersion;
 
     final Context context;
     final InvocationFuture future;
@@ -228,7 +234,7 @@ public abstract class Invocation implements OperationResponseHandler {
      *
      * @return {@code true} if the initialization was a success, {@code false} otherwise
      */
-    boolean initInvocationTarget() {
+    private boolean initInvocationTarget() {
         invTarget = getTarget();
 
         if (invTarget == null) {
@@ -237,11 +243,22 @@ public abstract class Invocation implements OperationResponseHandler {
             return false;
         }
 
+        MemberImpl previousTargetMember = targetMember;
         targetMember = context.clusterService.getMember(invTarget);
-        if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
-            notifyError(new TargetNotMemberException(
-                    invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
-            return false;
+        memberListVersion = context.clusterService.getMemberListVersion();
+
+        if (targetMember == null) {
+            if (previousTargetMember != null) {
+                // If a target member was found earlier but current target member is null
+                // then it means a member left.
+                notifyError(new MemberLeftException(previousTargetMember));
+                return false;
+            }
+            if (!(isJoinOperation(op) || isWanReplicationOperation(op))) {
+                notifyError(new TargetNotMemberException(
+                        invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
+                return false;
+            }
         }
 
         remote = !context.thisAddress.equals(invTarget);

@@ -554,7 +554,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         MemberInfo newMemberInfo = new MemberInfo(new Address("127.0.0.1", 6000), newUnsecureUuidString(),
                 Collections.<String, Object>emptyMap(), node.getVersion());
         MembersView membersView =
-                MembersView.cloneAdding(membershipManager.createMembersView(), singleton(newMemberInfo));
+                MembersView.cloneAdding(membershipManager.getMembersView(), singleton(newMemberInfo));
 
         Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
                 membersView, clusterService.getClusterTime(), null, true);
@@ -592,7 +592,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
-        hz3 = newHazelcastInstance(config, "test-instance", new StaticMemberNodeContext(member3));
+        hz3 = newHazelcastInstance(config, "test-instance", new StaticMemberNodeContext(factory, member3));
 
         assertClusterSizeEventually(4, hz1, hz4);
 
@@ -692,11 +692,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         return clusterService.getMembershipManager().getMemberMap();
     }
 
-    private class StaticMemberNodeContext implements NodeContext {
+    public static class StaticMemberNodeContext implements NodeContext {
         final NodeContext delegate;
-        private final MemberImpl member;
+        final MemberImpl member;
 
-        StaticMemberNodeContext(MemberImpl member) {
+        public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, MemberImpl member) {
             this.member = member;
             delegate = factory.getRegistry().createNodeContext(member.getAddress());
         }
