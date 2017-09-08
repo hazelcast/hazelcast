@@ -20,6 +20,7 @@ import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
@@ -146,6 +147,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      */
     @Override
     public MapService createMapService() {
+        NodeEngine nodeEngine = getNodeEngine();
         MapServiceContext mapServiceContext = getMapServiceContext();
         ManagedService managedService = createManagedService();
         CountingMigrationAwareService migrationAwareService = createMigrationAwareService();
@@ -160,6 +162,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         QuorumAwareService quorumAwareService = createQuorumAwareService();
         ClientAwareService clientAwareService = createClientAwareService();
 
+        checkNotNull(nodeEngine, "nodeEngine should not be null");
         checkNotNull(mapServiceContext, "mapServiceContext should not be null");
         checkNotNull(managedService, "managedService should not be null");
         checkNotNull(migrationAwareService, "migrationAwareService should not be null");
@@ -188,6 +191,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         mapService.partitionAwareService = partitionAwareService;
         mapService.quorumAwareService = quorumAwareService;
         mapService.clientAwareService = clientAwareService;
+        mapService.mapIndexSynchronizer = new MapIndexSynchronizer(mapServiceContext, nodeEngine);
         mapServiceContext.setService(mapService);
         return mapService;
     }

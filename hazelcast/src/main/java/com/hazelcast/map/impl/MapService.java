@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
+import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.ClientAwareService;
@@ -45,6 +46,7 @@ import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.Collection;
@@ -71,9 +73,10 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  * @see MapServiceContext
  */
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
-       TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
-       PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
-       PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener {
+        TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
+        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
+        ClusterVersionListener {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -90,6 +93,8 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected ClientAwareService clientAwareService;
     protected QuorumAwareService quorumAwareService;
     protected MapServiceContext mapServiceContext;
+    // RU_COMPAT_V38
+    protected MapIndexSynchronizer mapIndexSynchronizer;
 
     public MapService() {
     }
@@ -243,4 +248,12 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     public void onClusterStateChange(ClusterState newState) {
         mapServiceContext.onClusterStateChange(newState);
     }
+
+    @Override
+    // RU_COMPAT_V38
+    // We wont need to sync the indexes in 3.9+ clusters.
+    public void onClusterVersionChange(Version newVersion) {
+        mapIndexSynchronizer.onClusterVersionChange(newVersion);
+    }
+
 }
