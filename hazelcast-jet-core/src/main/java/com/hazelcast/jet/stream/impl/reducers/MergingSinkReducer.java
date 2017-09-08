@@ -22,7 +22,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeP;
 
@@ -46,7 +46,7 @@ public class MergingSinkReducer<T, K, V, R> extends SinkReducer<T, K, V, R> {
     }
 
     @Override
-    public R reduce(StreamContext context, Pipeline<? extends T> upstream) {
+    public R reduce(StreamContext context, Pipe<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
 

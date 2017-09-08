@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.CompletionStage;
 
-import static com.hazelcast.jet.impl.util.Util.formatIds;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 
 public class ExecuteOperation extends AsyncExecutionOperation  {
 
@@ -49,10 +49,10 @@ public class ExecuteOperation extends AsyncExecutionOperation  {
         executionFuture = service.execute(getCallerAddress(), jobId, executionId, f -> f.handle((r, error) -> error)
                 .thenAccept(value -> {
                     if (value != null) {
-                        logger.fine("Execution of " + formatIds(jobId, executionId)
+                        logger.fine("Execution of " + jobAndExecutionId(jobId, executionId)
                                 + " completed with failure", value);
                     } else {
-                        logger.fine("Execution of " + formatIds(jobId, executionId) + " completed");
+                        logger.fine("Execution of " + jobAndExecutionId(jobId, executionId) + " completed");
                     }
 
                     doSendResponse(value);
@@ -68,7 +68,7 @@ public class ExecuteOperation extends AsyncExecutionOperation  {
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.EXECUTE_OP;
+        return JetInitDataSerializerHook.EXECUTE_OP;
     }
 
     @Override

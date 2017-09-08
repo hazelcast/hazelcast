@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -94,7 +95,7 @@ public class WriteBufferedPTest extends JetTestSupport {
         JetInstance instance = createJetMember();
         try {
             DAG dag = new DAG();
-            Vertex source = dag.newVertex("source", SleepForeverProcessor::new);
+            Vertex source = dag.newVertex("source", StuckSource::new);
             Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
 
             dag.edge(Edge.between(source, sink));
@@ -111,8 +112,8 @@ public class WriteBufferedPTest extends JetTestSupport {
         }
     }
 
-    private ProcessorSupplier getLoggingBufferedWriter() {
-        // returns a processor that will not write anywhere, just log the events instead
+    // returns a processor that will not write anywhere, just log the events
+    private static ProcessorSupplier getLoggingBufferedWriter() {
         return SinkProcessors.writeBuffered(
                 idx -> {
                     events.add("new");
@@ -124,18 +125,16 @@ public class WriteBufferedPTest extends JetTestSupport {
         );
     }
 
-    private static class SleepForeverProcessor extends AbstractProcessor {
-        SleepForeverProcessor() {
+    private static class StuckSource extends AbstractProcessor {
+        StuckSource() {
             setCooperative(false);
         }
 
         @Override
         public boolean complete() {
-            // sleep forever - we'll cancel the job
             try {
-                Thread.sleep(Long.MAX_VALUE);
-            } catch (InterruptedException e) {
-//                fail();
+                currentThread().join();
+            } catch (InterruptedException ignored) {
             }
             return false;
         }

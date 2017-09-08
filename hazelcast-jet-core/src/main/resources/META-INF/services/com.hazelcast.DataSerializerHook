@@ -1,2 +1,2 @@
 com.hazelcast.jet.JetDataSerializerHook
-com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook
+com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook

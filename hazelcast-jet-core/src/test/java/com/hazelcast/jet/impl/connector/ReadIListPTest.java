@@ -51,7 +51,7 @@ public class ReadIListPTest {
     private static void testReader(int fetchSize) {
         final ArrayDequeOutbox outbox = new ArrayDequeOutbox(new int[]{2}, new ProgressTracker());
         final Queue<Object> bucket = outbox.queueWithOrdinal(0);
-        final ReadIListP r = new ReadIListP(asList(1, 2, 3, 4), fetchSize);
+        final ReadIListP r = new ReadIListP(asList(1, 2, 3, 4));
         r.init(outbox, Mockito.mock(Processor.Context.class));
 
         // When

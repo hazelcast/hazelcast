@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import static com.hazelcast.jet.impl.util.Util.formatIds;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
@@ -140,7 +140,7 @@ public class ExecutionContext {
             try {
                 s.complete(error);
             } catch (Exception e) {
-                logger.severe(formatIds(jobId, executionId)
+                logger.severe(jobAndExecutionId(jobId, executionId)
                         + " encountered an exception in ProcessorSupplier.complete(), ignoring it", e);
             }
         });

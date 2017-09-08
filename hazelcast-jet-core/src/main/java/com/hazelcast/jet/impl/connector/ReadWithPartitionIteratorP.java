@@ -50,11 +50,12 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
+@SuppressWarnings("unchecked")
 public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     private static final boolean PREFETCH_VALUES = true;
 
-    private static final int DEFAULT_FETCH_SIZE = 16384;
+    private static final int FETCH_SIZE = 16384;
 
     private final Traverser<T> outputTraverser;
 
@@ -76,76 +77,51 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         };
     }
 
-    public static ProcessorMetaSupplier readMap(@Nonnull String mapName) {
-        return readMap(mapName, DEFAULT_FETCH_SIZE);
-    }
-
-    public static <T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize) {
+    public static <T> ProcessorMetaSupplier readMap(@Nonnull String mapName) {
         return new LocalClusterMetaSupplier<T>(
                 instance -> partition -> ((MapProxyImpl) instance.getMap(mapName))
-                        .iterator(fetchSize, partition, PREFETCH_VALUES));
+                        .iterator(FETCH_SIZE, partition, PREFETCH_VALUES));
     }
 
-    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName,
-                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF) {
-        return readMap(mapName, DEFAULT_FETCH_SIZE, predicate, projectionF);
+    public static <T> ProcessorMetaSupplier readMap(
+            @Nonnull String mapName, @Nonnull ClientConfig clientConfig
+    ) {
+        return new RemoteClusterMetaSupplier<T>(clientConfig,
+                instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
+                        .iterator(FETCH_SIZE, partition, PREFETCH_VALUES));
     }
 
-    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize,
-                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF) {
+    public static <K, V, T> ProcessorMetaSupplier readMap(
+            @Nonnull String mapName,
+            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF
+    ) {
         return new LocalClusterMetaSupplier<T>(
                 instance -> partition -> ((MapProxyImpl) instance.getMap(mapName))
-                        .iterator(fetchSize, partition, toProjection(projectionF), predicate::test));
+                        .iterator(FETCH_SIZE, partition, toProjection(projectionF), predicate::test));
     }
 
-    public static ProcessorMetaSupplier readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return readMap(mapName, DEFAULT_FETCH_SIZE, clientConfig);
-    }
-
-    public static <T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize,
-                                                    @Nonnull ClientConfig clientConfig) {
+    public static <K, V, T> ProcessorMetaSupplier readMap(
+            @Nonnull String mapName,
+            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
+            @Nonnull ClientConfig clientConfig
+    ) {
         return new RemoteClusterMetaSupplier<T>(clientConfig,
                 instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
-                        .iterator(fetchSize, partition, PREFETCH_VALUES));
-    }
-
-    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName,
-                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
-                                                          @Nonnull ClientConfig clientConfig) {
-        return readMap(mapName, DEFAULT_FETCH_SIZE, predicate, projectionF, clientConfig);
-    }
-
-    public static <K, V, T> ProcessorMetaSupplier readMap(@Nonnull String mapName, int fetchSize,
-                                                          @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-                                                          @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
-                                                          @Nonnull ClientConfig clientConfig) {
-        return new RemoteClusterMetaSupplier<T>(clientConfig,
-                instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
-                        .iterator(fetchSize, partition, toProjection(projectionF), predicate::test));
+                        .iterator(FETCH_SIZE, partition, toProjection(projectionF), predicate::test));
     }
 
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
-        return readCache(cacheName, DEFAULT_FETCH_SIZE);
-    }
-
-    public static <T> ProcessorMetaSupplier readCache(@Nonnull String cacheName, int fetchSize) {
-        return new LocalClusterMetaSupplier<T>(
+        return new LocalClusterMetaSupplier<>(
                 instance -> partition -> ((CacheProxy) instance.getCacheManager().getCache(cacheName))
-                        .iterator(fetchSize, partition, PREFETCH_VALUES));
+                        .iterator(FETCH_SIZE, partition, PREFETCH_VALUES));
     }
 
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
-        return readCache(cacheName, DEFAULT_FETCH_SIZE, clientConfig);
-    }
-
-    public static <T> ProcessorMetaSupplier readCache(@Nonnull String cacheName, int fetchSize,
-                                                      @Nonnull ClientConfig clientConfig) {
-        return new RemoteClusterMetaSupplier<T>(clientConfig,
+        return new RemoteClusterMetaSupplier<>(clientConfig,
                 instance -> partition -> ((ClientCacheProxy) instance.getCacheManager().getCache(cacheName))
-                        .iterator(fetchSize, partition, PREFETCH_VALUES));
+                        .iterator(FETCH_SIZE, partition, PREFETCH_VALUES));
     }
 
     @Override

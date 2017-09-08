@@ -24,7 +24,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.IStreamCache;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.source.CacheSourcePipeline;
+import com.hazelcast.jet.stream.impl.source.CacheSourcePipe;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -53,7 +53,7 @@ public class CacheDecorator<K, V> implements IStreamCache<K, V> {
 
     @Override
     public DistributedStream<Map.Entry<K, V>> stream() {
-        return new CacheSourcePipeline<>(new StreamContext(instance), cache);
+        return new CacheSourcePipe<>(new StreamContext(instance), cache);
     }
 
     @Override

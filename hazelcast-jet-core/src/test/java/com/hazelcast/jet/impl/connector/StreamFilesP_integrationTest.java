@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,7 +35,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -48,8 +46,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.processor.SourceProcessors.streamFiles;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -251,7 +251,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         @Override
         public void run() {
             try (FileOutputStream fos = new FileOutputStream(file);
-                    OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
+                    OutputStreamWriter osw = new OutputStreamWriter(fos, UTF_8);
                     BufferedWriter bw = new BufferedWriter(osw)
             ) {
                 for (int i = 0; i < numLines; i++) {
@@ -273,7 +273,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     private DAG buildDag() {
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", SourceProcessors.streamFiles(directory.getPath()))
+        Vertex reader = dag.newVertex("reader", streamFiles(directory.getPath(), UTF_8, "*"))
                            .localParallelism(1);
         Vertex writer = dag.newVertex("writer", writeList(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));

@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.AggregateOperations.summingLong;
+import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.processor.Processors.accumulateByFrame;

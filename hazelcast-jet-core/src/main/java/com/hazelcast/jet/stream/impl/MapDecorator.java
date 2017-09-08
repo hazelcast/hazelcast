@@ -28,7 +28,7 @@ import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.source.MapSourcePipeline;
+import com.hazelcast.jet.stream.impl.source.MapSourcePipe;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -522,12 +522,14 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
 
     @Override
     public DistributedStream<Entry<K, V>> stream() {
-        return new MapSourcePipeline<>(new StreamContext(instance), map, null, null);
+        return new MapSourcePipe<>(new StreamContext(instance), map, null, null);
     }
 
     @Override
-    public <T> DistributedStream<T> stream(@Nonnull DistributedPredicate<Entry<K, V>> predicate,
-                                           @Nonnull DistributedFunction<Entry<K, V>, T> projectionF) {
-        return new MapSourcePipeline<>(new StreamContext(instance), map, predicate, projectionF);
+    public <E> DistributedStream<E> stream(
+            @Nonnull DistributedPredicate<Entry<K, V>> predicate,
+            @Nonnull DistributedFunction<Entry<K, V>, E> projectionF
+    ) {
+        return new MapSourcePipe<>(new StreamContext(instance), map, predicate, projectionF);
     }
 }

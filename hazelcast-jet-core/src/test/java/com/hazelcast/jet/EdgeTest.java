@@ -97,12 +97,6 @@ public class EdgeTest {
     }
 
     @Test
-    public void whenBufferedSet_thenTrue() {
-        final Edge e = Edge.from(a).buffered();
-        assertTrue(e.isBuffered());
-    }
-
-    @Test
     public void whenPartitionedNotSet_thenPartitionerNull() {
         final Edge e = Edge.from(a);
         assertNull(e.getPartitioner());

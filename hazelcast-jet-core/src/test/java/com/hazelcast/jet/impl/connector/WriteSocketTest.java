@@ -41,6 +41,7 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.processor.SinkProcessors.writeSocket;
 import static com.hazelcast.jet.processor.SourceProcessors.readMap;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -69,7 +70,8 @@ public class WriteSocketTest extends JetTestSupport {
         ArrayDequeInbox inbox = new ArrayDequeInbox();
         range(0, ITEM_COUNT).forEach(inbox::add);
 
-        Processor p = writeSocket("localhost", serverSocket.getLocalPort()).get(1).iterator().next();
+        Processor p = writeSocket("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8)
+                .get(1).iterator().next();
         p.init(mock(Outbox.class), new ProcCtx(null, null, null, 0));
         p.process(0, inbox);
         p.complete();
@@ -103,7 +105,8 @@ public class WriteSocketTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMap("map"));
-        Vertex sink = dag.newVertex("sink", writeSocket("localhost", serverSocket.getLocalPort()));
+        Vertex sink = dag.newVertex("sink", writeSocket(
+                "localhost", serverSocket.getLocalPort(), Object::toString, UTF_8));
 
         dag.edge(between(source, sink));
 

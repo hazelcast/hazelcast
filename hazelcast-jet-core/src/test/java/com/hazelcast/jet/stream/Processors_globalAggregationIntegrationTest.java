@@ -18,11 +18,11 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.AggregateOperation;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,8 +38,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.AggregateOperations.summingLong;
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.processor.Processors.accumulate;
 import static com.hazelcast.jet.processor.Processors.aggregate;
 import static com.hazelcast.jet.processor.Processors.combine;
@@ -75,7 +75,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
             throws Exception {
         JetInstance instance = createJetMember();
 
-        AggregateOperation<Long, ?, Long> summingOp = summingLong((Long l) -> l);
+        AggregateOperation1<Long, ?, Long> summingOp = summingLong((Long l) -> l);
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new EmitListP(sourceItems)).localParallelism(1);

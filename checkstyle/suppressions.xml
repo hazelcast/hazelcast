@@ -5,12 +5,24 @@
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 <suppressions>
 
+
+    <!-- TEMPORARY SUPPRESSION OF PROTOTYPE CODE -->
+    <suppress checks="Javadoc" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]"/>
+    <suppress checks="" files="com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]samples[\\/]"/>
+    <suppress checks="Javadoc" files="com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]"/>
+
+    <!-- impl packages are private API by contract, allow public members -->
+    <suppress checks="VisibilityModifier" files="[\\/]impl[\\/]"/>
+
     <!-- Files start with the license header -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
-    <!-- Suppress checking of copyright notice -->
+    <!-- Files derived from the Agrona project -->
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]concurrent[\\/]update[\\/]"/>
     <suppress checks="OuterTypeNumber" files="AbstractConcurrentArrayQueue"/>
+
+    <!-- Suppress checking of copyright notice in a file derived from Apache Tez -->
+    <suppress checks="Header" files="TopologicalSorter"/>
 
     <!-- Exclude these packages from JavaDoc checks -->
     <suppress checks="JavadocMethod" files="JetException\.java"/>

@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.DagValidator;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,8 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -34,8 +32,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
+import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.newSetFromMap;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Describes a computation to be performed by the Jet computation engine.
@@ -64,7 +67,8 @@ import static java.util.Collections.newSetFromMap;
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     private Set<Edge> edges = new LinkedHashSet<>();
-    private Map<String, Vertex> verticesByName = new HashMap<>();
+    private Map<String, Vertex> nameToVertex = new HashMap<>();
+    // Transient field:
     private Set<Vertex> verticesByIdentity = newSetFromMap(new IdentityHashMap<Vertex, Boolean>());
 
     /**
@@ -157,6 +161,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                     + (edge.getSourceOrdinal() == 0 && edge.getDestOrdinal() == 0
                             ? ", use Edge.from().to() to specify another ordinal" : ""));
         }
+        if (edge.getSource() == edge.getDestination()) {
+            throw new IllegalArgumentException("Attempted to add an edge from " + edge.getSourceName() + " to itself");
+        }
         edges.add(edge);
         return this;
     }
@@ -165,10 +172,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns the inbound edges connected to the vertex with the given name.
      */
     public List<Edge> getInboundEdges(String vertexName) {
-        if (!verticesByName.containsKey(vertexName)) {
+        if (!nameToVertex.containsKey(vertexName)) {
             throw new IllegalArgumentException("No vertex with name '" + vertexName + "' found in this DAG");
         }
-
         List<Edge> inboundEdges = new ArrayList<>();
         for (Edge edge : edges) {
             if (edge.getDestName().equals(vertexName)) {
@@ -182,10 +188,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns the outbound edges connected to the vertex with the given name.
      */
     public List<Edge> getOutboundEdges(String vertexName) {
-        if (!verticesByName.containsKey(vertexName)) {
+        if (!nameToVertex.containsKey(vertexName)) {
             throw new IllegalArgumentException("No vertex with name '" + vertexName + "' found in this DAG");
         }
-
         List<Edge> outboundEdges = new ArrayList<>();
         for (Edge edge : edges) {
             if (edge.getSourceName().equals(vertexName)) {
@@ -199,14 +204,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns the vertex with the given name.
      */
     public Vertex getVertex(String vertexName) {
-        return verticesByName.get(vertexName);
-    }
-
-    /**
-     * Returns an iterator over the DAG's vertices in reverse topological order.
-     */
-    public Iterator<Vertex> reverseIterator() {
-        return Collections.unmodifiableCollection(validate()).iterator();
+        return nameToVertex.get(vertexName);
     }
 
     /**
@@ -214,21 +212,15 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Override
     public Iterator<Vertex> iterator() {
-        final List<Vertex> vertices = new ArrayList<>(validate());
-        Collections.reverse(vertices);
-        return Collections.unmodifiableCollection(vertices).iterator();
-    }
-
-    Collection<Vertex> validate() {
-        return new DagValidator().validate(verticesByName, edges);
+        return validate().iterator();
     }
 
     private Vertex addVertex(Vertex vertex) {
-        if (verticesByName.containsKey(vertex.getName())) {
+        if (nameToVertex.containsKey(vertex.getName())) {
             throw new IllegalArgumentException("Vertex " + vertex.getName() + " is already defined.");
         }
         verticesByIdentity.add(vertex);
-        verticesByName.put(vertex.getName(), vertex);
+        nameToVertex.put(vertex.getName(), vertex);
         return vertex;
     }
 
@@ -237,7 +229,57 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     private boolean containsVertexName(Vertex vertex) {
-        return verticesByName.containsKey(vertex.getName());
+        return nameToVertex.containsKey(vertex.getName());
+    }
+
+    /**
+     * @return iterable over vertices in topological order
+     */
+    // exposed for testing
+    Iterable<Vertex> validate() {
+        checkTrue(!nameToVertex.isEmpty(), "DAG must contain at least one vertex");
+        Map<String, List<Edge>> inboundEdgeMap = edges.stream().collect(groupingBy(Edge::getDestName));
+        Map<String, List<Edge>> outboundEdgeMap = edges.stream().collect(groupingBy(Edge::getSourceName));
+        validateInboundEdgeOrdinals(inboundEdgeMap);
+        validateOutboundEdgeOrdinals(outboundEdgeMap);
+
+        Map<Vertex, List<Vertex>> adjacencyMap = new HashMap<>();
+        for (Edge edge : edges) {
+            adjacencyMap.computeIfAbsent(edge.getSource(), x -> new ArrayList<>())
+                        .add(edge.getDestination());
+        }
+        for (Vertex v : nameToVertex.values()) {
+            adjacencyMap.computeIfAbsent(v, x -> emptyList());
+        }
+        return topologicalSort(adjacencyMap, Vertex::getName);
+    }
+
+    private static void validateInboundEdgeOrdinals(Map<String, List<Edge>> inboundEdgeMap) {
+        for (Map.Entry<String, List<Edge>> entry : inboundEdgeMap.entrySet()) {
+            String vertex = entry.getKey();
+            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getDestOrdinal).sorted().toArray();
+            for (int i = 0; i < ordinals.length; i++) {
+                if (ordinals[i] != i) {
+                    throw new IllegalArgumentException("Input ordinals for vertex " + vertex
+                            + " are not properly numbered. Actual: " + Arrays.toString(ordinals)
+                            + " Expected: " + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
+                }
+            }
+        }
+    }
+
+    private static void validateOutboundEdgeOrdinals(Map<String, List<Edge>> outboundEdgeMap) {
+        for (Map.Entry<String, List<Edge>> entry : outboundEdgeMap.entrySet()) {
+            String vertex = entry.getKey();
+            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getSourceOrdinal).sorted().toArray();
+            for (int i = 0; i < ordinals.length; i++) {
+                if (ordinals[i] != i) {
+                    throw new IllegalArgumentException("Output ordinals for vertex " + vertex + " are not ordered. "
+                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
+                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
+                }
+            }
+        }
     }
 
     @Override
@@ -259,9 +301,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(verticesByName.size());
+        out.writeInt(nameToVertex.size());
 
-        for (Map.Entry<String, Vertex> entry : verticesByName.entrySet()) {
+        for (Map.Entry<String, Vertex> entry : nameToVertex.entrySet()) {
             out.writeObject(entry.getKey());
             out.writeObject(entry.getValue());
         }
@@ -280,13 +322,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         for (int i = 0; i < vertexCount; i++) {
             String key = in.readObject();
             Vertex value = in.readObject();
-            verticesByName.put(key, value);
+            nameToVertex.put(key, value);
         }
 
         int edgeCount = in.readInt();
 
         for (int i = 0; i < edgeCount; i++) {
             Edge edge = in.readObject();
+            edge.restoreSourceAndDest(nameToVertex);
             edges.add(edge);
         }
     }

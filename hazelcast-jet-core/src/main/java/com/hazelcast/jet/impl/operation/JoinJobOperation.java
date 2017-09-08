@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -61,7 +61,7 @@ public class JoinJobOperation extends AsyncExecutionOperation implements Identif
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.JOIN_JOB_OP;
+        return JetInitDataSerializerHook.JOIN_JOB_OP;
     }
 
     @Override

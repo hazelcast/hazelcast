@@ -21,7 +21,7 @@ import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
-import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import java.io.Serializable;
@@ -170,6 +170,6 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
          * @param upstream the upstream pipeline to execute the stream on
          * @return the result of the executed collector
          */
-        R reduce(StreamContext context, Pipeline<? extends T> upstream);
+        R reduce(StreamContext context, Pipe<? extends T> upstream);
     }
 }

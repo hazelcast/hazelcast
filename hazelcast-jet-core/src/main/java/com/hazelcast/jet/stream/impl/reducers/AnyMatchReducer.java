@@ -20,7 +20,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
-import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AnyMatchP;
 
@@ -40,7 +40,7 @@ public class AnyMatchReducer<T> implements Reducer<T, Boolean> {
     }
 
     @Override
-    public Boolean reduce(StreamContext context, Pipeline<? extends T> upstream) {
+    public Boolean reduce(StreamContext context, Pipe<? extends T> upstream) {
         String listName = uniqueListName();
 
         DAG dag = new DAG();

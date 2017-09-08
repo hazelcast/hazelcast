@@ -22,7 +22,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.source.ListSourcePipeline;
+import com.hazelcast.jet.stream.impl.source.ListSourcePipe;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -188,7 +188,7 @@ public class ListDecorator<E> implements IStreamList<E> {
 
     @Override
     public DistributedStream<E> stream() {
-        return new ListSourcePipeline<>(new StreamContext(instance), list);
+        return new ListSourcePipe<>(new StreamContext(instance), list);
     }
 
     @Override

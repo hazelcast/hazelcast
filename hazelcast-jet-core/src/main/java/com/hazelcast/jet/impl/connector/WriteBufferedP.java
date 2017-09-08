@@ -34,32 +34,35 @@ import static java.util.stream.Collectors.toList;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
-    private final DistributedConsumer<B> flushBuffer;
-    private final DistributedIntFunction<B> newBuffer;
-    private final DistributedBiConsumer<B, T> addToBuffer;
-    private final DistributedConsumer<B> disposeBuffer;
+    private final DistributedIntFunction<B> newBufferF;
+    private final DistributedBiConsumer<B, T> addToBufferF;
+    private final DistributedConsumer<B> flushBufferF;
+    private final DistributedConsumer<B> disposeBufferF;
+
     private B buffer;
 
-    WriteBufferedP(DistributedIntFunction<B> newBuffer,
-                   DistributedBiConsumer<B, T> addToBuffer,
-                   DistributedConsumer<B> flushBuffer,
-                   DistributedConsumer<B> disposeBuffer) {
-        this.newBuffer = newBuffer;
-        this.addToBuffer = addToBuffer;
-        this.flushBuffer = flushBuffer;
-        this.disposeBuffer = disposeBuffer;
+    WriteBufferedP(DistributedIntFunction<B> newBufferF,
+                   DistributedBiConsumer<B, T> addToBufferF,
+                   DistributedConsumer<B> flushBufferF,
+                   DistributedConsumer<B> disposeBufferF
+    ) {
+        this.newBufferF = newBufferF;
+        this.addToBufferF = addToBufferF;
+        this.flushBufferF = flushBufferF;
+        this.disposeBufferF = disposeBufferF;
     }
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        this.buffer = newBuffer.apply(context.globalProcessorIndex());
+        this.buffer = newBufferF.apply(context.globalProcessorIndex());
     }
 
     /**
-     * This is private API. Use {@link
-     * com.hazelcast.jet.processor.SinkProcessors#writeBuffered(
-     * DistributedIntFunction, DistributedBiConsumer, DistributedConsumer,
-     * DistributedConsumer) Sinks.writeBuffered()} instead.
+     * This is private API. Call
+     * {@link com.hazelcast.jet.processor.SinkProcessors#writeBuffered(
+     *        DistributedIntFunction, DistributedBiConsumer,
+     *        DistributedConsumer, DistributedConsumer)
+     * SinkProcessors.writeBuffered()} instead.
      */
     @Nonnull
     public static <B, T> ProcessorSupplier supplier(
@@ -71,10 +74,10 @@ public final class WriteBufferedP<B, T> implements Processor {
         return new ProcessorSupplier() {
             private transient List<WriteBufferedP<B, T>> processors;
 
-            @Nonnull
-            @Override
+            @Nonnull @Override
             public Collection<? extends Processor> get(int count) {
-                return processors = IntStream.range(0, count)
+                return processors = IntStream
+                        .range(0, count)
                         .mapToObj(i -> new WriteBufferedP<>(newBufferF, addToBufferF, flushBufferF, disposeBufferF))
                         .collect(toList());
             }
@@ -95,10 +98,10 @@ public final class WriteBufferedP<B, T> implements Processor {
     public void process(int ordinal, @Nonnull Inbox inbox) {
         inbox.drain(item -> {
             if (!(item instanceof Watermark)) {
-                addToBuffer.accept(buffer, (T) item);
+                addToBufferF.accept(buffer, (T) item);
             }
         });
-        flushBuffer.accept(buffer);
+        flushBufferF.accept(buffer);
     }
 
     @Override
@@ -108,7 +111,7 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     public void close() {
-        disposeBuffer.accept(buffer);
+        disposeBufferF.accept(buffer);
     }
 
     @Override

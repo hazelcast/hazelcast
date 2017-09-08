@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -70,12 +70,12 @@ public class CompleteOperation extends Operation implements IdentifiedDataSerial
 
     @Override
     public int getFactoryId() {
-        return JetImplDataSerializerHook.FACTORY_ID;
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.COMPLETE_OP;
+        return JetInitDataSerializerHook.COMPLETE_OP;
     }
 
     @Override

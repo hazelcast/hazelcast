@@ -26,7 +26,7 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.coordination.JobCoordinationService;
 import com.hazelcast.jet.impl.coordination.MasterContext;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -55,8 +55,8 @@ import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.
 import static com.hazelcast.jet.JobStatus.RUNNING;
 import static com.hazelcast.jet.JobStatus.STARTING;
 import static com.hazelcast.jet.TestUtil.getJetService;
-import static com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook.EXECUTE_OP;
-import static com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook.INIT_OP;
+import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.EXECUTE_OP;
+import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_OP;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
@@ -355,7 +355,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
 
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
-                JetImplDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
+                JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(TestProcessors.Identity::new, nodeCount + 1)));
 
@@ -404,7 +404,7 @@ public class TopologyChangeTest extends JetTestSupport {
         dropOperationsBetween(instances[2].getHazelcastInstance(), instances[0].getHazelcastInstance(),
                 PartitionDataSerializerHook.F_ID, singletonList(SHUTDOWN_REQUEST));
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
-                JetImplDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
+                JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
 
         // When a job participant starts its shutdown after the job is submitted
         DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(TestProcessors.Identity::new, nodeCount - 1)));
@@ -450,7 +450,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
 
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
-                JetImplDataSerializerHook.FACTORY_ID, singletonList(EXECUTE_OP));
+                JetInitDataSerializerHook.FACTORY_ID, singletonList(EXECUTE_OP));
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(TestProcessors.Identity::new, nodeCount - 1)));
 

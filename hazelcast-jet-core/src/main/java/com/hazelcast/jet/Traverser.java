@@ -73,6 +73,55 @@ public interface Traverser<T> {
     }
 
     /**
+     * Returns a new traverser that will emit a prefix of the original traverser,
+     * up to the item for which the predicate fails (exclusive).
+     */
+    @Nonnull
+    default Traverser<T> takeWhile(@Nonnull Predicate<? super T> pred) {
+        return new Traverser<T>() {
+            boolean predicateSatisfied = true;
+
+            @Override
+            public T next() {
+                if (!predicateSatisfied) {
+                    return null;
+                }
+                T t = Traverser.this.next();
+                predicateSatisfied = pred.test(t);
+                if (!predicateSatisfied) {
+                    return null;
+                }
+                return t;
+            }
+        };
+    }
+
+    /**
+     * Returns a new traverser that will emit a suffix of the original traverser,
+     * starting from the item for which the predicate fails (inclusive).
+     */
+    @Nonnull
+    default Traverser<T> dropWhile(@Nonnull Predicate<? super T> pred) {
+        return new Traverser<T>() {
+            boolean predicateSatisfied;
+
+            @Override
+            public T next() {
+                if (!predicateSatisfied) {
+                    return Traverser.this.next();
+                }
+                for (T t; (t = Traverser.this.next()) != null; ) {
+                    predicateSatisfied = pred.test(t);
+                    if (!predicateSatisfied) {
+                        return t;
+                    }
+                }
+                return null;
+            }
+        };
+    }
+
+    /**
      * Returns a traverser which appends an additional item to this traverser
      * after it returns the first {@code null} value.
      */

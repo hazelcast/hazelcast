@@ -17,12 +17,12 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.AggregateOperation;
-import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.TimestampedEntry;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.WindowDefinition;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
@@ -54,7 +54,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     private final WindowDefinition wDef;
     private final DistributedToLongFunction<? super T> getFrameTimestampF;
     private final Function<? super T, ?> getKeyF;
-    private final AggregateOperation<? super T, A, R> aggrOp;
+    private final AggregateOperation1<? super T, A, R> aggrOp;
 
     private final FlatMapper<Watermark, Object> flatMapper;
 
@@ -66,7 +66,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
             Function<? super T, ?> getKeyF,
             DistributedToLongFunction<? super T> getFrameTimestampF,
             WindowDefinition winDef,
-            AggregateOperation<? super T, A, R> aggrOp
+            AggregateOperation1<? super T, A, R> aggrOp
     ) {
         this.wDef = winDef;
         this.getFrameTimestampF = getFrameTimestampF;

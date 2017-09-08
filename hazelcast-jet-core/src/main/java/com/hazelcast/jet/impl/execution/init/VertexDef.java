@@ -87,12 +87,12 @@ public class VertexDef implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetImplDataSerializerHook.FACTORY_ID;
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.VERTEX_DEF;
+        return JetInitDataSerializerHook.VERTEX_DEF;
     }
 
     @Override

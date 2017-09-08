@@ -20,6 +20,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,8 +28,9 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.Edge.between;
@@ -38,6 +40,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -46,29 +49,42 @@ public class DAGTest {
     private static final DistributedSupplier<Processor> PROCESSOR_SUPPLIER = TestProcessor::new;
 
     @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
+    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void when_newVertex_then_hasIt() {
-        final DAG dag = new DAG();
-        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         assertSame(a, dag.getVertex("a"));
     }
 
     @Test
     public void when_connectKnownVertices_then_success() {
-        final DAG dag = new DAG();
-        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
-        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         dag.edge(between(a, b));
+    }
+
+    @Test
+    public void when_selfEdge_then_illegalArgument() {
+        // Given
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+
+        // Then
+        exceptionRule.expect(IllegalArgumentException.class);
+
+        // When
+        dag.edge(between(a, a));
     }
 
     @Test
     public void when_unknownSource_then_illegalArgument() {
         // Given
-        final DAG dag = new DAG();
-        final Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        DAG dag = new DAG();
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
 
         // Then
         exceptionRule.expect(IllegalArgumentException.class);
@@ -80,9 +96,9 @@ public class DAGTest {
     @Test
     public void when_unknownDestination_then_illegalArgument() {
         // Given
-        final DAG dag = new DAG();
-        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
-        final Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
 
         // Then
         exceptionRule.expect(IllegalArgumentException.class);
@@ -94,8 +110,8 @@ public class DAGTest {
     @Test
     public void when_addEdgeWithoutDestination_then_illegalArgument() {
         // Given
-        final DAG dag = new DAG();
-        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
 
         // Then
         exceptionRule.expect(IllegalArgumentException.class);
@@ -110,7 +126,7 @@ public class DAGTest {
         Vertex a1 = new Vertex("a", Processors.map(Object::hashCode));
         Vertex a2 = new Vertex("a", Processors.map(Object::toString));
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        final DAG dag = new DAG()
+        DAG dag = new DAG()
                 .vertex(a1)
                 .vertex(b);
 
@@ -127,7 +143,7 @@ public class DAGTest {
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b1 = new Vertex("b", Processors.map(Object::toString));
         Vertex b2 = new Vertex("b", Processors.map(Object::hashCode));
-        final DAG dag = new DAG()
+        DAG dag = new DAG()
                 .vertex(a)
                 .vertex(b1);
 
@@ -141,21 +157,21 @@ public class DAGTest {
     @Test
     public void inboundEdges() {
         // Given
-        final DAG dag = new DAG();
-        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
-        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
-        final Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
-        final Vertex d = dag.newVertex("d", PROCESSOR_SUPPLIER);
-        final Edge e1 = from(a).to(d, 0);
-        final Edge e2 = from(b).to(d, 1);
-        final Edge e3 = from(c).to(d, 2);
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        Vertex d = dag.newVertex("d", PROCESSOR_SUPPLIER);
+        Edge e1 = from(a).to(d, 0);
+        Edge e2 = from(b).to(d, 1);
+        Edge e3 = from(c).to(d, 2);
         dag.edge(e1)
            .edge(e2)
            .edge(e3)
            .edge(from(a, 1).to(b));
 
         // When
-        final Set<Edge> edges = new HashSet<>(dag.getInboundEdges("d"));
+        Set<Edge> edges = new HashSet<>(dag.getInboundEdges("d"));
 
         // Then
         assertEquals(new HashSet<>(asList(e1, e2, e3)), edges);
@@ -164,85 +180,85 @@ public class DAGTest {
     @Test
     public void outboundEdges() {
         // Given
-        final DAG dag = new DAG();
-        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
-        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
-        final Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
-        final Vertex d = dag.newVertex("d", PROCESSOR_SUPPLIER);
-        final Edge e1 = from(a, 0).to(b);
-        final Edge e2 = from(a, 1).to(c);
-        final Edge e3 = from(a, 2).to(d);
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        Vertex d = dag.newVertex("d", PROCESSOR_SUPPLIER);
+        Edge e1 = from(a, 0).to(b);
+        Edge e2 = from(a, 1).to(c);
+        Edge e3 = from(a, 2).to(d);
         dag.edge(e1)
            .edge(e2)
            .edge(e3)
            .edge(from(b).to(c, 1));
 
         // When
-        final Set<Edge> edges = new HashSet<>(dag.getOutboundEdges("a"));
+        Set<Edge> edges = new HashSet<>(dag.getOutboundEdges("a"));
 
         // Then
         assertEquals(new HashSet<>(asList(e1, e2, e3)), edges);
     }
 
     @Test
-    public void iteratorOrder() {
+    public void when_iterator_then_topologicalOrder() {
+        // We'll build this DAG:
+        // a --> b \
+        //           --> e --> f
+        // c --> d /
+
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
-        dag.edge(from(a, 0).to(b, 0))
-           .edge(from(b, 0).to(c, 0))
-           .edge(from(a, 1).to(c, 1));
+        Vertex d = dag.newVertex("d", PROCESSOR_SUPPLIER);
+        Vertex e = dag.newVertex("e", PROCESSOR_SUPPLIER);
+        Vertex f = dag.newVertex("f", PROCESSOR_SUPPLIER);
 
-        // When
-        Iterator<Vertex> iterator = dag.iterator();
-        Vertex v1 = iterator.next();
-        Vertex v2 = iterator.next();
-        Vertex v3 = iterator.next();
-
-        // Then
-        assertEquals(a, v1);
-        assertEquals(b, v2);
-        assertEquals(c, v3);
-        assertEquals(false, iterator.hasNext());
-    }
-
-    @Test
-    public void reverseIteratorOrder() {
-        // Given
-        DAG dag = new DAG();
-        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
-        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
-        dag.edge(from(a, 0).to(b, 0))
-           .edge(from(b, 0).to(c, 0))
-           .edge(from(a, 1).to(c, 1));
-
-        // When
-        Iterator<Vertex> iterator = dag.reverseIterator();
-        Vertex v1 = iterator.next();
-        Vertex v2 = iterator.next();
-        Vertex v3 = iterator.next();
-
-        // Then
-        assertEquals(c, v1);
-        assertEquals(b, v2);
-        assertEquals(a, v3);
-        assertEquals(false, iterator.hasNext());
-    }
-
-    @Test
-    public void when_cycleInGraph_then_invalid() {
-        // Given
-        DAG dag = new DAG();
-        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         dag.edge(between(a, b))
-           .edge(between(b, a));
+           .edge(between(b, e))
+           .edge(between(c, d))
+           .edge(from(d).to(e, 1))
+           .edge(between(e, f));
+
+        // When
+        List<Vertex> sorted = new ArrayList<>();
+        for (Vertex v : dag) {
+            sorted.add(v);
+        }
+
+        // Then
+        // Assert that for every edge x -> y, x is before y in the ordering.
+        assertTrue(sorted.indexOf(a) < sorted.indexOf(b));
+        assertTrue(sorted.indexOf(b) < sorted.indexOf(e));
+        assertTrue(sorted.indexOf(c) < sorted.indexOf(d));
+        assertTrue(sorted.indexOf(d) < sorted.indexOf(e));
+        assertTrue(sorted.indexOf(e) < sorted.indexOf(f));
+    }
+
+    @Test
+    public void when_cycle_then_invalid() {
+        // Given
+        DAG dag = new DAG();
+        Vertex x = dag.newVertex("x", PROCESSOR_SUPPLIER);
+        Vertex y = dag.newVertex("y", PROCESSOR_SUPPLIER);
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(between(a, b))
+           .edge(between(b, c))
+           .edge(between(c, a))
+           .edge(between(x, y))
+           .edge(from(y).to(a, 1));
 
         // Then
         exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(Matchers.anyOf(
+                Matchers.containsString("a -> b -> c -> a"),
+                Matchers.containsString("b -> c -> a -> b"),
+                Matchers.containsString("c -> a -> b -> c")
+        ));
 
         // When
         dag.validate();
@@ -330,7 +346,7 @@ public class DAGTest {
     }
 
     @Test
-    public void when_betweenUsedDuplicitly_then_errorMessageContainsEdgeFromTo() {
+    public void when_duplicateZeroDestOrdinal_then_errorAdvisesFromTo() {
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
@@ -346,7 +362,7 @@ public class DAGTest {
     }
 
     @Test
-    public void when_duplicateNonZeroOrdinal_then_errorMessageNotContainingEdgeFromTo() {
+    public void when_duplicateNonZeroDestOrdinal_then_errorDoesntAdviseFromTo() {
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);

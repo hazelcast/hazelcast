@@ -113,7 +113,7 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).execute().get();
+        jetInstance.newJob(dag).join();
 
         IStreamList<Object> list = jetInstance.getList(sinkName);
         assertEquals(ENTRY_COUNT - 1, list.size());
@@ -124,7 +124,7 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
     @Test
     public void testStreamMap() throws ExecutionException, InterruptedException {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamMap(streamSourceName));
+        Vertex source = dag.newVertex("source", streamMap(streamSourceName, false));
         Vertex sink = dag.newVertex("sink", writeList(streamSinkName));
 
         dag.edge(between(source, sink));
@@ -214,7 +214,7 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
     @Test
     public void testStreamCache() throws ExecutionException, InterruptedException {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamCache(streamSourceName));
+        Vertex source = dag.newVertex("source", streamCache(streamSourceName, false));
         Vertex sink = dag.newVertex("sink", writeList(streamSinkName));
 
         dag.edge(between(source, sink));

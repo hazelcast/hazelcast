@@ -23,7 +23,9 @@ import javax.annotation.Nonnull;
 import java.util.concurrent.Future;
 
 /**
- * A Jet computation job created from a {@link DAG}, ready to be executed.
+ * A Jet computation job created from a {@link DAG}. Jet will start executing
+ * it automatically and its associated {@link #getFuture() future} can be used
+ * to wait for it to complete or cancel it.
  */
 public interface Job {
 

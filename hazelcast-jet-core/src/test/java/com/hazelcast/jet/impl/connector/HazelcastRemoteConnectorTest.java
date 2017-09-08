@@ -44,8 +44,8 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
@@ -58,6 +58,7 @@ import static com.hazelcast.jet.processor.SourceProcessors.readMap;
 import static com.hazelcast.jet.processor.SourceProcessors.streamCache;
 import static com.hazelcast.jet.processor.SourceProcessors.streamMap;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -129,13 +130,13 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_mapReaderConfiguredWithClientConfig_then_readFromRemoteCluster_withProjectionAndPredicate()
+    public void when_mapReaderConfiguredWithClientConfigAndFilter_then_readFromRemoteCluster_withPredicate()
             throws Exception {
         populateMap(hz.getMap("source"));
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMap("source",
-                e -> !e.getKey().equals(0), Map.Entry::getKey, clientConfig)).localParallelism(4);
+                e -> !e.getKey().equals(0), Entry::getValue, clientConfig)).localParallelism(4);
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeList("sink")).localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -188,7 +189,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     @Test
     public void when_mapStreamerConfiguredWithClientConfig_then_streamFromRemoteCluster() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamMap("source", clientConfig));
+        Vertex source = dag.newVertex("source", streamMap("source", clientConfig, false));
         Vertex sink = dag.newVertex("sink", writeList("sink"));
         dag.edge(between(source, sink));
 
@@ -255,7 +256,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     @Test
     public void when_cacheStreamerConfiguredWithClientConfig_then_streamFromRemoteCluster() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamCache("source", clientConfig)).localParallelism(4);
+        Vertex source = dag.newVertex("source", streamCache("source", clientConfig, false)).localParallelism(4);
         Vertex sink = dag.newVertex("sink", writeList("sink")).localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -329,10 +330,10 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     private static void populateMap(Map<Object, Object> map) {
-        map.putAll(IntStream.range(0, ITEM_COUNT).boxed().collect(Collectors.toMap(m -> m, m -> m)));
+        map.putAll(IntStream.range(0, ITEM_COUNT).boxed().collect(toMap(m -> m, m -> m)));
     }
 
     private static void populateCache(ICache<Object, Object> cache) {
-        cache.putAll(IntStream.range(0, ITEM_COUNT).boxed().collect(Collectors.toMap(m -> m, m -> m)));
+        cache.putAll(IntStream.range(0, ITEM_COUNT).boxed().collect(toMap(m -> m, m -> m)));
     }
 }

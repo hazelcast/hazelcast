@@ -23,15 +23,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class StreamFilesP_readCompleteLineTest {
 
-    private StreamFilesP p = new StreamFilesP("", StandardCharsets.UTF_8, null, 0, 0);
+    private StreamFilesP p = new StreamFilesP("", UTF_8, "*", 0, 0);
 
     @Test
     public void when_emptyFile_then_null() throws Exception {

@@ -33,7 +33,6 @@ public class EdgeDef implements IdentifiedDataSerializable {
     private int sourceOrdinal;
     private int destOrdinal;
     private int priority;
-    private boolean isBuffered;
     private boolean isDistributed;
     private RoutingPolicy routingPolicy;
     private Partitioner partitioner;
@@ -53,7 +52,6 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.sourceOrdinal = edge.getSourceOrdinal();
         this.destOrdinal = edge.getDestOrdinal();
         this.priority = edge.getPriority();
-        this.isBuffered = edge.isBuffered();
         this.isDistributed = isJobDistributed && edge.isDistributed();
         this.routingPolicy = edge.getRoutingPolicy();
         this.partitioner = edge.getPartitioner();
@@ -99,10 +97,6 @@ public class EdgeDef implements IdentifiedDataSerializable {
         return priority;
     }
 
-    boolean isBuffered() {
-        return isBuffered;
-    }
-
     boolean isDistributed() {
         return isDistributed;
     }
@@ -116,12 +110,12 @@ public class EdgeDef implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetImplDataSerializerHook.FACTORY_ID;
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.EDGE_DEF;
+        return JetInitDataSerializerHook.EDGE_DEF;
     }
 
     @Override
@@ -130,7 +124,6 @@ public class EdgeDef implements IdentifiedDataSerializable {
         out.writeInt(destOrdinal);
         out.writeInt(sourceOrdinal);
         out.writeInt(priority);
-        out.writeBoolean(isBuffered);
         out.writeBoolean(isDistributed);
         out.writeObject(routingPolicy);
         CustomClassLoadedObject.write(out, partitioner);
@@ -143,7 +136,6 @@ public class EdgeDef implements IdentifiedDataSerializable {
         destOrdinal = in.readInt();
         sourceOrdinal = in.readInt();
         priority = in.readInt();
-        isBuffered = in.readBoolean();
         isDistributed = in.readBoolean();
         routingPolicy = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);

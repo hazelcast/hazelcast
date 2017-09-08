@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isJobRestartRequired;
-import static com.hazelcast.jet.impl.util.Util.formatIds;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 public class InitOperation extends Operation implements IdentifiedDataSerializable {
@@ -66,7 +66,7 @@ public class InitOperation extends Operation implements IdentifiedDataSerializab
         JetService service = getService();
 
         Address caller = getCallerAddress();
-        logger.fine("Initializing execution plan for " + formatIds(jobId, executionId) + " from " + caller);
+        logger.fine("Initializing execution plan for " + jobAndExecutionId(jobId, executionId) + " from " + caller);
         ExecutionPlan plan = planSupplier.get();
         service.initExecution(jobId, executionId, caller, coordinatorMemberListVersion, participants, plan);
     }
@@ -78,12 +78,12 @@ public class InitOperation extends Operation implements IdentifiedDataSerializab
 
     @Override
     public int getFactoryId() {
-        return JetImplDataSerializerHook.FACTORY_ID;
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.INIT_OP;
+        return JetInitDataSerializerHook.INIT_OP;
     }
 
     @Override

@@ -111,8 +111,8 @@ public class JetService
         jobCoordinationService.init();
 
         JetBuildInfo jetBuildInfo = BuildInfoProvider.getBuildInfo().getJetBuildInfo();
-        logger.info("Starting Jet " + jetBuildInfo.getVersion() + " (" + jetBuildInfo.getBuild() + " - " +
-                jetBuildInfo.getRevision() + ")");
+        logger.info(String.format("Starting Jet %s (%s - %s)",
+                jetBuildInfo.getVersion(), jetBuildInfo.getBuild(), jetBuildInfo.getRevision()));
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + config.getInstanceConfig().getCooperativeThreadCount());
 
@@ -138,15 +138,19 @@ public class JetService
         jobExecutionService.reset("reset", TopologyChangedException::new);
     }
 
-    public void initExecution(long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
-                              Set<MemberInfo> participants, ExecutionPlan plan) {
+    public void initExecution(
+            long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
+            Set<MemberInfo> participants, ExecutionPlan plan
+    ) {
         jobExecutionService.initExecution(
                 jobId, executionId, coordinator, coordinatorMemberListVersion, participants, plan
         );
     }
 
-    public CompletionStage<Void> execute(Address coordinator, long jobId, long executionId,
-                                         Consumer<CompletionStage<Void>> doneCallback) {
+    public CompletionStage<Void> execute(
+            Address coordinator, long jobId, long executionId,
+            Consumer<CompletionStage<Void>> doneCallback
+    ) {
         return jobExecutionService.execute(coordinator, jobId, executionId, doneCallback);
     }
 
@@ -218,5 +222,4 @@ public class JetService
     public CompletableFuture<Boolean> startOrJoinJob(long jobId, Data dag, JobConfig config) {
         return jobCoordinationService.startOrJoinJob(jobId, dag, config);
     }
-
 }

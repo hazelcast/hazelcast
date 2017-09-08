@@ -59,7 +59,7 @@ import static com.hazelcast.jet.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isJobRestartRequired;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.Util.formatIds;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
@@ -130,12 +130,12 @@ public class MasterContext {
         try {
             executionPlanMap = createExecutionPlans(membersView);
         } catch (TopologyChangedException e) {
-            logger.severe("Execution plans could not be created for " + formatIds(jobId, executionId), e);
+            logger.severe("Execution plans could not be created for " + jobAndExecutionId(jobId, executionId), e);
             scheduleRestart();
             return;
         }
 
-        logger.fine("Built execution plans for " + formatIds(jobId, executionId));
+        logger.fine("Built execution plans for " + jobAndExecutionId(jobId, executionId));
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new InitOperation(jobId, executionId, membersView.getVersion(), participants, plan);
@@ -204,9 +204,9 @@ public class MasterContext {
     private Map<MemberInfo, ExecutionPlan> createExecutionPlans(MembersView membersView) {
         DAG dag = deserializeDAG();
 
-        logger.info("Start executing " + formatIds(jobId, executionId) + ", status " + jobStatus()
+        logger.info("Start executing " + jobAndExecutionId(jobId, executionId) + ", status " + jobStatus()
                 + ": " + dag);
-        logger.fine("Building execution plan for " + formatIds(jobId, executionId));
+        logger.fine("Building execution plan for " + jobAndExecutionId(jobId, executionId));
         return coordinationService.createExecutionPlans(membersView, dag);
     }
 
@@ -223,7 +223,7 @@ public class MasterContext {
             JobStatus status = jobStatus();
 
             if (!(status == STARTING || status == RESTARTING)) {
-                error = new IllegalStateException("Cannot execute " + formatIds(jobId, executionId)
+                error = new IllegalStateException("Cannot execute " + jobAndExecutionId(jobId, executionId)
                         + ": status is " + status);
             }
         }
@@ -243,7 +243,7 @@ public class MasterContext {
      */
     private Throwable getInitResult(Map<MemberInfo, Object> responses) {
         if (completionFuture.isCancelled()) {
-            logger.fine(formatIds(jobId, executionId) + " to be cancelled after init");
+            logger.fine(jobAndExecutionId(jobId, executionId) + " to be cancelled after init");
             return new CancellationException();
         }
 
@@ -251,12 +251,12 @@ public class MasterContext {
         Collection<MemberInfo> successfulMembers = grouped.get(false).stream().map(Entry::getKey).collect(toList());
 
         if (successfulMembers.size() == executionPlanMap.size()) {
-            logger.fine("Init of " + formatIds(jobId, executionId) + " is successful.");
+            logger.fine("Init of " + jobAndExecutionId(jobId, executionId) + " is successful.");
             return null;
         }
 
         List<Entry<MemberInfo, Object>> failures = grouped.get(true);
-        logger.fine("Init of " + formatIds(jobId, executionId) + " failed with: " + failures);
+        logger.fine("Init of " + jobAndExecutionId(jobId, executionId) + " failed with: " + failures);
 
         // if there is at least one non-restartable failure, such as a user code failure, then fail the job
         // otherwise, return TopologyChangedException so that the job will be restarted
@@ -281,7 +281,7 @@ public class MasterContext {
     // on the remaining participants and the callback is completed after all invocations return.
     private void invokeExecute() {
         jobStatus.set(RUNNING);
-        logger.fine("Executing " + formatIds(jobId, executionId));
+        logger.fine("Executing " + jobAndExecutionId(jobId, executionId));
         Function<ExecutionPlan, Operation> operationCtor = plan -> new ExecuteOperation(jobId, executionId);
         invoke(operationCtor, this::onExecuteStepCompleted, completionFuture);
     }
@@ -299,7 +299,7 @@ public class MasterContext {
      */
     private Throwable getExecuteResult(Map<MemberInfo, Object> responses) {
         if (completionFuture.isCancelled()) {
-            logger.fine(formatIds(jobId, executionId) + " to be cancelled after execute");
+            logger.fine(jobAndExecutionId(jobId, executionId) + " to be cancelled after execute");
             return new CancellationException();
         }
 
@@ -307,12 +307,12 @@ public class MasterContext {
         Collection<MemberInfo> successfulMembers = grouped.get(false).stream().map(Entry::getKey).collect(toList());
 
         if (successfulMembers.size() == executionPlanMap.size()) {
-            logger.fine("Execute of " + formatIds(jobId, executionId) + " is successful.");
+            logger.fine("Execute of " + jobAndExecutionId(jobId, executionId) + " is successful.");
             return null;
         }
 
         List<Entry<MemberInfo, Object>> failures = grouped.get(true);
-        logger.fine("Execute of " + formatIds(jobId, executionId) + " has failures: " + failures);
+        logger.fine("Execute of " + jobAndExecutionId(jobId, executionId) + " has failures: " + failures);
 
         // If there is no user-code exception, it means at least one job participant has left the cluster.
         // In that case, all remaining participants return a CancellationException.
@@ -330,14 +330,14 @@ public class MasterContext {
 
         Throwable finalError;
         if (status == STARTING || status == RESTARTING || status == RUNNING) {
-            logger.fine("Completing " + formatIds(jobId, executionId));
+            logger.fine("Completing " + jobAndExecutionId(jobId, executionId));
             finalError = error;
         } else {
             if (error != null) {
-                logger.severe("Cannot properly complete failed " + formatIds(jobId, executionId)
+                logger.severe("Cannot properly complete failed " + jobAndExecutionId(jobId, executionId)
                         + ": status is " + status, error);
             } else {
-                logger.severe("Cannot properly complete " + formatIds(jobId, executionId)
+                logger.severe("Cannot properly complete " + jobAndExecutionId(jobId, executionId)
                         + ": status is " + status);
             }
 
@@ -372,16 +372,16 @@ public class MasterContext {
         long elapsed = completionTime - jobStartTime;
 
         if (isSuccess(failure)) {
-            logger.info("Execution of " + formatIds(jobId, executionId) + " completed in " + elapsed + " ms");
+            logger.info("Execution of " + jobAndExecutionId(jobId, executionId) + " completed in " + elapsed + " ms");
         } else {
-            logger.warning("Execution of " + formatIds(jobId, executionId)
+            logger.warning("Execution of " + jobAndExecutionId(jobId, executionId)
                     + " failed in " + elapsed + " ms", failure);
         }
 
         try {
             coordinationService.completeJob(this, completionTime, failure);
         } catch (RuntimeException e) {
-            logger.warning("Completion of " + formatIds(jobId, executionId)
+            logger.warning("Completion of " + jobAndExecutionId(jobId, executionId)
                     + " failed in " + elapsed + " ms", failure);
         } finally {
             setFinalResult(failure);

@@ -39,7 +39,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 /**
  * @see SourceProcessors#readFiles(String, Charset, String)
  */
-public class ReadFilesP extends AbstractProcessor {
+public final class ReadFilesP extends AbstractProcessor {
 
     private final Charset charset;
     private final int parallelism;
@@ -47,7 +47,7 @@ public class ReadFilesP extends AbstractProcessor {
     private final Path directory;
     private final String glob;
 
-    ReadFilesP(String directory, Charset charset, String glob, int parallelism, int id) {
+    private ReadFilesP(String directory, Charset charset, String glob, int parallelism, int id) {
         this.directory = Paths.get(directory);
         this.glob = glob;
         this.charset = charset;
@@ -96,7 +96,8 @@ public class ReadFilesP extends AbstractProcessor {
     }
 
     /**
-     * @see SourceProcessors#readFiles(String, Charset, String)
+     * Private API. Use {@link SourceProcessors#readFiles(String, Charset, String)}
+     * instead.
      */
     public static ProcessorSupplier supplier(@Nonnull String directory, @Nonnull String charset, @Nonnull String glob) {
         return new ProcessorSupplier() {

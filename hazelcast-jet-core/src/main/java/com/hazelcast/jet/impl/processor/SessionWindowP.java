@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.Session;
 import com.hazelcast.jet.Traverser;
@@ -47,7 +47,7 @@ import static java.lang.System.arraycopy;
 /**
  * Session window processor. See {@link
  *      com.hazelcast.jet.processor.Processors#aggregateToSessionWindow(long,
- *      DistributedToLongFunction, DistributedFunction, AggregateOperation)
+ *      DistributedToLongFunction, DistributedFunction, AggregateOperation1)
  * WindowingProcessors.sessionWindow()} for documentation.
  *
  * @param <T> type of the stream item
@@ -75,7 +75,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
             long sessionTimeout,
             DistributedToLongFunction<? super T> getTimestampF,
             DistributedFunction<? super T, K> getKeyF,
-            AggregateOperation<? super T, A, R> aggrOp
+            AggregateOperation1<? super T, A, R> aggrOp
     ) {
         this.getTimestampF = getTimestampF;
         this.getKeyF = getKeyF;

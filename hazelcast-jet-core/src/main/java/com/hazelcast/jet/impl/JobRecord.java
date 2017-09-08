@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -60,12 +60,12 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetImplDataSerializerHook.FACTORY_ID;
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.JOB_RECORD;
+        return JetInitDataSerializerHook.JOB_RECORD;
     }
 
     @Override

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 
@@ -34,7 +34,7 @@ public class AggregateP<T, A, R> extends AbstractProcessor {
     private R result;
 
     public AggregateP(
-            @Nonnull AggregateOperation<? super T, A, R> aggregateOperation
+            @Nonnull AggregateOperation1<? super T, A, R> aggregateOperation
     ) {
         this.accumulateF = aggregateOperation.accumulateItemF();
         this.finishF = aggregateOperation.finishAccumulationF();

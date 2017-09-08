@@ -184,18 +184,19 @@ public final class Util {
      * @throws IllegalArgumentException if {@code object} is not serializable
      */
     public static void checkSerializable(Object object, String objectName) {
-        if (object != null) {
-            if (!(object instanceof Serializable)) {
-                throw new IllegalArgumentException("\"" + objectName + "\" must be serializable");
-            }
-            try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
-                os.writeObject(object);
-            } catch (NotSerializableException | InvalidClassException e) {
-                throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
-            } catch (IOException e) {
-                // never really thrown, as the underlying stream never throws it
-                throw new JetException(e);
-            }
+        if (object == null) {
+            return;
+        }
+        if (!(object instanceof Serializable)) {
+            throw new IllegalArgumentException("\"" + objectName + "\" must be serializable");
+        }
+        try  (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+            os.writeObject(object);
+        } catch (NotSerializableException | InvalidClassException e) {
+            throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
+        } catch (IOException e) {
+            // never really thrown, as the underlying stream never throws it
+            throw new JetException(e);
         }
     }
 
@@ -235,7 +236,7 @@ public final class Util {
         return Holder.NUMBER_GENERATOR.nextLong();
     }
 
-    public static String formatIds(long jobId, long executionId) {
+    public static String jobAndExecutionId(long jobId, long executionId) {
         return "job " + idToString(jobId) + ", execution " + idToString(executionId);
     }
 

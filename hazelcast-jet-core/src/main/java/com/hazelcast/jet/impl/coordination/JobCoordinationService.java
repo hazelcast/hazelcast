@@ -55,7 +55,7 @@ import static com.hazelcast.jet.JobStatus.FAILED;
 import static com.hazelcast.jet.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.config.JetConfig.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
-import static com.hazelcast.jet.impl.util.Util.formatIds;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -280,14 +280,14 @@ public class JobCoordinationService {
         jobRepository.deleteJob(jobId);
 
         if (masterContexts.remove(masterContext.getJobId(), masterContext)) {
-            logger.fine(formatIds(jobId, executionId) + " is completed");
+            logger.fine(jobAndExecutionId(jobId, executionId) + " is completed");
         } else {
             MasterContext existing = masterContexts.get(jobId);
             if (existing != null) {
-                logger.severe("Different master context found to complete " + formatIds(jobId, executionId)
+                logger.severe("Different master context found to complete " + jobAndExecutionId(jobId, executionId)
                         + ", master context execution " + idToString(existing.getExecutionId()));
             } else {
-                logger.severe("No master context found to complete " + formatIds(jobId, executionId));
+                logger.severe("No master context found to complete " + jobAndExecutionId(jobId, executionId));
             }
         }
     }

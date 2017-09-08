@@ -35,10 +35,13 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *     {@code tryProcessN()} with each item received in the inbox. If the item
  *     is a watermark, routes it to {@code tryProcessWmN()} instead.
  * </li><li>
- *     There is also the catch-all {@link #tryProcess(int, Object)} to which
- *     the {@code tryProcessN} methods delegate by default. It must be used
- *     for ordinals greater than 4, but it may also be used whenever the
- *     processor doesn't care which edge an item originates from.
+ *     There is also the general {@link #tryProcess(int, Object)} to which
+ *     the {@code tryProcessN} methods delegate by default. It is convenient
+ *     to override it when the processor doesn't care which edge an item
+ *     originates from. Another convenient idiom is to override {@code
+ *     tryProcessN()} for one or two specially treated edges and override
+ *     {@link #tryProcess(int, Object)} to process the rest of the edges, which
+ *     are treated uniformly.
  * </li><li>
  *     The {@code emit(...)} methods avoid the need to deal with {@code Outbox}
  *     directly.

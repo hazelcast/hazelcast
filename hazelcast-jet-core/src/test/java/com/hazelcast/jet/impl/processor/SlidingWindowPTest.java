@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.StreamingTestSupport;
@@ -24,6 +24,7 @@ import com.hazelcast.jet.TimestampKind;
 import com.hazelcast.jet.TimestampedEntry;
 import com.hazelcast.jet.WindowDefinition;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -81,14 +82,13 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     @Before
     public void before() {
         WindowDefinition windowDef = slidingWindowDef(4, 1);
-        AggregateOperation<Entry<?, Long>, LongAccumulator, Long> operation;
 
-        operation = AggregateOperation.of(
-                    LongAccumulator::new,
-                    (acc, item) -> acc.addExact(item.getValue()),
-                    LongAccumulator::addExact,
-                    hasDeduct ? LongAccumulator::subtractExact : null,
-                    LongAccumulator::get);
+        AggregateOperation1<Entry<?, Long>, LongAccumulator, Long> operation = AggregateOperation
+                .withCreate(LongAccumulator::new)
+                .andAccumulate((LongAccumulator acc, Entry<?, Long> item) -> acc.addExact(item.getValue()))
+                .andCombine(LongAccumulator::addExact)
+                .andDeduct(hasDeduct ? LongAccumulator::subtractExact : null)
+                .andFinish(LongAccumulator::get);
 
         DistributedSupplier<Processor> procSupplier = singleStageProcessor
                 ? aggregateToSlidingWindow(

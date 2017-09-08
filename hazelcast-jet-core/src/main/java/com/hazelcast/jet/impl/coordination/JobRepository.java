@@ -24,7 +24,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.impl.JobRecord;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -281,12 +281,12 @@ public class JobRepository {
 
         @Override
         public int getFactoryId() {
-            return JetImplDataSerializerHook.FACTORY_ID;
+            return JetInitDataSerializerHook.FACTORY_ID;
         }
 
         @Override
         public int getId() {
-            return JetImplDataSerializerHook.FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE;
+            return JetInitDataSerializerHook.FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE;
         }
 
         @Override
@@ -313,12 +313,12 @@ public class JobRepository {
 
         @Override
         public int getFactoryId() {
-            return JetImplDataSerializerHook.FACTORY_ID;
+            return JetInitDataSerializerHook.FACTORY_ID;
         }
 
         @Override
         public int getId() {
-            return JetImplDataSerializerHook.FILTER_JOB_ID;
+            return JetInitDataSerializerHook.FILTER_JOB_ID;
         }
 
         @Override

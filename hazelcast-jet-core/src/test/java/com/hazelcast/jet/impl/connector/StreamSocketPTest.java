@@ -37,6 +37,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -72,7 +73,7 @@ public class StreamSocketPTest extends JetTestSupport {
             }));
             thread.start();
 
-            Processor processor = SourceProcessors.streamSocket("localhost", serverSocket.getLocalPort()).get();
+            Processor processor = SourceProcessors.streamSocket("localhost", serverSocket.getLocalPort(), UTF_8).get();
             processor.init(outbox, context);
 
             assertTrue(processor.complete());

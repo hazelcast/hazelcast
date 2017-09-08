@@ -53,9 +53,9 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 class IntPipeline implements DistributedIntStream {
 
     private final StreamContext context;
-    private final Pipeline<Integer> inner;
+    private final Pipe<Integer> inner;
 
-    IntPipeline(StreamContext context, Pipeline<Integer> inner) {
+    IntPipeline(StreamContext context, Pipe<Integer> inner) {
         this.context = context;
         this.inner = inner;
     }
@@ -84,14 +84,14 @@ class IntPipeline implements DistributedIntStream {
     public DistributedLongStream mapToLong(IntToLongFunction mapper) {
         checkSerializable(mapper, "mapper");
         DistributedStream<Long> stream = inner.map(mapper::applyAsLong);
-        return new LongPipeline(context, (Pipeline<Long>) stream);
+        return new LongPipe(context, (Pipe<Long>) stream);
     }
 
     @Override
     public DistributedDoubleStream mapToDouble(IntToDoubleFunction mapper) {
         checkSerializable(mapper, "mapper");
         DistributedStream<Double> stream = inner.map(mapper::applyAsDouble);
-        return new DoublePipeline(context, (Pipeline<Double>) stream);
+        return new DoublePipeline(context, (Pipe<Double>) stream);
     }
 
     @Override
@@ -309,7 +309,7 @@ class IntPipeline implements DistributedIntStream {
     }
 
     private DistributedIntStream wrap(Stream<Integer> pipeline) {
-        return new IntPipeline(context, (Pipeline<Integer>) pipeline);
+        return new IntPipeline(context, (Pipe<Integer>) pipeline);
     }
 
     private static OptionalInt toOptionalInt(Optional<Integer> optional) {

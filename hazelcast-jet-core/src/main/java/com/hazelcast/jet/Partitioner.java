@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 /**
@@ -76,7 +77,7 @@ public interface Partitioner<T> extends Serializable {
      * available after the partitioner is deserialized on each target member.
      * This method solves the lifecycle mismatch.
      */
-    default void init(DefaultPartitionStrategy strat) {
+    default void init(@Nonnull DefaultPartitionStrategy strat) {
     }
 
     /**
@@ -84,7 +85,7 @@ public interface Partitioner<T> extends Serializable {
      *
      * @param partitionCount the total number of partitions in use by the underlying Hazelcast instance
      */
-    int getPartition(T item, int partitionCount);
+    int getPartition(@Nonnull T item, int partitionCount);
 
     /**
      * Returns a partitioner which applies the default Hazelcast partitioning.
@@ -110,12 +111,12 @@ public interface Partitioner<T> extends Serializable {
         }
 
         @Override
-        public void init(DefaultPartitionStrategy defaultPartitioning) {
+        public void init(@Nonnull DefaultPartitionStrategy defaultPartitioning) {
             this.defaultPartitioning = defaultPartitioning;
         }
 
         @Override
-        public int getPartition(Object item, int partitionCount) {
+        public int getPartition(@Nonnull Object item, int partitionCount) {
             return defaultPartitioning.getPartition(item);
         }
     }

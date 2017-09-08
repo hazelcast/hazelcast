@@ -49,9 +49,7 @@ public class LiveOperationRegistry {
     }
 
     void populate(LiveOperations liveOperations) {
-        this.liveOperations.entrySet().forEach(entry ->
-                entry.getValue().keySet().forEach(callId -> liveOperations.add(entry.getKey(), callId))
-        );
+        this.liveOperations.forEach((key, value) -> value.keySet().forEach(callId -> liveOperations.add(key, callId)));
     }
 
     boolean cancel(Address caller, long callId) {

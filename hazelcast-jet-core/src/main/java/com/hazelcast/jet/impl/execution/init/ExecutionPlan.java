@@ -170,12 +170,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetImplDataSerializerHook.FACTORY_ID;
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.EXECUTION_PLAN;
+        return JetInitDataSerializerHook.EXECUTION_PLAN;
     }
 
     @Override
@@ -288,7 +288,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ) {
         final int totalPtionCount = nodeEngine.getPartitionService().getPartitionCount();
         OutboundCollector[] outboundCollectors = createOutboundCollectors(edge, processorIndex, senderConveyorMap);
-        int outboxLimit = edge.isBuffered() ? Integer.MAX_VALUE : edge.getConfig().getOutboxCapacity();
+        int outboxLimit = edge.getConfig().getOutboxCapacity();
         OutboundCollector compositeCollector = compositeCollector(outboundCollectors, edge, totalPtionCount);
         return new OutboundEdgeStream(edge.sourceOrdinal(), outboxLimit, compositeCollector);
     }

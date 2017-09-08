@@ -44,11 +44,8 @@ import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Instead of methods in this class use:<ul>
- * <li>{@link SinkProcessors#writeMap(String)}</li>
- * <li>{@link SinkProcessors#writeCache(String)}</li>
- * <li>{@link SinkProcessors#writeList(String)}</li>
- * </ul>
+ * This is private API. Check out the {@link SinkProcessors} class for
+ * public factory methods.
  */
 public final class HazelcastWriters {
 
@@ -61,6 +58,7 @@ public final class HazelcastWriters {
     }
 
     @Nonnull
+    @SuppressWarnings("unchecked")
     public static ProcessorSupplier writeMap(String name, ClientConfig clientConfig) {
         return new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
@@ -164,6 +162,11 @@ public final class HazelcastWriters {
             public int size() {
                 return entries.size();
             }
+        }
+
+        @Override
+        public String toString() {
+            return entries.toString();
         }
     }
 

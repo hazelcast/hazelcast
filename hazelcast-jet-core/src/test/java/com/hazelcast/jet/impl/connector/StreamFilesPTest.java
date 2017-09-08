@@ -20,7 +20,6 @@ import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.logging.Log4jFactory;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,6 +38,7 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 
+import static com.hazelcast.jet.processor.SourceProcessors.streamFiles;
 import static java.lang.Thread.interrupted;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -81,7 +81,7 @@ public class StreamFilesPTest extends JetTestSupport {
 
     @Test
     public void supplier() {
-        ProcessorSupplier supplier = SourceProcessors.streamFiles(workDir.getAbsolutePath());
+        ProcessorSupplier supplier = streamFiles(workDir.getAbsolutePath(), UTF_8, "*");
         assertEquals(1, supplier.get(1).size());
         supplier.complete(null);
     }

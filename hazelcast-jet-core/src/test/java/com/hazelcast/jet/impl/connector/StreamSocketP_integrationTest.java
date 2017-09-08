@@ -22,7 +22,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -41,6 +40,8 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.processor.Processors.noop;
 import static com.hazelcast.jet.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.processor.SourceProcessors.streamSocket;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -85,7 +86,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
             })).start();
 
             DAG dag = new DAG();
-            Vertex producer = dag.newVertex("producer", SourceProcessors.streamSocket(HOST, PORT)).localParallelism(2);
+            Vertex producer = dag.newVertex("producer", streamSocket(HOST, PORT, UTF_8)).localParallelism(2);
             Vertex consumer = dag.newVertex("consumer", writeList("consumer")).localParallelism(1);
             dag.edge(between(producer, consumer));
 
@@ -120,7 +121,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
                 }
             })).start();
 
-            Vertex producer = new Vertex("producer", SourceProcessors.streamSocket(HOST, PORT)).localParallelism(1);
+            Vertex producer = new Vertex("producer", streamSocket(HOST, PORT, UTF_8)).localParallelism(1);
             Vertex sink = new Vertex("sink", noop()).localParallelism(1);
             DAG dag = new DAG()
                     .vertex(producer)

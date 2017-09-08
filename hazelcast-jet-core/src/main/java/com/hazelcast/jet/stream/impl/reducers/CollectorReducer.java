@@ -22,7 +22,7 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
-import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.CollectorAccumulateP;
 import com.hazelcast.jet.stream.impl.processor.CollectorCombineP;
@@ -68,7 +68,7 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
         return result;
     }
 
-    static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
+    static <T, R> Vertex buildAccumulator(DAG dag, Pipe<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
         Vertex accumulatorVertex = dag.newVertex("accumulator",
                 () -> new CollectorAccumulateP<>(accumulator, supplier));
@@ -107,7 +107,7 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
     }
 
     @Override
-    public R reduce(StreamContext context, Pipeline<? extends T> upstream) {
+    public R reduce(StreamContext context, Pipe<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier, accumulator);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner, finisher);

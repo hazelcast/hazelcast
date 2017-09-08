@@ -20,7 +20,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.IStreamList;
-import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import static com.hazelcast.jet.Edge.between;
@@ -36,7 +36,7 @@ public class IListReducer<T> implements Reducer<T, IStreamList<T>> {
     }
 
     @Override
-    public IStreamList<T> reduce(StreamContext context, Pipeline<? extends T> upstream) {
+    public IStreamList<T> reduce(StreamContext context, Pipe<? extends T> upstream) {
         IStreamList<T> target = context.getJetInstance().getList(listName);
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag);

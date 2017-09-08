@@ -52,9 +52,9 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 class DoublePipeline implements DistributedDoubleStream {
 
     private final StreamContext context;
-    private final Pipeline<Double> inner;
+    private final Pipe<Double> inner;
 
-    DoublePipeline(StreamContext context, Pipeline<Double> inner) {
+    DoublePipeline(StreamContext context, Pipe<Double> inner) {
         this.context = context;
         this.inner = inner;
     }
@@ -83,14 +83,14 @@ class DoublePipeline implements DistributedDoubleStream {
     public DistributedIntStream mapToInt(DoubleToIntFunction mapper) {
         checkSerializable(mapper, "mapper");
         DistributedStream<Integer> stream = inner.map(mapper::applyAsInt);
-        return new IntPipeline(context, (Pipeline<Integer>) stream);
+        return new IntPipeline(context, (Pipe<Integer>) stream);
     }
 
     @Override
     public DistributedLongStream mapToLong(DoubleToLongFunction mapper) {
         checkSerializable(mapper, "mapper");
         DistributedStream<Long> stream = inner.map(mapper::applyAsLong);
-        return new LongPipeline(context, (Pipeline<Long>) stream);
+        return new LongPipe(context, (Pipe<Long>) stream);
     }
 
     @Override
@@ -299,7 +299,7 @@ class DoublePipeline implements DistributedDoubleStream {
     }
 
     private DistributedDoubleStream wrap(Stream<Double> pipeline) {
-        return new DoublePipeline(context, (Pipeline<Double>) pipeline);
+        return new DoublePipeline(context, (Pipe<Double>) pipeline);
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

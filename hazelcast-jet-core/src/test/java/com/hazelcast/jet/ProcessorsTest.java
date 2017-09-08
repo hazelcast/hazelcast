@@ -17,6 +17,8 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Processor.Context;
+import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
@@ -295,14 +297,12 @@ public class ProcessorsTest {
         return p;
     }
 
-    private static <T> AggregateOperation<T, List<T>, String> aggregateToListAndString() {
-        return AggregateOperation.of(
-                ArrayList::new,
-                List::add,
-                List::addAll,
-                null,
-                Object::toString
-        );
+    private static <T> AggregateOperation1<T, List<T>, String> aggregateToListAndString() {
+        return AggregateOperation
+                .<List<T>>withCreate(ArrayList::new)
+                .<T>andAccumulate(List::add)
+                .andCombine(List::addAll)
+                .andFinish(Object::toString);
     }
 
     private interface TwinConsumer<T> extends BiConsumer<T, T> { }

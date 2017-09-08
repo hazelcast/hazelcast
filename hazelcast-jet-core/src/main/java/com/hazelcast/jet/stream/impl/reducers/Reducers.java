@@ -22,7 +22,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
-import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AccumulateP;
 import com.hazelcast.jet.stream.impl.processor.CombineP;
@@ -58,7 +58,7 @@ public final class Reducers {
         }
 
         @Override
-        public U reduce(StreamContext context, Pipeline<? extends T> upstream) {
+        public U reduce(StreamContext context, Pipe<? extends T> upstream) {
             DAG dag = new DAG();
             Vertex accumulate = buildMappingAccumulator(dag, upstream, identity, accumulator);
             Vertex combine = buildCombiner(dag, accumulate, combiner);
@@ -75,7 +75,7 @@ public final class Reducers {
         }
 
         @Override
-        public Optional<T> reduce(StreamContext context, Pipeline<? extends T> upstream) {
+        public Optional<T> reduce(StreamContext context, Pipe<? extends T> upstream) {
             DAG dag = new DAG();
             Vertex accumulate = buildAccumulator(dag, upstream, accumulator, null);
             Vertex combine = buildCombiner(dag, accumulate, accumulator);
@@ -93,7 +93,7 @@ public final class Reducers {
         }
 
         @Override
-        public T reduce(StreamContext context, Pipeline<? extends T> upstream) {
+        public T reduce(StreamContext context, Pipe<? extends T> upstream) {
             DAG dag = new DAG();
             Vertex accumulate = buildAccumulator(dag, upstream, accumulator, identity);
             Vertex combine = buildCombiner(dag, accumulate, accumulator);
@@ -129,7 +129,7 @@ public final class Reducers {
 
 
     private static <T, U> Vertex buildMappingAccumulator(
-            DAG dag, Pipeline<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
+            DAG dag, Pipe<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
     ) {
         Vertex reduce = dag.newVertex("reduce", () -> new AccumulateP<>(accumulator, identity));
         Vertex previous = upstream.buildDAG(dag);
@@ -140,7 +140,7 @@ public final class Reducers {
     }
 
     private static <T> Vertex buildAccumulator(
-            DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, T identity
+            DAG dag, Pipe<? extends T> upstream, BinaryOperator<T> accumulator, T identity
     ) {
         Vertex reduce = reduceVertex(accumulator, identity);
         dag.vertex(reduce);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
+import com.hazelcast.jet.impl.serialization.SerializerHooks;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -111,7 +112,7 @@ public final class CustomClassLoadedObject {
 
         @Override
         public int getTypeId() {
-            return JetSerializerHook.CUSTOM_CLASS_LOADED_OBJECT;
+            return SerializerHooks.CUSTOM_CLASS_LOADED_OBJECT;
         }
 
         @Override

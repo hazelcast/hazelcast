@@ -23,7 +23,7 @@ import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector;
-import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import static com.hazelcast.jet.Edge.between;
@@ -52,7 +52,7 @@ public class SinkReducer<T, K, V, R> implements DistributedCollector.Reducer<T, 
 
 
     @Override
-    public R reduce(StreamContext context, Pipeline<? extends T> upstream) {
+    public R reduce(StreamContext context, Pipe<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
         Vertex mapper = dag.newVertex("map", Processors.map((T t) -> entry(keyMapper.apply(t), valueMapper.apply(t))));

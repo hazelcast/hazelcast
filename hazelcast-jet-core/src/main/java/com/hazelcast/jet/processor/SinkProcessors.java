@@ -32,12 +32,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Static utility class with factories of sink processors (the terminators
@@ -49,8 +49,9 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor that will put data into a Hazelcast
-     * {@code IMap}. Processor expects items of type {@code Map.Entry}.
+     * Returns a supplier of processors for a vertex that puts {@code
+     * Map.Entry}s it receives into a Hazelcast {@code IMap} with the
+     * specified name.
      */
     @Nonnull
     public static ProcessorSupplier writeMap(@Nonnull String mapName) {
@@ -58,9 +59,10 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor that will put data into a Hazelcast
-     * {@code IMap} in a remote cluster. Processor expects items of type {@code
-     * Map.Entry}.
+     * Returns a supplier of processors for a vertex that puts {@code
+     * Map.Entry}s it receives into a Hazelcast {@code IMap} with the
+     * specified name in a remote cluster identified by the supplied
+     * {@code ClientConfig}.
      */
     @Nonnull
     public static ProcessorSupplier writeMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
@@ -68,8 +70,9 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor which will put data into a Hazelcast
-     * {@code ICache}. Processor expects items of type {@code Map.Entry}
+     * Returns a supplier of processors for a vertex that puts {@code
+     * Map.Entry}s it receives into a Hazelcast {@code ICache} with the
+     * specified name.
      */
     @Nonnull
     public static ProcessorSupplier writeCache(@Nonnull String cacheName) {
@@ -77,9 +80,10 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor which will put data into a Hazelcast
-     * {@code ICache} in a remote cluster. Processor expects items of type
-     * {@code Map.Entry}.
+     * Returns a supplier of processors for a vertex that puts {@code
+     * Map.Entry}s it receives into a Hazelcast {@code ICache} with the
+     * specified name in a remote cluster identified by the supplied
+     * {@code ClientConfig}.
      */
     @Nonnull
     public static ProcessorSupplier writeCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
@@ -87,8 +91,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor which writes received items to an IMDG
-     * {@code IList}.
+     * Returns a supplier of processors for a vertex that adds the items it
+     * receives to a Hazelcast {@code IList} with the specified name.
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName) {
@@ -96,8 +100,9 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor which writes received items to an IMDG
-     * {@code IList} in a remote cluster.
+     * Returns a supplier of processors for a vertex that adds the items it
+     * receives to a Hazelcast {@code IList} with the specified name in a
+     * remote cluster identified by the supplied {@code ClientConfig}.
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -105,15 +110,16 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor which drains all items from its inbox
-     * to an intermediate buffer and then flushes the buffer. This is a useful
-     * building block to implement sinks with explicit control over buffering
-     * and flushing.
+     * Returns a supplier of processors for a vertex that drains all the items
+     * from its inbox to an intermediate buffer and then flushes the buffer.
+     * This is a useful building block to implement sinks with explicit control
+     * over buffering and flushing.
      *
      * @param <B> type of buffer
      * @param <T> type of received item
-     * @param newBufferF supplies the buffer. Supplier argument is the global processor index
-     * @param addToBufferF adds item to buffer
+     * @param newBufferF supplies the buffer. The argument to this function
+     *                   is the global processor index.
+     * @param addToBufferF adds an item to the buffer
      * @param flushBufferF flushes the buffer
      */
     @Nonnull
@@ -126,16 +132,18 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processor which drains all items from the inbox
-     * to an intermediate buffer and then flushes the buffer. The buffer will
-     * be disposed via {@code disposeBufferF} once the processor is completed.
+     * Returns a supplier of processors for a vertex that drains all the items
+     * from the inbox to an intermediate buffer and then flushes the buffer.
+     * As each processor completes, it will dispose of the buffer by calling
+     * {@code disposeBufferF}.
      * <p>
      * This is a useful building block to implement sinks with explicit control
      * over buffering and flushing.
      *
      * @param <B> type of buffer
      * @param <T> type of received item
-     * @param newBufferF supplies the buffer. Supplier argument is the global processor index.
+     * @param newBufferF supplies the buffer. The argument to this function
+     *                   is the global processor index.
      * @param addToBufferF adds item to buffer
      * @param flushBufferF flushes the buffer
      * @param disposeBufferF disposes of the buffer
@@ -151,30 +159,17 @@ public final class SinkProcessors {
     }
 
     /**
-     * Convenience for {@link #writeSocket(String, int, DistributedFunction, Charset)}
-     * with {@code Object::toString} formatter and UTF-8 charset.
-     */
-    public static ProcessorSupplier writeSocket(@Nonnull String host, int port) {
-        return writeSocket(host, port, Object::toString, StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Convenience for {@link #writeSocket(String, int, DistributedFunction, Charset)}
-     * with UTF-8 charset.
-     */
-    public static <T> ProcessorSupplier writeSocket(
-            @Nonnull String host,
-            int port,
-            @Nonnull DistributedFunction<T, String> toStringF
-    ) {
-        return writeSocket(host, port, toStringF, StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Returns a supplier of processor which connects to specified socket and
-     * writes the items as text.
-     * <p>
-     * Note that no separator is added between items.
+     * Returns a supplier of processors for a vertex that connects to the
+     * specified TCP socket and writes to it a string representation of the
+     * items it receives. It converts an item to its string representation
+     * using the supplied {@code toStringF} function and encodes the string
+     * using the supplied {@code Charset}. It follows each item with a newline
+     * character.
+     *
+     * @param host the name of the host to connect to
+     * @param port the port number to connect to
+     * @param toStringF a function that returns the string representation of an item
+     * @param charset charset used to encode the string representation
      */
     public static <T> ProcessorSupplier writeSocket(
             @Nonnull String host,
@@ -201,54 +196,28 @@ public final class SinkProcessors {
     }
 
     /**
-     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
-     * boolean)} with the UTF-8 charset and with overwriting of existing files.
-     *
-     * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all members.
-     */
-    @Nonnull
-    public static ProcessorSupplier writeFile(@Nonnull String directoryName) {
-        return writeFile(directoryName, Object::toString, StandardCharsets.UTF_8, false);
-    }
-
-    /**
-     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
-     * boolean)} with the UTF-8 charset and with overwriting of existing files.
-     *
-     * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all members.
-     * @param toStringF a function to convert items to String (a formatter).
-     */
-    @Nonnull
-    public static <T> ProcessorSupplier writeFile(
-            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringF
-    ) {
-        return writeFile(directoryName, toStringF, StandardCharsets.UTF_8, false);
-    }
-
-    /**
-     * Returns a meta-supplier of processor that writes all items to a local
-     * file on each member. The output of {@code toStringF} is written to the
-     * file, followed by a platform-specific line separator. Files are named
-     * with an integer number starting from 0, which is unique cluster-wide.
+     * Returns a supplier of processors for a vertex that writes the items it
+     * receives to files. Each processor will write to its own file whose name
+     * is equal to the processor's global index (an integer unique to each
+     * processor of the vertex), but a single pathname is used to resolve the
+     * containing directory of all files, on all cluster members.
      * <p>
-     * The same pathname must be available for writing on all members. Each
-     * processor instance will write to its own file so the full data will be
-     * distributed among several files and members.
+     * The vertex converts an item to its string representation using the
+     * supplied {@code toStringF} function and encodes the string using the
+     * supplied {@code Charset}. It follows each item with a platform-specific
+     * line separator.
      * <p>
-     * Since the work of this processor is file IO-intensive, {@link
+     * Since the work of this vertex is file IO-intensive, {@link
      * com.hazelcast.jet.Vertex#localParallelism(int) local parallelism} of the
      * vertex should be set according to the performance characteristics of the
-     * underlying storage system. Modern high-end devices peak with 4-8 writing
-     * threads, so if running a single Jet job with a single file-writing
-     * vertex, the optimal value would be in the range of 4-8.
+     * underlying storage system. Most typically, local parallelism of 1 will
+     * already reach the maximum available performance.
      *
-     * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all members.
-     * @param toStringF a function to convert items to String (a formatter)
-     * @param charset charset used to encode the file output
-     * @param append whether to append or overwrite the file
+     * @param directoryName directory to create the files in. Will be created if it doesn't exist.
+     * @param toStringF a function that returns the string representation of an item
+     * @param charset charset used to encode the string representation
+     * @param append whether to append ({@code true}) or overwrite ({@code false})
+     *               an existing file
      */
     @Nonnull
     public static <T> ProcessorSupplier writeFile(
@@ -258,5 +227,33 @@ public final class SinkProcessors {
             boolean append
     ) {
         return WriteFileP.supplier(directoryName, toStringF, charset.name(), append);
+    }
+
+    /**
+     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
+     * boolean)} with the UTF-8 charset and with overwriting of existing files.
+     *
+     * @param directoryName directory to create the files in. Will be created,
+     *                      if it doesn't exist. Must be the same on all members.
+     * @param toStringF a function that returns the string representation of an item
+     */
+    @Nonnull
+    public static <T> ProcessorSupplier writeFile(
+            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringF
+    ) {
+        return writeFile(directoryName, toStringF, UTF_8, false);
+    }
+
+    /**
+     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
+     * boolean)} with {@code Object.toString()} as the conversion function,
+     * UTF-8 as the charset and with overwriting of existing files.
+     *
+     * @param directoryName directory to create the files in. Will be created,
+     *                      if it doesn't exist. Must be the same on all members.
+     */
+    @Nonnull
+    public static ProcessorSupplier writeFile(@Nonnull String directoryName) {
+        return writeFile(directoryName, Object::toString, UTF_8, false);
     }
 }

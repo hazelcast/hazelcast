@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.processor.SourceProcessors;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -58,14 +57,17 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * @see SourceProcessors#streamFiles(String, Charset, String)
+ * Private API. Access via {@link
+ * com.hazelcast.jet.processor.SourceProcessors#streamFiles(String, Charset, String).
  */
 public class StreamFilesP extends AbstractProcessor implements Closeable {
 
     /**
-     * Number of lines read in one batch, to allow for timely draining of watcher
-     * events even while reading a file to avoid
-     * {@link java.nio.file.StandardWatchEventKinds#OVERFLOW OVERFLOW}.
+     * The amount of data read from one file at once must be limited
+     * in order to prevent a possible {@link java.nio.file.StandardWatchEventKinds#OVERFLOW
+     * OVERFLOW} if too many Watcher events accumulate in the queue. This
+     * constant specifies the number of lines to read at once, before going
+     * back to polling the event queue.
      */
     private static final int LINES_IN_ONE_BATCH = 64;
 
@@ -309,10 +311,13 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
     }
 
     /**
-     * @see SourceProcessors#streamFiles(String, Charset, String)
+     * Private API. Use {@link
+     * com.hazelcast.jet.processor.SourceProcessors#streamFiles(String, Charset, String)}
+     * instead.
      */
-    public static ProcessorSupplier supplier(@Nonnull String watchedDirectory, @Nonnull String charset,
-                                             @Nonnull String glob
+    @Nonnull
+    public static ProcessorSupplier supplier(
+            @Nonnull String watchedDirectory, @Nonnull String charset, @Nonnull String glob
     ) {
         return new Supplier(watchedDirectory, charset, glob);
     }

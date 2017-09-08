@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -52,12 +52,12 @@ public class GetJobStatusOperation extends Operation implements IdentifiedDataSe
 
     @Override
     public int getFactoryId() {
-        return JetImplDataSerializerHook.FACTORY_ID;
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.GET_JOB_STATUS_OP;
+        return JetInitDataSerializerHook.GET_JOB_STATUS_OP;
     }
 
     @Override

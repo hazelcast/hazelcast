@@ -63,7 +63,7 @@ public class CancellationTest extends JetTestSupport {
                 Integer.toString(TIMEOUT_MILLIS));
 
         factory = new JetTestInstanceFactory();
-        StuckProcessor.callCounter.set(0);
+        StuckSource.callCounter.set(0);
         FaultyProcessor.failNow = false;
         BlockingProcessor.hasStarted = false;
         BlockingProcessor.isDone = false;
@@ -80,7 +80,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance instance = newInstance();
 
         DAG dag = new DAG();
-        dag.newVertex("slow", StuckProcessor::new);
+        dag.newVertex("slow", StuckSource::new);
 
         Job job = instance.newJob(dag);
         assertExecutionStarted();
@@ -101,7 +101,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance instance = newInstance();
 
         DAG dag = new DAG();
-        dag.newVertex("slow", StuckProcessor::new);
+        dag.newVertex("slow", StuckSource::new);
 
         Job job = instance.newJob(dag);
         assertExecutionStarted();
@@ -121,7 +121,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance instance = newInstance();
 
         DAG dag = new DAG();
-        dag.newVertex("slow", StuckProcessor::new);
+        dag.newVertex("slow", StuckSource::new);
 
         Job job = instance.newJob(dag);
         assertExecutionStarted();
@@ -146,7 +146,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance client = factory.newClient();
 
         DAG dag = new DAG();
-        dag.newVertex("slow", StuckProcessor::new);
+        dag.newVertex("slow", StuckSource::new);
 
         Job job = client.newJob(dag);
         assertExecutionStarted();
@@ -168,7 +168,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance client = factory.newClient();
 
         DAG dag = new DAG();
-        dag.newVertex("slow", StuckProcessor::new);
+        dag.newVertex("slow", StuckSource::new);
 
         Job job = client.newJob(dag);
         assertExecutionStarted();
@@ -266,22 +266,22 @@ public class CancellationTest extends JetTestSupport {
     }
 
     private static void assertExecutionStarted() {
-        final long first = StuckProcessor.callCounter.get();
+        final long first = StuckSource.callCounter.get();
         assertTrueEventually(() -> assertTrue("Call counter should eventually start being incremented.",
-                first != StuckProcessor.callCounter.get()), 5);
+                first != StuckSource.callCounter.get()), 5);
     }
 
     private static void assertExecutionTerminated() {
         final long[] previous = {0};
         assertTrueEventually(() -> {
-                long current = StuckProcessor.callCounter.get();
+                long current = StuckSource.callCounter.get();
                 long last = previous[0];
                 previous[0] = current;
                 assertTrue("Call counter should eventually stop being incremented.", current == last);
             });
     }
 
-    private void assertBlockingProcessorEventuallyNotRunning() {
+    private static void assertBlockingProcessorEventuallyNotRunning() {
         try {
             assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted == BlockingProcessor.isDone), 40);
         } catch (AssertionError e) {
@@ -290,7 +290,7 @@ public class CancellationTest extends JetTestSupport {
         }
     }
 
-    private static class StuckProcessor extends AbstractProcessor {
+    private static class StuckSource extends AbstractProcessor {
 
         static final AtomicLong callCounter = new AtomicLong();
 
@@ -324,7 +324,8 @@ public class CancellationTest extends JetTestSupport {
             while (!jobFuture.isDone()) {
                 parkNanos(MILLISECONDS.toNanos(200));
             }
-            return isDone = true;
+            isDone = true;
+            return true;
         }
     }
 
@@ -372,7 +373,7 @@ public class CancellationTest extends JetTestSupport {
             return address ->
                     ProcessorSupplier.of(address.equals(failOnAddress)
                             ? () -> new FaultyProcessor(e)
-                            : StuckProcessor::new);
+                            : StuckSource::new);
         }
     }
 }

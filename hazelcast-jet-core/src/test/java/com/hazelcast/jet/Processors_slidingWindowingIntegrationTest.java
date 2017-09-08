@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,12 +34,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.WatermarkPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
 import static com.hazelcast.jet.processor.Processors.aggregateToSlidingWindow;
@@ -91,7 +92,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         JetInstance instance = createJetMember();
 
         WindowDefinition wDef = slidingWindowDef(2000, 1000);
-        AggregateOperation<Object, ?, Long> counting = counting();
+        AggregateOperation1<Object, ?, Long> counting = counting();
 
         DAG dag = new DAG();
         boolean isBatchLocal = isBatch;

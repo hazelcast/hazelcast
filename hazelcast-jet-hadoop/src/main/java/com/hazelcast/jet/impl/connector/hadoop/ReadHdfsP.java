@@ -38,6 +38,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -142,8 +143,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
         }
 
 
-        @Override
-        @Nonnull
+        @Nonnull @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new Supplier<>(
                     jobConf,
@@ -291,7 +291,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
                  @Nonnull DistributedBiFunction<K, V, R> mapper
         ) {
             this.jobConf = jobConf;
-            this.assignedSplits = assignedSplits.stream().collect(toList());
+            this.assignedSplits = new ArrayList<>(assignedSplits);
             this.mapper = mapper;
         }
 
