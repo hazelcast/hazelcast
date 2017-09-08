@@ -54,7 +54,16 @@ public interface MapOperationProvider {
 
     MapOperation createReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update);
 
-    MapOperation createDeleteOperation(String name, Data key);
+    /**
+     * Creates a delete operation for an entry with key equal to {@code key} from the map named {@code name}.
+     * You can also specify whether this operation should trigger a WAN replication event.
+     *
+     * @param name                       the map name
+     * @param key                        the entry key
+     * @param disableWanReplicationEvent if the delete operation should not send a WAN replication event
+     * @return the delete operation
+     */
+    MapOperation createDeleteOperation(String name, Data key, boolean disableWanReplicationEvent);
 
     MapOperation createClearOperation(String name);
 
