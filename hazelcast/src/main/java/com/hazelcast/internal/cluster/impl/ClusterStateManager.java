@@ -366,6 +366,9 @@ public class ClusterStateManager {
 
         } catch (Throwable e) {
             tx.rollback();
+            if (e instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException) {
+                throw new IllegalStateException("Cluster members changed during state change!", e);
+            }
             throw ExceptionUtil.rethrow(e);
         }
 
