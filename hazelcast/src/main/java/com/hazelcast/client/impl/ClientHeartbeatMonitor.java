@@ -98,7 +98,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private void monitor(String memberUuid, ClientEndpoint clientEndpoint) {
-        if (clientEndpoint.isFirstConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())) {
+        if (clientEndpoint.isOwnerConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())) {
             return;
         }
 

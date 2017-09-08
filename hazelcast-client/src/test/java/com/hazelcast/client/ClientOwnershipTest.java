@@ -146,9 +146,9 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         assertEquals(1, endpoints.size());
         ClientEndpoint endpoint = endpoints.iterator().next();
         if (asOwner) {
-            assertTrue(endpoint.isFirstConnection());
+            assertTrue(endpoint.isOwnerConnection());
         } else {
-            assertTrue(!endpoint.isFirstConnection());
+            assertTrue(!endpoint.isOwnerConnection());
         }
     }
 

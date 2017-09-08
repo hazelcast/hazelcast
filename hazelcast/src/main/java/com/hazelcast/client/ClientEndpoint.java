@@ -75,7 +75,11 @@ public interface ClientEndpoint extends Client {
 
     void removeTransactionContext(String txnId);
 
-    boolean isFirstConnection();
+    /**
+     * Indicates whether this endpoint is the owner connection for that client.
+     * @return {@code true} when this endpoint is the owner connection for the client
+     */
+    boolean isOwnerConnection();
 
     Subject getSubject();
 
