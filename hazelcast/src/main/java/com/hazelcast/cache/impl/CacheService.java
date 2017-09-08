@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -154,5 +155,9 @@ public class CacheService extends AbstractCacheService {
     @Override
     public CacheWanEventPublisher getCacheWanEventPublisher() {
         throw new UnsupportedOperationException("Wan replication is not supported");
+    }
+
+    public static ObjectNamespace getObjectNamespace(String cacheName) {
+        return new DistributedObjectNamespace(SERVICE_NAME, cacheName);
     }
 }

@@ -25,13 +25,11 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -401,7 +399,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DistributedObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+        return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
     }
 
     @Override

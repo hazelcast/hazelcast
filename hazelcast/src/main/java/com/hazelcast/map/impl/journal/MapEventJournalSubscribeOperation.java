@@ -19,9 +19,8 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.version.Version;
@@ -35,7 +34,7 @@ import com.hazelcast.version.Version;
  */
 public class MapEventJournalSubscribeOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
     private EventJournalInitialSubscriberState response;
-    private DistributedObjectNamespace namespace;
+    private ObjectNamespace namespace;
 
     public MapEventJournalSubscribeOperation() {
     }
@@ -53,7 +52,7 @@ public class MapEventJournalSubscribeOperation extends MapOperation implements P
             throw new UnsupportedOperationException(
                     "Event journal actions are not available when cluster version is " + clusterVersion);
         }
-        namespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
+        namespace = getServiceNamespace();
         if (!mapServiceContext.getEventJournal().hasEventJournal(namespace)) {
             throw new UnsupportedOperationException(
                     "Cannot subscribe to event journal because it is either not configured or disabled for map " + name);

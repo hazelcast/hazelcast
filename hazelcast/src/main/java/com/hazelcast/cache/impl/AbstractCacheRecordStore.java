@@ -35,7 +35,6 @@ import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionSt
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
@@ -151,7 +150,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
         evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         evictionStrategy = createEvictionStrategy(evictionConfig);
-        objectNamespace = new DistributedObjectNamespace(ICacheService.SERVICE_NAME, name);
+        objectNamespace = CacheService.getObjectNamespace(name);
 
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
         registerResourceIfItIsClosable(cacheWriter);

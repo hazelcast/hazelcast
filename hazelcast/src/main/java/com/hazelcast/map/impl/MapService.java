@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -30,6 +31,7 @@ import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.NotifiableEventListener;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -256,4 +258,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         mapIndexSynchronizer.onClusterVersionChange(newVersion);
     }
 
+    public static ObjectNamespace getObjectNamespace(String mapName) {
+        return new DistributedObjectNamespace(SERVICE_NAME, mapName);
+    }
 }
