@@ -240,6 +240,10 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                         <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="properties" type="properties" minOccurs="0"
+                                                            maxOccurs="1"/>
+                                            </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="parameterized-boolean"/>
                                             <xs:attributeGroup ref="class-or-bean-name">
                                                 <xs:annotation>

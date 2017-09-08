@@ -640,6 +640,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleRingbufferStoreConfig(Node node, BeanDefinitionBuilder ringbufferConfigBuilder) {
             final BeanDefinitionBuilder builder = createBeanBuilder(RingbufferStoreConfig.class);
+            for (Node child : childElements(node)) {
+                if ("properties".equals(cleanNodeName(child))) {
+                    handleProperties(child, builder);
+                    break;
+                }
+            }
             extractBasicStoreConfig(node, builder);
             ringbufferConfigBuilder.addPropertyValue("ringbufferStoreConfig", builder.getBeanDefinition());
         }

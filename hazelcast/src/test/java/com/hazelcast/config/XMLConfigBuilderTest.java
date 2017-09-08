@@ -398,6 +398,12 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <async-backup-count>1</async-backup-count>"
                 + "        <time-to-live-seconds>9</time-to-live-seconds>"
                 + "        <in-memory-format>OBJECT</in-memory-format>"
+                + "        <ringbuffer-store>"
+                + "            <class-name>com.hazelcast.RingbufferStoreImpl</class-name>"
+                + "            <properties>"
+                + "                <property name=\"store-path\">.//tmp//bufferstore</property>"
+                + "            </properties>"
+                + "        </ringbuffer-store>"
                 + "    </ringbuffer>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -407,6 +413,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(1, ringbufferConfig.getAsyncBackupCount());
         assertEquals(9, ringbufferConfig.getTimeToLiveSeconds());
         assertEquals(InMemoryFormat.OBJECT, ringbufferConfig.getInMemoryFormat());
+        RingbufferStoreConfig ringbufferStoreConfig = ringbufferConfig.getRingbufferStoreConfig();
+        assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
+        Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
+        assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
     }
 
     @Test

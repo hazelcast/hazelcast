@@ -1718,7 +1718,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 config.setClassName(getTextContent(n).trim());
             } else if ("factory-class-name".equals(nodeName)) {
                 config.setFactoryClassName(getTextContent(n).trim());
+            } else if ("properties".equals(nodeName)) {
+                fillProperties(n, config.getProperties());
             }
+
         }
         return config;
     }

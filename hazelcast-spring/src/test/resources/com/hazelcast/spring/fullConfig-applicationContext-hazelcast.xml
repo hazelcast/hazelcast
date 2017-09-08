@@ -246,7 +246,12 @@
             </hz:ringbuffer>
 
             <hz:ringbuffer name="testRingbuffer2">
-                <hz:ringbuffer-store enabled="true" factory-class-name="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
+                <hz:ringbuffer-store enabled="true" factory-class-name="com.hazelcast.spring.DummyRingbufferStoreFactory">
+                    <hz:properties>
+                        <hz:property name="dummy.property">value</hz:property>
+                        <hz:property name="dummy.property.2">value2</hz:property>
+                    </hz:properties>
+                </hz:ringbuffer-store>
             </hz:ringbuffer>
 
             <hz:ringbuffer name="testRingbuffer3">

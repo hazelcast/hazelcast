@@ -1221,6 +1221,7 @@
     <xs:complexType name="ringbuffer-store">
         <xs:all>
             <xs:element ref="factory-or-class-name" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="enabled" default="true" type="xs:boolean"/>
     </xs:complexType>
