@@ -50,6 +50,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -89,7 +91,7 @@ public class JoinStressTest extends HazelcastTestSupport {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    instances[index] = factory.newHazelcastInstance();
+                    instances[index] = factory.newHazelcastInstance(createConfig());
                     latch.countDown();
                 }
             }).start();
@@ -114,7 +116,7 @@ public class JoinStressTest extends HazelcastTestSupport {
                 public void run() {
                     sleepRandom(1, 1000);
 
-                    Config config = new Config();
+                    Config config = createConfig();
                     initNetworkConfig(config.getNetworkConfig(), basePort, portSeed, multicast, nodeCount);
 
                     HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
@@ -135,6 +137,13 @@ public class JoinStressTest extends HazelcastTestSupport {
             assertNotNull(hz);
             assertClusterSizeEventually(nodeCount, hz);
         }
+    }
+
+    private Config createConfig() {
+        Config config = new Config();
+        config.setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "3");
+        config.setProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
+        return config;
     }
 
     private static void sleepRandom(int min, int max) {
@@ -171,7 +180,7 @@ public class JoinStressTest extends HazelcastTestSupport {
                 public void run() {
                     sleepRandom(1, 1000);
 
-                    Config config = new Config();
+                    Config config = createConfig();
                     String name = "group-" + (int) (Math.random() * groupCount);
                     config.getGroupConfig().setName(name);
 
@@ -209,7 +218,6 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     private void initNetworkConfig(NetworkConfig networkConfig, int basePort, int portSeed, boolean multicast, int nodeCount) {
-
         networkConfig.setPortAutoIncrement(false);
         networkConfig.setPort(basePort + portSeed);
 
