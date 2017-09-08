@@ -98,7 +98,9 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private void monitor(String memberUuid, ClientEndpoint clientEndpoint) {
-        if (clientEndpoint.isOwnerConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())) {
+        // C++ client sends heartbeat over its non-owner connections
+        // For other client types, disregard non-owner connections for heartbeat monitoring purposes
+        if (clientEndpoint.isOwnerConnection() == ClientType.CPP.equals(clientEndpoint.getClientType())) {
             return;
         }
 
