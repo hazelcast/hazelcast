@@ -38,18 +38,18 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 public class SetReadCursorOperation extends MapOperation implements PartitionAwareOperation {
 
     private long sequence;
-    private String cacheName;
+    private String cacheId;
 
     private transient boolean result;
 
     public SetReadCursorOperation() {
     }
 
-    public SetReadCursorOperation(String mapName, String cacheName, long sequence, int ignored) {
+    public SetReadCursorOperation(String mapName, String cacheId, long sequence, int ignored) {
         super(checkHasText(mapName, "mapName"));
         checkPositive(sequence, "sequence");
 
-        this.cacheName = checkHasText(cacheName, "cacheName");
+        this.cacheId = checkHasText(cacheId, "cacheId");
         this.sequence = sequence;
     }
 
@@ -66,20 +66,20 @@ public class SetReadCursorOperation extends MapOperation implements PartitionAwa
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(cacheName);
+        out.writeUTF(cacheId);
         out.writeLong(sequence);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        cacheName = in.readUTF();
+        cacheId = in.readUTF();
         sequence = in.readLong();
     }
 
     private boolean setReadCursor() {
         QueryCacheContext context = getContext();
-        Accumulator accumulator = getAccumulatorOrNull(context, name, cacheName, getPartitionId());
+        Accumulator accumulator = getAccumulatorOrNull(context, name, cacheId, getPartitionId());
         if (accumulator == null) {
             return false;
         }

@@ -144,7 +144,7 @@ public class DefaultPublisherContext implements PublisherContext {
     private PartitionAccumulatorRegistry removePartitionAccumulatorRegistry(PartitionAccumulatorRegistry registry) {
         AccumulatorInfo info = registry.getInfo();
         String mapName = info.getMapName();
-        String cacheName = info.getCacheName();
+        String cacheId = info.getCacheId();
 
         MapPublisherRegistry mapPublisherRegistry = getMapPublisherRegistry();
         PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrNull(mapName);
@@ -152,7 +152,7 @@ public class DefaultPublisherContext implements PublisherContext {
             return null;
         }
 
-        return publisherRegistry.remove(cacheName);
+        return publisherRegistry.remove(cacheId);
     }
 
     private void startRemovalTask(final Collection<PartitionAccumulatorRegistry> removalCandidates, String uuid) {

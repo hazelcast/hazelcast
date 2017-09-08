@@ -95,13 +95,13 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public boolean hasListener(String mapName, String cacheName) {
+    public boolean hasListener(String mapName, String cacheId) {
         QueryCacheToListenerMapper queryCacheToListenerMapper = registrations.get(mapName);
         if (queryCacheToListenerMapper == null) {
             return false;
         }
 
-        Collection<ListenerInfo> infos = queryCacheToListenerMapper.getListenerInfos(cacheName);
+        Collection<ListenerInfo> infos = queryCacheToListenerMapper.getListenerInfos(cacheId);
         if (infos.isEmpty()) {
             return false;
         }
@@ -115,26 +115,26 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public void publish(String mapName, String cacheName, Object event, int orderKey) {
+    public void publish(String mapName, String cacheId, Object event, int orderKey) {
         checkHasText(mapName, "mapName");
-        checkHasText(cacheName, "cacheName");
+        checkHasText(cacheId, "cacheId");
         checkNotNull(event, "event cannot be null");
 
-        Collection<ListenerInfo> listeners = getListeners(mapName, cacheName);
+        Collection<ListenerInfo> listeners = getListeners(mapName, cacheId);
         for (ListenerInfo info : listeners) {
             try {
                 executor.execute(new EventDispatcher(event, info, orderKey, serializationService, EVENT_QUEUE_TIMEOUT_MILLIS));
             } catch (RejectedExecutionException e) {
                 // TODO Should we notify user when we overloaded?
                 logger.warning("EventQueue overloaded! Can not process IMap=[" + mapName + "]"
-                        + ", QueryCache=[ " + cacheName + "]" + ", Event=[" + event + "]");
+                        + ", QueryCache=[ " + cacheId + "]" + ", Event=[" + event + "]");
             }
         }
     }
 
     @Override
-    public String listenPublisher(String mapName, String cacheName, ListenerAdapter adapter) {
-        final String listenerName = generateListenerName(mapName, cacheName);
+    public String listenPublisher(String mapName, String cacheId, ListenerAdapter adapter) {
+        final String listenerName = generateListenerName(mapName, cacheId);
         EventHandler handler = new QueryCacheHandler(adapter);
         return listenerService.registerListener(createPublisherListenerCodec(listenerName), handler);
     }
@@ -170,29 +170,29 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public String addListener(String mapName, String cacheName, MapListener listener) {
-        return addListener(mapName, cacheName, listener, null);
+    public String addListener(String mapName, String cacheId, MapListener listener) {
+        return addListener(mapName, cacheId, listener, null);
     }
 
     @Override
-    public String addListener(String mapName, String cacheName, MapListener listener, EventFilter filter) {
+    public String addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
         checkHasText(mapName, "mapName");
-        checkHasText(cacheName, "cacheName");
+        checkHasText(cacheId, "cacheId");
         checkNotNull(listener, "listener cannot be null");
 
         QueryCacheToListenerMapper queryCacheToListenerMapper = getOrPutIfAbsent(registrations, mapName, REGISTRY_CONSTRUCTOR);
         ListenerAdapter listenerAdaptor = createQueryCacheListenerAdaptor(listener);
-        return queryCacheToListenerMapper.addListener(cacheName, listenerAdaptor, filter);
+        return queryCacheToListenerMapper.addListener(cacheId, listenerAdaptor, filter);
     }
 
     @Override
-    public boolean removeListener(String mapName, String cacheName, String id) {
+    public boolean removeListener(String mapName, String cacheId, String id) {
         checkHasText(mapName, "mapName");
-        checkHasText(cacheName, "cacheName");
+        checkHasText(cacheId, "cacheId");
         checkHasText(id, "id");
 
         QueryCacheToListenerMapper queryCacheToListenerMapper = getOrPutIfAbsent(registrations, mapName, REGISTRY_CONSTRUCTOR);
-        return queryCacheToListenerMapper.removeListener(cacheName, id);
+        return queryCacheToListenerMapper.removeListener(cacheId, id);
     }
 
     /**
