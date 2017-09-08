@@ -468,6 +468,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         RingbufferStoreConfig store2 = testRingbuffer2.getRingbufferStoreConfig();
         assertNotNull(store2);
         assertEquals(DummyRingbufferStoreFactory.class.getName(), store2.getFactoryClassName());
+        assertFalse(store2.getProperties().isEmpty());
+        assertEquals("value", store2.getProperty("dummy.property"));
+        assertEquals("value2", store2.getProperty("dummy.property.2"));
 
         RingbufferConfig testRingbuffer3 = config.getRingbufferConfig("testRingbuffer3");
         assertNotNull(testRingbuffer3);
