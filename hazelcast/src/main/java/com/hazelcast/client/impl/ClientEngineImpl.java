@@ -467,7 +467,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                     endpoint.getClientType());
             sendClientEvent(event);
 
-            if (!endpoint.isFirstConnection()) {
+            if (!endpoint.isOwnerConnection()) {
                 logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
                 return;
             }
