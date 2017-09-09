@@ -63,7 +63,6 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
         } else {
             result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
         }
-
     }
 
     private void runAsyncPartitionThreadScanForNative(QueryRunner queryRunner) {

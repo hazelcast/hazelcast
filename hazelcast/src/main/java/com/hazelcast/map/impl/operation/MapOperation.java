@@ -162,6 +162,10 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     protected boolean isNativeInMemoryFormat() {
+        if (mapContainer == null) {
+            // operation won't get executed in this context anyway.
+            return false;
+        }
         return mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE);
     }
 
