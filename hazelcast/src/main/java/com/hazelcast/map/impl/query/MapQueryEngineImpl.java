@@ -23,6 +23,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -114,6 +115,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
             doRunQueryOnPartitionThreads(query, mutablePartitionIds, result);
         }
+        assertAllPartitionsQueried(mutablePartitionIds);
 
         return result;
     }
@@ -126,6 +128,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
             doRunQueryOnPartitionThreads(query, mutablePartitionIds, result);
         }
+        assertAllPartitionsQueried(mutablePartitionIds);
 
         return result;
     }
@@ -150,12 +153,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     private void dispatchQueryOnQueryThreads(Query query, Target target, Collection<Integer> partitionIds, Result result) {
         try {
             List<Future<Result>> futures = queryDispatcher.dispatchFullQueryOnQueryThread(query, target);
-            addResultsOfPredicate(futures, result, partitionIds);
+            addResultsOfPredicate(futures, result, partitionIds, false);
         } catch (Throwable t) {
-            if (t.getCause() instanceof QueryResultSizeExceededException) {
-                throw rethrow(t);
-            }
-            logger.fine("Could not get results", t);
+            throw rethrow(t);
         }
     }
 
@@ -163,7 +163,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         try {
             List<Future<Result>> futures = queryDispatcher.dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
                     query, partitionIds);
-            addResultsOfPredicate(futures, result, partitionIds);
+            addResultsOfPredicate(futures, result, partitionIds, true);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -172,23 +172,38 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     @SuppressWarnings("unchecked")
     // modifies partitionIds list! Optimization not to allocate an extra collection with collected partitionIds
     private void addResultsOfPredicate(List<Future<Result>> futures, Result result,
-                                       Collection<Integer> partitionIds) throws ExecutionException, InterruptedException {
+                                       Collection<Integer> partitionIds, boolean rethrowAll)
+            throws ExecutionException, InterruptedException {
         for (Future<Result> future : futures) {
-            Result queryResult = future.get();
-            if (queryResult == null) {
-                continue;
-            }
-            Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
-            if (queriedPartitionIds != null) {
-                if (!partitionIds.containsAll(queriedPartitionIds)) {
-                    // do not take into account results that contain partition IDs already removed from partitionIds
-                    // collection as this means that we will count results from a single partition twice
-                    // see also https://github.com/hazelcast/hazelcast/issues/6471
+            try {
+                Result queryResult = future.get();
+                if (queryResult == null) {
                     continue;
                 }
-                partitionIds.removeAll(queriedPartitionIds);
-                result.combine(queryResult);
+                Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
+                if (queriedPartitionIds != null) {
+                    if (!partitionIds.containsAll(queriedPartitionIds)) {
+                        // do not take into account results that contain partition IDs already removed from partitionIds
+                        // collection as this means that we will count results from a single partition twice
+                        // see also https://github.com/hazelcast/hazelcast/issues/6471
+                        continue;
+                    }
+                    partitionIds.removeAll(queriedPartitionIds);
+                    result.combine(queryResult);
+                }
+            } catch (Throwable t) {
+                if (t.getCause() instanceof QueryResultSizeExceededException || rethrowAll) {
+                    throw rethrow(t);
+                }
+                logger.fine("Could not get query results", t);
             }
+        }
+    }
+
+    private void assertAllPartitionsQueried(Collection<Integer> mutablePartitionIds) {
+        if (isResultFromAnyPartitionMissing(mutablePartitionIds)) {
+            throw new QueryException("Query aborted. Could not execute query for all partitions. Missed "
+                    + mutablePartitionIds.size() + " partitions");
         }
     }
 

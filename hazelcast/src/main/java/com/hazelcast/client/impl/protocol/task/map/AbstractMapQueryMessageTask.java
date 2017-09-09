@@ -34,6 +34,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -137,6 +138,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             createInvocationsForMissingPartitions(missingList, missingFutures, predicate);
             collectResultsFromMissingPartitions(finishedPartitions, result, missingFutures);
         }
+        assertAllPartitionsQueried(finishedPartitions, partitionCount);
     }
 
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
@@ -173,7 +175,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     private Query buildQuery(Predicate predicate) {
         Query.QueryBuilder builder = Query.of().mapName(getDistributedObjectName()).predicate(
                 predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate)
-                                          .iterationType(getIterationType());
+                .iterationType(getIterationType());
         if (getAggregator() != null) {
             builder = builder.aggregator(getAggregator());
         }
@@ -289,4 +291,18 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             return new QueryPartitionOperation(query);
         }
     }
+
+    private void assertAllPartitionsQueried(BitSet finishedPartitions, int partitionCount) {
+        if (hasMissingPartitions(finishedPartitions, partitionCount)) {
+            int missedPartitionsCount = 0;
+            for (int i = 0; i < partitionCount; i++) {
+                if (!finishedPartitions.get(i)) {
+                    missedPartitionsCount++;
+                }
+            }
+            throw rethrow(new QueryException("Query aborted. Could not execute query for all partitions. Missed "
+                    + missedPartitionsCount + " partitions"));
+        }
+    }
+
 }
