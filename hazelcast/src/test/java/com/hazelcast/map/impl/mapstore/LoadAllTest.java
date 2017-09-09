@@ -70,30 +70,44 @@ public class LoadAllTest extends AbstractMapStoreTest {
 
     @Test
     public void load_givenKeys() throws Exception {
+        // SETUP
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
         final IMap<Integer, Integer> map = node.getMap(mapName);
         populateMap(map, 1000);
+
+        // GIVEN
         map.evictAll();
+        assertEquals(0, map.size());
+
+        // WHEN
         final Set<Integer> keysToLoad = selectKeysToLoad(100, 910);
         map.loadAll(keysToLoad, true);
 
+        // THEN
         assertEquals(810, map.size());
         assertRangeLoaded(map, 100, 910);
     }
 
     @Test
     public void load_allKeys() throws Exception {
+        // SETUP
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
         final IMap<Integer, Integer> map = node.getMap(mapName);
         final int itemCount = 1000;
         populateMap(map, itemCount);
+
+        // GIVEN
         map.evictAll();
+        assertEquals(0, map.size());
+
+        // WHEN
         map.loadAll(true);
 
+        // THEN
         assertEquals(itemCount, map.size());
     }
 
