@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -31,10 +32,10 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -144,19 +145,35 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     private Result doRunQueryOnQueryThreads(Query query, Collection<Integer> partitionIds, Target target) {
-        Result result = resultProcessorRegistry.get(query.getResultType()).populateResult(query,
-                queryResultSizeLimiter.getNodeResultLimit(partitionIds.size()));
-        dispatchQueryOnQueryThreads(query, target, partitionIds, result);
+        Result result = populateResult(query, partitionIds);
+        List<Future<Result>> futures = dispatchOnQueryThreads(query, target);
+        addResultsOfPredicate(futures, result, partitionIds, false);
         return result;
     }
 
-    private void dispatchQueryOnQueryThreads(Query query, Target target, Collection<Integer> partitionIds, Result result) {
+    private List<Future<Result>> dispatchOnQueryThreads(Query query, Target target) {
         try {
-            List<Future<Result>> futures = queryDispatcher.dispatchFullQueryOnQueryThread(query, target);
-            addResultsOfPredicate(futures, result, partitionIds, false);
+            return queryDispatcher.dispatchFullQueryOnQueryThread(query, target);
         } catch (Throwable t) {
-            throw rethrow(t);
+            if (!(t instanceof HazelcastException)) {
+                // these are programmatic errors that needs to be visible
+                throw rethrow(t);
+            } else if (t.getCause() instanceof QueryResultSizeExceededException) {
+                throw rethrow(t);
+            } else {
+                // log failure to invoke query on member at fine level
+                // the missing partition IDs will be queried anyway, so it's not a terminal failure
+                if (logger.isFineEnabled()) {
+                    logger.fine("Query invocation failed on member ", t);
+                }
+            }
         }
+        return Collections.emptyList();
+    }
+
+    private Result populateResult(Query query, Collection<Integer> partitionIds) {
+        return resultProcessorRegistry.get(query.getResultType()).populateResult(query,
+                queryResultSizeLimiter.getNodeResultLimit(partitionIds.size()));
     }
 
     private void doRunQueryOnPartitionThreads(Query query, Collection<Integer> partitionIds, Result result) {
@@ -172,8 +189,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     @SuppressWarnings("unchecked")
     // modifies partitionIds list! Optimization not to allocate an extra collection with collected partitionIds
     private void addResultsOfPredicate(List<Future<Result>> futures, Result result,
-                                       Collection<Integer> partitionIds, boolean rethrowAll)
-            throws ExecutionException, InterruptedException {
+                                       Collection<Integer> partitionIds, boolean rethrowAll) {
         for (Future<Result> future : futures) {
             try {
                 Result queryResult = future.get();

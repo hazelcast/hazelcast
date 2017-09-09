@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
@@ -158,7 +159,10 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                         .invoke();
                 futures.add(future);
             } catch (Throwable t) {
-                if (t.getCause() instanceof QueryResultSizeExceededException) {
+                if (!(t instanceof HazelcastException)) {
+                    // these are programmatic errors that needs to be visible
+                    throw rethrow(t);
+                } else if (t.getCause() instanceof QueryResultSizeExceededException) {
                     throw rethrow(t);
                 } else {
                     // log failure to invoke query on member at fine level
