@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
@@ -304,6 +303,4 @@ public class ProcessorsTest {
                 .andCombine(List::addAll)
                 .andFinish(Object::toString);
     }
-
-    private interface TwinConsumer<T> extends BiConsumer<T, T> { }
 }

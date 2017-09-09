@@ -24,7 +24,6 @@ import com.hazelcast.jet.pipeline.ComputeStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.stream.IStreamMap;
 
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -48,7 +47,7 @@ public class PipelineWordCount {
             ComputeStage<String> books = p.drawFrom(Sources.readFiles("books"));
 
             ComputeStage<Entry<String, Long>> wordCounts = books
-                    .flatMap((String line) -> traverseArray(delimiter.split(line.toLowerCase()))
+                    .flatMap(line -> traverseArray(delimiter.split(line.toLowerCase()))
                             .filter(word -> !word.isEmpty()))
                     .groupBy(wholeItem(), AggregateOperations.counting());
 

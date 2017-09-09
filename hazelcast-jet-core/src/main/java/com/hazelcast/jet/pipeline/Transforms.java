@@ -49,9 +49,9 @@ public final class Transforms {
 
     @Nonnull
     public static <E, R> UnaryTransform<E, R> fromProcessor(
-            String transforName, DistributedSupplier<Processor> procSupplier
+            String transformName, DistributedSupplier<Processor> procSupplier
     ) {
-        return new ProcessorTransform<>(transforName, procSupplier);
+        return new ProcessorTransform<>(transformName, procSupplier);
     }
 
     @Nonnull

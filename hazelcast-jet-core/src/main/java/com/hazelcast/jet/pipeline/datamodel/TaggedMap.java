@@ -29,7 +29,7 @@ import java.util.Map;
  * A tagged map is a less typesafe, but more flexible alternative to a
  * tuple. The tuple has a fixed number of integer-indexed, statically-typed
  * fields, and a tagged map has a variable number of tag-indexed fields
- * whose whose static type is encoded in the tags.
+ * whose static type is encoded in the tags.
  */
 public class TaggedMap implements Serializable {
     private final Map<Tag, Object> map = new HashMap<>();
