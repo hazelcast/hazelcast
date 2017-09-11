@@ -20,6 +20,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartition;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
@@ -53,7 +54,9 @@ final class PartitionInvocation extends Invocation {
 
     @Override
     ExceptionAction onException(Throwable t) {
-        if (shouldFailOnIndeterminateOperationState() && (t instanceof MemberLeftException)) {
+        if (shouldFailOnIndeterminateOperationState()
+                && (t instanceof MemberLeftException)
+                && !(op instanceof ReadonlyOperation)) {
             return THROW_EXCEPTION;
         }
 

@@ -3,14 +3,15 @@ package com.hazelcast.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.IndeterminateOperationStateException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,6 +33,7 @@ import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_O
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -92,6 +94,25 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         }
     }
 
+    @Test
+    public void readOnlyPartitionInvocation_shouldSucceed_whenPartitionPrimaryLeaves()
+            throws InterruptedException, TimeoutException, ExecutionException {
+        dropOperationsBetween(instance2, instance1, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+
+        int partitionId = getPartitionId(instance2);
+        InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
+        InternalCompletableFuture<Boolean> future = operationService
+                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new DummyReadOperation(), partitionId).invoke();
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                instance2.getLifecycleService().terminate();
+            }
+        });
+        boolean response = future.get(2, TimeUnit.MINUTES);
+        assertTrue(response);
+        assertEquals(getAddress(instance1), DummyReadOperation.lastInvocationAddress);
+    }
 
     @Test
     public void transaction_shouldFail_whenBackupTimeoutOccurs() throws InterruptedException, TimeoutException {
@@ -189,6 +210,27 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         @Override
         public boolean returnsResponse() {
             return false;
+        }
+
+    }
+
+    public static class DummyReadOperation extends Operation implements ReadonlyOperation {
+
+        static volatile Address lastInvocationAddress;
+
+        @Override
+        public void run() throws Exception {
+            lastInvocationAddress = getNodeEngine().getThisAddress();
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        @Override
+        public Object getResponse() {
+            return true;
         }
 
     }
