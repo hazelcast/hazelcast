@@ -50,7 +50,9 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
 
         expected.expect(Exception.class);
-        operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
+        InternalCompletableFuture<Object> future =
+                operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
+        future.join();
     }
 
     @Test
