@@ -49,12 +49,12 @@ public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfig
         this.eventService = eventService;
     }
 
-    protected void setEntryListener(String mapName, String cacheName, QueryCacheConfig config) {
+    protected void setEntryListener(String mapName, String cacheId, QueryCacheConfig config) {
         for (EntryListenerConfig listenerConfig : config.getEntryListenerConfigs()) {
             MapListener listener = getListener(listenerConfig);
             if (listener != null) {
                 EventFilter filter = new EntryEventFilter(listenerConfig.isIncludeValue(), null);
-                eventService.addListener(mapName, cacheName, listener, filter);
+                eventService.addListener(mapName, cacheId, listener, filter);
             }
         }
     }

@@ -33,7 +33,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Registry of mappings like {@code cacheName} to {@code PartitionAccumulatorRegistry}.
+ * Registry of mappings like {@code cacheId} to {@code PartitionAccumulatorRegistry}.
  *
  * @see PartitionAccumulatorRegistry
  */
@@ -42,8 +42,8 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
     private final ConstructorFunction<String, PartitionAccumulatorRegistry> partitionAccumulatorRegistryConstructor =
             new ConstructorFunction<String, PartitionAccumulatorRegistry>() {
                 @Override
-                public PartitionAccumulatorRegistry createNew(String cacheName) {
-                    AccumulatorInfo info = getAccumulatorInfo(cacheName);
+                public PartitionAccumulatorRegistry createNew(String cacheId) {
+                    AccumulatorInfo info = getAccumulatorInfo(cacheId);
                     checkNotNull(info, "info cannot be null");
 
                     AccumulatorFactory accumulatorFactory = createPublisherAccumulatorFactory();
@@ -64,13 +64,13 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
     }
 
     @Override
-    public PartitionAccumulatorRegistry getOrCreate(String cacheName) {
-        return getOrPutIfAbsent(partitionAccumulators, cacheName, partitionAccumulatorRegistryConstructor);
+    public PartitionAccumulatorRegistry getOrCreate(String cacheId) {
+        return getOrPutIfAbsent(partitionAccumulators, cacheId, partitionAccumulatorRegistryConstructor);
     }
 
     @Override
-    public PartitionAccumulatorRegistry getOrNull(String cacheName) {
-        return partitionAccumulators.get(cacheName);
+    public PartitionAccumulatorRegistry getOrNull(String cacheId) {
+        return partitionAccumulators.get(cacheId);
     }
 
     @Override
@@ -79,8 +79,8 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
     }
 
     @Override
-    public PartitionAccumulatorRegistry remove(String cacheName) {
-        return partitionAccumulators.remove(cacheName);
+    public PartitionAccumulatorRegistry remove(String cacheId) {
+        return partitionAccumulators.remove(cacheId);
     }
 
     /**
@@ -104,10 +104,10 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
 
     }
 
-    private AccumulatorInfo getAccumulatorInfo(String cacheName) {
+    private AccumulatorInfo getAccumulatorInfo(String cacheId) {
         PublisherContext publisherContext = context.getPublisherContext();
         AccumulatorInfoSupplier infoSupplier = publisherContext.getAccumulatorInfoSupplier();
-        return infoSupplier.getAccumulatorInfoOrNull(mapName, cacheName);
+        return infoSupplier.getAccumulatorInfoOrNull(mapName, cacheId);
     }
 
     protected PublisherAccumulatorFactory createPublisherAccumulatorFactory() {

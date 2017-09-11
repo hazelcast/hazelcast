@@ -66,8 +66,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 @SuppressWarnings("checkstyle:methodcount")
 class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
-    public DefaultQueryCache(String cacheName, String userGivenCacheName, IMap delegate, QueryCacheContext context) {
-        super(cacheName, userGivenCacheName, delegate, context);
+    public DefaultQueryCache(String cacheId, String cacheName, IMap delegate, QueryCacheContext context) {
+        super(cacheId, cacheName, delegate, context);
     }
 
     @Override
@@ -81,7 +81,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         QueryCacheRecord oldRecord = recordStore.add(keyData, valueData);
 
         if (eventType != null) {
-            EventPublisherHelper.publishEntryEvent(context, mapName, cacheName, keyData, valueData, oldRecord, eventType);
+            EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, keyData, valueData, oldRecord, eventType);
         }
     }
 
@@ -99,7 +99,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return;
         }
         if (eventType != null) {
-            EventPublisherHelper.publishEntryEvent(context, mapName, cacheName, keyData, null, oldRecord, eventType);
+            EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, keyData, null, oldRecord, eventType);
         }
     }
 
@@ -111,7 +111,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         }
 
         if (eventType != null) {
-            EventPublisherHelper.publishCacheWideEvent(context, mapName, cacheName,
+            EventPublisherHelper.publishCacheWideEvent(context, mapName, cacheId,
                     removedCount, eventType);
         }
     }
@@ -126,7 +126,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return true;
         }
 
-        Accumulator accumulator = subscriberRegistry.getOrNull(cacheName);
+        Accumulator accumulator = subscriberRegistry.getOrNull(cacheId);
         if (accumulator == null) {
             return true;
         }
@@ -155,7 +155,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             Integer partitionId = entry.getKey();
             Long sequence = entry.getValue();
             Object recoveryOperation
-                    = subscriberContextSupport.createRecoveryOperation(mapName, cacheName, sequence, partitionId);
+                    = subscriberContextSupport.createRecoveryOperation(mapName, cacheId, sequence, partitionId);
             Future<Object> future
                     = (Future<Object>)
                     invokerWrapper.invokeOnPartitionOwner(recoveryOperation, partitionId);
@@ -192,14 +192,14 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             Collection<Member> memberList = context.getMemberList();
             for (Member member : memberList) {
                 Address address = member.getAddress();
-                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, userGivenCacheName);
+                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheName);
                 invokerWrapper.invokeOnTarget(removePublisher, address);
             }
         } else {
             try {
                 subscriberContext.getEventService().removePublisherListener(mapName, publisherListenerId);
             } finally {
-                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, userGivenCacheName);
+                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheName);
                 invokerWrapper.invoke(removePublisher);
             }
         }
@@ -220,26 +220,26 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return true;
         }
 
-        subscriberRegistry.remove(cacheName);
+        subscriberRegistry.remove(cacheId);
         return false;
     }
 
     private void removeAccumulatorInfo() {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         AccumulatorInfoSupplier accumulatorInfoSupplier = subscriberContext.getAccumulatorInfoSupplier();
-        accumulatorInfoSupplier.remove(mapName, cacheName);
+        accumulatorInfoSupplier.remove(mapName, cacheId);
     }
 
     private void removeConfig() {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         QueryCacheConfigurator queryCacheConfigurator = subscriberContext.geQueryCacheConfigurator();
-        queryCacheConfigurator.removeConfiguration(mapName, userGivenCacheName);
+        queryCacheConfigurator.removeConfiguration(mapName, cacheName);
     }
 
     private boolean removeInternalQueryCache() {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         QueryCacheEndToEndProvider cacheProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        cacheProvider.remove(mapName, userGivenCacheName);
+        cacheProvider.remove(mapName, cacheName);
         clear();
         return subscriberContext.getQueryCacheFactory().remove(this);
     }
@@ -408,7 +408,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         EventFilter filter = new EntryEventFilter(includeValue, keyData);
         QueryCacheEventService eventService = getEventService();
         String mapName = delegate.getName();
-        return eventService.addListener(mapName, cacheName, listener, filter);
+        return eventService.addListener(mapName, cacheId, listener, filter);
     }
 
     @Override
@@ -419,7 +419,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         QueryCacheEventService eventService = getEventService();
         EventFilter filter = new QueryEventFilter(includeValue, null, predicate);
         String mapName = delegate.getName();
-        return eventService.addListener(mapName, cacheName, listener, filter);
+        return eventService.addListener(mapName, cacheId, listener, filter);
     }
 
     @Override
@@ -431,7 +431,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         QueryCacheEventService eventService = getEventService();
         EventFilter filter = new QueryEventFilter(includeValue, toData(key), predicate);
         String mapName = delegate.getName();
-        return eventService.addListener(mapName, cacheName, listener, filter);
+        return eventService.addListener(mapName, cacheId, listener, filter);
     }
 
     @Override
@@ -439,7 +439,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         checkNotNull(id, "listener ID cannot be null");
 
         QueryCacheEventService eventService = getEventService();
-        return eventService.removeListener(mapName, cacheName, id);
+        return eventService.removeListener(mapName, cacheId, id);
     }
 
     @Override
@@ -462,7 +462,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public String getName() {
-        return userGivenCacheName;
+        return cacheName;
     }
 
 

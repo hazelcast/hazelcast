@@ -49,8 +49,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     protected final boolean includeValue;
     protected final String mapName;
+    protected final String cacheId;
     protected final String cacheName;
-    protected final String userGivenCacheName;
     protected final IMap delegate;
     protected final QueryCacheContext context;
     protected final QueryCacheRecordStore recordStore;
@@ -63,9 +63,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
      */
     protected String publisherListenerId;
 
-    public AbstractInternalQueryCache(String cacheName, String userGivenCacheName, IMap delegate, QueryCacheContext context) {
+    public AbstractInternalQueryCache(String cacheId, String cacheName, IMap delegate, QueryCacheContext context) {
+        this.cacheId = cacheId;
         this.cacheName = cacheName;
-        this.userGivenCacheName = userGivenCacheName;
         this.mapName = delegate.getName();
         this.delegate = delegate;
         this.context = context;
@@ -86,8 +86,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     @Override
-    public String getCacheName() {
-        return cacheName;
+    public String getCacheId() {
+        return cacheId;
     }
 
     protected Predicate getPredicate() {
@@ -96,14 +96,14 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     private QueryCacheConfig getQueryCacheConfig() {
         QueryCacheConfigurator queryCacheConfigurator = context.getQueryCacheConfigurator();
-        return queryCacheConfigurator.getOrCreateConfiguration(mapName, userGivenCacheName);
+        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName);
     }
 
     private EvictionListener getEvictionListener() {
         return new EvictionListener<Data, QueryCacheRecord>() {
             @Override
             public void onEvict(Data dataKey, QueryCacheRecord record, boolean wasExpired) {
-                EventPublisherHelper.publishEntryEvent(context, mapName, cacheName, dataKey, null, record, EVICTED);
+                EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, dataKey, null, record, EVICTED);
             }
         };
     }

@@ -119,7 +119,7 @@ public class AccumulatorConsumerOperation extends Operation implements Partition
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
         AccumulatorInfo info = accumulator.getInfo();
         String mapName = info.getMapName();
-        String cacheName = info.getCacheName();
+        String cacheName = info.getCacheId();
 
         PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrNull(mapName);
         if (publisherRegistry == null) {

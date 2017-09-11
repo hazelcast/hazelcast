@@ -1474,8 +1474,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     private QueryCache<K, V> getQueryCacheInternal(String name, MapListener listener, Predicate predicate, Boolean includeValue,
                                                    IMap map) {
         QueryCacheRequest request = newQueryCacheRequest()
-                .withUserGivenCacheName(name)
-                .withCacheName(UuidUtil.newUnsecureUuidString())
+                .withCacheName(name)
+                .withCacheId(UuidUtil.newUnsecureUuidString())
                 .withListener(listener)
                 .withPredicate(predicate)
                 .withIncludeValue(includeValue)
@@ -1492,7 +1492,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
         return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(),
-                request.getUserGivenCacheName(), constructorFunction);
+                request.getCacheName(), constructorFunction);
     }
 
     @Override

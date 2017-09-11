@@ -34,8 +34,8 @@ public class NodeSubscriberContextSupport implements SubscriberContextSupport {
     }
 
     @Override
-    public Object createRecoveryOperation(String mapName, String cacheName, long sequence, int partitionId) {
-        return new SetReadCursorOperation(mapName, cacheName, sequence, partitionId);
+    public Object createRecoveryOperation(String mapName, String cacheId, long sequence, int partitionId) {
+        return new SetReadCursorOperation(mapName, cacheId, sequence, partitionId);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class NodeSubscriberContextSupport implements SubscriberContextSupport {
     }
 
     @Override
-    public Object createDestroyQueryCacheOperation(String mapName, String cacheName) {
-        return new DestroyQueryCacheOperation(mapName, cacheName);
+    public Object createDestroyQueryCacheOperation(String mapName, String cacheId) {
+        return new DestroyQueryCacheOperation(mapName, cacheId);
     }
 }

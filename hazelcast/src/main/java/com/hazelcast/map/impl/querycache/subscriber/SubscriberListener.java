@@ -70,6 +70,6 @@ class SubscriberListener implements ListenerAdapter<IMapEvent> {
     private Accumulator createAccumulator() {
         MapSubscriberRegistry mapSubscriberRegistry = subscriberContext.getMapSubscriberRegistry();
         SubscriberRegistry subscriberRegistry = mapSubscriberRegistry.getOrCreate(info.getMapName());
-        return subscriberRegistry.getOrCreate(info.getCacheName());
+        return subscriberRegistry.getOrCreate(info.getCacheId());
     }
 }
