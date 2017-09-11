@@ -22,6 +22,7 @@ Please see the schema to learn how to configure Hazelcast at
 https://hazelcast.com/schema/config/hazelcast-config-3.9.xsd or the Reference Manual at
 https://hazelcast.org/documentation/.
 -->
+<!--suppress XmlDefaultAttributeValue -->
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -443,7 +444,12 @@ https://hazelcast.org/documentation/.
         </interfaces>
         <ssl enabled="false"/>
         <socket-interceptor enabled="false"/>
-        <symmetric-encryption enabled="false"/>
+        <symmetric-encryption enabled="false">
+            <algorithm>PBEWithMD5AndDES</algorithm>
+            <password>...</password>
+            <salt>...</salt>
+            <iteration-count>7</iteration-count>
+        </symmetric-encryption>
     </network>
     <!--
         ===== PARTITION GROUPING CONFIGURATION =====
@@ -612,9 +618,7 @@ https://hazelcast.org/documentation/.
         <async-backup-count>0</async-backup-count>
         <empty-queue-ttl>-1</empty-queue-ttl>
         <item-listeners>
-            <item-listener include-value="true">
-                com.hazelcast.examples.ItemListener
-            </item-listener>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
         <queue-store>
             <class-name>com.hazelcast.QueueStoreImpl</class-name>
@@ -886,7 +890,6 @@ https://hazelcast.org/documentation/.
         <eviction-percentage>25</eviction-percentage>
         <min-eviction-check-millis>100</min-eviction-check-millis>
         <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
-        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
         <read-backup-data>false</read-backup-data>
         <hot-restart enabled="false">
             <fsync>false</fsync>
@@ -926,18 +929,13 @@ https://hazelcast.org/documentation/.
             <attribute extractor="com.bank.CurrencyExtractor">currency</attribute>
         </attributes>
         <entry-listeners>
-            <entry-listener include-value="false" local="false">
-                com.your-package.MyEntryListener
-            </entry-listener>
+            <entry-listener include-value="false" local="false">com.your-package.MyEntryListener</entry-listener>
         </entry-listeners>
         <partition-lost-listeners>
-            <partition-lost-listener>
-                com.your-package.YourPartitionLostListener
-            </partition-lost-listener>
+            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
-    </map>
-    <!--
+        <!--
         ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
 
         Configuration element's name is <query-caches>.
@@ -969,21 +967,26 @@ https://hazelcast.org/documentation/.
             You can define indexes for your query cache using this element's <index> sub-elements. See <index> in the
             map configuration above.
     -->
-    <query-caches>
-        <query-cache name="myContQueryCache">
-            <include-value>true</include-value>
-            <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
-            <entry-listeners>...</entry-listeners>
-            <in-memory-format>BINARY</in-memory-format>
-            <populate>true</populate>
-            <coalesce>false</coalesce>
-            <delay-seconds>3</delay-seconds>
-            <batch-size>2</batch-size>
-            <buffer-size>32</buffer-size>
-            <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
-            <indexes>...</indexes>
-        </query-cache>
-    </query-caches>
+        <query-caches>
+            <query-cache name="myContQueryCache">
+                <include-value>true</include-value>
+                <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+                <entry-listeners>
+                    <entry-listener>...</entry-listener>
+                </entry-listeners>
+                <in-memory-format>BINARY</in-memory-format>
+                <populate>true</populate>
+                <coalesce>false</coalesce>
+                <delay-seconds>3</delay-seconds>
+                <batch-size>2</batch-size>
+                <buffer-size>32</buffer-size>
+                <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+                <indexes>
+                    <index ordered="true">...</index>
+                </indexes>
+            </query-cache>
+        </query-caches>
+    </map>
 
     <!--
         ===== HAZELCAST MULTIMAP CONFIGURATION =====
@@ -1210,9 +1213,7 @@ https://hazelcast.org/documentation/.
         </wan-replication-ref>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
         <partition-lost-listeners>
-            <partition-lost-listener>
-                com.your-package.YourPartitionLostListener
-            </partition-lost-listener>
+            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
         <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>
         <hot-restart enabled="false">
