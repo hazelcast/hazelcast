@@ -73,11 +73,11 @@ public class ConfigXmlGeneratorTest {
                 .setUrl("http://foomybar.ber")
                 .setMutualAuthConfig(
                         new MCMutualAuthConfig()
-                            .setEnabled(true)
-                            .setProperty("keyStore", "/tmp/foo_keystore")
-                            .setProperty("keyStorePassword", "myp@ss1")
-                            .setProperty("trustStore", "/tmp/foo_truststore")
-                            .setProperty("trustStorePassword", "myp@ss2")
+                                .setEnabled(true)
+                                .setProperty("keyStore", "/tmp/foo_keystore")
+                                .setProperty("keyStorePassword", "myp@ss1")
+                                .setProperty("trustStore", "/tmp/foo_truststore")
+                                .setProperty("trustStorePassword", "myp@ss2")
                 );
 
         Config config = new Config()
@@ -128,6 +128,30 @@ public class ConfigXmlGeneratorTest {
 
         CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals("testQuorum", xmlCacheConfig.getQuorumName());
+    }
+
+    @Test
+    public void testRingbuffer() {
+        final RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
+                .setEnabled(true)
+                .setClassName("ClassName")
+                .setProperty("p1", "v1")
+                .setProperty("p2", "v2")
+                .setProperty("p3", "v3");
+        final RingbufferConfig rbConfig = new RingbufferConfig("testRbConfig")
+                .setBackupCount(1)
+                .setAsyncBackupCount(2)
+                .setCapacity(3)
+                .setTimeToLiveSeconds(4)
+                .setInMemoryFormat(InMemoryFormat.BINARY)
+                .setRingbufferStoreConfig(ringbufferStoreConfig);
+
+        final Config config = new Config().addRingBufferConfig(rbConfig);
+
+        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        final RingbufferConfig xmlRbConfig = xmlConfig.getRingbufferConfig(rbConfig.getName());
+        assertEquals(rbConfig, xmlRbConfig);
     }
 
     @Test

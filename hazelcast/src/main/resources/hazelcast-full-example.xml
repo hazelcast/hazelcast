@@ -1500,6 +1500,10 @@ It has the following sub-elements:
         <in-memory-format>BINARY</in-memory-format>
         <ringbuffer-store>
             <class-name>com.hazelcast.RingbufferStoreImpl</class-name>
+            <properties>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
+            </properties>
         </ringbuffer-store>
     </ringbuffer>
 <!--
