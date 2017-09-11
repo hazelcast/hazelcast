@@ -91,21 +91,18 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
     }
 
     @Override
-    public <C extends EvictionCandidate<K, V>> int evict(Iterable<C> evictionCandidates,
-                                                         EvictionListener<K, V> evictionListener) {
-        if (evictionCandidates == null) {
-            return 0;
+    public <C extends EvictionCandidate<K, V>> boolean evict(C evictionCandidate,
+                                                             EvictionListener<K, V> evictionListener) {
+        if (evictionCandidate == null) {
+            return false;
         }
-        int actualEvictedCount = 0;
-        for (EvictionCandidate<K, V> evictionCandidate : evictionCandidates) {
-            if (remove(evictionCandidate.getAccessor()) != null) {
-                actualEvictedCount++;
-                if (evictionListener != null) {
-                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
-                }
-            }
+        if (remove(evictionCandidate.getAccessor()) == null) {
+            return false;
         }
-        return actualEvictedCount;
+        if (evictionListener != null) {
+            evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
+        }
+        return true;
     }
 
     @Override

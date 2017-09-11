@@ -195,21 +195,18 @@ public class CacheRecordHashMap
     }
 
     @Override
-    public <C extends EvictionCandidate<Data, CacheRecord>> int evict(Iterable<C> evictionCandidates,
-                                                                      EvictionListener<Data, CacheRecord> evictionListener) {
-        if (evictionCandidates == null) {
-            return 0;
+    public <C extends EvictionCandidate<Data, CacheRecord>> boolean evict(C evictionCandidate,
+                                                                          EvictionListener<Data, CacheRecord> evictionListener) {
+        if (evictionCandidate == null) {
+            return false;
         }
-        int actualEvictedCount = 0;
-        for (EvictionCandidate<Data, CacheRecord> evictionCandidate : evictionCandidates) {
-            if (remove(evictionCandidate.getAccessor()) != null) {
-                actualEvictedCount++;
-                if (evictionListener != null) {
-                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
-                }
-            }
+        if (remove(evictionCandidate.getAccessor()) == null) {
+            return false;
         }
-        return actualEvictedCount;
+        if (evictionListener != null) {
+            evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
+        }
+        return true;
     }
 
     @Override

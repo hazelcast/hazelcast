@@ -439,9 +439,9 @@ public interface ICacheRecordStore {
      * Evict cache record store if eviction is required.
      * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
      * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
-     * @return the number of evicted records.
+     * @return true is an entry was evicted, otherwise false
      */
-    int evictIfRequired();
+    boolean evictIfRequired();
 
     /**
      * Determines whether wan replication is enabled or not for this record store.

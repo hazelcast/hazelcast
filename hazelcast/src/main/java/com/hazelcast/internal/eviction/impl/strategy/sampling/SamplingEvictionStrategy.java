@@ -45,15 +45,15 @@ public final class SamplingEvictionStrategy<A, E extends Evictable, S extends Sa
      *                                  eviction is required or not.
      * @param evictionListener          {@link EvictionListener} to listen evicted entries
      *
-     * @return evicted entry count
+     * @return true is an entry was evicted, otherwise false
      */
-    public int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
+    public boolean evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
                      EvictionChecker evictionChecker, EvictionListener<A, E> evictionListener) {
         if (evictionChecker != null) {
             if (evictionChecker.isEvictionRequired()) {
                 return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
             } else {
-                return 0;
+                return false;
             }
         } else {
             return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
@@ -67,14 +67,14 @@ public final class SamplingEvictionStrategy<A, E extends Evictable, S extends Sa
      * @param evictionPolicyEvaluator   {@link EvictionPolicyEvaluator} to evaluate
      * @param evictionListener          {@link EvictionListener} to listen evicted entries
      *
-     * @return evicted entry count
+     * @return true is an entry was evicted, otherwise false
      */
-    protected int evictInternal(S sampleableEvictableStore,
+    protected boolean evictInternal(S sampleableEvictableStore,
             EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
             EvictionListener<A, E> evictionListener) {
         final Iterable<EvictionCandidate<A, E>> samples = sampleableEvictableStore.sample(SAMPLE_COUNT);
-        final Iterable<EvictionCandidate<A, E>> evictionCandidates = evictionPolicyEvaluator.evaluate(samples);
-        return sampleableEvictableStore.evict(evictionCandidates, evictionListener);
+        final EvictionCandidate<A, E> evictionCandidate = evictionPolicyEvaluator.evaluate(samples);
+        return sampleableEvictableStore.evict(evictionCandidate, evictionListener);
     }
 
 }

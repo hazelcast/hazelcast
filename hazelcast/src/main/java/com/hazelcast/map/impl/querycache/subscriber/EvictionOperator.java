@@ -58,12 +58,11 @@ public class EvictionOperator {
         return evictionStrategy != null && evictionPolicyEvaluator != null;
     }
 
-    int evictIfRequired() {
-        int evictedCount = 0;
+    boolean evictIfRequired() {
         if (isEvictionEnabled()) {
-            evictedCount = evictionStrategy.evict(cache, evictionPolicyEvaluator, evictionChecker, listener);
+            return evictionStrategy.evict(cache, evictionPolicyEvaluator, evictionChecker, listener);
         }
-        return evictedCount;
+        return false;
     }
 
     private EvictionChecker createCacheEvictionChecker() {

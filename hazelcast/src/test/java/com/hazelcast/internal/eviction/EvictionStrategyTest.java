@@ -108,7 +108,6 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
     @Test
     public void evictionPolicySuccessfullyEvaluatedOnSamplingBasedEvictionStrategy() {
         final int RECORD_COUNT = 100;
-        final int EXPECTED_EVICTED_COUNT = 1;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
         Node node = TestUtil.getNode(instance);
@@ -140,16 +139,16 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         // we are testing "EvictionStrategy" in this test, so we mock "EvictionPolicyEvaluator" (it's tested in another test)
         EvictionPolicyEvaluator evictionPolicyEvaluator = mock(EvictionPolicyEvaluator.class);
         when(evictionPolicyEvaluator.evaluate(Matchers.any(Iterable.class))).
-                thenReturn(Collections.singleton(evictionCandidate));
+                thenReturn(evictionCandidate);
         when(evictionPolicyEvaluator.getEvictionPolicyComparator()).thenReturn(null);
 
         assertEquals(RECORD_COUNT, cacheRecordMap.size());
         assertTrue(cacheRecordMap.containsKey(expectedData));
         assertTrue(cacheRecordMap.containsValue(expectedEvictedRecord));
 
-        int evictedCount = evictionStrategy.evict((S) cacheRecordMap, evictionPolicyEvaluator, EVICT_ALWAYS, NO_LISTENER);
-        assertEquals(EXPECTED_EVICTED_COUNT, evictedCount);
-        assertEquals(RECORD_COUNT - EXPECTED_EVICTED_COUNT, cacheRecordMap.size());
+        boolean evicted = evictionStrategy.evict((S) cacheRecordMap, evictionPolicyEvaluator, EVICT_ALWAYS, NO_LISTENER);
+        assertTrue(evicted);
+        assertEquals(RECORD_COUNT - 1, cacheRecordMap.size());
         assertFalse(cacheRecordMap.containsKey(expectedData));
         assertFalse(cacheRecordMap.containsValue(expectedEvictedRecord));
     }

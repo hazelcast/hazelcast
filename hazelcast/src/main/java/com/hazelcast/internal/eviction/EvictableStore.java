@@ -27,14 +27,17 @@ public interface EvictableStore<A, E extends Evictable> {
 
     /**
      * The evict method is called by the {@link EvictionStrategy} to eventually evict, by the policy, selected
-     * candidates from the internal data structures.
+     * candidate from the internal data structures.
      *
-     * @param evictionCandidates Multiple {@link EvictionCandidate} to be evicted
+     * It could be the selected evicted candidate cannot be evicted. For example it might be gone at the time when
+     * the method is executed. In this case it will indicate this condition by returning false.
+     *
+     * @param evictionCandidate {@link EvictionCandidate} to be evicted
      * @param evictionListener   {@link EvictionListener} to listen evicted entries
      *
-     * @return evicted entry count
+     * @return <code>true</code> if the candidate was evicted, otherwise returns <code>false</code>
      */
-    <C extends EvictionCandidate<A, E>> int evict(Iterable<C> evictionCandidates,
+    <C extends EvictionCandidate<A, E>> boolean evict(C evictionCandidate,
                                                   EvictionListener<A, E> evictionListener);
 
 }
