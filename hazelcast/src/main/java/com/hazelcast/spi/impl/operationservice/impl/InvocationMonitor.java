@@ -35,6 +35,7 @@ import com.hazelcast.spi.OperationControl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
@@ -53,7 +54,9 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemo
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.nio.Packet.Type.OPERATION;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
@@ -72,7 +75,6 @@ import static java.util.logging.Level.INFO;
  */
 public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
-    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
 
@@ -186,8 +188,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     void onMemberLeft(MemberImpl member) {
-        // postpone notifying invocations since real response may arrive in the mean time.
-        scheduler.schedule(new OnMemberLeftTask(member), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
+        scheduler.execute(new OnMemberLeftTask(member));
     }
 
     void execute(Runnable runnable) {
@@ -341,20 +342,47 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private final class OnMemberLeftTask extends MonitorTask {
         private final MemberImpl leftMember;
+        private final PacketHandler inboundResponseHandler;
 
         private OnMemberLeftTask(MemberImpl leftMember) {
             this.leftMember = leftMember;
+
+            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+            this.inboundResponseHandler = operationService.getAsyncInboundResponseHandler();
         }
 
         @Override
         public void run0() {
             heartbeatPerMember.remove(leftMember.getAddress());
+            MemberLeftException error = new MemberLeftException(leftMember);
 
             for (Invocation invocation : invocationRegistry) {
                 if (hasMemberLeft(invocation)) {
-                    invocation.notifyError(new MemberLeftException(leftMember));
+                    notifyInvocation(invocation, error);
                 }
             }
+        }
+
+        private void notifyInvocation(Invocation inv, MemberLeftException error) {
+            ErrorResponse response = new ErrorResponse(error, inv.op.getCallId(), inv.op.isUrgent());
+            byte[] bytes = serializationService.toBytes(response);
+            Packet packet = newResponsePacket(bytes, response.isUrgent());
+            try {
+                inboundResponseHandler.handle(packet);
+            } catch (Exception e) {
+                logger.warning("Failed to notify " + inv + " with " + error, e);
+                inv.notifyError(error);
+            }
+        }
+
+        private Packet newResponsePacket(byte[] bytes, boolean urgent) {
+            Packet packet = new Packet(bytes, -1)
+                    .setPacketType(OPERATION)
+                    .raiseFlags(FLAG_OP_RESPONSE);
+            if (urgent) {
+                packet.raiseFlags(FLAG_URGENT);
+            }
+            return packet;
         }
 
         private boolean hasMemberLeft(Invocation invocation) {
