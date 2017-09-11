@@ -28,7 +28,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -340,7 +339,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     @Test(timeout = TEST_TIMEOUT)
-    @Ignore(value = "https://github.com/hazelcast/hazelcast-enterprise/issues/1660")
     public void testCreateAndDestroyDataStructure_withSameName() {
         nearCacheConfig.setName("createDestroyNearCache");
 
@@ -354,7 +352,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     @Test(timeout = TEST_TIMEOUT)
-    @Ignore(value = "https://github.com/hazelcast/hazelcast-enterprise/issues/1660")
     public void testCreateAndDestroyDataStructure_withDifferentNames() {
         nearCacheConfig.setName("createDestroyNearCache-*");
 
