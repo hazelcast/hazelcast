@@ -23,6 +23,8 @@ import com.hazelcast.map.impl.recordstore.ExpiredKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -30,6 +32,9 @@ import java.util.LinkedList;
 
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 
+/**
+ * Used to transfer expired keys from owner replica to backup replicas.
+ */
 public class EvictBatchBackupOperation extends MapOperation implements BackupOperation {
 
     private String name;
@@ -66,6 +71,18 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         for (int i = 0; i < diff; i++) {
             mapContainer.getEvictor().evict(recordStore, null);
         }
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof WrongTargetException) {
+            if (((WrongTargetException) throwable).getTarget() == null) {
+                // If there isn't any address of backup replica, no need to retry this operation.
+                return ExceptionAction.THROW_EXCEPTION;
+            }
+        }
+
+        return super.onInvocationException(throwable);
     }
 
     protected boolean canEvictRecord(Record existingRecord, ExpiredKey expiredKey) {
