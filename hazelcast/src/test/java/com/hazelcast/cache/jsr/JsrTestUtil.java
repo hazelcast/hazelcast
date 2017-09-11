@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertThatIsNoParallelTest;
 import static java.lang.String.format;
 import static org.junit.Assert.fail;
 
@@ -48,6 +49,7 @@ public final class JsrTestUtil {
     }
 
     public static void setup() {
+        assertThatIsNoParallelTest();
         setSystemProperties("server");
     }
 
