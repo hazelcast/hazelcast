@@ -61,6 +61,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+@SuppressWarnings({"WeakerAccess", "deprecation"})
 public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
@@ -1660,7 +1661,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
         Config config = new InMemoryXmlConfig(xml);
         GlobalSerializerConfig globalSerializerConfig = config.getSerializationConfig().getGlobalSerializerConfig();
-        globalSerializerConfig.getClassName();
         assertEquals(name, globalSerializerConfig.getClassName());
         assertTrue(globalSerializerConfig.isOverrideJavaSerialization());
     }
@@ -1790,10 +1790,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    </cache>"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
+        buildConfig(xml);
     }
 
-    private void assertPermissionConfig(PermissionConfig expected, Config config) {
+    private static void assertPermissionConfig(PermissionConfig expected, Config config) {
         Iterator<PermissionConfig> permConfigs = config.getSecurityConfig().getClientPermissionConfigs().iterator();
         PermissionConfig configured = permConfigs.next();
         assertEquals(expected.getType(), configured.getType());
