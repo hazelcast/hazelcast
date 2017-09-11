@@ -72,7 +72,6 @@ import static java.util.logging.Level.INFO;
  */
 public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
-    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
 
@@ -190,7 +189,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         // this is guaranteed to be greater than version in invocations whose target was left member.
         int memberListVersion = nodeEngine.getClusterService().getMemberListVersion();
         // postpone notifying invocations since real response may arrive in the mean time.
-        scheduler.schedule(new OnMemberLeftTask(member, memberListVersion), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
+        scheduler.execute(new OnMemberLeftTask(member, memberListVersion));
     }
 
     void execute(Runnable runnable) {
