@@ -31,7 +31,6 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -148,7 +147,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             }
         });
 
-        exception.expect(TargetNotMemberException.class);
+        exception.expect(IllegalStateException.class);
         hz.getCluster().changeClusterState(ClusterState.PASSIVE, options);
     }
 
@@ -324,7 +323,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         try {
             hz.getCluster().changeClusterState(ClusterState.FROZEN, options);
             fail("A member is terminated. Cannot commit the transaction!");
-        } catch (TargetNotMemberException ignored) {
+        } catch (IllegalStateException ignored) {
         }
 
         assertClusterStateEventually(ClusterState.ACTIVE, instances[2], instances[1]);
