@@ -578,32 +578,23 @@ public class MembershipManager {
     }
 
     void onMemberRemove(MemberImpl deadMember) {
-        // sync call
+        // sync calls
         node.getPartitionService().memberRemoved(deadMember);
-        // sync call
         nodeEngine.onMemberLeft(deadMember);
+        node.getNodeExtension().onMemberListChange();
     }
 
     void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers) {
         Set<Member> eventMembers = new LinkedHashSet<Member>(currentMembers);
         if (!newMembers.isEmpty()) {
-            if (newMembers.size() == 1) {
-                MemberImpl newMember = newMembers.iterator().next();
-                // sync call
+            for (MemberImpl newMember : newMembers) {
+                // sync calls
                 node.getPartitionService().memberAdded(newMember);
+                node.getNodeExtension().onMemberListChange();
 
                 // async events
                 eventMembers.add(newMember);
-                sendMembershipEventNotifications(newMember, unmodifiableSet(eventMembers), true);
-            } else {
-                for (MemberImpl newMember : newMembers) {
-                    // sync call
-                    node.getPartitionService().memberAdded(newMember);
-
-                    // async events
-                    eventMembers.add(newMember);
-                    sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true);
-                }
+                sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true);
             }
         }
     }
