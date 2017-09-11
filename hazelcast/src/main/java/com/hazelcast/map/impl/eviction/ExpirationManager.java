@@ -440,11 +440,16 @@ public final class ExpirationManager implements OperationResponseHandler {
         OperationService operationService = nodeEngine.getOperationService();
         int backupReplicaCount = recordStore.getMapContainer().getTotalBackupCount();
         for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
-            Operation operation = new EvictBatchBackupOperation(recordStore.getName(), expiredKeys, recordStore.size());
-            operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, recordStore.getPartitionId())
-                    .setReplicaIndex(replicaIndex)
-                    .invoke();
+            if (hasReplicaAddress(recordStore.getPartitionId(), replicaIndex)) {
+                Operation operation = new EvictBatchBackupOperation(recordStore.getName(), expiredKeys, recordStore.size());
+                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, recordStore.getPartitionId())
+                        .setReplicaIndex(replicaIndex).invoke();
+            }
         }
+    }
+
+    private boolean hasReplicaAddress(int partitionId, int replicaIndex) {
+        return partitionService.getPartition(partitionId).getReplicaAddress(replicaIndex) != null;
     }
 
     private static Collection<ExpiredKey> pollExpiredKeys(Queue<ExpiredKey> expiredKeys) {
