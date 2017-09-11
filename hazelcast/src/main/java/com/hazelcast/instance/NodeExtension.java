@@ -194,9 +194,14 @@ public interface NodeExtension {
     void onClusterStateChange(ClusterState newState, boolean isTransient);
 
     /**
-     * Called when partition state (partition assignments, version etc) changes
+     * Called synchronously when partition state (partition assignments, version etc) changes
      */
     void onPartitionStateChange();
+
+    /**
+     * Called synchronously when member list changes
+     */
+    void onMemberListChange();
 
     /**
      * Called after cluster version is changed.

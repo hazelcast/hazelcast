@@ -165,6 +165,11 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void onMemberListChange() {
+        nodeExtension.onMemberListChange();
+    }
+
+    @Override
     public void onClusterVersionChange(Version newVersion) {
         nodeExtension.onClusterVersionChange(newVersion);
     }

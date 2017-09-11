@@ -287,6 +287,10 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void onMemberListChange() {
+    }
+
+    @Override
     public void onClusterVersionChange(Version newVersion) {
         systemLogger.info("Cluster version set to " + newVersion);
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
