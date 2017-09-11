@@ -138,27 +138,12 @@ public class DefaultDiscoveryService
             Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(
                     discoveryConfig.getDiscoveryStrategyConfigs());
 
-            Iterator<DiscoveryStrategyFactory> iterator = ServiceLoader
-                    .iterator(DiscoveryStrategyFactory.class, SERVICE_LOADER_TAG, configClassLoader);
-
-            // Collect possible factories
-            List<DiscoveryStrategyFactory> factories = new ArrayList<DiscoveryStrategyFactory>();
-            while (iterator.hasNext()) {
-                factories.add(iterator.next());
-            }
-            for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
-                DiscoveryStrategyFactory factory = config.getDiscoveryStrategyFactory();
-                if (factory != null) {
-                    factories.add(factory);
-                }
-            }
+            List<DiscoveryStrategyFactory> factories = collectFactories(discoveryStrategyConfigs, configClassLoader);
 
             List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
-            for (DiscoveryStrategyFactory factory : factories) {
-                DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(factory, discoveryStrategyConfigs);
-                if (discoveryStrategy != null) {
-                    discoveryStrategies.add(discoveryStrategy);
-                }
+            for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
+                DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
+                discoveryStrategies.add(discoveryStrategy);
             }
             return discoveryStrategies;
         } catch (Exception e) {
@@ -168,6 +153,41 @@ public class DefaultDiscoveryService
                 throw new RuntimeException("Failed to configure discovery strategies", e);
             }
         }
+    }
+
+    private List<DiscoveryStrategyFactory> collectFactories(Collection<DiscoveryStrategyConfig> strategyConfigs,
+                                                            ClassLoader classloader) throws Exception {
+        Iterator<DiscoveryStrategyFactory> iterator = ServiceLoader
+                .iterator(DiscoveryStrategyFactory.class, SERVICE_LOADER_TAG, classloader);
+
+        // Collect possible factories
+        List<DiscoveryStrategyFactory> factories = new ArrayList<DiscoveryStrategyFactory>();
+        while (iterator.hasNext()) {
+            factories.add(iterator.next());
+        }
+        for (DiscoveryStrategyConfig config : strategyConfigs) {
+            DiscoveryStrategyFactory factory = config.getDiscoveryStrategyFactory();
+            if (factory != null) {
+                factories.add(factory);
+            }
+        }
+        return factories;
+    }
+
+    private DiscoveryStrategy buildDiscoveryStrategy(DiscoveryStrategyConfig config,
+                                                     List<DiscoveryStrategyFactory> candidateFactories) {
+        for (DiscoveryStrategyFactory factory : candidateFactories) {
+            Class<? extends DiscoveryStrategy> discoveryStrategyType = factory.getDiscoveryStrategyType();
+            String className = discoveryStrategyType.getName();
+            String factoryClassName = getFactoryClassName(config);
+            if (className.equals(factoryClassName)) {
+                Map<String, Comparable> properties = buildProperties(factory, config, className);
+                return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
+            }
+        }
+        throw new ValidationException("There is no discovery strategy factory to create '"
+                + config + "' Is it a typo in a strategy classname? "
+                + "Perhaps you forgot to include implementation on a classpath?");
     }
 
     private Map<String, Comparable> buildProperties(DiscoveryStrategyFactory factory, DiscoveryStrategyConfig config,
@@ -203,21 +223,6 @@ public class DefaultDiscoveryService
         }
 
         return mappedProperties;
-    }
-
-    private DiscoveryStrategy buildDiscoveryStrategy(DiscoveryStrategyFactory factory,
-                                                     Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
-        Class<? extends DiscoveryStrategy> discoveryStrategyType = factory.getDiscoveryStrategyType();
-        String className = discoveryStrategyType.getName();
-
-        for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
-            String factoryClassName = getFactoryClassName(config);
-            if (className.equals(factoryClassName)) {
-                Map<String, Comparable> properties = buildProperties(factory, config, className);
-                return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
-            }
-        }
-        return null;
     }
 
     private String getFactoryClassName(DiscoveryStrategyConfig config) {
