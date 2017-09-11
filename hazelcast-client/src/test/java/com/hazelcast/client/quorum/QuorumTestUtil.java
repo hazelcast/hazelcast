@@ -31,6 +31,7 @@ public class QuorumTestUtil {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
+        clientConfig.getNetworkConfig().setSmartRouting(false);
         clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
         return clientConfig;
     }
