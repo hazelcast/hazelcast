@@ -26,12 +26,14 @@ import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 
 /**
  * Contains eviction specific functionality of a {@link QueryCacheRecordStore}.
  */
 public class EvictionOperator {
+    private static final int MAX_EVICTION_ATTEMPTS = 10;
 
     private final QueryCacheRecordHashMap cache;
     private final EvictionConfig evictionConfig;
@@ -58,18 +60,22 @@ public class EvictionOperator {
         return evictionStrategy != null && evictionPolicyEvaluator != null;
     }
 
-    boolean evictIfRequired() {
-        if (isEvictionEnabled()) {
-            return evictionStrategy.evict(cache, evictionPolicyEvaluator, evictionChecker, listener);
+    void evictIfRequired() {
+        if (!isEvictionEnabled()) {
+            return;
         }
-        return false;
+
+        for (int i = 0; evictionChecker.isEvictionRequired() && i < MAX_EVICTION_ATTEMPTS; i++) {
+            // we already established we should evict -> we can pass EVICT_ALWAYS to the eviction strategy
+            evictionStrategy.evict(cache, evictionPolicyEvaluator, EVICT_ALWAYS, listener);
+        }
     }
 
     private EvictionChecker createCacheEvictionChecker() {
         return new EvictionChecker() {
             @Override
             public boolean isEvictionRequired() {
-                return cache.size() > evictionConfig.getSize();
+                return cache.size() >= evictionConfig.getSize();
             }
         };
     }
