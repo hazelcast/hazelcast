@@ -300,9 +300,9 @@ public abstract class AbstractHazelcastCacheManager
      * Default implementation does not require it. But client implementation overrides this to track a local copy
      * of the config.
      *
-     * @param cacheName cache name.
+     * @param cacheNameWithPrefix cache name.
      */
-    protected void removeCacheConfigFromLocal(String cacheName) {
+    protected void removeCacheConfigFromLocal(String cacheNameWithPrefix) {
     }
 
     private String registerLifecycleListener() {

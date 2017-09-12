@@ -28,6 +28,7 @@ import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 
@@ -115,4 +116,13 @@ public interface ICacheService
     CacheWanEventPublisher getCacheWanEventPublisher();
 
     CacheEventJournal getEventJournal();
+
+    /**
+     * Returns a mutex for the given {@code cacheName} which must be used to guard cache lifecycle methods (creating & destroying
+     * caches).
+     *
+     * @param cacheNameWithPrefix   complete cache name with prefix
+     * @return                      the lifecycle mutex for the given {@code cacheNameWithPrefix}
+     */
+    ContextMutexFactory.Mutex getLifecycleMutex(String cacheNameWithPrefix);
 }

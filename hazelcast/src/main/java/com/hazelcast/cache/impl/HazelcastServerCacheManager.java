@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
@@ -28,7 +29,9 @@ import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.ContextMutexFactory;
 
+import javax.cache.configuration.Configuration;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -177,6 +180,33 @@ public class HazelcastServerCacheManager
     }
 
     @Override
+    public <K, V, C extends Configuration<K, V>> ICache<K, V> createCache(String cacheName, C configuration)
+            throws IllegalArgumentException {
+        // the mutex is bound to the prefixed cache name
+        ContextMutexFactory.Mutex mutex = cacheService.getLifecycleMutex(getCacheNameWithPrefix(cacheName));
+        try {
+            synchronized (mutex) {
+                return super.createCache(cacheName, configuration);
+            }
+        } finally {
+            mutex.close();
+        }
+    }
+
+    @Override
+    public <K, V> ICache<K, V> getOrCreateCache(String cacheName, CacheConfig<K, V> cacheConfig) {
+        // the mutex is bound to the prefixed cache name
+        ContextMutexFactory.Mutex mutex = cacheService.getLifecycleMutex(getCacheNameWithPrefix(cacheName));
+        try {
+            synchronized (mutex) {
+                return super.getOrCreateCache(cacheName, cacheConfig);
+            }
+        } finally {
+            mutex.close();
+        }
+    }
+
+    @Override
     protected <K, V> CacheConfig<K, V> getCacheConfig(String cacheNameWithPrefix, String cacheName) {
         CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
@@ -187,9 +217,16 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected void removeCacheConfigFromLocal(String cacheName) {
-        cacheService.deleteCacheConfig(cacheName);
-        super.removeCacheConfigFromLocal(cacheName);
+    protected void removeCacheConfigFromLocal(String cacheNameWithPrefix) {
+        ContextMutexFactory.Mutex mutex = cacheService.getLifecycleMutex(cacheNameWithPrefix);
+        try {
+            synchronized (mutex) {
+                cacheService.deleteCacheConfig(cacheNameWithPrefix);
+                super.removeCacheConfigFromLocal(cacheNameWithPrefix);
+            }
+        } finally {
+            mutex.close();
+        }
     }
 
     @Override

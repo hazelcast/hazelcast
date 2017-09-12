@@ -35,11 +35,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -162,10 +169,127 @@ public class CacheDestroyTest extends CacheTestSupport {
 
     }
 
+    @Test
+    public void test_whenCacheDestroyedConcurrently_thenNoExceptionThrown() throws ExecutionException, InterruptedException {
+        String cacheName = randomName();
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig();
+        final Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, cacheConfig);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        int concurrency = Runtime.getRuntime().availableProcessors();
+        Future[] destroyFutures = new Future[concurrency];
+
+        DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, cache);
+
+        for (int i = 0; i < concurrency; i++) {
+            destroyFutures[i] = spawn(destroyCacheTask);
+        }
+
+        latch.countDown();
+        sleepSeconds(5);
+        destroyCacheTask.stop();
+        for (int i = 0; i < concurrency; i++) {
+            destroyFutures[i].get();
+        }
+    }
+
+    @Test
+    public void test_whenCacheCreatedDestroyedConcurrently_thenNoExceptionThrown() throws ExecutionException, InterruptedException {
+        String cacheName = randomName();
+        final CacheConfig<Integer, Integer> cacheConfig = createCacheConfig();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        int concurrency = Runtime.getRuntime().availableProcessors() * 4;
+        Future[] futures = new Future[concurrency];
+
+        DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, null);
+        CreateCacheTask createCacheTask = new CreateCacheTask(cacheName, cacheManager, latch, cacheConfig);
+
+        for (int i = 0; i < concurrency; i++) {
+            futures[i] = spawn( i % 2 == 0 ? destroyCacheTask : createCacheTask);
+        }
+
+        latch.countDown();
+        sleepSeconds(20);
+        destroyCacheTask.stop();
+        createCacheTask.stop();
+        for (int i = 0; i < concurrency; i++) {
+            futures[i].get();
+        }
+    }
+
     private void registerInvalidationListener(CacheEventListener cacheEventListener, String name) {
         HazelcastInstanceProxy hzInstance = (HazelcastInstanceProxy) this.hazelcastInstance;
         hzInstance.getOriginal().node.getNodeEngine().getEventService()
                 .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
+    }
+
+    public static abstract class CacheTask implements Runnable {
+        protected final AtomicBoolean running = new AtomicBoolean(true);
+        protected final String cacheName;
+        protected final CacheManager cacheManager;
+        protected final CountDownLatch latch;
+
+        public CacheTask(String cacheName, CacheManager cacheManager, CountDownLatch latch) {
+            this.cacheName = cacheName;
+            this.cacheManager = cacheManager;
+            this.latch = latch;
+        }
+
+        public void stop() {
+            running.set(false);
+        }
+
+        @Override
+        public void run() {
+            try {
+                latch.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            while (running.get()) {
+                run0();
+            }
+        }
+
+        protected abstract void run0();
+    }
+
+    public static class DestroyCacheTask extends CacheTask {
+        private final Cache cache;
+
+        public DestroyCacheTask(String cacheName, CacheManager cacheManager, CountDownLatch latch, Cache cache) {
+            super(cacheName, cacheManager, latch);
+            this.cache = cache;
+        }
+
+        @Override
+        protected void run0() {
+            cacheManager.destroyCache(cacheName);
+        }
+    }
+
+    public static class CreateCacheTask extends CacheTask {
+        private final CacheConfig cacheConfig;
+
+        public CreateCacheTask(String cacheName, CacheManager cacheManager, CountDownLatch latch, CacheConfig cacheConfig) {
+            super(cacheName, cacheManager, latch);
+            this.cacheConfig = cacheConfig;
+        }
+
+        @Override
+        protected void run0() {
+            try {
+                cacheManager.createCache(cacheName, cacheConfig);
+            } catch (CacheException e) {
+                // cache may have already been created by another thread, so ignore
+                if (e.getMessage().startsWith(format("A cache named %s already exists", cacheName))) {
+                    // ignore
+                } else {
+                    throw e;
+                }
+            }
+        }
     }
 
 }
