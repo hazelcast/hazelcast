@@ -37,188 +37,199 @@ import static java.util.stream.IntStream.range;
  */
 public final class AggregateOperationBuilder<A> {
 
-    private final DistributedSupplier<A> createAccumulatorF;
+    private final DistributedSupplier<A> createFn;
 
-    AggregateOperationBuilder(DistributedSupplier<A> createAccumulatorF) {
-        this.createAccumulatorF = createAccumulatorF;
+    AggregateOperationBuilder(DistributedSupplier<A> createFn) {
+        this.createFn = createFn;
     }
 
-    public <T0> Arity1<T0, A> andAccumulate(DistributedBiConsumer<? super A, T0> accumulateItemF) {
-        checkNotNull(accumulateItemF, "accumulateItemF");
-        return new Arity1<>(createAccumulatorF, accumulateItemF);
+    public <T0> Arity1<T0, A> andAccumulate(DistributedBiConsumer<? super A, T0> accumulateFn) {
+        checkNotNull(accumulateFn, "accumulateFn");
+        return new Arity1<>(createFn, accumulateFn);
     }
 
-    public <T0> Arity1<T0, A> andAccumulate0(DistributedBiConsumer<? super A, T0> accumulateItemF0) {
-        checkNotNull(accumulateItemF0, "accumulateItemF0");
-        return new Arity1<>(createAccumulatorF, accumulateItemF0);
+    public <T0> Arity1<T0, A> andAccumulate0(DistributedBiConsumer<? super A, T0> accumulateFn0) {
+        checkNotNull(accumulateFn0, "accumulateFn0");
+        return new Arity1<>(createFn, accumulateFn0);
     }
 
-    public <T> VarArity<A> andAccumulate(Tag<T> tag, DistributedBiConsumer<? super A, T> accumulateItemF) {
+    public <T> VarArity<A> andAccumulate(Tag<T> tag, DistributedBiConsumer<? super A, T> accumulateFn) {
         checkNotNull(tag, "tag");
-        checkNotNull(accumulateItemF, "accumulateItemF");
-        return new VarArity<>(createAccumulatorF, tag, accumulateItemF);
+        checkNotNull(accumulateFn, "accumulateFn");
+        return new VarArity<>(createFn, tag, accumulateFn);
     }
 
     public static class Arity1<T0, A> {
-        private final DistributedSupplier<A> createAccumulatorF;
-        private final DistributedBiConsumer<? super A, T0> accumulateItemF0;
-        private DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF;
-        private DistributedBiConsumer<? super A, ? super A> deductAccumulatorF;
+        private final DistributedSupplier<A> createFn;
+        private final DistributedBiConsumer<? super A, T0> accumulateFn0;
+        private DistributedBiConsumer<? super A, ? super A> combineFn;
+        private DistributedBiConsumer<? super A, ? super A> deductFn;
 
-        Arity1(DistributedSupplier<A> createAccumulatorF, DistributedBiConsumer<? super A, T0> accumulateItemF0) {
-            this.createAccumulatorF = createAccumulatorF;
-            this.accumulateItemF0 = accumulateItemF0;
+        Arity1(DistributedSupplier<A> createFn, DistributedBiConsumer<? super A, T0> accumulateFn0) {
+            this.createFn = createFn;
+            this.accumulateFn0 = accumulateFn0;
         }
 
-        public <T1> Arity2<T0, T1, A> andAccumulate1(DistributedBiConsumer<? super A, T1> accumulateItemF1) {
-            checkNotNull(accumulateItemF1, "accumulateItemF1");
-            return new Arity2<>(this, accumulateItemF1);
+        public <T1> Arity2<T0, T1, A> andAccumulate1(DistributedBiConsumer<? super A, T1> accumulateFn1) {
+            checkNotNull(accumulateFn1, "accumulateFn1");
+            return new Arity2<>(this, accumulateFn1);
         }
 
-        public Arity1<T0, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF) {
-            checkNotNull(combineAccumulatorsF, "combineAccumulatorsF");
-            this.combineAccumulatorsF = combineAccumulatorsF;
+        public Arity1<T0, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkNotNull(combineFn, "combineFn");
+            this.combineFn = combineFn;
             return this;
         }
 
-        public Arity1<T0, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductAccumulatorF) {
-            this.deductAccumulatorF = deductAccumulatorF;
+        public Arity1<T0, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+            this.deductFn = deductFn;
             return this;
         }
 
-        public <R> AggregateOperation1<T0, A, R> andFinish(DistributedFunction<? super A, R> finishAccumulationF) {
-            checkNotNull(finishAccumulationF, "finishAccumulationF");
-            return new AggregateOperation1Impl<>(createAccumulatorF, accumulateItemF0,
-                    combineAccumulatorsF, deductAccumulatorF, finishAccumulationF);
+        public <R> AggregateOperation1<T0, A, R> andFinish(DistributedFunction<? super A, R> finishFn) {
+            checkNotNull(finishFn, "finishFn");
+            return new AggregateOperation1Impl<>(createFn, accumulateFn0, combineFn, deductFn, finishFn);
+        }
+
+        public AggregateOperation1<T0, A, A> andIdentityFinish() {
+            return new AggregateOperation1Impl<>(createFn, accumulateFn0, combineFn, deductFn,
+                    DistributedFunction.identity());
         }
     }
 
     public static class Arity2<T0, T1, A> {
-        private final DistributedSupplier<A> createAccumulatorF;
-        private final DistributedBiConsumer<? super A, T0> accumulateItemF0;
-        private final DistributedBiConsumer<? super A, T1> accumulateItemF1;
-        private DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF;
-        private DistributedBiConsumer<? super A, ? super A> deductAccumulatorF;
+        private final DistributedSupplier<A> createFn;
+        private final DistributedBiConsumer<? super A, T0> accumulateFn0;
+        private final DistributedBiConsumer<? super A, T1> accumulateFn1;
+        private DistributedBiConsumer<? super A, ? super A> combineFn;
+        private DistributedBiConsumer<? super A, ? super A> deductFn;
 
-        Arity2(Arity1<T0, A> step1, DistributedBiConsumer<? super A, T1> accumulateItemF1) {
-            this.createAccumulatorF = step1.createAccumulatorF;
-            this.accumulateItemF0 = step1.accumulateItemF0;
-            this.accumulateItemF1 = accumulateItemF1;
+        Arity2(Arity1<T0, A> step1, DistributedBiConsumer<? super A, T1> accumulateFn1) {
+            this.createFn = step1.createFn;
+            this.accumulateFn0 = step1.accumulateFn0;
+            this.accumulateFn1 = accumulateFn1;
         }
 
-        public <T2> Arity3<T0, T1, T2, A> andAccumulate2(DistributedBiConsumer<? super A, T2> accumulateItemF2) {
-            checkNotNull(accumulateItemF2, "accumulateItemF2");
-            return new Arity3<>(this, accumulateItemF2);
+        public <T2> Arity3<T0, T1, T2, A> andAccumulate2(DistributedBiConsumer<? super A, T2> accumulateFn2) {
+            checkNotNull(accumulateFn2, "accumulateFn2");
+            return new Arity3<>(this, accumulateFn2);
         }
 
-        public Arity2<T0, T1, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF) {
-            checkNotNull(combineAccumulatorsF, "combineAccumulatorsF");
-            this.combineAccumulatorsF = combineAccumulatorsF;
+        public Arity2<T0, T1, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkNotNull(combineFn, "combineFn");
+            this.combineFn = combineFn;
             return this;
         }
 
-        public Arity2<T0, T1, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductAccumulatorF) {
-            this.deductAccumulatorF = deductAccumulatorF;
+        public Arity2<T0, T1, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+            this.deductFn = deductFn;
             return this;
         }
 
-        public <R> AggregateOperation2<T0, T1, A, R> andFinish(DistributedFunction<? super A, R> finishAccumulationF) {
-            checkNotNull(finishAccumulationF, "finishAccumulationF");
-            return new AggregateOperation2Impl<>(createAccumulatorF,
-                    accumulateItemF0, accumulateItemF1,
-                    combineAccumulatorsF, deductAccumulatorF, finishAccumulationF);
+        public <R> AggregateOperation2<T0, T1, A, R> andFinish(DistributedFunction<? super A, R> finishFn) {
+            checkNotNull(finishFn, "finishFn");
+            return new AggregateOperation2Impl<>(createFn,
+                    accumulateFn0, accumulateFn1,
+                    combineFn, deductFn, finishFn);
+        }
+
+        public AggregateOperation2<T0, T1, A, A> andIdentityFinish() {
+            return new AggregateOperation2Impl<>(createFn,
+                    accumulateFn0, accumulateFn1,
+                    combineFn, deductFn, DistributedFunction.identity());
         }
     }
 
     public static class Arity3<T0, T1, T2, A> {
-        private final DistributedSupplier<A> createAccumulatorF;
-        private final DistributedBiConsumer<? super A, T0> accumulateItemF0;
-        private final DistributedBiConsumer<? super A, T1> accumulateItemF1;
-        private final DistributedBiConsumer<? super A, T2> accumulateItemF2;
-        private DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF;
-        private DistributedBiConsumer<? super A, ? super A> deductAccumulatorF;
+        private final DistributedSupplier<A> createFn;
+        private final DistributedBiConsumer<? super A, T0> accumulateFn0;
+        private final DistributedBiConsumer<? super A, T1> accumulateFn1;
+        private final DistributedBiConsumer<? super A, T2> accumulateFn2;
+        private DistributedBiConsumer<? super A, ? super A> combineFn;
+        private DistributedBiConsumer<? super A, ? super A> deductFn;
 
         Arity3(Arity2<T0, T1, A> step2,
-               DistributedBiConsumer<? super A, T2> accumulateItemF2
+               DistributedBiConsumer<? super A, T2> accumulateFn2
         ) {
-            this.createAccumulatorF = step2.createAccumulatorF;
-            this.accumulateItemF0 = step2.accumulateItemF0;
-            this.accumulateItemF1 = step2.accumulateItemF1;
-            this.accumulateItemF2 = accumulateItemF2;
+            this.createFn = step2.createFn;
+            this.accumulateFn0 = step2.accumulateFn0;
+            this.accumulateFn1 = step2.accumulateFn1;
+            this.accumulateFn2 = accumulateFn2;
         }
 
-        public Arity3<T0, T1, T2, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF) {
-            checkNotNull(combineAccumulatorsF, "combineAccumulatorsF");
-            this.combineAccumulatorsF = combineAccumulatorsF;
+        public Arity3<T0, T1, T2, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkNotNull(combineFn, "combineFn");
+            this.combineFn = combineFn;
             return this;
         }
 
-        public Arity3<T0, T1, T2, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductAccumulatorF) {
-            this.deductAccumulatorF = deductAccumulatorF;
+        public Arity3<T0, T1, T2, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+            this.deductFn = deductFn;
             return this;
         }
 
         public <R> AggregateOperation3<T0, T1, T2, A, R> andFinish(
-                DistributedFunction<? super A, R> finishAccumulationF
+                DistributedFunction<? super A, R> finishFn
         ) {
-            checkNotNull(finishAccumulationF, "finishAccumulationF");
-            return new AggregateOperation3Impl<>(createAccumulatorF,
-                    accumulateItemF0, accumulateItemF1, accumulateItemF2,
-                    combineAccumulatorsF, deductAccumulatorF, finishAccumulationF);
+            checkNotNull(finishFn, "finishFn");
+            return new AggregateOperation3Impl<>(createFn,
+                    accumulateFn0, accumulateFn1, accumulateFn2,
+                    combineFn, deductFn, finishFn);
+        }
+
+        public AggregateOperation3<T0, T1, T2, A, A> andIdentityFinish() {
+            return new AggregateOperation3Impl<>(createFn,
+                    accumulateFn0, accumulateFn1, accumulateFn2,
+                    combineFn, deductFn, DistributedFunction.identity());
         }
     }
 
     public static class VarArity<A> {
-        private final DistributedSupplier<A> createAccumulatorF;
-        private final Map<Integer, DistributedBiConsumer<? super A, ?>> accumulateFsByTag = new HashMap<>();
-        private DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF;
-        private DistributedBiConsumer<? super A, ? super A> deductAccumulatorF;
+        private final DistributedSupplier<A> createFn;
+        private final Map<Integer, DistributedBiConsumer<? super A, ?>> accumulateFnsByTag = new HashMap<>();
+        private DistributedBiConsumer<? super A, ? super A> combineFn;
+        private DistributedBiConsumer<? super A, ? super A> deductFn;
 
-        <T> VarArity(
-                DistributedSupplier<A> createAccumulatorF,
-                Tag<T> tag,
-                DistributedBiConsumer<? super A, T> accumulateItemF
-        ) {
-            this.createAccumulatorF = createAccumulatorF;
-            accumulateFsByTag.put(tag.index(), accumulateItemF);
+        <T> VarArity(DistributedSupplier<A> createFn, Tag<T> tag, DistributedBiConsumer<? super A, T> accumulateFn) {
+            this.createFn = createFn;
+            accumulateFnsByTag.put(tag.index(), accumulateFn);
         }
 
-        public <T> VarArity<A> andAccumulate(Tag<T> tag, DistributedBiConsumer<? super A, T> accumulateItemF) {
+        public <T> VarArity<A> andAccumulate(Tag<T> tag, DistributedBiConsumer<? super A, T> accumulateFn) {
             checkNotNull(tag, "tag");
-            checkNotNull(accumulateItemF, "accumulateItemF");
-            accumulateFsByTag.merge(tag.index(), accumulateItemF, (x, y) -> {
+            checkNotNull(accumulateFn, "accumulateFn");
+            accumulateFnsByTag.merge(tag.index(), accumulateFn, (x, y) -> {
                 throw new IllegalArgumentException("Tag with index " + tag.index() + " already registered");
             });
             return this;
         }
 
-        public VarArity<A> andCombine(DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF) {
-            checkNotNull(combineAccumulatorsF, "combineAccumulatorsF");
-            this.combineAccumulatorsF = combineAccumulatorsF;
+        public VarArity<A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkNotNull(combineFn, "combineFn");
+            this.combineFn = combineFn;
             return this;
         }
 
-        public VarArity<A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductAccumulatorF) {
-            checkNotNull(deductAccumulatorF, "deductAccumulatorF");
-            this.deductAccumulatorF = deductAccumulatorF;
+        public VarArity<A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+            this.deductFn = deductFn;
             return this;
         }
 
-        public <R> AggregateOperation<A, R> andFinish(DistributedFunction<? super A, R> finishAccumulationF) {
-            checkNotNull(finishAccumulationF, "finishAccumulationF");
-            return new AggregateOperationImpl<>(createAccumulatorF, packAccumulateFs(),
-                    combineAccumulatorsF, deductAccumulatorF, finishAccumulationF);
+        public <R> AggregateOperation<A, R> andFinish(DistributedFunction<? super A, R> finishFn) {
+            checkNotNull(finishFn, "finishFn");
+            return new AggregateOperationImpl<>(createFn, packAccumulateFns(),
+                    combineFn, deductFn, finishFn);
         }
 
-        private DistributedBiConsumer<? super A, ?>[] packAccumulateFs() {
-            int size = accumulateFsByTag.size();
+        private DistributedBiConsumer<? super A, ?>[] packAccumulateFns() {
+            int size = accumulateFnsByTag.size();
             @SuppressWarnings("unchecked")
             DistributedBiConsumer<? super A, ?>[] accFs = new DistributedBiConsumer[size];
             for (int i = 0; i < size; i++) {
-                accFs[i] = accumulateFsByTag.get(i);
+                accFs[i] = accumulateFnsByTag.get(i);
                 if (accFs[i] == null) {
                     throw new IllegalStateException("Registered tags' indices are "
-                            + accumulateFsByTag.keySet().stream().sorted().collect(toList())
+                            + accumulateFnsByTag.keySet().stream().sorted().collect(toList())
                             + " but should be " + range(0, size).boxed().collect(toList()));
                 }
             }

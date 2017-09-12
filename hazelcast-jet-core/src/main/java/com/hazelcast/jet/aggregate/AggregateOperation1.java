@@ -31,14 +31,14 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
      * item.
      */
     @Nonnull
-    DistributedBiConsumer<? super A, ? super T> accumulateItemF();
+    DistributedBiConsumer<? super A, ? super T> accumulateFn();
 
     @Nonnull
-    <R_NEW> AggregateOperation1<T, A, R_NEW> withFinish(
-            @Nonnull DistributedFunction<? super A, R_NEW> finishAccumulationF
+    <R_NEW> AggregateOperation1<T, A, R_NEW> withFinishFn(
+            @Nonnull DistributedFunction<? super A, R_NEW> finishFn
     );
 
     @Nonnull
-    <T_NEW> AggregateOperation1<T_NEW, A, R> withAccumulateItemF(
-            DistributedBiConsumer<? super A, ? super T_NEW> accumulateItemF);
+    <T_NEW> AggregateOperation1<T_NEW, A, R> withAccumulateFn(
+            DistributedBiConsumer<? super A, ? super T_NEW> accumulateFn);
 }

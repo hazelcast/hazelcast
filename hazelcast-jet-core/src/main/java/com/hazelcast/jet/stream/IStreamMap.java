@@ -53,6 +53,6 @@ public interface IStreamMap<K, V> extends IMap<K, V> {
      * @since 1.8
      */
     <T> DistributedStream<T> stream(@Nonnull DistributedPredicate<Entry<K, V>> predicate,
-                                    @Nonnull DistributedFunction<Entry<K, V>, T> projectionF);
+                                    @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn);
 
 }

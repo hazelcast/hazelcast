@@ -44,7 +44,7 @@ public final class WriteFileP {
      */
     public static <T> ProcessorSupplier supplier(
             @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull String charset,
             boolean append) {
 
@@ -52,7 +52,7 @@ public final class WriteFileP {
                 globalIndex -> createBufferedWriter(Paths.get(directoryName), globalIndex,
                         charset, append),
                 (fileWriter, item) -> uncheckRun(() -> {
-                    fileWriter.write(toStringF.apply((T) item));
+                    fileWriter.write(toStringFn.apply((T) item));
                     fileWriter.newLine();
                 }),
                 fileWriter -> uncheckRun(fileWriter::flush),

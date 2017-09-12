@@ -30,20 +30,20 @@ import java.util.function.Function;
  */
 public class HashJoinCollectP<K, E, V> extends AbstractProcessor {
     private final Map<K, V> map = new HashMap<>();
-    @Nonnull private final Function<E, K> keyF;
-    @Nonnull private final Function<E, V> projectF;
+    @Nonnull private final Function<E, K> keyFn;
+    @Nonnull private final Function<E, V> projectFn;
 
-    public HashJoinCollectP(@Nonnull Function<E, K> keyF, @Nonnull Function<E, V> projectF) {
-        this.keyF = keyF;
-        this.projectF = projectF;
+    public HashJoinCollectP(@Nonnull Function<E, K> keyFn, @Nonnull Function<E, V> projectFn) {
+        this.keyFn = keyFn;
+        this.projectFn = projectFn;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess0(@Nonnull Object item) throws Exception {
         E e = (E) item;
-        K key = keyF.apply(e);
-        V value = projectF.apply(e);
+        K key = keyFn.apply(e);
+        V value = projectFn.apply(e);
         V previous = map.put(key, value);
         if (previous != null) {
             throw new IllegalStateException("Duplicate values for key " + key + ": " + previous + " and " + value);

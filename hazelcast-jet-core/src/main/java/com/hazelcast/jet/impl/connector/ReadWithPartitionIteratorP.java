@@ -94,22 +94,22 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
     public static <K, V, T> ProcessorMetaSupplier readMap(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
     ) {
         return new LocalClusterMetaSupplier<T>(
                 instance -> partition -> ((MapProxyImpl) instance.getMap(mapName))
-                        .iterator(FETCH_SIZE, partition, toProjection(projectionF), predicate::test));
+                        .iterator(FETCH_SIZE, partition, toProjection(projectionFn), predicate::test));
     }
 
     public static <K, V, T> ProcessorMetaSupplier readMap(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
             @Nonnull ClientConfig clientConfig
     ) {
         return new RemoteClusterMetaSupplier<T>(clientConfig,
                 instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
-                        .iterator(FETCH_SIZE, partition, toProjection(projectionF), predicate::test));
+                        .iterator(FETCH_SIZE, partition, toProjection(projectionFn), predicate::test));
     }
 
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
@@ -146,10 +146,10 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                 .collect(toList());
     }
 
-    private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionF) {
+    private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {
         return new Projection<I, O>() {
             @Override public O transform(I input) {
-                return projectionF.apply(input);
+                return projectionFn.apply(input);
             }
         };
     }

@@ -26,11 +26,11 @@ import java.util.Map.Entry;
  * Javadoc pending.
  */
 public class GroupByTransform<E, K, R> implements UnaryTransform<E, Entry<K, R>> {
-    private final DistributedFunction<? super E, ? extends K> keyF;
+    private final DistributedFunction<? super E, ? extends K> keyFn;
     private final AggregateOperation1<E, ?, R> aggrOp;
 
-    public GroupByTransform(DistributedFunction<? super E, ? extends K> keyF, AggregateOperation1<E, ?, R> aggrOp) {
-        this.keyF = keyF;
+    public GroupByTransform(DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<E, ?, R> aggrOp) {
+        this.keyFn = keyFn;
         this.aggrOp = aggrOp;
     }
 
@@ -39,8 +39,8 @@ public class GroupByTransform<E, K, R> implements UnaryTransform<E, Entry<K, R>>
         return "GroupBy";
     }
 
-    public DistributedFunction<? super E, ? extends K> keyF() {
-        return keyF;
+    public DistributedFunction<? super E, ? extends K> keyFn() {
+        return keyFn;
     }
 
     public AggregateOperation1<E, ?, R> aggregateOperation() {

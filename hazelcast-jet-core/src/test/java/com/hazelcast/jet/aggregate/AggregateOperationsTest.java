@@ -142,52 +142,52 @@ public class AggregateOperationsTest {
         // Given
         AggregateOperation1<Entry<Long, Long>, LinTrendAccumulator, Double> op =
                 linearTrend(Entry::getKey, Entry::getValue);
-        Supplier<LinTrendAccumulator> newF = op.createAccumulatorF();
-        BiConsumer<? super LinTrendAccumulator, ? super Entry<Long, Long>> accF = op.accumulateItemF();
-        BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> combineF = op.combineAccumulatorsF();
-        BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> deductF = op.deductAccumulatorF();
-        Function<? super LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
-        assertNotNull(deductF);
+        Supplier<LinTrendAccumulator> newFn = op.createFn();
+        BiConsumer<? super LinTrendAccumulator, ? super Entry<Long, Long>> accFn = op.accumulateFn();
+        BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> combineFn = op.combineFn();
+        BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> deductFn = op.deductFn();
+        Function<? super LinTrendAccumulator, Double> finishFn = op.finishFn();
+        assertNotNull(deductFn);
 
         // When
-        LinTrendAccumulator a1 = newF.get();
-        accF.accept(a1, entry(1L, 3L));
-        accF.accept(a1, entry(2L, 5L));
-        assertEquals(2.0, finishF.apply(a1), Double.MIN_VALUE);
+        LinTrendAccumulator a1 = newFn.get();
+        accFn.accept(a1, entry(1L, 3L));
+        accFn.accept(a1, entry(2L, 5L));
+        assertEquals(2.0, finishFn.apply(a1), Double.MIN_VALUE);
 
-        LinTrendAccumulator a2 = newF.get();
-        accF.accept(a2, entry(5L, 11L));
-        accF.accept(a2, entry(6L, 13L));
-        assertEquals(2.0, finishF.apply(a2), Double.MIN_VALUE);
+        LinTrendAccumulator a2 = newFn.get();
+        accFn.accept(a2, entry(5L, 11L));
+        accFn.accept(a2, entry(6L, 13L));
+        assertEquals(2.0, finishFn.apply(a2), Double.MIN_VALUE);
 
-        combineF.accept(a1, a2);
-        assertEquals(2.0, finishF.apply(a1), Double.MIN_VALUE);
+        combineFn.accept(a1, a2);
+        assertEquals(2.0, finishFn.apply(a1), Double.MIN_VALUE);
 
-        deductF.accept(a1, a2);
-        assertEquals(2.0, finishF.apply(a1), Double.MIN_VALUE);
+        deductFn.accept(a1, a2);
+        assertEquals(2.0, finishFn.apply(a1), Double.MIN_VALUE);
 
-        Double result = finishF.apply(a1);
+        Double result = finishFn.apply(a1);
         assertEquals(Double.valueOf(2), result);
 
         // When
-        LinTrendAccumulator acc = newF.get();
+        LinTrendAccumulator acc = newFn.get();
         // Then
-        assertTrue("NaN expected if nothing accumulated", Double.isNaN(finishF.apply(acc)));
+        assertTrue("NaN expected if nothing accumulated", Double.isNaN(finishFn.apply(acc)));
 
         // When
-        accF.accept(acc, entry(2L, 1L));
+        accFn.accept(acc, entry(2L, 1L));
         // Then
-        assertTrue("NaN expected if just single point accumulated", Double.isNaN(finishF.apply(acc)));
+        assertTrue("NaN expected if just single point accumulated", Double.isNaN(finishFn.apply(acc)));
 
         // When
-        accF.accept(acc, entry(2L, 1L));
+        accFn.accept(acc, entry(2L, 1L));
         // Then
-        assertTrue("NaN expected if all data points are equal", Double.isNaN(finishF.apply(acc)));
+        assertTrue("NaN expected if all data points are equal", Double.isNaN(finishFn.apply(acc)));
 
         // When
-        accF.accept(acc, entry(2L, 2L));
+        accFn.accept(acc, entry(2L, 2L));
         // Then
-        assertTrue("NaN expected if all data points have same x value", Double.isNaN(finishF.apply(acc)));
+        assertTrue("NaN expected if all data points have same x value", Double.isNaN(finishFn.apply(acc)));
     }
 
     @Test
@@ -228,11 +228,11 @@ public class AggregateOperationsTest {
         AggregateOperation1<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
                 toMap(entryKey(), entryValue());
 
-        Map<Integer, Integer> acc = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc, entry(1, 1));
+        Map<Integer, Integer> acc = op.createFn().get();
+        op.accumulateFn().accept(acc, entry(1, 1));
 
         exception.expect(IllegalStateException.class);
-        op.accumulateItemF().accept(acc, entry(1, 2));
+        op.accumulateFn().accept(acc, entry(1, 2));
     }
 
     @Test
@@ -240,13 +240,13 @@ public class AggregateOperationsTest {
         AggregateOperation1<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
                 toMap(entryKey(), entryValue());
 
-        Map<Integer, Integer> acc1 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc1, entry(1, 1));
-        Map<Integer, Integer> acc2 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc2, entry(1, 2));
+        Map<Integer, Integer> acc1 = op.createFn().get();
+        op.accumulateFn().accept(acc1, entry(1, 1));
+        Map<Integer, Integer> acc2 = op.createFn().get();
+        op.accumulateFn().accept(acc2, entry(1, 2));
 
         exception.expect(IllegalStateException.class);
-        op.combineAccumulatorsF().accept(acc1, acc2);
+        op.combineFn().accept(acc1, acc2);
     }
 
     @Test
@@ -304,7 +304,7 @@ public class AggregateOperationsTest {
 
     private static <T, A, X, R> void validateOp(
             AggregateOperation1<T, A, R> op,
-            Function<A, X> getAccValF,
+            Function<A, X> getAccValFn,
             T item1,
             T item2,
             X expectAcced1,
@@ -312,48 +312,48 @@ public class AggregateOperationsTest {
             R expectFinished
     ) {
         // Given
-        BiConsumer<? super A, ? super A> deductAccF = op.deductAccumulatorF();
-        assertNotNull(deductAccF);
+        BiConsumer<? super A, ? super A> deductAccFn = op.deductFn();
+        assertNotNull(deductAccFn);
 
         // When
-        A acc1 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc1, item1);
+        A acc1 = op.createFn().get();
+        op.accumulateFn().accept(acc1, item1);
 
-        A acc2 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc2, item2);
+        A acc2 = op.createFn().get();
+        op.accumulateFn().accept(acc2, item2);
 
         // Checks must be made early because combine/deduct
         // are allowed to be destructive ops
 
         // Then
-        assertEquals("accumulated", expectAcced1, getAccValF.apply(acc1));
+        assertEquals("accumulated", expectAcced1, getAccValFn.apply(acc1));
 
         // When
-        op.combineAccumulatorsF().accept(acc1, acc2);
+        op.combineFn().accept(acc1, acc2);
         // Then
-        assertEquals("combined", expectCombined, getAccValF.apply(acc1));
+        assertEquals("combined", expectCombined, getAccValFn.apply(acc1));
 
         // When
-        R finished = op.finishAccumulationF().apply(acc1);
+        R finished = op.finishFn().apply(acc1);
         // Then
         assertEquals("finished", expectFinished, finished);
 
         // When
-        deductAccF.accept(acc1, acc2);
+        deductAccFn.accept(acc1, acc2);
         // Then
-        assertEquals("deducted", expectAcced1, getAccValF.apply(acc1));
+        assertEquals("deducted", expectAcced1, getAccValFn.apply(acc1));
 
         // When - accumulate both items into single accumulator
-        acc1 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc1, item1);
-        op.accumulateItemF().accept(acc1, item2);
+        acc1 = op.createFn().get();
+        op.accumulateFn().accept(acc1, item1);
+        op.accumulateFn().accept(acc1, item2);
         // Then
-        assertEquals("accumulated", expectCombined, getAccValF.apply(acc1));
+        assertEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
     }
 
     private static <T, A, X, R> void validateOpWithoutDeduct(
             AggregateOperation1<T, A, R> op,
-            Function<A, X> getAccValF,
+            Function<A, X> getAccValFn,
             T item1,
             T item2,
             X expectAcced,
@@ -361,36 +361,36 @@ public class AggregateOperationsTest {
             R expectFinished
     ) {
         // Then
-        assertNull(op.deductAccumulatorF());
+        assertNull(op.deductFn());
 
         // When
-        A acc1 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc1, item1);
+        A acc1 = op.createFn().get();
+        op.accumulateFn().accept(acc1, item1);
 
-        A acc2 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc2, item2);
+        A acc2 = op.createFn().get();
+        op.accumulateFn().accept(acc2, item2);
 
         // Checks must be made early because combine/deduct
         // are allowed to be destructive ops
 
         // Then
-        assertEquals("accumulated", expectAcced, getAccValF.apply(acc1));
+        assertEquals("accumulated", expectAcced, getAccValFn.apply(acc1));
 
         // When
-        op.combineAccumulatorsF().accept(acc1, acc2);
+        op.combineFn().accept(acc1, acc2);
         // Then
-        assertEquals("combined", expectCombined, getAccValF.apply(acc1));
+        assertEquals("combined", expectCombined, getAccValFn.apply(acc1));
 
         // When
-        R finished = op.finishAccumulationF().apply(acc1);
+        R finished = op.finishFn().apply(acc1);
         // Then
         assertEquals("finished", expectFinished, finished);
 
         // When - accumulate both items into single accumulator
-        acc1 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc1, item1);
-        op.accumulateItemF().accept(acc1, item2);
+        acc1 = op.createFn().get();
+        op.accumulateFn().accept(acc1, item1);
+        op.accumulateFn().accept(acc1, item2);
         // Then
-        assertEquals("accumulated", expectCombined, getAccValF.apply(acc1));
+        assertEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
     }
 }

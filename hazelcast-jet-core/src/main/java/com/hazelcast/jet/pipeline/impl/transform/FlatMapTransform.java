@@ -24,10 +24,10 @@ import com.hazelcast.jet.pipeline.UnaryTransform;
  * Javadoc pending.
  */
 public class FlatMapTransform<E, R> implements UnaryTransform<E, R> {
-    private final DistributedFunction<? super E, Traverser<? extends R>> flatMapF;
+    private final DistributedFunction<? super E, Traverser<? extends R>> flatMapFn;
 
-    public FlatMapTransform(DistributedFunction<? super E, Traverser<? extends R>> flatMapF) {
-        this.flatMapF = flatMapF;
+    public FlatMapTransform(DistributedFunction<? super E, Traverser<? extends R>> flatMapFn) {
+        this.flatMapFn = flatMapFn;
     }
 
     @Override
@@ -35,7 +35,7 @@ public class FlatMapTransform<E, R> implements UnaryTransform<E, R> {
         return "FlatMap";
     }
 
-    public DistributedFunction<? super E, Traverser<? extends R>> flatMapF() {
-        return flatMapF;
+    public DistributedFunction<? super E, Traverser<? extends R>> flatMapFn() {
+        return flatMapFn;
     }
 }

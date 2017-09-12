@@ -42,8 +42,8 @@ import static java.util.stream.Collectors.toList;
 public class CoGroupBuilder<K, E0> {
     private final List<CoGroupClause<?, K>> clauses = new ArrayList<>();
 
-    CoGroupBuilder(ComputeStage<E0> s, DistributedFunction<? super E0, K> groupKeyF) {
-        add(s, groupKeyF);
+    CoGroupBuilder(ComputeStage<E0> s, DistributedFunction<? super E0, K> groupKeyFn) {
+        add(s, groupKeyFn);
     }
 
     /**
@@ -58,14 +58,14 @@ public class CoGroupBuilder<K, E0> {
      * Adds another contributing pipeline stage to the co-grouping operation.
      *
      * @param stage the pipeline stage to be co-grouped
-     * @param groupKeyF a function that will extract the key from the data items of the
+     * @param groupKeyFn a function that will extract the key from the data items of the
      *                  pipeline stage
      * @param <E> type of items on the pipeline stage
      * @return the tag referring to the pipeline stage
      */
     @SuppressWarnings("unchecked")
-    public <E> Tag<E> add(ComputeStage<E> stage, DistributedFunction<? super E, K> groupKeyF) {
-        clauses.add(new CoGroupClause<>(stage, groupKeyF));
+    public <E> Tag<E> add(ComputeStage<E> stage, DistributedFunction<? super E, K> groupKeyFn) {
+        clauses.add(new CoGroupClause<>(stage, groupKeyFn));
         return (Tag<E>) tag(clauses.size() - 1);
     }
 
@@ -86,7 +86,7 @@ public class CoGroupBuilder<K, E0> {
                 .collect(toList());
         MultiTransform transform = Transforms.coGroup(clauses
                 .stream()
-                .map(CoGroupClause::groupKeyF)
+                .map(CoGroupClause::groupKeyFn)
                 .collect(toList()),
                 aggrOp);
         PipelineImpl pipeline = (PipelineImpl) clauses.get(0).stage.getPipeline();
@@ -95,19 +95,19 @@ public class CoGroupBuilder<K, E0> {
 
     private static class CoGroupClause<E, K> {
         private final ComputeStage<E> stage;
-        private final DistributedFunction<? super E, K> groupKeyF;
+        private final DistributedFunction<? super E, K> groupKeyFn;
 
-        CoGroupClause(ComputeStage<E> stage, DistributedFunction<? super E, K> groupKeyF) {
+        CoGroupClause(ComputeStage<E> stage, DistributedFunction<? super E, K> groupKeyFn) {
             this.stage = stage;
-            this.groupKeyF = groupKeyF;
+            this.groupKeyFn = groupKeyFn;
         }
 
         ComputeStage<E> stage() {
             return stage;
         }
 
-        DistributedFunction<? super E, K> groupKeyF() {
-            return groupKeyF;
+        DistributedFunction<? super E, K> groupKeyFn() {
+            return groupKeyFn;
         }
     }
 }

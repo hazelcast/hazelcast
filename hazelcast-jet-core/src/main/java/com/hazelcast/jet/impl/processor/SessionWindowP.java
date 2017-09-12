@@ -63,26 +63,26 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     final SortedMap<Long, Set<K>> deadlineToKeys = new TreeMap<>();
 
     private final long sessionTimeout;
-    private final DistributedToLongFunction<? super T> getTimestampF;
-    private final DistributedFunction<? super T, K> getKeyF;
-    private final DistributedSupplier<A> newAccumulatorF;
-    private final BiConsumer<? super A, ? super T> accumulateF;
-    private final DistributedFunction<? super A, R> finishAccumulationF;
-    private final DistributedBiConsumer<? super A, ? super A> combineAccF;
+    private final DistributedToLongFunction<? super T> getTimestampFn;
+    private final DistributedFunction<? super T, K> getKeyFn;
+    private final DistributedSupplier<A> newAccumulatorFn;
+    private final BiConsumer<? super A, ? super T> accumulateFn;
+    private final DistributedFunction<? super A, R> finishAccumulationFn;
+    private final DistributedBiConsumer<? super A, ? super A> combineAccFn;
     private final FlatMapper<Watermark, Session<K, R>> expiredSessionFlatmapper;
 
     public SessionWindowP(
             long sessionTimeout,
-            DistributedToLongFunction<? super T> getTimestampF,
-            DistributedFunction<? super T, K> getKeyF,
+            DistributedToLongFunction<? super T> getTimestampFn,
+            DistributedFunction<? super T, K> getKeyFn,
             AggregateOperation1<? super T, A, R> aggrOp
     ) {
-        this.getTimestampF = getTimestampF;
-        this.getKeyF = getKeyF;
-        this.newAccumulatorF = aggrOp.createAccumulatorF();
-        this.accumulateF = aggrOp.accumulateItemF();
-        this.combineAccF = aggrOp.combineAccumulatorsF();
-        this.finishAccumulationF = aggrOp.finishAccumulationF();
+        this.getTimestampFn = getTimestampFn;
+        this.getKeyFn = getKeyFn;
+        this.newAccumulatorFn = aggrOp.createFn();
+        this.accumulateFn = aggrOp.accumulateFn();
+        this.combineAccFn = aggrOp.combineFn();
+        this.finishAccumulationFn = aggrOp.finishFn();
         this.sessionTimeout = sessionTimeout;
         this.expiredSessionFlatmapper = flatMapper(this::expiredSessionTraverser);
     }
@@ -90,8 +90,8 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
         final T event = (T) item;
-        final long timestamp = getTimestampF.applyAsLong(event);
-        K key = getKeyF.apply(event);
+        final long timestamp = getTimestampFn.applyAsLong(event);
+        K key = getKeyFn.apply(event);
         keyToWindows.computeIfAbsent(key, k -> new Windows())
                     .addEvent(key, timestamp, event);
         return true;
@@ -143,14 +143,14 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
         private A[] accs = (A[]) new Object[2];
 
         void addEvent(K key, long timestamp, T event) {
-            accumulateF.accept(resolveAcc(key, timestamp), event);
+            accumulateFn.accept(resolveAcc(key, timestamp), event);
         }
 
         List<Session<K, R>> closeWindows(K key, long wm) {
             List<Session<K, R>> sessions = new ArrayList<>();
             int i = 0;
             for (; i < size && ends[i] < wm; i++) {
-                sessions.add(new Session<>(key, starts[i], ends[i], finishAccumulationF.apply(accs[i])));
+                sessions.add(new Session<>(key, starts[i], ends[i], finishAccumulationFn.apply(accs[i])));
             }
             if (i != size) {
                 removeHead(i);
@@ -189,7 +189,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
                 // both `i` and `i + 1` windows overlap the event interval
                 removeFromDeadlines(key, ends[i]);
                 ends[i] = ends[i + 1];
-                combineAccF.accept(accs[i], accs[i + 1]);
+                combineAccFn.accept(accs[i], accs[i + 1]);
                 removeWindow(i + 1);
                 return accs[i];
             }
@@ -203,7 +203,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
             size++;
             starts[idx] = windowStart;
             ends[idx] = windowEnd;
-            accs[idx] = newAccumulatorF.get();
+            accs[idx] = newAccumulatorFn.get();
             return accs[idx];
         }
 

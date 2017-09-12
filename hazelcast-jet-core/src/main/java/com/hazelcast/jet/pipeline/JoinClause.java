@@ -22,7 +22,26 @@ import java.io.Serializable;
 import java.util.Map.Entry;
 
 /**
- * Javadoc pending.
+ * Specifies how to join an enriching stream to the primary stream in a
+ * {@link ComputeStage#hashJoin(ComputeStage, JoinClause) hash-join}
+ * operation. It holds three primitives:
+ * <ol><li>
+ *     <em>left-hand key extractor</em>: extracts the join key from the primary
+ *     stream
+ * </li><li>
+ *     <em>right-hand key extractor</em>: extracts the join key from the
+ *     enriching stream
+ * </li><li>
+ *     <em>right-hand projection function</em>: maps the enriching stream item
+ *     to the item that will be in the result of the join operation.
+ * </li></ol>
+ *  The primary use case for the projection function is enrichment from a
+ *  map source, such as {@link com.hazelcast.jet.pipeline.Sources#readMap}.
+ *  The enriching stream consists of map entries, but result should contain
+ *  just the vaules. In this case the projection function should be {@code
+ *  Entry::getValue}. There is direct support for this case with the method
+ *  {@link #joinMapEntries(DistributedFunction)}.
+ *
  */
 public final class JoinClause<K, E0, E1, E1_OUT> implements Serializable {
     private final DistributedFunction<E0, K> leftKeyFn;
@@ -46,6 +65,17 @@ public final class JoinClause<K, E0, E1, E1_OUT> implements Serializable {
         return new JoinClause<>(leftKeyFn, rightKeyFn, DistributedFunction.identity());
     }
 
+    /**
+     * A shorthand factory for the common case of hash-joining with a stream of
+     * map entries. The right key extractor is {@code Map.Entry::getKey} and the
+     * right-hand projection function is {@code Map.Entry::getValue}.
+     *
+     * @param leftKeyFn the function to extract the key from the primary stream
+     * @param <K> the type of the key
+     * @param <E0> the type of the primary stream
+     * @param <E1> the type of the enriching stream's entry value
+     * @param <E1_IN> the type of the enriching stream ({@code Map.Entry<K, E1>})
+     */
     public static <K, E0, E1, E1_IN extends Entry<K, E1>> JoinClause<K, E0, E1_IN, E1> joinMapEntries(
             DistributedFunction<E0, K> leftKeyFn
     ) {

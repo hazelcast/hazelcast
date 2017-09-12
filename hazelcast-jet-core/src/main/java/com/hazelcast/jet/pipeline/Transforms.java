@@ -55,26 +55,26 @@ public final class Transforms {
     }
 
     @Nonnull
-    public static <E, R> UnaryTransform<E, R> map(DistributedFunction<? super E, ? extends R> mapF) {
-        return new MapTransform<>(mapF);
+    public static <E, R> UnaryTransform<E, R> map(DistributedFunction<? super E, ? extends R> mapFn) {
+        return new MapTransform<>(mapFn);
     }
 
     @Nonnull
-    public static <E, R> UnaryTransform<E, R> flatMap(DistributedFunction<? super E, Traverser<? extends R>> flatMapF) {
-        return new FlatMapTransform<>(flatMapF);
+    public static <E, R> UnaryTransform<E, R> flatMap(DistributedFunction<? super E, Traverser<? extends R>> flatMapFn) {
+        return new FlatMapTransform<>(flatMapFn);
     }
 
     @Nonnull
-    public static <E> UnaryTransform<E, E> filter(DistributedPredicate<? super E> filterF) {
-        return new FilterTransform<>(filterF);
+    public static <E> UnaryTransform<E, E> filter(DistributedPredicate<? super E> filterFn) {
+        return new FilterTransform<>(filterFn);
     }
 
     @Nonnull
     public static <E, K, R> UnaryTransform<E, Entry<K, R>> groupBy(
-            DistributedFunction<? super E, ? extends K> keyF,
+            DistributedFunction<? super E, ? extends K> keyFn,
             AggregateOperation1<E, ?, R> aggregation
     ) {
-        return new GroupByTransform<>(keyF, aggregation);
+        return new GroupByTransform<>(keyFn, aggregation);
     }
 
     @Nonnull
@@ -101,21 +101,21 @@ public final class Transforms {
 
     @Nonnull
     public static <E0, E1, K, A, R> MultiTransform coGroup(
-            DistributedFunction<? super E0, ? extends K> key0F,
-            DistributedFunction<? super E1, ? extends K> key1F,
+            DistributedFunction<? super E0, ? extends K> key0Fn,
+            DistributedFunction<? super E1, ? extends K> key1Fn,
             AggregateOperation2<E0, E1, A, R> aggrOp
     ) {
-        return new CoGroupTransform<>(asList(key0F, key1F), aggrOp);
+        return new CoGroupTransform<>(asList(key0Fn, key1Fn), aggrOp);
     }
 
     @Nonnull
     public static <E0, E1, E2, K, A, R> MultiTransform coGroup(
-            DistributedFunction<? super E0, ? extends K> key0F,
-            DistributedFunction<? super E1, ? extends K> key1F,
-            DistributedFunction<? super E2, ? extends K> key2F,
+            DistributedFunction<? super E0, ? extends K> key0Fn,
+            DistributedFunction<? super E1, ? extends K> key1Fn,
+            DistributedFunction<? super E2, ? extends K> key2Fn,
             AggregateOperation3<E0, E1, E2, A, R> aggrOp
     ) {
-        return new CoGroupTransform<>(asList(key0F, key1F, key2F), aggrOp);
+        return new CoGroupTransform<>(asList(key0Fn, key1Fn, key2Fn), aggrOp);
     }
 
     @Nonnull

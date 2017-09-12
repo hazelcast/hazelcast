@@ -39,7 +39,7 @@ import java.util.function.ToLongFunction;
  */
 public class InsertWatermarksP<T> extends AbstractProcessor {
 
-    private final ToLongFunction<T> getTimestampF;
+    private final ToLongFunction<T> getTimestampFn;
     private final WatermarkPolicy wmPolicy;
     private final WatermarkEmissionPolicy wmEmitPolicy;
     private final ResettableSingletonTraverser<Object> singletonTraverser;
@@ -49,15 +49,15 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
     private long lastEmittedWm = Long.MIN_VALUE;
 
     /**
-     * @param getTimestampF function that extracts the timestamp from the item
+     * @param getTimestampFn function that extracts the timestamp from the item
      * @param wmPolicy the watermark policy
      */
     public InsertWatermarksP(
-            @Nonnull DistributedToLongFunction<T> getTimestampF,
+            @Nonnull DistributedToLongFunction<T> getTimestampFn,
             @Nonnull WatermarkPolicy wmPolicy,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy
     ) {
-        this.getTimestampF = getTimestampF;
+        this.getTimestampFn = getTimestampFn;
         this.wmPolicy = wmPolicy;
         this.wmEmitPolicy = wmEmitPolicy;
         this.flatMapper = flatMapper(this::traverser);
@@ -83,7 +83,7 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
     }
 
     private Traverser<Object> traverser(Object item) {
-        long timestamp = getTimestampF.applyAsLong((T) item);
+        long timestamp = getTimestampFn.applyAsLong((T) item);
         if (timestamp < currWm) {
             // drop late event
             return Traversers.empty();

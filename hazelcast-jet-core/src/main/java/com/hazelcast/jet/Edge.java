@@ -207,27 +207,27 @@ public class Edge implements IdentifiedDataSerializable {
      * Activates the {@link RoutingPolicy#PARTITIONED PARTITIONED} routing
      * policy and applies the {@link Partitioner#defaultPartitioner() default}
      * Hazelcast partitioning strategy. The strategy is applied to the result of
-     * the {@code extractKeyF} function.
+     * the {@code extractKeyFn} function.
      */
     @Nonnull
-    public <T> Edge partitioned(@Nonnull DistributedFunction<T, ?> extractKeyF) {
-        return partitioned(extractKeyF, defaultPartitioner());
+    public <T> Edge partitioned(@Nonnull DistributedFunction<T, ?> extractKeyFn) {
+        return partitioned(extractKeyFn, defaultPartitioner());
     }
 
     /**
      * Activates the {@link RoutingPolicy#PARTITIONED PARTITIONED} routing
      * policy and applies the provided partitioning strategy. The strategy
-     * is applied to the result of the {@code extractKeyF} function.
+     * is applied to the result of the {@code extractKeyFn} function.
      */
     @Nonnull
     public <T, K> Edge partitioned(
-            @Nonnull DistributedFunction<T, K> extractKeyF,
+            @Nonnull DistributedFunction<T, K> extractKeyFn,
             @Nonnull Partitioner<? super K> partitioner
     ) {
-        checkSerializable(extractKeyF, "extractKeyF");
+        checkSerializable(extractKeyFn, "extractKeyFn");
         checkSerializable(partitioner, "partitioner");
         this.routingPolicy = RoutingPolicy.PARTITIONED;
-        this.partitioner = new KeyPartitioner<>(extractKeyF, partitioner);
+        this.partitioner = new KeyPartitioner<>(extractKeyFn, partitioner);
         return this;
     }
 

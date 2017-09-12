@@ -117,64 +117,64 @@ public final class SinkProcessors {
      *
      * @param <B> type of buffer
      * @param <T> type of received item
-     * @param newBufferF supplies the buffer. The argument to this function
+     * @param newBufferFn supplies the buffer. The argument to this function
      *                   is the global processor index.
-     * @param addToBufferF adds an item to the buffer
-     * @param flushBufferF flushes the buffer
+     * @param addToBufferFn adds an item to the buffer
+     * @param flushBufferFn flushes the buffer
      */
     @Nonnull
     public static <B, T> ProcessorSupplier writeBuffered(
-            @Nonnull DistributedIntFunction<B> newBufferF,
-            @Nonnull DistributedBiConsumer<B, T> addToBufferF,
-            @Nonnull DistributedConsumer<B> flushBufferF
+            @Nonnull DistributedIntFunction<B> newBufferFn,
+            @Nonnull DistributedBiConsumer<B, T> addToBufferFn,
+            @Nonnull DistributedConsumer<B> flushBufferFn
     ) {
-        return writeBuffered(newBufferF, addToBufferF, flushBufferF, noopConsumer());
+        return writeBuffered(newBufferFn, addToBufferFn, flushBufferFn, noopConsumer());
     }
 
     /**
      * Returns a supplier of processors for a vertex that drains all the items
      * from the inbox to an intermediate buffer and then flushes the buffer.
      * As each processor completes, it will dispose of the buffer by calling
-     * {@code disposeBufferF}.
+     * {@code disposeBufferFn}.
      * <p>
      * This is a useful building block to implement sinks with explicit control
      * over buffering and flushing.
      *
      * @param <B> type of buffer
      * @param <T> type of received item
-     * @param newBufferF supplies the buffer. The argument to this function
+     * @param newBufferFn supplies the buffer. The argument to this function
      *                   is the global processor index.
-     * @param addToBufferF adds item to buffer
-     * @param flushBufferF flushes the buffer
-     * @param disposeBufferF disposes of the buffer
+     * @param addToBufferFn adds item to buffer
+     * @param flushBufferFn flushes the buffer
+     * @param disposeBufferFn disposes of the buffer
      */
     @Nonnull
     public static <B, T> ProcessorSupplier writeBuffered(
-            @Nonnull DistributedIntFunction<B> newBufferF,
-            @Nonnull DistributedBiConsumer<B, T> addToBufferF,
-            @Nonnull DistributedConsumer<B> flushBufferF,
-            @Nonnull DistributedConsumer<B> disposeBufferF
+            @Nonnull DistributedIntFunction<B> newBufferFn,
+            @Nonnull DistributedBiConsumer<B, T> addToBufferFn,
+            @Nonnull DistributedConsumer<B> flushBufferFn,
+            @Nonnull DistributedConsumer<B> disposeBufferFn
     ) {
-        return WriteBufferedP.supplier(newBufferF, addToBufferF, flushBufferF, disposeBufferF);
+        return WriteBufferedP.supplier(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn);
     }
 
     /**
      * Returns a supplier of processors for a vertex that connects to the
      * specified TCP socket and writes to it a string representation of the
      * items it receives. It converts an item to its string representation
-     * using the supplied {@code toStringF} function and encodes the string
+     * using the supplied {@code toStringFn} function and encodes the string
      * using the supplied {@code Charset}. It follows each item with a newline
      * character.
      *
      * @param host the name of the host to connect to
      * @param port the port number to connect to
-     * @param toStringF a function that returns the string representation of an item
+     * @param toStringFn a function that returns the string representation of an item
      * @param charset charset used to encode the string representation
      */
     public static <T> ProcessorSupplier writeSocket(
             @Nonnull String host,
             int port,
-            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull Charset charset
     ) {
         String charsetName = charset.name();
@@ -184,7 +184,7 @@ public final class SinkProcessors {
                                 new Socket(host, port).getOutputStream(), charsetName))),
                 (bufferedWriter, item) -> {
                     try {
-                        bufferedWriter.write(toStringF.apply((T) item));
+                        bufferedWriter.write(toStringFn.apply((T) item));
                         bufferedWriter.write('\n');
                     } catch (IOException e) {
                         throw sneakyThrow(e);
@@ -203,7 +203,7 @@ public final class SinkProcessors {
      * containing directory of all files, on all cluster members.
      * <p>
      * The vertex converts an item to its string representation using the
-     * supplied {@code toStringF} function and encodes the string using the
+     * supplied {@code toStringFn} function and encodes the string using the
      * supplied {@code Charset}. It follows each item with a platform-specific
      * line separator.
      * <p>
@@ -214,7 +214,7 @@ public final class SinkProcessors {
      * already reach the maximum available performance.
      *
      * @param directoryName directory to create the files in. Will be created if it doesn't exist.
-     * @param toStringF a function that returns the string representation of an item
+     * @param toStringFn a function that returns the string representation of an item
      * @param charset charset used to encode the string representation
      * @param append whether to append ({@code true}) or overwrite ({@code false})
      *               an existing file
@@ -222,11 +222,11 @@ public final class SinkProcessors {
     @Nonnull
     public static <T> ProcessorSupplier writeFile(
             @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull Charset charset,
             boolean append
     ) {
-        return WriteFileP.supplier(directoryName, toStringF, charset.name(), append);
+        return WriteFileP.supplier(directoryName, toStringFn, charset.name(), append);
     }
 
     /**
@@ -235,13 +235,13 @@ public final class SinkProcessors {
      *
      * @param directoryName directory to create the files in. Will be created,
      *                      if it doesn't exist. Must be the same on all members.
-     * @param toStringF a function that returns the string representation of an item
+     * @param toStringFn a function that returns the string representation of an item
      */
     @Nonnull
     public static <T> ProcessorSupplier writeFile(
-            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringF
+            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringFn
     ) {
-        return writeFile(directoryName, toStringF, UTF_8, false);
+        return writeFile(directoryName, toStringFn, UTF_8, false);
     }
 
     /**

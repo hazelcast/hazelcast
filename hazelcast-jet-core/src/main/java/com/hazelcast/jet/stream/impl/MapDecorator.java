@@ -528,8 +528,8 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
     @Override
     public <E> DistributedStream<E> stream(
             @Nonnull DistributedPredicate<Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Entry<K, V>, E> projectionF
+            @Nonnull DistributedFunction<Entry<K, V>, E> projectionFn
     ) {
-        return new MapSourcePipe<>(new StreamContext(instance), map, predicate, projectionF);
+        return new MapSourcePipe<>(new StreamContext(instance), map, predicate, projectionFn);
     }
 }

@@ -23,10 +23,10 @@ import com.hazelcast.jet.pipeline.UnaryTransform;
  * Javadoc pending.
  */
 public class FilterTransform<T> implements UnaryTransform<T, T> {
-    public final DistributedPredicate<? super T> filterF;
+    public final DistributedPredicate<? super T> filterFn;
 
-    public FilterTransform(DistributedPredicate<? super T> filterF) {
-        this.filterF = filterF;
+    public FilterTransform(DistributedPredicate<? super T> filterFn) {
+        this.filterFn = filterFn;
     }
 
     @Override

@@ -39,7 +39,7 @@ import static java.util.stream.Collectors.toMap;
 public final class TopologicalSorter<V> {
     // Consulted, but not updated, by the algorithm:
     private final Map<TarjanVertex<V>, List<TarjanVertex<V>>> adjacencyMap;
-    private final Function<V, String> vertexNameF;
+    private final Function<V, String> vertexNameFn;
 
     // Updated by the algorithm:
     private final ArrayDeque<V> topologicallySorted = new ArrayDeque<>();
@@ -48,10 +48,10 @@ public final class TopologicalSorter<V> {
 
     private TopologicalSorter(
             @Nonnull Map<TarjanVertex<V>, List<TarjanVertex<V>>> adjacencyMap,
-            @Nonnull Function<V, String> vertexNameF
+            @Nonnull Function<V, String> vertexNameFn
     ) {
         this.adjacencyMap = adjacencyMap;
-        this.vertexNameF = vertexNameF;
+        this.vertexNameFn = vertexNameFn;
     }
 
     /**
@@ -62,12 +62,12 @@ public final class TopologicalSorter<V> {
      *
      * @param adjacencyMap the description of the graph: for each vertex,
      *                     a list of its adjacent vertices
-     * @param vertexNameF a function that returns a vertex's name, used to generate
+     * @param vertexNameFn a function that returns a vertex's name, used to generate
      *                    diagnostic information in the case of a cycle in the graph
      * @param <V> type used to represent the vertices
      */
     public static <V> Iterable<V> topologicalSort(
-            @Nonnull Map<V, List<V>> adjacencyMap, @Nonnull Function<V, String> vertexNameF
+            @Nonnull Map<V, List<V>> adjacencyMap, @Nonnull Function<V, String> vertexNameFn
     ) {
         // fill in missing map entries
         adjacencyMap.values().stream()
@@ -87,7 +87,7 @@ public final class TopologicalSorter<V> {
                                            e -> e.getValue().stream()
                                                  .map(tarjanVertices::get)
                                                  .collect(toList())));
-        return new TopologicalSorter<>(tarjanAdjacencyMap, vertexNameF).go();
+        return new TopologicalSorter<>(tarjanAdjacencyMap, vertexNameFn).go();
     }
 
     // Partial implementation of Tarjan's algorithm:
@@ -122,7 +122,7 @@ public final class TopologicalSorter<V> {
         for (TarjanVertex<V> outTv : adjacencyMap.get(currTv)) {
             if (outTv == currTv) {
                 throw new IllegalArgumentException(
-                        "Vertex " + vertexNameF.apply(currTv.v) + " is connected to itself");
+                        "Vertex " + vertexNameFn.apply(currTv.v) + " is connected to itself");
             }
             if (outTv.index == -1) {
                 // outTv not discovered yet, visit it...
@@ -166,7 +166,7 @@ public final class TopologicalSorter<V> {
         tarjanStack.addLast(currTv);
         throw new IllegalArgumentException("DAG contains a cycle: "
                 + tarjanStack.stream()
-                             .map(av -> vertexNameF.apply(av.v))
+                             .map(av -> vertexNameFn.apply(av.v))
                              .collect(joining(" -> ")));
     }
 

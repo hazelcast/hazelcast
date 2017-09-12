@@ -39,18 +39,18 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * <p>
  * This is a summary of all the primitives involved:
  * <ol><li>
- *     {@link #createAccumulatorF() create} a new accumulator object
+ *     {@link #createFn() create} a new accumulator object
  * </li><li>
- *     {@link #accumulateItemF(Tag) accumulate} the data of an item by mutating
+ *     {@link #accumulateFn(Tag) accumulate} the data of an item by mutating
  *     the accumulator
  * </li><li>
- *     {@link #combineAccumulatorsF() combine} the contents of the right-hand
+ *     {@link #combineFn() combine} the contents of the right-hand
  *     accumulator into the left-hand one
  * </li><li>
- *     {@link #deductAccumulatorF() deduct} the contents of the right-hand
+ *     {@link #deductFn() deduct} the contents of the right-hand
  *     accumulator from the left-hand one (undo the effects of {@code combine})
  * </li><li>
- *     {@link #finishAccumulationF() finish} accumulation by transforming the
+ *     {@link #finishFn() finish} accumulation by transforming the
  *     accumulator's intermediate result into the final result
  * </li></ol>
  * The <em>deduct</em> primitive is optional. It is used in sliding window
@@ -86,7 +86,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * can be evicted from a processor's storage.
      */
     @Nonnull
-    DistributedSupplier<A> createAccumulatorF();
+    DistributedSupplier<A> createFn();
 
     /**
      * A primitive that updates the accumulator state to account for a new
@@ -94,8 +94,8 @@ public interface AggregateOperation<A, R> extends Serializable {
      * in a co-group operation the returned function will handle.
      */
     @Nonnull
-    default <T> DistributedBiConsumer<? super A, ? super T> accumulateItemF(Tag<T> tag) {
-        return accumulateItemF(tag.index());
+    default <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(Tag<T> tag) {
+        return accumulateFn(tag.index());
     }
 
     /**
@@ -104,7 +104,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * in a co-group operation the returned function will handle.
      */
     @Nonnull
-    <T> DistributedBiConsumer<? super A, ? super T> accumulateItemF(int index);
+    <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(int index);
 
     /**
      * A primitive that accepts two accumulators and updates the state of the
@@ -113,7 +113,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * the operation will be used for single-stage aggregation.
      */
     @Nullable
-    DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF();
+    DistributedBiConsumer<? super A, ? super A> combineFn();
 
     /**
      * A primitive that accepts two accumulators and updates the state of the
@@ -121,7 +121,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * right-hand accumulator remains unchanged.
      * <p>
      * The effect of this primitive must be the opposite of {@link
-     * #combineAccumulatorsF() combine} so that
+     * #combineFn() combine} so that
      * <pre>
      *     combine(acc, x);
      *     deduct(acc, x);
@@ -139,38 +139,38 @@ public interface AggregateOperation<A, R> extends Serializable {
      * step, the more pronounced the difference in computation effort will be.
      */
     @Nullable
-    DistributedBiConsumer<? super A, ? super A> deductAccumulatorF();
+    DistributedBiConsumer<? super A, ? super A> deductFn();
 
     /**
      * A primitive that finishes the accumulation process by transforming
      * the accumulator object into the final result.
      */
     @Nonnull
-    DistributedFunction<? super A, R> finishAccumulationF();
+    DistributedFunction<? super A, R> finishFn();
 
     /**
      * Returns a copy of this aggregate operation with the map of
      * {@code accumulate} primitives replaced by the supplied one.
      */
     @Nonnull
-    AggregateOperation<A, R> withAccumulateItemFs(
-            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFs);
+    AggregateOperation<A, R> withAccumulateFns(
+            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns);
 
     @Nonnull
-    <R1> AggregateOperation<A, R1> withFinish(
-            @Nonnull DistributedFunction<? super A, R1> finishAccumulationF
+    <R1> AggregateOperation<A, R1> withFinishFn(
+            @Nonnull DistributedFunction<? super A, R1> finishFn
     );
 
     @Nonnull
-    default <T> AggregateOperation1<T, A, R> withCombiningAccumulateF(
-            @Nonnull DistributedFunction<T, A> getAccF
+    default <T> AggregateOperation1<T, A, R> withCombiningAccumulateFn(
+            @Nonnull DistributedFunction<T, A> getAccFn
     ) {
         return new AggregateOperation1Impl<>(
-                createAccumulatorF(),
-                (A acc, T item) -> combineAccumulatorsF().accept(acc, getAccF.apply(item)),
-                combineAccumulatorsF(),
-                deductAccumulatorF(),
-                finishAccumulationF());
+                createFn(),
+                (A acc, T item) -> combineFn().accept(acc, getAccFn.apply(item)),
+                combineFn(),
+                deductFn(),
+                finishFn());
     }
 
     /**
@@ -183,25 +183,29 @@ public interface AggregateOperation<A, R> extends Serializable {
      * <ul><li>
      *     For fixed arity use {@link
      *     AggregateOperationBuilder#andAccumulate0(DistributedBiConsumer)
-     *     builder.andAccumulate1()}, optionally followed by {@code andAccumulate2()},
-     *     {@code andAccumulate3()}. The return type of these methods changes as the
+     *     andAccumulate0()}, optionally followed by {@code .andAccumulate1()},
+     *     {@code .andAccumulate2()}. The return type of these methods changes as the
      *     static types of the contributing streams are captured.
      * </li><li>
      *     For variable arity use {@link AggregateOperationBuilder#andAccumulate(Tag,
-     *     DistributedBiConsumer) builder.andAccumulate(tag)}.
+     *     DistributedBiConsumer) andAccumulate(tag)}.
      * </li></ul>
-     * The {@code andFinish()} method returns the constructed aggregate operation.
-     * Its static type receives all the type parameters captured in the above
-     * method calls.
+     * The {@link AggregateOperationBuilder.Arity1#andFinish(DistributedFunction)
+     * andFinish()} method returns the constructed aggregate operation. Its
+     * static type receives all the type parameters captured in the above
+     * method calls. If your aggregate operation doesn't need a finishing
+     * transformation (the accumulator itself is the result value), you
+     * can call the shorthand {@link AggregateOperationBuilder.Arity1#andIdentityFinish()
+     * andIdentityFinish()}.
      *
-     * @param createAccumulatorF the {@code create} primitive
+     * @param createFn the {@code create} primitive
      * @param <A> the type of the accumulator
      * @return the builder object whose static type represents the fact that it
      *         has just the {@code create} primitive defined
      */
     @Nonnull
-    static <A> AggregateOperationBuilder<A> withCreate(DistributedSupplier<A> createAccumulatorF) {
-        checkNotNull(createAccumulatorF, "createAccumulatorF");
-        return new AggregateOperationBuilder<>(createAccumulatorF);
+    static <A> AggregateOperationBuilder<A> withCreate(DistributedSupplier<A> createFn) {
+        checkNotNull(createFn, "createFn");
+        return new AggregateOperationBuilder<>(createFn);
     }
 }

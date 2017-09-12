@@ -34,27 +34,27 @@ import static java.util.stream.Collectors.toList;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
-    private final DistributedIntFunction<B> newBufferF;
-    private final DistributedBiConsumer<B, T> addToBufferF;
-    private final DistributedConsumer<B> flushBufferF;
-    private final DistributedConsumer<B> disposeBufferF;
+    private final DistributedIntFunction<B> newBufferFn;
+    private final DistributedBiConsumer<B, T> addToBufferFn;
+    private final DistributedConsumer<B> flushBufferFn;
+    private final DistributedConsumer<B> disposeBufferFn;
 
     private B buffer;
 
-    WriteBufferedP(DistributedIntFunction<B> newBufferF,
-                   DistributedBiConsumer<B, T> addToBufferF,
-                   DistributedConsumer<B> flushBufferF,
-                   DistributedConsumer<B> disposeBufferF
+    WriteBufferedP(DistributedIntFunction<B> newBufferFn,
+                   DistributedBiConsumer<B, T> addToBufferFn,
+                   DistributedConsumer<B> flushBufferFn,
+                   DistributedConsumer<B> disposeBufferFn
     ) {
-        this.newBufferF = newBufferF;
-        this.addToBufferF = addToBufferF;
-        this.flushBufferF = flushBufferF;
-        this.disposeBufferF = disposeBufferF;
+        this.newBufferFn = newBufferFn;
+        this.addToBufferFn = addToBufferFn;
+        this.flushBufferFn = flushBufferFn;
+        this.disposeBufferFn = disposeBufferFn;
     }
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        this.buffer = newBufferF.apply(context.globalProcessorIndex());
+        this.buffer = newBufferFn.apply(context.globalProcessorIndex());
     }
 
     /**
@@ -66,10 +66,10 @@ public final class WriteBufferedP<B, T> implements Processor {
      */
     @Nonnull
     public static <B, T> ProcessorSupplier supplier(
-            DistributedIntFunction<B> newBufferF,
-            DistributedBiConsumer<B, T> addToBufferF,
-            DistributedConsumer<B> flushBufferF,
-            DistributedConsumer<B> disposeBufferF
+            DistributedIntFunction<B> newBufferFn,
+            DistributedBiConsumer<B, T> addToBufferFn,
+            DistributedConsumer<B> flushBufferFn,
+            DistributedConsumer<B> disposeBufferFn
     ) {
         return new ProcessorSupplier() {
             private transient List<WriteBufferedP<B, T>> processors;
@@ -78,7 +78,7 @@ public final class WriteBufferedP<B, T> implements Processor {
             public Collection<? extends Processor> get(int count) {
                 return processors = IntStream
                         .range(0, count)
-                        .mapToObj(i -> new WriteBufferedP<>(newBufferF, addToBufferF, flushBufferF, disposeBufferF))
+                        .mapToObj(i -> new WriteBufferedP<>(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn))
                         .collect(toList());
             }
 
@@ -98,10 +98,10 @@ public final class WriteBufferedP<B, T> implements Processor {
     public void process(int ordinal, @Nonnull Inbox inbox) {
         inbox.drain(item -> {
             if (!(item instanceof Watermark)) {
-                addToBufferF.accept(buffer, (T) item);
+                addToBufferFn.accept(buffer, (T) item);
             }
         });
-        flushBufferF.accept(buffer);
+        flushBufferFn.accept(buffer);
     }
 
     @Override
@@ -111,7 +111,7 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     public void close() {
-        disposeBufferF.accept(buffer);
+        disposeBufferFn.accept(buffer);
     }
 
     @Override

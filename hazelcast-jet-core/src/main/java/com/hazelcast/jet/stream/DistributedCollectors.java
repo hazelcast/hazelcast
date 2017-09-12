@@ -1171,7 +1171,7 @@ public abstract class DistributedCollectors {
     toICache(String cacheName,
              DistributedFunction<? super T, ? extends K> keyMapper,
              DistributedFunction<? super T, ? extends U> valueMapper) {
-        return new SinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheF(cacheName),
+        return new SinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
                 keyMapper, valueMapper, writeCache(cacheName));
     }
 
@@ -1235,7 +1235,7 @@ public abstract class DistributedCollectors {
              DistributedFunction<? super T, ? extends K> keyMapper,
              DistributedFunction<? super T, ? extends U> valueMapper,
              DistributedBinaryOperator<U> mergeFunction) {
-        return new MergingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheF(cacheName),
+        return new MergingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
                 keyMapper, valueMapper, mergeFunction, writeCache(cacheName));
     }
 
@@ -1378,7 +1378,7 @@ public abstract class DistributedCollectors {
     Reducer<T, ICache<K, D>> groupingByToICache(String cacheName,
                                                 DistributedFunction<? super T, ? extends K> classifier,
                                                 DistributedCollector<? super T, A, D> downstream) {
-        return new GroupingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheF(cacheName),
+        return new GroupingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
                 classifier, downstream, writeCache(cacheName));
     }
 
@@ -1387,7 +1387,7 @@ public abstract class DistributedCollectors {
      */
     private static class CacheGetter {
 
-        private static <K, V> DistributedFunction<JetInstance, IStreamCache<K, V>> getCacheF(String name) {
+        private static <K, V> DistributedFunction<JetInstance, IStreamCache<K, V>> getCacheFn(String name) {
             return instance -> instance.getCacheManager().getCache(name);
         }
     }

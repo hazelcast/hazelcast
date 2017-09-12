@@ -303,9 +303,9 @@ public class WriteFilePTest extends JetTestSupport {
         }
     }
 
-    private DAG buildDag(DistributedFunction<String, String> toStringF, Charset charset, boolean append) {
-        if (toStringF == null) {
-            toStringF = Object::toString;
+    private DAG buildDag(DistributedFunction<String, String> toStringFn, Charset charset, boolean append) {
+        if (toStringFn == null) {
+            toStringFn = Object::toString;
         }
         if (charset == null) {
             charset = StandardCharsets.UTF_8;
@@ -313,7 +313,7 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(directory.toString(), toStringF, charset, append))
+        Vertex writer = dag.newVertex("writer", writeFile(directory.toString(), toStringFn, charset, append))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;

@@ -107,28 +107,28 @@ class Planner {
     }
 
     private void handleMap(AbstractStage stage, MapTransform map) {
-        PlannerVertex pv = addVertex(stage, "map." + randomSuffix(), Processors.map(map.mapF));
+        PlannerVertex pv = addVertex(stage, "map." + randomSuffix(), Processors.map(map.mapFn));
         addEdges(stage, pv.v);
     }
 
     private void handleFilter(AbstractStage stage, FilterTransform filter) {
-        PlannerVertex pv = addVertex(stage, "filter." + randomSuffix(), Processors.filter(filter.filterF));
+        PlannerVertex pv = addVertex(stage, "filter." + randomSuffix(), Processors.filter(filter.filterFn));
         addEdges(stage, pv.v);
     }
 
     private void handleFlatMap(AbstractStage stage, FlatMapTransform flatMap) {
         PlannerVertex pv = addVertex(stage, "flatMap." + randomSuffix(),
-                Processors.flatMap(flatMap.flatMapF()));
+                Processors.flatMap(flatMap.flatMapFn()));
         addEdges(stage, pv.v);
     }
 
     private void handleGroupBy(AbstractStage stage, GroupByTransform<Object, Object, Object> groupBy) {
         String name = "groupByKey." + randomSuffix() + ".stage";
         Vertex v1 = dag.newVertex(name + '1',
-                Processors.accumulateByKey(groupBy.keyF(), groupBy.aggregateOperation()));
+                Processors.accumulateByKey(groupBy.keyFn(), groupBy.aggregateOperation()));
         PlannerVertex pv2 = addVertex(stage, name + '2',
                 Processors.combineByKey(groupBy.aggregateOperation()));
-        addEdges(stage, v1, e -> e.partitioned(groupBy.keyF(), HASH_CODE));
+        addEdges(stage, v1, e -> e.partitioned(groupBy.keyFn(), HASH_CODE));
         dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));
     }
 
@@ -180,12 +180,12 @@ class Planner {
         for (Stage fromStage : tailList(stage.upstream)) {
             PlannerVertex fromPv = stage2vertex.get(fromStage);
             JoinClause<?, ?, ?, ?> clause = hashJoin.clauses().get(collectorOrdinal - 1);
-            DistributedFunction<Object, Object> getKeyF =
+            DistributedFunction<Object, Object> getKeyFn =
                     (DistributedFunction<Object, Object>) clause.rightKeyFn();
-            DistributedFunction<Object, Object> projectF =
+            DistributedFunction<Object, Object> projectFn =
                     (DistributedFunction<Object, Object>) clause.rightProjectFn();
             Vertex collector = dag.newVertex(collectorName + collectorOrdinal,
-                    () -> new HashJoinCollectP(getKeyF, projectF));
+                    () -> new HashJoinCollectP(getKeyFn, projectFn));
             collector.localParallelism(1);
             dag.edge(from(fromPv.v, fromPv.availableOrdinal++)
                     .to(collector, 0)
@@ -215,19 +215,19 @@ class Planner {
         return pv;
     }
 
-    private void addEdges(AbstractStage stage, Vertex toVertex, BiConsumer<Edge, Integer> configureEdgeF) {
+    private void addEdges(AbstractStage stage, Vertex toVertex, BiConsumer<Edge, Integer> configureEdgeFn) {
         int destOrdinal = 0;
         for (Stage fromStage : stage.upstream) {
             PlannerVertex fromPv = stage2vertex.get(fromStage);
             Edge edge = from(fromPv.v, fromPv.availableOrdinal++).to(toVertex, destOrdinal);
             dag.edge(edge);
-            configureEdgeF.accept(edge, destOrdinal);
+            configureEdgeFn.accept(edge, destOrdinal);
             destOrdinal++;
         }
     }
 
-    private void addEdges(AbstractStage stage, Vertex toVertex, Consumer<Edge> configureEdgeF) {
-        addEdges(stage, toVertex, (e, ord) -> configureEdgeF.accept(e));
+    private void addEdges(AbstractStage stage, Vertex toVertex, Consumer<Edge> configureEdgeFn) {
+        addEdges(stage, toVertex, (e, ord) -> configureEdgeFn.accept(e));
     }
 
     private void addEdges(AbstractStage stage, Vertex toVertex) {

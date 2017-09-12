@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.pipeline.datamodel.TaggedMap;
+import com.hazelcast.jet.pipeline.datamodel.ItemsByTag;
 import com.hazelcast.jet.pipeline.datamodel.Tag;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.datamodel.Tuple3;
@@ -87,7 +87,7 @@ public class HashJoinP<E0> extends AbstractProcessor {
                     ? new Tuple2<>(e0, lookupJoined(1, e0))
                     : new Tuple3<>(e0, lookupJoined(1, e0), lookupJoined(2, e0)));
         }
-        TaggedMap map = new TaggedMap();
+        ItemsByTag map = new ItemsByTag();
         for (int i = 1; i < keyFs.size(); i++) {
             map.put(tags.get(i), lookupJoined(i, e0));
         }

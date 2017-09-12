@@ -27,8 +27,8 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.datamodel.BagsByTag;
+import com.hazelcast.jet.pipeline.datamodel.ItemsByTag;
 import com.hazelcast.jet.pipeline.datamodel.Tag;
-import com.hazelcast.jet.pipeline.datamodel.TaggedMap;
 import com.hazelcast.jet.pipeline.datamodel.ThreeBags;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.datamodel.Tuple3;
@@ -149,21 +149,21 @@ public class PipelineJoinAndCoGroup {
         System.err.println("JoinDirect results are valid");
     }
 
-    private ComputeStage<Entry<Integer, Tuple2<Trade, TaggedMap>>> joinBuild() {
+    private ComputeStage<Entry<Integer, Tuple2<Trade, ItemsByTag>>> joinBuild() {
         HashJoinBuilder<Trade> builder = trades.hashJoinBuilder();
         productTag = builder.add(prodEntries, joinMapEntries(Trade::productId));
         brokerTag = builder.add(brokEntries, joinMapEntries(Trade::brokerId));
-        ComputeStage<Tuple2<Trade, TaggedMap>> joined = builder.build();
+        ComputeStage<Tuple2<Trade, ItemsByTag>> joined = builder.build();
         return joined.map(t -> entry(t.f0().id(), t));
     }
 
     private void validateJoinBuildResults() {
-        IMap<Integer, Tuple2<Trade, TaggedMap>> result = jet.getMap(RESULT);
+        IMap<Integer, Tuple2<Trade, ItemsByTag>> result = jet.getMap(RESULT);
         printImap(result);
         for (int tradeId = 1; tradeId < 5; tradeId++) {
-            Tuple2<Trade, TaggedMap> value = result.get(tradeId);
+            Tuple2<Trade, ItemsByTag> value = result.get(tradeId);
             Trade trade = value.f0();
-            TaggedMap map = value.f1();
+            ItemsByTag map = value.f1();
             Product product = map.get(productTag);
             Broker broker = map.get(brokerTag);
             assertEquals(trade.productId(), product.id());

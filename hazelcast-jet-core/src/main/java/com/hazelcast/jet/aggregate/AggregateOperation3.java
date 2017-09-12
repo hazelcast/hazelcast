@@ -31,24 +31,24 @@ public interface AggregateOperation3<T0, T1, T2, A, R> extends AggregateOperatio
      * item coming from stream number 0 in a co-grouping operation.
      */
     @Nonnull
-    DistributedBiConsumer<? super A, ? super T0> accumulateItemF0();
+    DistributedBiConsumer<? super A, ? super T0> accumulateFn0();
 
     /**
      * A primitive that updates the accumulator state to account for a new
      * item coming from stream number 1 in a co-grouping operation.
      */
     @Nonnull
-    DistributedBiConsumer<? super A, ? super T1> accumulateItemF1();
+    DistributedBiConsumer<? super A, ? super T1> accumulateFn1();
 
     /**
      * A primitive that updates the accumulator state to account for a new
      * item coming from stream number 2 in a co-grouping operation.
      */
     @Nonnull
-    DistributedBiConsumer<? super A, ? super T2> accumulateItemF2();
+    DistributedBiConsumer<? super A, ? super T2> accumulateFn2();
 
     @Nonnull
-    <R1> AggregateOperation3<T0, T1, T2, A, R1> withFinish(
-            @Nonnull DistributedFunction<? super A, R1> finishAccumulationF
+    <R1> AggregateOperation3<T0, T1, T2, A, R1> withFinishFn(
+            @Nonnull DistributedFunction<? super A, R1> finishFn
     );
 }

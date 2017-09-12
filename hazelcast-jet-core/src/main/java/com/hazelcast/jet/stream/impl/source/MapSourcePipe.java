@@ -29,24 +29,24 @@ import java.util.Map;
 public class MapSourcePipe<K, V, E> extends AbstractSourcePipe<E> {
 
     private final IMap<K, V> map;
-    private final DistributedFunction<Map.Entry<K, V>, E> projectionF;
+    private final DistributedFunction<Map.Entry<K, V>, E> projectionFn;
     private final DistributedPredicate<Map.Entry<K, V>> predicate;
 
     public MapSourcePipe(
             StreamContext context, IMap<K, V> map,
             DistributedPredicate<Map.Entry<K, V>> predicate,
-            DistributedFunction<Map.Entry<K, V>, E> projectionF
+            DistributedFunction<Map.Entry<K, V>, E> projectionFn
     ) {
         super(context);
         this.map = map;
         this.predicate = predicate;
-        this.projectionF = projectionF;
+        this.projectionFn = projectionFn;
     }
 
     @Override
     protected ProcessorMetaSupplier getSourceMetaSupplier() {
-        if (projectionF != null) {
-            return SourceProcessors.readMap(map.getName(), predicate, projectionF);
+        if (projectionFn != null) {
+            return SourceProcessors.readMap(map.getName(), predicate, projectionFn);
         }
         return SourceProcessors.readMap(map.getName());
     }

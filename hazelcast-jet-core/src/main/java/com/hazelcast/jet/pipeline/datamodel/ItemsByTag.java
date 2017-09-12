@@ -23,15 +23,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A heterogeneous map, mapping a {@code Tag<E>} to a value of type {@code
- * E}. Each mapping can have a different {@code E}.
+ * A heterogeneous map from {@code Tag<E>} to {@code E}, where {@code E}
+ * can be different for each tag.
  * <p>
- * A tagged map is a less typesafe, but more flexible alternative to a
- * tuple. The tuple has a fixed number of integer-indexed, statically-typed
- * fields, and a tagged map has a variable number of tag-indexed fields
- * whose static type is encoded in the tags.
+ * This is a less typesafe, but more flexible alternative to a tuple. The
+ * tuple has a fixed (and limited) number of integer-indexed,
+ * statically-typed fields, and {@code ItemsByTag} has a variable number of
+ * tag-indexed fields whose whose static type is encoded in the tags.
  */
-public class TaggedMap implements Serializable {
+public class ItemsByTag implements Serializable {
     private final Map<Tag, Object> map = new HashMap<>();
 
     /**

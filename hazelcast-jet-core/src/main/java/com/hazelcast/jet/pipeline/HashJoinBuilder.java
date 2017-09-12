@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.pipeline.datamodel.Tag;
-import com.hazelcast.jet.pipeline.datamodel.TaggedMap;
+import com.hazelcast.jet.pipeline.datamodel.ItemsByTag;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.impl.PipelineImpl;
 
@@ -37,10 +37,10 @@ import static java.util.stream.Collectors.toList;
  * To obtain it, call {@link ComputeStage#hashJoinBuilder()} on the primary
  * stage, whose data will be enriched from all other stages.
  * <p>
- * This object is primarily intended to build a hash-join of the primary
- * stage with three or more contributing stages. For one or two stages the
- * direct {@code stage.hashJoin(...)} calls should be preferred because
- * they offer more static type safety.
+ * This object is mainly intended to build a hash-join of the primary stage
+ * with three or more contributing stages. For one or two stages the direct
+ * {@code stage.hashJoin(...)} calls should be preferred because they offer
+ * more static type safety.
  */
 public class HashJoinBuilder<E0> {
     private final Map<Tag<?>, StageAndClause> clauses = new HashMap<>();
@@ -73,7 +73,7 @@ public class HashJoinBuilder<E0> {
      * @return the hash-join pipeline stage
      */
     @SuppressWarnings("unchecked")
-    public ComputeStage<Tuple2<E0, TaggedMap>> build() {
+    public ComputeStage<Tuple2<E0, ItemsByTag>> build() {
         List<Entry<Tag<?>, StageAndClause>> orderedClauses = clauses.entrySet().stream()
                                                                     .sorted(comparing(Entry::getKey))
                                                                     .collect(toList());

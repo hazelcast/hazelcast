@@ -29,6 +29,12 @@ import java.util.Map;
  * {@code E} can be different for each tag. Useful as a container of
  * co-grouped items, where each tag corresponds to one contributing
  * pipeline stage.
+ * <p>
+ * This is a less typesafe, but more flexible alternative to the {@link
+ * TwoBags} and {@link ThreeBags} containers, which have a fixed (and
+ * limited) number of integer-indexed, statically-typed fields. {@code
+ * BagsByTag} has a variable number of tag-indexed fields whose whose
+ * static type is encoded in the tags.
  */
 public class BagsByTag implements Serializable {
     private final Map<Tag<?>, Collection> components = new HashMap<>();

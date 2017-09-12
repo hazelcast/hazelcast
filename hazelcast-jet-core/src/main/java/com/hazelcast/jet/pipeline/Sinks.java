@@ -97,18 +97,18 @@ public final class Sinks {
     /**
      * Returns a sink that connects to the specified TCP socket and writes to
      * it a string representation of the items it receives. It converts an
-     * item to its string representation using the supplied {@code toStringF}
+     * item to its string representation using the supplied {@code toStringFn}
      * function and encodes the string using the supplied {@code Charset}. It
      * follows each item with a newline character.
      */
     public static <T> Sink writeSocket(
             @Nonnull String host,
             int port,
-            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull Charset charset
     ) {
         return new SinkImpl("writeSocket(" + host + ':' + port + ')',
-                SinkProcessors.writeSocket(host, port, toStringF, charset));
+                SinkProcessors.writeSocket(host, port, toStringFn, charset));
     }
 
     /**
@@ -118,10 +118,10 @@ public final class Sinks {
     public static <T> Sink writeSocket(
             @Nonnull String host,
             int port,
-            @Nonnull DistributedFunction<T, String> toStringF
+            @Nonnull DistributedFunction<T, String> toStringFn
     ) {
         return new SinkImpl("writeSocket(" + host + ':' + port + ')',
-                SinkProcessors.writeSocket(host, port, toStringF, UTF_8));
+                SinkProcessors.writeSocket(host, port, toStringFn, UTF_8));
     }
 
     /**
@@ -142,13 +142,13 @@ public final class Sinks {
      * directory of all files, on all cluster members.
      * <p>
      * The sink converts an item to its string representation using the
-     * supplied {@code toStringF} function and encodes the string using the
+     * supplied {@code toStringFn} function and encodes the string using the
      * supplied {@code Charset}. It follows each item with a platform-specific
      * line separator.
      *
      * @param directoryName directory to create the files in. Will be created
      *                      if it doesn't exist. Must be the same on all members.
-     * @param toStringF a function to convert items to String (a formatter)
+     * @param toStringFn a function to convert items to String (a formatter)
      * @param charset charset used to encode the file output
      * @param append whether to append ({@code true}) or overwrite ({@code false})
      *               an existing file
@@ -156,12 +156,12 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink writeFile(
             @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull Charset charset,
             boolean append
     ) {
         return new SinkImpl("writeFile(" + directoryName + ')',
-                SinkProcessors.writeFile(directoryName, toStringF, charset, append));
+                SinkProcessors.writeFile(directoryName, toStringFn, charset, append));
     }
 
     /**
@@ -170,9 +170,9 @@ public final class Sinks {
      */
     @Nonnull
     public static <T> Sink writeFile(
-            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringF
+            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringFn
     ) {
-        return writeFile(directoryName, toStringF, UTF_8, false);
+        return writeFile(directoryName, toStringFn, UTF_8, false);
     }
 
     /**

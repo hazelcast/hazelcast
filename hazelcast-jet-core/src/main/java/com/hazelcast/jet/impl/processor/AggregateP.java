@@ -28,29 +28,29 @@ import javax.annotation.Nonnull;
  * on all received items.
  */
 public class AggregateP<T, A, R> extends AbstractProcessor {
-    private final DistributedBiConsumer<? super A, ? super T> accumulateF;
-    private final DistributedFunction<? super A, R> finishF;
+    private final DistributedBiConsumer<? super A, ? super T> accumulateFn;
+    private final DistributedFunction<? super A, R> finishFn;
     private final A acc;
     private R result;
 
     public AggregateP(
             @Nonnull AggregateOperation1<? super T, A, R> aggregateOperation
     ) {
-        this.accumulateF = aggregateOperation.accumulateItemF();
-        this.finishF = aggregateOperation.finishAccumulationF();
-        this.acc = aggregateOperation.createAccumulatorF().get();
+        this.accumulateFn = aggregateOperation.accumulateFn();
+        this.finishFn = aggregateOperation.finishFn();
+        this.acc = aggregateOperation.createFn().get();
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        accumulateF.accept(acc, (T) item);
+        accumulateFn.accept(acc, (T) item);
         return true;
     }
 
     @Override
     public boolean complete() {
         if (result == null) {
-            result = finishF.apply(acc);
+            result = finishFn.apply(acc);
         }
         return tryEmit(result);
     }

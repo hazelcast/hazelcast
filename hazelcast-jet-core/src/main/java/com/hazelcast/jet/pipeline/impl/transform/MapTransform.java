@@ -23,10 +23,10 @@ import com.hazelcast.jet.pipeline.UnaryTransform;
  * Javadoc pending.
  */
 public class MapTransform<T, R> implements UnaryTransform<T, R> {
-    public final DistributedFunction<? super T, ? extends R> mapF;
+    public final DistributedFunction<? super T, ? extends R> mapFn;
 
-    public MapTransform(DistributedFunction<? super T, ? extends R> mapF) {
-        this.mapF = mapF;
+    public MapTransform(DistributedFunction<? super T, ? extends R> mapFn) {
+        this.mapFn = mapFn;
     }
 
     @Override

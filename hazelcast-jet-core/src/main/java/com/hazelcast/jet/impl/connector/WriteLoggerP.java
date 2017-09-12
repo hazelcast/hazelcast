@@ -27,15 +27,15 @@ import javax.annotation.Nonnull;
  */
 public class WriteLoggerP<T> extends AbstractProcessor {
 
-    private DistributedFunction<T, String> toStringF;
+    private DistributedFunction<T, String> toStringFn;
 
-    public WriteLoggerP(DistributedFunction<T, String> toStringF) {
-        this.toStringF = toStringF;
+    public WriteLoggerP(DistributedFunction<T, String> toStringFn) {
+        this.toStringFn = toStringFn;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        getLogger().info(toStringF.apply((T) item));
+        getLogger().info(toStringFn.apply((T) item));
         return true;
     }
 

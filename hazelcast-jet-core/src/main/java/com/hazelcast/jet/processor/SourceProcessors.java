@@ -93,9 +93,9 @@ public final class SourceProcessors {
     public static <K, V, T> ProcessorMetaSupplier readMap(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionF);
+        return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionFn);
     }
 
     /**
@@ -171,10 +171,10 @@ public final class SourceProcessors {
     public static <K, V, T> ProcessorMetaSupplier readMap(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionF,
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
             @Nonnull ClientConfig clientConfig
     ) {
-        return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionF, clientConfig);
+        return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionFn, clientConfig);
     }
 
     /**

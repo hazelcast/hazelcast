@@ -65,10 +65,10 @@ public class AggregateOperations_accEqualityTest {
 
     @Test
     public void testTwoAccumulatorsEqual() {
-        assertTrue("this test is not needed if deduct is not implemented", operation.deductAccumulatorF() != null);
+        assertTrue("this test is not needed if deduct is not implemented", operation.deductFn() != null);
 
-        Object accumulator1 = operation.createAccumulatorF();
-        Object accumulator2 = operation.createAccumulatorF();
+        Object accumulator1 = operation.createFn();
+        Object accumulator2 = operation.createFn();
 
         assertEquals("two empty accumulators not equal", accumulator1, accumulator2);
     }

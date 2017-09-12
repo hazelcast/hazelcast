@@ -86,12 +86,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     private StreamEventJournalP(EventJournalReader<E> eventJournalReader,
                                 List<Integer> partitions,
                                 Predicate<E> predicate,
-                                Function<E, T> projectionF,
+                                Function<E, T> projectionFn,
                                 boolean startFromLatestSequence) {
         this.eventJournalReader = eventJournalReader;
         this.partitions = partitions;
         this.predicate = predicate != null ? predicate::test : null;
-        this.projection = createProjection(projectionF);
+        this.projection = createProjection(projectionFn);
         this.startFromLatestSequence = startFromLatestSequence;
     }
 
@@ -168,13 +168,13 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return false;
     }
 
-    private static <E, T> Projection<E, T> createProjection(Function<E, T> projectionF) {
-        if (projectionF == null) {
+    private static <E, T> Projection<E, T> createProjection(Function<E, T> projectionFn) {
+        if (projectionFn == null) {
             return null;
         }
         return new Projection<E, T>() {
             @Override public T transform(E input) {
-                return projectionF.apply(input);
+                return projectionFn.apply(input);
             }
         };
     }

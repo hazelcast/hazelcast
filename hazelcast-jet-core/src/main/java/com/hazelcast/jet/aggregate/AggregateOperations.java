@@ -41,8 +41,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.function.DistributedFunction.identity;
-
 /**
  * Utility class with factory methods for several useful windowing
  * operations.
@@ -67,17 +65,17 @@ public final class AggregateOperations {
 
     /**
      * Returns an operation that tracks the sum of the quantity returned by
-     * {@code mapToLongF} applied to each item in the window.
+     * {@code getLongValueFn} applied to each item in the window.
      *
      * @param <T> Input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> summingLong(
-            @Nonnull DistributedToLongFunction<T> mapToLongF
+            @Nonnull DistributedToLongFunction<T> getLongValueFn
     ) {
         return AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate((LongAccumulator a, T item) -> a.addExact(mapToLongF.applyAsLong(item)))
+                .andAccumulate((LongAccumulator a, T item) -> a.addExact(getLongValueFn.applyAsLong(item)))
                 .andCombine(LongAccumulator::addExact)
                 .andDeduct(LongAccumulator::subtractExact)
                 .andFinish(LongAccumulator::get);
@@ -85,17 +83,17 @@ public final class AggregateOperations {
 
     /**
      * Returns an operation that tracks the sum of the quantity returned by
-     * {@code mapToDoubleF} applied to each item in the window.
+     * {@code getDoubleValueFn} applied to each item in the window.
      *
      * @param <T> Input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, DoubleAccumulator, Double> summingDouble(
-            @Nonnull DistributedToDoubleFunction<T> mapToDoubleF
+            @Nonnull DistributedToDoubleFunction<T> getDoubleValueFn
     ) {
         return AggregateOperation
                 .withCreate(DoubleAccumulator::new)
-                .andAccumulate((DoubleAccumulator a, T item) -> a.add(mapToDoubleF.applyAsDouble(item)))
+                .andAccumulate((DoubleAccumulator a, T item) -> a.add(getDoubleValueFn.applyAsDouble(item)))
                 .andCombine(DoubleAccumulator::add)
                 .andDeduct(DoubleAccumulator::subtract)
                 .andFinish(DoubleAccumulator::get);
@@ -106,7 +104,7 @@ public final class AggregateOperations {
      * {@code comparator}.
      * <p>
      * The implementation doesn't have the <i>deduction function </i>. {@link
-     * AggregateOperation1#deductAccumulatorF() See note here}.
+     * AggregateOperation1#deductFn() See note here}.
      *
      * @param <T> Input item type
      */
@@ -122,7 +120,7 @@ public final class AggregateOperations {
      * {@code comparator}.
      * <p>
      * The implementation doesn't have the <i>deduction function </i>. {@link
-     * AggregateOperation1#deductAccumulatorF() See note here}.
+     * AggregateOperation1#deductFn() See note here}.
      *
      * @param <T> Input item type
      */
@@ -147,13 +145,13 @@ public final class AggregateOperations {
 
     /**
      * Returns an operation that calculates the arithmetic mean of {@code long}
-     * values returned by the {@code mapToLongF} function.
+     * values returned by the {@code getLongValueFn} function.
      *
      * @param <T> Input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongLongAccumulator, Double> averagingLong(
-            @Nonnull DistributedToLongFunction<T> mapToLongF
+            @Nonnull DistributedToLongFunction<T> getLongValueFn
     ) {
         // accumulator.value1 is count
         // accumulator.value2 is sum
@@ -165,7 +163,7 @@ public final class AggregateOperations {
                         throw new ArithmeticException("Counter overflow");
                     }
                     a.setValue1(a.getValue1() + 1);
-                    a.setValue2(Math.addExact(a.getValue2(), mapToLongF.applyAsLong(i)));
+                    a.setValue2(Math.addExact(a.getValue2(), getLongValueFn.applyAsLong(i)));
                 })
                 .andCombine((a1, a2) -> {
                     a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
@@ -180,25 +178,25 @@ public final class AggregateOperations {
 
     /**
      * Returns an operation that calculates the arithmetic mean of {@code double}
-     * values returned by the {@code mapToDoubleF} function.
+     * values returned by the {@code getDoubleValueFn} function.
      *
      * @param <T> Input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongDoubleAccumulator, Double> averagingDouble(
-            @Nonnull DistributedToDoubleFunction<T> mapToDoubleF
+            @Nonnull DistributedToDoubleFunction<T> getDoubleValueFn
     ) {
         // accumulator.value1 is count
         // accumulator.value2 is sum
         return AggregateOperation
                 .withCreate(LongDoubleAccumulator::new)
-                .andAccumulate((LongDoubleAccumulator a, T i) -> {
+                .andAccumulate((LongDoubleAccumulator a, T item) -> {
                     // a bit faster check than in addExact, specialized for increment
                     if (a.getValue1() == Long.MAX_VALUE) {
                         throw new ArithmeticException("Counter overflow");
                     }
                     a.setValue1(a.getValue1() + 1);
-                    a.setValue2(a.getValue2() + mapToDoubleF.applyAsDouble(i));
+                    a.setValue2(a.getValue2() + getDoubleValueFn.applyAsDouble(item));
                 })
                 .andCombine((a1, a2) -> {
                     a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
@@ -220,13 +218,13 @@ public final class AggregateOperations {
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LinTrendAccumulator, Double> linearTrend(
-            @Nonnull DistributedToLongFunction<T> getX,
-            @Nonnull DistributedToLongFunction<T> getY
+            @Nonnull DistributedToLongFunction<T> getXFn,
+            @Nonnull DistributedToLongFunction<T> getYFn
     ) {
         return AggregateOperation
                 .withCreate(LinTrendAccumulator::new)
                 .andAccumulate((LinTrendAccumulator a, T item) ->
-                        a.accumulate(getX.applyAsLong(item), getY.applyAsLong(item)))
+                        a.accumulate(getXFn.applyAsLong(item), getYFn.applyAsLong(item)))
                 .andCombine(LinTrendAccumulator::combine)
                 .andDeduct(LinTrendAccumulator::deduct)
                 .andFinish(LinTrendAccumulator::finish);
@@ -250,33 +248,33 @@ public final class AggregateOperations {
                 .withCreate(() -> {
                     List<Object> res = new ArrayList<>(untypedOps.length);
                     for (AggregateOperation untypedOp : untypedOps) {
-                        res.add(untypedOp.createAccumulatorF().get());
+                        res.add(untypedOp.createFn().get());
                     }
                     return res;
                 })
                 .andAccumulate((List<Object> accs, T item) -> {
                     for (int i = 0; i < untypedOps.length; i++) {
-                        untypedOps[i].accumulateItemF().accept(accs.get(i), item);
+                        untypedOps[i].accumulateFn().accept(accs.get(i), item);
                     }
                 })
                 .andCombine((accs1, accs2) -> {
                     for (int i = 0; i < untypedOps.length; i++) {
-                        untypedOps[i].combineAccumulatorsF().accept(accs1.get(i), accs2.get(i));
+                        untypedOps[i].combineFn().accept(accs1.get(i), accs2.get(i));
                     }
                 })
                 .andDeduct(
                         // we can support deduct only if all operations do
-                        Stream.of(untypedOps).allMatch(o -> o.deductAccumulatorF() != null)
+                        Stream.of(untypedOps).allMatch(o -> o.deductFn() != null)
                                 ? (accs1, accs2) -> {
                                     for (int i = 0; i < untypedOps.length; i++) {
-                                        untypedOps[i].deductAccumulatorF().accept(accs1.get(i), accs2.get(i));
+                                        untypedOps[i].deductFn().accept(accs1.get(i), accs2.get(i));
                                     }
                                 }
                                 : null)
                 .andFinish(accs -> {
                     List<Object> res = new ArrayList<>(untypedOps.length);
                     for (int i = 0; i < untypedOps.length; i++) {
-                        res.add(untypedOps[i].finishAccumulationF().apply(accs.get(i)));
+                        res.add(untypedOps[i].finishFn().apply(accs.get(i)));
                     }
                     return res;
                 });
@@ -287,7 +285,7 @@ public final class AggregateOperations {
      * U} to one accepting elements of type {@code T} by applying a mapping
      * function to each input element before accumulation.
      * <p>
-     * If the {@code mapF} maps to {@code null}, the item won't be aggregated
+     * If the {@code mapFn} maps to {@code null}, the item won't be aggregated
      * at all. This allows the mapping to be used as a filter at the same time.
      * <p>
      * This operation is useful if we cannot precede the aggregating vertex
@@ -299,26 +297,26 @@ public final class AggregateOperations {
      * @param <U> type of elements accepted by downstream operation
      * @param <A> intermediate accumulation type of the downstream operation
      * @param <R> result type of operation
-     * @param mapF a function to be applied to the input elements
+     * @param mapFn a function to be applied to the input elements
      * @param downstream an operation which will accept mapped values
      */
     public static <T, U, A, R>
     AggregateOperation1<T, ?, R> mapping(
-            @Nonnull DistributedFunction<? super T, ? extends U> mapF,
+            @Nonnull DistributedFunction<? super T, ? extends U> mapFn,
             @Nonnull AggregateOperation1<? super U, A, R> downstream
     ) {
-        DistributedBiConsumer<? super A, ? super U> downstreamAccumulateF = downstream.accumulateItemF();
+        DistributedBiConsumer<? super A, ? super U> downstreamAccumulateFn = downstream.accumulateFn();
         return AggregateOperation
-                .withCreate(downstream.createAccumulatorF())
+                .withCreate(downstream.createFn())
                 .andAccumulate((A a, T t) -> {
-                    U mapped = mapF.apply(t);
+                    U mapped = mapFn.apply(t);
                     if (mapped != null) {
-                        downstreamAccumulateF.accept(a, mapped);
+                        downstreamAccumulateFn.accept(a, mapped);
                     }
                 })
-                .andCombine(downstream.combineAccumulatorsF())
-                .andDeduct(downstream.deductAccumulatorF())
-                .andFinish(downstream.finishAccumulationF());
+                .andCombine(downstream.combineFn())
+                .andDeduct(downstream.deductFn())
+                .andFinish(downstream.finishFn());
     }
 
     /**
@@ -331,17 +329,17 @@ public final class AggregateOperations {
      *
      * @param <T> the type of the input elements
      * @param <C> the type of the resulting {@code Collection}
-     * @param createCollectionF a {@code Supplier} which returns a new, empty
+     * @param createCollectionFn a {@code Supplier} which returns a new, empty
      *                          {@code Collection} of the appropriate type
      */
     public static <T, C extends Collection<T>> AggregateOperation1<T, C, C> toCollection(
-            DistributedSupplier<C> createCollectionF
+            DistributedSupplier<C> createCollectionFn
     ) {
         return AggregateOperation
-                .withCreate(createCollectionF)
+                .withCreate(createCollectionFn)
                 .andAccumulate(Collection<T>::add)
                 .andCombine(Collection::addAll)
-                .andFinish(identity());
+                .andIdentityFinish();
     }
 
     /**
@@ -379,8 +377,8 @@ public final class AggregateOperations {
      * @param <T> the type of the input elements
      * @param <K> the output type of the key mapping function
      * @param <U> the output type of the value mapping function
-     * @param getKeyF a function to extract the key from input item
-     * @param getValueF a function to extract value from input item
+     * @param getKeyFn a function to extract the key from input item
+     * @param getValueFn a function to extract value from input item
      *
      * @see #toMap(DistributedFunction, DistributedFunction,
      *      DistributedBinaryOperator)
@@ -388,10 +386,10 @@ public final class AggregateOperations {
      *      DistributedBinaryOperator, DistributedSupplier)
      */
     public static <T, K, U> AggregateOperation1<T, Map<K, U>, Map<K, U>> toMap(
-            DistributedFunction<? super T, ? extends K> getKeyF,
-            DistributedFunction<? super T, ? extends U> getValueF
+            DistributedFunction<? super T, ? extends K> getKeyFn,
+            DistributedFunction<? super T, ? extends U> getValueFn
     ) {
-        return toMap(getKeyF, getValueF, throwingMerger(), HashMap::new);
+        return toMap(getKeyFn, getValueFn, throwingMerger(), HashMap::new);
     }
 
     /**
@@ -407,9 +405,9 @@ public final class AggregateOperations {
      * @param <T> the type of the input elements
      * @param <K> the output type of the key mapping function
      * @param <U> the output type of the value mapping function
-     * @param getKeyF a function to extract the key from input item
-     * @param getValueF a function to extract value from input item
-     * @param mergeF a merge function, used to resolve collisions between
+     * @param getKeyFn a function to extract the key from input item
+     * @param getValueFn a function to extract value from input item
+     * @param mergeFn a merge function, used to resolve collisions between
      *                      values associated with the same key, as supplied
      *                      to {@link Map#merge(Object, Object,
      *                      java.util.function.BiFunction)}
@@ -419,11 +417,11 @@ public final class AggregateOperations {
      *      DistributedBinaryOperator, DistributedSupplier)
      */
     public static <T, K, U> AggregateOperation1<T, Map<K, U>, Map<K, U>> toMap(
-            DistributedFunction<? super T, ? extends K> getKeyF,
-            DistributedFunction<? super T, ? extends U> getValueF,
-            DistributedBinaryOperator<U> mergeF
+            DistributedFunction<? super T, ? extends K> getKeyFn,
+            DistributedFunction<? super T, ? extends U> getValueFn,
+            DistributedBinaryOperator<U> mergeFn
     ) {
-        return toMap(getKeyF, getValueF, mergeF, HashMap::new);
+        return toMap(getKeyFn, getValueFn, mergeFn, HashMap::new);
     }
 
     /**
@@ -434,38 +432,38 @@ public final class AggregateOperations {
      * If the mapped keys contain duplicates (according to {@link
      * Object#equals(Object)}), the value mapping function is applied to each
      * equal element, and the results are merged using the provided merging
-     * function. The {@code Map} is created by a provided {@code createMapF}
+     * function. The {@code Map} is created by a provided {@code createMapFn}
      * function.
      *
      * @param <T> the type of the input elements
      * @param <K> the output type of the key mapping function
      * @param <U> the output type of the value mapping function
      * @param <M> the type of the resulting {@code Map}
-     * @param getKeyF a function to extract the key from input item
-     * @param getValueF a function to extract value from input item
-     * @param mergeF a merge function, used to resolve collisions between
+     * @param getKeyFn a function to extract the key from input item
+     * @param getValueFn a function to extract value from input item
+     * @param mergeFn a merge function, used to resolve collisions between
      *                      values associated with the same key, as supplied
      *                      to {@link Map#merge(Object, Object,
      *                      java.util.function.BiFunction)}
-     * @param createMapF a function which returns a new, empty {@code Map} into
+     * @param createMapFn a function which returns a new, empty {@code Map} into
      *                    which the results will be inserted
      *
      * @see #toMap(DistributedFunction, DistributedFunction)
      * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)
      */
     public static <T, K, U, M extends Map<K, U>> AggregateOperation1<T, M, M> toMap(
-            DistributedFunction<? super T, ? extends K> getKeyF,
-            DistributedFunction<? super T, ? extends U> getValueF,
-            DistributedBinaryOperator<U> mergeF,
-            DistributedSupplier<M> createMapF
+            DistributedFunction<? super T, ? extends K> getKeyFn,
+            DistributedFunction<? super T, ? extends U> getValueFn,
+            DistributedBinaryOperator<U> mergeFn,
+            DistributedSupplier<M> createMapFn
     ) {
-        DistributedBiConsumer<M, T> accumulateF =
-                (map, element) -> map.merge(getKeyF.apply(element), getValueF.apply(element), mergeF);
+        DistributedBiConsumer<M, T> accumulateFn =
+                (map, element) -> map.merge(getKeyFn.apply(element), getValueFn.apply(element), mergeFn);
         return AggregateOperation
-                .withCreate(createMapF)
-                .andAccumulate(accumulateF)
-                .andCombine(mapMerger(mergeF))
-                .andFinish(identity());
+                .withCreate(createMapFn)
+                .andAccumulate(accumulateFn)
+                .andCombine(mapMerger(mergeFn))
+                .andIdentityFinish();
     }
 
     private static <T> DistributedBinaryOperator<T> throwingMerger() {
@@ -488,7 +486,7 @@ public final class AggregateOperations {
      * A reducing operation maintains an accumulated value that starts out as
      * {@code emptyAccValue} and is being iteratively transformed by applying
      * the {@code combine} primitive to it and each stream item's accumulated
-     * value, as returned from {@code toAccValueF}. The {@code combine} must
+     * value, as returned from {@code toAccValueFn}. The {@code combine} must
      * be <em>associative</em> because it will also be used to combine partial
      * results, and <em>commutative</em> because the encounter order of items
      * is unspecified.
@@ -498,16 +496,16 @@ public final class AggregateOperations {
      * {@code combine}:
      * <pre>
      *     A accVal;  (has some pre-existing value)
-     *     A itemAccVal = toAccValueF.apply(item);
-     *     A combined = combineAccValuesF.apply(accVal, itemAccVal);
-     *     A deducted = deductAccValueF.apply(combined, itemAccVal);
+     *     A itemAccVal = toAccValueFn.apply(item);
+     *     A combined = combineAccValuesFn.apply(accVal, itemAccVal);
+     *     A deducted = deductAccValueFn.apply(combined, itemAccVal);
      *     assert deducted.equals(accVal);
      * </pre>
      *
      * @param emptyAccValue the reducing operation's emptyAccValue element
-     * @param toAccValueF transforms the stream item into its accumulated value
-     * @param combineAccValuesF combines two accumulated values into one
-     * @param deductAccValueF deducts the right-hand accumulated value from the left-hand one
+     * @param toAccValueFn transforms the stream item into its accumulated value
+     * @param combineAccValuesFn combines two accumulated values into one
+     * @param deductAccValueFn deducts the right-hand accumulated value from the left-hand one
      *                        (optional)
      * @param <T> type of the stream item
      * @param <A> type of the accumulated value
@@ -515,17 +513,17 @@ public final class AggregateOperations {
     @Nonnull
     public static <T, A> AggregateOperation1<T, MutableReference<A>, A> reducing(
             @Nonnull A emptyAccValue,
-            @Nonnull DistributedFunction<? super T, ? extends A> toAccValueF,
-            @Nonnull DistributedBinaryOperator<A> combineAccValuesF,
-            @Nullable DistributedBinaryOperator<A> deductAccValueF
+            @Nonnull DistributedFunction<? super T, ? extends A> toAccValueFn,
+            @Nonnull DistributedBinaryOperator<A> combineAccValuesFn,
+            @Nullable DistributedBinaryOperator<A> deductAccValueFn
     ) {
         return AggregateOperation
                 .withCreate(() -> new MutableReference<>(emptyAccValue))
                 .andAccumulate((MutableReference<A> a, T t) ->
-                        a.set(combineAccValuesF.apply(a.get(), toAccValueF.apply(t))))
-                .andCombine((a, b) -> a.set(combineAccValuesF.apply(a.get(), b.get())))
-                .andDeduct(deductAccValueF != null
-                        ? (a, b) -> a.set(deductAccValueF.apply(a.get(), b.get()))
+                        a.set(combineAccValuesFn.apply(a.get(), toAccValueFn.apply(t))))
+                .andCombine((a, b) -> a.set(combineAccValuesFn.apply(a.get(), b.get())))
+                .andDeduct(deductAccValueFn != null
+                        ? (a, b) -> a.set(deductAccValueFn.apply(a.get(), b.get()))
                         : null)
                 .andFinish(MutableReference::get);
     }

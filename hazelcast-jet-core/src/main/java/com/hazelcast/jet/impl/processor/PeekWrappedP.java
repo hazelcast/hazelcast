@@ -36,16 +36,16 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public final class PeekWrappedP implements Processor {
 
     private final Processor wrappedProcessor;
-    private final DistributedFunction<Object, String> toStringF;
-    private final Predicate<Object> shouldLogF;
+    private final DistributedFunction<Object, String> toStringFn;
+    private final Predicate<Object> shouldLogFn;
     private final boolean peekInput;
     private final boolean peekOutput;
 
     private final LoggingInbox loggingInbox;
     private ILogger logger;
 
-    public PeekWrappedP(Processor wrappedProcessor, DistributedFunction<Object, String> toStringF,
-            Predicate<Object> shouldLogF, boolean peekInput, boolean peekOutput
+    public PeekWrappedP(Processor wrappedProcessor, DistributedFunction<Object, String> toStringFn,
+            Predicate<Object> shouldLogFn, boolean peekInput, boolean peekOutput
     ) {
         if (!peekInput && !peekOutput) {
             throw new IllegalArgumentException("Peeking neither on input nor on output");
@@ -53,8 +53,8 @@ public final class PeekWrappedP implements Processor {
         checkNotNull(wrappedProcessor, "wrappedProcessor");
 
         this.wrappedProcessor = wrappedProcessor;
-        this.toStringF = toStringF;
-        this.shouldLogF = shouldLogF;
+        this.toStringFn = toStringFn;
+        this.shouldLogFn = shouldLogFn;
         this.peekInput = peekInput;
         this.peekOutput = peekOutput;
 
@@ -97,8 +97,8 @@ public final class PeekWrappedP implements Processor {
 
     private void log(Object object) {
         // null object can come from poll()
-        if (object != null && shouldLogF.test(object)) {
-            logger.info(toStringF.apply(object));
+        if (object != null && shouldLogFn.test(object)) {
+            logger.info(toStringFn.apply(object));
         }
     }
 

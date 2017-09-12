@@ -26,10 +26,9 @@ import java.util.concurrent.Future;
 /**
  * Models a distributed computation job using an analogy with a system of
  * interconnected water pipes. The basic element is a <em>stage</em> which
- * can be attached to one or more other stages. The data flows from a given
- * stage to all those attached to it in the downstream direction. A stage
- * accepts the data coming from its upstream stages, transforms it, and
- * directs the resulting data to its downstream stages.
+ * can be attached to one or more other stages. A stage accepts the data
+ * coming from its upstream stages, transforms it, and directs the
+ * resulting data to its downstream stages.
  * <p>
  * The {@code Pipeline} object is a container of all the stages defined on
  * a pipeline: the source stages obtained directly from it by calling {@link
