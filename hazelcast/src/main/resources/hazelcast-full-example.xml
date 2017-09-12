@@ -1488,7 +1488,7 @@ https://hazelcast.org/documentation/.
         - OBJECT:
             Data will be stored in deserialized form.
         * <ringbuffer-store>:
-        Includes the Ringbuffer store factory class name. The store format is the same as the
+        Includes the Ringbuffer store factory class name and property configurations. The store format is the same as the
             in-memory-format for the Ringbuffer.
     -->
 
