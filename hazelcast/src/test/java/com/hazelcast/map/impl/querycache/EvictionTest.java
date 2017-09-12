@@ -25,7 +25,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -56,15 +56,12 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Integer> map = getMap(node, mapName);
 
-        // expecting at least populationCount - maxSize - 50 evicted entries according to max size.
-        // 50 states an error margin since eviction does not sweep precise number of entries.
-        int margin = 50;
-        final CountDownLatch evictedCount = new CountDownLatch(populationCount - maxSize - margin);
+        final CountDownLatch entryCountingLatch = new CountDownLatch(populationCount);
         QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, TruePredicate.INSTANCE, true);
-        String listener = cache.addEntryListener(new EntryEvictedListener() {
+        String listener = cache.addEntryListener(new EntryAddedListener() {
             @Override
-            public void entryEvicted(EntryEvent event) {
-                evictedCount.countDown();
+            public void entryAdded(EntryEvent event) {
+                entryCountingLatch.countDown();
             }
         }, false);
 
@@ -72,8 +69,11 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        assertOpenEventually("Cache size is " + cache.size(), evictedCount);
-        assertQueryCacheEvicted(maxSize, margin, cache);
+        assertOpenEventually("Cache size is " + cache.size(), entryCountingLatch);
+
+        // expecting at most populationCount - maxSize - 5 entries
+        // 5 states an error margin since eviction does not sweep precise number of entries.
+        assertQueryCacheEvicted(maxSize, 5, cache);
         assertTrue(cache.removeEntryListener(listener));
     }
 
