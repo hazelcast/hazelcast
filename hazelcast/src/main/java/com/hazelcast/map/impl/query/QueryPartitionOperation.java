@@ -25,6 +25,8 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+
 public class QueryPartitionOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private Query query;
@@ -41,10 +43,11 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     @Override
     public void run() throws Exception {
         QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
+        boolean isNativeMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE);
         // Native handling only for RU compatibility purposes, can be deleted in 3.10 master
         // An old member may send a QueryOperation (and not HDQueryOperation) to an HD member.
         // In this case we want to handle it in the most efficient way.
-        if (isNativeInMemoryFormat()) {
+        if (isNativeMemoryFormat) {
             // partition-index scan or partition-scan
             result = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
         } else {

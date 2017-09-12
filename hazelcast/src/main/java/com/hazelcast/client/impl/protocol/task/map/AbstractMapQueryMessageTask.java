@@ -304,8 +304,8 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                     missedPartitionsCount++;
                 }
             }
-            throw rethrow(new QueryException("Query aborted. Could not execute query for all partitions. Missed "
-                    + missedPartitionsCount + " partitions"));
+            throw new QueryException("Query aborted. Could not execute query for all partitions. Missed "
+                    + missedPartitionsCount + " partitions");
         }
     }
 
