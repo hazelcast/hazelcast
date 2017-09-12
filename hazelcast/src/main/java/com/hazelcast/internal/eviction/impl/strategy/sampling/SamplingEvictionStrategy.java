@@ -74,7 +74,7 @@ public final class SamplingEvictionStrategy<A, E extends Evictable, S extends Sa
             EvictionListener<A, E> evictionListener) {
         final Iterable<EvictionCandidate<A, E>> samples = sampleableEvictableStore.sample(SAMPLE_COUNT);
         final EvictionCandidate<A, E> evictionCandidate = evictionPolicyEvaluator.evaluate(samples);
-        return sampleableEvictableStore.evict(evictionCandidate, evictionListener);
+        return sampleableEvictableStore.tryEvict(evictionCandidate, evictionListener);
     }
 
 }

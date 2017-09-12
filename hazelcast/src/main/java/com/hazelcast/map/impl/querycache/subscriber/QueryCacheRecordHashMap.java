@@ -110,7 +110,7 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
 
     @Override
     public <C extends EvictionCandidate<Data, QueryCacheRecord>>
-    boolean evict(C evictionCandidate, EvictionListener<Data, QueryCacheRecord> evictionListener) {
+    boolean tryEvict(C evictionCandidate, EvictionListener<Data, QueryCacheRecord> evictionListener) {
         if (evictionCandidate == null) {
             return false;
         }

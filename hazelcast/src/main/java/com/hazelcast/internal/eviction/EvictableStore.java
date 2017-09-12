@@ -37,7 +37,7 @@ public interface EvictableStore<A, E extends Evictable> {
      *
      * @return <code>true</code> if the candidate was evicted, otherwise returns <code>false</code>
      */
-    <C extends EvictionCandidate<A, E>> boolean evict(C evictionCandidate,
-                                                  EvictionListener<A, E> evictionListener);
+    <C extends EvictionCandidate<A, E>> boolean tryEvict(C evictionCandidate,
+                                                         EvictionListener<A, E> evictionListener);
 
 }

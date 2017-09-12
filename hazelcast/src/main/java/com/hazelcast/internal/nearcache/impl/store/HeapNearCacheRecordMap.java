@@ -91,8 +91,8 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
     }
 
     @Override
-    public <C extends EvictionCandidate<K, V>> boolean evict(C evictionCandidate,
-                                                             EvictionListener<K, V> evictionListener) {
+    public <C extends EvictionCandidate<K, V>> boolean tryEvict(C evictionCandidate,
+                                                                EvictionListener<K, V> evictionListener) {
         if (evictionCandidate == null) {
             return false;
         }
