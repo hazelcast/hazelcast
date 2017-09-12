@@ -196,7 +196,7 @@ public class CacheRecordHashMap
 
     @Override
     public <C extends EvictionCandidate<Data, CacheRecord>> boolean tryEvict(C evictionCandidate,
-                                                                             EvictionListener<Data, CacheRecord> evictionListener) {
+                                                                 EvictionListener<Data, CacheRecord> evictionListener) {
         if (evictionCandidate == null) {
             return false;
         }

@@ -22,8 +22,6 @@ import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.util.Clock;
 
-import static java.util.Collections.singleton;
-
 /**
  * Default {@link EvictionPolicyEvaluator} implementation.
  *
