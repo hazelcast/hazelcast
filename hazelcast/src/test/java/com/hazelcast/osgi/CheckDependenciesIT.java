@@ -100,7 +100,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
                 if (matchedUrl == null) {
                     matchedUrl = url;
                 } else {
-                    throw new AssertionError("Found multiple matching URLs: " + url +" and " + matchedUrl);
+                    throw new AssertionError("Found multiple matching URLs: " + url + " and " + matchedUrl);
                 }
             }
         }
@@ -115,6 +115,6 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-3.") && urlString.contains("target");
+        return urlString.contains("hazelcast/target/classes/META-INF/MANIFEST.MF");
     }
 }

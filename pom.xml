@@ -988,7 +988,6 @@
                             </includes>
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/**IT.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
