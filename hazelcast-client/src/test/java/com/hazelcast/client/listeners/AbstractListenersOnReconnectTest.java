@@ -479,8 +479,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
                     EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
                     EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
-                    assertNotNull(serviceSegment);
-                    assertEquals(1, serviceSegment.getRegistrationIdMap().size());
+                    Member member = instance.getCluster().getLocalMember();
+                    assertNotNull(member.toString(), serviceSegment);
+                    assertEquals(member.toString(), 1, serviceSegment.getRegistrationIdMap().size());
                 }
             }
         });
