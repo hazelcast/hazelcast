@@ -30,17 +30,19 @@ import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 public class ClientNonSmartListenerService extends ClientListenerServiceImpl implements ConnectionListener {
 
-    private final Map<ClientRegistrationKey, ClientEventRegistration> registrations
+    private final Map<ClientRegistrationKey, ClientEventRegistration> activeRegistrations
             = new ConcurrentHashMap<ClientRegistrationKey, ClientEventRegistration>();
+    private final Set<ClientRegistrationKey> userRegistrations = new HashSet<ClientRegistrationKey>();
 
     public ClientNonSmartListenerService(HazelcastClientInstanceImpl client,
                                          int eventThreadCount, int eventQueueCapacity) {
@@ -59,7 +61,8 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                 ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
                 try {
                     ClientEventRegistration registration = invoke(registrationKey);
-                    registrations.put(registrationKey, registration);
+                    activeRegistrations.put(registrationKey, registration);
+                    userRegistrations.add(registrationKey);
                 } catch (Exception e) {
                     throw new HazelcastException("Listener can not be added", e);
                 }
@@ -100,10 +103,14 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
             @Override
             public Boolean call() throws Exception {
                 ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-                ClientEventRegistration registration = registrations.get(key);
 
-                if (registration == null) {
+                if (!userRegistrations.remove(key)) {
                     return false;
+                }
+
+                ClientEventRegistration registration = activeRegistrations.get(key);
+                if (registration == null) {
+                    return true;
                 }
 
                 ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
@@ -111,9 +118,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                     Future future = new ClientInvocation(client, request).invoke();
                     future.get();
                     removeEventHandler(registration.getCallId());
-                    registrations.remove(key);
+                    activeRegistrations.remove(key);
                 } catch (Exception e) {
-                    throw new HazelcastException("Listener with id " + userRegistrationId + " could not be removed", e);
+                    throw new HazelcastException("Listener with ID " + userRegistrationId + " could not be removed", e);
                 }
                 return true;
             }
@@ -138,18 +145,21 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
-                Map<ClientRegistrationKey, ClientEventRegistration> tempMap =
-                        new HashMap<ClientRegistrationKey, ClientEventRegistration>();
-                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
+                for (ClientRegistrationKey registrationKey : userRegistrations) {
                     try {
+                        ClientEventRegistration oldRegistration = activeRegistrations.get(registrationKey);
+                        if (oldRegistration != null) {
+                            //if there was a registration corresponding to same user listener key before,
+                            //then we need to remove its event handler as cleanup
+                            removeEventHandler(oldRegistration.getCallId());
+                        }
                         ClientEventRegistration eventRegistration = invoke(registrationKey);
-                        tempMap.put(registrationKey, eventRegistration);
+                        activeRegistrations.put(registrationKey, eventRegistration);
                     } catch (Exception e) {
                         logger.warning("Listener " + registrationKey + " can not be added to new connection: "
                                 + connection, e);
                     }
                 }
-                registrations.putAll(tempMap);
             }
         });
 
@@ -157,18 +167,6 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void connectionRemoved(Connection connection) {
-        //This method should not be called from registrationExecutor
-        assert (!Thread.currentThread().getName().contains("eventRegistration"));
-
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                for (ClientEventRegistration registration : registrations.values()) {
-                    registration.setActive(false);
-                    removeEventHandler(registration.getCallId());
-                }
-            }
-        });
     }
 
     //For Testing
@@ -180,14 +178,12 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                 new Callable<Collection<ClientEventRegistration>>() {
                     @Override
                     public Collection<ClientEventRegistration> call() throws Exception {
-                        ClientEventRegistration registration = registrations.get(new ClientRegistrationKey(uuid));
-                        if (registration == null) {
+                        ClientEventRegistration registration = activeRegistrations.get(new ClientRegistrationKey(uuid));
+                        if (registration == null || !registration.getSubscriber().isAlive()) {
                             return Collections.EMPTY_LIST;
                         }
                         LinkedList<ClientEventRegistration> activeRegistrations = new LinkedList<ClientEventRegistration>();
-                        if (registration.isActive()) {
-                            activeRegistrations.add(registration);
-                        }
+                        activeRegistrations.add(registration);
                         return activeRegistrations;
                     }
                 });
