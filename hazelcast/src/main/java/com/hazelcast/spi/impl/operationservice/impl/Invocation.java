@@ -232,15 +232,14 @@ public abstract class Invocation implements OperationResponseHandler {
     /**
      * Initializes the invocation target.
      *
-     * @return {@code true} if the initialization was a success, {@code false} otherwise
+     * @throws Exception if the initialization was a failure
      */
-    private boolean initInvocationTarget() {
+    private void initInvocationTarget() throws Exception {
         invTarget = getTarget();
 
         if (invTarget == null) {
             remote = false;
-            notifyWithExceptionWhenTargetIsNull();
-            return false;
+            throw newTargetNullException();
         }
 
         MemberImpl previousTargetMember = targetMember;
@@ -251,18 +250,15 @@ public abstract class Invocation implements OperationResponseHandler {
             if (previousTargetMember != null) {
                 // If a target member was found earlier but current target member is null
                 // then it means a member left.
-                notifyError(new MemberLeftException(previousTargetMember));
-                return false;
+                throw new MemberLeftException(previousTargetMember);
             }
             if (!(isJoinOperation(op) || isWanReplicationOperation(op))) {
-                notifyError(new TargetNotMemberException(
-                        invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
-                return false;
+                throw new TargetNotMemberException(
+                        invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
             }
         }
 
         remote = !context.thisAddress.equals(invTarget);
-        return true;
     }
 
     void notifyError(Object error) {
@@ -532,11 +528,23 @@ public abstract class Invocation implements OperationResponseHandler {
 
         setInvocationTime(op, context.clusterClock.getClusterTime());
 
+        // We'll initialize the invocation before registering it. Invocation monitor iterates over
+        // registered invocations and it must observe completely initialized invocations.
+        Exception initializationFailure = null;
+        try {
+            initInvocationTarget();
+        } catch (Exception e) {
+            // We'll keep initialization failure and notify invocation with this failure
+            // after invocation is registered to the invocation registry.
+            initializationFailure = e;
+        }
+
         if (!context.invocationRegistry.register(this)) {
             return;
         }
 
-        if (!initInvocationTarget()) {
+        if (initializationFailure != null) {
+            notifyError(initializationFailure);
             return;
         }
 
@@ -603,19 +611,19 @@ public abstract class Invocation implements OperationResponseHandler {
         }
     }
 
-    private void notifyWithExceptionWhenTargetIsNull() {
+    private Exception newTargetNullException() {
         ClusterState clusterState = context.clusterService.getClusterState();
         if (!clusterState.isMigrationAllowed()) {
-            notifyError(new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
-                    + "but partitions can't be assigned in cluster-state: " + clusterState));
-        } else if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-            notifyError(new NoDataMemberInClusterException(
-                    "Target of invocation cannot be found! Partition owner is null "
-                            + "but partitions can't be assigned since all nodes in the cluster are lite members."));
-        } else {
-            notifyError(new WrongTargetException(context.thisAddress, null, op.getPartitionId(),
-                    op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));
+            return new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
+                    + "but partitions can't be assigned in cluster-state: " + clusterState);
         }
+        if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            return new NoDataMemberInClusterException(
+                    "Target of invocation cannot be found! Partition owner is null "
+                            + "but partitions can't be assigned since all nodes in the cluster are lite members.");
+        }
+        return new WrongTargetException(context.thisAddress, null, op.getPartitionId(),
+                    op.getReplicaIndex(), op.getClass().getName(), op.getServiceName());
     }
 
     // This is an idempotent operation
