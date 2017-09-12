@@ -17,12 +17,14 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,21 +34,45 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Collection;
+
+import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static java.lang.String.format;
 import static java.lang.String.valueOf;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MemberMapReconciliationTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter(0)
+    public InMemoryFormat mapInMemoryFormat;
+
+    @Parameterized.Parameter(1)
+    public InMemoryFormat nearCacheInMemoryFormat;
+
+    @Parameterized.Parameters(name = "mapInMemoryFormat:{0} nearCacheInMemoryFormat:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {BINARY, BINARY},
+                {BINARY, OBJECT},
+                {OBJECT, BINARY},
+                {OBJECT, OBJECT},
+        });
+    }
 
     private static final String MAP_NAME = "test";
     private static final int RECONCILIATION_INTERVAL_SECONDS = 3;
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
-    private final Config config = new Config();
+    private final Config config = getConfig();
 
     private IMap serverMap;
     private IMap nearCachedServerMap;
@@ -56,13 +82,20 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         NearCacheConfig nearCacheConfig = new NearCacheConfig(MAP_NAME);
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setCacheLocalEntries(true);
+        nearCacheConfig.setInMemoryFormat(nearCacheInMemoryFormat);
 
+        // we want to test that reconciliation doesn't cause any premature
+        // removal of entries by falsely assuming some entries as stale
         config.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
         config.setProperty("hazelcast.invalidation.reconciliation.interval.seconds", valueOf(RECONCILIATION_INTERVAL_SECONDS));
         config.setProperty("hazelcast.invalidation.min.reconciliation.interval.seconds", valueOf(RECONCILIATION_INTERVAL_SECONDS));
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), valueOf(Integer.MAX_VALUE));
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), valueOf(Integer.MAX_VALUE));
-        config.getMapConfig(MAP_NAME).setNearCacheConfig(nearCacheConfig);
+
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
+        mapConfig.setInMemoryFormat(mapInMemoryFormat);
+
+        mapConfig.setNearCacheConfig(nearCacheConfig);
 
         HazelcastInstance server = factory.newHazelcastInstance(config);
         serverMap = server.getMap(MAP_NAME);
@@ -95,7 +128,10 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
             nearCachedServerMap.get(i);
         }
 
-        IMap nearCachedMapFromNewServer = nearCachedMapFromNewServer();
+        IMap<Integer, Integer> nearCachedMapFromNewServer = nearCachedMapFromNewServer();
+
+        warmUpPartitions(factory.getAllHazelcastInstances());
+
         for (int i = 0; i < total; i++) {
             nearCachedMapFromNewServer.get(i);
         }
@@ -113,8 +149,9 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
     }
 
     public static void assertStats(NearCacheStats nearCacheStats, int ownedEntryCount, int expectedHits, int expectedMisses) {
-        assertEquals("not expected ownedEntryCount", ownedEntryCount, nearCacheStats.getOwnedEntryCount());
-        assertEquals("not expected expectedHits", expectedHits, nearCacheStats.getHits());
-        assertEquals("not expected expectedMisses", expectedMisses, nearCacheStats.getMisses());
+        String msg = "Wrong %s [%s]";
+        assertEquals(format(msg, "ownedEntryCount", nearCacheStats), ownedEntryCount, nearCacheStats.getOwnedEntryCount());
+        assertEquals(format(msg, "expectedHits", nearCacheStats), expectedHits, nearCacheStats.getHits());
+        assertEquals(format(msg, "expectedMisses", nearCacheStats), expectedMisses, nearCacheStats.getMisses());
     }
 }
