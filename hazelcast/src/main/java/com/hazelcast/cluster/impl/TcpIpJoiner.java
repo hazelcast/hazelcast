@@ -127,7 +127,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     private void joinViaPossibleMembers() {
         try {
             blacklistedAddresses.clear();
-            Collection<Address> possibleAddresses = getPossibleAddresses();
+            Collection<Address> possibleAddresses = getPossibleAddressesForInitialJoin();
 
             boolean foundConnection = tryInitialConnection(possibleAddresses);
             if (!foundConnection) {
@@ -179,6 +179,10 @@ public class TcpIpJoiner extends AbstractJoiner {
         } catch (Throwable t) {
             logger.severe(t);
         }
+    }
+
+    protected Collection<Address> getPossibleAddressesForInitialJoin() {
+        return getPossibleAddresses();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
