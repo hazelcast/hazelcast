@@ -79,7 +79,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
+import static com.hazelcast.spi.discovery.DiscoverySpiTest.ParametrizedDiscoveryStrategyFactory.BOOL_PROPERTY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -110,7 +113,66 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
         createHazelcastInstance(config);
+    }
 
+    @Test
+    public void givenDiscoveryStrategyFactoryExistOnClassPath_whenTheSameFactoryIsConfiguredExplicitly_thenOnlyOneInstanceOfStrategyIsCreated() {
+        // ParametrizedDiscoveryStrategy has a static counter and throws an exception when its instantiated  more than
+        // than once.
+
+        Config config = new Config();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
+
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(new ParametrizedDiscoveryStrategyFactory());
+        strategyConfig.addProperty("bool-property", true);
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+
+        //this will fail when the discovery strategy throws an exception
+        createHazelcastInstance(config);
+    }
+
+    public static final class ParametrizedDiscoveryStrategy extends AbstractDiscoveryStrategy {
+        private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
+
+        public ParametrizedDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+            super(logger, properties);
+            boolean parameterPassed = getOrDefault(BOOL_PROPERTY, false);
+            if (!parameterPassed) {
+                throw new AssertionError("configured parameter was not passed!");
+            }
+            if (INSTANCE_COUNTER.getAndIncrement() != 0) {
+                throw new AssertionError("only 1 instance of a discovery strategy should be created");
+            }
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return null;
+        }
+    }
+
+
+    public static final class ParametrizedDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+        public static final PropertyDefinition BOOL_PROPERTY = new SimplePropertyDefinition("bool-property", true, BOOLEAN);
+
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return ParametrizedDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
+            return new ParametrizedDiscoveryStrategy(logger, properties);
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return Collections.singleton(BOOL_PROPERTY);
+        }
     }
 
     @Test
@@ -235,7 +297,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void test_AbstractDiscoveryStrategy_getOrNull() throws Exception {
         PropertyDefinition first = new SimplePropertyDefinition("first", PropertyTypeConverter.STRING);
-        PropertyDefinition second = new SimplePropertyDefinition("second", PropertyTypeConverter.BOOLEAN);
+        PropertyDefinition second = new SimplePropertyDefinition("second", BOOLEAN);
         PropertyDefinition third = new SimplePropertyDefinition("third", PropertyTypeConverter.INTEGER);
         PropertyDefinition fourth = new SimplePropertyDefinition("fourth", true, PropertyTypeConverter.STRING);
 
@@ -462,7 +524,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
             propertyDefinitions.add(new SimplePropertyDefinition("key-string", PropertyTypeConverter.STRING));
             propertyDefinitions.add(new SimplePropertyDefinition("key-int", PropertyTypeConverter.INTEGER));
-            propertyDefinitions.add(new SimplePropertyDefinition("key-boolean", PropertyTypeConverter.BOOLEAN));
+            propertyDefinitions.add(new SimplePropertyDefinition("key-boolean", BOOLEAN));
             propertyDefinitions.add(new SimplePropertyDefinition("key-something", true, PropertyTypeConverter.STRING));
             this.propertyDefinitions = Collections.unmodifiableCollection(propertyDefinitions);
         }
