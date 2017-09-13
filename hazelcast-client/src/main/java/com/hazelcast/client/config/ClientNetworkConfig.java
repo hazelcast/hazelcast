@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -189,6 +190,11 @@ public class ClientNetworkConfig {
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig addAddress(String... addresses) {
+        isNotNull(addresses, "addresses");
+        for (String address : addresses) {
+            isNotNull(address, "address");
+            checkHasText(address.trim(), "member must contain text");
+        }
         Collections.addAll(addressList, addresses);
         return this;
     }
@@ -304,6 +310,7 @@ public class ClientNetworkConfig {
 
     /**
      * Returns the outbound port definitions. It is possible that null is returned if not defined.
+     *
      * @return list of outbound port definitions
      */
     public Collection<String> getOutboundPortDefinitions() {
@@ -312,6 +319,7 @@ public class ClientNetworkConfig {
 
     /**
      * Returns the outbound ports. It is possible that null is returned if not defined.
+     *
      * @return list of outbound ports
      */
     public Collection<Integer> getOutboundPorts() {
@@ -320,6 +328,7 @@ public class ClientNetworkConfig {
 
     /**
      * Set outbound port definitions
+     *
      * @param outboundPortDefinitions outbound port definitions
      * @return ClientNetworkConfig
      */
@@ -330,6 +339,7 @@ public class ClientNetworkConfig {
 
     /**
      * Set outbond ports
+     *
      * @param outboundPorts outbound ports
      * @return ClientNetworkConfig
      */
@@ -340,6 +350,7 @@ public class ClientNetworkConfig {
 
     /**
      * Add outbound port to the outbound port list
+     *
      * @param port outbound port
      * @return ClientNetworkConfig
      */
@@ -353,6 +364,7 @@ public class ClientNetworkConfig {
 
     /**
      * Add outbound port definition to the outbound port definition list
+     *
      * @param portDef outbound port definition
      * @return ClientNetworkConfig
      */

@@ -79,6 +79,24 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastClient(config);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmptyStringAsAddress() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress("");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullAsAddress() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullAsAddresses() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress(null, null);
+    }
+
     @Test
     public void testWithLegalAndIllegalAddressTogether() {
         String illegalAddress = randomString();
