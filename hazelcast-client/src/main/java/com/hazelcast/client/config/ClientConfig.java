@@ -762,8 +762,7 @@ public class ClientConfig {
     }
 
     /**
-     *
-     * @param mapName The name of the map for which the query cache config is to be returned.
+     * @param mapName   The name of the map for which the query cache config is to be returned.
      * @param cacheName The name of the query cache.
      * @return The query cache config. If the config does not exist, it is created.
      */
@@ -786,12 +785,11 @@ public class ClientConfig {
     }
 
     /**
-     *
-     * @param mapName The name of the map for which the query cache config is to be returned.
-     * @param queryCacheName The name of the query cache config.
+     * @param mapName   The name of the map for which the query cache config is to be returned.
+     * @param cacheName The name of the query cache.
      * @return The query cache config. If no such config exist null is returned.
      */
-    public QueryCacheConfig getOrNullQueryCacheConfig(String mapName, String queryCacheName) {
+    public QueryCacheConfig getOrNullQueryCacheConfig(String mapName, String cacheName) {
         if (queryCacheConfigs == null) {
             return null;
         }
@@ -801,6 +799,6 @@ public class ClientConfig {
             return null;
         }
 
-        return lookupByPattern(queryCacheConfigsForMap, queryCacheName);
+        return lookupByPattern(queryCacheConfigsForMap, cacheName);
     }
 }

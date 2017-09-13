@@ -36,7 +36,7 @@ import static java.lang.String.format;
  * If all incoming events are in the correct sequence order, this accumulator applies those events to
  * {@link com.hazelcast.map.QueryCache QueryCache}.
  * Otherwise, it informs registered callback if there is any.
- *
+ * <p>
  * This class can be accessed by multiple-threads at a time.
  */
 public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData> {
@@ -154,9 +154,12 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
 
         if (!isNextSequence) {
             if (logger.isWarningEnabled()) {
-                logger.warning(format("Event lost detected for partitionId=%d, expectedSequence=%d "
-                                + "but foundSequence=%d, cacheSize=%d",
-                        partitionId, expectedSequence, foundSequence, getQueryCache().size()));
+                InternalQueryCache queryCache = getQueryCache();
+                if (queryCache != null) {
+                    logger.warning(format("Event lost detected for partitionId=%d, expectedSequence=%d "
+                                    + "but foundSequence=%d, cacheSize=%d",
+                            partitionId, expectedSequence, foundSequence, queryCache.size()));
+                }
             }
         }
 

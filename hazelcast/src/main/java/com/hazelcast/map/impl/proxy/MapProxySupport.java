@@ -1182,7 +1182,7 @@ abstract class MapProxySupport<K, V>
             QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
             SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
             QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
-            provider.removeQueryCachesOfMap(name);
+            provider.destroyAllQueryCaches(name);
         } finally {
             super.preDestroy();
         }

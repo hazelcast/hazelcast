@@ -44,7 +44,6 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.Target;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
-import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
@@ -74,7 +73,6 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
@@ -1039,12 +1037,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
-        ConstructorFunction<String, InternalQueryCache> constructorFunction = new NodeQueryCacheEndToEndConstructor(request);
         QueryCacheContext queryCacheContext = request.getContext();
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
         return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
-                constructorFunction);
+                new NodeQueryCacheEndToEndConstructor(request));
     }
 
     private void handleHazelcastInstanceAwareParams(Object... objects) {
