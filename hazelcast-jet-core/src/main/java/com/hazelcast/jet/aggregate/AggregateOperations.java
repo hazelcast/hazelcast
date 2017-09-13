@@ -257,11 +257,14 @@ public final class AggregateOperations {
                         untypedOps[i].accumulateFn().accept(accs.get(i), item);
                     }
                 })
-                .andCombine((accs1, accs2) -> {
-                    for (int i = 0; i < untypedOps.length; i++) {
-                        untypedOps[i].combineFn().accept(accs1.get(i), accs2.get(i));
-                    }
-                })
+                .andCombine(
+                        // we can support combine only if all operations do
+                        Stream.of(untypedOps).allMatch(o -> o.combineFn() != null)
+                                ? (accs1, accs2) -> {
+                                    for (int i = 0; i < untypedOps.length; i++) {
+                                        untypedOps[i].combineFn().accept(accs1.get(i), accs2.get(i));
+                            }
+                        } : null)
                 .andDeduct(
                         // we can support deduct only if all operations do
                         Stream.of(untypedOps).allMatch(o -> o.deductFn() != null)

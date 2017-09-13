@@ -17,11 +17,7 @@
 package com.hazelcast.jet.pipeline.impl.transform;
 
 import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.pipeline.UnaryTransform;
 
-/**
- * Javadoc pending.
- */
 public class FilterTransform<T> implements UnaryTransform<T, T> {
     public final DistributedPredicate<? super T> filterFn;
 

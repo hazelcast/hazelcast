@@ -18,5 +18,10 @@ package com.hazelcast.jet.pipeline;
 
 import java.io.Serializable;
 
+/**
+ * Represents the data transformation performed by a pipeline {@link
+ * Stage}. {@link Sink} is a special case of a transform that doesn'
+ * produce any output.
+ */
 public interface Transform extends Serializable {
 }

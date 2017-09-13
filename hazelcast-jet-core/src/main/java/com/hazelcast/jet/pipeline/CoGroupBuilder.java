@@ -21,6 +21,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.datamodel.Tag;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.impl.PipelineImpl;
+import com.hazelcast.jet.pipeline.impl.transform.CoGroupTransform;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,9 @@ import static java.util.stream.Collectors.toList;
  * This object is primarily intended to build a co-grouping of four or more
  * stages; for up to three stages the direct {@code stage.coGroup(...)}
  * calls should be preferred because they offer more static type safety.
+ *
+ * @param <K> the type of the grouping key
+ * @param <E0> the type of item in stream-0
  */
 public class CoGroupBuilder<K, E0> {
     private final List<CoGroupClause<?, K>> clauses = new ArrayList<>();
@@ -84,11 +88,10 @@ public class CoGroupBuilder<K, E0> {
                 .stream()
                 .map(CoGroupClause::stage)
                 .collect(toList());
-        MultiTransform transform = Transforms.coGroup(clauses
+        CoGroupTransform<K, A, R> transform = new CoGroupTransform<>(clauses
                 .stream()
                 .map(CoGroupClause::groupKeyFn)
-                .collect(toList()),
-                aggrOp);
+                .collect(toList()), aggrOp);
         PipelineImpl pipeline = (PipelineImpl) clauses.get(0).stage.getPipeline();
         return pipeline.attach(upstream, transform);
     }

@@ -51,7 +51,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *     accumulator from the left-hand one (undo the effects of {@code combine})
  * </li><li>
  *     {@link #finishFn() finish} accumulation by transforming the
- *     accumulator's intermediate result into the final result
+ *     accumulator object into the final result
  * </li></ol>
  * The <em>deduct</em> primitive is optional. It is used in sliding window
  * aggregation, where it can significantly improve the performance.
@@ -71,7 +71,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * AggregateOperation3}. If you use the provided {@link
  * #withCreate(DistributedSupplier) builder object}, it will automatically
  * return the appropriate static type, depending on which {@code accumulate}
- * primitives are provided to it.
+ * primitives you have provided.
  *
  * @param <A> the type of the accumulator
  * @param <R> the type of the final result
@@ -80,7 +80,7 @@ public interface AggregateOperation<A, R> extends Serializable {
 
     /**
      * A primitive that returns a new accumulator. If the {@code deduct}
-     * operation is defined, the accumulator object must properly implement
+     * primitive is defined, the accumulator object must properly implement
      * {@code equals()}, which will be used to detect when an accumulator is
      * "empty" (i.e., equal to a fresh instance returned from this method) and
      * can be evicted from a processor's storage.
@@ -91,7 +91,7 @@ public interface AggregateOperation<A, R> extends Serializable {
     /**
      * A primitive that updates the accumulator state to account for a new
      * item. The tag argument identifies which of the contributing streams
-     * in a co-group operation the returned function will handle.
+     * the returned function will handle.
      */
     @Nonnull
     default <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(Tag<T> tag) {
@@ -101,7 +101,7 @@ public interface AggregateOperation<A, R> extends Serializable {
     /**
      * A primitive that updates the accumulator state to account for a new
      * item. The argument identifies the index of the contributing stream
-     * in a co-group operation the returned function will handle.
+     * the returned function will handle.
      */
     @Nonnull
     <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(int index);
@@ -109,8 +109,8 @@ public interface AggregateOperation<A, R> extends Serializable {
     /**
      * A primitive that accepts two accumulators and updates the state of the
      * left-hand one by combining it with the state of the right-hand one.
-     * The right-hand accumulator remains unchanged. May be {@code null} if
-     * the operation will be used for single-stage aggregation.
+     * The right-hand accumulator remains unchanged. In some cases, such as
+     * single-stage batch aggregation it is not needed and may be {@code null}.
      */
     @Nullable
     DistributedBiConsumer<? super A, ? super A> combineFn();
@@ -129,14 +129,14 @@ public interface AggregateOperation<A, R> extends Serializable {
      * leaves {@code acc} in the same state as it was before the two
      * operations.
      * <p>
-     * <strong>Note:</strong> this method may return {@code null} because the
-     * <em>deduct</em> primitive is optional. However, when this aggregate
-     * operation is used to compute a sliding window, its presence may
-     * significantly reduce the computational cost. With it, the current
+     * <strong>Note:</strong> this primitive is only used in sliding window
+     * aggregation and even in that case it is optional, but its presence
+     * may significantly reduce the computational cost. With it, the current
      * sliding window can be obtained from the previous one by deducting the
      * trailing frame and combining the leading frame; without it, each window
-     * must be recomputed from all its constituent frames. The finer the sliding
-     * step, the more pronounced the difference in computation effort will be.
+     * must be recomputed from all its constituent frames. The finer the
+     * sliding step, the more pronounced the difference in computation effort
+     * will be.
      */
     @Nullable
     DistributedBiConsumer<? super A, ? super A> deductFn();
@@ -149,18 +149,36 @@ public interface AggregateOperation<A, R> extends Serializable {
     DistributedFunction<? super A, R> finishFn();
 
     /**
-     * Returns a copy of this aggregate operation with the map of
-     * {@code accumulate} primitives replaced by the supplied one.
+     * Returns a copy of this aggregate operation, but with all the {@code
+     * accumulate} primitives replaced from the supplied array. The index
+     * in the array corresponds to the index of the contributing stream in
+     * the aggregate operation.
      */
     @Nonnull
     AggregateOperation<A, R> withAccumulateFns(
             @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns);
 
+    /**
+     * Returns a copy of this aggregate operation, but with the {@code finish}
+     * primitive replaced with the supplied one.
+     *
+     * @param finishFn the new {@code finish} primitive
+     * @param <R_NEW> the new aggregation result type
+     */
     @Nonnull
-    <R1> AggregateOperation<A, R1> withFinishFn(
-            @Nonnull DistributedFunction<? super A, R1> finishFn
+    <R_NEW> AggregateOperation<A, R_NEW> withFinishFn(
+            @Nonnull DistributedFunction<? super A, R_NEW> finishFn
     );
 
+    /**
+     * Returns a copy of this aggregate operation, but with the {@code
+     * accumulate} primitive replaced with one that expects to find
+     * accumulator objects in the input and will combine them all into
+     * a single accumulator of the same type.
+     *
+     * @param getAccFn the function that extracts the accumulator from the stream item
+     * @param <T> the type of stream item
+     */
     @Nonnull
     default <T> AggregateOperation1<T, A, R> withCombiningAccumulateFn(
             @Nonnull DistributedFunction<T, A> getAccFn
@@ -174,9 +192,9 @@ public interface AggregateOperation<A, R> extends Serializable {
     }
 
     /**
-     * Returns a builder object, initialized with the {@code create} primitive,
-     * that can be used to construct the definition of an aggregate operation
-     * in a step-by-step manner.
+     * Returns a builder object, initialized with the supplied {@code create}
+     * primitive, that can be used to construct the definition of an aggregate
+     * operation in a step-by-step manner.
      * <p>
      * The same builder is used to construct both fixed- and variable-arity
      * aggregate operations:

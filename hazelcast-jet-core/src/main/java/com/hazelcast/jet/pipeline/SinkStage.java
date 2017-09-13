@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+package com.hazelcast.jet.pipeline;
+
 /**
- * Classes in this package are not a part of public API and can change
- * without notice.
+ * A pipeline stage that doesn't allow any downstream stages to be attached
+ * to it. Corresponds to a data sink.
  */
-package com.hazelcast.jet.pipeline.impl;
+public interface SinkStage extends Stage {
+}

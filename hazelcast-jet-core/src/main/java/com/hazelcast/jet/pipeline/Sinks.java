@@ -27,6 +27,12 @@ import java.nio.charset.Charset;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * Contains factory methods for various types of pipeline sinks. Formally,
+ * a sink is a transform that has no output. A pipeline stage with a sink
+ * as its transform has the type {@link SinkStage} and accepts no
+ * downstream stages.
+ */
 public final class Sinks {
 
     private Sinks() {

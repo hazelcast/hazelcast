@@ -32,6 +32,16 @@ import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * Contains factory methods for various types of pipeline sources. To start
+ * building a pipeline, pass a source to {@link Pipeline#drawFrom(Source)}
+ * and you will obtain the initial {@link ComputeStage}. You can then
+ * attach further stages to it.
+ * <p>
+ * The same pipeline may contain more than one source, each starting its
+ * own branch. The branches may be merged with multiple-input transforms
+ * such as co-group and hash-join.
+ */
 public final class Sources {
 
     private static final String GLOB_WILDCARD = "*";

@@ -16,15 +16,11 @@
 
 package com.hazelcast.jet.pipeline.impl.transform;
 
-import com.hazelcast.jet.pipeline.MultiTransform;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import java.util.List;
 
-/**
- * Javadoc pending.
- */
 public class CoGroupTransform<K, A, R> implements MultiTransform {
     private final List<DistributedFunction<?, ? extends K>> groupKeyFs;
     private final AggregateOperation<A, R> aggrOp;

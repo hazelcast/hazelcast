@@ -16,7 +16,16 @@
 
 package com.hazelcast.jet.pipeline;
 
+/**
+ * The basic element of a Jet {@link com.hazelcast.jet.pipeline pipeline}.
+ * To build a pipeline, start with {@link Pipeline#drawFrom(Source)} to
+ * get the initial {@link ComputeStage} and then use its methods to attach
+ * further downstream stages. Terminate the pipeline by calling {@link
+ * ComputeStage#drainTo(Sink)}, which will attach a {@link SinkStage}.
+ */
 public interface Stage {
-
+    /**
+     * Returns the {@link Pipeline} this stage belongs to.
+     */
     Pipeline getPipeline();
 }

@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline;
-
 /**
- * Javadoc pending.
+ * Contains {@code AggregateOperation} and several its variants, as well
+ * as a builder object for the aggregate operations.
  */
-public interface MultiTransform<R> extends Transform {
-}
+package com.hazelcast.jet.aggregate;

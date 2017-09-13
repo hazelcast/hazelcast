@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.pipeline.datamodel.Tag;
 import com.hazelcast.jet.pipeline.datamodel.ItemsByTag;
+import com.hazelcast.jet.pipeline.datamodel.Tag;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.impl.PipelineImpl;
+import com.hazelcast.jet.pipeline.impl.transform.HashJoinTransform;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +42,8 @@ import static java.util.stream.Collectors.toList;
  * with three or more contributing stages. For one or two stages the direct
  * {@code stage.hashJoin(...)} calls should be preferred because they offer
  * more static type safety.
+ *
+ * @param <E0> the type of the stream-0 item
  */
 public class HashJoinBuilder<E0> {
     private final Map<Tag<?>, StageAndClause> clauses = new HashMap<>();
@@ -85,7 +88,7 @@ public class HashJoinBuilder<E0> {
                 .stream()
                 .skip(1)
                 .map(e -> e.getValue().clause());
-        MultiTransform hashJoinTransform = Transforms.hashJoin(
+        HashJoinTransform<E0> hashJoinTransform = new HashJoinTransform<>(
                 joinClauses.collect(toList()),
                 orderedClauses.stream()
                               .skip(1)

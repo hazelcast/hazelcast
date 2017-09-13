@@ -31,9 +31,6 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import java.io.IOException;
 import java.math.BigInteger;
 
-/**
- * Javadoc pending.
- */
 public class AccumulatorSerializerHooks {
     public static final class LongAccHook implements SerializerHook<LongAccumulator> {
 

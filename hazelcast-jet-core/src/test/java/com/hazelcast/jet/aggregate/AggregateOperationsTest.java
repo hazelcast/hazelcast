@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
@@ -127,7 +128,7 @@ public class AggregateOperationsTest {
     }
 
     @Test
-    public void when_allOfWithoutDeduct() {
+    public void when_allOfWithoutDeduct_then_noDeduct() {
         validateOpWithoutDeduct(
                 allOf(counting(), maxBy(naturalOrder())),
                 identity(), 10L, 11L,
@@ -135,6 +136,17 @@ public class AggregateOperationsTest {
                 asList(new LongAccumulator(2), new MutableReference<>(11L)),
                 asList(2L, 11L)
         );
+    }
+
+    @Test
+    public void when_allOfWithoutCombine_then_noCombine() {
+        AggregateOperation1<Long, List<Object>, List<Object>> composite =
+                allOf(AggregateOperation
+                                .withCreate(LongAccumulator::new)
+                                .<Long>andAccumulate(LongAccumulator::add)
+                                .andFinish(LongAccumulator::get),
+                        summingLong(x -> x));
+        assertNull(composite.combineFn());
     }
 
     @Test

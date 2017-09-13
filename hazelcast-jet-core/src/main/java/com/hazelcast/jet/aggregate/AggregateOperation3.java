@@ -22,32 +22,40 @@ import com.hazelcast.jet.function.DistributedFunction;
 import javax.annotation.Nonnull;
 
 /**
- * Javadoc pending.
+ * Specialization of {@link AggregateOperation} to the "arity-3" case with
+ * two data stream being aggregated over.
+ *
+ * @param <T0> the type of item in stream-0
+ * @param <T1> the type of item in stream-1
+ * @param <T2> the type of item in stream-2
+ * @param <A> the type of the accumulator
+ * @param <R> the type of the aggregation result
  */
 public interface AggregateOperation3<T0, T1, T2, A, R> extends AggregateOperation<A, R> {
 
     /**
      * A primitive that updates the accumulator state to account for a new
-     * item coming from stream number 0 in a co-grouping operation.
+     * item coming from stream-0.
      */
     @Nonnull
     DistributedBiConsumer<? super A, ? super T0> accumulateFn0();
 
     /**
      * A primitive that updates the accumulator state to account for a new
-     * item coming from stream number 1 in a co-grouping operation.
+     * item coming from stream-1.
      */
     @Nonnull
     DistributedBiConsumer<? super A, ? super T1> accumulateFn1();
 
     /**
      * A primitive that updates the accumulator state to account for a new
-     * item coming from stream number 2 in a co-grouping operation.
+     * item coming from stream-2.
      */
     @Nonnull
     DistributedBiConsumer<? super A, ? super T2> accumulateFn2();
 
-    @Nonnull
+    // Override with a narrowed return type
+    @Nonnull @Override
     <R1> AggregateOperation3<T0, T1, T2, A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn
     );

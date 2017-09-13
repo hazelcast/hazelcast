@@ -22,7 +22,12 @@ import com.hazelcast.jet.function.DistributedFunction;
 import javax.annotation.Nonnull;
 
 /**
- * Javadoc pending.
+ * Specialization of {@link AggregateOperation} to the "arity-1" case with
+ * a single data stream being aggregated over.
+ *
+ * @param <T> the type of the stream item
+ * @param <A> the type of the accumulator
+ * @param <R> the type of the aggregation result
  */
 public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
 
@@ -33,12 +38,9 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
     @Nonnull
     DistributedBiConsumer<? super A, ? super T> accumulateFn();
 
-    @Nonnull
+    // Override with a narrowed return type
+    @Nonnull @Override
     <R_NEW> AggregateOperation1<T, A, R_NEW> withFinishFn(
             @Nonnull DistributedFunction<? super A, R_NEW> finishFn
     );
-
-    @Nonnull
-    <T_NEW> AggregateOperation1<T_NEW, A, R> withAccumulateFn(
-            DistributedBiConsumer<? super A, ? super T_NEW> accumulateFn);
 }

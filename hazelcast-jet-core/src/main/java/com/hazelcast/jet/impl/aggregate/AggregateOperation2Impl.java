@@ -26,9 +26,6 @@ import com.hazelcast.jet.pipeline.datamodel.Tag;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-/**
- * Javadoc pending.
- */
 public class AggregateOperation2Impl<T0, T1, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation2<T0, T1, A, R> {

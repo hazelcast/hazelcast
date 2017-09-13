@@ -16,6 +16,13 @@
 
 package com.hazelcast.jet.pipeline;
 
+/**
+ * A transform which accepts an input stream and produces no output
+ * streams.
+ */
 public interface Sink extends Transform {
+    /**
+     * Returns the name of this sink.
+     */
     String name();
 }

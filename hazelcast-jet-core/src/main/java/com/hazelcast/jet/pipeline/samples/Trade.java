@@ -18,9 +18,6 @@ package com.hazelcast.jet.pipeline.samples;
 
 import java.io.Serializable;
 
-/**
- * Javadoc pending.
- */
 class Trade implements Serializable {
 
     private final int id;

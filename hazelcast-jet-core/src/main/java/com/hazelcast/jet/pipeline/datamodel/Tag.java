@@ -31,9 +31,9 @@ import java.io.Serializable;
  * @param <T> the type of the data associated with the tag
  */
 public final class Tag<T> implements Serializable, Comparable<Tag<?>> {
-    public static final Tag TAG_0 = new Tag(0);
-    public static final Tag TAG_1 = new Tag(1);
-    public static final Tag TAG_2 = new Tag(2);
+    private static final Tag TAG_0 = new Tag(0);
+    private static final Tag TAG_1 = new Tag(1);
+    private static final Tag TAG_2 = new Tag(2);
 
     private final int index;
 

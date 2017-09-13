@@ -26,9 +26,6 @@ import com.hazelcast.jet.pipeline.datamodel.Tag;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-/**
- * Javadoc pending.
- */
 public class AggregateOperation1Impl<T0, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation1<T0, A, R> {
@@ -70,15 +67,6 @@ public class AggregateOperation1Impl<T0, A, R>
         }
         return new AggregateOperation1Impl<>(
                 createFn(), (DistributedBiConsumer<? super A, ? super T0>) accumulateFns[0],
-                combineFn(), deductFn(), finishFn());
-    }
-
-    @Nonnull @Override
-    public <T_NEW> AggregateOperation1<T_NEW, A, R> withAccumulateFn(
-            DistributedBiConsumer<? super A, ? super T_NEW> accumulateFn
-    ) {
-        return new AggregateOperation1Impl<>(
-                createFn(), accumulateFn,
                 combineFn(), deductFn(), finishFn());
     }
 

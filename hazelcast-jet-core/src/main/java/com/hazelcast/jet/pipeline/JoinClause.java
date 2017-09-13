@@ -37,11 +37,15 @@ import java.util.Map.Entry;
  * </li></ol>
  *  The primary use case for the projection function is enrichment from a
  *  map source, such as {@link com.hazelcast.jet.pipeline.Sources#readMap}.
- *  The enriching stream consists of map entries, but result should contain
- *  just the vaules. In this case the projection function should be {@code
- *  Entry::getValue}. There is direct support for this case with the method
- *  {@link #joinMapEntries(DistributedFunction)}.
+ *  The enriching stream consists of map entries, but the result should
+ *  contain just the vaules. In this case the projection function should be
+ *  {@code Entry::getValue}. There is direct support for this case with the
+ *  method {@link #joinMapEntries(DistributedFunction)}.
  *
+ * @param <K> the type of the join key
+ * @param <E0> the type of the left-hand stream item
+ * @param <E1> the type of the right-hand stream item
+ * @param <E1_OUT> the result type of the right-hand projection function
  */
 public final class JoinClause<K, E0, E1, E1_OUT> implements Serializable {
     private final DistributedFunction<E0, K> leftKeyFn;
@@ -58,6 +62,11 @@ public final class JoinClause<K, E0, E1, E1_OUT> implements Serializable {
         this.rightProjectFn = rightProjectFn;
     }
 
+    /**
+     * Constructs and returns a join clause with the supplied left-hand and
+     * right-hand key extractor functions, and with an identity right-hand
+     * projection function.
+     */
     public static <K, E0, E1> JoinClause<K, E0, E1, E1> onKeys(
             DistributedFunction<E0, K> leftKeyFn,
             DistributedFunction<E1, K> rightKeyFn
@@ -82,20 +91,33 @@ public final class JoinClause<K, E0, E1, E1_OUT> implements Serializable {
         return new JoinClause<>(leftKeyFn, Entry::getKey, Entry::getValue);
     }
 
+    /**
+     * Returns a copy of this join clause, but with the right-hand projection
+     * function replaced with the supplied one.
+     */
     public <E1_NEW_OUT> JoinClause<K, E0, E1, E1_NEW_OUT> projecting(
             DistributedFunction<E1, E1_NEW_OUT> rightProjectFn
     ) {
         return new JoinClause<>(this.leftKeyFn, this.rightKeyFn, rightProjectFn);
     }
 
+    /**
+     * Returns the left-hand key extractor function.
+     */
     public DistributedFunction<E0, K> leftKeyFn() {
         return leftKeyFn;
     }
 
+    /**
+     * Returns the right-hand key extractor function.
+     */
     public DistributedFunction<E1, K> rightKeyFn() {
         return rightKeyFn;
     }
 
+    /**
+     * Returns the right-hand projection function.
+     */
     public DistributedFunction<E1, E1_OUT> rightProjectFn() {
         return rightProjectFn;
     }

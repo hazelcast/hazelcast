@@ -30,9 +30,9 @@
  *
  * <h3>Basic</h3>
  *
- * Basic transformations have a single upstream stage and statelessly transform
- * individual items in it. Examples are {@code map}, {@code filter}, and
- * {@code flatMap}.
+ * Basic transformations have a single upstream stage and statelessly
+ * transform individual items in it. Examples are {@code map}, {@code
+ * filter}, and {@code flatMap}.
  *
  * <h3>Grouping and aggregation</h3>
  *
@@ -52,8 +52,8 @@
  * distinguishes the <em>primary</em> upstream stage from the <em>enriching
  * </em> stages. The source for an enriching stage is most typically a
  * key-value store (such as a Hazelcast {@code IMap}). Its data stream must
- * be finite and each item must have a distinct join key. The primary stage
- * may be infinite and contain duplicate keys.
+ * be finite and each item must have a distinct join key. The primary stage,
+ * on the other hand, may be infinite and contain duplicate keys.
  * <p>
  * For each of the enriching stages there is a separate pair of functions
  * to extract the joining key on both sides. For example, a {@code Trade}
@@ -63,8 +63,8 @@
  * transform.
  * <p>
  * Implementationally, the hash-join transform is optimized for throughput
- * so that each computing member holds on to all the enriching data, stored
- * in hashtables (hence the name). The enriching streams are consumed in
- * full before ingesting any data from the primary stream.
+ * so that each computing member has a local copy of all the enriching
+ * data, stored in hashtables (hence the name). The enriching streams are
+ * consumed in full before ingesting any data from the primary stream.
  */
 package com.hazelcast.jet.pipeline;

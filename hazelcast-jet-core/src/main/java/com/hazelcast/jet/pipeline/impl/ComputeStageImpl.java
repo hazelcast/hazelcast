@@ -16,24 +16,32 @@
 
 package com.hazelcast.jet.pipeline.impl;
 
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.pipeline.ComputeStage;
-import com.hazelcast.jet.pipeline.EndStage;
+import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.JoinClause;
-import com.hazelcast.jet.pipeline.MultiTransform;
+import com.hazelcast.jet.pipeline.impl.transform.MultiTransform;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Source;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.Transform;
-import com.hazelcast.jet.pipeline.Transforms;
-import com.hazelcast.jet.pipeline.UnaryTransform;
+import com.hazelcast.jet.pipeline.impl.transform.UnaryTransform;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.datamodel.Tuple3;
+import com.hazelcast.jet.pipeline.impl.transform.CoGroupTransform;
+import com.hazelcast.jet.pipeline.impl.transform.FilterTransform;
+import com.hazelcast.jet.pipeline.impl.transform.FlatMapTransform;
+import com.hazelcast.jet.pipeline.impl.transform.GroupByTransform;
+import com.hazelcast.jet.pipeline.impl.transform.HashJoinTransform;
+import com.hazelcast.jet.pipeline.impl.transform.MapTransform;
+import com.hazelcast.jet.pipeline.impl.transform.ProcessorTransform;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -61,24 +69,24 @@ public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E
 
     @Override
     public <R> ComputeStage<R> map(DistributedFunction<? super E, ? extends R> mapFn) {
-        return attach(Transforms.map(mapFn));
+        return attach(new MapTransform<>(mapFn));
     }
 
     @Override
     public ComputeStage<E> filter(DistributedPredicate<E> filterFn) {
-        return attach(Transforms.filter(filterFn));
+        return attach(new FilterTransform<>(filterFn));
     }
 
     @Override
     public <R> ComputeStage<R> flatMap(DistributedFunction<? super E, Traverser<? extends R>> flatMapFn) {
-        return attach(Transforms.flatMap(flatMapFn));
+        return attach(new FlatMapTransform<>(flatMapFn));
     }
 
     @Override
     public <K, R> ComputeStage<Entry<K, R>> groupBy(
             DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<E, ?, R> aggrOp
     ) {
-        return attach(Transforms.groupBy(keyFn, aggrOp));
+        return attach(new GroupByTransform<>(keyFn, aggrOp));
     }
 
     @Override
@@ -86,7 +94,7 @@ public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E
     public <K, E1_IN, E1> ComputeStage<Tuple2<E, E1>> hashJoin(
             ComputeStage<E1_IN> stage1, JoinClause<K, E, E1_IN, E1> joinClause
     ) {
-        return attach(Transforms.hashJoin(joinClause), singletonList(stage1));
+        return attach(new HashJoinTransform<E>(singletonList(joinClause), emptyList()), singletonList(stage1));
     }
 
     @Override
@@ -95,28 +103,28 @@ public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E
             ComputeStage<E1_IN> stage1, JoinClause<K1, E, E1_IN, E1> joinClause1,
             ComputeStage<E2_IN> stage2, JoinClause<K2, E, E2_IN, E2> joinClause2
     ) {
-        return attach(Transforms.hashJoin(joinClause1, joinClause2), asList(stage1, stage2));
+        return attach(new HashJoinTransform<E>(asList(joinClause1, joinClause2), emptyList()), asList(stage1, stage2));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <K, A, E1, R> ComputeStage<Tuple2<K, R>> coGroup(
             DistributedFunction<? super E, ? extends K> thisKeyFn,
-            ComputeStage<E1> s1, DistributedFunction<? super E1, ? extends K> key1Fn,
+            ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
             AggregateOperation2<E, E1, A, R> aggrOp
     ) {
-        return attach(Transforms.coGroup(thisKeyFn, key1Fn, aggrOp), singletonList(s1));
+        return attach(new CoGroupTransform<K, A, R>(asList(thisKeyFn, key1Fn), aggrOp), singletonList(stage1));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <K, A, E1, E2, R> ComputeStage<Tuple2<K, R>> coGroup(
             DistributedFunction<? super E, ? extends K> thisKeyFn,
-            ComputeStage<E1> s1, DistributedFunction<? super E1, ? extends K> key1Fn,
-            ComputeStage<E2> s2, DistributedFunction<? super E2, ? extends K> key2Fn,
+            ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
+            ComputeStage<E2> stage2, DistributedFunction<? super E2, ? extends K> key2Fn,
             AggregateOperation3<E, E1, E2, A, R> aggrOp
     ) {
-        return attach(Transforms.coGroup(thisKeyFn, key1Fn, key2Fn, aggrOp), asList(s1, s2));
+        return attach(new CoGroupTransform<K, A, R>(asList(thisKeyFn, key1Fn, key2Fn), aggrOp), asList(stage1, stage2));
     }
 
     private <R> ComputeStage<R> attach(UnaryTransform<? super E, R> unaryTransform) {
@@ -130,7 +138,12 @@ public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E
     }
 
     @Override
-    public EndStage drainTo(Sink sink) {
+    public SinkStage drainTo(Sink sink) {
         return pipelineImpl.drainTo(this, sink);
+    }
+
+    @Override
+    public <R> ComputeStage<R> customTransform(String stageName, DistributedSupplier<Processor> procSupplier) {
+        return attach(new ProcessorTransform<E, R>(stageName, procSupplier));
     }
 }

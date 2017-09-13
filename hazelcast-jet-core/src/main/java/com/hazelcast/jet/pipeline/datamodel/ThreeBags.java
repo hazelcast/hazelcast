@@ -26,6 +26,10 @@ import java.util.List;
  * A container of three bags (collections), each with its own element
  * type. Bags are identified by their index: 0, 1, and 2. Useful as
  * a container of co-grouped data.
+ *
+ * @param <E0> type of items in bag-0
+ * @param <E1> type of items in bag-1
+ * @param <E2> type of items in bag-2
  */
 public class ThreeBags<E0, E1, E2> implements Serializable {
     private final Collection<E0> bag0;
@@ -69,6 +73,10 @@ public class ThreeBags<E0, E1, E2> implements Serializable {
         return bag2;
     }
 
+    /**
+     * Combines this and the supplied container by merging all the supplied
+     * container's data into this one. Leaves the supplied container unchanged.
+     */
     public void combineWith(ThreeBags<E0, E1, E2> that) {
         bag0.addAll(that.bag0());
         bag1.addAll(that.bag1());

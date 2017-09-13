@@ -16,6 +16,14 @@
 
 package com.hazelcast.jet.pipeline;
 
+/**
+ * A transform that takes no input streams and produces an output stream.
+ *
+ * @param <E> the stream item type
+ */
 public interface Source<E> extends Transform {
+    /**
+     * Returns the name of this source.
+     */
     String name();
 }

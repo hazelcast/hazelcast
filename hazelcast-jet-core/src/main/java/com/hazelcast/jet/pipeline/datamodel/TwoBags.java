@@ -25,6 +25,9 @@ import java.util.Collection;
  * A container of two bags (collections), each with its own element
  * type. Bags are identified by their index: 0 and 1. Useful as
  * a container of co-grouped data.
+ *
+ * @param <E0> type of items in bag-0
+ * @param <E1> type of items in bag-1
  */
 public class TwoBags<E0, E1> implements Serializable {
     private final Collection<E0> bag0;

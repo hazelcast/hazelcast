@@ -18,7 +18,6 @@ package com.hazelcast.jet.pipeline.impl.transform;
 
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.pipeline.UnaryTransform;
 
 /**
  * A unary transform constructed directly from a provided Core API

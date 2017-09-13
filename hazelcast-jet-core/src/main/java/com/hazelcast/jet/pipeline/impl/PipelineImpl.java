@@ -17,14 +17,14 @@
 package com.hazelcast.jet.pipeline.impl;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.pipeline.MultiTransform;
-import com.hazelcast.jet.pipeline.EndStage;
+import com.hazelcast.jet.pipeline.impl.transform.MultiTransform;
+import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.ComputeStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Source;
 import com.hazelcast.jet.pipeline.Stage;
-import com.hazelcast.jet.pipeline.UnaryTransform;
+import com.hazelcast.jet.pipeline.impl.transform.UnaryTransform;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -60,8 +60,8 @@ public class PipelineImpl implements Pipeline {
         return attached;
     }
 
-    public <E> EndStage drainTo(ComputeStage<E> upstream, Sink sink) {
-        EndStageImpl output = new EndStageImpl(upstream, sink, this);
+    public <E> SinkStage drainTo(ComputeStage<E> upstream, Sink sink) {
+        SinkStageImpl output = new SinkStageImpl(upstream, sink, this);
         connect(upstream, output);
         return output;
     }
