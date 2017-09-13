@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,8 +43,8 @@ import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
+import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -62,15 +61,6 @@ public class CacheCreationTest {
 
     private static final int THREAD_COUNT = 4;
 
-    private static Config hzConfig;
-
-    @BeforeClass
-    public static void init() throws Exception {
-        final URL configUrl = CacheCreationTest.class.getClassLoader().getResource("test-hazelcast-real-jcache.xml");
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(configUrl.getFile());
-        hzConfig = configBuilder.build();
-    }
-
     @Before
     @After
     public void killAllHazelcastInstances() throws Exception {
@@ -79,7 +69,7 @@ public class CacheCreationTest {
 
     @Test
     public void createSingleCache() throws URISyntaxException {
-        CachingProvider cachingProvider = createCachingProvider(hzConfig);
+        CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache" + 1);
         cache.get(1);
     }
@@ -93,7 +83,7 @@ public class CacheCreationTest {
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    CachingProvider cachingProvider = createCachingProvider(hzConfig);
+                    CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
                     Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache");
                     cache.get(1);
                     latch.countDown();
@@ -114,7 +104,7 @@ public class CacheCreationTest {
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    CachingProvider cachingProvider = createCachingProvider(hzConfig);
+                    CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
                     Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
                     cache.get(1);
                     latch.countDown();
@@ -153,6 +143,12 @@ public class CacheCreationTest {
     protected CachingProvider createCachingProvider(Config hzConfig) {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
         return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+    }
+
+    private Config getDeclarativeConfig() {
+        InputStream config = CacheCreationTest.class.getClassLoader().getResourceAsStream("test-hazelcast-real-jcache.xml");
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(config);
+        return configBuilder.build();
     }
 
     // fails on OS due to NATIVE in-memory format, on EE due to invalid eviction config for NATIVE memory
