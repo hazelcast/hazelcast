@@ -200,6 +200,14 @@ public abstract class AtomicLongAbstractTest extends HazelcastTestSupport {
         assertEquals(11, atomicLong.get());
     }
 
+    @Test
+    public void testDestroy() {
+        atomicLong.set(23);
+        atomicLong.destroy();
+
+        assertEquals(0, atomicLong.get());
+    }
+
     private static class AddOneFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
