@@ -179,12 +179,9 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        assertTrue(client.getLifecycleService().isRunning());
-
-        hazelcastInstance.shutdown();
 
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
@@ -195,8 +192,11 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
             }
         });
 
+        hazelcastInstance.shutdown();
+
         hazelcastFactory.newHazelcastInstance();
 
+        assertTrue(client.getLifecycleService().isRunning());
         assertOpenEventually(reconnectedLatch);
 
         client.getMap(randomMapName());
