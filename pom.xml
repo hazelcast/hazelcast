@@ -591,6 +591,9 @@
                             <includes>
                                 <include>**/*.java</include>
                             </includes>
+                            <excludes>
+                                <exclude>**/**IT.java</exclude>
+                            </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
                                 com.hazelcast.test.annotation.SlowTest
@@ -987,6 +990,7 @@
                                 <include>**/**.java</include>
                             </includes>
                             <excludes>
+                                <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
                             </excludes>
                             <groups>
