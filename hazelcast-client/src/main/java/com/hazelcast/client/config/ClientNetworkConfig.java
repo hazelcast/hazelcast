@@ -21,7 +21,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,8 +45,6 @@ public class ClientNetworkConfig {
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
     private DiscoveryConfig discoveryConfig;
-    private Collection<String> outboundPortDefinitions;
-    private Collection<Integer> outboundPorts;
 
     /**
      * Returns the configuration of the Hazelcast Discovery SPI and configured discovery providers
