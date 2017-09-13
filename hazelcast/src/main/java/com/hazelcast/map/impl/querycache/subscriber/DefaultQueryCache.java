@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.NodeInvokerWrapper;
-import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
@@ -189,24 +188,25 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         if (invokerWrapper instanceof NodeInvokerWrapper) {
+            subscriberContext.getEventService().removePublisherListener(mapName, publisherListenerId);
+
             Collection<Member> memberList = context.getMemberList();
             for (Member member : memberList) {
                 Address address = member.getAddress();
-                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheName);
+                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheId);
                 invokerWrapper.invokeOnTarget(removePublisher, address);
             }
         } else {
             try {
                 subscriberContext.getEventService().removePublisherListener(mapName, publisherListenerId);
             } finally {
-                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheName);
+                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheId);
                 invokerWrapper.invoke(removePublisher);
             }
         }
     }
 
     private boolean destroyLocalResources() {
-        removeConfig();
         removeAccumulatorInfo();
         removeSubscriberRegistry();
         return removeInternalQueryCache();
@@ -230,16 +230,10 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         accumulatorInfoSupplier.remove(mapName, cacheId);
     }
 
-    private void removeConfig() {
-        SubscriberContext subscriberContext = context.getSubscriberContext();
-        QueryCacheConfigurator queryCacheConfigurator = subscriberContext.geQueryCacheConfigurator();
-        queryCacheConfigurator.removeConfiguration(mapName, cacheName);
-    }
-
     private boolean removeInternalQueryCache() {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         QueryCacheEndToEndProvider cacheProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        cacheProvider.remove(mapName, cacheName);
+        cacheProvider.removeSingleQueryCache(mapName, cacheId);
         clear();
         return subscriberContext.getQueryCacheFactory().remove(this);
     }

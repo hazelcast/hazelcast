@@ -118,11 +118,10 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -148,7 +147,6 @@ import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.UuidUtil;
@@ -1487,12 +1485,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
 
     @SuppressWarnings("unchecked")
     private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
-        ConstructorFunction<String, InternalQueryCache> constructorFunction
-                = new ClientQueryCacheEndToEndConstructor(request);
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(),
-                request.getCacheName(), constructorFunction);
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
+                new ClientQueryCacheEndToEndConstructor(request));
     }
 
     @Override
@@ -1780,7 +1776,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         try {
             SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
             QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
-            provider.removeQueryCachesOfMap(name);
+            provider.destroyAllQueryCaches(name);
         } finally {
             super.onDestroy();
         }
