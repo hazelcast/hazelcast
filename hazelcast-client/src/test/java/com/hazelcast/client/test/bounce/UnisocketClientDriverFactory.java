@@ -19,6 +19,7 @@ package com.hazelcast.client.test.bounce;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.Address;
 
 import java.net.InetSocketAddress;
 
@@ -46,10 +47,9 @@ public class UnisocketClientDriverFactory extends AbstractClientDriverFactory {
         config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         config.getNetworkConfig().setSmartRouting(false);
 
-        InetSocketAddress socketAddress = member.getCluster().getLocalMember().getSocketAddress();
+        Address address = member.getCluster().getLocalMember().getAddress();
 
-        config.getNetworkConfig().
-                addAddress(socketAddress.getHostName() + ":" + socketAddress.getPort());
+        config.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
 
         return config;
     }

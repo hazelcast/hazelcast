@@ -54,7 +54,7 @@ public class ClientStateListener
      *
      * @param clientConfig The client configuration to which this listener will be registered
      */
-    ClientStateListener(ClientConfig clientConfig) {
+    public ClientStateListener(ClientConfig clientConfig) {
         clientConfig.addListenerConfig(new ListenerConfig(this));
     }
 

@@ -17,18 +17,13 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
-
-import static com.hazelcast.util.AddressUtil.getPossibleInetAddressesFor;
 
 /**
  * This is a client side utility class for working with addresses and cluster connections
@@ -41,7 +36,7 @@ public final class AddressHelper {
     private AddressHelper() {
     }
 
-    public static Collection<InetSocketAddress> getSocketAddresses(String address) {
+    public static Collection<Address> getSocketAddresses(String address) {
         final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         final String scopedAddress = addressHolder.getScopeId() != null
                 ? addressHolder.getAddress() + '%' + addressHolder.getScopeId()
@@ -55,37 +50,21 @@ public final class AddressHelper {
         return getPossibleSocketAddresses(port, scopedAddress, maxPortTryCount);
     }
 
-    public static Collection<InetSocketAddress> getPossibleSocketAddresses(int port, String scopedAddress,
+    public static Collection<Address> getPossibleSocketAddresses(int port, String scopedAddress,
                                                                            int portTryCount) {
-        InetAddress inetAddress = null;
-        try {
-            inetAddress = InetAddress.getByName(scopedAddress);
-        } catch (UnknownHostException ignored) {
-            Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
-        }
-
         int possiblePort = port;
         if (possiblePort == -1) {
             possiblePort = INITIAL_FIRST_PORT;
         }
-        final Collection<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-        if (inetAddress == null) {
-            for (int i = 0; i < portTryCount; i++) {
-                socketAddresses.add(new InetSocketAddress(scopedAddress, possiblePort + i));
-            }
-        } else if (inetAddress instanceof Inet4Address) {
-            for (int i = 0; i < portTryCount; i++) {
-                socketAddresses.add(new InetSocketAddress(inetAddress, possiblePort + i));
-            }
-        } else if (inetAddress instanceof Inet6Address) {
-            final Collection<Inet6Address> addresses = getPossibleInetAddressesFor((Inet6Address) inetAddress);
-            for (Inet6Address inet6Address : addresses) {
-                for (int i = 0; i < portTryCount; i++) {
-                    socketAddresses.add(new InetSocketAddress(inet6Address, possiblePort + i));
-                }
+        final Collection<Address> addresses = new LinkedList<Address>();
+        for (int i = 0; i < portTryCount; i++) {
+            try {
+                addresses.add(new Address(scopedAddress, possiblePort + i));
+            } catch (UnknownHostException ignored) {
+                Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
             }
         }
 
-        return socketAddresses;
+        return addresses;
     }
 }
