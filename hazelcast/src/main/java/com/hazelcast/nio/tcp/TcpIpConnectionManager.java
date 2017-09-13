@@ -231,7 +231,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             return false;
         }
 
-        connection.setEndPoint(remoteEndPoint);
+        //connection.setEndPoint(remoteEndPoint);
         ioService.onSuccessfulConnection(remoteEndPoint);
         if (reply) {
             sendBindRequest(connection, remoteEndPoint, false);
@@ -302,18 +302,18 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             if (connection instanceof TcpIpConnection) {
                 TcpIpConnection tcpConnection = (TcpIpConnection) connection;
                 Address currentEndPoint = tcpConnection.getEndPoint();
-                if (currentEndPoint != null && !currentEndPoint.equals(remoteEndPoint)) {
-                    throw new IllegalArgumentException(connection + " has already a different endpoint than: "
-                            + remoteEndPoint);
-                }
-                tcpConnection.setEndPoint(remoteEndPoint);
+//                if (currentEndPoint != null && !currentEndPoint.equals(remoteEndPoint)) {
+//                    throw new IllegalArgumentException(connection + " has already a different endpoint than: "
+//                            + remoteEndPoint);
+//                }
+//                tcpConnection.setEndPoint(remoteEndPoint);
 
                 if (!connection.isClient()) {
                     TcpIpConnectionErrorHandler connectionMonitor = getErrorHandler(remoteEndPoint, true);
                     tcpConnection.setErrorHandler(connectionMonitor);
                 }
             }
-            connectionsMap.put(remoteEndPoint, connection);
+            connectionsMap.put(connection.getEndPoint(), connection);
 
             ioService.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
