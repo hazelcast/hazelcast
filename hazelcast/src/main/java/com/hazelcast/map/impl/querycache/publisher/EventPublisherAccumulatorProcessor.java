@@ -47,7 +47,7 @@ public class EventPublisherAccumulatorProcessor implements AccumulatorProcessor<
 
     @Override
     public void process(Sequenced sequenced) {
-        String listenerName = generateListenerName(info.getMapName(), info.getCacheName());
+        String listenerName = generateListenerName(info.getMapName(), info.getCacheId());
         eventService.sendEventToSubscriber(listenerName, sequenced, sequenced.getPartitionId());
 
         if (logger.isFinestEnabled()) {

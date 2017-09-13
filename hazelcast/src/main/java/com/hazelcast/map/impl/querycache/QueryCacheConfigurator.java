@@ -25,25 +25,25 @@ import com.hazelcast.config.QueryCacheConfig;
 public interface QueryCacheConfigurator {
 
     /**
-     * Returns {@link QueryCacheConfig} for the requested query cache with cacheName.
+     * Returns {@link QueryCacheConfig} for the requested {@code cacheName}
      *
      * @param mapName   underlying IMap name for query cache.
      * @param cacheName query cache name.
-     * @return {@link QueryCacheConfig} for the requested #cacheName.
+     * @return {@link QueryCacheConfig} for the requested {@code cacheName}.
      */
     QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName);
 
     /**
-     * Returns {@link QueryCacheConfig} for the requested query cache with cacheName or null.
+     * Returns {@link QueryCacheConfig} for the requested {@code cacheName} or null
      *
      * @param mapName   underlying IMap name for query cache.
      * @param cacheName query cache name.
-     * @return {@link QueryCacheConfig} for the requested #cacheName.
+     * @return {@link QueryCacheConfig} for the requested {@code cacheName}.
      */
     QueryCacheConfig getOrNull(String mapName, String cacheName);
 
     /**
-     * Removes corresponding configuration for the supplied cache name.
+     * Removes corresponding configuration for the supplied {@code cacheName}
      *
      * @param mapName   underlying IMap name for query cache.
      * @param cacheName query cache name.

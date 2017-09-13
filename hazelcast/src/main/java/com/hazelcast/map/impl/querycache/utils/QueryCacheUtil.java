@@ -37,8 +37,8 @@ public final class QueryCacheUtil {
     /**
      * Returns accumulators of a {@code QueryCache}.
      */
-    public static Map<Integer, Accumulator> getAccumulators(QueryCacheContext context, String mapName, String cacheName) {
-        PartitionAccumulatorRegistry partitionAccumulatorRegistry = getAccumulatorRegistryOrNull(context, mapName, cacheName);
+    public static Map<Integer, Accumulator> getAccumulators(QueryCacheContext context, String mapName, String cacheId) {
+        PartitionAccumulatorRegistry partitionAccumulatorRegistry = getAccumulatorRegistryOrNull(context, mapName, cacheId);
         if (partitionAccumulatorRegistry == null) {
             return Collections.emptyMap();
         }
@@ -51,14 +51,14 @@ public final class QueryCacheUtil {
      * @see PartitionAccumulatorRegistry
      */
     public static PartitionAccumulatorRegistry getAccumulatorRegistryOrNull(QueryCacheContext context,
-                                                                            String mapName, String cacheName) {
+                                                                            String mapName, String cacheId) {
         PublisherContext publisherContext = context.getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
         PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrNull(mapName);
         if (publisherRegistry == null) {
             return null;
         }
-        return publisherRegistry.getOrNull(cacheName);
+        return publisherRegistry.getOrNull(cacheId);
     }
 
     /**
@@ -67,8 +67,8 @@ public final class QueryCacheUtil {
      * @see Accumulator
      */
     public static Accumulator getAccumulatorOrNull(QueryCacheContext context,
-                                                   String mapName, String cacheName, int partitionId) {
-        PartitionAccumulatorRegistry accumulatorRegistry = getAccumulatorRegistryOrNull(context, mapName, cacheName);
+                                                   String mapName, String cacheId, int partitionId) {
+        PartitionAccumulatorRegistry accumulatorRegistry = getAccumulatorRegistryOrNull(context, mapName, cacheId);
         if (accumulatorRegistry == null) {
             return null;
         }

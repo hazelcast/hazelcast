@@ -34,13 +34,13 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 class DefaultQueryCacheRequest implements QueryCacheRequest {
 
     private IMap map;
-    private String cacheName;
     private Predicate predicate;
     private Boolean includeValue;
     private MapListener listener;
     private QueryCacheContext context;
     private String mapName;
-    private String userGivenCacheName;
+    private String cacheId;
+    private String cacheName;
 
     DefaultQueryCacheRequest() {
     }
@@ -53,14 +53,14 @@ class DefaultQueryCacheRequest implements QueryCacheRequest {
     }
 
     @Override
-    public QueryCacheRequest withCacheName(String cacheName) {
-        this.cacheName = checkHasText(cacheName, "cacheName");
+    public QueryCacheRequest withCacheId(String cacheId) {
+        this.cacheId = checkHasText(cacheId, "cacheId");
         return this;
     }
 
     @Override
-    public QueryCacheRequest withUserGivenCacheName(String userGivenCacheName) {
-        this.userGivenCacheName = checkHasText(userGivenCacheName, "userGivenCacheName");
+    public QueryCacheRequest withCacheName(String cacheName) {
+        this.cacheName = checkHasText(cacheName, "cacheName");
         return this;
     }
 
@@ -101,13 +101,13 @@ class DefaultQueryCacheRequest implements QueryCacheRequest {
     }
 
     @Override
-    public String getCacheName() {
-        return cacheName;
+    public String getCacheId() {
+        return cacheId;
     }
 
     @Override
-    public String getUserGivenCacheName() {
-        return userGivenCacheName;
+    public String getCacheName() {
+        return cacheName;
     }
 
     @Override

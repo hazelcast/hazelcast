@@ -43,8 +43,8 @@ public class SubscriberRegistry implements Registry<String, Accumulator> {
     private final ConstructorFunction<String, Accumulator> accumulatorConstructor =
             new ConstructorFunction<String, Accumulator>() {
                 @Override
-                public Accumulator createNew(String cacheName) {
-                    AccumulatorInfo info = getAccumulatorInfo(cacheName);
+                public Accumulator createNew(String cacheId) {
+                    AccumulatorInfo info = getAccumulatorInfo(cacheId);
                     checkNotNull(info, "info cannot be null");
 
                     AccumulatorFactory accumulatorFactory = createSubscriberAccumulatorFactory();
@@ -63,13 +63,13 @@ public class SubscriberRegistry implements Registry<String, Accumulator> {
     }
 
     @Override
-    public Accumulator getOrCreate(String cacheName) {
-        return getOrPutIfAbsent(accumulators, cacheName, accumulatorConstructor);
+    public Accumulator getOrCreate(String cacheId) {
+        return getOrPutIfAbsent(accumulators, cacheId, accumulatorConstructor);
     }
 
     @Override
-    public Accumulator getOrNull(String cacheName) {
-        return accumulators.get(cacheName);
+    public Accumulator getOrNull(String cacheId) {
+        return accumulators.get(cacheId);
     }
 
     @Override
@@ -78,14 +78,14 @@ public class SubscriberRegistry implements Registry<String, Accumulator> {
     }
 
     @Override
-    public Accumulator remove(String cacheName) {
-        return accumulators.remove(cacheName);
+    public Accumulator remove(String cacheId) {
+        return accumulators.remove(cacheId);
     }
 
-    private AccumulatorInfo getAccumulatorInfo(String cacheName) {
+    private AccumulatorInfo getAccumulatorInfo(String cacheId) {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         AccumulatorInfoSupplier infoSupplier = subscriberContext.getAccumulatorInfoSupplier();
-        return infoSupplier.getAccumulatorInfoOrNull(mapName, cacheName);
+        return infoSupplier.getAccumulatorInfoOrNull(mapName, cacheId);
     }
 
     protected SubscriberAccumulatorFactory createSubscriberAccumulatorFactory() {

@@ -63,7 +63,7 @@ public class NodeQueryCacheContextTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("unchecked")
     public void testInvokerWrapper_invokeOnAllPartitions() throws Exception {
-        MadePublishableOperationFactory factory = new MadePublishableOperationFactory("mapName", "cacheName");
+        MadePublishableOperationFactory factory = new MadePublishableOperationFactory("mapName", "cacheId");
 
         Map<Integer, Object> result = (Map<Integer, Object>) context.getInvokerWrapper().invokeOnAllPartitions(factory);
         assertEquals(partitionCount, result.size());

@@ -30,8 +30,8 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Holds id's of registered listeners which are registered to listen underlying
  * {@code IMap} events to feed {@link com.hazelcast.map.QueryCache QueryCache}.
- * <p/>
- * This class contains mappings like: cacheName ---> registered listener ids for underlying {@code IMap}.
+ * <p>
+ * This class contains mappings like: cacheId ---> registered listener IDs for underlying {@code IMap}.
  */
 public class QueryCacheListenerRegistry implements Registry<String, String> {
 
@@ -55,13 +55,13 @@ public class QueryCacheListenerRegistry implements Registry<String, String> {
     }
 
     @Override
-    public String getOrCreate(String cacheName) {
-        return ConcurrencyUtil.getOrPutIfAbsent(listeners, cacheName, registryConstructorFunction);
+    public String getOrCreate(String cacheId) {
+        return ConcurrencyUtil.getOrPutIfAbsent(listeners, cacheId, registryConstructorFunction);
     }
 
     @Override
-    public String getOrNull(String cacheName) {
-        return listeners.get(cacheName);
+    public String getOrNull(String cacheId) {
+        return listeners.get(cacheId);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class QueryCacheListenerRegistry implements Registry<String, String> {
     }
 
     @Override
-    public String remove(String cacheName) {
-        return listeners.remove(cacheName);
+    public String remove(String cacheId) {
+        return listeners.remove(cacheId);
     }
 }

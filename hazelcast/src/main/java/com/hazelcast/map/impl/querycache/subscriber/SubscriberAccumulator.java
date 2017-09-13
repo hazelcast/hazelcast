@@ -131,7 +131,7 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
 
     private void handleUnexpectedEvent(QueryCacheEventData event) {
         addEventSequenceToBrokenSequences(event);
-        publishEventLost(context, info.getMapName(), info.getCacheName(), event.getPartitionId());
+        publishEventLost(context, info.getMapName(), info.getCacheId(), event.getPartitionId());
     }
 
     private void addEventSequenceToBrokenSequences(QueryCacheEventData event) {
@@ -166,10 +166,10 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
 
     private InternalQueryCache getQueryCache() {
         AccumulatorInfo info = getInfo();
-        String cacheName = info.getCacheName();
+        String cacheId = info.getCacheId();
         SubscriberContext subscriberContext = context.getSubscriberContext();
         QueryCacheFactory queryCacheFactory = subscriberContext.getQueryCacheFactory();
-        return queryCacheFactory.getOrNull(cacheName);
+        return queryCacheFactory.getOrNull(cacheId);
     }
 
     private SubscriberAccumulatorHandler createAccumulatorHandler() {

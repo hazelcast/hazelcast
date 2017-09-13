@@ -39,7 +39,7 @@ import java.util.Set;
  *
  *     IMap map = hzInstance.getMap("mapName");
  *     Predicate predicate = TruePredicate.INSTANCE;
- *     QueryCache cache = map.getQueryCache(cacheName, predicate, includeValue);
+ *     QueryCache cache = map.getQueryCache(cacheId, predicate, includeValue);
  *
  * </code>
  * </pre>
