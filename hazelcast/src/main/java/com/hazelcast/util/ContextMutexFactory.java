@@ -22,21 +22,21 @@ import java.util.Map;
 
 /**
  * Provides reference-counted mutexes suitable for synchronization in the context of a supplied object.
- *
+ * <p>
  * Context objects and their associated mutexes are stored in a {@link Map}. Client code is responsible to invoke
  * {@link Mutex#close()} on the obtained {@link Mutex} after having synchronized on the mutex; failure to do so
  * will leave an entry residing in the internal {@link Map} which may have adverse effects on the ability to garbage
  * collect the context object and the mutex.
- *
+ * <p>
  * The returned {@link Mutex}es implement {@link Closeable}, so can be conveniently used in a try-with-resources statement.
- *
+ * <p>
  * Typical usage would allow, for example, synchronizing access to a non-thread-safe {@link Map} on a per-key basis,
  * to avoid blocking other threads who would perform updates on other entries of the {@link Map}.
  *
  * <pre>
  *     class Test {
  *
- *         private static final ContextMutexFactory mutexFactory = new ContextMutexFactory();
+ *         private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
  *         private final Map&lt;String, String&gt; mapToSync = new HashMap&lt;String, String&gt;();
  *
  *         public void test(String key, String value) {
@@ -48,8 +48,7 @@ import java.util.Map;
  *                          mapToSync.put(key, value);
  *                      }
  *                 }
- *             }
- *             finally {
+ *             } finally {
  *                 mutex.close();
  *             }
  *         }
