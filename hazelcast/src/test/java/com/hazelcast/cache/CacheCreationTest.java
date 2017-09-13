@@ -44,17 +44,16 @@ import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class CacheCreationTest {
+public class CacheCreationTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -63,19 +62,19 @@ public class CacheCreationTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws Exception {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.shutdownAll();
     }
 
     @Test
-    public void createSingleCache() throws URISyntaxException {
+    public void createSingleCache() {
         CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache" + 1);
         cache.get(1);
     }
 
     @Test
-    public void createOrGetConcurrentlySingleCache_fromMultiProviders() throws URISyntaxException, InterruptedException {
+    public void createOrGetConcurrentlySingleCache_fromMultiProviders() {
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_COUNT);
 
         final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
@@ -90,12 +89,12 @@ public class CacheCreationTest {
                 }
             });
         }
-        HazelcastTestSupport.assertOpenEventually(latch);
+        assertOpenEventually(latch);
         executorService.shutdown();
     }
 
     @Test
-    public void createConcurrentlyMultipleCaches_fromMultipleProviders() throws Exception {
+    public void createConcurrentlyMultipleCaches_fromMultipleProviders() {
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_COUNT);
 
         final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
@@ -111,7 +110,7 @@ public class CacheCreationTest {
                 }
             });
         }
-        HazelcastTestSupport.assertOpenEventually(latch);
+        assertOpenEventually(latch);
         executorService.shutdown();
     }
 
@@ -120,24 +119,27 @@ public class CacheCreationTest {
         Config config = createInvalidConfig();
         CachingProvider cachingProvider = createCachingProvider(config);
         CacheManager defaultCacheManager = cachingProvider.getCacheManager();
+
         thrown.expect(IllegalArgumentException.class);
-        Cache cache = defaultCacheManager.getCache("test");
+        defaultCacheManager.getCache("test");
     }
 
     @Test
     public void createInvalidCache_throwsException_fromCacheManager_createCache() {
         CachingProvider cachingProvider = createCachingProvider(createBasicConfig());
         CacheManager defaultCacheManager = cachingProvider.getCacheManager();
+
         thrown.expect(IllegalArgumentException.class);
-        Cache cache = defaultCacheManager.createCache("test", createInvalidCacheConfig());
+        defaultCacheManager.createCache("test", createInvalidCacheConfig());
     }
 
     @Test
     public void createInvalidCache_fromDeclarativeConfig_throwsException_fromHazelcastInstanceCreation() {
         System.setProperty("hazelcast.config", "classpath:test-hazelcast-invalid-cache.xml");
         CachingProvider cachingProvider = Caching.getCachingProvider();
+
         thrown.expect(CacheException.class);
-        CacheManager defaultCacheManager = cachingProvider.getCacheManager();
+        cachingProvider.getCacheManager();
     }
 
     protected CachingProvider createCachingProvider(Config hzConfig) {
@@ -153,26 +155,28 @@ public class CacheCreationTest {
 
     // fails on OS due to NATIVE in-memory format, on EE due to invalid eviction config for NATIVE memory
     private Config createInvalidConfig() {
-        Config config = createBasicConfig();
-        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
-        cacheSimpleConfig.setName("test");
-        cacheSimpleConfig.setInMemoryFormat(InMemoryFormat.NATIVE);
-        cacheSimpleConfig.setEvictionConfig(new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU));
-        config.addCacheConfig(cacheSimpleConfig);
-        return config;
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
+                .setName("test")
+                .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setEvictionConfig(new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU));
+
+        return createBasicConfig()
+                .addCacheConfig(cacheSimpleConfig);
     }
 
     private CacheConfig createInvalidCacheConfig() {
-        CacheConfig cacheConfig = new CacheConfig("test");
-        cacheConfig.setInMemoryFormat(InMemoryFormat.NATIVE);
-        cacheConfig.setEvictionConfig(new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU));
-        return cacheConfig;
+        return new CacheConfig("test")
+                .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setEvictionConfig(new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU));
     }
 
     private Config createBasicConfig() {
         Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setMembers(Arrays.asList("127.0.0.1"));
+        config.getNetworkConfig().getJoin().getMulticastConfig()
+                .setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig()
+                .setEnabled(true)
+                .setMembers(singletonList("127.0.0.1"));
         return config;
     }
 }
