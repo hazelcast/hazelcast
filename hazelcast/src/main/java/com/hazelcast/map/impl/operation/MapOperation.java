@@ -34,7 +34,6 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.List;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public abstract class MapOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ServiceNamespaceAware {
@@ -159,10 +158,6 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         } else {
             return partitionContainer.getExistingRecordStore(name);
         }
-    }
-
-    protected boolean isNativeInMemoryFormat() {
-        return mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE);
     }
 
     @Override

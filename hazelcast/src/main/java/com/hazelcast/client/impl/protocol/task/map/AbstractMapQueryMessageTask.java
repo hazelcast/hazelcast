@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
@@ -34,6 +35,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -137,6 +139,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             createInvocationsForMissingPartitions(missingList, missingFutures, predicate);
             collectResultsFromMissingPartitions(finishedPartitions, result, missingFutures);
         }
+        assertAllPartitionsQueried(finishedPartitions, partitionCount);
     }
 
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
@@ -156,7 +159,10 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                         .invoke();
                 futures.add(future);
             } catch (Throwable t) {
-                if (t.getCause() instanceof QueryResultSizeExceededException) {
+                if (!(t instanceof HazelcastException)) {
+                    // these are programmatic errors that needs to be visible
+                    throw rethrow(t);
+                } else if (t.getCause() instanceof QueryResultSizeExceededException) {
                     throw rethrow(t);
                 } else {
                     // log failure to invoke query on member at fine level
@@ -173,7 +179,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     private Query buildQuery(Predicate predicate) {
         Query.QueryBuilder builder = Query.of().mapName(getDistributedObjectName()).predicate(
                 predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate)
-                                          .iterationType(getIterationType());
+                .iterationType(getIterationType());
         if (getAggregator() != null) {
             builder = builder.aggregator(getAggregator());
         }
@@ -289,4 +295,18 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             return new QueryPartitionOperation(query);
         }
     }
+
+    private void assertAllPartitionsQueried(BitSet finishedPartitions, int partitionCount) {
+        if (hasMissingPartitions(finishedPartitions, partitionCount)) {
+            int missedPartitionsCount = 0;
+            for (int i = 0; i < partitionCount; i++) {
+                if (!finishedPartitions.get(i)) {
+                    missedPartitionsCount++;
+                }
+            }
+            throw new QueryException("Query aborted. Could not execute query for all partitions. Missed "
+                    + missedPartitionsCount + " partitions");
+        }
+    }
+
 }

@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
@@ -63,7 +64,6 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
         } else {
             result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
         }
-
     }
 
     private void runAsyncPartitionThreadScanForNative(QueryRunner queryRunner) {
@@ -146,6 +146,11 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
             return null;
         }
         return result;
+    }
+
+    private boolean isNativeInMemoryFormat() {
+        // the mapContainer may be null if the failure happens before the beforeRun of an operation (e.g. on quorum failure)
+        return mapContainer != null && mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE);
     }
 
     @Override

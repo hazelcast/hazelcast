@@ -217,12 +217,11 @@ public class QueryRunner {
                                                                      Collection<Integer> partitions, int migrationStamp)
             throws InterruptedException, ExecutionException {
 
-        Collection<QueryableEntry> entries;
         if (!validateMigrationStamp(migrationStamp)) {
             return null;
         }
 
-        entries = partitionScanExecutor.execute(name, predicate, partitions);
+        Collection<QueryableEntry> entries = partitionScanExecutor.execute(name, predicate, partitions);
 
         // If a migration is in progress or migration ownership changes, this means migrations were executed and we may
         // return stale data, so we should rather return null.
