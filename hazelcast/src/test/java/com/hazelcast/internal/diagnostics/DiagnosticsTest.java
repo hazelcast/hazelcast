@@ -22,12 +22,15 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Properties;
 
 import static java.lang.System.currentTimeMillis;
 import static org.junit.Assert.assertArrayEquals;
@@ -55,6 +58,25 @@ public class DiagnosticsTest extends HazelcastTestSupport {
                 Logger.getLogger(Diagnostics.class),
                 "hz",
                 nodeEngineImpl.getNode().getProperties());
+    }
+
+    @Test
+    public void whenFileNamePrefixSet() {
+        Properties properties = new Properties();
+        properties.put(Diagnostics.FILENAME_PREFIX.getName(), "foobar");
+        HazelcastProperties hzProperties = new HazelcastProperties(properties);
+
+        Diagnostics diagnostics = new Diagnostics("diagnostics", Logger.getLogger(Diagnostics.class), "hz", hzProperties);
+        assertEquals("foobar-diagnostics", diagnostics.baseFileName);
+    }
+
+    @Test
+    public void whenFileNamePrefixNotSet() {
+        Properties properties = new Properties();
+        HazelcastProperties hzProperties = new HazelcastProperties(properties);
+
+        Diagnostics diagnostics = new Diagnostics("diagnostics", Logger.getLogger(Diagnostics.class), "hz", hzProperties);
+        assertEquals("diagnostics", diagnostics.baseFileName);
     }
 
     @Test(expected = NullPointerException.class)

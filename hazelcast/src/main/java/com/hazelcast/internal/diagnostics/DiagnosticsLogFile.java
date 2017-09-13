@@ -63,7 +63,7 @@ final class DiagnosticsLogFile {
                 ? new SingleLineDiagnosticsLogWriter()
                 : new MultiLineDiagnosticsLogWriter();
         this.logger = diagnostics.logger;
-        this.fileName = diagnostics.fileName + "-%03d.log";
+        this.fileName = diagnostics.baseFileName + "-%03d.log";
 
         this.maxRollingFileCount = diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT);
         // we accept a float so it becomes easier to testing to create a small file
