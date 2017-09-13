@@ -21,9 +21,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
+
+import static com.hazelcast.util.AddressUtil.getPossibleInetAddressesFor;
 
 /**
  * This is a client side utility class for working with addresses and cluster connections
@@ -52,16 +57,37 @@ public final class AddressHelper {
 
     public static Collection<Address> getPossibleSocketAddresses(int port, String scopedAddress,
                                                                            int portTryCount) {
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getByName(scopedAddress);
+        } catch (UnknownHostException ignored) {
+            Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
+        }
+
         int possiblePort = port;
         if (possiblePort == -1) {
             possiblePort = INITIAL_FIRST_PORT;
         }
         final Collection<Address> addresses = new LinkedList<Address>();
-        for (int i = 0; i < portTryCount; i++) {
-            try {
-                addresses.add(new Address(scopedAddress, possiblePort + i));
-            } catch (UnknownHostException ignored) {
-                Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
+
+        if (inetAddress == null) {
+            for (int i = 0; i < portTryCount; i++) {
+                try {
+                    addresses.add(new Address(scopedAddress, possiblePort + i));
+                } catch (UnknownHostException ignored) {
+                    Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
+                }
+            }
+        } else if (inetAddress instanceof Inet4Address) {
+            for (int i = 0; i < portTryCount; i++) {
+                addresses.add(new Address(scopedAddress, inetAddress, possiblePort + i));
+            }
+        } else if (inetAddress instanceof Inet6Address) {
+            final Collection<Inet6Address> possibleInetAddresses = getPossibleInetAddressesFor((Inet6Address) inetAddress);
+            for (Inet6Address inet6Address : possibleInetAddresses) {
+                for (int i = 0; i < portTryCount; i++) {
+                    addresses.add(new Address(scopedAddress, inet6Address, possiblePort + i));
+                }
             }
         }
 

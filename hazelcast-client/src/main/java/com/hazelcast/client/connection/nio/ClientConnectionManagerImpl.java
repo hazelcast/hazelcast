@@ -813,13 +813,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             attempt++;
             long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
 
-            Collection<Address> socketAddresses = getSocketAddresses();
-            for (Address inetSocketAddress : socketAddresses) {
+            Collection<Address> addresses = getPossibleMemberAddresses();
+            for (Address address : addresses) {
                 if (!client.getLifecycleService().isRunning()) {
                     throw new IllegalStateException("Giving up on retrying to connect to cluster since client is shutdown.");
                 }
-                triedAddresses.add(inetSocketAddress);
-                if (connectAsOwner(inetSocketAddress) != null) {
+                triedAddresses.add(address);
+                if (connectAsOwner(address) != null) {
                     return;
                 }
             }
@@ -877,7 +877,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     }
 
-    private Collection<Address> getSocketAddresses() {
+    private Collection<Address> getPossibleMemberAddresses() {
         final List<Address> addresses = new LinkedList<Address>();
 
         Collection<Member> memberList = client.getClientClusterService().getMemberList();
