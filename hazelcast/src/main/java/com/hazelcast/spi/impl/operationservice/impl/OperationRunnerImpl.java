@@ -352,12 +352,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
         if (operation instanceof Backup) {
             failedBackupsCounter.inc();
-        }
-
-        if (!operation.returnsResponse()) {
             return;
         }
 
+        // a response is send regardless of the Operation.returnsResponse method because some operation do want to send
+        // back a response, but they didn't want to send it yet but they ran into some kind of error. If on the receiving
+        // side no invocation is waiting, the response is ignored.
         sendResponseAfterOperationError(operation, e);
     }
 
