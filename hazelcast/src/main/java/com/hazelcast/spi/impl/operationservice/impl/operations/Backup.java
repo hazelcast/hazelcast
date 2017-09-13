@@ -43,6 +43,10 @@ import java.util.Arrays;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 
+/**
+ * The Backup is a container around the operation that takes care of the actual backup. Backups
+ * are sent from the primary and don't have a call'id set.
+ */
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Address originalCaller;
@@ -148,12 +152,12 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     public void afterRun() throws Exception {
-        if (!valid || !sync || getCallId() == 0 || originalCaller == null) {
+        if (!valid || !sync || backupOp.getCallId() == 0 || originalCaller == null) {
             return;
         }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        long callId = getCallId();
+        long callId = backupOp.getCallId();
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
         if (nodeEngine.getThisAddress().equals(originalCaller)) {

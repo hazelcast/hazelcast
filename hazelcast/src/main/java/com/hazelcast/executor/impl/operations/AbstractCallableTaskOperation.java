@@ -24,11 +24,9 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -73,17 +71,8 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
         }
     }
 
-    /**
-     * since this operation handles responses in an async way, we need to handle serialization exceptions too
-     * @return
-     */
     private Callable getCallable() {
-        try {
-            return getNodeEngine().toObject(callableData);
-        } catch (HazelcastSerializationException e) {
-            sendResponse(e);
-            throw ExceptionUtil.rethrow(e);
-        }
+        return getNodeEngine().toObject(callableData);
     }
 
     private ManagedContext getManagedContext() {

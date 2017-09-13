@@ -354,14 +354,15 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             failedBackupsCounter.inc();
         }
 
-        if (!operation.returnsResponse()) {
-            return;
-        }
-
         sendResponseAfterOperationError(operation, e);
     }
 
     private void sendResponseAfterOperationError(Operation operation, Throwable e) {
+        OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
+        if (responseHandler == null) {
+            return;
+        }
+
         try {
             if (node.getState() != NodeState.SHUT_DOWN) {
                 operation.sendResponse(e);
@@ -435,6 +436,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private void setOperationResponseHandler(Operation op) {
         OperationResponseHandler handler = outboundResponseHandler;
         if (op.getCallId() == 0) {
+            // Backup operation will also have a 0 callId; so they get an empty response-handler. This is desired, since on
+            // the primary there is no invocation waiting for that backup, so there is no point sending responses.
+
             if (op.returnsResponse()) {
                 throw new HazelcastException(
                         "Operation " + op + " wants to return a response, but doesn't have a call ID");
