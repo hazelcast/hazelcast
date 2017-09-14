@@ -19,12 +19,9 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -41,8 +38,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
-import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -56,15 +51,13 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -93,7 +86,6 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
-import static com.hazelcast.instance.BuildInfo.UNKNOWN_HAZELCAST_VERSION;
 import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -983,14 +975,19 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
 
         @Override
         public void beforeListenerRegister() {
-            pre38EventHandler.beforeListenerRegister();
             repairingEventHandler.beforeListenerRegister();
+
+            supportsRepairableNearCache = supportsRepairableNearCache();
+
+            if (!supportsRepairableNearCache) {
+                pre38EventHandler.beforeListenerRegister();
+
+                logger.warning(format("Near Cache for '%s' cache is started in legacy mode", name));
+            }
         }
 
         @Override
         public void onListenerRegister() {
-            supportsRepairableNearCache = supportsRepairableNearCache();
-
             if (supportsRepairableNearCache) {
                 repairingEventHandler.onListenerRegister();
             } else {
@@ -1015,16 +1012,17 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     private final class RepairableNearCacheEventHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final RepairingHandler repairingHandler;
-
-        public RepairableNearCacheEventHandler() {
-            getRepairingTask().deregisterHandler(nameWithPrefix);
-            repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
-        }
+        private volatile RepairingHandler repairingHandler;
 
         @Override
         public void beforeListenerRegister() {
-            // NOP
+            if (supportsRepairableNearCache()) {
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
+            } else {
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingTask.deregisterHandler(nameWithPrefix);
+            }
         }
 
         @Override
@@ -1042,16 +1040,11 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                            Collection<UUID> partitionUuids, Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
         }
-
-        private RepairingTask getRepairingTask() {
-            ClientContext clientContext = getContext();
-            return clientContext.getRepairingTask(CacheService.SERVICE_NAME);
-        }
     }
 
     /**
      * This event handler is here to be used with server versions < 3.8.
-     * <p>
+     *
      * If server version is < 3.8 and client version is >= 3.8, this event handler must be used to
      * listen near cache invalidations. Because new improvements for near cache eventual consistency cannot work
      * with server versions < 3.8.
@@ -1156,23 +1149,6 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
             }
         };
-    }
-
-    private int getConnectedServerVersion() {
-        ClientContext clientContext = getContext();
-        ClientClusterService clusterService = clientContext.getClusterService();
-        Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
-
-        HazelcastClientInstanceImpl client = getClient();
-        ClientConnectionManager connectionManager = client.getConnectionManager();
-        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
-        if (connection == null) {
-            logger.warning(format("No owner connection is available, "
-                    + "near cached cache %s will be started in legacy mode", name));
-            return UNKNOWN_HAZELCAST_VERSION;
-        }
-
-        return ((ClientConnection) connection).getConnectedServerVersion();
     }
 
     private boolean supportsRepairableNearCache() {
