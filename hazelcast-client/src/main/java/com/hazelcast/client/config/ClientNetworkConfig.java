@@ -40,7 +40,7 @@ public class ClientNetworkConfig {
     private boolean smartRouting = true;
     private boolean redoOperation;
     private int connectionTimeout = CONNECTION_TIMEOUT;
-    private int connectionAttemptLimit = 2;
+    private int connectionAttemptLimit = -1;
     private int connectionAttemptPeriod = CONNECTION_ATTEMPT_PERIOD;
     private SocketInterceptorConfig socketInterceptorConfig;
     private SocketOptions socketOptions = new SocketOptions();
@@ -151,6 +151,7 @@ public class ClientNetworkConfig {
      *
      * @param connectionAttemptLimit number of times to attempt to connect
      *                               A zero value means try forever.
+     *                               A negative value means default value
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig setConnectionAttemptLimit(int connectionAttemptLimit) {

@@ -74,8 +74,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         Address memberAddress = hazelcastFactory.nextAddress();
 
         // trying 8.8.8.8 address will delay the initial connection since no such server exist
-        clientConfig.getNetworkConfig().addAddress("8.8.8.8", memberAddress.getHost() + ":" + memberAddress.getPort())
-                .setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getNetworkConfig().addAddress("8.8.8.8", memberAddress.getHost() + ":" + memberAddress.getPort());
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -210,7 +209,6 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 

@@ -100,6 +100,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public class ClientConnectionManagerImpl implements ClientConnectionManager, ConnectionHeartbeatListener {
 
     private static final int DEFAULT_SSL_THREAD_COUNT = 3;
+    private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC = 2;
+    private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC = 20;
 
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
@@ -167,9 +169,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.addressProviders = addressProviders;
-        int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-        connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+
+        int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
+        boolean isAsync = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
+
+        if (connAttemptLimit < 0) {
+            this.connectionAttemptLimit = isAsync ? DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC
+                    : DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC;
+        } else {
+            this.connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+        }
 
         this.outboundPorts.addAll(getOutboundPorts(networkConfig));
         this.outboundPortCount = outboundPorts.size();
