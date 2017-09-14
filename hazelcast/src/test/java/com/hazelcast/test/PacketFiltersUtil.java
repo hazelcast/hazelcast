@@ -106,7 +106,8 @@ public final class PacketFiltersUtil {
 
         final int factory;
 
-        final IntHashSet types = new IntHashSet(1024, 0);
+        // Integer.MIN_VALUE is used for missing value
+        final IntHashSet types = new IntHashSet(1024, Integer.MIN_VALUE);
 
         EndpointAgnosticPacketFilter(InternalSerializationService serializationService, int factory, List<Integer> typeIds) {
             super(serializationService);
