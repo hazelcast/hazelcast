@@ -60,7 +60,7 @@ final class DiagnosticsLogFile {
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
-        this.fileName = diagnostics.fileName + "-%03d.log";
+        this.fileName = diagnostics.baseFileName + "-%03d.log";
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
 
         this.maxRollingFileCount = diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT);

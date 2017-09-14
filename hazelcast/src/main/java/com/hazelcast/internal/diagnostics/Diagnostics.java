@@ -103,6 +103,15 @@ public class Diagnostics {
     public static final HazelcastProperty DIRECTORY
             = new HazelcastProperty(PREFIX + ".directory", "" + System.getProperty("user.dir"));
 
+    /**
+     * Configures the prefix for the diagnostics file.
+     *
+     * So instead of having e.g. 'diagnostics-...log' you get 'foobar-diagnostics-...log'.
+     */
+    public static final HazelcastProperty FILENAME_PREFIX
+            = new HazelcastProperty(PREFIX + ".filename.prefix");
+
+
     final HazelcastProperties properties;
     final String directory;
     DiagnosticsLogFile diagnosticsLogFile;
@@ -111,7 +120,7 @@ public class Diagnostics {
     );
 
     final ILogger logger;
-    final String fileName;
+    final String baseFileName;
     final boolean includeEpochTime;
     private final String hzName;
     private final boolean enabled;
@@ -119,8 +128,10 @@ public class Diagnostics {
     private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap
             = new ConcurrentHashMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin>();
 
-    public Diagnostics(String fileName, ILogger logger, String hzName, HazelcastProperties properties) {
-        this.fileName = fileName;
+    public Diagnostics(String baseFileName, ILogger logger, String hzName,
+                       HazelcastProperties properties) {
+        String optionalPrefix = properties.getString(FILENAME_PREFIX);
+        this.baseFileName = optionalPrefix == null ? baseFileName : optionalPrefix + "-" + baseFileName;
         this.logger = logger;
         this.hzName = hzName;
         this.properties = properties;
