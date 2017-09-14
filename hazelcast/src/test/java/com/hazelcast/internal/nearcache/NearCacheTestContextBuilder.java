@@ -21,6 +21,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
+import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -50,6 +51,8 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
     private boolean hasLocalData;
     private DataStructureLoader loader;
     private NearCacheInvalidationListener invalidationListener;
+
+    private RepairingTask repairingTask;
 
     public NearCacheTestContextBuilder(NearCacheConfig nearCacheConfig, SerializationService serializationService) {
         this.nearCacheConfig = nearCacheConfig;
@@ -111,6 +114,11 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
         return this;
     }
 
+    public NearCacheTestContextBuilder<K, V, NK, NV> setRepairingTask(RepairingTask repairingTask) {
+        this.repairingTask = repairingTask;
+        return this;
+    }
+
     public NearCacheTestContext<K, V, NK, NV> build() {
         checkNotNull(serializationService, "serializationService cannot be null!");
 
@@ -130,7 +138,8 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
                 memberCacheManager,
                 hasLocalData,
                 loader,
-                invalidationListener);
+                invalidationListener,
+                repairingTask);
 
         warmUpPartitions(context.dataInstance, context.nearCacheInstance);
         waitAllForSafeState(context.dataInstance, context.nearCacheInstance);

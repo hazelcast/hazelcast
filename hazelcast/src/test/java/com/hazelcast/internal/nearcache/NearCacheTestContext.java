@@ -21,6 +21,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
+import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -100,6 +101,11 @@ public class NearCacheTestContext<K, V, NK, NV> {
      */
     public final NearCacheInvalidationListener invalidationListener;
 
+    /**
+     * The {@link RepairingTask} from the Near Cache instance.
+     */
+    public final RepairingTask repairingTask;
+
     NearCacheTestContext(NearCacheConfig nearCacheConfig,
                          SerializationService serializationService,
                          HazelcastInstance nearCacheInstance,
@@ -112,7 +118,8 @@ public class NearCacheTestContext<K, V, NK, NV> {
                          HazelcastServerCacheManager memberCacheManager,
                          boolean hasLocalData,
                          DataStructureLoader loader,
-                         NearCacheInvalidationListener invalidationListener) {
+                         NearCacheInvalidationListener invalidationListener,
+                         RepairingTask repairingTask) {
         this.nearCacheConfig = nearCacheConfig;
         this.serializationService = serializationService;
 
@@ -130,5 +137,6 @@ public class NearCacheTestContext<K, V, NK, NV> {
         this.hasLocalData = hasLocalData;
         this.loader = loader;
         this.invalidationListener = invalidationListener;
+        this.repairingTask = repairingTask;
     }
 }
