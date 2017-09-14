@@ -51,7 +51,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
             createPublishAccumulatorWithoutIncludeValue(info);
         }
         if (info.isPopulate()) {
-            madePublishable(info.getMapName(), info.getCacheName());
+            madePublishable(info.getMapName(), info.getCacheId());
             info.setPublishable(true);
         }
     }
@@ -59,7 +59,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     private void createPublishAccumulatorWithIncludeValue(AccumulatorInfo info) {
         Data data = context.getSerializationService().toData(info.getPredicate());
         ClientMessage request = ContinuousQueryPublisherCreateWithValueCodec.encodeRequest(info.getMapName(),
-                info.getCacheName(), data,
+                info.getCacheId(), data,
                 info.getBatchSize(), info.getBufferSize(), info.getDelaySeconds(),
                 info.isPopulate(), info.isCoalesce());
 
@@ -76,7 +76,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     private void createPublishAccumulatorWithoutIncludeValue(AccumulatorInfo info) {
         Data data = context.getSerializationService().toData(info.getPredicate());
         ClientMessage request = ContinuousQueryPublisherCreateCodec.encodeRequest(info.getMapName(),
-                info.getCacheName(), data,
+                info.getCacheId(), data,
                 info.getBatchSize(), info.getBufferSize(), info.getDelaySeconds(),
                 info.isPopulate(), info.isCoalesce());
 

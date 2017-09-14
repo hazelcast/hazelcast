@@ -36,15 +36,15 @@ import java.io.IOException;
  */
 public class DestroyQueryCacheOperation extends MapOperation {
 
-    private String cacheName;
+    private String cacheId;
     private transient boolean result;
 
     public DestroyQueryCacheOperation() {
     }
 
-    public DestroyQueryCacheOperation(String mapName, String cacheName) {
+    public DestroyQueryCacheOperation(String mapName, String cacheId) {
         super(mapName);
-        this.cacheName = cacheName;
+        this.cacheId = cacheId;
     }
 
     @Override
@@ -67,13 +67,13 @@ public class DestroyQueryCacheOperation extends MapOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(cacheName);
+        out.writeUTF(cacheId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        cacheName = in.readUTF();
+        cacheId = in.readUTF();
     }
 
     private void deregisterLocalIMapListener() {
@@ -83,14 +83,14 @@ public class DestroyQueryCacheOperation extends MapOperation {
         if (listenerRegistry == null) {
             return;
         }
-        String listenerId = listenerRegistry.remove(cacheName);
+        String listenerId = listenerRegistry.remove(cacheId);
         mapService.getMapServiceContext().removeEventListener(name, listenerId);
     }
 
     private void removeAccumulatorInfo() {
         PublisherContext publisherContext = getPublisherContext();
         AccumulatorInfoSupplier infoSupplier = publisherContext.getAccumulatorInfoSupplier();
-        infoSupplier.remove(name, cacheName);
+        infoSupplier.remove(name, cacheId);
     }
 
     private void removePublisherAccumulators() {
@@ -100,7 +100,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
         if (publisherRegistry == null) {
             return;
         }
-        publisherRegistry.remove(cacheName);
+        publisherRegistry.remove(cacheId);
     }
 
     private PublisherContext getPublisherContext() {

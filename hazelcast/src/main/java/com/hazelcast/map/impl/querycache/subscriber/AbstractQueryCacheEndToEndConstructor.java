@@ -63,7 +63,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     public final void createSubscriberAccumulator(AccumulatorInfo info) {
         QueryCacheEventService eventService = context.getQueryCacheEventService();
         ListenerAdapter listener = new SubscriberListener(context, info);
-        publisherListenerId = eventService.listenPublisher(info.getMapName(), info.getCacheName(), listener);
+        publisherListenerId = eventService.listenPublisher(info.getMapName(), info.getCacheId(), listener);
     }
 
     /**
@@ -81,7 +81,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
             // when calling `IMap.getQueryCache` method
             addListener(request);
 
-            AccumulatorInfo info = createAccumulatorInfo(queryCacheConfig, mapName, request.getCacheName(), predicate);
+            AccumulatorInfo info = createAccumulatorInfo(queryCacheConfig, mapName, request.getCacheId(), predicate);
             addInfoToSubscriberContext(info);
 
             info.setPublishable(true);
@@ -92,7 +92,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
             queryCache.setPublisherListenerId(publisherListenerId);
 
         } catch (Throwable throwable) {
-            removeQueryCacheConfig(mapName, request.getUserGivenCacheName());
+            removeQueryCacheConfig(mapName, request.getCacheName());
             throw rethrow(throwable);
         }
 
@@ -111,7 +111,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     private void addInfoToSubscriberContext(AccumulatorInfo info) {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         AccumulatorInfoSupplier accumulatorInfoSupplier = subscriberContext.getAccumulatorInfoSupplier();
-        accumulatorInfoSupplier.putIfAbsent(info.getMapName(), info.getCacheName(), info);
+        accumulatorInfoSupplier.putIfAbsent(info.getMapName(), info.getCacheId(), info);
     }
 
     private String addListener(QueryCacheRequest request) {
@@ -120,11 +120,11 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
             return null;
         }
         QueryCacheEventService eventService = subscriberContext.getEventService();
-        return eventService.addListener(request.getMapName(), request.getCacheName(), listener);
+        return eventService.addListener(request.getMapName(), request.getCacheId(), listener);
     }
 
     public String getCacheName() {
-        return request.getCacheName();
+        return request.getCacheId();
     }
 
     protected Object toObject(Object data) {
@@ -137,9 +137,9 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         QueryCacheConfig queryCacheConfig;
 
         if (predicate == null) {
-            queryCacheConfig = getOrNullQueryCacheConfig(mapName, request.getUserGivenCacheName());
+            queryCacheConfig = getOrNullQueryCacheConfig(mapName, request.getCacheName());
         } else {
-            queryCacheConfig = getOrCreateQueryCacheConfig(mapName, request.getUserGivenCacheName());
+            queryCacheConfig = getOrCreateQueryCacheConfig(mapName, request.getCacheName());
             queryCacheConfig.setIncludeValue(request.isIncludeValue());
             queryCacheConfig.getPredicateConfig().setImplementation(predicate);
         }

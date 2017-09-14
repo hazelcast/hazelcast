@@ -39,16 +39,16 @@ public class MadePublishableOperation extends MapOperation {
 
     private final ILogger logger = Logger.getLogger(getClass());
 
-    private String cacheName;
+    private String cacheId;
 
     private transient boolean done;
 
     public MadePublishableOperation() {
     }
 
-    public MadePublishableOperation(String mapName, String cacheName) {
+    public MadePublishableOperation(String mapName, String cacheId) {
         super(mapName);
-        this.cacheName = cacheName;
+        this.cacheId = cacheId;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class MadePublishableOperation extends MapOperation {
     }
 
     private void setPublishable() {
-        PartitionAccumulatorRegistry registry = QueryCacheUtil.getAccumulatorRegistryOrNull(getContext(), name, cacheName);
+        PartitionAccumulatorRegistry registry = QueryCacheUtil.getAccumulatorRegistryOrNull(getContext(), name, cacheId);
         if (registry == null) {
             return;
         }
@@ -86,13 +86,13 @@ public class MadePublishableOperation extends MapOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(cacheName);
+        out.writeUTF(cacheId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        cacheName = in.readUTF();
+        cacheId = in.readUTF();
     }
 
     @Override

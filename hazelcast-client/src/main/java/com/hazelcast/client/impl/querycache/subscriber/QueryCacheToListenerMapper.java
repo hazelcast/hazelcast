@@ -31,7 +31,7 @@ import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * This class includes mappings of {@code cacheName --to--> listener collections}.
+ * This class includes mappings of {@code cacheId --to--> listener collections}.
  */
 public class QueryCacheToListenerMapper {
 

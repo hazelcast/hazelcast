@@ -62,7 +62,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         }
 
         if (populate) {
-            madePublishable(info.getMapName(), info.getCacheName());
+            madePublishable(info.getMapName(), info.getCacheId());
         }
     }
 
@@ -78,13 +78,13 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         return returnWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);
     }
 
-    private void madePublishable(String mapName, String cacheName) throws Exception {
+    private void madePublishable(String mapName, String cacheId) throws Exception {
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
 
         Collection<Member> memberList = context.getMemberList();
         List<Future> futures = new ArrayList<Future>(memberList.size());
         for (Member member : memberList) {
-            Operation operation = new MadePublishableOperation(mapName, cacheName);
+            Operation operation = new MadePublishableOperation(mapName, cacheId);
             Future future = invokerWrapper.invokeOnTarget(operation, member.getAddress());
             futures.add(future);
         }

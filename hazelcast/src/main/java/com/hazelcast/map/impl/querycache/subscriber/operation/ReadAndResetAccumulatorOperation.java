@@ -41,21 +41,21 @@ import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumula
  */
 public class ReadAndResetAccumulatorOperation extends MapOperation implements PartitionAwareOperation {
 
-    private String cacheName;
+    private String cacheId;
     private List<Sequenced> eventDataList;
 
     public ReadAndResetAccumulatorOperation() {
     }
 
-    public ReadAndResetAccumulatorOperation(String mapName, String cacheName) {
+    public ReadAndResetAccumulatorOperation(String mapName, String cacheId) {
         super(mapName);
-        this.cacheName = cacheName;
+        this.cacheId = cacheId;
     }
 
     @Override
     public void run() throws Exception {
         QueryCacheContext context = getQueryCacheContext();
-        Map<Integer, Accumulator> accumulators = getAccumulators(context, name, cacheName);
+        Map<Integer, Accumulator> accumulators = getAccumulators(context, name, cacheId);
         Accumulator<Sequenced> accumulator = accumulators.get(getPartitionId());
         if (accumulator.isEmpty()) {
             return;
@@ -82,13 +82,13 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(cacheName);
+        out.writeUTF(cacheId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        cacheName = in.readUTF();
+        cacheId = in.readUTF();
     }
 
     private QueryCacheContext getQueryCacheContext() {

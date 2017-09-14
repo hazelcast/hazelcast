@@ -34,22 +34,22 @@ public interface QueryCacheEventService<E> {
     /**
      * Publishes query-cache events locally.
      *
-     * @param mapName   underlying map name of query cache.
-     * @param cacheName name of the query cache.
-     * @param event     event to publish.
-     * @param orderKey  use same order key for events which are required to be ordered.
+     * @param mapName  underlying map name of query cache
+     * @param cacheId  id of the query cache
+     * @param event    event to publish
+     * @param orderKey use same order key for events which are required to be ordered
      */
-    void publish(String mapName, String cacheName, E event, int orderKey);
+    void publish(String mapName, String cacheId, E event, int orderKey);
 
     /**
      * Adds the listener to listen underlying IMap on all nodes.
      *
-     * @param mapName         underlying map name of query cache.
-     * @param cacheName       name of the query cache.
-     * @param listenerAdapter listener adapter for the query-cache.
-     * @return id of registered event listener
+     * @param mapName         underlying map name of query cache
+     * @param cacheId         id of the query cache
+     * @param listenerAdapter listener adapter for the query-cache
+     * @return ID of registered event listener
      */
-    String listenPublisher(String mapName, String cacheName, ListenerAdapter listenerAdapter);
+    String listenPublisher(String mapName, String cacheId, ListenerAdapter listenerAdapter);
 
     /**
      * Removes listener from underlying IMap
@@ -64,43 +64,43 @@ public interface QueryCacheEventService<E> {
      * Adds a user-defined listener to a query-cache. This listener is registered as a local listener
      * on subscriber side.
      *
-     * @param mapName   underlying IMap name of query-cache.
-     * @param cacheName name of the query-cache.
-     * @param listener  listener for receiving events.
-     * @return id of registered event listener
+     * @param mapName  underlying IMap name of query-cache
+     * @param cacheId  id of the query-cache
+     * @param listener listener for receiving events
+     * @return ID of registered event listener
      */
-    String addListener(String mapName, String cacheName, MapListener listener);
+    String addListener(String mapName, String cacheId, MapListener listener);
 
     /**
      * Adds a user-defined listener to a query-cache. This listener is registered as a local listener
      * on subscriber side.
      *
-     * @param mapName   underlying IMap name of query-cache.
-     * @param cacheName name of the query-cache.
-     * @param listener  listener for receiving events.
-     * @param filter    used to filter events.
-     * @return id of registered event listener
+     * @param mapName  underlying IMap name of query-cache
+     * @param cacheId  id of the query-cache
+     * @param listener listener for receiving events
+     * @param filter   used to filter events
+     * @return ID of registered event listener
      */
-    String addListener(String mapName, String cacheName, MapListener listener, EventFilter filter);
+    String addListener(String mapName, String cacheId, MapListener listener, EventFilter filter);
 
     /**
      * Removes listener from this event service.
      *
-     * @param mapName   underlying IMap name of query-cache.
-     * @param cacheName name of the query cache.
-     * @param id        id of listener.
-     * @return {@code true} if listener is removed successfully, {@code false} otherwise.
+     * @param mapName underlying IMap name of query-cache
+     * @param cacheId id of the query cache
+     * @param id      ID of listener
+     * @return {@code true} if listener is removed successfully, {@code false} otherwise
      */
-    boolean removeListener(String mapName, String cacheName, String id);
+    boolean removeListener(String mapName, String cacheId, String id);
 
     /**
      * Returns {@code true} if this query-cache has at least one registered listener otherwise returns {@code false}.
      *
-     * @param mapName   underlying IMap name of query-cache.
-     * @param cacheName name of the query-cache.
-     * @return {@code true} if this query-cache has at least one registered listener otherwise returns {@code false}.
+     * @param mapName underlying IMap name of query-cache
+     * @param cacheId id of the query-cache
+     * @return {@code true} if this query-cache has at least one registered listener otherwise returns {@code false}
      */
-    boolean hasListener(String mapName, String cacheName);
+    boolean hasListener(String mapName, String cacheId);
 
     /**
      * Only sends events which wrap data to be put in a query cache.

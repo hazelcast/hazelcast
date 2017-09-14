@@ -45,46 +45,46 @@ public final class EventPublisherHelper {
      * Publishes event upon a change on a key in {@code QueryCache}.
      *
      * @param mapName      the name of underlying map.
-     * @param cacheName    the name of {@code QueryCache}
+     * @param cacheId    the name of {@code QueryCache}
      * @param dataKey      the key in {@code Data} format.
      * @param dataNewValue the value in {@code Data} format.
      * @param oldRecord    the relevant {@code QueryCacheEntry}
      * @param context      the {@code QueryCacheContext}
      */
-    static void publishEntryEvent(QueryCacheContext context, String mapName, String cacheName, Data dataKey, Data dataNewValue,
+    static void publishEntryEvent(QueryCacheContext context, String mapName, String cacheId, Data dataKey, Data dataNewValue,
                                   QueryCacheRecord oldRecord, EntryEventType eventType) {
         QueryCacheEventService eventService = getQueryCacheEventService(context);
-        if (!eventService.hasListener(mapName, cacheName)) {
+        if (!eventService.hasListener(mapName, cacheId)) {
             return;
         }
 
         Object oldValue = getOldValue(oldRecord);
 
-        LocalEntryEventData eventData = createLocalEntryEventData(cacheName, dataKey, dataNewValue, oldValue,
+        LocalEntryEventData eventData = createLocalEntryEventData(cacheId, dataKey, dataNewValue, oldValue,
                 eventType.getType(), -1, context);
-        eventService.publish(mapName, cacheName, eventData, dataKey.hashCode());
+        eventService.publish(mapName, cacheId, eventData, dataKey.hashCode());
     }
 
-    static void publishCacheWideEvent(QueryCacheContext context, String mapName, String cacheName,
+    static void publishCacheWideEvent(QueryCacheContext context, String mapName, String cacheId,
                                       int numberOfEntriesAffected, EntryEventType eventType) {
         QueryCacheEventService eventService = getQueryCacheEventService(context);
-        if (!eventService.hasListener(mapName, cacheName)) {
+        if (!eventService.hasListener(mapName, cacheId)) {
             return;
         }
 
-        LocalCacheWideEventData eventData = new LocalCacheWideEventData(cacheName, eventType.getType(), numberOfEntriesAffected);
-        eventService.publish(mapName, cacheName, eventData, cacheName.hashCode());
+        LocalCacheWideEventData eventData = new LocalCacheWideEventData(cacheId, eventType.getType(), numberOfEntriesAffected);
+        eventService.publish(mapName, cacheId, eventData, cacheId.hashCode());
     }
 
     private static Object getOldValue(QueryCacheRecord oldRecord) {
         return oldRecord == null ? null : oldRecord.getValue();
     }
 
-    private static LocalEntryEventData createLocalEntryEventData(String cacheName, Data dataKey, Data dataNewValue,
+    private static LocalEntryEventData createLocalEntryEventData(String cacheId, Data dataKey, Data dataNewValue,
                                                                  Object oldValue, int eventType,
                                                                  int partitionId, QueryCacheContext context) {
         SerializationService serializationService = context.getSerializationService();
-        return new LocalEntryEventData(serializationService, cacheName, eventType, dataKey, oldValue, dataNewValue, partitionId);
+        return new LocalEntryEventData(serializationService, cacheId, eventType, dataKey, oldValue, dataNewValue, partitionId);
     }
 
     private static QueryCacheEventService getQueryCacheEventService(QueryCacheContext context) {
@@ -92,12 +92,12 @@ public final class EventPublisherHelper {
         return subscriberContext.getEventService();
     }
 
-    public static void publishEventLost(QueryCacheContext context, String mapName, String cacheName, int partitionId) {
+    public static void publishEventLost(QueryCacheContext context, String mapName, String cacheId, int partitionId) {
         QueryCacheEventService eventService = getQueryCacheEventService(context);
-        int orderKey = cacheName.hashCode();
+        int orderKey = cacheId.hashCode();
 
-        eventService.publish(mapName, cacheName,
-                createLocalEntryEventData(cacheName, null, null, null,
+        eventService.publish(mapName, cacheId,
+                createLocalEntryEventData(cacheId, null, null, null,
                         EventLostEvent.EVENT_TYPE, partitionId, context), orderKey);
     }
 

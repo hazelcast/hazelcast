@@ -63,22 +63,22 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
 
     // TODO not used order key
     @Override
-    public void publish(String mapName, String cacheName, EventData eventData, int orderKey) {
+    public void publish(String mapName, String cacheId, EventData eventData, int orderKey) {
         checkHasText(mapName, "mapName");
-        checkHasText(cacheName, "cacheName");
+        checkHasText(cacheId, "cacheId");
         checkNotNull(eventData, "eventData cannot be null");
 
-        publishLocalEvent(mapName, cacheName, eventData);
+        publishLocalEvent(mapName, cacheId, eventData);
     }
 
     @Override
-    public String addListener(String mapName, String cacheName, MapListener listener) {
-        return addListener(mapName, cacheName, listener, null);
+    public String addListener(String mapName, String cacheId, MapListener listener) {
+        return addListener(mapName, cacheId, listener, null);
     }
 
     @Override
-    public String listenPublisher(String mapName, String cacheName, ListenerAdapter listenerAdapter) {
-        String listenerName = generateListenerName(mapName, cacheName);
+    public String listenPublisher(String mapName, String cacheId, ListenerAdapter listenerAdapter) {
+        String listenerName = generateListenerName(mapName, cacheId);
         return mapServiceContext.addListenerAdapter(listenerName, listenerAdapter);
     }
 
@@ -88,9 +88,9 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     @Override
-    public String addListener(String mapName, String cacheName, MapListener listener, EventFilter filter) {
+    public String addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
         checkHasText(mapName, "mapName");
-        checkHasText(cacheName, "cacheName");
+        checkHasText(cacheId, "cacheId");
         checkNotNull(listener, "listener cannot be null");
 
         ListenerAdapter queryCacheListenerAdaptor = createQueryCacheListenerAdaptor(listener);
@@ -98,7 +98,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         EventService eventService = nodeEngine.getEventService();
 
-        String listenerName = generateListenerName(mapName, cacheName);
+        String listenerName = generateListenerName(mapName, cacheId);
         EventRegistration registration;
         if (filter == null) {
             registration = eventService.registerLocalListener(MapService.SERVICE_NAME,
@@ -111,16 +111,16 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     @Override
-    public boolean removeListener(String mapName, String cacheName, String id) {
-        String listenerName = generateListenerName(mapName, cacheName);
+    public boolean removeListener(String mapName, String cacheId, String id) {
+        String listenerName = generateListenerName(mapName, cacheId);
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(MapService.SERVICE_NAME, listenerName, id);
     }
 
     @Override
-    public boolean hasListener(String mapName, String cacheName) {
-        String listenerName = generateListenerName(mapName, cacheName);
+    public boolean hasListener(String mapName, String cacheId) {
+        String listenerName = generateListenerName(mapName, cacheId);
         Collection<EventRegistration> eventRegistrations = getRegistrations(listenerName);
         if (eventRegistrations.isEmpty()) {
             return false;
@@ -138,8 +138,8 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     // TODO needs refactoring.
-    private void publishLocalEvent(String mapName, String cacheName, Object eventData) {
-        String listenerName = generateListenerName(mapName, cacheName);
+    private void publishLocalEvent(String mapName, String cacheId, Object eventData) {
+        String listenerName = generateListenerName(mapName, cacheId);
         Collection<EventRegistration> eventRegistrations = getRegistrations(listenerName);
         if (eventRegistrations.isEmpty()) {
             return;

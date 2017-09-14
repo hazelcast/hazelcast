@@ -37,19 +37,19 @@ public interface QueryCacheRequest {
     /**
      * Setter for name of the {@link com.hazelcast.map.QueryCache QueryCache}.
      *
-     * @param cacheName name of {@link com.hazelcast.map.QueryCache QueryCache}
+     * @param cacheId name of {@link com.hazelcast.map.QueryCache QueryCache}
      * @return this request object.
      */
-    QueryCacheRequest withCacheName(String cacheName);
+    QueryCacheRequest withCacheId(String cacheId);
 
 
     /**
      * Sets the user given name for the {@link com.hazelcast.map.QueryCache QueryCache}.
      *
-     * @param userGivenCacheName name of {@link com.hazelcast.map.QueryCache QueryCache}
+     * @param cacheName name of {@link com.hazelcast.map.QueryCache QueryCache}
      * @return this request object.
      */
-    QueryCacheRequest withUserGivenCacheName(String userGivenCacheName);
+    QueryCacheRequest withCacheName(String cacheName);
 
     /**
      * Setter for the predicate which will be used to filter underlying {@link IMap}
@@ -105,14 +105,14 @@ public interface QueryCacheRequest {
      *
      * @return name of the {@link com.hazelcast.map.QueryCache QueryCache} to be created.
      */
-    String getCacheName();
+    String getCacheId();
 
     /**
      * Returns the name which is given by the user.
      *
      * @return user given name of the {@link com.hazelcast.map.QueryCache QueryCache} to be created.
      */
-    String getUserGivenCacheName();
+    String getCacheName();
 
     /**
      * Returns predicate which is set.

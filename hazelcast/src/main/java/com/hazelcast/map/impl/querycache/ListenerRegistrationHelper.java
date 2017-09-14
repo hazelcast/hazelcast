@@ -27,7 +27,7 @@ public final class ListenerRegistrationHelper {
     private ListenerRegistrationHelper() {
     }
 
-    public static String generateListenerName(String mapName, String cacheName) {
-        return mapName + PLACE_HOLDER + cacheName;
+    public static String generateListenerName(String mapName, String cacheId) {
+        return mapName + PLACE_HOLDER + cacheId;
     }
 }
