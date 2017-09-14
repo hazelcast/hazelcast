@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore.writethrough;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * Write through map data store implementation.
@@ -27,7 +27,7 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
 
-    public WriteThroughStore(MapStoreWrapper store, SerializationService serializationService) {
+    public WriteThroughStore(MapStoreWrapper store, InternalSerializationService serializationService) {
         super(store, serializationService);
     }
 
