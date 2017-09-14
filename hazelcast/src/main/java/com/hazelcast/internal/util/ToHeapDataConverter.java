@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache.impl.invalidation;
+package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
@@ -27,10 +27,16 @@ public final class ToHeapDataConverter {
     private ToHeapDataConverter() {
     }
 
-    public static Data toHeapData(Data key) {
-        if (key instanceof HeapData) {
-            return key;
+    /**
+     * Converts Data to HeapData. Useful for off-heap conversion.
+     *
+     * @param data
+     * @return the on-heap representation of data. If data is null, null is returned.
+     */
+    public static Data toHeapData(Data data) {
+        if (data == null || data instanceof HeapData) {
+            return data;
         }
-        return new HeapData(key.toByteArray());
+        return new HeapData(data.toByteArray());
     }
 }

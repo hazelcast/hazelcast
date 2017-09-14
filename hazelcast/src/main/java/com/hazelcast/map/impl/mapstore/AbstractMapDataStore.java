@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.internal.util.ToHeapDataConverter;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -77,8 +78,8 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         return serializationService.toObject(obj);
     }
 
-    protected Data toData(Object obj) {
-        return serializationService.toData(obj);
+    protected Data toHeapData(Object obj) {
+        return ToHeapDataConverter.toHeapData(serializationService.toData(obj));
     }
 
     public MapStoreWrapper getStore() {

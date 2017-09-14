@@ -20,7 +20,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.List;
@@ -54,10 +53,6 @@ abstract class AbstractWriteBehindProcessor<T> implements WriteBehindProcessor<T
 
     protected Object toObject(Object obj) {
         return serializationService.toObject(obj);
-    }
-
-    protected Data toData(Object obj) {
-        return serializationService.toData(obj);
     }
 
     /**
