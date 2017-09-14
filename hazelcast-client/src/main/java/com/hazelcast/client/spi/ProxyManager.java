@@ -51,6 +51,7 @@ import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -85,7 +86,6 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -100,9 +100,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ServiceLoader.classIterator;
 
@@ -146,6 +144,9 @@ public final class ProxyManager {
     private final HazelcastClientInstanceImpl client;
 
     private ClientContext context;
+    private long invocationRetryPauseMillis;
+    private long invocationTimeoutMillis;
+
 
     public ProxyManager(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -214,6 +215,9 @@ public final class ProxyManager {
         }
 
         readProxyDescriptors();
+        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
+        invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
     }
 
     private void readProxyDescriptors() {
@@ -321,7 +325,6 @@ public final class ProxyManager {
     }
 
     private void initializeWithRetry(ClientProxy clientProxy) throws Exception {
-        long invocationTimeoutMillis = getInvocationTimeoutMillis();
         long startMillis = System.currentTimeMillis();
         while (System.currentTimeMillis() < startMillis + invocationTimeoutMillis) {
             try {
@@ -347,20 +350,13 @@ public final class ProxyManager {
                 + " ms. Configured invocation timeout is " + invocationTimeoutMillis + " ms");
     }
 
-    private long getInvocationTimeoutMillis() {
-        HazelcastProperties hazelcastProperties = client.getProperties();
-        int waitTime = hazelcastProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
-        waitTime = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
-        return TimeUnit.SECONDS.toMillis(waitTime);
-    }
-
     private boolean isRetryable(final Throwable t) {
         return ClientInvocation.isRetrySafeException(t);
     }
 
     private void sleepForProxyInitRetry() {
         try {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(ClientInvocation.RETRY_WAIT_TIME_IN_SECONDS));
+            Thread.sleep(invocationRetryPauseMillis);
         } catch (InterruptedException ignored) {
             EmptyStatement.ignore(ignored);
         }

@@ -50,8 +50,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class ClientInvocation implements Runnable {
 
-    public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
-
+    private static final int MAX_FAST_INVOCATION_COUNT = 5;
     private static final int UNASSIGNED_PARTITION = -1;
 
     private final ClientInvocationFuture clientInvocationFuture;
@@ -65,10 +64,12 @@ public class ClientInvocation implements Runnable {
     private final Address address;
     private final int partitionId;
     private final Connection connection;
+    private final long retryExpirationMillis;
+    private final long retryPauseMillis;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
-    private long retryExpirationMillis;
     private EventHandler handler;
+    private volatile int invokeCount;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
@@ -84,6 +85,7 @@ public class ClientInvocation implements Runnable {
         this.address = address;
         this.connection = connection;
         this.retryExpirationMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
+        this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = client.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
@@ -136,6 +138,7 @@ public class ClientInvocation implements Runnable {
     }
 
     private void invokeOnSelection() {
+        invokeCount++;
         try {
             if (isBindToSingleConnection()) {
                 invocationService.invokeOnConnection(this, (ClientConnection) connection);
@@ -211,11 +214,22 @@ public class ClientInvocation implements Runnable {
         }
 
         try {
-            executionService.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+            execute();
         } catch (RejectedExecutionException e) {
             clientInvocationFuture.complete(exception);
         }
 
+    }
+
+    private void execute() {
+        if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+            // fast retry for the first few invocations
+            executionService.execute(this);
+        } else {
+            // progressive retry delay
+            long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
+            executionService.schedule(this, delayMillis, TimeUnit.MILLISECONDS);
+        }
     }
 
     private boolean isNotAllowedToRetryOnSelection(Throwable exception) {
@@ -261,7 +275,7 @@ public class ClientInvocation implements Runnable {
 
     public ClientConnection getSendConnectionOrWait() throws InterruptedException {
         while (sendConnection == null && !clientInvocationFuture.isDone()) {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
+            Thread.sleep(retryPauseMillis);
         }
         return sendConnection;
     }

@@ -36,15 +36,14 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
@@ -54,7 +53,9 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
-    private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
+    private static final HazelcastProperty CLEAN_RESOURCES_MILLIS
+            = new HazelcastProperty("hazelcast.client.internal.clean.resources.millis",
+            100, TimeUnit.MILLISECONDS);
 
     protected final HazelcastClientInstanceImpl client;
     protected final ILogger invocationLogger;
@@ -70,12 +71,19 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
 
     private volatile boolean isShutdown;
     private final long invocationTimeoutMillis;
+    private final long invocationRetryPauseMillis;
 
     public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
+        this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
+    }
+
+    private long initInvocationRetryPauseMillis() {
+        long pauseTime = client.getProperties().getMillis(INVOCATION_RETRY_PAUSE_MILLIS);
+        return pauseTime > 0 ? pauseTime : Long.parseLong(INVOCATION_RETRY_PAUSE_MILLIS.getDefaultValue());
     }
 
     private long initInvocationTimeoutMillis() {
@@ -91,7 +99,13 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
         responseThread = new ResponseThread(client.getName() + ".response-", classLoader);
         responseThread.start();
         ClientExecutionService executionService = client.getClientExecutionService();
-        executionService.scheduleWithRepetition(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
+        long cleanResourcesMillis = client.getProperties().getMillis(CLEAN_RESOURCES_MILLIS);
+        if (cleanResourcesMillis <= 0) {
+            cleanResourcesMillis = Integer.parseInt(CLEAN_RESOURCES_MILLIS.getDefaultValue());
+
+        }
+        executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
+                cleanResourcesMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -181,7 +195,6 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
         @Override
         public void run() {
             Iterator<Map.Entry<Long, ClientInvocation>> iter = callIdMap.entrySet().iterator();
-            Collection<ClientConnection> expiredConnections = null;
             while (iter.hasNext()) {
                 Map.Entry<Long, ClientInvocation> entry = iter.next();
                 ClientInvocation invocation = entry.getValue();
@@ -194,25 +207,9 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
                     continue;
                 }
 
-                if (connection.getPendingPacketCount() != 0) {
-                    long closedTime = connection.getClosedTime();
-                    long elapsed = System.currentTimeMillis() - closedTime;
-                    if (elapsed < WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD) {
-                        continue;
-                    } else {
-                        if (expiredConnections == null) {
-                            expiredConnections = new LinkedList<ClientConnection>();
-                        }
-                        expiredConnections.add(connection);
-                    }
-                }
-
                 iter.remove();
 
                 notifyException(invocation, connection);
-            }
-            if (expiredConnections != null) {
-                logExpiredConnections(expiredConnections);
             }
         }
 
@@ -232,16 +229,6 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
             invocation.notifyException(ex);
         }
 
-        private void logExpiredConnections(Collection<ClientConnection> expiredConnections) {
-            for (ClientConnection expiredConnection : expiredConnections) {
-                int pendingPacketCount = expiredConnection.getPendingPacketCount();
-                if (pendingPacketCount != 0) {
-                    invocationLogger.warning("There are " + pendingPacketCount
-                            + " packets which are not processed on "
-                            + expiredConnection.getEndPoint());
-                }
-            }
-        }
     }
 
     @Override
@@ -251,6 +238,10 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
 
     public long getInvocationTimeoutMillis() {
         return invocationTimeoutMillis;
+    }
+
+    public long getInvocationRetryPauseMillis() {
+        return invocationRetryPauseMillis;
     }
 
     private static class ClientPacket {
