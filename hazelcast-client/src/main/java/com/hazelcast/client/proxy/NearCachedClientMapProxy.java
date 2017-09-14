@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
@@ -40,7 +37,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.CollectionUtil;
@@ -57,12 +53,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
-import static com.hazelcast.instance.BuildInfo.UNKNOWN_HAZELCAST_VERSION;
 import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -653,7 +647,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             return;
         }
 
-        getContext().getRepairingTask(SERVICE_NAME).deregisterHandler(name);
+        getContext().getRepairingTask(getServiceName()).deregisterHandler(name);
         deregisterListener(invalidationListenerId);
     }
 
@@ -665,21 +659,26 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
      */
     private final class ConnectedServerVersionAwareNearCacheEventHandler implements EventHandler<ClientMessage> {
 
-        private final RepairableNearCacheEventHandler repairingEventHandler = new RepairableNearCacheEventHandler();
         private final Pre38NearCacheEventHandler pre38EventHandler = new Pre38NearCacheEventHandler();
+        private final RepairableNearCacheEventHandler repairingEventHandler = new RepairableNearCacheEventHandler();
 
         private volatile boolean supportsRepairableNearCache;
 
         @Override
         public void beforeListenerRegister() {
             repairingEventHandler.beforeListenerRegister();
-            pre38EventHandler.beforeListenerRegister();
+
+            supportsRepairableNearCache = supportsRepairableNearCache();
+
+            if (!supportsRepairableNearCache) {
+                pre38EventHandler.beforeListenerRegister();
+
+                logger.warning(format("Near Cache for '%s' map is started in legacy mode", name));
+            }
         }
 
         @Override
         public void onListenerRegister() {
-            supportsRepairableNearCache = supportsRepairableNearCache();
-
             if (supportsRepairableNearCache) {
                 repairingEventHandler.onListenerRegister();
             } else {
@@ -705,17 +704,17 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final RepairingHandler repairingHandler;
-
-        public RepairableNearCacheEventHandler() {
-            RepairingTask repairingTask = getContext().getRepairingTask(SERVICE_NAME);
-            repairingTask.deregisterHandler(name);
-            repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
-        }
+        private volatile RepairingHandler repairingHandler;
 
         @Override
         public void beforeListenerRegister() {
-            // NOP
+            if (supportsRepairableNearCache()) {
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
+            } else {
+                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+                repairingTask.deregisterHandler(name);
+            }
         }
 
         @Override
@@ -774,18 +773,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 nearCache.remove(serializeKeys ? key : toObject(key));
             }
         }
-    }
-
-    private int getConnectedServerVersion() {
-        HazelcastClientInstanceImpl client = getClient();
-        ClientConnectionManager connectionManager = client.getConnectionManager();
-        Connection connection = connectionManager.getOwnerConnection();
-        if (connection == null) {
-            logger.warning(format("No owner connection is available, near cached cache %s will be started in legacy mode", name));
-            return UNKNOWN_HAZELCAST_VERSION;
-        }
-
-        return ((ClientConnection) connection).getConnectedServerVersion();
     }
 
     private boolean supportsRepairableNearCache() {

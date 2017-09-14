@@ -23,6 +23,7 @@ import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,6 +31,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.lang.String.format;
 import static java.lang.System.nanoTime;
@@ -158,17 +160,29 @@ public final class RepairingTask implements Runnable {
         }
     }
 
-    public <K, V> RepairingHandler registerAndGetHandler(String name, NearCache<K, V> nearCache) {
-        RepairingHandler handler = handlers.get(name);
-        if (handler == null) {
-            handler = new RepairingHandler(logger, localUuid, name, nearCache, serializationService, partitionService);
+    private class HandlerConstructor<K, V> implements ConstructorFunction<String, RepairingHandler> {
+
+        private final NearCache<K, V> nearCache;
+
+        public HandlerConstructor(NearCache nearCache) {
+            this.nearCache = nearCache;
+        }
+
+        @Override
+        public RepairingHandler createNew(String dataStructureName) {
+            RepairingHandler handler = new RepairingHandler(logger, localUuid, dataStructureName,
+                    nearCache, serializationService, partitionService);
             StaleReadDetector staleReadDetector = new StaleReadDetectorImpl(handler, partitionService);
             nearCache.unwrap(DefaultNearCache.class).getNearCacheRecordStore().setStaleReadDetector(staleReadDetector);
 
             initRepairingHandler(handler);
 
-            handlers.put(name, handler);
+            return handler;
         }
+    }
+
+    public <K, V> RepairingHandler registerAndGetHandler(String dataStructureName, NearCache<K, V> nearCache) {
+        RepairingHandler handler = getOrPutIfAbsent(handlers, dataStructureName, new HandlerConstructor(nearCache));
 
         if (running.compareAndSet(false, true)) {
             scheduleNextRun();
@@ -178,8 +192,8 @@ public final class RepairingTask implements Runnable {
         return handler;
     }
 
-    public void deregisterHandler(String mapName) {
-        handlers.remove(mapName);
+    public void deregisterHandler(String dataStructureName) {
+        handlers.remove(dataStructureName);
     }
 
     /**

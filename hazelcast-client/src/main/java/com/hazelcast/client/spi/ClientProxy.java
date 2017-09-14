@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
@@ -27,13 +29,15 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Collection;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.instance.BuildInfo.UNKNOWN_HAZELCAST_VERSION;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Base class for client proxies.
- *
+ * <p>
  * Allows the client to proxy operations through member nodes.
  */
 public abstract class ClientProxy implements DistributedObject {
@@ -99,6 +103,17 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected final HazelcastClientInstanceImpl getClient() {
         return (HazelcastClientInstanceImpl) getContext().getHazelcastInstance();
+    }
+
+    protected final int getConnectedServerVersion() {
+        HazelcastClientInstanceImpl client = getClient();
+        ClientConnectionManager connectionManager = client.getConnectionManager();
+        Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+        for (ClientConnection connection : activeConnections) {
+            return connection.getConnectedServerVersion();
+        }
+
+        return UNKNOWN_HAZELCAST_VERSION;
     }
 
     @Deprecated

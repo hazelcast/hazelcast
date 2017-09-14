@@ -41,14 +41,14 @@ import static java.lang.String.format;
  */
 public final class RepairingHandler {
 
+    private final int partitionCount;
+    private final boolean serializeKeys;
     private final ILogger logger;
     private final String localUuid;
     private final String name;
     private final NearCache nearCache;
-    private final boolean serializeKeys;
     private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
-    private final int partitionCount;
     private final MetaDataContainer[] metaDataContainers;
 
     public RepairingHandler(ILogger logger, String localUuid, String name, NearCache nearCache,
