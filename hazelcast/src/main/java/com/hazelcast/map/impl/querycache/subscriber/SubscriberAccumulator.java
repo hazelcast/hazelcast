@@ -28,16 +28,16 @@ import com.hazelcast.map.impl.querycache.event.sequence.SubscriberSequencerProvi
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEventLost;
 import static java.lang.String.format;
-import static java.util.logging.Level.WARNING;
 
 /**
  * If all incoming events are in the correct sequence order, this accumulator applies those events to
  * {@link com.hazelcast.map.QueryCache QueryCache}.
  * Otherwise, it informs registered callback if there is any.
- *
+ * <p>
  * This class can be accessed by multiple-threads at a time.
  */
 public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData> {
@@ -154,10 +154,13 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         boolean isNextSequence = foundSequence == expectedSequence;
 
         if (!isNextSequence) {
-            if (logger.isLoggable(WARNING)) {
-                logger.warning(format("Event lost detected for partitionId=%d, expectedSequence=%d "
-                                + "but foundSequence=%d, cacheSize=%d",
-                        partitionId, expectedSequence, foundSequence, getQueryCache().size()));
+            if (logger.isLoggable(Level.WARNING)) {
+                InternalQueryCache queryCache = getQueryCache();
+                if (queryCache != null) {
+                    logger.warning(format("Event lost detected for partitionId=%d, expectedSequence=%d "
+                                    + "but foundSequence=%d, cacheSize=%d",
+                            partitionId, expectedSequence, foundSequence, queryCache.size()));
+                }
             }
         }
 
