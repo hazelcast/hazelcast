@@ -33,7 +33,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -108,23 +107,23 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         }
     }
 
-    private Collection<InetSocketAddress> getSocketAddresses() {
-        final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
+    private Collection<Address> getAddresses() {
+        final List<Address> addresses = new LinkedList<Address>();
 
         Collection<Member> memberList = getMemberList();
         for (Member member : memberList) {
-            socketAddresses.add(member.getSocketAddress());
+            addresses.add(member.getAddress());
         }
 
         for (AddressProvider addressProvider : addressProviders) {
-            socketAddresses.addAll(addressProvider.loadAddresses());
+            addresses.addAll(addressProvider.loadAddresses());
         }
 
         if (shuffleMemberList) {
-            Collections.shuffle(socketAddresses);
+            Collections.shuffle(addresses);
         }
 
-        return socketAddresses;
+        return addresses;
     }
 
     public ClientPrincipal getPrincipal() {
@@ -145,7 +144,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         final int connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
 
         int attempt = 0;
-        Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
+        Set<Address> triedAddresses = new HashSet<Address>();
         while (attempt < connectionAttemptLimit) {
             checkIfClientStillRuning("Giving up on retrying to connect to cluster since client is shutdown.");
             attempt++;
@@ -186,9 +185,9 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         }
     }
 
-    private boolean connect(Set<InetSocketAddress> triedAddresses) throws Exception {
-        final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
-        for (InetSocketAddress inetSocketAddress : socketAddresses) {
+    private boolean connect(Set<Address> triedAddresses) throws Exception {
+        final Collection<Address> memberAddresses = getAddresses();
+        for (Address address : memberAddresses) {
             if (!client.getLifecycleService().isRunning()) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Giving up on retrying to connect to cluster since client is shutdown");
@@ -197,17 +196,16 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             }
             Connection connection = null;
             try {
-                triedAddresses.add(inetSocketAddress);
-                Address address = new Address(inetSocketAddress);
+                triedAddresses.add(address);
                 logger.info("Trying to connect to " + address + " as owner member");
                 connection = connectionManager.getOrConnect(address, true);
                 clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {
-                logger.warning("Exception during initial connection to " + inetSocketAddress + ", exception " + e);
+                logger.warning("Exception during initial connection to " + address + ", exception " + e);
                 if (null != connection) {
-                    connection.close("Could not connect to " + inetSocketAddress + " as owner", e);
+                    connection.close("Could not connect to " + address + " as owner", e);
                 }
             }
         }
