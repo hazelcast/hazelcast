@@ -18,13 +18,16 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -40,7 +43,7 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheComplete
  */
 public class CacheRemoveAllOperation
         extends PartitionWideCacheOperation
-        implements BackupAwareOperation, MutatingOperation {
+        implements BackupAwareOperation, MutatingOperation, ServiceNamespaceAware {
 
     private Set<Data> keys;
     private int completionId;
@@ -117,6 +120,11 @@ public class CacheRemoveAllOperation
     @Override
     public Operation getBackupOperation() {
         return new CacheRemoveAllBackupOperation(name, filteredKeys);
+    }
+
+    @Override
+    public ObjectNamespace getServiceNamespace() {
+        return cache != null ? cache.getObjectNamespace() : CacheService.getObjectNamespace(name);
     }
 
     @Override

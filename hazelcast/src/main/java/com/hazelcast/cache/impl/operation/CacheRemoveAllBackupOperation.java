@@ -25,6 +25,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
@@ -38,7 +40,7 @@ import java.util.Set;
  */
 public class CacheRemoveAllBackupOperation
         extends AbstractNamedOperation
-        implements BackupOperation, IdentifiedDataSerializable, MutatingOperation {
+        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
 
     private Set<Data> keys;
 
@@ -89,6 +91,16 @@ public class CacheRemoveAllBackupOperation
                 cache.removeRecord(key);
             }
         }
+    }
+
+    @Override
+    public ObjectNamespace getServiceNamespace() {
+        ICacheRecordStore recordStore = cache;
+        if (recordStore == null) {
+            ICacheService service = getService();
+            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
+        }
+        return recordStore.getObjectNamespace();
     }
 
     @Override
