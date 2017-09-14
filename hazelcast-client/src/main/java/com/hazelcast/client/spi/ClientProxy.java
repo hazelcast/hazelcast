@@ -59,7 +59,7 @@ public abstract class ClientProxy implements DistributedObject {
         return context.getListenerService().deregisterListener(registrationId);
     }
 
-    protected final ClientContext getContext() {
+    public final ClientContext getContext() {
         return context;
     }
 
