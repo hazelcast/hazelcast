@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessor;
@@ -26,7 +27,6 @@ import com.hazelcast.map.impl.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,9 +58,11 @@ public final class MapDataStores {
     public static <K, V> MapDataStore<K, V> createWriteBehindStore(MapStoreContext mapStoreContext, int partitionId,
                                                                    WriteBehindProcessor writeBehindProcessor) {
         MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
-
-        WriteBehindStore mapDataStore = new WriteBehindStore(mapStoreContext, partitionId);
+        InternalSerializationService serializationService
+                = ((InternalSerializationService) nodeEngine.getSerializationService());
+        WriteBehindStore mapDataStore = new WriteBehindStore(mapStoreContext, partitionId, serializationService);
         mapDataStore.setWriteBehindQueue(newWriteBehindQueue(mapServiceContext, mapStoreConfig.isWriteCoalescing()));
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
         return (MapDataStore<K, V>) mapDataStore;
@@ -85,7 +87,8 @@ public final class MapDataStores {
         final MapStoreWrapper store = mapStoreContext.getMapStoreWrapper();
         final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final SerializationService serializationService = nodeEngine.getSerializationService();
+        final InternalSerializationService serializationService
+                = ((InternalSerializationService) nodeEngine.getSerializationService());
 
         return (MapDataStore<K, V>) new WriteThroughStore(store, serializationService);
 

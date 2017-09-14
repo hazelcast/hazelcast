@@ -16,9 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.nio.serialization.DataType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +36,9 @@ import java.util.Map;
 public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
 
     private final MapStoreWrapper store;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
 
-    protected AbstractMapDataStore(MapStoreWrapper store, SerializationService serializationService) {
+    protected AbstractMapDataStore(MapStoreWrapper store, InternalSerializationService serializationService) {
         if (store == null || serializationService == null) {
             throw new NullPointerException();
         }
@@ -77,8 +78,8 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         return serializationService.toObject(obj);
     }
 
-    protected Data toData(Object obj) {
-        return serializationService.toData(obj);
+    protected Data toHeapData(Object obj) {
+        return serializationService.toData(obj, DataType.HEAP);
     }
 
     public MapStoreWrapper getStore() {
