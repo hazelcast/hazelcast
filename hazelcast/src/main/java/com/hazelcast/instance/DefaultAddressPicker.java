@@ -300,7 +300,7 @@ class DefaultAddressPicker implements AddressPicker {
         if (address != null) {
             address = address.trim();
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
-                return pickLoopbackAddress(defaultPort);
+                return pickLoopbackAddress(address, defaultPort);
             } else {
                 // allow port to be defined in same string in the form of <host>:<port>, e.g. 10.0.0.0:1234
                 AddressUtil.AddressHolder holder = AddressUtil.getAddressHolder(address, defaultPort);
@@ -314,9 +314,9 @@ class DefaultAddressPicker implements AddressPicker {
         return new AddressDefinition(InetAddress.getByName("127.0.0.1"));
     }
 
-    private AddressDefinition pickLoopbackAddress(int defaultPort) throws UnknownHostException {
-        InetAddress adddress = InetAddress.getByName("127.0.0.1");
-        return new AddressDefinition(adddress.getHostAddress(), defaultPort, adddress);
+    private AddressDefinition pickLoopbackAddress(String host, int defaultPort) throws UnknownHostException {
+        InetAddress adddress = InetAddress.getByName(host);
+        return new AddressDefinition(host, defaultPort, adddress);
     }
 
     private AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {

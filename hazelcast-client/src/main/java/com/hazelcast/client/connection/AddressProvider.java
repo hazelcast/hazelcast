@@ -16,17 +16,20 @@
 
 package com.hazelcast.client.connection;
 
-import java.net.InetSocketAddress;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.util.Collection;
 
 /**
  * Provides initial addresses for client to find and connect to a node
  */
+@PrivateApi
 public interface AddressProvider {
 
     /**
-     * @return Collection of InetSocketAddress
+     * @return The possible member addresses to connect to.
      */
-    Collection<InetSocketAddress> loadAddresses();
+    Collection<Address> loadAddresses();
 
 }
