@@ -17,12 +17,20 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.test.ClientTestSupport;
+import com.hazelcast.client.util.ClientStateListener;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -32,13 +40,17 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientRegressionWithRealNetworkTest extends HazelcastTestSupport {
+public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
     @After
     public void cleanUp() {
@@ -90,5 +102,87 @@ public class ClientRegressionWithRealNetworkTest extends HazelcastTestSupport {
         });
 
         assertOpenEventually(clientLatch);
+    }
+
+    @Test
+    public void testConnectWithDNSHostnames() throws InterruptedException {
+        Config config = new Config();
+        config.setProperty(GroupProperty.SOCKET_BIND_ANY.getName(), "false");
+        config.setProperty("hazelcast.local.localAddress", "localhost");
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress("localhost").setConnectionAttemptLimit(Integer.MAX_VALUE);
+        ClientStateListener clientStateListener = new ClientStateListener(clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        final ClientConnectionManager connectionManager = clientInstanceImpl.getConnectionManager();
+
+        Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(2, connectionManager.getActiveConnections().size());
+            }
+        });
+
+        hazelcastInstance.shutdown();
+
+        assertTrue(clientStateListener.awaitConnected(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+
+        assertEquals(1, connectionManager.getActiveConnections().size());
+    }
+
+    @Test
+    public void testListenersWhenDNSHostnamesAreUsed() {
+        Config config = new Config();
+        int heartBeatSeconds = 5;
+        config.setProperty(GroupProperty.SOCKET_BIND_ANY.getName(), "false");
+        config.setProperty("hazelcast.local.localAddress", "localhost");
+        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), Integer.toString(heartBeatSeconds));
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        networkConfig.addAddress("localhost");
+        networkConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final IMap<Integer, Integer> map = client.getMap("test");
+
+        final AtomicInteger eventCount = new AtomicInteger(0);
+
+        map.addEntryListener(new EntryAddedListener() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                eventCount.incrementAndGet();
+            }
+        }, false);
+
+        Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+                int size = clientInstanceImpl.getConnectionManager().getActiveConnections().size();
+                assertEquals(2, size);
+
+            }
+        });
+
+        hazelcastInstance.shutdown();
+
+        sleepAtLeastSeconds(2 * heartBeatSeconds);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                map.put(1, 2);
+                assertNotEquals(0, eventCount.get());
+            }
+        });
     }
 }

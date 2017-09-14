@@ -33,7 +33,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -104,14 +103,14 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
         return new AddressProvider() {
             @Override
-            public Collection<InetSocketAddress> loadAddresses() {
-                Collection<InetSocketAddress> inetAddresses = new ArrayList<InetSocketAddress>();
+            public Collection<Address> loadAddresses() {
+                Collection<Address> possibleAddresses = new ArrayList<Address>();
                 for (Address address : getKnownAddresses()) {
-                    Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
+                    Collection<Address> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
                             address.getHost(), 1);
-                    inetAddresses.addAll(addresses);
+                    possibleAddresses.addAll(addresses);
                 }
-                return inetAddresses;
+                return possibleAddresses;
             }
         };
     }

@@ -22,8 +22,8 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.Address;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,10 +45,10 @@ public class AwsAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Collection<InetSocketAddress> loadAddresses() {
+    public Collection<Address> loadAddresses() {
         updateLookupTable();
         final Map<String, String> lookupTable = getLookupTable();
-        final Collection<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>(lookupTable.size());
+        final Collection<Address> addresses = new ArrayList<Address>(lookupTable.size());
 
         for (String privateAddress : lookupTable.keySet()) {
             addresses.addAll(AddressHelper.getSocketAddresses(privateAddress));

@@ -16,7 +16,8 @@
 
 package com.hazelcast.client.connection;
 
-import java.net.InetSocketAddress;
+import com.hazelcast.nio.Address;
+
 import java.util.Collection;
 
 /**
@@ -25,8 +26,8 @@ import java.util.Collection;
 public interface AddressProvider {
 
     /**
-     * @return Collection of InetSocketAddress
+     * @return The possible member addresses to connect to.
      */
-    Collection<InetSocketAddress> loadAddresses();
+    Collection<Address> loadAddresses();
 
 }
