@@ -128,8 +128,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
         // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
         if (NATIVE == inMemoryFormat) {
-            value = toData(value);
-            key = toData(key);
+            value = toHeapData(value);
+            key = toHeapData(key);
         }
 
         // This note describes the problem when we want to persist all states of an entry (means write-coalescing is off)
@@ -141,7 +141,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         // this means an extra serialization and additional latency for operations like map#put but it is needed,
         // otherwise we can lost a state.
         if (!coalesce && OBJECT == inMemoryFormat) {
-            value = toData(value);
+            value = toHeapData(value);
         }
 
         DelayedEntry<Data, Object> delayedEntry
@@ -162,7 +162,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public void addTransient(Data key, long now) {
         if (NATIVE == inMemoryFormat) {
-            key = toData(key);
+            key = toHeapData(key);
         }
 
         stagingArea.put(key, TRANSIENT);
@@ -176,7 +176,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public void remove(Data key, long now) {
         if (NATIVE == inMemoryFormat) {
-            key = toData(key);
+            key = toHeapData(key);
         }
 
         DelayedEntry<Data, Object> delayedEntry
@@ -216,7 +216,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         Iterator iterator = keys.iterator();
         while (iterator.hasNext()) {
             Object key = iterator.next();
-            Data dataKey = toData(key);
+            Data dataKey = toHeapData(key);
 
             DelayedEntry delayedEntry = getFromStagingArea(dataKey);
             if (delayedEntry != null) {
@@ -247,7 +247,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public boolean loadable(Data key) {
         if (NATIVE == inMemoryFormat) {
-            key = toData(key);
+            key = toHeapData(key);
         }
 
         return !writeBehindQueue.contains(DelayedEntries.createDefault(key, null, -1, -1));
@@ -261,8 +261,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public Object flush(Data key, Object value, boolean backup) {
         if (NATIVE == inMemoryFormat) {
-            key = toData(key);
-            value = toData(value);
+            key = toHeapData(key);
+            value = toHeapData(value);
         }
 
         DelayedEntry delayedEntry = stagingArea.get(key);

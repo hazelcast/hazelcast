@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache.impl.invalidation;
+package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertUtilityConstructor;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -41,6 +42,12 @@ public class ToHeapDataConverterTest {
     public void toHeapData() throws Exception {
         Data data = ToHeapDataConverter.toHeapData(new AnotherDataImpl());
         assertInstanceOf(HeapData.class, data);
+    }
+
+    @Test
+    public void whenNull() throws Exception {
+        Data data = ToHeapDataConverter.toHeapData(null);
+        assertNull(data);
     }
 
     class AnotherDataImpl implements Data {
