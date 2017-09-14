@@ -84,7 +84,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
             return;
         }
         String listenerId = listenerRegistry.remove(cacheId);
-        mapService.getMapServiceContext().removeEventListener(name, listenerId);
+        mapService.getMapServiceContext().removeEventListener(cacheId, listenerId);
     }
 
     private void removeAccumulatorInfo() {

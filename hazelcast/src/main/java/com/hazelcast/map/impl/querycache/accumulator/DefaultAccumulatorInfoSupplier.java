@@ -49,6 +49,10 @@ public class DefaultAccumulatorInfoSupplier implements AccumulatorInfoSupplier {
     @Override
     public AccumulatorInfo getAccumulatorInfoOrNull(String mapName, String cacheId) {
         ConcurrentMap<String, AccumulatorInfo> cacheToInfoMap = cacheInfoPerMap.get(mapName);
+        if (cacheToInfoMap == null) {
+            return null;
+        }
+
         return cacheToInfoMap.get(cacheId);
     }
 
@@ -64,6 +68,17 @@ public class DefaultAccumulatorInfoSupplier implements AccumulatorInfoSupplier {
         if (cacheToInfoMap == null) {
             return;
         }
+
         cacheToInfoMap.remove(cacheId);
+    }
+
+    // only for testing
+    public int accumulatorInfoCountOfMap(String mapName) {
+        ConcurrentMap<String, AccumulatorInfo> accumulatorInfo = cacheInfoPerMap.get(mapName);
+        if (accumulatorInfo == null) {
+            return 0;
+        } else {
+            return accumulatorInfo.size();
+        }
     }
 }

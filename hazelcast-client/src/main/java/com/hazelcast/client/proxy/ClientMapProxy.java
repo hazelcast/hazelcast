@@ -112,7 +112,6 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
@@ -138,7 +137,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.Preconditions;
@@ -1457,14 +1455,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return createQueryCache(request);
     }
 
-
-    private QueryCache createQueryCache(QueryCacheRequest request) {
-        ConstructorFunction<String, InternalQueryCache> constructorFunction
-                = new ClientQueryCacheEndToEndConstructor(request);
+    @SuppressWarnings("unchecked")
+    private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(),
-                request.getCacheName(), constructorFunction);
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
+                new ClientQueryCacheEndToEndConstructor(request));
     }
 
     @Override
@@ -1660,4 +1656,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
     }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
+            QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
+            provider.destroyAllQueryCaches(name);
+        } finally {
+            super.onDestroy();
+        }
+    }
+
 }

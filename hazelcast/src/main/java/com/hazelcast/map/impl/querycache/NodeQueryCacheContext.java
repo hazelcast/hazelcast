@@ -172,12 +172,12 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         return mapServiceContext.toObject(obj);
     }
 
-    private String registerLocalIMapListener(String mapName) {
+    private String registerLocalIMapListener(String name) {
         return mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
             @Override
             public void onEvent(IMapEvent event) {
                 // NOP
             }
-        }, mapName);
+        }, name);
     }
 }
