@@ -20,6 +20,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -130,7 +131,11 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     @Override
     public EventJournalConfig getEventJournalConfig(ObjectNamespace namespace) {
-        return nodeEngine.getConfig().findMapEventJournalConfig(namespace.getObjectName());
+        // when the cluster version is less than 3.9 we act as if the journal is disabled
+        // this is because some members might not know how to save journal events
+        return nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)
+                ? null
+                : nodeEngine.getConfig().findMapEventJournalConfig(namespace.getObjectName());
     }
 
     @Override
