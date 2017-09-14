@@ -110,20 +110,17 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
 
     @Override
     public <C extends EvictionCandidate<Data, QueryCacheRecord>>
-    int evict(Iterable<C> evictionCandidates, EvictionListener<Data, QueryCacheRecord> evictionListener) {
-        if (evictionCandidates == null) {
-            return 0;
+    boolean tryEvict(C evictionCandidate, EvictionListener<Data, QueryCacheRecord> evictionListener) {
+        if (evictionCandidate == null) {
+            return false;
         }
-        int actualEvictedCount = 0;
-        for (EvictionCandidate<Data, QueryCacheRecord> evictionCandidate : evictionCandidates) {
-            if (remove(evictionCandidate.getAccessor()) != null) {
-                actualEvictedCount++;
-                if (evictionListener != null) {
-                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
-                }
-            }
+        if (remove(evictionCandidate.getAccessor()) == null) {
+            return false;
         }
-        return actualEvictedCount;
+        if (evictionListener != null) {
+            evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
+        }
+        return true;
     }
 
     @Override

@@ -22,8 +22,6 @@ import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.util.Clock;
 
-import static java.util.Collections.singleton;
-
 /**
  * Default {@link EvictionPolicyEvaluator} implementation.
  *
@@ -44,13 +42,15 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
     }
 
     /**
-     * The evaluate method implements the {@link com.hazelcast.config.EvictionPolicy} rule
-     * on the given input set of candidates.
+     * Selects the best candidate to be evicted.
+     * The definition of the best depends on configured eviction policy. (LRU, LFU, custom, etc)
+     *
+     * It returns <code>null</code> when there the input is empty.
      *
      * @param evictionCandidates Multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} to be evicted
-     * @return multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} these are available to be evicted
+     * @return a selected candidate to be evicted or null.
      */
-    public <C extends EvictionCandidate<A, E>> Iterable<C> evaluate(Iterable<C> evictionCandidates) {
+    public <C extends EvictionCandidate<A, E>> C evaluate(Iterable<C> evictionCandidates) {
         C selectedEvictionCandidate = null;
         long now = Clock.currentTimeMillis();
         for (C currentEvictionCandidate : evictionCandidates) {
@@ -59,7 +59,7 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
             } else {
                 E evictable = currentEvictionCandidate.getEvictable();
                 if (isExpired(now, evictable)) {
-                    return returnEvictionCandidate(currentEvictionCandidate);
+                    return currentEvictionCandidate;
                 }
 
                 int comparisonResult = evictionPolicyComparator.compare(selectedEvictionCandidate, currentEvictionCandidate);
@@ -68,15 +68,7 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
                 }
             }
         }
-        return returnEvictionCandidate(selectedEvictionCandidate);
-    }
-
-    private <C extends EvictionCandidate<A, E>> Iterable<C> returnEvictionCandidate(C evictionCandidate) {
-        if (evictionCandidate == null) {
-            return null;
-        } else {
-            return evictionCandidate instanceof Iterable ? (Iterable<C>) evictionCandidate : singleton(evictionCandidate);
-        }
+        return selectedEvictionCandidate;
     }
 
     private boolean isExpired(long now, Evictable evictable) {

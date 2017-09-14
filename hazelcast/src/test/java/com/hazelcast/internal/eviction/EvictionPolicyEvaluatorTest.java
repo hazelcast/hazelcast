@@ -150,19 +150,10 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
 
         sleepAtLeastMillis(1);
 
-        Iterable<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecords =
-                evictionPolicyEvaluator.evaluate(records);
+        EvictionCandidate<Integer, CacheObjectRecord> evictionCandidate = evictionPolicyEvaluator.evaluate(records);
+        assertNotNull(evictionCandidate);
 
-        assertNotNull(evictedRecords);
-
-        Iterator<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecordsIterator = evictedRecords.iterator();
-        assertTrue(evictedRecordsIterator.hasNext());
-
-        EvictionCandidate<Integer, CacheObjectRecord> candidateEvictedRecord = evictedRecordsIterator.next();
-        assertNotNull(candidateEvictedRecord);
-        assertFalse(evictedRecordsIterator.hasNext());
-
-        CacheObjectRecord evictedRecord = candidateEvictedRecord.getEvictable();
+        CacheObjectRecord evictedRecord = evictionCandidate.getEvictable();
         assertNotNull(evictedRecord);
         if (useExpiredEntry) {
             assertEquals(EXPECTED_EXPIRED_RECORD_VALUE, evictedRecord.getValue());
@@ -231,19 +222,11 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             records.add(new SimpleEvictionCandidate<Integer, CacheObjectRecord>(i, record));
         }
 
-        Iterable<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecords =
-                evictionPolicyEvaluator.evaluate(records);
+        EvictionCandidate<Integer, CacheObjectRecord> evictionCandidate = evictionPolicyEvaluator.evaluate(records);
 
-        assertNotNull(evictedRecords);
+        assertNotNull(evictionCandidate);
 
-        Iterator<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecordsIterator = evictedRecords.iterator();
-        assertTrue(evictedRecordsIterator.hasNext());
-
-        EvictionCandidate<Integer, CacheObjectRecord> candidateEvictedRecord = evictedRecordsIterator.next();
-        assertNotNull(candidateEvictedRecord);
-        assertFalse(evictedRecordsIterator.hasNext());
-
-        CacheObjectRecord evictedRecord = candidateEvictedRecord.getEvictable();
+        CacheObjectRecord evictedRecord = evictionCandidate.getEvictable();
         assertNotNull(evictedRecord);
         if (useExpiredEntry) {
             assertEquals(EXPECTED_EXPIRED_RECORD_VALUE, evictedRecord.getValue());

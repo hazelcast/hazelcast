@@ -26,12 +26,19 @@ import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 
 /**
  * Contains eviction specific functionality of a {@link QueryCacheRecordStore}.
  */
 public class EvictionOperator {
+    // It could be the current size of the CQC is over a configured limit. This can happen e.g. when multiple threads
+    // are inserting entries concurrently. However each eviction cycle can remove at most 1 entry -> we run multiple
+    // eviction cycles when the current size is over the configured eviction threshold. This property controls maximum
+    // no. of eviction cycles during one insertion into CQC.
+    // Too low value might be insufficient to properly evict entries, too high value can cause latency spikes.
+    private static final int MAX_EVICTION_ATTEMPTS = 10;
 
     private final QueryCacheRecordHashMap cache;
     private final EvictionConfig evictionConfig;
@@ -58,19 +65,22 @@ public class EvictionOperator {
         return evictionStrategy != null && evictionPolicyEvaluator != null;
     }
 
-    int evictIfRequired() {
-        int evictedCount = 0;
-        if (isEvictionEnabled()) {
-            evictedCount = evictionStrategy.evict(cache, evictionPolicyEvaluator, evictionChecker, listener);
+    void evictIfRequired() {
+        if (!isEvictionEnabled()) {
+            return;
         }
-        return evictedCount;
+
+        for (int i = 0; evictionChecker.isEvictionRequired() && i < MAX_EVICTION_ATTEMPTS; i++) {
+            // we already established we should evict -> we can pass EVICT_ALWAYS to the eviction strategy
+            evictionStrategy.evict(cache, evictionPolicyEvaluator, EVICT_ALWAYS, listener);
+        }
     }
 
     private EvictionChecker createCacheEvictionChecker() {
         return new EvictionChecker() {
             @Override
             public boolean isEvictionRequired() {
-                return cache.size() > evictionConfig.getSize();
+                return cache.size() >= evictionConfig.getSize();
             }
         };
     }
