@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableException;
@@ -70,16 +69,12 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
     private void submit(UnlockOperation operation, Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         OperationService operationService = nodeEngine.getOperationService();
-        operation.setNodeEngine(nodeEngine);
-        operation.setServiceName(SERVICE_NAME);
         operation.setPartitionId(partitionId);
-        OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-        operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
         operation.setOperationResponseHandler(unlockResponseHandler);
         operation.setValidateTarget(false);
         operation.setAsyncBackup(true);
 
-        operationService.execute(operation);
+        operationService.invokeOnTarget(SERVICE_NAME, operation, nodeEngine.getThisAddress());
     }
 
     private class UnlockResponseHandler implements OperationResponseHandler {
