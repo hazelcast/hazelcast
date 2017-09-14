@@ -33,7 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -97,8 +97,12 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
     private class TestAddressProvider implements AddressProvider {
         @Override
-        public Collection<InetSocketAddress> loadAddresses() {
-            return Collections.singletonList(new InetSocketAddress("127.0.0.1", 5701));
+        public Collection<Address> loadAddresses() {
+            try {
+                return Collections.singletonList(new Address("127.0.0.1", 5701));
+            } catch (UnknownHostException e) {
+                return null;
+            }
         }
     }
 

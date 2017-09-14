@@ -19,8 +19,8 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.nio.Address;
 
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,16 +41,16 @@ public class DefaultAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Collection<InetSocketAddress> loadAddresses() {
+    public Collection<Address> loadAddresses() {
         final List<String> addresses = networkConfig.getAddresses();
         if (addresses.isEmpty() && noOtherAddressProviderExist) {
-            addresses.add("localhost");
+            addresses.add("127.0.0.1");
         }
-        final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
+        final List<Address> possibleAddresses = new LinkedList<Address>();
 
         for (String address : addresses) {
-            socketAddresses.addAll(AddressHelper.getSocketAddresses(address));
+            possibleAddresses.addAll(AddressHelper.getSocketAddresses(address));
         }
-        return socketAddresses;
+        return possibleAddresses;
     }
 }

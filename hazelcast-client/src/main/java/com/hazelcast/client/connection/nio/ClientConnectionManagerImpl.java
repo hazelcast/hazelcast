@@ -420,10 +420,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return connection;
     }
 
-    private Connection connectAsOwner(InetSocketAddress ownerInetSocketAddress) {
+    private Connection connectAsOwner(Address address) {
         Connection connection = null;
         try {
-            Address address = new Address(ownerInetSocketAddress);
             logger.info("Trying to connect to " + address + " as owner member");
             connection = getOrConnect(address, true);
             client.onClusterConnect(connection);
@@ -432,9 +431,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + ownerInetSocketAddress + ", exception " + e);
+            logger.warning("Exception during initial connection to " + address + ", exception " + e);
             if (null != connection) {
-                connection.close("Could not connect to " + ownerInetSocketAddress + " as owner", e);
+                connection.close("Could not connect to " + address + " as owner", e);
             }
             return null;
         }
@@ -808,19 +807,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     private void connectToClusterInternal() {
         int attempt = 0;
-        Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
+        Set<Address> triedAddresses = new HashSet<Address>();
 
         while (attempt < connectionAttemptLimit) {
             attempt++;
             long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
 
-            Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
-            for (InetSocketAddress inetSocketAddress : socketAddresses) {
+            Collection<Address> addresses = getPossibleMemberAddresses();
+            for (Address address : addresses) {
                 if (!client.getLifecycleService().isRunning()) {
                     throw new IllegalStateException("Giving up on retrying to connect to cluster since client is shutdown.");
                 }
-                triedAddresses.add(inetSocketAddress);
-                if (connectAsOwner(inetSocketAddress) != null) {
+                triedAddresses.add(address);
+                if (connectAsOwner(address) != null) {
                     return;
                 }
             }
@@ -878,23 +877,23 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     }
 
-    private Collection<InetSocketAddress> getSocketAddresses() {
-        final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
+    private Collection<Address> getPossibleMemberAddresses() {
+        final List<Address> addresses = new LinkedList<Address>();
 
         Collection<Member> memberList = client.getClientClusterService().getMemberList();
         for (Member member : memberList) {
-            socketAddresses.add(member.getSocketAddress());
+            addresses.add(member.getAddress());
         }
 
         for (AddressProvider addressProvider : addressProviders) {
-            socketAddresses.addAll(addressProvider.loadAddresses());
+            addresses.addAll(addressProvider.loadAddresses());
         }
 
         if (shuffleMemberList) {
-            Collections.shuffle(socketAddresses);
+            Collections.shuffle(addresses);
         }
 
-        return socketAddresses;
+        return addresses;
     }
 
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {

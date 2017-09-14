@@ -362,8 +362,7 @@ public class ClientServiceTest extends ClientTestSupport {
             map.put(randomString(), randomString());
         }
         HazelcastClientInstanceImpl clientInstanceImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        InetSocketAddress socketAddress = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
-        Address address = new Address(socketAddress.getAddress().getHostAddress(), socketAddress.getPort());
+        Address address = hazelcastInstance.getCluster().getLocalMember().getAddress();
         ClientConnectionManager connectionManager = clientInstanceImpl.getConnectionManager();
         final ClientConnection connection = (ClientConnection) connectionManager.getActiveConnection(address);
         assertTrueEventually(new AssertTask() {
