@@ -33,6 +33,11 @@ import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.ge
  * Contains eviction specific functionality of a {@link QueryCacheRecordStore}.
  */
 public class EvictionOperator {
+    // It could be the current size of the CQC is over a configured limit. This can happen e.g. when multiple threads
+    // are inserting entries concurrently. However each eviction cycle can remove at most 1 entry -> we run multiple
+    // eviction cycles when the current size is over the configured eviction threshold. This property controls maximum
+    // no. of eviction cycles during one insertion into CQC.
+    // Too low value might be insufficient to properly evict entries, too high value can cause latency spikes.
     private static final int MAX_EVICTION_ATTEMPTS = 10;
 
     private final QueryCacheRecordHashMap cache;

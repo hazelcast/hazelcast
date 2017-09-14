@@ -42,11 +42,13 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
     }
 
     /**
-     * The evaluate method implements the {@link com.hazelcast.config.EvictionPolicy} rule
-     * on the given input set of candidates.
+     * Selects the best candidate to be evicted.
+     * The definition of the best depends on configured eviction policy. (LRU, LFU, custom, etc)
+     *
+     * It returns <code>null</code> when there the input is empty.
      *
      * @param evictionCandidates Multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} to be evicted
-     * @return multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} these are available to be evicted
+     * @return a selected candidate to be evicted or null.
      */
     public <C extends EvictionCandidate<A, E>> C evaluate(Iterable<C> evictionCandidates) {
         C selectedEvictionCandidate = null;
