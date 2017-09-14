@@ -31,8 +31,8 @@ import com.hazelcast.logging.Logger;
 
 import java.util.EnumSet;
 
-import static com.hazelcast.config.EvictionPolicy.NONE;
-import static com.hazelcast.config.EvictionPolicy.RANDOM;
+import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
@@ -50,6 +50,8 @@ public final class ConfigValidator {
 
     private static final EnumSet<EvictionConfig.MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
             = EnumSet.of(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+
+    private static final EnumSet<EvictionPolicy> SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
 
     private ConfigValidator() {
     }
@@ -96,7 +98,7 @@ public final class ConfigValidator {
      */
     // not private for testing
     static void checkNearCacheNativeMemoryConfig(InMemoryFormat inMemoryFormat,
-                                                        NativeMemoryConfig nativeMemoryConfig, boolean isEnterprise) {
+                                                 NativeMemoryConfig nativeMemoryConfig, boolean isEnterprise) {
         if (!isEnterprise) {
             return;
         }
@@ -173,11 +175,14 @@ public final class ConfigValidator {
             throw new IllegalArgumentException("Only one of the `comparator class name` and `comparator`"
                     + " can be configured in the eviction configuration!");
         }
-        if (!isNearCache && (evictionPolicy == null || evictionPolicy == NONE || evictionPolicy == RANDOM)) {
+
+        if (!isNearCache && !SUPPORTED_EVICTION_POLICIES.contains(evictionPolicy)) {
             if (isNullOrEmpty(comparatorClassName) && comparator == null) {
-                throw new IllegalArgumentException(
-                        "Eviction policy must be set to an eviction policy type rather than `null`, `NONE`, `RANDOM`"
-                                + " or custom eviction policy comparator must be specified!");
+
+                String msg = format("Eviction policy `%s` is not supported. Either you can provide a custom one or "
+                                + "can use one of the supported: %s.", evictionPolicy, SUPPORTED_EVICTION_POLICIES);
+
+                throw new IllegalArgumentException(msg);
             }
         } else {
             if (evictionPolicy != EvictionConfig.DEFAULT_EVICTION_POLICY) {
