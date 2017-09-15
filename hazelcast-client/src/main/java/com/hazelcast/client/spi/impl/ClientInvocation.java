@@ -40,6 +40,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
  * Handles the routing of a request from a Hazelcast client.
@@ -52,6 +53,8 @@ public class ClientInvocation implements Runnable {
 
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
     private static final int UNASSIGNED_PARTITION = -1;
+    private static final AtomicLongFieldUpdater<ClientInvocation> INVOKE_COUNT
+            = AtomicLongFieldUpdater.newUpdater(ClientInvocation.class, "invokeCount");
 
     private final ClientInvocationFuture clientInvocationFuture;
     private final ILogger logger;
@@ -69,7 +72,7 @@ public class ClientInvocation implements Runnable {
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
     private EventHandler handler;
-    private volatile int invokeCount;
+    private volatile long invokeCount;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
@@ -138,7 +141,7 @@ public class ClientInvocation implements Runnable {
     }
 
     private void invokeOnSelection() {
-        invokeCount++;
+        INVOKE_COUNT.incrementAndGet(this);
         try {
             if (isBindToSingleConnection()) {
                 invocationService.invokeOnConnection(this, (ClientConnection) connection);
