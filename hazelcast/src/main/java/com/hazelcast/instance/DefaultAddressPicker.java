@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -54,16 +55,18 @@ class DefaultAddressPicker implements AddressPicker {
     private static final int SOCKET_BACKLOG_LENGTH = 100;
     private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(1);
 
-    private final Node node;
     private final ILogger logger;
+    private final HazelcastProperties hazelcastProperties;
+    private final Config config;
 
     private ServerSocketChannel serverSocketChannel;
     private Address publicAddress;
     private Address bindAddress;
 
-    public DefaultAddressPicker(Node node) {
-        this.node = node;
-        this.logger = node.getLogger(DefaultAddressPicker.class);
+    DefaultAddressPicker(Config config, HazelcastProperties hazelcastProperties, ILogger logger) {
+        this.config = config;
+        this.hazelcastProperties = hazelcastProperties;
+        this.logger = logger;
     }
 
     @Override
@@ -90,8 +93,8 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private AddressDefinition getPublicAddressByPortSearch() throws IOException {
-        NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        boolean bindAny = node.getProperties().getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        boolean bindAny = hazelcastProperties.getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
 
         Throwable error = null;
         ServerSocket serverSocket = null;
@@ -149,7 +152,7 @@ class DefaultAddressPicker implements AddressPicker {
         bindAddress = createAddress(bindAddressDef, port);
 
         logger.info("Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
-        return getPublicAddress(node.getConfig(), port);
+        return getPublicAddress(config, port);
     }
 
     private Address createAddress(AddressDefinition addressDef, int port) throws UnknownHostException {
@@ -160,7 +163,7 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private AddressDefinition pickAddress(NetworkConfig networkConfig) throws UnknownHostException, SocketException {
-        AddressDefinition addressDef = getSystemConfiguredAddress(node.getConfig());
+        AddressDefinition addressDef = getSystemConfiguredAddress(config);
         if (addressDef == null) {
             addressDef = pickInterfaceAddress(networkConfig);
         }
@@ -208,7 +211,7 @@ class DefaultAddressPicker implements AddressPicker {
         if (tcpIpConfig.isEnabled()) {
             // LinkedHashMap is to guarantee order
             addressDomainMap = new LinkedHashMap<String, String>();
-            Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+            Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(config);
             for (String possibleAddress : possibleAddresses) {
                 String addressHolder = AddressUtil.getAddressHolder(possibleAddress).getAddress();
                 if (AddressUtil.isIpAddress(addressHolder)) {
@@ -354,9 +357,9 @@ class DefaultAddressPicker implements AddressPicker {
 
     private boolean preferIPv4Stack() {
         boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
-                || node.getProperties().getBoolean(GroupProperty.PREFER_IPv4_STACK);
+                || hazelcastProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
         // AWS does not support IPv6
-        JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
+        JoinConfig join = config.getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();
         boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
         return preferIPv4Stack || awsEnabled;
