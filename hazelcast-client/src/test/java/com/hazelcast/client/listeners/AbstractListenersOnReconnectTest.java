@@ -60,7 +60,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     private static final int EVENT_COUNT = 10;
     private final AtomicInteger eventCount = new AtomicInteger();
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private final CountDownLatch eventsLatch = new CountDownLatch(1);
+    private CountDownLatch eventsLatch = new CountDownLatch(1);
     private final Set<String> events = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private String registrationId;
     private int clusterSize;
@@ -521,6 +521,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private void validateListenerFunctionality() {
+        eventCount.set(0);
+        eventsLatch = new CountDownLatch(1);
         for (int i = 0; i < EVENT_COUNT; i++) {
             events.add(randomString());
         }
