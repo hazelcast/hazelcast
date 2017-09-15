@@ -16,14 +16,15 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
+import com.hazelcast.spi.NodeAware;
 
 import java.io.IOException;
 import java.util.Map;
@@ -31,7 +32,7 @@ import java.util.concurrent.Callable;
 
 public class ScheduledRunnableAdapter<V>
         implements IdentifiedDataSerializable, Callable<V>,
-                   HazelcastInstanceAware, PartitionAware, NamedTask, StatefulTask {
+                   NodeAware, PartitionAware, NamedTask, StatefulTask {
 
     private Runnable task;
 
@@ -65,11 +66,9 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        if (task instanceof HazelcastInstanceAware) {
-            HazelcastInstanceAware instanceAwareTask = (HazelcastInstanceAware) task;
-            instanceAwareTask.setHazelcastInstance(hazelcastInstance);
-        }
+    public void setNode(Node node) {
+        ManagedContext managedContext = node.getSerializationService().getManagedContext();
+        managedContext.initialize(task);
     }
 
     @Override
