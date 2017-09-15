@@ -40,7 +40,7 @@ public class DefaultNodeContext implements NodeContext {
 
     @Override
     public AddressPicker createAddressPicker(Node node) {
-        return new DefaultAddressPicker(node);
+        return new DefaultAddressPicker(node.getConfig(), node.getProperties(), node.getLogger(AddressPicker.class));
     }
 
     @Override

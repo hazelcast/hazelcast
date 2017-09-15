@@ -43,7 +43,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -124,12 +123,12 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         config.getNetworkConfig().setSmartRouting(false);
 
-        InetSocketAddress socketAddress1 = server1.getCluster().getLocalMember().getSocketAddress();
-        InetSocketAddress socketAddress2 = server2.getCluster().getLocalMember().getSocketAddress();
+        Address address1 = server1.getCluster().getLocalMember().getAddress();
+        Address address2 = server2.getCluster().getLocalMember().getAddress();
 
         config.getNetworkConfig().
-                addAddress(socketAddress1.getHostName() + ":" + socketAddress1.getPort()).
-                addAddress(socketAddress2.getHostName() + ":" + socketAddress2.getPort());
+                addAddress(address1.getHost() + ":" + address1.getPort()).
+                addAddress(address2.getHost() + ":" + address2.getPort());
 
         hazelcastFactory.newHazelcastClient(config);
 
@@ -151,7 +150,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
         connectionManager.addConnectionListener(listener);
 
-        final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
+        final Address serverAddress = server.getCluster().getLocalMember().getAddress();
         final Connection connectionToServer = connectionManager.getConnection(serverAddress);
 
         final CountDownLatch isConnected = new CountDownLatch(1);
