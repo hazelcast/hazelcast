@@ -588,7 +588,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         String registrationId = nearCacheMembershipRegistrationId;
         if (registrationId != null) {
-            getContext().getRepairingTask(getServiceName()).deregisterHandler(name);
+            getContext().getRepairingTask(getServiceName()).deregisterHandler(nameWithPrefix);
             getContext().getListenerService().deregisterListener(registrationId);
         }
     }
