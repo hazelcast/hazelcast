@@ -24,6 +24,9 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.spi.NodeAware;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -61,11 +64,15 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Test Node & HazelcastInstance are injected to {@link NodeAware} and {@link HazelcastInstanceAware} cache resources.
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
     static ConcurrentMap<Long, Boolean> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
+    static ConcurrentMap<Long, Boolean> NODE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
 
     private static final String CACHE_NAME = "MyCache";
 
@@ -105,11 +112,11 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_inject_hazelcastInstance_to_cacheLoader_if_itIs_hazelcastInstanceAware() {
+    public void test_injectDependenciesTo_cacheLoader() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
-        cacheConfig.setCacheLoaderFactory(new HazelcastInstanceAwareCacheLoaderFactory(id1, id2));
+        cacheConfig.setCacheLoaderFactory(new CacheLoaderFactoryWithDependencies(id1, id2));
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
@@ -121,14 +128,18 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into cache loader!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+        assertEquals("Node instance has not been injected into cache loader factory!",
+                Boolean.TRUE, NODE_INJECTION_RESULT_MAP.get(id1));
+        assertEquals("Node instance has not been injected into cache loader!",
+                Boolean.TRUE, NODE_INJECTION_RESULT_MAP.get(id2));
     }
 
     @Test
-    public void test_inject_hazelcastInstance_to_cacheWriter_if_itIs_hazelcastInstanceAware() {
+    public void test_injectDependenciesTo_cacheWriter() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
-        cacheConfig.setCacheWriterFactory(new HazelcastInstanceAwareCacheWriterFactory(id1, id2));
+        cacheConfig.setCacheWriterFactory(new CacheWriterFactoryWithDependencies(id1, id2));
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
@@ -140,14 +151,18 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into cache writer!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+        assertEquals("Node instance has not been injected into cache writer factory!",
+                Boolean.TRUE, NODE_INJECTION_RESULT_MAP.get(id1));
+        assertEquals("Node instance has not been injected into cache writer!",
+                Boolean.TRUE, NODE_INJECTION_RESULT_MAP.get(id2));
     }
 
     @Test
-    public void test_inject_hazelcastInstance_to_expiryPolicy_if_itIs_hazelcastInstanceAware() {
+    public void test_injectDependenciesTo_expiryPolicy() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
-        cacheConfig.setExpiryPolicyFactory(new HazelcastInstanceAwareExpiryPolicyFactory(id1, id2));
+        cacheConfig.setExpiryPolicyFactory(new ExpiryPolicyFactoryWithDependencies(id1, id2));
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
@@ -159,10 +174,14 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into expiry policy!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+        assertEquals("Node instance has not been injected into expiry policy factory!",
+                Boolean.TRUE, NODE_INJECTION_RESULT_MAP.get(id1));
+        assertEquals("Node instance has not been injected into expiry policy!",
+                Boolean.TRUE, NODE_INJECTION_RESULT_MAP.get(id2));
     }
 
     @Test
-    public void test_inject_hazelcastInstance_to_entryProcessor_if_itIs_hazelcastInstanceAware() {
+    public void test_injectDependenciesTo__entryProcessor() {
         long id = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
 
@@ -170,14 +189,17 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
         Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
-        cache.invoke(1, new HazelcastInstanceAwareEntryProcessor(id));
+        cache.invoke(1, new EntryProcessorWithDependencies(id));
 
         assertEquals("Hazelcast instance has not been injected into entry processor!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id));
+
+        assertEquals("Node instance has not been injected into entry processor!",
+                Boolean.TRUE, NODE_INJECTION_RESULT_MAP.get(id));
     }
 
     @Test
-    public void test_inject_hazelcastInstance_to_completionListener_if_itIs_hazelcastInstanceAware() {
+    public void test_injectDependenciesTo_completionListener() {
         final long id = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
 
@@ -185,7 +207,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
         Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
-        cache.loadAll(new HashSet<Integer>(), false, new HazelcastInstanceAwareCompletionListener(id));
+        cache.loadAll(new HashSet<Integer>(), false, new CompletionListenerWithDependencies(id));
 
         assertEqualsEventually(new Callable<Boolean>() {
             @Override
@@ -193,10 +215,20 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
                 return HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id);
             }
         }, Boolean.TRUE);
+        // Node is only injected on member side completion listener
+        if (!ClassLoaderUtil.isClassAvailable(null,"com.hazelcast.client.HazelcastClient")) {
+            assertEqualsEventually(new Callable<Boolean>() {
+                @Override
+                public Boolean call()
+                        throws Exception {
+                    return NODE_INJECTION_RESULT_MAP.get(id);
+                }
+            }, Boolean.TRUE);
+        }
     }
 
     @Test
-    public void test_inject_hazelcastInstance_to_entryListener_if_itIs_hazelcastInstanceAware() {
+    public void test_injectDependenciesTo__entryListener() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
@@ -211,10 +243,17 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into entry listener!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+        // Node is only injected on member side entry listeners
+        if (!ClassLoaderUtil.isClassAvailable(null,"com.hazelcast.client.HazelcastClient")) {
+            assertEquals("Node instance has not been injected into entry listener factory!", Boolean.TRUE,
+                    NODE_INJECTION_RESULT_MAP.get(id1));
+            assertEquals("Node instance has not been injected into entry listener!", Boolean.TRUE,
+                    NODE_INJECTION_RESULT_MAP.get(id2));
+        }
     }
 
     @Test
-    public void test_inject_hazelcastInstance_to_partitionLostListener_if_itIs_hazelcastInstanceAware() {
+    public void test_injectDependenciesTo_partitionLostListener() {
         long id = generateUniqueHazelcastInjectionId();
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
 
@@ -222,39 +261,49 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
         ICache<Integer, Integer> cache = (ICache<Integer, Integer>) cacheManager.createCache(CACHE_NAME, cacheConfig);
 
-        cache.addPartitionLostListener(new HazelcastInstanceAwareCachePartitionLostListener(id));
+        cache.addPartitionLostListener(new CachePartitionLostListenerWithDependencies(id));
 
         assertEquals("Hazelcast instance has not been injected into partition lost listener!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id));
+        // Node is only injected on member side listeners
+        if (!ClassLoaderUtil.isClassAvailable(null,"com.hazelcast.client.HazelcastClient")) {
+            assertEquals("Node instance has not been injected into partition lost listener!", Boolean.TRUE,
+                    NODE_INJECTION_RESULT_MAP.get(id));
+        }
     }
 
-    public static class HazelcastInstanceAwareCacheLoaderFactory
-            implements Factory<CacheLoader<Integer, Integer>>, HazelcastInstanceAware {
+    public static class CacheLoaderFactoryWithDependencies
+            implements Factory<CacheLoader<Integer, Integer>>, HazelcastInstanceAware, NodeAware {
 
         private final long id1;
         private final long id2;
 
-        HazelcastInstanceAwareCacheLoaderFactory(long id1, long id2) {
+        CacheLoaderFactoryWithDependencies(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
 
         @Override
         public CacheLoader<Integer, Integer> create() {
-            return new HazelcastInstanceAwareCacheLoader(id2);
+            return new CacheLoaderWithDependencies(id2);
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id1, true);
         }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id1, true);
+        }
     }
 
-    public static class HazelcastInstanceAwareCacheLoader implements CacheLoader<Integer, Integer>, HazelcastInstanceAware {
+    public static class CacheLoaderWithDependencies implements CacheLoader<Integer, Integer>, HazelcastInstanceAware, NodeAware {
 
         private final long id2;
 
-        HazelcastInstanceAwareCacheLoader(long id2) {
+        CacheLoaderWithDependencies(long id2) {
             this.id2 = id2;
         }
 
@@ -274,36 +323,46 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id2, true);
         }
 
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id2, true);
+        }
     }
 
-    public static class HazelcastInstanceAwareCacheWriterFactory
-            implements Factory<CacheWriter<Integer, Integer>>, HazelcastInstanceAware {
+    public static class CacheWriterFactoryWithDependencies
+            implements Factory<CacheWriter<Integer, Integer>>, HazelcastInstanceAware, NodeAware {
 
         private final long id1;
         private final long id2;
 
-        HazelcastInstanceAwareCacheWriterFactory(long id1, long id2) {
+        CacheWriterFactoryWithDependencies(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
 
         @Override
         public CacheWriter<Integer, Integer> create() {
-            return new HazelcastInstanceAwareCacheWriter(id2);
+            return new CacheWriterWithDependencies(id2);
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id1, true);
         }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id1, true);
+        }
     }
 
-    public static class HazelcastInstanceAwareCacheWriter implements CacheWriter<Integer, Integer>, HazelcastInstanceAware {
+    public static class CacheWriterWithDependencies
+            implements CacheWriter<Integer, Integer>, HazelcastInstanceAware, NodeAware {
 
-        private final long id2;
+        private final long id;
 
-        HazelcastInstanceAwareCacheWriter(long id2) {
-            this.id2 = id2;
+        CacheWriterWithDependencies(long id) {
+            this.id = id;
         }
 
         @Override
@@ -326,43 +385,58 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id2, true);
+            HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id, true);
         }
 
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id, true);
+        }
     }
 
-    public static class HazelcastInstanceAwareExpiryPolicyFactory implements Factory<ExpiryPolicy>, HazelcastInstanceAware {
+    public static class ExpiryPolicyFactoryWithDependencies implements Factory<ExpiryPolicy>, HazelcastInstanceAware,
+                       NodeAware {
 
         private final long id1;
         private final long id2;
 
-        HazelcastInstanceAwareExpiryPolicyFactory(long id1, long id2) {
+        ExpiryPolicyFactoryWithDependencies(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
 
         @Override
         public ExpiryPolicy create() {
-            return new HazelcastInstanceAwareExpiryPolicy(id2);
+            return new ExpiryPolicyWithDependencies(id2);
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id1, true);
         }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id1, true);
+        }
     }
 
-    public static class HazelcastInstanceAwareExpiryPolicy implements ExpiryPolicy, HazelcastInstanceAware {
+    public static class ExpiryPolicyWithDependencies implements ExpiryPolicy, HazelcastInstanceAware, NodeAware {
 
-        private final long id2;
+        private final long id;
 
-        HazelcastInstanceAwareExpiryPolicy(long id2) {
-            this.id2 = id2;
+        ExpiryPolicyWithDependencies(long id) {
+            this.id = id;
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id2, true);
+            HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id, true);
+        }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id, true);
         }
 
         @Override
@@ -381,18 +455,23 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         }
     }
 
-    public static class HazelcastInstanceAwareEntryProcessor
-            implements EntryProcessor<Integer, Integer, Integer>, HazelcastInstanceAware, Serializable {
+    public static class EntryProcessorWithDependencies
+            implements EntryProcessor<Integer, Integer, Integer>, HazelcastInstanceAware, NodeAware, Serializable {
 
         private final long id;
 
-        HazelcastInstanceAwareEntryProcessor(long id) {
+        EntryProcessorWithDependencies(long id) {
             this.id = id;
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id, true);
+        }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id, true);
         }
 
         @Override
@@ -402,17 +481,22 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         }
     }
 
-    public static class HazelcastInstanceAwareCompletionListener implements CompletionListener, HazelcastInstanceAware {
+    public static class CompletionListenerWithDependencies implements CompletionListener, HazelcastInstanceAware, NodeAware {
 
         private final long id;
 
-        HazelcastInstanceAwareCompletionListener(long id) {
+        CompletionListenerWithDependencies(long id) {
             this.id = id;
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id, true);
+        }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.put(id, true);
         }
 
         @Override
@@ -437,7 +521,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
         @Override
         public Factory<CacheEntryListener<? super Integer, ? super Integer>> getCacheEntryListenerFactory() {
-            return new HazelcastInstanceAwareCacheEntryListenerFactory(id1, id2);
+            return new CacheEntryListenerFactoryWithDependencies(id1, id2);
         }
 
         @Override
@@ -456,55 +540,71 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         }
     }
 
-    public static class HazelcastInstanceAwareCacheEntryListenerFactory
-            implements Factory<CacheEntryListener<? super Integer, ? super Integer>>, HazelcastInstanceAware, Serializable {
+    public static class CacheEntryListenerFactoryWithDependencies
+            implements Factory<CacheEntryListener<? super Integer, ? super Integer>>, HazelcastInstanceAware,
+                       NodeAware, Serializable {
 
         private final long id1;
         private final long id2;
 
-        HazelcastInstanceAwareCacheEntryListenerFactory(long id1, long id2) {
+        CacheEntryListenerFactoryWithDependencies(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
 
         @Override
         public CacheEntryListener<? super Integer, ? super Integer> create() {
-            return new HazelcastInstanceAwareCacheEntryListener(id2);
+            return new CacheEntryListenerWithDependencies(id2);
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id1, true);
         }
-    }
-
-    public static class HazelcastInstanceAwareCacheEntryListener
-            implements CacheEntryListener<Integer, Integer>, HazelcastInstanceAware, Serializable {
-
-        private final long id2;
-
-        HazelcastInstanceAwareCacheEntryListener(long id2) {
-            this.id2 = id2;
-        }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id2, true);
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.putIfAbsent(id1, true);
         }
     }
 
-    public static class HazelcastInstanceAwareCachePartitionLostListener
-            implements CachePartitionLostListener, HazelcastInstanceAware, Serializable {
+    public static class CacheEntryListenerWithDependencies
+            implements CacheEntryListener<Integer, Integer>, HazelcastInstanceAware, NodeAware, Serializable {
 
         private final long id;
 
-        HazelcastInstanceAwareCachePartitionLostListener(long id) {
+        CacheEntryListenerWithDependencies(long id) {
             this.id = id;
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id, true);
+        }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.putIfAbsent(id, true);
+        }
+    }
+
+    public static class CachePartitionLostListenerWithDependencies
+            implements CachePartitionLostListener, HazelcastInstanceAware, NodeAware, Serializable {
+
+        private final long id;
+
+        CachePartitionLostListenerWithDependencies(long id) {
+            this.id = id;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id, true);
+        }
+
+        @Override
+        public void setNode(Node node) {
+            NODE_INJECTION_RESULT_MAP.putIfAbsent(id, true);
         }
 
         @Override
