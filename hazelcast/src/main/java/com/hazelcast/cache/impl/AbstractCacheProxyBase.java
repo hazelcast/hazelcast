@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -91,9 +91,8 @@ abstract class AbstractCacheProxyBase<K, V>
     }
 
     void injectDependencies(Object obj) {
-        if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(nodeEngine.getHazelcastInstance());
-        }
+        ManagedContext managedContext = serializationService.getManagedContext();
+        managedContext.initialize(obj);
     }
 
     @Override

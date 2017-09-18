@@ -390,7 +390,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
-                getSerializationService(), getClient());
+                getSerializationService());
         EventHandler handler = createHandler(adaptor);
         String regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
         if (regId != null) {
