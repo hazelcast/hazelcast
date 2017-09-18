@@ -28,7 +28,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 
-@SuppressWarnings("WeakerAccess")
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
+@SuppressWarnings({"WeakerAccess", "unused"})
 public final class TestKeyStoreUtil {
 
     public static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
@@ -47,7 +50,7 @@ public final class TestKeyStoreUtil {
     private TestKeyStoreUtil() {
     }
 
-    public static Properties createSslProperties() throws IOException {
+    public static Properties createSslProperties() {
         Properties props = new Properties();
         props.setProperty(JAVAX_NET_SSL_KEY_STORE, getKeyStoreFilePath());
         props.setProperty(JAVAX_NET_SSL_TRUST_STORE, getTrustStoreFilePath());
@@ -56,48 +59,57 @@ public final class TestKeyStoreUtil {
         return props;
     }
 
-    public static synchronized String getKeyStoreFilePath() throws IOException {
+    public static synchronized String getKeyStoreFilePath() {
         if (keyStore == null || !new File(keyStore).exists()) {
             keyStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast.keystore").getAbsolutePath();
         }
         return keyStore;
     }
 
-    public static synchronized String getTrustStoreFilePath() throws IOException {
+    public static synchronized String getTrustStoreFilePath() {
         if (trustStore == null || !new File(trustStore).exists()) {
             trustStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast.truststore").getAbsolutePath();
         }
         return trustStore;
     }
 
-    public static synchronized String getWrongKeyStoreFilePath() throws IOException {
+    public static synchronized String getWrongKeyStoreFilePath() {
         if (wrongKeyStore == null || !new File(wrongKeyStore).exists()) {
             wrongKeyStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast_wrong.keystore").getAbsolutePath();
         }
         return wrongKeyStore;
     }
 
-    public static synchronized String getMalformedKeyStoreFilePath() throws IOException {
+    public static synchronized String getMalformedKeyStoreFilePath() {
         if (malformedKeystore == null || !new File(malformedKeystore).exists()) {
             malformedKeystore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast_malformed.keystore").getAbsolutePath();
         }
         return malformedKeystore;
     }
 
-    private static File createTempKeyStoreFile(String resource) throws IOException {
-        ClassLoader cl = TestKeyStoreUtil.class.getClassLoader();
-        InputStream in = new BufferedInputStream(cl.getResourceAsStream(resource));
-        File file = File.createTempFile("hazelcast", "jks");
-        OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-        int b;
-        while ((b = in.read()) > -1) {
-            out.write(b);
+    private static File createTempKeyStoreFile(String resource) {
+        InputStream in = null;
+        OutputStream out = null;
+        try {
+            File file = File.createTempFile("hazelcast", "jks");
+            file.deleteOnExit();
+
+            ClassLoader cl = TestKeyStoreUtil.class.getClassLoader();
+            in = new BufferedInputStream(cl.getResourceAsStream(resource));
+            out = new BufferedOutputStream(new FileOutputStream(file));
+            int b;
+            while ((b = in.read()) > -1) {
+                out.write(b);
+            }
+            out.flush();
+
+            LOGGER.warning("Keystore file path: " + file.getAbsolutePath() + ", length: " + file.length());
+            return file;
+        } catch (IOException e) {
+            throw rethrow(e);
+        } finally {
+            closeResource(out);
+            closeResource(in);
         }
-        out.flush();
-        out.close();
-        in.close();
-        file.deleteOnExit();
-        LOGGER.warning("Keystore file path: " + file.getAbsolutePath() + ", length = " + file.length());
-        return file;
     }
 }

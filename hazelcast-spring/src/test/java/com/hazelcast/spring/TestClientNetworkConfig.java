@@ -51,7 +51,7 @@ public class TestClientNetworkConfig {
 
     @BeforeClass
     @AfterClass
-    public static void start() throws Exception {
+    public static void start() {
         String keyStoreFilePath = TestKeyStoreUtil.getKeyStoreFilePath();
         String trustStoreFilePath = TestKeyStoreUtil.getTrustStoreFilePath();
 

@@ -10,8 +10,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.createSslProperties;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -19,7 +17,7 @@ import static com.hazelcast.nio.ssl.TestKeyStoreUtil.createSslProperties;
 public class SSLWithoutEnterpriseTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
-    public void test() throws IOException {
+    public void test() {
         ClientConfig config = new ClientConfig();
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setEnabled(true)
