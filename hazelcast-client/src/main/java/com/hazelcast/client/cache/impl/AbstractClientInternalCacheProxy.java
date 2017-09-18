@@ -1159,7 +1159,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         if (nearCache != null && nearCache.isInvalidatedOnChange()) {
             String registrationId = nearCacheMembershipRegistrationId;
             if (registrationId != null) {
-                clientContext.getRepairingTask(SERVICE_NAME).deregisterHandler(name);
+                clientContext.getRepairingTask(SERVICE_NAME).deregisterHandler(nameWithPrefix);
                 clientContext.getListenerService().deregisterListener(registrationId);
             }
         }
