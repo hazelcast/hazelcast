@@ -202,7 +202,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
             final int index = i;
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     final Integer valueInMap = map.get(index);
                     final Integer valueInStore = (Integer) store.getStore().get(index);
 
@@ -266,7 +266,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testInitialLoadModeEagerWhileStoppigOneNode() throws InterruptedException {
+    public void testInitialLoadModeEagerWhileStoppigOneNode() {
         final int instanceCount = 2;
         final int size = 10000;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
@@ -302,7 +302,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 240000)
-    public void testMapInitialLoad() throws InterruptedException {
+    public void testMapInitialLoad() {
         int size = 10000;
         String mapName = randomMapName();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -454,7 +454,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testOneMemberFlush() throws Exception {
+    public void testOneMemberFlush() {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         int size = 100;
@@ -485,7 +485,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testOneMemberFlushOnShutdown() throws Exception {
+    public void testOneMemberFlushOnShutdown() {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 200);
@@ -504,7 +504,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testGetAllKeys() throws Exception {
+    public void testGetAllKeys() {
         EventBasedMapStore<Integer, String> testMapStore = new EventBasedMapStore<Integer, String>();
         Map<Integer, String> store = testMapStore.getStore();
         int size = 1000;
@@ -554,7 +554,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
      * Test for Issue 572
     */
     @Test(timeout = 120000)
-    public void testMapstoreDeleteOnClear() throws Exception {
+    public void testMapstoreDeleteOnClear() {
         Config config = getConfig();
         SimpleMapStore store = new SimpleMapStore();
         config.getMapConfig("testMapstoreDeleteOnClear").setMapStoreConfig(new MapStoreConfig().setEnabled(true).setImplementation(store));
@@ -645,7 +645,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testIssue1019() throws InterruptedException {
+    public void testIssue1019() {
         final String keyWithNullValue = "keyWithNullValue";
 
         EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>() {
@@ -685,7 +685,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testIssue1115EnablingMapstoreMutatingValue() throws InterruptedException {
+    public void testIssue1115EnablingMapstoreMutatingValue() {
         Config config = getConfig();
         String mapName = "testIssue1115";
         MapStore mapStore = new ProcessingStore();
@@ -751,7 +751,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
      * Test for issue https://github.com/hazelcast/hazelcast/issues/1110
      */
     @Test(timeout = 300000)
-    public void testMapLoader_withMapLoadChunkSize() throws InterruptedException {
+    public void testMapLoader_withMapLoadChunkSize() {
         final int chunkSize = 5;
         final int numberOfEntriesToLoad = 100;
         final String mapName = randomString();
@@ -845,7 +845,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testReadingConfiguration() throws Exception {
+    public void testReadingConfiguration() {
         String mapName = "mapstore-test";
         InputStream is = getClass().getResourceAsStream("/com/hazelcast/config/hazelcast-mapstore-config.xml");
         XmlConfigBuilder builder = new XmlConfigBuilder(is);
@@ -883,7 +883,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testMapStoreNotCalledFromEntryProcessorBackup() throws Exception {
+    public void testMapStoreNotCalledFromEntryProcessorBackup() {
         final String mapName = "testMapStoreNotCalledFromEntryProcessorBackup_" + randomString();
         final int instanceCount = 2;
         Config config = getConfig();
@@ -928,14 +928,14 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertWriteBehindQueuesEmpty(mapName, singletonList(hzInstance));
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, store.store.size());
             }
         });
     }
 
     @Test
-    public void testEntryProcessor_calls_load_only_one_time_per_key() throws Exception {
+    public void testEntryProcessor_calls_load_only_one_time_per_key() {
         Config config = getConfig();
         // configure map with one backup and dummy map store
         MapConfig mapConfig = config.getMapConfig("default");
@@ -987,7 +987,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         // expect oldValue equals 1
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Integer value = oldValue.get();
                 assertNotNull(value);
                 assertEquals(1, value.intValue());

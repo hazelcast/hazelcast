@@ -18,12 +18,13 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterableUtil;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * MapLoader that pauses once while loading keys until resumed using {@link #resume()}
@@ -72,7 +73,7 @@ class PausingMapLoader<K, V> implements MapLoader<K, V> {
             pauseLatch.countDown();
             resumeLatch.await();
         } catch (InterruptedException e) {
-            ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -80,7 +81,7 @@ class PausingMapLoader<K, V> implements MapLoader<K, V> {
         try {
             pauseLatch.await();
         } catch (InterruptedException e) {
-            ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

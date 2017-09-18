@@ -48,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 public class LoadAllTest extends AbstractMapStoreTest {
 
     @Test(expected = NullPointerException.class)
-    public void load_givenKeys_null() throws Exception {
+    public void load_givenKeys_null() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
@@ -58,7 +58,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void load_givenKeys_withEmptySet() throws Exception {
+    public void load_givenKeys_withEmptySet() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
@@ -69,7 +69,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void load_givenKeys() throws Exception {
+    public void load_givenKeys() {
         // SETUP
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
@@ -91,7 +91,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void load_allKeys() throws Exception {
+    public void load_allKeys() {
         // SETUP
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
@@ -112,7 +112,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testAllItemsLoaded_whenLoadingAllOnMultipleInstances() throws Exception {
+    public void testAllItemsLoaded_whenLoadingAllOnMultipleInstances() {
         String mapName = randomMapName();
         Config config = createNewConfig(mapName);
 
@@ -129,7 +129,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testItemsNotOverwritten_whenLoadingWithoutReplacing() throws Exception {
+    public void testItemsNotOverwritten_whenLoadingWithoutReplacing() {
         String mapName = randomMapName();
         Config config = createNewConfig(mapName);
 
@@ -149,7 +149,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void load_allKeys_preserveExistingKeys_firesEvent() throws Exception {
+    public void load_allKeys_preserveExistingKeys_firesEvent() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
 
@@ -170,7 +170,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void load_allKeys_firesEvent() throws Exception {
+    public void load_allKeys_firesEvent() {
         final int itemCount = 1000;
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
@@ -189,7 +189,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void load_givenKeys_withBackupNodes() throws Exception {
+    public void load_givenKeys_withBackupNodes() {
         final int itemCount = 10000;
         final int rangeStart = 1000;
         // select an ordinary value
