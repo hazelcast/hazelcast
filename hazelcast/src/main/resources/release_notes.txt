@@ -1,11 +1,11 @@
 
-In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.9-EA release.
+In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.9 release.
 The numbers in the square brackets refer to the issue number in Hazelcast’s GitHub repository. You can reach
 to the full descriptions of the issues at https://github.com/hazelcast/hazelcast/issues/<issue number>.
 
 1. New Features
 
-The following are the new features introduced with 3.9-EA release.
+The following are the new features introduced with 3.9 release.
 
 **Hazelcast IMDG Enterprise Features**
 
@@ -17,7 +17,7 @@ The following are the new features introduced with 3.9-EA release.
 
 2. Enhancements
 
-The following are the enhancements introduced with 3.9-EA release.
+The following are the enhancements introduced with 3.9 release.
 
 **Hazelcast IMDG Enterprise Enhancements**
 
@@ -57,7 +57,7 @@ The following are the other improvements performed to solve the enhancement issu
 
 3. Fixes
 
-The following are the issues solved for Hazelcast 3.9-EA release.
+The following are the issues solved for Hazelcast 3.9 release.
 
 - The system property hazelcast.cache.invalidation.batchfrequency.seconds does not work for IMap. [#10743]
 - When a Java application is run with Hazelcast 3.8.2 within Docker, and after switching from openjdk:8u121-jre-alpine to openjdk:8u131-jre-alpine, IllegalArgumentException is thrown during cluster bootstrap. [#10704]
@@ -78,3 +78,25 @@ The following are the issues solved for Hazelcast 3.9-EA release.
 - Cluster member-list update operations are not ordered, new member addition and removal operations can get reordered on receiving/processing side. Also periodic member-list publish operation has no order with other member adding/removing operations. That can cause having different member lists on different members. [#9486]
 - Backup is lost if maxIdle property is used. [#9153]
 - Heartbeat only removes a member if it is related to the master member. [#5253]
+
+4. Behavioral Changes
+
+- Maximum timeout of heartbeat for a member to assume it is dead was 300 seconds. Starting with Hazelcast 3.9, it is reduced to 60 seconds. Also, starting with Hazelcast 3.9, maximum timeout of master confirmation from other members is reduced to 150 seconds from 450 seconds.
+
+- Starting with Hazelcast 3.9, the format of member list shown in the logs is changed. Before Hazelcast 3.9, it was like the following:
+
+Members [3] {
+    Member [127.0.0.1]:5701 - c1ccc8d4-a549-4bff-bf46-9213e14a9fd2 this
+    Member [127.0.0.1]:5702 - 33a82dbf-85d6-4780-b9cf-e47d42fb89d4
+    Member [127.0.0.1]:5703 - 813ec82f-9d9e-4712-bae1-6c95b32d6d7d
+}
+Starting with Hazelcast 3.9, it is shown as follows:
+
+Members {size:3, ver:3} [
+  Member [127.0.0.1]:5701 - e40081de-056a-4ae5-8ffe-632caf8a6cf1 this
+  Member [127.0.0.1]:5702 - 93e82109-16bf-4b16-9c87-f4a6d0873080
+  Member [127.0.0.1]:5703 - 06fb4e61-9757-443b-a19f-7af1f3966f30
+]
+Here, you can see the size of your cluster (size) and member list version (ver). The member list version will be incremented when changes happen to the cluster, e.g., a member leaving from or joining to the cluster.
+
+You can set the system property hazelcast.legacy.memberlist.format.enabled to true if you want to see the member list in its old format.
