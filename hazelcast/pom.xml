@@ -231,10 +231,17 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <phase>prepare-package</phase>
                         <goals>
-                            <goal>jar</goal>
                             <goal>test-jar</goal>
                             <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>latest-artifact</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
