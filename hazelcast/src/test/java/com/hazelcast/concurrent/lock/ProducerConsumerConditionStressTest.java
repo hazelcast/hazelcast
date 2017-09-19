@@ -21,13 +21,15 @@ import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertNull;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
+@Category(NightlyTest.class)
 public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
 
     private static volatile Object object;
@@ -121,6 +123,7 @@ public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
     }
 
     class ConsumerThread extends TestThread {
+
         private final ILock lock;
         private final ICondition condition;
 
