@@ -24,10 +24,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.util.Random;
@@ -35,6 +40,8 @@ import java.util.Random;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;
@@ -66,7 +73,7 @@ public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestS
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
                 String content = fileAsText(file);
                 assertContains(content, "ringworm");
@@ -80,12 +87,10 @@ public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestS
 
             @Override
             public void store(long sequence, Object data) {
-
             }
 
             @Override
             public void storeAll(long firstItemSequence, Object[] items) {
-
             }
 
             @Override
