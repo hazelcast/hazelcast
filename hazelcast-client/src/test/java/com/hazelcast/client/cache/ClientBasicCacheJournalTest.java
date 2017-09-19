@@ -27,12 +27,19 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.function.Predicate;
 import org.junit.After;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientBasicCacheJournalTest extends BasicCacheJournalTest {
 
     private TestHazelcastFactory factory;
@@ -63,7 +70,7 @@ public class ClientBasicCacheJournalTest extends BasicCacheJournalTest {
     }
 
     @Override
-    protected <K, V> EventJournalInitialSubscriberState subscribeToEventJournal(Cache<K, V> cache, int partitionId) throws Exception{
+    protected <K, V> EventJournalInitialSubscriberState subscribeToEventJournal(Cache<K, V> cache, int partitionId) throws Exception {
         return ((ClientCacheProxy<K, V>) cache).subscribeToEventJournal(partitionId).get();
     }
 

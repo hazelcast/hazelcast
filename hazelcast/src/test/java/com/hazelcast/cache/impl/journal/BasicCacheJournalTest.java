@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.journal;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
@@ -33,7 +33,6 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -71,11 +70,14 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicCacheJournalTest extends HazelcastTestSupport {
-    protected HazelcastInstance[] instances;
-    protected CacheManager cacheManager;
+
     private static final Random RANDOM = new Random();
     private static final TruePredicate<EventJournalCacheEvent<String, Integer>> TRUE_PREDICATE = truePredicate();
     private static final IdentityProjection<EventJournalCacheEvent<String, Integer>> IDENTITY_PROJECTION = identityProjection();
+
+    protected HazelcastInstance[] instances;
+    protected CacheManager cacheManager;
+
     private int partitionId;
 
     @Before
@@ -101,20 +103,28 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        final Config config = super.getConfig();
-        final int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
-        config.addEventJournalConfig(new EventJournalConfig().setCapacity(200 * defaultPartitionCount)
-                                                             .setCacheName("default").setEnabled(true));
-        final CacheSimpleConfig nonEvictingCache = new CacheSimpleConfig().setName("cache");
-        nonEvictingCache.getEvictionConfig().setSize(Integer.MAX_VALUE);
+        int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        EventJournalConfig eventJournalConfig = new EventJournalConfig()
+                .setEnabled(true)
+                .setCacheName("default")
+                .setCapacity(200 * defaultPartitionCount);
 
-        return config.addCacheConfig(nonEvictingCache)
-                     .addCacheConfig(new CacheSimpleConfig().setName("evicting"));
+        CacheSimpleConfig nonEvictingCache = new CacheSimpleConfig()
+                .setName("cache");
+        nonEvictingCache.getEvictionConfig()
+                .setSize(Integer.MAX_VALUE);
+
+        CacheSimpleConfig evictingCache = new CacheSimpleConfig()
+                .setName("evicting");
+
+        return super.getConfig()
+                .addEventJournalConfig(eventJournalConfig)
+                .addCacheConfig(nonEvictingCache)
+                .addCacheConfig(evictingCache);
     }
 
-
     @Test
-    public void unparkReadOperation() throws Exception {
+    public void unparkReadOperation() {
         final ICache<String, Integer> c = getCache();
         assertJournalSize(c, 0);
 
@@ -122,7 +132,8 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
         final Integer value = RANDOM.nextInt();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        final ExecutionCallback<ReadResultSet<EventJournalCacheEvent<String, Integer>>> ec = new ExecutionCallback<ReadResultSet<EventJournalCacheEvent<String, Integer>>>() {
+        final ExecutionCallback<ReadResultSet<EventJournalCacheEvent<String, Integer>>> ec
+                = new ExecutionCallback<ReadResultSet<EventJournalCacheEvent<String, Integer>>>() {
             @Override
             public void onResponse(ReadResultSet<EventJournalCacheEvent<String, Integer>> response) {
                 assertEquals(1, response.size());
@@ -207,7 +218,6 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
                     break;
             }
         }
-
 
         assertEquals(0, c.size());
         assertJournalSize(c, count * 2);
@@ -324,35 +334,10 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
         return entries;
     }
 
-    public static class NewValueParityPredicate implements Predicate<EventJournalCacheEvent<String, Integer>>, Serializable {
-        private final int remainder;
-
-        NewValueParityPredicate(int remainder) {
-            this.remainder = remainder;
-        }
-
-        @Override
-        public boolean test(EventJournalCacheEvent<String, Integer> e) {
-            return e.getNewValue() % 2 == remainder;
-        }
-    }
-
-    private static class NewValueIncrementingProjection extends Projection<EventJournalCacheEvent<String, Integer>, Integer> {
-        private final int delta;
-
-        NewValueIncrementingProjection(int delta) {
-            this.delta = delta;
-        }
-
-        @Override
-        public Integer transform(EventJournalCacheEvent<String, Integer> input) {
-            return input.getNewValue() + delta;
-        }
-    }
-
     private <T> ReadResultSet<T> getAllEvents(ICache<String, Integer> c,
                                               Predicate<? super EventJournalCacheEvent<String, Integer>> predicate,
-                                              Projection<? super EventJournalCacheEvent<String, Integer>, T> projection) throws Exception {
+                                              Projection<? super EventJournalCacheEvent<String, Integer>, T> projection)
+            throws Exception {
         final EventJournalInitialSubscriberState state = subscribeToEventJournal(c, partitionId);
         return readFromEventJournal(
                 c, state.getOldestSequence(), (int) (state.getNewestSequence() - state.getOldestSequence() + 1),
@@ -438,5 +423,31 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
 
     private static <T> IdentityProjection<T> identityProjection() {
         return new IdentityProjection<T>();
+    }
+
+    public static class NewValueParityPredicate implements Predicate<EventJournalCacheEvent<String, Integer>>, Serializable {
+        private final int remainder;
+
+        NewValueParityPredicate(int remainder) {
+            this.remainder = remainder;
+        }
+
+        @Override
+        public boolean test(EventJournalCacheEvent<String, Integer> e) {
+            return e.getNewValue() % 2 == remainder;
+        }
+    }
+
+    private static class NewValueIncrementingProjection extends Projection<EventJournalCacheEvent<String, Integer>, Integer> {
+        private final int delta;
+
+        NewValueIncrementingProjection(int delta) {
+            this.delta = delta;
+        }
+
+        @Override
+        public Integer transform(EventJournalCacheEvent<String, Integer> input) {
+            return input.getNewValue() + delta;
+        }
     }
 }
