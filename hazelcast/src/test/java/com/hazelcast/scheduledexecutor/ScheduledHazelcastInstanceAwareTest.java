@@ -25,8 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertTrue;
 
@@ -35,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public class ScheduledHazelcastInstanceAwareTest extends ScheduledExecutorServiceTestSupport {
 
     private HazelcastInstance[] members;
-    protected IScheduledExecutorService scheduledExecutorService;
+    private IScheduledExecutorService scheduledExecutorService;
 
     @Before
     public void setup() {
@@ -44,16 +42,14 @@ public class ScheduledHazelcastInstanceAwareTest extends ScheduledExecutorServic
     }
 
     @Test
-    public void test_hazelcastInstanceIsInjected_whenSchedulingOnSameMember()
-            throws ExecutionException, InterruptedException {
+    public void test_hazelcastInstanceIsInjected_whenSchedulingOnSameMember() throws Exception {
         IScheduledFuture<Boolean> injected = scheduledExecutorService.schedule(
                 new HazelcastInstanceAwareRunnable(randomNameOwnedBy(members[0])), 200, MILLISECONDS);
         assertTrue("HazelcastInstance should have been injected", injected.get());
     }
 
     @Test
-    public void test_hazelcastInstanceIsInjected_whenSchedulingOnOtherMember()
-            throws ExecutionException, InterruptedException {
+    public void test_hazelcastInstanceIsInjected_whenSchedulingOnOtherMember() throws Exception {
         IScheduledFuture<Boolean> injected = scheduledExecutorService.schedule(
                 new HazelcastInstanceAwareRunnable(randomNameOwnedBy(members[1])), 200, MILLISECONDS);
         assertTrue("HazelcastInstance should have been injected", injected.get());

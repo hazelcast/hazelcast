@@ -17,56 +17,54 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ScheduledExecutorWaitNotifyKeyTest {
 
     @Test
-    public void equals_sameRef()
-            throws Exception {
-
+    public void equals_sameRef() {
         ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handler.toUrn();
 
         ScheduledExecutorWaitNotifyKey keyA = new ScheduledExecutorWaitNotifyKey("myScheduler", myTaskURN);
 
-        assertTrue(keyA.equals(keyA));
+        assertEquals(keyA, keyA);
     }
 
     @Test
-    public void equals_sameURN()
-            throws Exception {
-
+    public void equals_sameURN() {
         ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handler.toUrn();
 
         ScheduledExecutorWaitNotifyKey keyA = new ScheduledExecutorWaitNotifyKey("myScheduler", myTaskURN);
         ScheduledExecutorWaitNotifyKey keyB = new ScheduledExecutorWaitNotifyKey("myScheduler", myTaskURN);
 
-        assertTrue(keyA.equals(keyB));
+        assertEquals(keyA, keyB);
     }
 
     @Test
-    public void equals_fail_withNull()
-            throws Exception {
-
+    public void equals_fail_withNull() {
         ScheduledTaskHandler handlerA = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handlerA.toUrn();
 
         ScheduledExecutorWaitNotifyKey keyA = new ScheduledExecutorWaitNotifyKey("myScheduler", myTaskURN);
 
-        assertFalse(keyA.equals(null));
+        assertNotNull(keyA);
     }
 
     @Test
-    public void equals_fail_withDiffURN()
-            throws Exception {
-
+    public void equals_fail_withDiffURN() {
         ScheduledTaskHandler handlerA = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handlerA.toUrn();
 
@@ -76,13 +74,11 @@ public class ScheduledExecutorWaitNotifyKeyTest {
         ScheduledExecutorWaitNotifyKey keyA = new ScheduledExecutorWaitNotifyKey("myScheduler", myTaskURN);
         ScheduledExecutorWaitNotifyKey keyB = new ScheduledExecutorWaitNotifyKey("myScheduler", myTask2URN);
 
-        assertFalse(keyA.equals(keyB));
+        assertNotEquals(keyA, keyB);
     }
 
     @Test
-    public void equals_fail_withDiffDistObject()
-            throws Exception {
-
+    public void equals_fail_withDiffDistObject() {
         ScheduledTaskHandler handlerA = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handlerA.toUrn();
 
@@ -92,14 +88,11 @@ public class ScheduledExecutorWaitNotifyKeyTest {
         ScheduledExecutorWaitNotifyKey keyA = new ScheduledExecutorWaitNotifyKey("myScheduler", myTaskURN);
         ScheduledExecutorWaitNotifyKey keyB = new ScheduledExecutorWaitNotifyKey("myWrongScheduler", myTask2URN);
 
-        assertFalse(keyA.equals(keyB));
+        assertNotEquals(keyA, keyB);
     }
 
-
     @Test
-    public void hashcode_sameRef()
-            throws Exception {
-
+    public void hashcode_sameRef() {
         ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handler.toUrn();
 
@@ -109,9 +102,7 @@ public class ScheduledExecutorWaitNotifyKeyTest {
     }
 
     @Test
-    public void hashcode_sameURN()
-            throws Exception {
-
+    public void hashcode_sameURN() {
         ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handler.toUrn();
 
@@ -122,9 +113,7 @@ public class ScheduledExecutorWaitNotifyKeyTest {
     }
 
     @Test
-    public void hashcode_fail_withDiffURN()
-            throws Exception {
-
+    public void hashcode_fail_withDiffURN() {
         ScheduledTaskHandler handlerA = ScheduledTaskHandlerImpl.of(1, "MyScheduler", "MyTask");
         String myTaskURN = handlerA.toUrn();
 
