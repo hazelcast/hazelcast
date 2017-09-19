@@ -20,53 +20,51 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
-import org.junit.Ignore;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Ignore("Not a JUnit test")
-public class ClientQueuePerformanceTest {
+public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
 
-    static final AtomicLong totalOffer = new AtomicLong();
-    static final AtomicLong totalPoll = new AtomicLong();
-    static final AtomicLong totalPeek = new AtomicLong();
+    private static final AtomicLong TOTAL_OFFER = new AtomicLong();
+    private static final AtomicLong TOTAL_POLL = new AtomicLong();
+    private static final AtomicLong TOTAL_PEEK = new AtomicLong();
 
-    static final int THREAD_COUNT = 40;
-    static final byte[] VALUE = new byte[1000];
+    private static final int THREAD_COUNT = 40;
+    private static final byte[] VALUE = new byte[1000];
 
-    static HazelcastInstance server;
-    static HazelcastInstance second;
-    static HazelcastInstance client;
-    static IQueue q;
+    private static HazelcastInstance server;
+    private static IQueue<Object> queue;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         server = Hazelcast.newHazelcastInstance();
-        second = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient(null);
-        q = client.getQueue("test");
-//        test1();
+        Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
+        queue = client.getQueue("test");
+        //test1();
         test2();
     }
 
-    public static void test1() throws Exception {
+    private static void test1()  {
         final Random rnd = new Random();
         for (int i = 0; i < THREAD_COUNT; i++) {
             new Thread() {
+                @Override
                 public void run() {
                     while (true) {
                         int random = rnd.nextInt(100);
                         if (random > 54) {
-                            q.poll();
-                            totalPoll.incrementAndGet();
+                            queue.poll();
+                            TOTAL_POLL.incrementAndGet();
                         } else if (random > 4) {
-                            q.offer(VALUE);
-                            totalOffer.incrementAndGet();
+                            queue.offer(VALUE);
+                            TOTAL_OFFER.incrementAndGet();
                         } else {
-                            q.peek();
-                            totalPeek.incrementAndGet();
+                            queue.peek();
+                            TOTAL_PEEK.incrementAndGet();
                         }
                     }
                 }
@@ -74,15 +72,16 @@ public class ClientQueuePerformanceTest {
         }
 
         new Thread() {
+            @Override
             public void run() {
                 while (true) {
                     try {
-                        int size = q.size();
+                        int size = queue.size();
                         if (size > 50000) {
                             System.err.println("cleaning a little");
                             for (int i = 0; i < 20000; i++) {
-                                q.poll();
-                                totalPoll.incrementAndGet();
+                                queue.poll();
+                                TOTAL_POLL.incrementAndGet();
                             }
                             Thread.sleep(2 * 1000);
                         } else {
@@ -96,41 +95,39 @@ public class ClientQueuePerformanceTest {
         }.start();
 
         while (true) {
-            long sleepTime = 10;
-            Thread.sleep(sleepTime * 1000);
-            long totalOfferVal = totalOffer.getAndSet(0);
-            long totalPollVal = totalPoll.getAndSet(0);
-            long totalPeekVal = totalPeek.getAndSet(0);
-
+            int sleepTime = 10;
+            sleepSeconds(sleepTime);
+            long totalOfferVal = TOTAL_OFFER.getAndSet(0);
+            long totalPollVal = TOTAL_POLL.getAndSet(0);
+            long totalPeekVal = TOTAL_PEEK.getAndSet(0);
 
             System.err.println("_______________________________________________________________________________________");
             System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal + ",\t peek: " + totalPeekVal);
-            System.err.println(" size: " + q.size() + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
+            System.err.println(" size: " + queue.size() + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
             System.err.println("---------------------------------------------------------------------------------------");
             System.err.println("");
         }
     }
 
-    public static void test2() throws Exception {
-
-        final CountDownLatch latch = new CountDownLatch(100);
-        final CountDownLatch latch1 = new CountDownLatch(1000);
+    private static void test2() {
+        final CountDownLatch latch1 = new CountDownLatch(100);
+        final CountDownLatch latch2 = new CountDownLatch(1000);
         new Thread() {
             public void run() {
                 for (int i = 0; i < 1000; i++) {
-                    q.offer("item" + i);
-                    latch.countDown();
+                    queue.offer("item" + i);
                     latch1.countDown();
+                    latch2.countDown();
                 }
             }
         }.start();
 
-        latch.await();
+        assertOpenEventually(latch1);
 
         server.shutdown();
 
-        latch1.await();
+        assertOpenEventually(latch2);
 
-        System.err.println("size: " + q.size());
+        System.err.println("size: " + queue.size());
     }
 }
