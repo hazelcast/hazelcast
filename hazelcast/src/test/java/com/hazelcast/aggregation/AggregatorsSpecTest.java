@@ -31,12 +31,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -48,25 +50,26 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class AggregatorsSpecTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public InMemoryFormat inMemoryFormat;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public boolean parallelAccumulation;
 
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public String postfix;
 
-    @Parameterized.Parameters(name = "{0} parallelAccumulation={1}, postfix={2}")
+    @Parameters(name = "{0} parallelAccumulation={1}, postfix={2}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY, false, ""},
                 {InMemoryFormat.OBJECT, false, ""},
                 {InMemoryFormat.BINARY, true, ""},
@@ -337,6 +340,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class Person implements Serializable {
 
         public Integer intValue;
@@ -351,14 +355,15 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
 
         public Person(int numberValue) {
             this.intValue = numberValue;
-            this.doubleValue = Double.valueOf(numberValue);
-            this.longValue = Long.valueOf(numberValue);
+            this.doubleValue = (double) numberValue;
+            this.longValue = (long) numberValue;
             this.bigDecimalValue = BigDecimal.valueOf(numberValue);
             this.bigIntegerValue = BigInteger.valueOf(numberValue);
             this.comparableValue = String.valueOf(numberValue);
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class PersonAny extends Person implements Serializable {
 
         public int[] intValue;
@@ -375,9 +380,9 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
             this.intValue = new int[]{numberValue};
             this.doubleValue = new double[]{numberValue};
             this.longValue = new long[]{numberValue};
-            this.bigDecimalValue = asList(BigDecimal.valueOf(numberValue));
-            this.bigIntegerValue = asList(BigInteger.valueOf(numberValue));
-            this.comparableValue = asList(String.valueOf(numberValue));
+            this.bigDecimalValue = singletonList(BigDecimal.valueOf(numberValue));
+            this.bigIntegerValue = singletonList(BigInteger.valueOf(numberValue));
+            this.comparableValue = singletonList(String.valueOf(numberValue));
         }
 
         public static PersonAny empty() {
@@ -392,8 +397,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         }
 
         public static PersonAny nulls() {
-            PersonAny person = new PersonAny();
-            return person;
+            return new PersonAny();
         }
     }
 }
