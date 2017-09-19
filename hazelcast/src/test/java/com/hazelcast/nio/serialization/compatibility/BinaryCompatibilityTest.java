@@ -25,10 +25,15 @@ import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -41,28 +46,47 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID;
+import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.INNER_PORTABLE_CLASS_ID;
+import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.PORTABLE_FACTORY_ID;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class BinaryCompatibilityTest {
 
     private static final int NULL_OBJECT = -1;
     private static Map<String, Data> dataMap = new HashMap<String, Data>();
 
-    //OPTIONS
+    // OPTIONS
     private static Object[] objects = ReferenceObjects.allTestObjects;
     private static boolean[] unsafeAllowedOpts = {true, false};
     private static ByteOrder[] byteOrders = {ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN};
     private static byte[] versions = {1};
 
-    @Parameterized.Parameter(0)
+    @Parameters(name = "allowUnsafe:{0}, {index}, isBigEndian:{2}, version:{3}")
+    public static Iterable<Object[]> parameters() {
+        LinkedList<Object[]> parameters = new LinkedList<Object[]>();
+        for (boolean allowUnsafe : unsafeAllowedOpts) {
+            for (Object object : objects) {
+                for (ByteOrder byteOrder : byteOrders) {
+                    for (byte version : versions) {
+                        parameters.add(new Object[]{allowUnsafe, object, byteOrder, version});
+                    }
+                }
+            }
+        }
+        return parameters;
+    }
+
+    @Parameter
     public boolean allowUnsafe;
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public Object object;
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public ByteOrder byteOrder;
-    @Parameterized.Parameter(3)
+    @Parameter(3)
     public byte version;
 
     @BeforeClass
@@ -84,62 +108,8 @@ public class BinaryCompatibilityTest {
         }
     }
 
-    @Parameterized.Parameters(name = "allowUnsafe:{0}, {index}, isBigEndian:{2}, version:{3}")
-    public static Iterable<Object[]> parameters() {
-
-
-        LinkedList<Object[]> parameters = new LinkedList<Object[]>();
-        for (boolean allowUnsafe : unsafeAllowedOpts) {
-            for (Object object : objects) {
-                for (ByteOrder byteOrder : byteOrders) {
-                    for (byte version : versions) {
-                        parameters.add(new Object[]{allowUnsafe, object, byteOrder, version});
-                    }
-                }
-            }
-        }
-        return parameters;
-    }
-
-    private String createObjectKey() {
-        return version + "-" + (object == null ? "NULL" : object.getClass().getSimpleName()) + "-" + byteOrder;
-    }
-
-
-    private static String createFileName(byte version) {
-        return version + ".serialization.compatibility.binary";
-    }
-
-    private SerializationService createSerializationService() {
-        SerializationConfig config = new SerializationConfig();
-        {
-            SerializerConfig serializerConfig = new SerializerConfig();
-            serializerConfig.setImplementation(new CustomByteArraySerializer()).setTypeClass(CustomByteArraySerializable.class);
-            config.addSerializerConfig(serializerConfig);
-        }
-        {
-            SerializerConfig serializerConfig = new SerializerConfig();
-            serializerConfig.setImplementation(new CustomStreamSerializer()).setTypeClass(CustomStreamSerializable.class);
-            config.addSerializerConfig(serializerConfig);
-        }
-        config.setAllowUnsafe(allowUnsafe);
-        config.setByteOrder(byteOrder);
-        ClassDefinition classDefinition =
-                new ClassDefinitionBuilder(ReferenceObjects.PORTABLE_FACTORY_ID, ReferenceObjects.INNER_PORTABLE_CLASS_ID)
-                        .addIntField("i").addFloatField("f").build();
-
-        return new DefaultSerializationServiceBuilder()
-                .setConfig(config)
-                .setVersion(version)
-                .addPortableFactory(ReferenceObjects.PORTABLE_FACTORY_ID, new APortableFactory())
-                .addDataSerializableFactory(ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID,
-                        new ADataSerializableFactory())
-                .addClassDefinition(classDefinition)
-                .build();
-    }
-
     @Test
-    public void readAndVerifyBinaries() throws IOException {
+    public void readAndVerifyBinaries() {
         String key = createObjectKey();
         SerializationService serializationService = createSerializationService();
         Object readObject = serializationService.toObject(dataMap.get(key));
@@ -148,18 +118,50 @@ public class BinaryCompatibilityTest {
             System.out.println(object.getClass().getSimpleName() + ": " + object + " != " + readObject);
         }
         assertTrue(equals);
-
     }
 
     @Test
-    public void basicSerializeDeserialize() throws IOException {
+    public void basicSerializeDeserialize() {
         SerializationService serializationService = createSerializationService();
         Data data = serializationService.toData(object);
         Object readObject = serializationService.toObject(data);
         assertTrue(equals(object, readObject));
     }
 
-    public static boolean equals(Object a, Object b) {
+    private String createObjectKey() {
+        return version + "-" + (object == null ? "NULL" : object.getClass().getSimpleName()) + "-" + byteOrder;
+    }
+
+    private SerializationService createSerializationService() {
+        SerializerConfig customByteArraySerializerConfig = new SerializerConfig()
+                .setImplementation(new CustomByteArraySerializer())
+                .setTypeClass(CustomByteArraySerializable.class);
+
+        SerializerConfig customStreamSerializerConfig = new SerializerConfig()
+                .setImplementation(new CustomStreamSerializer())
+                .setTypeClass(CustomStreamSerializable.class);
+
+        SerializationConfig config = new SerializationConfig()
+                .addSerializerConfig(customByteArraySerializerConfig)
+                .addSerializerConfig(customStreamSerializerConfig)
+                .setAllowUnsafe(allowUnsafe)
+                .setByteOrder(byteOrder);
+
+        ClassDefinition classDefinition = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, INNER_PORTABLE_CLASS_ID)
+                .addIntField("i")
+                .addFloatField("f")
+                .build();
+
+        return new DefaultSerializationServiceBuilder()
+                .setVersion(version)
+                .addPortableFactory(PORTABLE_FACTORY_ID, new APortableFactory())
+                .addDataSerializableFactory(IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID, new ADataSerializableFactory())
+                .setConfig(config)
+                .addClassDefinition(classDefinition)
+                .build();
+    }
+
+    private static boolean equals(Object a, Object b) {
         if (a == b) {
             return true;
         }
@@ -197,5 +199,7 @@ public class BinaryCompatibilityTest {
         return a.equals(b);
     }
 
-
+    private static String createFileName(byte version) {
+        return version + ".serialization.compatibility.binary";
+    }
 }
