@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.standalone;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -51,20 +52,23 @@ public class ClientEntryListenerDisconnectTest {
         Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress("localhost:6701", "localhost:6702");
         clientConfig.setGroupConfig(new GroupConfig("test", "test"));
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig()
+                .addAddress("localhost:6701", "localhost:6702")
+                .setConnectionAttemptLimit(100)
+                .setSmartRouting(false);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Integer, GenericEvent> mapClient = client.getMap("test");
 
         mapClient.addEntryListener(new EntryAdapter<Integer, GenericEvent>() {
 
+            @Override
             public void entryAdded(EntryEvent<Integer, GenericEvent> event) {
                 adds++;
             }
 
+            @Override
             public void entryEvicted(EntryEvent<Integer, GenericEvent> event) {
                 if (event.getValue() == null) {
                     evictionsNull++;
@@ -119,21 +123,22 @@ public class ClientEntryListenerDisconnectTest {
         System.exit(0);
     }
 
+    @SuppressWarnings("unused")
     private static class GenericEvent implements Serializable {
 
         private static final long serialVersionUID = -933111044641052844L;
 
         private int userId;
 
-        public GenericEvent(int userId) {
+        GenericEvent(int userId) {
             setUserId(userId);
         }
 
-        public int getUserId() {
+        int getUserId() {
             return userId;
         }
 
-        public void setUserId(int userId) {
+        void setUserId(int userId) {
             this.userId = userId;
         }
     }
