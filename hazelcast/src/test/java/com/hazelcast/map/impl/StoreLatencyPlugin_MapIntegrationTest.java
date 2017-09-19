@@ -44,7 +44,7 @@ import static com.hazelcast.test.TestStringUtils.fileAsText;
 public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;
-    private Map<String, String> map;
+    private Map<Integer, String> map;
 
     @Before
     public void setup() throws Exception {
@@ -65,14 +65,14 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() {
         for (int k = 0; k < 100; k++) {
             map.get(k);
         }
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
                 String content = fileAsText(file);
                 assertContains(content, "mappy");
@@ -82,12 +82,13 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
 
     private static MapConfig addMapConfig(Config config) {
         MapConfig mapConfig = config.getMapConfig("mappy");
-        mapConfig.getMapStoreConfig().setEnabled(true).setImplementation(new MapStore() {
+        mapConfig.getMapStoreConfig()
+                .setEnabled(true)
+                .setImplementation(new MapStore() {
             private final Random random = new Random();
 
             @Override
             public void store(Object key, Object value) {
-
             }
 
             @Override
@@ -112,12 +113,10 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
 
             @Override
             public void storeAll(Map map) {
-
             }
 
             @Override
             public void delete(Object key) {
-
             }
 
             @Override

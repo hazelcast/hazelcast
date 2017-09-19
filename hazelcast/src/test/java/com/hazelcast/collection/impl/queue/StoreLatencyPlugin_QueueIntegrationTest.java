@@ -79,7 +79,7 @@ public class StoreLatencyPlugin_QueueIntegrationTest extends HazelcastTestSuppor
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
                 String content = fileAsText(file);
                 assertContains(content, QUEUE_NAME);
