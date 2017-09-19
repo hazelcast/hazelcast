@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
  * to very large).
  */
 @SuppressWarnings("WeakerAccess")
-public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpConnection_AbstractTest {
 
     // total running time for writer threads
     private static final long WRITER_THREAD_RUNNING_TIME_IN_SECONDS = MINUTES.toSeconds(2);

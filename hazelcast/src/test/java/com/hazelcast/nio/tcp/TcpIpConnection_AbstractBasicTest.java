@@ -34,7 +34,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnection_AbstractBasicTest extends TcpIpConnection_AbstractTest {
 
     // sleep time for lastWrite and lastRead tests
     private static final int LAST_READ_WRITE_SLEEP_SECONDS = 5;
@@ -51,7 +51,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         startAllConnectionManagers();
         ioServiceB.packetHandler = new PacketHandler() {
             @Override
-            public void handle(Packet packet) throws Exception {
+            public void handle(Packet packet) {
                 packetsB.add(packet);
             }
         };
@@ -68,7 +68,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, packetsB.size());
             }
         });
@@ -89,7 +89,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, packetsB.size());
             }
         });
@@ -113,7 +113,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         // wait for the packet to get written
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, packetsB.size());
             }
         });
@@ -158,7 +158,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         // wait for the packet to get read
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, packetsB.size());
                 System.out.println("Packet processed");
             }

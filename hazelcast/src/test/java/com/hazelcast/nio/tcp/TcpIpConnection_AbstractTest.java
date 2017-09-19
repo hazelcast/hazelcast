@@ -89,12 +89,6 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
                 .build();
     }
 
-    public void startAllConnectionManagers() {
-        connManagerA.start();
-        connManagerB.start();
-        connManagerC.start();
-    }
-
     @After
     public void tearDown() {
         connManagerA.shutdown();
@@ -104,6 +98,12 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         metricsRegistryA.shutdown();
         metricsRegistryB.shutdown();
         metricsRegistryC.shutdown();
+    }
+
+    protected void startAllConnectionManagers() {
+        connManagerA.start();
+        connManagerB.start();
+        connManagerC.start();
     }
 
     protected MetricsRegistryImpl newMetricsRegistry() {
@@ -133,7 +133,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         final AtomicReference<TcpIpConnection> ref = new AtomicReference<TcpIpConnection>();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Connection c = connectionManager.getConnection(address);
                 assertNotNull(c);
                 ref.set((TcpIpConnection) c);

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.nio.tcp.TcpIpConnection_BaseTest;
+import com.hazelcast.nio.tcp.TcpIpConnection_AbstractBasicTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class Spinning_TcpIpConnection_BasicTest extends TcpIpConnection_BaseTest {
+public class Spinning_TcpIpConnection_BasicTest extends TcpIpConnection_AbstractBasicTest {
 
     @Before
     public void setup() throws Exception {

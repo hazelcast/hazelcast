@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A test that verifies if two members can connect to each other.
  */
-public abstract class TcpIpConnectionManager_ConnectMemberBaseTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends TcpIpConnection_AbstractTest {
 
     @Test
     public void testConnectionCount() {
