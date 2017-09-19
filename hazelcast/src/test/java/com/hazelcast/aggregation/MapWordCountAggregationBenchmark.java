@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.UuidUtil;
-import org.junit.Ignore;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,8 +36,10 @@ import java.util.StringTokenizer;
 
 import static java.util.Collections.singletonList;
 
-@Ignore("Run manually only")
-public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport {
+/**
+ * This is no JUnit test.
+ */
+public class MapWordCountAggregationBenchmark extends HazelcastTestSupport {
 
     private static final String[] DATA_RESOURCES_TO_LOAD = {"dracula.txt"};
 
@@ -103,7 +104,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
 
         IMap<String, String> map = hazelcastInstance.getMap(MAP_NAME);
         for (String file : DATA_RESOURCES_TO_LOAD) {
-            InputStream is = MapWordCountAggregationPerformanceTest.class.getResourceAsStream("/wordcount/" + file);
+            InputStream is = MapWordCountAggregationBenchmark.class.getResourceAsStream("/wordcount/" + file);
             LineNumberReader reader = new LineNumberReader(new InputStreamReader(is));
 
             StringBuilder sb = new StringBuilder();
@@ -122,7 +123,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
 
         IMap<String, String> map = hazelcastInstance.getMap(MAP_NAME);
         for (String file : DATA_RESOURCES_TO_LOAD) {
-            InputStream is = MapWordCountAggregationPerformanceTest.class.getResourceAsStream("/wordcount/" + file);
+            InputStream is = MapWordCountAggregationBenchmark.class.getResourceAsStream("/wordcount/" + file);
             LineNumberReader reader = new LineNumberReader(new InputStreamReader(is));
 
             int batchSize = 10000;
