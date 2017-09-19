@@ -22,33 +22,37 @@ import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
-import java.util.Arrays;
 
+import static java.util.Collections.singletonList;
+
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class ClientCacheCreationTest extends CacheCreationTest {
-
-
-    @Test
-    @Ignore("Only applicable for member-side HazelcastInstance")
-    @Override
-    public void createInvalidCache_fromDeclarativeConfig_throwsException_fromHazelcastInstanceCreation() {
-
-    }
 
     @Override
     protected CachingProvider createCachingProvider(Config hzConfig) {
-        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
+        Hazelcast.newHazelcastInstance(hzConfig);
         ClientConfig clientConfig = null;
         if (hzConfig != null) {
             clientConfig = new ClientConfig();
             clientConfig.getGroupConfig().setName(hzConfig.getGroupConfig().getName());
             clientConfig.getGroupConfig().setPassword(hzConfig.getGroupConfig().getPassword());
-            clientConfig.getNetworkConfig().setAddresses(Arrays.asList("127.0.0.1"));
+            clientConfig.getNetworkConfig().setAddresses(singletonList("127.0.0.1"));
         }
         return HazelcastClientCachingProvider.createCachingProvider(HazelcastClient.newHazelcastClient(clientConfig));
+    }
+
+    @Test
+    @Ignore("Only applicable for member-side HazelcastInstance")
+    @Override
+    public void createInvalidCache_fromDeclarativeConfig_throwsException_fromHazelcastInstanceCreation() {
     }
 }
