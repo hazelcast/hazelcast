@@ -47,7 +47,7 @@ public class HazelcastStarter {
      *
      * @param version the version string e.g. "3.8". Must correspond to a released version available either in the
      *                local maven repository or maven central.
-     * @return        a {@link HazelcastInstance} proxying the started Hazelcast instance.
+     * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version) {
         return newHazelcastInstance(version, null, false);
@@ -58,11 +58,11 @@ public class HazelcastStarter {
      * configuration is provided, in order to start enterprise edition a license key must be previously set as a
      * system property.
      *
-     * @param version       the version string e.g. "3.8". Must correspond to a released version available either in
-     *                      local maven repository or maven central or Hazelcast enterprise repository, in case
-     *                      {@code enterprise} is true.
-     * @param enterprise    when {@code true}, start Hazelcast enterprise edition, otherwise open source
-     * @return              a {@link HazelcastInstance} proxying the started Hazelcast instance.
+     * @param version    the version string e.g. "3.8". Must correspond to a released version available either in
+     *                   local maven repository or maven central or Hazelcast enterprise repository, in case
+     *                   {@code enterprise} is true.
+     * @param enterprise when {@code true}, start Hazelcast enterprise edition, otherwise open source
+     * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, boolean enterprise) {
         return newHazelcastInstance(version, null, enterprise);
@@ -78,7 +78,7 @@ public class HazelcastStarter {
      * @param configTemplate configuration object to clone on the target HazelcastInstance. If {@code null}, default
      *                       configuration is assumed.
      * @param enterprise     when {@code true}, start Hazelcast enterprise edition, otherwise open source
-     * @return               a {@link HazelcastInstance} proxying the started Hazelcast instance.
+     * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise) {
         HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise,
@@ -110,9 +110,9 @@ public class HazelcastStarter {
      * Classloaders are cached, so requesting the classloader for a given version multiple times will return the
      * same instance.
      *
-     * @param version   the target Hazelcast version e.g. "3.8.1", must be a published release version.
+     * @param version           the target Hazelcast version e.g. "3.8.1", must be a published release version.
      * @param configClassLoader class loader given via config
-     * @return          a classloader with given version's artifacts in its classpath
+     * @return a classloader with given version's artifacts in its classpath
      */
     public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise, ClassLoader configClassLoader) {
         String versionSpec = versionSpec(version, enterprise);
@@ -149,8 +149,7 @@ public class HazelcastStarter {
         Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.core.Hazelcast");
         System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
         Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
-        Object config;
-        config = getConfig(configTemplate, classloader, configClass);
+        Object config = getConfig(configTemplate, classloader, configClass);
 
         Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
         Object delegate = newHazelcastInstanceMethod.invoke(null, config);
@@ -158,8 +157,8 @@ public class HazelcastStarter {
         return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
     }
 
-    private static Object getConfig(Config configTemplate, HazelcastAPIDelegatingClassloader classloader,
-                                    Class<?> configClass)
+    public static Object getConfig(Object configTemplate, HazelcastAPIDelegatingClassloader classloader,
+                                   Class<?> configClass)
             throws InstantiationException, IllegalAccessException, NoSuchMethodException,
             InvocationTargetException, ClassNotFoundException {
         Object config;
@@ -171,39 +170,6 @@ public class HazelcastStarter {
             config = proxyObjectForStarter(classloader, configTemplate);
         }
         return config;
-    }
-
-    public static HazelcastInstance newHazelcastClient(String version, boolean enterprise) {
-        HazelcastAPIDelegatingClassloader classloader = getTargetVersionClassloader(version, enterprise, null);
-        ClassLoader contextClassLoader = currentThread().getContextClassLoader();
-        currentThread().setContextClassLoader(null);
-        try {
-            Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.client.HazelcastClient");
-            System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
-            Class<?> configClass = classloader.loadClass("com.hazelcast.client.config.ClientConfig");
-            Object config = configClass.newInstance();
-            Method setClassLoaderMethod = configClass.getMethod("setClassLoader", ClassLoader.class);
-            setClassLoaderMethod.invoke(config, classloader);
-
-            Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastClient", configClass);
-            Object delegate = newHazelcastInstanceMethod.invoke(null, config);
-            return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
-
-        } catch (ClassNotFoundException e) {
-            throw rethrow(e);
-        } catch (NoSuchMethodException e) {
-            throw rethrow(e);
-        } catch (IllegalAccessException e) {
-            throw rethrow(e);
-        } catch (InvocationTargetException e) {
-            throw rethrow(e);
-        } catch (InstantiationException e) {
-            throw rethrow(e);
-        } finally {
-            if (contextClassLoader != null) {
-                currentThread().setContextClassLoader(contextClassLoader);
-            }
-        }
     }
 
     private static URL[] fileIntoUrls(File[] files) {

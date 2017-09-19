@@ -1094,6 +1094,30 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void assertFalseEventually(AssertTask task, long timeoutSeconds) {
+        AssertionError error = null;
+        // we are going to check five times a second
+        int sleepMillis = 200;
+        long iterations = timeoutSeconds * 5;
+        for (int i = 0; i < iterations; i++) {
+            try {
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    throw rethrow(e);
+                }
+            } catch (AssertionError e) {
+                return;
+            }
+            sleepMillis(sleepMillis);
+        }
+        fail("assertFalseEventually() failed without AssertionError!");
+    }
+
+    public static void assertFalseEventually(AssertTask task) {
+        assertFalseEventually(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
         // we are going to check five times a second

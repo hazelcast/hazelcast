@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
-
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -218,9 +217,14 @@ public class ClientCompatibilityNullTest_1_1 {
 {
     ClientMessage clientMessage = ClientGetPartitionsCodec.encodeRequest( );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.1) which is earlier than latest change in the message
+    // (version 1.5), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -228,6 +232,7 @@ public class ClientCompatibilityNullTest_1_1 {
     inputStream.read(bytes);
     ClientGetPartitionsCodec.ResponseParameters params = ClientGetPartitionsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aPartitionTable, params.partitions));
+                assertFalse(params.partitionStateVersionExist);
 }
 
 

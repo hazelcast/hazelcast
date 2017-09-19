@@ -130,7 +130,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final MessageTaskFactory messageTaskFactory;
     private final ClientExceptionFactory clientExceptionFactory;
     private final int endpointRemoveDelaySeconds;
-
+    private final ClientPartitionListenerService partitionListenerService;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -143,6 +143,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.messageTaskFactory = new CompositeMessageTaskFactory(this.nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
+        this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
@@ -407,6 +408,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public TransactionManagerService getTransactionManagerService() {
         return node.nodeEngine.getTransactionManagerService();
+    }
+
+    public ClientPartitionListenerService getPartitionListenerService() {
+        return partitionListenerService;
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

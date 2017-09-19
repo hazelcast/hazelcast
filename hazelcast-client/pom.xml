@@ -164,6 +164,19 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>15.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.1</version>
+            <scope>test</scope>
+        </dependency>
         <!-- dependencies for XATransaction tests -->
         <dependency>
             <groupId>com.atomikos</groupId>

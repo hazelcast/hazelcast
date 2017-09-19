@@ -185,7 +185,7 @@ public class ServerCompatibilityNullTest_1_5 {
     ClientGetPartitionsCodec.RequestParameters params = ClientGetPartitionsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
 }
 {
-    ClientMessage clientMessage = ClientGetPartitionsCodec.encodeResponse(    aPartitionTable   );
+    ClientMessage clientMessage = ClientGetPartitionsCodec.encodeResponse(    aPartitionTable ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -347,7 +347,7 @@ public class ServerCompatibilityNullTest_1_5 {
 }
 {
     {
-        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent( aPartitionTable   );
+        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent( aPartitionTable ,  anInt   );
         int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);

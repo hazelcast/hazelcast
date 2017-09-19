@@ -251,7 +251,7 @@ public class PartitionServiceProxy implements PartitionService {
 
         @Override
         public String toString() {
-            return "Partition [" + +partitionId + "], owner=" + getOwner();
+            return "Partition [" + partitionId + "], owner=" + getOwner();
         }
     }
 }

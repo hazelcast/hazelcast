@@ -284,6 +284,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onPartitionStateChange() {
+        node.clientEngine.getPartitionListenerService().onPartitionStateChange();
     }
 
     @Override

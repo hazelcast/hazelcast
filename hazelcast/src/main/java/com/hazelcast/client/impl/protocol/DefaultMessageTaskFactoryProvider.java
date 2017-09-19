@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.task.AddPartitionListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheEventJournalReadTask;
@@ -1716,6 +1717,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new DeployClassesMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AddPartitionListenerMessageTask(clientMessage, node, connection);
             }
         };
 //endregion
