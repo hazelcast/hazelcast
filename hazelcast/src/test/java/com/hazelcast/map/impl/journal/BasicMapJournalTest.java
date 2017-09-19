@@ -34,7 +34,6 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -68,10 +67,13 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapJournalTest extends HazelcastTestSupport {
-    protected HazelcastInstance[] instances;
+
     private static final Random RANDOM = new Random();
     private static final TruePredicate<EventJournalMapEvent<String, Integer>> TRUE_PREDICATE = truePredicate();
     private static final IdentityProjection<EventJournalMapEvent<String, Integer>> IDENTITY_PROJECTION = identityProjection();
+
+    protected HazelcastInstance[] instances;
+
     private int partitionId;
 
     @Before
@@ -107,21 +109,27 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
         return ((MapProxyImpl<K, V>) map).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 
-
     @Override
     protected Config getConfig() {
-        final Config config = super.getConfig();
-        final int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
-        config.addEventJournalConfig(new EventJournalConfig().setCapacity(500 * defaultPartitionCount)
-                                                             .setMapName("default").setEnabled(true));
+        int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        EventJournalConfig eventJournalConfig = new EventJournalConfig()
+                .setEnabled(true)
+                .setMapName("default")
+                .setCapacity(500 * defaultPartitionCount);
 
-        final MapConfig mapConfig = new MapConfig("mappy");
-        final MapConfig expiringMap = new MapConfig("expiring").setTimeToLiveSeconds(1);
-        return config.addMapConfig(mapConfig).addMapConfig(expiringMap);
+        MapConfig mapConfig = new MapConfig("mappy");
+
+        MapConfig expiringMap = new MapConfig("expiring")
+                .setTimeToLiveSeconds(1);
+
+        return super.getConfig()
+                .addEventJournalConfig(eventJournalConfig)
+                .addMapConfig(mapConfig)
+                .addMapConfig(expiringMap);
     }
 
     @Test
-    public void unparkReadOperation() throws Exception {
+    public void unparkReadOperation() {
         final IMap<String, Integer> m = getMap();
         assertJournalSize(m, 0);
 
@@ -129,7 +137,8 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
         final Integer value = RANDOM.nextInt();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        final ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>> ec = new ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>>() {
+        final ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>> ec
+                = new ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>>() {
             @Override
             public void onResponse(ReadResultSet<EventJournalMapEvent<String, Integer>> response) {
                 assertEquals(1, response.size());
@@ -183,7 +192,7 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void receiveExpirationEventsWhenPutWithTtl() throws Exception {
+    public void receiveExpirationEventsWhenPutWithTtl() {
         final String mapName = "mappy";
         final IMap<String, Integer> m = getMap(mapName);
         testExpiration(mapName, new BiConsumer<String, Integer>() {
@@ -195,7 +204,7 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void receiveExpirationEventsWhenPutOnExpiringMap() throws Exception {
+    public void receiveExpirationEventsWhenPutOnExpiringMap() {
         final String mapName = "expiring";
         final IMap<String, Integer> m = getMap(mapName);
         testExpiration(mapName, new BiConsumer<String, Integer>() {
@@ -235,7 +244,6 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
                     break;
             }
         }
-
 
         assertEquals(0, m.size());
         assertJournalSize(m, count * 2);
@@ -334,33 +342,7 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
         }
     }
 
-    private static class NewValueIncrementingProjection extends Projection<EventJournalMapEvent<String, Integer>, Integer> {
-        private final int delta;
-
-        NewValueIncrementingProjection(int delta) {
-            this.delta = delta;
-        }
-
-        @Override
-        public Integer transform(EventJournalMapEvent<String, Integer> input) {
-            return input.getNewValue() + delta;
-        }
-    }
-
-    public static class NewValueParityPredicate implements Predicate<EventJournalMapEvent<String, Integer>>, Serializable {
-        private final int remainder;
-
-        NewValueParityPredicate(int remainder) {
-            this.remainder = remainder;
-        }
-
-        @Override
-        public boolean test(EventJournalMapEvent<String, Integer> e) {
-            return e.getNewValue() % 2 == remainder;
-        }
-    }
-
-    private void testExpiration(String mapName, BiConsumer<String, Integer> mutationFn) throws Exception {
+    private void testExpiration(String mapName, BiConsumer<String, Integer> mutationFn) {
         final IMap<String, Integer> m = getMap(mapName);
         final int count = 2;
         assertJournalSize(m, 0);
@@ -392,26 +374,12 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
 
     private <T> ReadResultSet<T> getAllEvents(IMap<String, Integer> m,
                                               Predicate<? super EventJournalMapEvent<String, Integer>> predicate,
-                                              Projection<? super EventJournalMapEvent<String, Integer>, T> projection) throws Exception {
+                                              Projection<? super EventJournalMapEvent<String, Integer>, T> projection)
+            throws Exception {
         final EventJournalInitialSubscriberState state = subscribeToEventJournal(m, partitionId);
         return readFromEventJournal(
                 m, state.getOldestSequence(), (int) (state.getNewestSequence() - state.getOldestSequence() + 1),
                 partitionId, predicate, projection).get();
-    }
-
-
-    private static class TruePredicate<T> implements Predicate<T>, Serializable {
-        @Override
-        public boolean test(T t) {
-            return true;
-        }
-    }
-
-    private static class IdentityProjection<I> extends Projection<I, I> implements Serializable {
-        @Override
-        public I transform(I input) {
-            return input;
-        }
     }
 
     private String randomPartitionKey() {
@@ -462,5 +430,45 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
 
     private static <T> IdentityProjection<T> identityProjection() {
         return new IdentityProjection<T>();
+    }
+
+    private static class NewValueIncrementingProjection extends Projection<EventJournalMapEvent<String, Integer>, Integer> {
+        private final int delta;
+
+        NewValueIncrementingProjection(int delta) {
+            this.delta = delta;
+        }
+
+        @Override
+        public Integer transform(EventJournalMapEvent<String, Integer> input) {
+            return input.getNewValue() + delta;
+        }
+    }
+
+    public static class NewValueParityPredicate implements Predicate<EventJournalMapEvent<String, Integer>>, Serializable {
+        private final int remainder;
+
+        NewValueParityPredicate(int remainder) {
+            this.remainder = remainder;
+        }
+
+        @Override
+        public boolean test(EventJournalMapEvent<String, Integer> e) {
+            return e.getNewValue() % 2 == remainder;
+        }
+    }
+
+    private static class TruePredicate<T> implements Predicate<T>, Serializable {
+        @Override
+        public boolean test(T t) {
+            return true;
+        }
+    }
+
+    private static class IdentityProjection<I> extends Projection<I, I> implements Serializable {
+        @Override
+        public I transform(I input) {
+            return input;
+        }
     }
 }

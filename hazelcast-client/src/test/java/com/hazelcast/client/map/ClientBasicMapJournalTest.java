@@ -26,9 +26,16 @@ import com.hazelcast.map.impl.journal.BasicMapJournalTest;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.function.Predicate;
 import org.junit.After;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientBasicMapJournalTest extends BasicMapJournalTest {
 
     private TestHazelcastFactory factory;
