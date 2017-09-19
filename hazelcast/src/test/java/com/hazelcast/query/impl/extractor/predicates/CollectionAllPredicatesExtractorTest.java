@@ -23,8 +23,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Limb;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Person;
@@ -45,6 +50,8 @@ import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStruct
  * This test is parametrised. See CollectionAllPredicatesReflectionTest for more details.
  */
 @RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 @SuppressWarnings("unused")
 public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicatesReflectionTest {
 
