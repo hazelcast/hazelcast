@@ -36,7 +36,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-public abstract class BaseCacheEvictionPolicyComparatorTest extends HazelcastTestSupport {
+public abstract class AbstractCacheEvictionPolicyComparatorTest extends HazelcastTestSupport {
 
     protected static final String CACHE_NAME = "MyCache";
 
@@ -50,17 +50,17 @@ public abstract class BaseCacheEvictionPolicyComparatorTest extends HazelcastTes
         return new Config();
     }
 
-    protected CacheConfig createCacheConfig(String cacheName) {
-        return new CacheConfig(cacheName);
+    protected CacheConfig<Integer, String> createCacheConfig(String cacheName) {
+        return new CacheConfig<Integer, String>(cacheName);
     }
 
-    void do_test_evictionPolicyComparator(EvictionConfig evictionConfig, int iterationCount) {
+    void testEvictionPolicyComparator(EvictionConfig evictionConfig, int iterationCount) {
         HazelcastInstance instance = createInstance(createConfig());
         CachingProvider cachingProvider = createCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, String> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.setEvictionConfig(evictionConfig);
-        Cache cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
+        Cache<Integer, String> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
         for (int i = 0; i < iterationCount; i++) {
             cache.put(i, "Value-" + i);
@@ -107,7 +107,5 @@ public abstract class BaseCacheEvictionPolicyComparatorTest extends HazelcastTes
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             hazelcastInstance.getUserContext().put("callCounter", callCounter);
         }
-
     }
-
 }

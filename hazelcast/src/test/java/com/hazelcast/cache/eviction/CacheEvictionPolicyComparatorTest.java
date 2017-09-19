@@ -17,7 +17,6 @@
 package com.hazelcast.cache.eviction;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,9 +32,12 @@ import org.junit.runner.RunWith;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
+import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CacheEvictionPolicyComparatorTest extends BaseCacheEvictionPolicyComparatorTest {
+public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPolicyComparatorTest {
 
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
@@ -56,24 +58,18 @@ public class CacheEvictionPolicyComparatorTest extends BaseCacheEvictionPolicyCo
     @Test
     public void test_evictionPolicyComparator_with_comparatorClassName_when_maxSizePolicy_is_entryCount() {
         int partitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
-        int iterationCount =
-                (EntryCountCacheEvictionChecker.calculateMaxPartitionSize(
-                        EvictionConfig.DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
-        EvictionConfig evictionConfig =
-                new EvictionConfig()
-                        .setComparatorClassName(MyEvictionPolicyComparator.class.getName());
-        do_test_evictionPolicyComparator(evictionConfig, iterationCount);
+        int iterationCount = (calculateMaxPartitionSize(DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
+        EvictionConfig evictionConfig = new EvictionConfig().setComparatorClassName(MyEvictionPolicyComparator.class.getName());
+
+        testEvictionPolicyComparator(evictionConfig, iterationCount);
     }
 
     @Test
     public void test_evictionPolicyComparator_with_comparatorInstance_when_maxSizePolicy_is_entryCount() {
         int partitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
-        int iterationCount =
-                (EntryCountCacheEvictionChecker.calculateMaxPartitionSize(
-                        EvictionConfig.DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
-        EvictionConfig evictionConfig =
-                new EvictionConfig().setComparator(new MyEvictionPolicyComparator());
-        do_test_evictionPolicyComparator(evictionConfig, iterationCount);
-    }
+        int iterationCount = (calculateMaxPartitionSize(DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
+        EvictionConfig evictionConfig = new EvictionConfig().setComparator(new MyEvictionPolicyComparator());
 
+        testEvictionPolicyComparator(evictionConfig, iterationCount);
+    }
 }
