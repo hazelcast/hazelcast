@@ -38,8 +38,8 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@Category({QuickTest.class, ParallelTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class NodeIOServiceTest extends HazelcastTestSupport {
 
     private NetworkConfig networkConfig;
