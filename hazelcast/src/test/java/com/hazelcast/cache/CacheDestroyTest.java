@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -194,6 +195,7 @@ public class CacheDestroyTest extends CacheTestSupport {
     }
 
     @Test
+    @Ignore("Caches cannot be safely created & destroyed concurrently")
     public void test_whenCacheCreatedDestroyedConcurrently_thenNoExceptionThrown() throws ExecutionException, InterruptedException {
         String cacheName = randomName();
         final CacheConfig<Integer, Integer> cacheConfig = createCacheConfig();
