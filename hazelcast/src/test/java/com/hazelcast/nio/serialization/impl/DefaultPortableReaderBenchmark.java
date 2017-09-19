@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.TestPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -43,7 +44,7 @@ import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTes
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
+public class DefaultPortableReaderBenchmark extends HazelcastTestSupport {
 
     private static final int WARMUP_ITERATIONS_COUNT = 500;
     private static final int MEASUREMENT_ITERATIONS_COUNT = 2000;
@@ -55,8 +56,7 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
     @Setup
     public void setup() throws Exception {
         ss = new DefaultSerializationServiceBuilder()
-                .addPortableFactory(DefaultPortableReaderQuickTest.TestPortableFactory.ID,
-                        new DefaultPortableReaderQuickTest.TestPortableFactory())
+                .addPortableFactory(TestPortableFactory.ID, new TestPortableFactory())
                 .build();
 
         Portable primitive = new DefaultPortableReaderTestStructure.PrimitivePortable();
@@ -188,7 +188,7 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(DefaultPortableReaderPerformanceTest.class.getSimpleName())
+                .include(DefaultPortableReaderBenchmark.class.getSimpleName())
                 .warmupIterations(WARMUP_ITERATIONS_COUNT)
                 .warmupTime(TimeValue.milliseconds(2))
                 .measurementIterations(MEASUREMENT_ITERATIONS_COUNT)
