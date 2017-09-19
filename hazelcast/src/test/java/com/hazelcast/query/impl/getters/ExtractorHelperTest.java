@@ -21,13 +21,17 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -36,24 +40,27 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsF
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static groovy.util.GroovyTestCase.assertEquals;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(QuickTest.class)
+@SuppressWarnings("unused")
 public class ExtractorHelperTest {
 
-    @Parameterized.Parameters(name = "useClassloader:{0}")
+    @Parameters(name = "useClassloader:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {false},
                 {true}
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter
     public boolean useClassloader;
 
     @Rule
@@ -155,7 +162,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        instantiateExtractors(asList(string));
+        instantiateExtractors(singletonList(string));
     }
 
     @Test
@@ -167,7 +174,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        instantiateExtractors(asList(string));
+        instantiateExtractors(singletonList(string));
     }
 
     @Test
@@ -179,7 +186,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        instantiateExtractors(asList(string));
+        instantiateExtractors(singletonList(string));
     }
 
     @Test
@@ -279,5 +286,4 @@ public class ExtractorHelperTest {
         return ExtractorHelper.instantiateExtractors(mapAttributeConfigs,
                 useClassloader ? this.getClass().getClassLoader() : null);
     }
-
 }
