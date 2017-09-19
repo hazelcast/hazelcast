@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_READ;
 
@@ -135,11 +136,7 @@ public final class NioChannelReader extends AbstractHandler {
 
         inputBuffer.flip();
         inboundHandler.onRead(inputBuffer);
-        if (inputBuffer.hasRemaining()) {
-            inputBuffer.compact();
-        } else {
-            inputBuffer.clear();
-        }
+        compactOrClear(inputBuffer);
     }
 
     private boolean init() throws IOException {
