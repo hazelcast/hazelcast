@@ -7,35 +7,42 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class PredicateHzAwareTest extends HazelcastTestSupport {
-    @Parameterized.Parameters(name = "instanceCount:{0}")
+
+    @Parameters(name = "instanceCount:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {1},
                 {3}
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter
     public int instanceCount;
 
     @Test
-    public void testHzAware() throws Exception {
+    public void testHzAware() {
         final HazelcastInstance[] instances = createHazelcastInstanceFactory(instanceCount).newInstances();
         final IMap<String, Integer> m = instances[0].getMap("mappy");
         m.put("a", 1);
@@ -47,7 +54,8 @@ public class PredicateHzAwareTest extends HazelcastTestSupport {
         assertEquals(2, (int) result.iterator().next());
     }
 
-    private static class SimpleProjection extends Projection<Map.Entry<String, Integer>, Integer>
+    private static class SimpleProjection
+            extends Projection<Map.Entry<String, Integer>, Integer>
             implements HazelcastInstanceAware, Serializable {
 
         private transient HazelcastInstance instance;
@@ -65,6 +73,7 @@ public class PredicateHzAwareTest extends HazelcastTestSupport {
     }
 
     private static class SimplePredicate implements Predicate<String, Integer>, Serializable, HazelcastInstanceAware {
+
         private transient HazelcastInstance instance;
 
         @Override
