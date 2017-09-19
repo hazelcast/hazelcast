@@ -22,12 +22,13 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest;
+import com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.TestPortableFactory;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.extractor.ValueReader;
-import com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure;
+import com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.Person;
+import com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.PersonPortable;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -44,7 +45,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import org.openjdk.jmh.runner.options.VerboseMode;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.finger;
@@ -55,27 +55,170 @@ import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataSt
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-public class QueryPerformanceTest extends HazelcastTestSupport {
+@SuppressWarnings("unused")
+public class QueryPerformanceBenchmark extends HazelcastTestSupport {
 
     private static final int WARMUP_ITERATIONS_COUNT = 1000;
     private static final int MEASUREMENT_ITERATIONS_COUNT = 10000;
 
     private HazelcastInstanceProxy hz;
-    private IMap portableMap;
-    private IMap portableMapWithExtractor;
-    private IMap objectMap;
-    private IMap objectMapWithExtractor;
+    private IMap<String, PersonPortable> portableMap;
+    private IMap<String, PersonPortable> portableMapWithExtractor;
+    private IMap<String, Person> objectMap;
+    private IMap<String, Person> objectMapWithExtractor;
 
-    public static class NameExtractor extends ValueExtractor<ComplexTestDataStructure.Person, Object> {
+    @Setup
+    public void setup() {
+        // object map
+        MapAttributeConfig nameWithExtractor = new MapAttributeConfig()
+                .setName("nameWithExtractor")
+                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$NameExtractor");
+
+        MapAttributeConfig limbNameWithExtractor = new MapAttributeConfig()
+                .setName("limbNameWithExtractor")
+                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$LimbNameExtractor");
+
+        MapConfig objectMapConfig = new MapConfig()
+                .setName("objectMap")
+                .setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        MapConfig objectMapWithExtractorConfig = new MapConfig()
+                .setName("objectMapWithExtractor")
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .addMapAttributeConfig(nameWithExtractor)
+                .addMapAttributeConfig(limbNameWithExtractor);
+
+        // portable map
+        MapAttributeConfig portableNameWithExtractor = new MapAttributeConfig()
+                .setName("nameWithExtractor")
+                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableNameExtractor");
+
+        MapAttributeConfig portableLimbNameWithExtractor = new MapAttributeConfig()
+                .setName("limbNameWithExtractor")
+                .setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableLimbNameExtractor");
+
+        MapConfig portableMapConfig = new MapConfig()
+                .setName("portableMapWithExtractor")
+                .addMapAttributeConfig(portableNameWithExtractor)
+                .addMapAttributeConfig(portableLimbNameWithExtractor);
+
+        // config
+        Config config = new Config()
+                .addMapConfig(objectMapConfig)
+                .addMapConfig(objectMapWithExtractorConfig)
+                .addMapConfig(portableMapConfig);
+
+        config.getSerializationConfig().addPortableFactory(TestPortableFactory.ID, new TestPortableFactory());
+
+        hz = (HazelcastInstanceProxy) createHazelcastInstance(config);
+
+        portableMap = hz.getMap("portableMap");
+        objectMap = hz.getMap("objectMap");
+        objectMapWithExtractor = hz.getMap("objectMapWithExtractor");
+        portableMapWithExtractor = hz.getMap("portableMapWithExtractor");
+
+        Person BOND = person("Bond",
+                limb("left-hand", tattoos(), finger("thumb"), finger(null)),
+                limb("right-hand", tattoos("knife"), finger("middle"), finger("index"))
+        );
+
+        for (int i = 0; i <= 1000; i++) {
+            portableMap.put(String.valueOf(i), BOND.getPortable());
+            portableMapWithExtractor.put(String.valueOf(i), BOND.getPortable());
+            objectMap.put(String.valueOf(i), BOND);
+            objectMapWithExtractor.put(String.valueOf(i), BOND);
+        }
+    }
+
+    @TearDown
+    public void tearDown() {
+        hz.shutdown();
+    }
+
+    @Benchmark
+    public Object query_portable_equalsPredicate() {
+        return portableMap.values(Predicates.equal("name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_portable_nested_equalsPredicate() {
+        return portableMap.values(Predicates.equal("firstLimb.name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_portable_nested_collection_equalsPredicate() {
+        return portableMap.values(Predicates.equal("limbs_portable[1].name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_portable_nestedTwice_collection_equalsPredicate() {
+        return portableMap.values(Predicates.equal("limbs_portable[0].fingers_portable[1].name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_portable_extractor_equalsPredicate() {
+        return portableMapWithExtractor.values(Predicates.equal("nameWithExtractor", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_portable_extractor_nested_equalsPredicate() {
+        return portableMapWithExtractor.values(Predicates.equal("limbNameWithExtractor", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_object_equalsPredicate() {
+        return objectMap.values(Predicates.equal("name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_object_nested_equalsPredicate() {
+        return objectMap.values(Predicates.equal("firstLimb.name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_object_nested_collection_equalsPredicate() {
+        return objectMap.values(Predicates.equal("limbs_list[1].name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_object_nestedTwice_collection_equalsPredicate() {
+        return objectMap.values(Predicates.equal("limbs_list[0].fingers_list[1].name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_object_extractor_equalsPredicate() {
+        return objectMapWithExtractor.values(Predicates.equal("nameWithExtractor", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_object_extractor_nested_equalsPredicate() {
+        return objectMapWithExtractor.values(Predicates.equal("limbNameWithExtractor", "Ferrari"));
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder()
+                .include(QueryPerformanceBenchmark.class.getSimpleName())
+                .warmupIterations(WARMUP_ITERATIONS_COUNT)
+                .warmupTime(TimeValue.milliseconds(2))
+                .measurementIterations(MEASUREMENT_ITERATIONS_COUNT)
+                .measurementTime(TimeValue.milliseconds(2))
+                .verbosity(VerboseMode.NORMAL)
+                .forks(1)
+                .build();
+
+        new Runner(opt).run();
+    }
+
+    public static class NameExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(ComplexTestDataStructure.Person target, Object argument, ValueCollector collector) {
+        public void extract(Person target, Object argument, ValueCollector collector) {
             collector.addObject(target.getName());
         }
     }
 
-    public static class LimbNameExtractor extends ValueExtractor<ComplexTestDataStructure.Person, Object> {
+    public static class LimbNameExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(ComplexTestDataStructure.Person target, Object argument, ValueCollector collector) {
+        public void extract(Person target, Object argument, ValueCollector collector) {
             collector.addObject(target.getFirstLimb().getName());
         }
     }
@@ -92,151 +235,5 @@ public class QueryPerformanceTest extends HazelcastTestSupport {
         public void extract(ValueReader target, Object argument, ValueCollector collector) {
             target.read("firstLimb.name", collector);
         }
-    }
-
-    @Setup
-    public void setup() throws IOException {
-        Config config = new Config();
-        config.getSerializationConfig().addPortableFactory(DefaultPortableReaderQuickTest.TestPortableFactory.ID,
-                new DefaultPortableReaderQuickTest.TestPortableFactory());
-
-        //
-        // object map
-        //
-        MapAttributeConfig nameWithExtractor = new MapAttributeConfig();
-        nameWithExtractor.setName("nameWithExtractor");
-        nameWithExtractor.setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$NameExtractor");
-
-        MapAttributeConfig limbNameWithExtractor = new MapAttributeConfig();
-        limbNameWithExtractor.setName("limbNameWithExtractor");
-        limbNameWithExtractor.setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$LimbNameExtractor");
-
-        MapConfig objectMapConfig = new MapConfig();
-        objectMapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        objectMapConfig.setName("objectMap");
-
-        MapConfig objectMapWithExtractorConfig = new MapConfig();
-        objectMapWithExtractorConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        objectMapWithExtractorConfig.setName("objectMapWithExtractor");
-        objectMapWithExtractorConfig.addMapAttributeConfig(nameWithExtractor);
-        objectMapWithExtractorConfig.addMapAttributeConfig(limbNameWithExtractor);
-
-        //
-        // portable map
-        //
-        MapAttributeConfig portableNameWithExtractor = new MapAttributeConfig();
-        portableNameWithExtractor.setName("nameWithExtractor");
-        portableNameWithExtractor.setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableNameExtractor");
-
-        MapAttributeConfig portableLimbNameWithExtractor = new MapAttributeConfig();
-        portableLimbNameWithExtractor.setName("limbNameWithExtractor");
-        portableLimbNameWithExtractor.setExtractor("com.hazelcast.query.impl.QueryPerformanceTest$PortableLimbNameExtractor");
-
-        MapConfig portableMapConfig = new MapConfig();
-        portableMapConfig.setName("portableMapWithExtractor");
-        portableMapConfig.addMapAttributeConfig(portableNameWithExtractor);
-        portableMapConfig.addMapAttributeConfig(portableLimbNameWithExtractor);
-
-
-        config.addMapConfig(objectMapConfig);
-        config.addMapConfig(objectMapWithExtractorConfig);
-        config.addMapConfig(portableMapConfig);
-        hz = (HazelcastInstanceProxy) createHazelcastInstance(config);
-
-        portableMap = hz.getMap("portableMap");
-        objectMap = hz.getMap("objectMap");
-        objectMapWithExtractor = hz.getMap("objectMapWithExtractor");
-        portableMapWithExtractor = hz.getMap("portableMapWithExtractor");
-
-        ComplexTestDataStructure.Person BOND = person("Bond",
-                limb("left-hand", tattoos(), finger("thumb"), finger(null)),
-                limb("right-hand", tattoos("knife"), finger("middle"), finger("index"))
-        );
-
-        for (int i = 0; i <= 1000; i++) {
-            portableMap.put(String.valueOf(i), BOND.getPortable());
-            portableMapWithExtractor.put(String.valueOf(i), BOND.getPortable());
-            objectMap.put(String.valueOf(i), BOND);
-            objectMapWithExtractor.put(String.valueOf(i), BOND);
-        }
-    }
-
-    @TearDown
-    public void tearDown() throws IOException {
-        hz.shutdown();
-    }
-
-    @Benchmark
-    public Object query_portable_equalsPredicate() throws IOException {
-        return portableMap.values(Predicates.equal("name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_portable_nested_equalsPredicate() throws IOException {
-        return portableMap.values(Predicates.equal("firstLimb.name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_portable_nested_collection_equalsPredicate() throws IOException {
-        return portableMap.values(Predicates.equal("limbs_portable[1].name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_portable_nestedTwice_collection_equalsPredicate() throws IOException {
-        return portableMap.values(Predicates.equal("limbs_portable[0].fingers_portable[1].name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_portable_extractor_equalsPredicate() throws IOException {
-        return portableMapWithExtractor.values(Predicates.equal("nameWithExtractor", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_portable_extractor_nested_equalsPredicate() throws IOException {
-        return portableMapWithExtractor.values(Predicates.equal("limbNameWithExtractor", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_object_equalsPredicate() throws IOException {
-        return objectMap.values(Predicates.equal("name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_object_nested_equalsPredicate() throws IOException {
-        return objectMap.values(Predicates.equal("firstLimb.name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_object_nested_collection_equalsPredicate() throws IOException {
-        return objectMap.values(Predicates.equal("limbs_list[1].name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_object_nestedTwice_collection_equalsPredicate() throws IOException {
-        return objectMap.values(Predicates.equal("limbs_list[0].fingers_list[1].name", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_object_extractor_equalsPredicate() throws IOException {
-        return objectMapWithExtractor.values(Predicates.equal("nameWithExtractor", "Ferrari"));
-    }
-
-    @Benchmark
-    public Object query_object_extractor_nested_equalsPredicate() throws IOException {
-        return objectMapWithExtractor.values(Predicates.equal("limbNameWithExtractor", "Ferrari"));
-    }
-
-    public static void main(String[] args) throws RunnerException {
-        Options opt = new OptionsBuilder()
-                .include(QueryPerformanceTest.class.getSimpleName())
-                .warmupIterations(WARMUP_ITERATIONS_COUNT)
-                .warmupTime(TimeValue.milliseconds(2))
-                .measurementIterations(MEASUREMENT_ITERATIONS_COUNT)
-                .measurementTime(TimeValue.milliseconds(2))
-                .verbosity(VerboseMode.NORMAL)
-                .forks(1)
-                .build();
-
-        new Runner(opt).run();
     }
 }
