@@ -558,7 +558,7 @@ abstract class MapProxySupport<K, V>
 
     protected void deleteInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
-        MapOperation operation = operationProvider.createDeleteOperation(name, keyData);
+        MapOperation operation = operationProvider.createDeleteOperation(name, keyData, false);
         invokeOperation(keyData, operation);
     }
 
