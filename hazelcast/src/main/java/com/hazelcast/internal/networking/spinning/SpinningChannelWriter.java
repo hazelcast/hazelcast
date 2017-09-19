@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -243,11 +244,7 @@ public class SpinningChannelWriter extends AbstractHandler {
             bytesWritten.inc(result);
         }
 
-        if (outputBuffer.hasRemaining()) {
-            outputBuffer.compact();
-        } else {
-            outputBuffer.clear();
-        }
+        compactOrClear(outputBuffer);
     }
 
     private static final class TaskFrame implements OutboundFrame {

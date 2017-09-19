@@ -60,6 +60,19 @@ public final class IOUtil {
     private IOUtil() {
     }
 
+    /**
+     * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
+     *
+     * @param bb the ByteBuffer
+     */
+    public static void compactOrClear(ByteBuffer bb) {
+        if (bb.hasRemaining()) {
+            bb.compact();
+        } else {
+            bb.clear();
+        }
+    }
+
     public static ByteBuffer newByteBuffer(int bufferSize, boolean direct) {
         if (direct) {
             return ByteBuffer.allocateDirect(bufferSize);

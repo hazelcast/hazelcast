@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -322,14 +323,7 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
 
         bytesWritten.inc(written);
 
-        // Now we verify if all data is written.
-        if (outputBuffer.hasRemaining()) {
-            // We did not manage to write all data to the socket. So lets compact the buffer so new data can be added at the end.
-            outputBuffer.compact();
-        } else {
-            // We managed to fully write the outputBuffer to the socket, so we are done.
-            outputBuffer.clear();
-        }
+        compactOrClear(outputBuffer);
     }
 
     /**
