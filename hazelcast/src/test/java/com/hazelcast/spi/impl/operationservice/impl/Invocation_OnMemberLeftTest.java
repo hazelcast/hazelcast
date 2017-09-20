@@ -23,6 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.impl.MembershipUpdateTest.StaticMemberNodeContext;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -39,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -118,8 +121,18 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         });
         assertOpenEventually(blockMonitorLatch);
 
+        // Unresponsive operation should be executed before shutting down the node
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNotNull(remote.getUserContext().get(UnresponsiveTargetOperation.COMPLETION_FLAG));
+            }
+        });
+
         remote.getLifecycleService().terminate();
         restartAction.run();
+
+        assertTrue(remote.getLifecycleService().isRunning());
 
         Future<Object> futureAfterRestart =
                 localOperationService.invokeOnTarget(null, new UnresponsiveTargetOperation(), remoteMember.getAddress());
@@ -142,8 +155,11 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
     }
 
     private static class UnresponsiveTargetOperation extends Operation {
+        static final String COMPLETION_FLAG = UnresponsiveTargetOperation.class.getName();
+
         @Override
         public void run() throws Exception {
+            getNodeEngine().getHazelcastInstance().getUserContext().put(COMPLETION_FLAG, new Object());
         }
 
         @Override
