@@ -373,7 +373,7 @@ public final class GroupProperty {
      * The timeout which defines when a cluster member is removed because it has not sent any heartbeats.
      */
     public static final HazelcastProperty MAX_NO_HEARTBEAT_SECONDS
-            = new HazelcastProperty("hazelcast.max.no.heartbeat.seconds", 300, SECONDS);
+            = new HazelcastProperty("hazelcast.max.no.heartbeat.seconds", 60, SECONDS);
 
     /**
      * The interval at which master confirmations are sent from non-master nodes to the master node
@@ -384,7 +384,7 @@ public final class GroupProperty {
      * The timeout which defines when a cluster member is removed because it has not sent any master confirmations.
      */
     public static final HazelcastProperty MAX_NO_MASTER_CONFIRMATION_SECONDS
-            = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 350, SECONDS);
+            = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 150, SECONDS);
 
     /**
      * Heartbeat failure detector type. Available options are:
