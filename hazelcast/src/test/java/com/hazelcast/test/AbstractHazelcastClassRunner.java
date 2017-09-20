@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
@@ -64,6 +65,11 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
     static {
+        // we set the JSR System properties globally, since some tests trigger the MBeanServer
+        // initialization, which will not create the correct one without these System properties
+        // (this was done via the pom.xml before for most test profiles, so this does no harm)
+        JsrTestUtil.setSystemProperties();
+
         TestLoggingUtils.initializeLogging();
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
