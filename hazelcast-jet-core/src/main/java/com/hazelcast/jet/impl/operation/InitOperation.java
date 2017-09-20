@@ -119,7 +119,7 @@ public class InitOperation extends Operation implements IdentifiedDataSerializab
         final Data planBlob = in.readData();
         planSupplier = () -> {
             JetService service = getService();
-            ClassLoader cl = service.getClassLoader(executionId);
+            ClassLoader cl = service.getClassLoader(jobId);
             return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
         };
     }
