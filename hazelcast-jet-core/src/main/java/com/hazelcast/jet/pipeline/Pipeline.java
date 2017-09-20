@@ -37,9 +37,10 @@ import java.util.concurrent.Future;
  * <p>
  * Note that there is no simple one-to-one correspondence between pipeline
  * stages and Core API's DAG vertices. Some stages map to several vertices
- * (e.g., grouping co-grouping are implemented as a cascade of two vertices)
- * and some stages may be merged with others into a single vertex (e.g., a
- * cascade of map/filter/flatMap stages can be fused into one vertex).
+ * (e.g., grouping and co-grouping are implemented as a cascade of two
+ * vertices) and some stages may be merged with others into a single vertex
+ * (e.g., a cascade of map/filter/flatMap stages can be fused into one
+ * vertex).
  */
 public interface Pipeline {
 

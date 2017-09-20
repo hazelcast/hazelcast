@@ -40,6 +40,7 @@ import com.hazelcast.jet.processor.Processors;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -67,6 +68,7 @@ class Planner {
     }
 
     DAG createDag() {
+        validateNoLeakage();
         Iterable<AbstractStage> sorted = (Iterable<AbstractStage>) (Iterable<? extends Stage>)
                 topologicalSort(pipeline.adjacencyMap, Object::toString);
         for (AbstractStage stage : sorted) {
@@ -94,6 +96,17 @@ class Planner {
             }
         }
         return dag;
+    }
+
+    private void validateNoLeakage() {
+        List<Stage> leakages = pipeline.adjacencyMap
+                .entrySet().stream()
+                .filter(e -> e.getValue().isEmpty())
+                .map(Entry::getKey)
+                .collect(toList());
+        if (!leakages.isEmpty()) {
+            throw new IllegalArgumentException("Some ComputeStages have nothing attached to them: " + leakages);
+        }
     }
 
     private void handleSource(AbstractStage stage, SourceImpl source) {

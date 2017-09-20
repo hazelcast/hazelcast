@@ -17,17 +17,16 @@
 package com.hazelcast.jet.pipeline.impl;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.pipeline.impl.transform.MultiTransform;
-import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.ComputeStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.Source;
 import com.hazelcast.jet.pipeline.Stage;
+import com.hazelcast.jet.pipeline.impl.transform.MultiTransform;
 import com.hazelcast.jet.pipeline.impl.transform.UnaryTransform;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +45,12 @@ public class PipelineImpl implements Pipeline {
         return new Planner(this).createDag();
     }
 
+    public ComputeStage attach(List<ComputeStage> upstream, MultiTransform transform) {
+        ComputeStageImpl attached = new ComputeStageImpl(upstream, transform, this);
+        upstream.forEach(u -> connect(u, attached));
+        return attached;
+    }
+
     <IN, OUT> ComputeStage<OUT> attach(
             ComputeStage<IN> upstream, UnaryTransform<? super IN, OUT> unaryTransform
     ) {
@@ -54,20 +59,13 @@ public class PipelineImpl implements Pipeline {
         return output;
     }
 
-    public ComputeStage attach(List<ComputeStage> upstream, MultiTransform transform) {
-        ComputeStageImpl attached = new ComputeStageImpl(upstream, transform, this);
-        upstream.forEach(u -> connect(u, attached));
-        return attached;
-    }
-
-    public <E> SinkStage drainTo(ComputeStage<E> upstream, Sink sink) {
+    <E> SinkStage drainTo(ComputeStage<E> upstream, Sink sink) {
         SinkStageImpl output = new SinkStageImpl(upstream, sink, this);
         connect(upstream, output);
         return output;
     }
 
     private void connect(ComputeStage upstream, Stage downstream) {
-        adjacencyMap.computeIfAbsent(upstream, e -> new ArrayList<>())
-                    .add(downstream);
+        adjacencyMap.get(upstream).add(downstream);
     }
 }

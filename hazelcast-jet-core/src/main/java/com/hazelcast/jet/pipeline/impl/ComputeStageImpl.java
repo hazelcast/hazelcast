@@ -43,6 +43,7 @@ import com.hazelcast.jet.pipeline.impl.transform.HashJoinTransform;
 import com.hazelcast.jet.pipeline.impl.transform.MapTransform;
 import com.hazelcast.jet.pipeline.impl.transform.ProcessorTransform;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
@@ -55,16 +56,17 @@ import static java.util.stream.Collectors.toList;
 @SuppressWarnings("unchecked")
 public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E> {
 
-    ComputeStageImpl(Source<E> source, PipelineImpl pipeline) {
-        super(emptyList(), source, pipeline);
-    }
-
     ComputeStageImpl(List<Stage> upstream, Transform transform, PipelineImpl pipeline) {
         super(upstream, transform, pipeline);
+        pipeline.adjacencyMap.put(this, new ArrayList<>());
+    }
+
+    ComputeStageImpl(Source<E> source, PipelineImpl pipeline) {
+        this(emptyList(), source, pipeline);
     }
 
     ComputeStageImpl(Stage upstream, Transform transform, PipelineImpl pipeline) {
-        super(singletonList(upstream), transform, pipeline);
+        this(singletonList(upstream), transform, pipeline);
     }
 
     @Override
