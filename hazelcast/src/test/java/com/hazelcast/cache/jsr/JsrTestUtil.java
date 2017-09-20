@@ -62,9 +62,7 @@ public final class JsrTestUtil {
     }
 
     /**
-     * Sets the System properties for JSR related tests.
-     * <p>
-     * Uses plain strings to avoid triggering any classloading of JSR classes with static code initializations.
+     * Sets the System properties for JSR related tests including the JCache provider type.
      *
      * @param providerType "server" or "client" according to your test type
      */
@@ -78,6 +76,14 @@ public final class JsrTestUtil {
          */
         setSystemProperty("hazelcast.jcache.provider.type", providerType);
 
+        setSystemProperties();
+    }
+
+    /**
+     * Sets the System properties for JSR related tests.
+     */
+    public static void setSystemProperties() {
+        // uses plain strings to avoid triggering any classloading of JSR classes with static code initializations
         setSystemProperty("javax.management.builder.initial", "com.hazelcast.cache.impl.TCKMBeanServerBuilder");
         setSystemProperty("CacheManagerImpl", "com.hazelcast.cache.HazelcastCacheManager");
         setSystemProperty("javax.cache.Cache", "com.hazelcast.cache.ICache");
