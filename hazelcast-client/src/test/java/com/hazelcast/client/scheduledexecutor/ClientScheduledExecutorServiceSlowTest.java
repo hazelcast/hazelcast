@@ -57,5 +57,4 @@ public class ClientScheduledExecutorServiceSlowTest extends ScheduledExecutorSer
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         return factory.newHazelcastClient().getScheduledExecutorService(name);
     }
-
 }
