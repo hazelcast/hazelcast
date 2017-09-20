@@ -25,6 +25,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.processor.HashJoinCollectP;
 import com.hazelcast.jet.impl.processor.HashJoinP;
+import com.hazelcast.jet.pipeline.ComputeStage;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.Transform;
@@ -68,9 +69,10 @@ class Planner {
     }
 
     DAG createDag() {
-        validateNoLeakage();
+        Map<Stage, List<Stage>> adjacencyMap = pipeline.adjacencyMap();
+        validateNoLeakage(adjacencyMap);
         Iterable<AbstractStage> sorted = (Iterable<AbstractStage>) (Iterable<? extends Stage>)
-                topologicalSort(pipeline.adjacencyMap, Object::toString);
+                topologicalSort(adjacencyMap, Object::toString);
         for (AbstractStage stage : sorted) {
             Transform transform = stage.transform;
             if (transform instanceof SourceImpl) {
@@ -98,14 +100,16 @@ class Planner {
         return dag;
     }
 
-    private void validateNoLeakage() {
-        List<Stage> leakages = pipeline.adjacencyMap
+    private static void validateNoLeakage(Map<Stage, List<Stage>> adjacencyMap) {
+        List<ComputeStage> leakages = adjacencyMap
                 .entrySet().stream()
                 .filter(e -> e.getValue().isEmpty())
                 .map(Entry::getKey)
+                .filter(stage -> stage instanceof ComputeStage)
+                .map(stage -> (ComputeStage) stage)
                 .collect(toList());
         if (!leakages.isEmpty()) {
-            throw new IllegalArgumentException("Some ComputeStages have nothing attached to them: " + leakages);
+            throw new IllegalArgumentException("These ComputeStages have nothing attached to them: " + leakages);
         }
     }
 

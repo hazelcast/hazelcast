@@ -25,14 +25,12 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.pipeline.ComputeStage;
-import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.JoinClause;
-import com.hazelcast.jet.pipeline.impl.transform.MultiTransform;
 import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.Source;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.Transform;
-import com.hazelcast.jet.pipeline.impl.transform.UnaryTransform;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.datamodel.Tuple3;
 import com.hazelcast.jet.pipeline.impl.transform.CoGroupTransform;
@@ -41,7 +39,9 @@ import com.hazelcast.jet.pipeline.impl.transform.FlatMapTransform;
 import com.hazelcast.jet.pipeline.impl.transform.GroupByTransform;
 import com.hazelcast.jet.pipeline.impl.transform.HashJoinTransform;
 import com.hazelcast.jet.pipeline.impl.transform.MapTransform;
+import com.hazelcast.jet.pipeline.impl.transform.MultiTransform;
 import com.hazelcast.jet.pipeline.impl.transform.ProcessorTransform;
+import com.hazelcast.jet.pipeline.impl.transform.UnaryTransform;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,8 +57,7 @@ import static java.util.stream.Collectors.toList;
 public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E> {
 
     ComputeStageImpl(List<Stage> upstream, Transform transform, PipelineImpl pipeline) {
-        super(upstream, transform, pipeline);
-        pipeline.adjacencyMap.put(this, new ArrayList<>());
+        super(upstream, new ArrayList<>(), transform, pipeline);
     }
 
     ComputeStageImpl(Source<E> source, PipelineImpl pipeline) {

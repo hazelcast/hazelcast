@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.pipeline.impl;
 
-import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.Transform;
 
 import java.util.List;
@@ -28,10 +28,11 @@ public abstract class AbstractStage implements Stage {
     final List<Stage> upstream;
     final Transform transform;
 
-    AbstractStage(List<Stage> upstream, Transform transform, PipelineImpl pipelineImpl) {
+    AbstractStage(List<Stage> upstream, List<Stage> downstream, Transform transform, PipelineImpl pipelineImpl) {
         this.upstream = upstream;
         this.transform = transform;
         this.pipelineImpl = pipelineImpl;
+        pipelineImpl.register(this, downstream);
     }
 
     @Override

@@ -28,7 +28,6 @@ import java.util.function.Function;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.stream.DistributedCollectors.toList;
 import static java.lang.Math.min;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
@@ -69,12 +68,6 @@ public final class TopologicalSorter<V> {
     public static <V> Iterable<V> topologicalSort(
             @Nonnull Map<V, List<V>> adjacencyMap, @Nonnull Function<V, String> vertexNameFn
     ) {
-        // fill in missing map entries
-        adjacencyMap.values().stream()
-                    .flatMap(List::stream)
-                    .collect(toList())
-                    .forEach(v -> adjacencyMap.putIfAbsent(v, emptyList()));
-
         // decorate all the vertices with Tarjan vertices, which hold the
         // metadata needed by the algorithm
         Map<V, TarjanVertex<V>> tarjanVertices =

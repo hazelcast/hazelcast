@@ -27,13 +27,14 @@ import com.hazelcast.jet.pipeline.impl.transform.MultiTransform;
 import com.hazelcast.jet.pipeline.impl.transform.UnaryTransform;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class PipelineImpl implements Pipeline {
 
-    final Map<Stage, List<Stage>> adjacencyMap = new HashMap<>();
+    private final Map<Stage, List<Stage>> adjacencyMap = new HashMap<>();
 
     @Override
     public <E> ComputeStage<E> drawFrom(Source<E> source) {
@@ -54,15 +55,26 @@ public class PipelineImpl implements Pipeline {
     <IN, OUT> ComputeStage<OUT> attach(
             ComputeStage<IN> upstream, UnaryTransform<? super IN, OUT> unaryTransform
     ) {
-        ComputeStageImpl<OUT> output = new ComputeStageImpl<>(upstream, unaryTransform, this);
-        connect(upstream, output);
-        return output;
+        ComputeStageImpl<OUT> attached = new ComputeStageImpl<>(upstream, unaryTransform, this);
+        connect(upstream, attached);
+        return attached;
     }
 
     <E> SinkStage drainTo(ComputeStage<E> upstream, Sink sink) {
         SinkStageImpl output = new SinkStageImpl(upstream, sink, this);
         connect(upstream, output);
         return output;
+    }
+
+    Map<Stage, List<Stage>> adjacencyMap() {
+        Map<Stage, List<Stage>> safeCopy = new HashMap<>();
+        adjacencyMap.forEach((k, v) -> safeCopy.put(k, new ArrayList<>(v)));
+        return safeCopy;
+    }
+
+    void register(Stage stage, List<Stage> downstream) {
+        List<Stage> prev = adjacencyMap.put(stage, downstream);
+        assert prev == null : "Double registering of a Stage with this Pipeline: " + stage;
     }
 
     private void connect(ComputeStage upstream, Stage downstream) {
