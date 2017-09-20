@@ -68,7 +68,8 @@ public abstract class MetaDataFetcher {
             repairSequences(resultHolder.namePartitionSequenceList, handlers);
         } catch (Exception e) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Can't fetch invalidation meta-data [" + e.getClass().getSimpleName() + "] " + e.getMessage());            }
+                logger.warning("Can't fetch invalidation meta-data [" + e.getClass().getSimpleName() + "] " + e.getMessage());
+            }
         }
     }
 
