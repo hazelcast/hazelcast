@@ -302,7 +302,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         }
 
         @Override
-        public boolean saveSnapshot() {
+        public boolean saveToSnapshot() {
             if (snapshotTraverser == null) {
                 snapshotTraverser = Traversers.traverseStream(IntStream.range(0, assignedPtions.length).boxed())
                                               // save {partitionId; partitionOffset} tuples
@@ -315,14 +315,12 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         }
 
         @Override
-        public void restoreSnapshot(@Nonnull Inbox inbox) {
-            for (Object o; (o = inbox.poll()) != null; ) {
-                Entry<BroadcastKey<Integer>, Integer> e = (Entry<BroadcastKey<Integer>, Integer>) o;
-                int partitionIndex = arrayIndexOf(e.getKey().key(), assignedPtions);
-                // restore offset, if assigned to us. Ignore it otherwise
-                if (partitionIndex >= 0) {
-                    ptionOffsets[partitionIndex] = e.getValue();
-                }
+        public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+            BroadcastKey<Integer> bKey = (BroadcastKey<Integer>) key;
+            int partitionIndex = arrayIndexOf(bKey.key(), assignedPtions);
+            // restore offset, if assigned to us. Ignore it otherwise
+            if (partitionIndex >= 0) {
+                ptionOffsets[partitionIndex] = (int) value;
             }
         }
 

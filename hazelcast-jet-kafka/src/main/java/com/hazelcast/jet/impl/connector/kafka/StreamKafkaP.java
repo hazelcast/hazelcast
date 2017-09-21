@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -153,7 +152,7 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
     }
 
     @Override
-    public boolean saveSnapshot() {
+    public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
             snapshotTraverser = Traversers.traverseIterable(offsets.entrySet())
                     .onFirstNull(() -> snapshotTraverser = null);
@@ -162,13 +161,11 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
     }
 
     @Override
-    public void restoreSnapshot(@Nonnull Inbox inbox) {
-        Set<TopicPartition> assignment = consumer.assignment();
-        for (Object o; (o = inbox.poll()) != null; ) {
-            Entry<TopicPartition, Long> entry = (Entry<TopicPartition, Long>) o;
-            if (assignment.contains(entry.getKey())) {
-                consumer.seek(entry.getKey(), entry.getValue());
-            }
+    public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        TopicPartition partition = (TopicPartition) key;
+        long offset = (long) value;
+        if (assignment.contains(partition)) {
+            consumer.seek(partition, offset);
         }
     }
 

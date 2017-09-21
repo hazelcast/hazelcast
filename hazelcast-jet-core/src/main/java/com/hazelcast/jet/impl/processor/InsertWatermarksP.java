@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.ResettableSingletonTraverser;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Watermark;
@@ -26,7 +25,6 @@ import com.hazelcast.jet.WatermarkPolicy;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
-import java.util.Map.Entry;
 import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.BroadcastKey.broadcastKey;
@@ -96,16 +94,14 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
     }
 
     @Override
-    public boolean saveSnapshot() {
+    public boolean saveToSnapshot() {
         return tryEmitToSnapshot(broadcastKey(index), lastEmittedWm);
     }
 
     @Override
-    public void restoreSnapshot(@Nonnull Inbox inbox) {
+    public void restoreFromSnapshot(@Nonnull Object key, @Nonnull  Object value) {
         // we restart at the oldest WM any instance was at at the time of snapshot
-        for (Object o; (o = inbox.poll()) != null; ) {
-            minRestoredWm = Math.min(minRestoredWm, ((Entry<?, Long>) o).getValue());
-        }
+        minRestoredWm = Math.min(minRestoredWm, (long) value);
     }
 
     @Override

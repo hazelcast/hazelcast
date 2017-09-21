@@ -120,7 +120,7 @@ public interface Processor {
      * Called after all the inbound edges' streams are exhausted. If it returns
      * {@code false}, it will be invoked again until it returns {@code true}.
      * After this method is called, no other processing methods will be called on
-     * this processor, except for {@link #saveSnapshot()}.
+     * this processor, except for {@link #saveToSnapshot()}.
      * <p>
      * Non-cooperative processors are required to return from this method from
      * time to time to give the system a chance to check for snapshot requests
@@ -178,7 +178,7 @@ public interface Processor {
      * <p>
      * The default implementation takes no action and returns {@code true}.
      */
-    default boolean saveSnapshot() {
+    default boolean saveToSnapshot() {
         return true;
     }
 
@@ -197,13 +197,14 @@ public interface Processor {
      * <p>
      * The default implementation throws an exception.
      */
-    default void restoreSnapshot(@Nonnull Inbox inbox) {
-        throw new JetException("Processor " + getClass().getName() + " does not override the restoreSnapshot() method");
+    default void restoreFromSnapshot(@Nonnull Inbox inbox) {
+        throw new JetException("Processor " + getClass().getName()
+                + " does not override the restoreFromSnapshot() method");
     }
 
     /**
      * Called after all keys have been restored using {@link
-     * #restoreSnapshot(Inbox)}. If it returns {@code false}, it will be called
+     * #restoreFromSnapshot(Inbox)}. If it returns {@code false}, it will be called
      * again before proceeding to call any other method.
      * <p>
      * The default implementation takes no action and returns {@code true}.
@@ -215,7 +216,7 @@ public interface Processor {
 
     /**
      * Context passed to the processor in the
-     * {@link #init(Outbox, Processor.Context) init()} call.
+     * {@link #init(Outbox, SnapshotOutbox, Processor.Context) init()} call.
      */
     interface Context {
 

@@ -70,13 +70,13 @@ public final class ThrottleWrappedP implements Processor {
     }
 
     @Override
-    public boolean saveSnapshot() {
-        return wrappedProcessor.saveSnapshot();
+    public boolean saveToSnapshot() {
+        return wrappedProcessor.saveToSnapshot();
     }
 
     @Override
-    public void restoreSnapshot(@Nonnull Inbox inbox) {
-        wrappedProcessor.restoreSnapshot(inbox);
+    public void restoreFromSnapshot(@Nonnull Inbox inbox) {
+        wrappedProcessor.restoreFromSnapshot(inbox);
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Session;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -150,7 +149,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     }
 
     @Override
-    public boolean saveSnapshot() {
+    public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
             snapshotTraverser = Traversers.traverseIterable(keyToWindows.entrySet())
                     .onFirstNull(() -> snapshotTraverser = null);
@@ -159,11 +158,8 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     }
 
     @Override
-    public void restoreSnapshot(@Nonnull Inbox inbox) {
-        for (Object o; (o = inbox.poll()) != null; ) {
-            Entry<K, Windows> entry = (Entry<K, Windows>) o;
-            keyToWindows.put(entry.getKey(), entry.getValue());
-        }
+    protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        keyToWindows.put((K) key, (Windows) value);
     }
 
     @Override

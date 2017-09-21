@@ -21,12 +21,12 @@ import javax.annotation.CheckReturnValue;
 import static com.hazelcast.jet.BroadcastKey.broadcastKey;
 
 /**
- * A {@link Outbox} which is used for offering items to processor snapshot state.
+ * An {@link Outbox} which is used for offering items to processor's state snapshot.
  * <p>
- * The methods on this class may only be called from inside the
- * {@link Processor#saveSnapshot()} method.
+ * The methods in this class may only be called from inside the
+ * {@link Processor#saveToSnapshot()} method.
  * <p>
- * As with the regular {@link Outbox}, anon-cooperative processor's outbox will
+ * As with the regular {@link Outbox}, a non-cooperative processor's outbox will
  * block until the item can fit into the downstream buffers
  * and the {@code offer} methods will always return
  * {@code true}.
@@ -35,9 +35,9 @@ public interface SnapshotOutbox {
 
     /**
      * Offers the specified key and value pair to the processor's snapshot storage.
-     * State stored this way once restored will be distributed between all
-     * processors instances using default partitioning.
-     * <p>
+     * State stored this way, once restored, will be distributed among all
+     * processor instances using default partitioning.
+     *
      * @return whether the outbox fully accepted the item
      */
     @CheckReturnValue
@@ -45,9 +45,9 @@ public interface SnapshotOutbox {
 
     /**
      * Offers the specified key and value pair to the processor's snapshot storage.
-     * State stored this way once restored will be broadcast to all
-     * processors instances, meaning all processor instances will receive
-     * all of the broadcast key and value pairs.
+     * State stored this way, once restored, will be broadcast to all
+     * processor instances, meaning all processor instances will receive
+     * all key and value pairs which were broadcast using this method.
      *
      * @return whether the outbox fully accepted the item
      */

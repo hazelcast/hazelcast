@@ -38,7 +38,7 @@ enum ProcessorState {
     COMPLETE,
 
     /**
-     * Doing calls to {@link Processor#saveSnapshot()} until
+     * Doing calls to {@link Processor#saveToSnapshot()} until
      * it returns true.
      */
     SAVE_SNAPSHOT,

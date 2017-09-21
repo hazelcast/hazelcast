@@ -138,7 +138,7 @@ public abstract class ProcessorTaskletBase implements Tasklet {
                 }
                 if (!inbox.isEmpty()) {
                     if (isSnapshotInbox()) {
-                        processor.restoreSnapshot(inbox);
+                        processor.restoreFromSnapshot(inbox);
                     } else {
                         processor.process(currInstream.ordinal(), inbox);
                     }
@@ -177,7 +177,7 @@ public abstract class ProcessorTaskletBase implements Tasklet {
                 assert context.snapshottingEnabled() : "Snapshotting is not enabled";
 
                 progTracker.notDone();
-                if (processor.saveSnapshot()) {
+                if (processor.saveToSnapshot()) {
                     progTracker.madeProgress();
                     state = EMIT_BARRIER;
                 }

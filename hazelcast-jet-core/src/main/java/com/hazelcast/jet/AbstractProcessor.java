@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -31,8 +32,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  * Base class to implement custom processors. Simplifies the contract of
  * {@code Processor} with several levels of convenience:
  * <ol><li>
- *     {@link #init(Outbox, Context)} retains the supplied outbox and the
- *     logger retrieved from the context.
+ *     {@link #init(Outbox, SnapshotOutbox, Context)} retains the supplied outboxes
+ *     and the logger retrieved from the context.
  * </li><li>
  *     {@link #process(int, Inbox) process(n, inbox)} delegates to the matching
  *     {@code tryProcessN()} with each item received in the inbox. If the item
@@ -304,6 +305,30 @@ public abstract class AbstractProcessor implements Processor {
     @SuppressWarnings("checkstyle:magicnumber")
     protected boolean tryProcessWm4(@Nonnull Watermark wm) {
         return tryProcessWm(4, wm);
+    }
+
+
+    /**
+     * Implements the boilerplate of polling the inbox and casting the items to Map.Entry
+     */
+    @Override
+    public final void restoreFromSnapshot(@Nonnull Inbox inbox) {
+        for (Map.Entry entry; (entry = (Map.Entry) inbox.poll()) != null; ) {
+            restoreFromSnapshot(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Tries to restore the given key and value received from the
+     * latest snapshot.
+     * <p>
+     * The default implementation throws an {@code UnsupportedOperationException}.
+     * <p>
+     * @param key      key of the entry from the snapshot
+     * @param value    value of the entry from the snapshot
+     */
+    protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        throw new UnsupportedOperationException("Missing implementation");
     }
 
     /**

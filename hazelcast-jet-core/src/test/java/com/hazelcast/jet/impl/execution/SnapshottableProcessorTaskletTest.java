@@ -275,7 +275,7 @@ public class SnapshottableProcessorTaskletTest {
         }
 
         @Override
-        public boolean saveSnapshot() {
+        public boolean saveToSnapshot() {
             for (Map.Entry item; (item = snapshotQueue.peek()) != null; ) {
                 if (!snapshotOutbox.offer(item.getKey(), item.getValue())) {
                     return false;
@@ -288,7 +288,7 @@ public class SnapshottableProcessorTaskletTest {
         }
 
         @Override
-        public void restoreSnapshot(@Nonnull Inbox inbox) {
+        public void restoreFromSnapshot(@Nonnull Inbox inbox) {
             for (Object o; (o = inbox.poll()) != null; ) {
                 snapshotQueue.offer((Entry) o);
             }

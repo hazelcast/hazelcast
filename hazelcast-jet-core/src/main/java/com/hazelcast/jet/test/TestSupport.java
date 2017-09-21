@@ -70,12 +70,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * </ul>
  * The {@link #disableSnapshots() optional} snapshot+restore test procedure:
  * <ul>
- *     <li>{@code saveSnapshot()} is called
+ *     <li>{@code saveToSnapshot()} is called
  *
  *     <li>new processor instance is created, from now on only this
  *     instance will be used
  *
- *     <li>snapshot is restored using {@code restoreSnapshot()}
+ *     <li>snapshot is restored using {@code restoreFromSnapshot()}
  *
  *     <li>{@code finishSnapshotRestore()} is called
  * </ul>
@@ -292,7 +292,7 @@ public final class TestSupport {
         // create instance of your processor and call the init() method
         processor[0].init(outbox, outbox, new TestProcessorContext());
 
-        // do snapshot+restore before processing any item. This will test saveSnapshot() in this edge case
+        // do snapshot+restore before processing any item. This will test saveToSnapshot() in this edge case
         snapshotAndRestore(processor, outbox, actualOutput, doSnapshots);
 
         // call the process() method
@@ -351,14 +351,14 @@ public final class TestSupport {
         boolean[] done = {false};
         Set<Object> keys = new HashSet<>();
         do {
-            checkTime("saveSnapshot", () -> done[0] = processor[0].saveSnapshot());
+            checkTime("saveSnapshot", () -> done[0] = processor[0].saveToSnapshot());
             for (Entry<MockData, MockData> entry : outbox.snapshotQueue()) {
                 Object key = entry.getKey().getObject();
-                assertTrue("Duplicate key produced in saveSnapshot()\n  Duplicate: " + key + "\n  Keys so far: " + keys,
+                assertTrue("Duplicate key produced in saveToSnapshot()\n  Duplicate: " + key + "\n  Keys so far: " + keys,
                         keys.add(key));
                 snapshotInbox.add(entry(key, entry.getValue().getObject()));
             }
-            assertTrue("saveSnapshot() call without progress",
+            assertTrue("saveToSnapshot() call without progress",
                     !assertProgress || done[0] || !outbox.snapshotQueue().isEmpty()
                             || !outbox.queueWithOrdinal(0).isEmpty());
             drainOutbox(outbox.queueWithOrdinal(0), actualOutput, logInputOutput);
@@ -375,8 +375,8 @@ public final class TestSupport {
         }
         int lastInboxSize = snapshotInbox.size();
         while (!snapshotInbox.isEmpty()) {
-            checkTime("restoreSnapshot", () -> processor[0].restoreSnapshot(snapshotInbox));
-            assertTrue("restoreSnapshot() call without progress",
+            checkTime("restoreSnapshot", () -> processor[0].restoreFromSnapshot(snapshotInbox));
+            assertTrue("restoreFromSnapshot() call without progress",
                     !assertProgress || lastInboxSize > snapshotInbox.size() || !outbox.queueWithOrdinal(0).isEmpty());
             drainOutbox(outbox.queueWithOrdinal(0), actualOutput, logInputOutput);
             lastInboxSize = snapshotInbox.size();

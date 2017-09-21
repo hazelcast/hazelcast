@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.BroadcastKey;
-import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.TimestampedEntry;
 import com.hazelcast.jet.Traverser;
@@ -125,7 +124,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     }
 
     @Override
-    public boolean saveSnapshot() {
+    public boolean saveToSnapshot() {
         if (!isLastStage || flushTraverser != null) {
             return flushBuffers();
         }
@@ -141,24 +140,21 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     }
 
     @Override
-    public void restoreSnapshot(@Nonnull Inbox inbox) {
-        for (Map.Entry e; (e = (Map.Entry) inbox.poll()) != null; ) {
-            if (e.getKey().equals(Keys.NEXT_WIN_TO_EMIT)) {
-                long newNextWinToEmit = (long) e.getValue();
-                assert nextWinToEmit == Long.MIN_VALUE || nextWinToEmit == newNextWinToEmit
-                        : "different values for nextWinToEmit restored, "
-                                + "before=" + nextWinToEmit + ", new=" + newNextWinToEmit;
-                nextWinToEmit = newNextWinToEmit;
-                continue;
-            }
-            Entry<SnapshotKey, A> entry = (Entry<SnapshotKey, A>) e;
-            SnapshotKey k = entry.getKey();
-            if (tsToKeyToAcc.computeIfAbsent(k.timestamp, x -> new HashMap<>())
-                            .put(k.key, entry.getValue()) != null) {
-                throw new JetException("Duplicate key in snapshot: " + k);
-            }
-            topTs = max(topTs, k.timestamp);
+    protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        if (key.equals(Keys.NEXT_WIN_TO_EMIT)) {
+            long newNextWinToEmit = (long) value;
+            assert nextWinToEmit == Long.MIN_VALUE || nextWinToEmit == newNextWinToEmit
+                    : "different values for nextWinToEmit restored, "
+                            + "before=" + nextWinToEmit + ", new=" + newNextWinToEmit;
+            nextWinToEmit = newNextWinToEmit;
+            return;
         }
+        SnapshotKey k = (SnapshotKey) key;
+        if (tsToKeyToAcc.computeIfAbsent(k.timestamp, x -> new HashMap<>())
+                        .put(k.key, (A) value) != null) {
+            throw new JetException("Duplicate key in snapshot: " + k);
+        }
+        topTs = max(topTs, k.timestamp);
     }
 
     @Override
