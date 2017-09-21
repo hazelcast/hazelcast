@@ -74,6 +74,9 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         Future<Object> future =
                 localOperationService.invokeOnTarget(null, new UnresponsiveTargetOperation(), remoteMember.getAddress());
 
+        // Unresponsive operation should be executed before shutting down the node
+        assertUnresponsiveOperationStarted();
+
         remote.getLifecycleService().terminate();
 
         try {
@@ -119,15 +122,11 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
                 assertOpenEventually(resumeMonitorLatch);
             }
         });
+
         assertOpenEventually(blockMonitorLatch);
 
         // Unresponsive operation should be executed before shutting down the node
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotNull(remote.getUserContext().get(UnresponsiveTargetOperation.COMPLETION_FLAG));
-            }
-        });
+        assertUnresponsiveOperationStarted();
 
         remote.getLifecycleService().terminate();
         restartAction.run();
@@ -152,6 +151,15 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         } catch (TimeoutException e) {
             ignore(e);
         }
+    }
+
+    private void assertUnresponsiveOperationStarted() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNotNull(remote.getUserContext().get(UnresponsiveTargetOperation.COMPLETION_FLAG));
+            }
+        });
     }
 
     private static class UnresponsiveTargetOperation extends Operation {
