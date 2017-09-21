@@ -61,6 +61,8 @@ public class HazelcastOSGiIntegrationTest {
         System.setProperty(MAVEN_REPOSITORIES_PROP, MAVEN_REPOSITORIES);
 
         String url = "reference:file:" + PathUtils.getBaseDir() + "/target/classes";
+        // modify url for Windows environment
+        url = url.replace("\\", "/");
         UrlProvisionOption hzBundle = bundle(url);
         CompositeOption junitBundles = junitBundles();
         return options(hzBundle, junitBundles);
