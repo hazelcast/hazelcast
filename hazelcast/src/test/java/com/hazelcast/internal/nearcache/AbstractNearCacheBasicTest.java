@@ -359,6 +359,15 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_TRANSIENT} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutTransientIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_TRANSIENT);
+    }
+
+    /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_IF_ABSENT} with
      * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
      */
@@ -439,6 +448,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case PUT_ASYNC_WITH_EXPIRY_POLICY:
                     ICompletableFuture<String> future = adapter.putAsync(i, value, expiryPolicy);
                     assertNull(getFuture(future, "Could not put value via putAsync() with ExpiryPolicy"));
+                    break;
+                case PUT_TRANSIENT:
+                    adapter.putTransient(i, value, 1, HOURS);
                     break;
                 case PUT_IF_ABSENT:
                     assertTrue(adapter.putIfAbsent(i, value));
@@ -600,6 +612,24 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     @Test
     public void whenPutAsyncWithExpiryPolicyIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT_ASYNC_WITH_EXPIRY_POLICY);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_TRANSIENT}
+     * is used.
+     */
+    @Test
+    public void whenPutTransientIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_TRANSIENT);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_TRANSIENT}
+     * is used.
+     */
+    @Test
+    public void whenPutTransientIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT_TRANSIENT);
     }
 
     /**
@@ -799,6 +829,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case PUT_ASYNC_WITH_EXPIRY_POLICY:
                     ICompletableFuture<String> expiryFuture = adapter.putAsync(i, newValue, expiryPolicy);
                     assertEquals(value, getFuture(expiryFuture, "Could not put value via putAsync() with ExpiryPolicy"));
+                    break;
+                case PUT_TRANSIENT:
+                    adapter.putTransient(i, newValue, 1, HOURS);
                     break;
                 case REPLACE:
                     assertEquals(value, adapter.replace(i, newValue));

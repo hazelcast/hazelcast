@@ -99,6 +99,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        map.putTransient(key, value, ttl, timeunit);
+    }
+
+    @Override
     public boolean putIfAbsent(K key, V value) {
         return map.putIfAbsent(key, value) == null;
     }

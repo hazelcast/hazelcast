@@ -121,6 +121,12 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
+    public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public boolean putIfAbsent(K key, V value) {
         begin();
         V oldValue = transactionalMap.putIfAbsent(key, value);

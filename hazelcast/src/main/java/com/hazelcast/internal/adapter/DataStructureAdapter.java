@@ -58,6 +58,8 @@ public interface DataStructureAdapter<K, V> {
 
     ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy);
 
+    void putTransient(K key, V value, long ttl, TimeUnit timeunit);
+
     boolean putIfAbsent(K key, V value);
 
     ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value);
@@ -132,6 +134,7 @@ public interface DataStructureAdapter<K, V> {
         PUT_ASYNC("putAsync", Object.class, Object.class),
         PUT_ASYNC_WITH_TTL("putAsync", Object.class, Object.class, long.class, TimeUnit.class),
         PUT_ASYNC_WITH_EXPIRY_POLICY("putAsync", Object.class, Object.class, ExpiryPolicy.class),
+        PUT_TRANSIENT("putTransient", Object.class, Object.class, long.class, TimeUnit.class),
         PUT_IF_ABSENT("putIfAbsent", Object.class, Object.class),
         PUT_IF_ABSENT_ASYNC("putIfAbsentAsync", Object.class, Object.class),
         REPLACE("replace", Object.class, Object.class),

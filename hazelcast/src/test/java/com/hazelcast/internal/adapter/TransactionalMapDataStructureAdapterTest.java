@@ -132,6 +132,11 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         adapter.putAsync(42, "value", expiryPolicy);
     }
 
+    @Test(expected = MethodNotAvailableException.class)
+    public void testPutTransient() {
+        adapter.putTransient(42, "value", 1, TimeUnit.MILLISECONDS);
+    }
+
     @Test
     public void testPutIfAbsent() {
         map.put(42, "oldValue");

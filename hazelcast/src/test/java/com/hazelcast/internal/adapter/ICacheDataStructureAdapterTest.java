@@ -190,6 +190,11 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         }
     }
 
+    @Test(expected = MethodNotAvailableException.class)
+    public void testPutTransient() {
+        adapter.putTransient(42, "value", 1, TimeUnit.MILLISECONDS);
+    }
+
     @Test
     public void testPutIfAbsent() {
         cache.put(42, "oldValue");
