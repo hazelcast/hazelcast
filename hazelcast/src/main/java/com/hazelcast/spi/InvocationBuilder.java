@@ -17,8 +17,12 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;
+
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
+import static com.hazelcast.util.Preconditions.checkFalse;
 
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
@@ -65,6 +69,7 @@ public abstract class InvocationBuilder {
     protected int tryCount = DEFAULT_TRY_COUNT;
     protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
+    protected boolean failOnIndeterminateOperationState;
 
     /**
      * Creates an InvocationBuilder
@@ -130,6 +135,29 @@ public abstract class InvocationBuilder {
      */
     public InvocationBuilder setTryCount(int tryCount) {
         this.tryCount = tryCount;
+        return this;
+    }
+
+    /**
+     * Returns true if {@link IndeterminateOperationStateException} is enabled for this invocation
+     *
+     * @return true if {@link IndeterminateOperationStateException} is enabled for this invocation
+     */
+    public boolean shouldFailOnIndeterminateOperationState() {
+        return failOnIndeterminateOperationState;
+    }
+
+    /**
+     * Enables / disables throwing {@link IndeterminateOperationStateException} for this invocation.
+     * Can be used only for partition invocations
+     * @see IndeterminateOperationStateException
+     *
+     * @return the InvocationBuilder
+     */
+    public InvocationBuilder setFailOnIndeterminateOperationState(boolean failOnIndeterminateOperationState) {
+        checkFalse((failOnIndeterminateOperationState && partitionId == GENERIC_PARTITION_ID),
+                "failOnIndeterminateOperationState can be used with only partition invocations");
+        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
         return this;
     }
 

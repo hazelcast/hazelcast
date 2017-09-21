@@ -31,14 +31,18 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  */
 final class PartitionInvocation extends Invocation {
 
+    final boolean failOnIndeterminateOperationState;
+
     PartitionInvocation(Context context, Operation op, Runnable doneCallback, int tryCount, long tryPauseMillis,
-                        long callTimeoutMillis, boolean deserialize) {
+                        long callTimeoutMillis, boolean deserialize, boolean failOnIndeterminateOperationState) {
         super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState && !(op instanceof ReadonlyOperation);
     }
 
     PartitionInvocation(Context context, Operation op, int tryCount, long tryPauseMillis,
-                        long callTimeoutMillis, boolean deserialize) {
-        this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+                        long callTimeoutMillis, boolean deserialize, boolean failOnIndeterminateOperationState) {
+        this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize,
+                failOnIndeterminateOperationState);
     }
 
     @Override
@@ -49,14 +53,12 @@ final class PartitionInvocation extends Invocation {
 
     @Override
     protected boolean shouldFailOnIndeterminateOperationState() {
-        return context.failOnIndeterminateOperationState;
+        return failOnIndeterminateOperationState;
     }
 
     @Override
     ExceptionAction onException(Throwable t) {
-        if (shouldFailOnIndeterminateOperationState()
-                && (t instanceof MemberLeftException)
-                && !(op instanceof ReadonlyOperation)) {
+        if (shouldFailOnIndeterminateOperationState() && (t instanceof MemberLeftException)) {
             return THROW_EXCEPTION;
         }
 

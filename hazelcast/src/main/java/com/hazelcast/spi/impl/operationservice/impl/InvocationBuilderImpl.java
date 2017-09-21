@@ -50,7 +50,8 @@ class InvocationBuilderImpl extends InvocationBuilder {
         if (target == null) {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             invocation = new PartitionInvocation(
-                    context, op, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+                    context, op, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized,
+                    failOnIndeterminateOperationState);
         } else {
             invocation = new TargetInvocation(
                     context, op, target, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized);

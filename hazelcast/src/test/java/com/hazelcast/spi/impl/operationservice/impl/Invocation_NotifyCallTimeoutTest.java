@@ -58,7 +58,7 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
         op.setPartitionId(0).setWaitTimeout(-1);
 
         Invocation invocation = new PartitionInvocation(
-                operationService.invocationContext, op, 10, MINUTES.toSeconds(2), MINUTES.toSeconds(2), false);
+                operationService.invocationContext, op, 10, MINUTES.toSeconds(2), MINUTES.toSeconds(2), false, false);
 
         OperationAccessor.setInvocationTime(op, node.getClusterService().getClusterClock().getClusterTime());
 
@@ -75,7 +75,7 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
         op.setPartitionId(0).setWaitTimeout(SECONDS.toMillis(2));
 
         Invocation invocation = new PartitionInvocation(
-                operationService.invocationContext, op, 10, MINUTES.toSeconds(2), MINUTES.toSeconds(2), false);
+                operationService.invocationContext, op, 10, MINUTES.toSeconds(2), MINUTES.toSeconds(2), false, false);
 
         OperationAccessor.setInvocationTime(op, node.getClusterService().getClusterClock().getClusterTime());
 
@@ -94,7 +94,7 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
         op.setPartitionId(0).setWaitTimeout(SECONDS.toMillis(60));
 
         Invocation invocation = new PartitionInvocation(
-                operationService.invocationContext, op, 10, MINUTES.toSeconds(2), MINUTES.toSeconds(2), false);
+                operationService.invocationContext, op, 10, MINUTES.toSeconds(2), MINUTES.toSeconds(2), false, false);
 
         OperationAccessor.setInvocationTime(op, node.getClusterService().getClusterClock().getClusterTime());
 
