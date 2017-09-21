@@ -428,12 +428,13 @@ abstract class AbstractInternalCacheProxy<K, V>
             listener = (T) listenerConfig.getImplementation();
         } else if (listenerConfig.getClassName() != null) {
             try {
-                return ClassLoaderUtil.newInstance(getNodeEngine().getConfigClassLoader(),
+                listener = ClassLoaderUtil.newInstance(getNodeEngine().getConfigClassLoader(),
                         listenerConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
         }
+        injectDependencies(listener);
         return listener;
     }
 }

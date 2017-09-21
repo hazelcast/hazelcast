@@ -27,7 +27,7 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 
@@ -100,9 +100,8 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     }
 
     protected void injectDependencies(Object obj) {
-        if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(getClient());
-        }
+        ManagedContext managedContext = getSerializationService().getManagedContext();
+        managedContext.initialize(obj);
     }
 
     @Override

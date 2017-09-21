@@ -18,8 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.ICache;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -84,12 +83,11 @@ public class CacheEventListenerAdaptor<K, V>
 
     public CacheEventListenerAdaptor(ICache<K, V> source,
                                      CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
-                                     SerializationService serializationService,
-                                     HazelcastInstance hazelcastInstance) {
+                                     SerializationService serializationService) {
         this.source = source;
         this.serializationService = serializationService;
 
-        this.cacheEntryListener = createCacheEntryListener(cacheEntryListenerConfiguration, hazelcastInstance);
+        this.cacheEntryListener = createCacheEntryListener(cacheEntryListenerConfiguration);
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
             this.cacheEntryCreatedListener = (CacheEntryCreatedListener) cacheEntryListener;
         } else {
@@ -110,7 +108,7 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.cacheEntryExpiredListener = null;
         }
-        injectDependencies(cacheEntryListener, hazelcastInstance);
+        injectDependencies(cacheEntryListener);
 
         Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory =
                 cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory();
@@ -119,25 +117,23 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.filter = null;
         }
-        injectDependencies(filter, hazelcastInstance);
+        injectDependencies(filter);
 
         this.isOldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
     }
 
     private CacheEntryListener<K, V> createCacheEntryListener(
-            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
-            HazelcastInstance hazelcastInstance) {
+            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         Factory<CacheEntryListener<? super K, ? super V>> cacheEntryListenerFactory =
                 cacheEntryListenerConfiguration.getCacheEntryListenerFactory();
-        injectDependencies(cacheEntryListenerFactory, hazelcastInstance);
+        injectDependencies(cacheEntryListenerFactory);
 
         return (CacheEntryListener<K, V>) cacheEntryListenerFactory.create();
     }
 
-    private void injectDependencies(Object obj, HazelcastInstance hazelcastInstance) {
-        if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(hazelcastInstance);
-        }
+    private void injectDependencies(Object obj) {
+        ManagedContext managedContext = serializationService.getManagedContext();
+        managedContext.initialize(obj);
     }
 
     @Override

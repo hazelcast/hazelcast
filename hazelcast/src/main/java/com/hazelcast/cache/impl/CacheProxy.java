@@ -296,8 +296,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
 
         CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration,
-                getNodeEngine().getSerializationService(),
-                getNodeEngine().getHazelcastInstance());
+                getNodeEngine().getSerializationService());
         String regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
             if (addToConfig) {
