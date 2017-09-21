@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import org.apache.hadoop.mapred.JobContextImpl;
@@ -43,7 +43,7 @@ import static java.util.stream.IntStream.range;
 import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
 
 /**
- * See {@link com.hazelcast.jet.processor.HdfsProcessors#writeHdfs(
+ * See {@link com.hazelcast.jet.core.processor.HdfsProcessors#writeHdfs(
  * org.apache.hadoop.mapred.JobConf, DistributedFunction, DistributedFunction)}.
  */
 public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {

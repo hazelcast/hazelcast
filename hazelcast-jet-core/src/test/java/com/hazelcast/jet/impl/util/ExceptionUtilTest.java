@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.TestUtil;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;

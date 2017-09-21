@@ -16,13 +16,14 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.core.Processor;
 
 enum ProcessorState {
 
     /**
      * Doing calls to {@link Processor#tryProcess()} and {@link
-     * Processor#process(int, com.hazelcast.jet.Inbox)} until the inbox is empty.
+     * Processor#process(int, com.hazelcast.jet.core.Inbox)} until the inbox
+     * is empty.
      */
     PROCESS_INBOX,
 

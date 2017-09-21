@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.logging.ILogger;

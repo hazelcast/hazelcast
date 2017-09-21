@@ -23,7 +23,7 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
-import com.hazelcast.jet.TimestampedEntry;
+import com.hazelcast.jet.core.TimestampedEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;

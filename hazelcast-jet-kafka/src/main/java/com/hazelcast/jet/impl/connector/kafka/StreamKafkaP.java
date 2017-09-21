@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.connector.kafka;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.logging.ILogger;
@@ -50,7 +50,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
 /**
- * See {@link com.hazelcast.jet.processor.KafkaProcessors#streamKafka(
+ * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#streamKafka(
  * Properties, String...)}.
  */
 public final class StreamKafkaP extends AbstractProcessor implements Closeable {
@@ -170,7 +170,7 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
     }
 
     /**
-     * Please use {@link com.hazelcast.jet.processor.KafkaProcessors#streamKafka(Properties, String...)}.
+     * Please use {@link com.hazelcast.jet.core.processor.KafkaProcessors#streamKafka(Properties, String...)}.
      */
     private static class Supplier implements ProcessorSupplier {
 

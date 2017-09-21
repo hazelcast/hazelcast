@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.Watermark;
-import com.hazelcast.jet.WatermarkEmissionPolicy;
-import com.hazelcast.jet.WatermarkPolicy;
-import com.hazelcast.jet.test.TestOutbox;
-import com.hazelcast.jet.test.TestProcessorContext;
+import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.WatermarkEmissionPolicy;
+import com.hazelcast.jet.core.WatermarkPolicy;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,10 +39,10 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByMinStep;
-import static com.hazelcast.jet.WatermarkPolicies.withFixedLag;
-import static com.hazelcast.jet.WindowDefinition.tumblingWindowDef;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByMinStep;
+import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.WindowDefinition.tumblingWindowDef;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.WatermarkPolicyUtil.limitingTimestampAndWallClockLag;
 import static java.util.Arrays.asList;

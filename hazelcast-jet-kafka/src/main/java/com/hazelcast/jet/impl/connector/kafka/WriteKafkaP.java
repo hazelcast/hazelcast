@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.connector.kafka;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * See {@link com.hazelcast.jet.processor.KafkaProcessors#writeKafka(String,
+ * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#writeKafka(String,
  * Properties)}.
  */
 public final class WriteKafkaP<K, V> extends AbstractProcessor {

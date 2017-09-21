@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;

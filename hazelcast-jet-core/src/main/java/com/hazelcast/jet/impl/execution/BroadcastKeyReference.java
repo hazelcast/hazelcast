@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.BroadcastKey;
+import com.hazelcast.jet.core.BroadcastKey;
 
 public class BroadcastKeyReference<K> implements BroadcastKey<K> {
     private final K key;

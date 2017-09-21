@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.stream.IStreamMap;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.TestUtil.executeAndPeel;
+import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.stream.DistributedCollectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;

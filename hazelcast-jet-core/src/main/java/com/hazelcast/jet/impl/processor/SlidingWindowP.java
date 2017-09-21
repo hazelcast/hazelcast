@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.BroadcastKey;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.TimestampedEntry;
+import com.hazelcast.jet.core.TimestampedEntry;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.Watermark;
-import com.hazelcast.jet.WindowDefinition;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
@@ -47,7 +47,7 @@ import static java.util.Collections.emptyMap;
 
 /**
  * Handles various setups of sliding and tumbling window aggregation.
- * See {@link com.hazelcast.jet.processor.Processors} for more documentation.
+ * See {@link com.hazelcast.jet.core.processor.Processors} for more documentation.
  *
  * @param <T> type of input item (stream item in 1st stage, Frame, if 2nd stage)
  * @param <A> type of the frame accumulator object

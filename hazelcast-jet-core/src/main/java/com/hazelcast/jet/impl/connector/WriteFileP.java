@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.processor.SinkProcessors;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;

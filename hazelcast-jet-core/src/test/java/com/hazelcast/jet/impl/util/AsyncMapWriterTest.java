@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.stream.IStreamMap;

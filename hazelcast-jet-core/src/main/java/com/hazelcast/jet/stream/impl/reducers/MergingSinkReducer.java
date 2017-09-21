@@ -16,19 +16,19 @@
 
 package com.hazelcast.jet.stream.impl.reducers;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeP;
 
-import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public class MergingSinkReducer<T, K, V, R> extends SinkReducer<T, K, V, R> {

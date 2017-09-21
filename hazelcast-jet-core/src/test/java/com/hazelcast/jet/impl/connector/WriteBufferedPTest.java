@@ -16,21 +16,21 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.SnapshotOutbox;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.SnapshotOutbox;
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
-import com.hazelcast.jet.processor.SinkProcessors;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;

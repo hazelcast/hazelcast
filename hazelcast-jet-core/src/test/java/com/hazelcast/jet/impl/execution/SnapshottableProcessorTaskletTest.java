@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.Inbox;
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.SnapshotOutbox;
+import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
-import com.hazelcast.jet.test.TestOutbox.MockData;
-import com.hazelcast.jet.test.TestOutbox.MockSerializationService;
+import com.hazelcast.jet.core.test.TestOutbox.MockData;
+import com.hazelcast.jet.core.test.TestOutbox.MockSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

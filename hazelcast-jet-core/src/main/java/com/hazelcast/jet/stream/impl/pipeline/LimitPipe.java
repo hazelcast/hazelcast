@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.impl.processor.LimitP;
 
-import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 class LimitPipe<T> extends AbstractIntermediatePipe<T, T> {

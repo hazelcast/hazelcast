@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.core.AbstractProcessor;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;

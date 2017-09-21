@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;

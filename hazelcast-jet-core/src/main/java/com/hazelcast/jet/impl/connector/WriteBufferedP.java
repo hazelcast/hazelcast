@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.Inbox;
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.SnapshotOutbox;
-import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.SnapshotOutbox;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedIntFunction;
@@ -60,7 +60,7 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     /**
      * This is private API. Call
-     * {@link com.hazelcast.jet.processor.SinkProcessors#writeBuffered(
+     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeBuffered(
      *        DistributedIntFunction, DistributedBiConsumer,
      *        DistributedConsumer, DistributedConsumer)
      * SinkProcessors.writeBuffered()} instead.

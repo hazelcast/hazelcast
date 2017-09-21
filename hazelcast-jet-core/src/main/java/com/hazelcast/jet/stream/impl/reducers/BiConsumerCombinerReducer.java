@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.reducers;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;

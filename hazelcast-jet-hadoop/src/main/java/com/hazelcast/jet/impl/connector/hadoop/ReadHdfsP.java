@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.processor.Processors;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -68,7 +68,7 @@ import static java.util.stream.Stream.concat;
 import static org.apache.hadoop.mapred.Reporter.NULL;
 
 /**
- * See {@link com.hazelcast.jet.processor.HdfsProcessors#readHdfs(
+ * See {@link com.hazelcast.jet.core.processor.HdfsProcessors#readHdfs(
  * org.apache.hadoop.mapred.JobConf, DistributedBiFunction)}.
  */
 public final class ReadHdfsP<K, V, R> extends AbstractProcessor {

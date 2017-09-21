@@ -20,7 +20,7 @@ import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
-import com.hazelcast.jet.pipeline.datamodel.Tag;
+import com.hazelcast.jet.datamodel.Tag;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

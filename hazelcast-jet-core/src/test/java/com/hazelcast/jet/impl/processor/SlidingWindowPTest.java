@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.TimestampKind;
-import com.hazelcast.jet.TimestampedEntry;
-import com.hazelcast.jet.Watermark;
-import com.hazelcast.jet.WindowDefinition;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.TimestampKind;
+import com.hazelcast.jet.core.TimestampedEntry;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
@@ -47,10 +47,10 @@ import java.util.Map.Entry;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.processor.Processors.aggregateToSlidingWindow;
-import static com.hazelcast.jet.processor.Processors.combineToSlidingWindow;
-import static com.hazelcast.jet.test.TestSupport.verifyProcessor;
+import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindow;
+import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow;
+import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;

@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.SnapshotOutbox;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.logging.Log4jFactory;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,7 +39,7 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 
-import static com.hazelcast.jet.processor.SourceProcessors.streamFiles;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamFiles;
 import static java.lang.Thread.interrupted;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;

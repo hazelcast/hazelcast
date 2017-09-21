@@ -16,23 +16,23 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.ResettableSingletonTraverser;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Watermark;
-import com.hazelcast.jet.WatermarkEmissionPolicy;
-import com.hazelcast.jet.WatermarkPolicy;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.WatermarkEmissionPolicy;
+import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
 import java.util.function.ToLongFunction;
 
-import static com.hazelcast.jet.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * A processor that inserts watermark into a data stream. See
- * {@link com.hazelcast.jet.processor.Processors#insertWatermarks(
+ * {@link com.hazelcast.jet.core.processor.Processors#insertWatermarks(
  *     DistributedToLongFunction,
  *     com.hazelcast.jet.function.DistributedSupplier,
  *     WatermarkEmissionPolicy) Processors.insertWatermarks()}.

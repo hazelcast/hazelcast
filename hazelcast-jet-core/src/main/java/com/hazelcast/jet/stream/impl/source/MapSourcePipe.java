@@ -17,10 +17,10 @@
 package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.processor.SourceProcessors;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 

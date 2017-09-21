@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.nio.serialization.Data;

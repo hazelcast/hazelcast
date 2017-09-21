@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.SnapshotOutbox;
-import com.hazelcast.jet.processor.DiagnosticProcessors;
-import com.hazelcast.jet.Inbox;
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.core.SnapshotOutbox;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;

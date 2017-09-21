@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.TimestampKind;
-import com.hazelcast.jet.TimestampedEntry;
-import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.core.TimestampKind;
+import com.hazelcast.jet.core.TimestampedEntry;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -35,10 +35,10 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
-import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
-import static com.hazelcast.jet.test.TestSupport.verifyProcessor;
+import static com.hazelcast.jet.core.processor.Processors.accumulateByFrame;
+import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertTrue;

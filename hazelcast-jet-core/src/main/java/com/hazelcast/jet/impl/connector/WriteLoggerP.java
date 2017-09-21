@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.processor.DiagnosticProcessors;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;

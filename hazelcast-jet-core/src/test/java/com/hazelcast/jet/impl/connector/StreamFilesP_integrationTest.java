@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,10 +45,10 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.processor.SinkProcessors.writeList;
-import static com.hazelcast.jet.processor.SourceProcessors.streamFiles;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamFiles;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;

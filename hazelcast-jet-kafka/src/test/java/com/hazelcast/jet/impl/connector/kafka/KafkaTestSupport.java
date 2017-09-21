@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector.kafka;
 
-import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.core.JetTestSupport;
 import kafka.admin.AdminUtils;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;

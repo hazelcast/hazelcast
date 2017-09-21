@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline.samples;
+package com.hazelcast.jet.samples;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperation;
-import com.hazelcast.jet.pipeline.CoGroupBuilder;
-import com.hazelcast.jet.pipeline.ComputeStage;
-import com.hazelcast.jet.pipeline.HashJoinBuilder;
-import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.pipeline.datamodel.BagsByTag;
-import com.hazelcast.jet.pipeline.datamodel.ItemsByTag;
-import com.hazelcast.jet.pipeline.datamodel.Tag;
-import com.hazelcast.jet.pipeline.datamodel.ThreeBags;
-import com.hazelcast.jet.pipeline.datamodel.Tuple2;
-import com.hazelcast.jet.pipeline.datamodel.Tuple3;
+import com.hazelcast.jet.CoGroupBuilder;
+import com.hazelcast.jet.ComputeStage;
+import com.hazelcast.jet.HashJoinBuilder;
+import com.hazelcast.jet.Pipeline;
+import com.hazelcast.jet.Sinks;
+import com.hazelcast.jet.Sources;
+import com.hazelcast.jet.datamodel.BagsByTag;
+import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.jet.datamodel.ThreeBags;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
+import static com.hazelcast.jet.JoinClause.joinMapEntries;
 
 public class PipelineJoinAndCoGroup {
 

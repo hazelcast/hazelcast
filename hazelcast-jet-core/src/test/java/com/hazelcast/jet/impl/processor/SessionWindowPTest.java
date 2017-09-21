@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Session;
-import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Session;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperations;
-import com.hazelcast.jet.test.TestOutbox;
-import com.hazelcast.jet.test.TestProcessorContext;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.test.TestSupport.verifyProcessor;
+import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.concurrent.TimeUnit.SECONDS;

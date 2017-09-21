@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Session;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Session;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -56,7 +56,7 @@ import static java.lang.System.arraycopy;
 
 /**
  * Session window processor. See {@link
- *      com.hazelcast.jet.processor.Processors#aggregateToSessionWindow(long,
+ *      com.hazelcast.jet.core.processor.Processors#aggregateToSessionWindow(long,
  *      DistributedToLongFunction, DistributedFunction, AggregateOperation1)
  * WindowingProcessors.sessionWindow()} for documentation.
  *

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.Vertex;
 
 /**
  * Constants used for Hazelcast's {@link com.hazelcast.nio.serialization.IdentifiedDataSerializable}
@@ -31,7 +31,7 @@ public final class SerializationConstants {
     public static final int JET_DS_FACTORY_ID = -10001;
     /** Resolved ID of Jet's data serialization factory. */
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
-    /** Serialization ID of the {@link com.hazelcast.jet.DAG} class. */
+    /** Serialization ID of the {@link com.hazelcast.jet.core.DAG} class. */
     public static final int DAG = 0;
     /** Serialization ID of the {@link Vertex} class. */
     public static final int VERTEX = 1;

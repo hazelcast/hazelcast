@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,11 +49,11 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.SourceProcessors.readMap;
-import static com.hazelcast.jet.processor.SinkProcessors.writeList;
-import static com.hazelcast.jet.processor.HdfsProcessors.readHdfs;
-import static com.hazelcast.jet.processor.HdfsProcessors.writeHdfs;
+import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfs;
+import static com.hazelcast.jet.core.processor.HdfsProcessors.writeHdfs;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 

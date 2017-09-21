@@ -20,6 +20,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.JetCacheManager;

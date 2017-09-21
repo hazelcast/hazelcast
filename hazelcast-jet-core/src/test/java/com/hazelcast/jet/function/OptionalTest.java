@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.function;
 
-import com.hazelcast.jet.TestUtil.DummyUncheckedTestException;
+import com.hazelcast.jet.core.TestUtil.DummyUncheckedTestException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;

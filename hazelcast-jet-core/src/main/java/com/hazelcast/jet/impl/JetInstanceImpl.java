@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.JobStatus;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;

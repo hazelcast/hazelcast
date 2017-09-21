@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.ResettableSingletonTraverser;
+import com.hazelcast.jet.core.ResettableSingletonTraverser;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;

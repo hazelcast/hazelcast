@@ -25,6 +25,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.nio.Address;
+
 import java.util.Arrays;
 
 import static com.hazelcast.jet.Jet.getJetClientInstance;

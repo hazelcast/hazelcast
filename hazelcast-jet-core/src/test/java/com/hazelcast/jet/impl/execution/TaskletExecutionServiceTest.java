@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;

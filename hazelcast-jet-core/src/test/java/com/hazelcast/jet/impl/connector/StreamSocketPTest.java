@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.processor.SourceProcessors;
-import com.hazelcast.jet.test.TestOutbox;
-import com.hazelcast.jet.test.TestProcessorContext;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;

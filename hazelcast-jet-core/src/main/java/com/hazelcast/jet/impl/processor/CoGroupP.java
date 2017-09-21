@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.Traverser;

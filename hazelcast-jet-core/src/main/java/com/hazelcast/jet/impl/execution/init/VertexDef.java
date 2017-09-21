@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
-import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

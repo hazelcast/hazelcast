@@ -17,11 +17,11 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,12 +38,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
-import static com.hazelcast.jet.processor.Processors.accumulate;
-import static com.hazelcast.jet.processor.Processors.aggregate;
-import static com.hazelcast.jet.processor.Processors.combine;
-import static com.hazelcast.jet.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.Processors.accumulate;
+import static com.hazelcast.jet.core.processor.Processors.aggregate;
+import static com.hazelcast.jet.core.processor.Processors.combine;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;

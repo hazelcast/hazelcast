@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,9 +34,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.SinkProcessors.writeList;
-import static com.hazelcast.jet.processor.KafkaProcessors.streamKafka;
+import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.KafkaProcessors.streamKafka;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

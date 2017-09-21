@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
 
 import javax.annotation.Nonnull;

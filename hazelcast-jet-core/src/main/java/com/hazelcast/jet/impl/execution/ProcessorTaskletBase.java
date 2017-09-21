@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;

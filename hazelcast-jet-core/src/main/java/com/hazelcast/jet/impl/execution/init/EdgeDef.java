@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.Edge.RoutingPolicy;
+import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.Partitioner;
+import com.hazelcast.jet.core.Partitioner;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

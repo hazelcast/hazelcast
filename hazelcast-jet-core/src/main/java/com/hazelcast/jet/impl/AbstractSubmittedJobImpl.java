@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.logging.ILogger;

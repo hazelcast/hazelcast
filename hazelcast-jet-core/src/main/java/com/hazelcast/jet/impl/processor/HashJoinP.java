@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.pipeline.datamodel.ItemsByTag;
-import com.hazelcast.jet.pipeline.datamodel.Tag;
-import com.hazelcast.jet.pipeline.datamodel.Tuple2;
-import com.hazelcast.jet.pipeline.datamodel.Tuple3;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
- * Implements the {@link com.hazelcast.jet.pipeline.impl.transform.HashJoinTransform
+ * Implements the {@link com.hazelcast.jet.impl.transform.HashJoinTransform
  * hash-join transform}.
  */
 public class HashJoinP<E0> extends AbstractProcessor {
@@ -55,7 +55,7 @@ public class HashJoinP<E0> extends AbstractProcessor {
      * The {@code tags} is used to populate the output items. It can be {@code
      * null}, in which case {@code keyFs} must have either one or two elements,
      * corresponding to the two supported special cases in
-     * {@link com.hazelcast.jet.pipeline.ComputeStage}.
+     * {@link com.hazelcast.jet.ComputeStage}.
      * <p>
      * Note that internally the processor stores the lists with a {@code null}
      * element prepended to remove the mismatch between list index and ordinal.

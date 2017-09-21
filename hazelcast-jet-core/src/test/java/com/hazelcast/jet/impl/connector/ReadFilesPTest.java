@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,9 +38,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.SourceProcessors.readFiles;
-import static com.hazelcast.jet.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readFiles;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

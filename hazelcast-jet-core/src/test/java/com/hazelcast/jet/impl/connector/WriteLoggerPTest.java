@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.SnapshotOutbox;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
-import com.hazelcast.jet.processor.DiagnosticProcessors;
-import com.hazelcast.jet.test.TestProcessorContext;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

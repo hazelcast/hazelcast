@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.SnapshotOutbox;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.nio.serialization.Data;

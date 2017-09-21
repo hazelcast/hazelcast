@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.SnapshotOutbox;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.SnapshotOutbox;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.test.TestProcessorContext;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -38,10 +38,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static com.hazelcast.jet.processor.SinkProcessors.writeSocket;
-import static com.hazelcast.jet.processor.SourceProcessors.readMap;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocket;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;

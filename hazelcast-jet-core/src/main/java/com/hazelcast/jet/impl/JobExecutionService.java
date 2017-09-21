@@ -21,7 +21,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
-import com.hazelcast.jet.TopologyChangedException;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;

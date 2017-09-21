@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.TopologyChangedException;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 

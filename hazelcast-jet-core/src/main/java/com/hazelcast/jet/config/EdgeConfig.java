@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.core.Edge;
 
 import java.io.Serializable;
 

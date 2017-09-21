@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.core.AbstractProcessor;
 
 import static org.junit.Assert.fail;
 

@@ -18,7 +18,7 @@ package com.hazelcast.jet.server;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;

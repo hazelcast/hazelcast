@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.impl.processor.DistinctP;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
-import static com.hazelcast.jet.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 class DistinctPipe<T> extends AbstractIntermediatePipe<T, T> {

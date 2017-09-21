@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.pipeline.samples;
+package com.hazelcast.jet.samples;
 
 import java.io.Serializable;
 

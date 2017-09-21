@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.WatermarkPolicy;
+import com.hazelcast.jet.core.WatermarkPolicy;
+import com.hazelcast.jet.core.WatermarkPolicies;
 import com.hazelcast.jet.function.DistributedLongSupplier;
 import com.hazelcast.jet.function.DistributedSupplier;
 
@@ -27,7 +28,7 @@ import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Util and test support classes for {@link com.hazelcast.jet.WatermarkPolicies}
+ * Util and test support classes for {@link WatermarkPolicies}
  */
 public final class WatermarkPolicyUtil {
 

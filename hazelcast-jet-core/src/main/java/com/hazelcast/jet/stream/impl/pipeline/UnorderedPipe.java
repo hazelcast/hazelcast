@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Vertex;
 
 class UnorderedPipe<T> extends AbstractIntermediatePipe<T, T> {
     UnorderedPipe(StreamContext context, Pipe<T> upstream) {

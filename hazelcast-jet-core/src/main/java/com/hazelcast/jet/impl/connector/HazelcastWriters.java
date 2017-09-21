@@ -26,9 +26,9 @@ import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedIntFunction;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.processor.SinkProcessors;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 
 import javax.annotation.Nonnull;
 import java.util.AbstractMap;

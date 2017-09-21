@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.Vertex;
 
 public abstract class AbstractSourcePipe<E_OUT> extends AbstractPipe<E_OUT> {
 
