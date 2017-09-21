@@ -19,6 +19,8 @@ package com.hazelcast.jet.test;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 
+import javax.annotation.Nonnull;
+
 /**
  * Simple implementation of {@link ProcessorMetaSupplier.Context}.
  */
@@ -26,8 +28,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private JetInstance jetInstance;
     private int totalParallelism = 1;
     private int localParallelism = 1;
+    private boolean snapshottingEnabled;
 
-    @Override
+    @Nonnull @Override
     public JetInstance jetInstance() {
         return jetInstance;
     }
@@ -35,8 +38,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     /**
      * Set the jet instance.
      */
-    public void setJetInstance(JetInstance jetInstance) {
+    public TestProcessorMetaSupplierContext setJetInstance(JetInstance jetInstance) {
         this.jetInstance = jetInstance;
+        return this;
     }
 
     @Override
@@ -47,8 +51,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     /**
      * Set total parallelism.
      */
-    public void setTotalParallelism(int totalParallelism) {
+    public TestProcessorMetaSupplierContext setTotalParallelism(int totalParallelism) {
         this.totalParallelism = totalParallelism;
+        return this;
     }
 
     @Override
@@ -56,10 +61,24 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return localParallelism;
     }
 
+    @Override
+    public boolean snapshottingEnabled() {
+        return snapshottingEnabled;
+    }
+
+    /**
+     * Sets if snapshotting is enabled for the job.
+     */
+    public TestProcessorMetaSupplierContext setSnapshottingEnabled(boolean snapshottingEnabled) {
+        this.snapshottingEnabled = snapshottingEnabled;
+        return this;
+    }
+
     /**
      * Set local parallelism.
      */
-    public void setLocalParallelism(int localParallelism) {
+    public TestProcessorMetaSupplierContext setLocalParallelism(int localParallelism) {
         this.localParallelism = localParallelism;
+        return this;
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
@@ -36,13 +37,18 @@ public final class Contexts {
         private final ILogger logger;
         private final String vertexName;
         private final int index;
+        private final SerializationService serService;
         private CompletableFuture<Void> jobFuture;
+        private final boolean snapshottingEnabled;
 
-        public ProcCtx(JetInstance instance, ILogger logger, String vertexName, int index) {
+        public ProcCtx(JetInstance instance, SerializationService serService,
+                       ILogger logger, String vertexName, int index, boolean snapshottingEnabled) {
             this.instance = instance;
+            this.serService = serService;
             this.logger = logger;
             this.vertexName = vertexName;
             this.index = index;
+            this.snapshottingEnabled = snapshottingEnabled;
         }
 
         @Nonnull
@@ -79,19 +85,30 @@ public final class Contexts {
             return jobFuture;
         }
 
+        @Override
+        public boolean snapshottingEnabled() {
+            return snapshottingEnabled;
+        }
+
         public void initJobFuture(CompletableFuture<Void> jobFuture) {
             assert this.jobFuture == null : "jobFuture already initialized";
             this.jobFuture = jobFuture;
+        }
+
+        public SerializationService getSerializationService() {
+            return serService;
         }
     }
 
     static class ProcSupplierCtx implements ProcessorSupplier.Context {
         private final JetInstance instance;
         private final int perNodeParallelism;
+        private final boolean snapshottingEnabled;
 
-        ProcSupplierCtx(JetInstance instance, int perNodeParallelism) {
+        ProcSupplierCtx(JetInstance instance, int perNodeParallelism, boolean snapshottingEnabled) {
             this.instance = instance;
             this.perNodeParallelism = perNodeParallelism;
+            this.snapshottingEnabled = snapshottingEnabled;
         }
 
         @Nonnull
@@ -104,17 +121,24 @@ public final class Contexts {
         public int localParallelism() {
             return perNodeParallelism;
         }
+
+        @Override
+        public boolean snapshottingEnabled() {
+            return snapshottingEnabled;
+        }
     }
 
     static class MetaSupplierCtx implements Context {
         private final JetInstance jetInstance;
         private final int totalParallelism;
         private final int localParallelism;
+        private final boolean snapshottingEnabled;
 
-        MetaSupplierCtx(JetInstance jetInstance, int totalParallelism, int localParallelism) {
+        MetaSupplierCtx(JetInstance jetInstance, int totalParallelism, int localParallelism, boolean snapshottingEnabled) {
             this.jetInstance = jetInstance;
             this.totalParallelism = totalParallelism;
             this.localParallelism = localParallelism;
+            this.snapshottingEnabled = snapshottingEnabled;
         }
 
         @Nonnull
@@ -131,6 +155,11 @@ public final class Contexts {
         @Override
         public int localParallelism() {
             return localParallelism;
+        }
+
+        @Override
+        public boolean snapshottingEnabled() {
+            return snapshottingEnabled;
         }
     }
 }

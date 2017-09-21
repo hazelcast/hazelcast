@@ -24,10 +24,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+
+import static com.hazelcast.jet.impl.util.Util.idToString;
 
 public class JobRecord implements IdentifiedDataSerializable {
 
     private long jobId;
+    private long creationTime;
     private Data dag;
     private JobConfig config;
     private int quorumSize;
@@ -35,8 +40,9 @@ public class JobRecord implements IdentifiedDataSerializable {
     public JobRecord() {
     }
 
-    public JobRecord(long jobId, Data dag, JobConfig config, int quorumSize) {
+    public JobRecord(long jobId, long creationTime, Data dag, JobConfig config, int quorumSize) {
         this.jobId = jobId;
+        this.creationTime = creationTime;
         this.dag = dag;
         this.config = config;
         this.quorumSize = quorumSize;
@@ -44,6 +50,10 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     public long getJobId() {
         return jobId;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
     }
 
     public Data getDag() {
@@ -71,6 +81,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(jobId);
+        out.writeLong(creationTime);
         out.writeData(dag);
         out.writeObject(config);
         out.writeInt(quorumSize);
@@ -79,10 +90,21 @@ public class JobRecord implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         jobId = in.readLong();
+        creationTime = in.readLong();
         dag = in.readData();
         config = in.readObject();
         quorumSize = in.readInt();
     }
 
+    @Override
+    public String toString() {
+        return "JobRecord{" +
+                "jobId=" + idToString(jobId) +
+                ", creationTime=" + Instant.ofEpochMilli(creationTime).atZone(ZoneId.systemDefault()) +
+                ", dag=" + dag +
+                ", config=" + config +
+                ", quorumSize=" + quorumSize +
+                '}';
+    }
 
 }

@@ -16,36 +16,29 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.impl.execution.OutboxBlockingImpl.JobFutureCompleted;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
+import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
-import static com.hazelcast.jet.impl.execution.ExecutionService.IDLER;
-
 /**
  * Tasklet that drives a non-cooperative processor.
  */
 public class BlockingProcessorTasklet extends ProcessorTaskletBase {
 
-    private final BlockingOutbox outbox;
-    private CompletableFuture<?> jobFuture;
-
     public BlockingProcessorTasklet(
-            ProcCtx context, Processor processor, List<InboundEdgeStream> instreams,
-            List<OutboundEdgeStream> outstreams
-    ) {
-        super(context, processor, instreams, outstreams);
+            ProcCtx context, Processor processor, List<? extends InboundEdgeStream> instreams,
+            List<? extends OutboundEdgeStream> outstreams, SnapshotContext ssContext,
+            OutboundCollector ssCollector) {
+        super(context, processor, instreams, outstreams, ssContext, ssCollector);
         Preconditions.checkFalse(processor.isCooperative(), "Processor is cooperative");
-        outbox = new BlockingOutbox();
     }
 
     @Override
@@ -56,100 +49,21 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
     @Override
     public void init(CompletableFuture<Void> jobFuture) {
         super.init(jobFuture);
-        this.jobFuture = jobFuture;
-        initProcessor(outbox, jobFuture);
+        ((OutboxBlockingImpl) getOutbox()).initJobFuture(jobFuture);
     }
 
     @Override @Nonnull
     public ProgressState call() {
         try {
-            progTracker.reset();
-            if (inbox().isEmpty()) {
-                callNullaryProcess();
-                tryFillInbox();
-            } else {
-                progTracker.notDone();
-            }
-            if (progTracker.isDone()) {
-                complete();
-            } else if (!inbox().isEmpty()) {
-                processor.process(currInstream.ordinal(), inbox());
-            }
-            return progTracker.toProgressState();
+            return super.call();
         } catch (JobFutureCompleted e) {
             return ProgressState.DONE;
         }
     }
 
-    private void callNullaryProcess() {
-        if (!processor.tryProcess()) {
-            throw new JetException("Non-cooperative processor's tryProcess() returned false: " + processor);
-        }
-    }
-
-    private void complete() {
-        if (processor.complete()) {
-            outbox.add(DONE_ITEM);
-        } else {
-            progTracker.notDone();
-        }
-    }
-
-    private class BlockingOutbox implements Outbox {
-
-        @Override
-        public int bucketCount() {
-            return outstreams.length;
-        }
-
-        @Override
-        public boolean offer(int ordinal, @Nonnull Object item) {
-            progTracker.madeProgress();
-            if (ordinal != -1) {
-                submit(outstreams[ordinal], item);
-            } else {
-                for (OutboundEdgeStream outstream : outstreams) {
-                    submit(outstream, item);
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public boolean offer(int[] ordinals, @Nonnull Object item) {
-            progTracker.madeProgress();
-            for (int ord : ordinals) {
-                submit(outstreams[ord], item);
-            }
-            return true;
-        }
-
-        void add(@Nonnull Object item) {
-            boolean accepted = outbox.offer(item);
-            assert accepted : "Blocking outbox refused an item: " + item;
-        }
-
-        private void submit(OutboundEdgeStream outstream, @Nonnull Object item) {
-            OutboundCollector collector = outstream.getCollector();
-            for (long idleCount = 0; ;) {
-                ProgressState result = (item instanceof Watermark || item instanceof DoneItem)
-                        ? collector.offerBroadcast(item)
-                        : collector.offer(item);
-                if (result.isDone()) {
-                    return;
-                }
-                if (jobFuture.isDone()) {
-                    throw new JobFutureCompleted();
-                }
-                if (result.isMadeProgress()) {
-                    idleCount = 0;
-                } else {
-                    IDLER.idle(++idleCount);
-                }
-            }
-        }
-    }
-
-    private static class JobFutureCompleted extends RuntimeException {
+    @Override
+    protected OutboxImpl createOutboxInt(OutboundCollector[] outstreams, boolean hasSnapshot,
+                                         ProgressTracker progTracker, SerializationService serializationService) {
+        return new OutboxBlockingImpl(outstreams, hasSnapshot, progTracker, serializationService);
     }
 }

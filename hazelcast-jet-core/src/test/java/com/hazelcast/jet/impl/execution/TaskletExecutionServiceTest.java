@@ -59,14 +59,14 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class ExecutionServiceTest extends JetTestSupport {
+public class TaskletExecutionServiceTest extends JetTestSupport {
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
     private final Consumer<CompletionStage<Void>> doneCallback = noopConsumer();
 
-    private ExecutionService es;
+    private TaskletExecutionService es;
     private ClassLoader classLoaderMock;
 
     @Before
@@ -77,7 +77,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         Mockito.when(hzMock.getName()).thenReturn("test-hz-instance");
         Mockito.when(hzMock.getLoggingService()).thenReturn(loggingService);
         Mockito.when(loggingService.getLogger(Mockito.<Class>any())).thenReturn(mockLogger);
-        es = new ExecutionService(hzMock, 4);
+        es = new TaskletExecutionService(hzMock, 4);
         classLoaderMock = mock(ClassLoader.class);
     }
 

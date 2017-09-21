@@ -22,11 +22,13 @@ import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.TestProcessors.Identity;
 import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -56,6 +58,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.TestUtil.getJetService;
+import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
@@ -256,7 +259,8 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         JetService jetService = getJetService(instance);
         final Map<MemberInfo, ExecutionPlan> executionPlans =
-                jetService.getJobCoordinationService().createExecutionPlans(membersView, dag);
+                ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, new JobConfig(),
+                        NO_SNAPSHOT);
         ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
         long jobId = 0;
         long executionId = 1;

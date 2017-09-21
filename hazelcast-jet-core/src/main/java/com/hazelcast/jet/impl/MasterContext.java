@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.coordination;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.BroadcastKey;
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.TopologyChangedException;
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobRecord;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.execution.BroadcastEntry;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.operation.CompleteOperation;
 import com.hazelcast.jet.impl.operation.ExecuteOperation;
 import com.hazelcast.jet.impl.operation.InitOperation;
+import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -38,6 +43,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -56,15 +62,23 @@ import static com.hazelcast.jet.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.JobStatus.RESTARTING;
 import static com.hazelcast.jet.JobStatus.RUNNING;
 import static com.hazelcast.jet.JobStatus.STARTING;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
+import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isJobRestartRequired;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static com.hazelcast.jet.processor.Processors.map;
+import static com.hazelcast.jet.processor.SourceProcessors.readMap;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
 public class MasterContext {
+
+    public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
 
     private final NodeEngineImpl nodeEngine;
     private final JobCoordinationService coordinationService;
@@ -73,6 +87,8 @@ public class MasterContext {
     private final long jobId;
     private final CompletableFuture<Boolean> completionFuture = new CompletableFuture<>();
     private final AtomicReference<JobStatus> jobStatus = new AtomicReference<>(NOT_STARTED);
+    private final SnapshotRepository snapshotRepository;
+    private volatile Set<String> vertexNames;
 
     private volatile long executionId;
     private volatile long jobStartTime;
@@ -81,6 +97,7 @@ public class MasterContext {
     MasterContext(NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, JobRecord jobRecord) {
         this.nodeEngine = nodeEngine;
         this.coordinationService = coordinationService;
+        this.snapshotRepository = coordinationService.snapshotRepository();
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRecord = jobRecord;
         this.jobId = jobRecord.getJobId();
@@ -96,6 +113,10 @@ public class MasterContext {
 
     public JobStatus jobStatus() {
         return jobStatus.get();
+    }
+
+    public JobConfig getJobConfig() {
+        return jobRecord.getConfig();
     }
 
     CompletableFuture<Boolean> completionFuture() {
@@ -125,10 +146,38 @@ public class MasterContext {
             return;
         }
 
+        DAG dag = deserializeDAG();
+        // save a copy of the vertex list, because it is going to change
+        vertexNames = new HashSet<>();
+        dag.iterator().forEachRemaining(e1 -> vertexNames.add(e1.getName()));
         executionId = executionIdSupplier.apply(jobId);
+
+        // last started snapshot complete or not complete. The next started snapshot must be greater than this number
+        long lastSnapshotId = NO_SNAPSHOT;
+        if (jobRecord.getConfig().getSnapshotInterval() > 0) {
+            Long snapshotIdToRestore = snapshotRepository.latestCompleteSnapshot(jobId);
+            snapshotRepository.deleteSnapshots(jobId, snapshotIdToRestore);
+            Long lastStartedSnapshot = snapshotRepository.latestStartedSnapshot(jobId);
+            if (snapshotIdToRestore != null) {
+                logger.info("State of " + jobAndExecutionId(jobId, executionId) + " will be restored from snapshot "
+                        + snapshotIdToRestore);
+                rewriteDagWithSnapshotRestore(dag, snapshotIdToRestore);
+            } else {
+                logger.warning("No usable snapshot for " + jobAndExecutionId(jobId, executionId) + " found.");
+            }
+            if (lastStartedSnapshot != null) {
+                lastSnapshotId = lastStartedSnapshot;
+            }
+        }
+
         MembersView membersView = getMembersView();
         try {
-            executionPlanMap = createExecutionPlans(membersView);
+            logger.info("Start executing " + jobAndExecutionId(jobId, executionId) + ", status " + jobStatus()
+                    + "\n" + dag);
+            logger.fine("Building execution plan for " + jobAndExecutionId(jobId, executionId));
+            JobConfig jobConfig = jobRecord.getConfig();
+            executionPlanMap = ExecutionPlanBuilder.createExecutionPlans(nodeEngine,
+                    membersView, dag, jobConfig, lastSnapshotId);
         } catch (TopologyChangedException e) {
             logger.severe("Execution plans could not be created for " + jobAndExecutionId(jobId, executionId), e);
             scheduleRestart();
@@ -140,6 +189,25 @@ public class MasterContext {
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new InitOperation(jobId, executionId, membersView.getVersion(), participants, plan);
         invoke(operationCtor, this::onInitStepCompleted, null);
+    }
+
+    private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId) {
+        logger.info(jobAndExecutionId(jobId, executionId) + ": restoring state from snapshotId=" + snapshotId);
+        for (Vertex vertex : dag) {
+            String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
+            if (!nodeEngine.getHazelcastInstance().getMap(mapName).isEmpty()) {
+                int parallelism = vertex.getLocalParallelism();
+                Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(), readMap(mapName))
+                                               .localParallelism(parallelism);
+                // TODO: get rid of this additional vertex by adding a mapping option to readMap()
+                Vertex mapSnapshotEntry = dag.newVertex("__map_snapshot_entry." + vertex.getName(), map(
+                        (Map.Entry e) -> (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry(e) : e)
+                ).localParallelism(parallelism);
+                int destOrdinal = dag.getInboundEdges(vertex.getName()).size();
+                dag.edge(Edge.between(readSnapshotVertex, mapSnapshotEntry).isolated())
+                   .edge(new SnapshotRestoreEdge(mapSnapshotEntry, vertex, destOrdinal));
+            }
+        }
     }
 
     /**
@@ -201,15 +269,6 @@ public class MasterContext {
         return clusterService.getMembershipManager().getMembersView();
     }
 
-    private Map<MemberInfo, ExecutionPlan> createExecutionPlans(MembersView membersView) {
-        DAG dag = deserializeDAG();
-
-        logger.info("Start executing " + jobAndExecutionId(jobId, executionId) + ", status " + jobStatus()
-                + ": " + dag);
-        logger.fine("Building execution plan for " + jobAndExecutionId(jobId, executionId));
-        return coordinationService.createExecutionPlans(membersView, dag);
-    }
-
     private DAG deserializeDAG() {
         ClassLoader cl = coordinationService.getClassLoader(jobId);
         return deserializeWithCustomClassLoader(nodeEngine.getSerializationService(), cl, jobRecord.getDag());
@@ -263,7 +322,7 @@ public class MasterContext {
         return failures
                 .stream()
                 .map(e -> (Throwable) e.getValue())
-                .filter(t -> !isJobRestartRequired(t))
+                .filter(t -> !isTopologicalFailure(t))
                 .findFirst()
                 .map(ExceptionUtil::peel)
                 .orElse(new TopologyChangedException());
@@ -271,10 +330,15 @@ public class MasterContext {
 
     // true -> failures, false -> success responses
     private Map<Boolean, List<Entry<MemberInfo, Object>>> groupResponses(Map<MemberInfo, Object> responses) {
-        return responses
+        Map<Boolean, List<Entry<MemberInfo, Object>>> grouped = responses
                 .entrySet()
                 .stream()
                 .collect(partitioningBy(e -> e.getValue() instanceof Throwable));
+
+        grouped.putIfAbsent(true, emptyList());
+        grouped.putIfAbsent(false, emptyList());
+
+        return grouped;
     }
 
     // If a participant leaves or the execution fails in a participant locally, executions are cancelled
@@ -284,6 +348,48 @@ public class MasterContext {
         logger.fine("Executing " + jobAndExecutionId(jobId, executionId));
         Function<ExecutionPlan, Operation> operationCtor = plan -> new ExecuteOperation(jobId, executionId);
         invoke(operationCtor, this::onExecuteStepCompleted, completionFuture);
+
+        if (getJobConfig().isSnapshottingEnabled()) {
+            coordinationService.scheduleSnapshot(jobId, executionId);
+        }
+    }
+
+    void beginSnapshot(long executionId) {
+        if (this.executionId != executionId) {
+            // current execution is completed and probably a new execution has started
+            logger.warning("Not beginning snapshot since expected execution id " + idToString(this.executionId)
+                    + " does not match to " + jobAndExecutionId(jobId, executionId));
+            return;
+        }
+
+        long newSnapshotId = snapshotRepository.registerSnapshot(jobId, vertexNames);
+
+        logger.info(String.format("Starting snapshot %s for %s", newSnapshotId, jobAndExecutionId(jobId, executionId)));
+        Function<ExecutionPlan, Operation> factory =
+                plan -> new SnapshotOperation(jobId, executionId, newSnapshotId);
+
+        invoke(factory, responses -> onSnapshotCompleted(responses, executionId, newSnapshotId), null);
+    }
+
+    private void onSnapshotCompleted(Map<MemberInfo, Object> responses, long executionId, long snapshotId) {
+        // check if all members were successful
+        // we don't check member list in execution plan on purpose since this snapshot might be stale
+        Map<Boolean, List<Entry<MemberInfo, Object>>> grouped = groupResponses(responses);
+        List<Entry<MemberInfo, Object>> failures = grouped.get(true);
+        List<Entry<MemberInfo, Object>> nonTopologicalFailures = failures.stream()
+                                                                         .filter(e -> !(e.getValue()
+                                                                                 instanceof CancellationException ||
+                                                                                 isTopologicalFailure(e.getValue())))
+                                                                         .collect(toList());
+
+        if (!nonTopologicalFailures.isEmpty()) {
+            logger.warning(jobAndExecutionId(jobId, executionId) + " snapshot " + snapshotId + " has failures: "
+                    + nonTopologicalFailures);
+        }
+
+        boolean successful = failures.isEmpty();
+
+        coordinationService.completeSnapshot(jobId, executionId, snapshotId, successful);
     }
 
     // Called as callback when all ExecuteOperation invocations are done
@@ -319,7 +425,7 @@ public class MasterContext {
         return failures
                 .stream()
                 .map(e -> (Throwable) e.getValue())
-                .filter(t -> !(t instanceof CancellationException || isJobRestartRequired(t)))
+                .filter(t -> !(t instanceof CancellationException || isTopologicalFailure(t)))
                 .findFirst()
                 .map(ExceptionUtil::peel)
                 .orElse(new TopologyChangedException());
@@ -358,19 +464,18 @@ public class MasterContext {
             } else {
                 logger.severe("Ignoring completion of " + idToString(jobId) + " because status is " + status);
             }
-
             return;
         }
 
-        long completionTime = System.currentTimeMillis();
+        long executionId = resetExecutionId();
 
+        long completionTime = System.currentTimeMillis();
         if (failure instanceof TopologyChangedException) {
             scheduleRestart();
             return;
         }
 
         long elapsed = completionTime - jobStartTime;
-
         if (isSuccess(failure)) {
             logger.info("Execution of " + jobAndExecutionId(jobId, executionId) + " completed in " + elapsed + " ms");
         } else {
@@ -379,13 +484,19 @@ public class MasterContext {
         }
 
         try {
-            coordinationService.completeJob(this, completionTime, failure);
+            coordinationService.completeJob(this, executionId, completionTime, failure);
         } catch (RuntimeException e) {
             logger.warning("Completion of " + jobAndExecutionId(jobId, executionId)
                     + " failed in " + elapsed + " ms", failure);
         } finally {
             setFinalResult(failure);
         }
+    }
+
+    private long resetExecutionId() {
+        long executionId = this.executionId;
+        this.executionId = 0;
+        return executionId;
     }
 
     void setFinalResult(Throwable failure) {
@@ -456,21 +567,37 @@ public class MasterContext {
     private void invokeOnParticipants(Map<MemberInfo, InternalCompletableFuture<Object>> futures,
                                       CompletableFuture<Void> doneFuture,
                                       Function<ExecutionPlan, Operation> opCtor) {
-        AtomicInteger doneLatch = new AtomicInteger(executionPlanMap.size());
+        AtomicInteger remainingCount = new AtomicInteger(executionPlanMap.size());
 
         for (Entry<MemberInfo, ExecutionPlan> e : executionPlanMap.entrySet()) {
             MemberInfo member = e.getKey();
             Operation op = opCtor.apply(e.getValue());
             InternalCompletableFuture<Object> future = nodeEngine.getOperationService()
-                         .createInvocationBuilder(JetService.SERVICE_NAME, op, member.getAddress())
-                         .setDoneCallback(() -> {
-                             if (doneLatch.decrementAndGet() == 0) {
-                                 doneFuture.complete(null);
-                             }
-                         })
-                         .invoke();
+                 .createInvocationBuilder(JetService.SERVICE_NAME, op, member.getAddress())
+                 .setDoneCallback(() -> {
+                     if (remainingCount.decrementAndGet() == 0) {
+                         doneFuture.complete(null);
+                     }
+                 })
+                 .invoke();
             futures.put(member, future);
         }
     }
 
+    /**
+     * Specific type of edge to be used when restoring snapshots
+     */
+    private static class SnapshotRestoreEdge extends Edge {
+
+        SnapshotRestoreEdge(Vertex source, Vertex destination, int destOrdinal) {
+            super(source, 0, destination, destOrdinal);
+            distributed();
+            partitioned(entryKey());
+        }
+
+        @Override
+        public int getPriority() {
+            return SNAPSHOT_RESTORE_EDGE_PRIORITY;
+        }
+    }
 }

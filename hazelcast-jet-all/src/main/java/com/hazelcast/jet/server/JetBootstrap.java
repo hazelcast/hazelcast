@@ -31,6 +31,7 @@ import com.hazelcast.jet.stream.IStreamMap;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
 
@@ -181,6 +182,11 @@ public final class JetBootstrap {
                 config.addJar(jarPathname);
             }
             return instance.newJob(dag, config);
+        }
+
+        @Override
+        public Collection<Job> getJobs() {
+            return instance.getJobs();
         }
 
         @Override

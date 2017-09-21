@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.SnapshotOutbox;
 import com.hazelcast.logging.Log4jFactory;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -242,13 +243,14 @@ public class StreamFilesPTest extends JetTestSupport {
         }
         processor = new StreamFilesP(workDir.getAbsolutePath(), UTF_8, glob, 1, 0);
         Outbox outbox = mock(Outbox.class);
+        SnapshotOutbox ssOutbox = mock(SnapshotOutbox.class);
         when(outbox.offer(any())).thenAnswer(item -> {
             emittedCount++;
             return true;
         });
         Context ctx = mock(Context.class);
         when(ctx.logger()).thenReturn(new Log4jFactory().getLogger("testing"));
-        processor.init(outbox, ctx);
+        processor.init(outbox, ssOutbox, ctx);
     }
 
     // Asserts the eventual stable state of the item counter as follows:

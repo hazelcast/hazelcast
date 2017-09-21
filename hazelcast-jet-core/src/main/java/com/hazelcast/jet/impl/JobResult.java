@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,6 +28,8 @@ import java.time.ZoneId;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.JobStatus.COMPLETED;
+import static com.hazelcast.jet.JobStatus.FAILED;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 
 public class JobResult implements IdentifiedDataSerializable {
@@ -67,12 +70,17 @@ public class JobResult implements IdentifiedDataSerializable {
     public boolean isSuccessful() {
         return (failure == null);
     }
+
     public boolean isSuccessfulOrCancelled() {
         return (failure == null || failure instanceof CancellationException);
     }
 
     public Throwable getFailure() {
         return failure;
+    }
+
+    public JobStatus getJobStatus() {
+        return isSuccessfulOrCancelled() ? COMPLETED : FAILED;
     }
 
     public CompletableFuture<Boolean> asCompletableFuture() {

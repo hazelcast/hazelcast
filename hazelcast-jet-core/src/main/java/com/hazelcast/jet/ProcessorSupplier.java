@@ -85,5 +85,10 @@ public interface ProcessorSupplier extends Serializable {
          * will be asked to create.
          */
         int localParallelism();
+
+        /**
+         * Returns true, if snapshots will be saved for this job.
+         */
+        boolean snapshottingEnabled();
     }
 }

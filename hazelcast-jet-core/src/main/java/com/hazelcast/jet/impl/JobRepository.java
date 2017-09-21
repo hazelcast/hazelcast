@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.coordination;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
@@ -23,7 +23,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
-import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.IOUtil;
@@ -32,6 +31,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
+import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,35 +47,60 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.zip.DeflaterOutputStream;
 
-import static com.hazelcast.jet.config.JetConfig.IDS_MAP_NAME;
-import static com.hazelcast.jet.config.JetConfig.JOB_RECORDS_MAP_NAME;
-import static com.hazelcast.jet.config.JetConfig.RESOURCES_MAP_NAME_PREFIX;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static java.util.concurrent.TimeUnit.HOURS;
 
 public class JobRepository {
 
-    private static final String RESOURCE_MARKER = "__jet.jobId";
+    /**
+     * Name of internal IMap which stores job resources
+     */
+    public static final String RESOURCES_MAP_NAME_PREFIX = "__jet.resources.";
+
+    /**
+     * Name of internal IMap which is used for unique id generation
+     */
+    public static final String RANDOM_IDS_MAP_NAME = "__jet.ids";
+
+    /**
+     * Name of internal IMap which stores job records
+     */
+    public static final String JOB_RECORDS_MAP_NAME = "__jet.records";
+
+    /**
+     * Name of internal IMap which stores job results
+     */
+    public static final String JOB_RESULTS_MAP_NAME = "__jet.results";
+
+    private static final String RESOURCE_MARKER = "__jet.resourceMarker";
     private static final long JOB_EXPIRATION_DURATION_IN_MILLIS = HOURS.toMillis(2);
 
     private final HazelcastInstance instance;
-    private final IMap<Long, Long> jobIds;
+    private final SnapshotRepository snapshotRepository;
+
+    private final IMap<Long, Long> randomIds;
     private final IMap<Long, JobRecord> jobs;
     private long jobExpirationDurationInMillis = JOB_EXPIRATION_DURATION_IN_MILLIS;
 
-    public JobRepository(JetInstance jetInstance) {
+    /**
+     * @param snapshotRepository Can be {@code null} if used on client to upload resources.
+     */
+    JobRepository(JetInstance jetInstance, @Nullable SnapshotRepository snapshotRepository) {
         this.instance = jetInstance.getHazelcastInstance();
-        this.jobIds = instance.getMap(IDS_MAP_NAME);
+        this.snapshotRepository = snapshotRepository;
+
+        this.randomIds = instance.getMap(RANDOM_IDS_MAP_NAME);
         this.jobs = instance.getMap(JOB_RECORDS_MAP_NAME);
     }
 
+    // for tests
     void setJobExpirationDurationInMillis(long jobExpirationDurationInMillis) {
         this.jobExpirationDurationInMillis = jobExpirationDurationInMillis;
     }
 
     /**
      * Uploads job resources and returns a unique job id generated for the job.
-     * If the upload process fails for any reason, such as being unable to access to a resource,
+     * If the upload process fails for any reason, such as being unable to access a resource,
      * uploaded resources are cleaned up.
      */
     public long uploadJobResources(JobConfig jobConfig) {
@@ -88,8 +113,8 @@ public class JobRepository {
                 try {
                     loadJar(tmpMap, rc.getUrl());
                 } catch (IOException e) {
-                    cleanupJobResourcesMap(jobResourcesMap);
-                    jobIds.remove(jobId);
+                    cleanupJobResourcesAndSnapshots(jobId, jobResourcesMap);
+                    randomIds.remove(jobId);
                     throw new JetException("Job resource upload failed", e);
                 }
             } else {
@@ -97,8 +122,8 @@ public class JobRepository {
                     InputStream in = rc.getUrl().openStream();
                     readStreamAndPutCompressedToMap(rc.getId(), tmpMap, in);
                 } catch (IOException e) {
-                    cleanupJobResourcesMap(jobResourcesMap);
-                    jobIds.remove(jobId);
+                    cleanupJobResourcesAndSnapshots(jobId, jobResourcesMap);
+                    randomIds.remove(jobId);
                     throw new JetException("Job resource upload failed", e);
                 }
             }
@@ -117,7 +142,7 @@ public class JobRepository {
         long jobId;
         do {
             jobId = Util.secureRandomNextLong();
-        } while (jobIds.putIfAbsent(jobId, jobId) != null);
+        } while (randomIds.putIfAbsent(jobId, jobId) != null);
         return jobId;
     }
 
@@ -153,8 +178,10 @@ public class JobRepository {
         map.put(resourceName, baos.toByteArray());
     }
 
-    private void cleanupJobResourcesMap(IMap<String, Object> jobResourcesMap) {
-        jobResourcesMap.clear();
+    private void cleanupJobResourcesAndSnapshots(long jobId, IMap<String, Object> jobResourcesMap) {
+        if (snapshotRepository != null) {
+            snapshotRepository.deleteSnapshots(jobId, null);
+        }
         jobResourcesMap.destroy();
     }
 
@@ -179,21 +206,8 @@ public class JobRepository {
         long executionId;
         do {
             executionId = Util.secureRandomNextLong();
-        } while (jobIds.putIfAbsent(executionId, jobId) != null);
+        } while (randomIds.putIfAbsent(executionId, jobId) != null);
         return executionId;
-    }
-
-    /**
-     * Returns the job record creation time for the given job id.
-     * If the job record is not found, fails with an {@link IllegalArgumentException}
-     */
-    long getJobCreationTimeOrFail(long jobId) {
-        EntryView<Long, JobRecord> entryView = jobs.getEntryView(jobId);
-        if (entryView != null) {
-            return entryView.getCreationTime();
-        }
-
-        throw new IllegalArgumentException("Job creation time not found for job id: " + idToString(jobId));
     }
 
     /**
@@ -204,11 +218,11 @@ public class JobRepository {
         // Delete the job record
         jobs.remove(jobId);
         // Delete the execution ids, but keep the job id
-        Set<Long> executionIds = jobIds.keySet(new FilterExecutionIdByJobIdPredicate(jobId));
-        executionIds.forEach(jobIds::remove);
+        Set<Long> executionIds = randomIds.keySet(new FilterExecutionIdByJobIdPredicate(jobId));
+        executionIds.forEach(randomIds::remove);
 
         // Delete job resources
-        cleanupJobResourcesMap(getJobResources(jobId));
+        cleanupJobResourcesAndSnapshots(jobId, getJobResources(jobId));
     }
 
     /**
@@ -225,30 +239,34 @@ public class JobRepository {
 
         // Job ids are never cleaned up.
         // We also don't clean up job records here because they might be started in parallel while cleanup is running
-        // If a job id is not running or completed, it might be suitable for job resource clean up
-        jobIds.keySet(new FilterJobIdPredicate())
-              .stream()
-              .filter(jobId -> !validJobIds.contains(jobId))
-              .forEach(jobId -> {
-                  IMap<String, Object> resources = getJobResources(jobId);
-                  if (resources.isEmpty()) {
-                      return;
-                  }
+        // If a job id is not running or is completed it might be suitable to clean up job resources
+        randomIds.keySet(new FilterJobIdPredicate())
+                 .stream()
+                 .filter(jobId -> !validJobIds.contains(jobId))
+                 .forEach(jobId -> {
+                     IMap<String, Object> resources = getJobResources(jobId);
+                     if (resources.isEmpty()) {
+                         return;
+                     }
 
-                  EntryView<String, Object> marker = resources.getEntryView(RESOURCE_MARKER);
-                  // If the marker is absent, then job resources may be still uploaded.
-                  // Just put the marker so that the job resources may be cleaned up eventually.
-                  // If the job resources are still being uploaded, then the marker will be overwritten, which is ok.
-                  if (marker == null) {
-                      resources.putIfAbsent(RESOURCE_MARKER, RESOURCE_MARKER);
-                  } else if (isJobExpired(marker.getCreationTime())) {
-                      cleanupJobResourcesMap(resources);
-                  }
-              });
+                     EntryView<String, Object> marker = resources.getEntryView(RESOURCE_MARKER);
+                     // If the marker is absent, then job resources may be still uploaded.
+                     // Just put the marker so that the job resources may be cleaned up eventually.
+                     // If the job resources are still being uploaded, then the marker will be overwritten, which is ok.
+                     if (marker == null) {
+                         resources.putIfAbsent(RESOURCE_MARKER, RESOURCE_MARKER);
+                     } else if (isJobExpired(marker.getCreationTime())) {
+                         cleanupJobResourcesAndSnapshots(jobId, resources);
+                     }
+                 });
     }
 
     private boolean isJobExpired(long creationTime) {
         return (System.currentTimeMillis() - creationTime) >= jobExpirationDurationInMillis;
+    }
+
+    Set<Long> getJobIds() {
+        return jobs.keySet();
     }
 
     Collection<JobRecord> getJobRecords() {
@@ -260,7 +278,7 @@ public class JobRepository {
     }
 
     <T> IMap<String, T> getJobResources(long jobId) {
-        return instance.getMap(RESOURCES_MAP_NAME_PREFIX + jobId);
+        return instance.getMap(RESOURCES_MAP_NAME_PREFIX + idToString(jobId));
     }
 
     public static class FilterExecutionIdByJobIdPredicate implements Predicate<Long, Long>, IdentifiedDataSerializable {
@@ -298,7 +316,6 @@ public class JobRepository {
         public void readData(ObjectDataInput in) throws IOException {
             jobId = in.readLong();
         }
-
     }
 
     public static class FilterJobIdPredicate implements Predicate<Long, Long>, IdentifiedDataSerializable {
@@ -328,7 +345,5 @@ public class JobRepository {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
         }
-
     }
-
 }

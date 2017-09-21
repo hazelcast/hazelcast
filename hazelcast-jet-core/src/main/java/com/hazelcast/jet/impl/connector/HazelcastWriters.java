@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.function.DistributedBiConsumer;
@@ -67,7 +68,11 @@ public final class HazelcastWriters {
                 instance -> {
                     IMap map = instance.getMap(name);
                     return buffer -> {
-                        map.putAll(buffer);
+                        try {
+                            map.putAll(buffer);
+                        } catch (HazelcastInstanceNotActiveException e) {
+                            logInstanceNotActive(instance, e);
+                        }
                         buffer.clear();
                     };
                 },
@@ -101,7 +106,11 @@ public final class HazelcastWriters {
             return instance -> {
                 ICache cache = instance.getCacheManager().getCache(name);
                 return buffer -> {
-                    cache.putAll(buffer);
+                    try {
+                        cache.putAll(buffer);
+                    } catch (HazelcastInstanceNotActiveException e) {
+                        logInstanceNotActive(instance, e);
+                    }
                     buffer.clear();
                 };
             };
@@ -122,12 +131,21 @@ public final class HazelcastWriters {
                 instance -> {
                     IList<Object> list = instance.getList(name);
                     return buffer -> {
-                        list.addAll(buffer);
+                        try {
+                            list.addAll(buffer);
+                        } catch (HazelcastInstanceNotActiveException e) {
+                            logInstanceNotActive(instance, e);
+                        }
                         buffer.clear();
                     };
                 },
                 noopConsumer()
         );
+    }
+
+    private static void logInstanceNotActive(HazelcastInstance instance, HazelcastInstanceNotActiveException e) {
+        instance.getLoggingService().getLogger(HazelcastWriters.class).warning(
+                "Ignored HazelcastInstanceNotActiveException, we expect the job will be restarted", e);
     }
 
     private static SerializableClientConfig serializableConfig(ClientConfig clientConfig) {

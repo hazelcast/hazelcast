@@ -23,6 +23,7 @@ import com.hazelcast.nio.Address;
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Factory of {@link ProcessorSupplier} instances. The starting point of
@@ -72,7 +73,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * been called.
      */
     @Nonnull
-    java.util.function.Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses);
+    Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**
      * Factory method that wraps the given {@code ProcessorSupplier}
@@ -87,7 +88,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Factory method that wraps the given {@code Supplier<Processor>}
      * and uses it as the supplier of all {@code Processor} instances.
      * Specifically, returns a meta-supplier that will always return the
-     * result of calling {@link ProcessorSupplier#of(DistributedSupplier <Processor>)}.
+     * result of calling {@link ProcessorSupplier#of(DistributedSupplier)}.
      */
     @Nonnull
     static ProcessorMetaSupplier of(@Nonnull DistributedSupplier<? extends Processor> procSupplier) {
@@ -99,7 +100,12 @@ public interface ProcessorMetaSupplier extends Serializable {
      * {@link ProcessorSupplier} for each given address
      */
     static ProcessorMetaSupplier of(DistributedFunction<Address, ProcessorSupplier> addressToSupplier) {
-        return x -> addressToSupplier;
+        return new ProcessorMetaSupplier() {
+            @Nonnull @Override
+            public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+                return addressToSupplier;
+            }
+        };
     }
 
     /**
@@ -125,6 +131,11 @@ public interface ProcessorMetaSupplier extends Serializable {
          * will be asked to create once deserialized on each member.
          */
         int localParallelism();
+
+        /**
+         * Returns true, if snapshots will be saved for this job.
+         */
+        boolean snapshottingEnabled();
     }
 
 }

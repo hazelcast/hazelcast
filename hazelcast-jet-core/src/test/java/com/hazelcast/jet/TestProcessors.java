@@ -54,7 +54,7 @@ public class TestProcessors {
         }
     }
 
-    public static class ProcessorThatFailsInInit implements Processor {
+    public static class ProcessorThatFailsInInit extends AbstractProcessor {
 
         private final RuntimeException e;
 
@@ -63,8 +63,9 @@ public class TestProcessors {
         }
 
         @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+        protected void init(@Nonnull Context context) throws Exception {
             throw e;
         }
+
     }
 }

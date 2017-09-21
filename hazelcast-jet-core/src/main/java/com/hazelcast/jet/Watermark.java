@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet;
 
-import java.io.Serializable;
+import com.hazelcast.jet.impl.execution.BroadcastItem;
+
 import java.time.Instant;
 import java.time.ZoneId;
 
@@ -30,7 +31,7 @@ import java.time.ZoneId;
  * windowing processors as anchoring points where the processor knows which
  * windows it can close and emit their aggregated results.
  */
-public final class Watermark implements Serializable {
+public final class Watermark implements BroadcastItem {
 
     private final long timestamp;
 
@@ -60,6 +61,9 @@ public final class Watermark implements Serializable {
 
     @Override
     public String toString() {
-        return "Watermark{timestamp=" + Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalTime() + '}';
+        return "Watermark{ts="
+                + timestamp
+                + ", formattedTs="
+                + Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalTime() + '}';
     }
 }

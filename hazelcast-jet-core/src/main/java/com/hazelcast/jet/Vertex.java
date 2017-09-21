@@ -63,15 +63,15 @@ public class Vertex implements IdentifiedDataSerializable {
 
     /**
      * Creates a vertex from a {@code Supplier<Processor>}.
-     *
+     * <p>
      * This is useful for vertices where all the {@code Processor} instances
      * will be instantiated the same way.
-     *
-     *  <strong>NOTE:</strong> this constructor should not be abused with a stateful
+     * <p>
+     * <strong>NOTE:</strong> this constructor should not be abused with a stateful
      * implementation which produces a different processor each time. In such a
      * case the full {@code ProcessorSupplier} type should be implemented.
      *
-     * @param name the unique name of the vertex
+     * @param name the unique name of the vertex. This name identifies the vertex in the snapshot
      * @param processorSupplier the simple, parameterless supplier of {@code Processor} instances
      */
     public Vertex(@Nonnull String name, @Nonnull DistributedSupplier<? extends Processor> processorSupplier) {
@@ -81,7 +81,7 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * Creates a vertex from a {@code ProcessorSupplier}.
      *
-     * @param name the unique name of the vertex
+     * @param name the unique name of the vertex. This name identifies the vertex in the snapshot
      * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      */
     public Vertex(@Nonnull String name, @Nonnull ProcessorSupplier processorSupplier) {
@@ -91,7 +91,7 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * Creates a vertex from a {@code ProcessorMetaSupplier}.
      *
-     * @param name the unique name of the vertex
+     * @param name the unique name of the vertex. This name identifies the vertex in the snapshot
      * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
      *
      */

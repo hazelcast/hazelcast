@@ -20,6 +20,9 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -66,6 +69,8 @@ public abstract class AbstractProcessor implements Processor {
     private Outbox outbox;
 
     private Object pendingItem;
+    private Entry<?, ?> pendingSnapshotItem;
+    private SnapshotOutbox snapshotOutbox;
 
     /**
      * Specifies what this processor's {@link #isCooperative()} method will return.
@@ -83,8 +88,9 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     @Override
-    public final void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public final void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
         this.outbox = outbox;
+        this.snapshotOutbox = snapshotOutbox;
         this.logger = context.logger();
         try {
             init(context);
@@ -99,6 +105,9 @@ public abstract class AbstractProcessor implements Processor {
      * the processing methods ({@link #process(int, Inbox) process()} and
      * {@link #complete()}), but after the outbox and {@link #getLogger()
      * logger} have been initialized.
+     * <p>
+     * Subclasses are not required to call this superclass method, it does
+     * nothing.
      *
      * @param context the {@link Context context} associated with this processor
      */
@@ -328,6 +337,14 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
+     * Javadoc pending
+     */
+    @CheckReturnValue
+    protected boolean tryEmitToSnapshot(Object key, Object value) {
+        return snapshotOutbox.offer(key, value);
+    }
+
+    /**
      * Adds the item to the outbox bucket with the supplied ordinal, throwing
      * an exception if the outbox refuses it. Only useful for non-cooperative
      * processors that work with an auto-flushing outbox.
@@ -360,6 +377,13 @@ public abstract class AbstractProcessor implements Processor {
         ensureAccepted(tryEmit(ordinals, item));
     }
 
+    /**
+     * Javadoc pending
+     */
+    protected void emitToSnapshot(Object key, Object value) {
+        ensureAccepted(tryEmitToSnapshot(key, value));
+    }
+
     private static void ensureAccepted(boolean accepted) {
         if (!accepted) {
             throw new IllegalStateException("Attempt to emit an item to a full outbox");
@@ -380,18 +404,25 @@ public abstract class AbstractProcessor implements Processor {
      *
      * @param ordinal ordinal of the target bucket
      * @param traverser traverser over items to emit
+     * @param onEmit an optional consumer which will be called each time an item is added to the outbox
      * @return whether the traverser has been exhausted
      */
-    protected boolean emitFromTraverser(int ordinal, @Nonnull Traverser<?> traverser) {
-        Object item;
+    protected <E> boolean emitFromTraverser(
+            int ordinal, @Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit
+    ) {
+        E item;
         if (pendingItem != null) {
-            item = pendingItem;
+            item = (E) pendingItem;
             pendingItem = null;
         } else {
             item = traverser.next();
         }
         for (; item != null; item = traverser.next()) {
-            if (!tryEmit(ordinal, item)) {
+            if (tryEmit(ordinal, item)) {
+                if (onEmit != null) {
+                    onEmit.accept(item);
+                }
+            } else {
                 pendingItem = item;
                 return false;
             }
@@ -400,10 +431,62 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Convenience for {@link #emitFromTraverser(int, Traverser)} which emits to all ordinals.
+     * Obtains items from the traverser and offers them to the snapshot outbox.
+     * Each item is a {@code Map.Entry} and its key and
+     * value are passed as the two arguments of {@link
+     * SnapshotOutbox#offer(Object, Object)}. If the
+     * outbox refuses an item, it backs off and returns {@code false}.
+     * <p>
+     * If this method returns {@code false}, then the same traverser must be
+     * retained by the caller and passed again in the subsequent invocation of
+     * this method, so as to resume emitting where it left off.
+     *
+     * @param traverser traverser over the items to emit to the snapshot
+     * @return whether the traverser has been exhausted
+     */
+    protected <T extends Entry<?, ?>> boolean emitFromTraverserToSnapshot(@Nonnull Traverser<T> traverser) {
+        Entry<?, ?> item;
+        if (pendingSnapshotItem != null) {
+            item = pendingSnapshotItem;
+            pendingSnapshotItem = null;
+        } else {
+            item = traverser.next();
+        }
+        for (; item != null; item = traverser.next()) {
+            if (!snapshotOutbox.offer(item.getKey(), item.getValue())) {
+                pendingSnapshotItem = item;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)} which emits to all ordinals.
      */
     protected boolean emitFromTraverser(@Nonnull Traverser<?> traverser) {
-        return emitFromTraverser(-1, traverser);
+        return emitFromTraverser(-1, traverser, null);
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)} which emits to the specified ordinal.
+     */
+    protected boolean emitFromTraverser(int ordinal, @Nonnull Traverser<?> traverser) {
+        return emitFromTraverser(ordinal, traverser, null);
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int[], Traverser, Consumer)} which emits to the specified ordinals.
+     */
+    protected boolean emitFromTraverser(int[] ordinals, @Nonnull Traverser<?> traverser) {
+        return emitFromTraverser(ordinals, traverser, null);
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)} which emits to all ordinals.
+     */
+    protected <E> boolean emitFromTraverser(@Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit) {
+        return emitFromTraverser(-1, traverser, onEmit);
     }
 
     /**
@@ -420,12 +503,15 @@ public abstract class AbstractProcessor implements Processor {
      *
      * @param ordinals ordinals of the target bucket
      * @param traverser traverser over items to emit
+     * @param onEmit an optional consumer which will be called each time an item is added to the outbox
      * @return whether the traverser has been exhausted
      */
-    protected boolean emitFromTraverser(@Nonnull int[] ordinals, @Nonnull Traverser<?> traverser) {
-        Object item;
+    protected <E> boolean emitFromTraverser(
+            @Nonnull int[] ordinals, @Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit
+    ) {
+        E item;
         if (pendingItem != null) {
-            item = pendingItem;
+            item = (E) pendingItem;
             pendingItem = null;
         } else {
             item = traverser.next();
@@ -478,7 +564,7 @@ public abstract class AbstractProcessor implements Processor {
      * supplies a {@code mapper} which takes an item and returns a traverser
      * over all output items that should be emitted. The {@link
      * #tryProcess(Object)} method obtains and passes the traverser to {@link
-     * #emitFromTraverser(int, Traverser)}.
+     * #emitFromTraverser(int, Traverser, Consumer)}.
      *
      * Example:
      * <pre>
@@ -527,7 +613,7 @@ public abstract class AbstractProcessor implements Processor {
 
         private boolean emit() {
             return outputOrdinals != null
-                    ? emitFromTraverser(outputOrdinals, outputTraverser)
+                    ? emitFromTraverser(outputOrdinals, outputTraverser, null)
                     : emitFromTraverser(outputTraverser);
         }
     }

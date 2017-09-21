@@ -25,12 +25,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
@@ -48,6 +50,7 @@ public class ExecutionContext {
     private final Address coordinator;
     private final Set<Address> participants;
     private final Object executionLock = new Object();
+    private final ILogger logger;
 
     // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
     private Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap = emptyMap();
@@ -62,9 +65,10 @@ public class ExecutionContext {
     private CompletionStage<Void> jobFuture;
 
     private final NodeEngine nodeEngine;
-    private final ExecutionService execService;
+    private final TaskletExecutionService execService;
+    private SnapshotContext snapshotContext;
 
-    public ExecutionContext(NodeEngine nodeEngine, ExecutionService execService,
+    public ExecutionContext(NodeEngine nodeEngine, TaskletExecutionService execService,
                             long jobId, long executionId, Address coordinator, Set<Address> participants) {
         this.jobId = jobId;
         this.executionId = executionId;
@@ -72,6 +76,8 @@ public class ExecutionContext {
         this.participants = new HashSet<>(participants);
         this.execService = execService;
         this.nodeEngine = nodeEngine;
+
+        logger = nodeEngine.getLogger(getClass());
     }
 
     public ExecutionContext initialize(ExecutionPlan plan) {
@@ -79,7 +85,10 @@ public class ExecutionContext {
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
         processors = plan.getProcessors();
-        plan.initialize(nodeEngine, executionId);
+        snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobId, executionId,
+                plan.lastSnapshotId(), plan.getJobConfig().getProcessingGuarantee());
+        plan.initialize(nodeEngine, jobId, executionId, snapshotContext);
+        snapshotContext.initTaskletCount(plan.getStoreSnapshotTaskletCount(), plan.getHigherPriorityVertexCount());
         receiverMap = unmodifiableMap(plan.getReceiverMap());
         senderMap = unmodifiableMap(plan.getSenderMap());
         tasklets = plan.getTasklets();
@@ -153,6 +162,18 @@ public class ExecutionContext {
                    .get(ordinal)
                    .get(sender)
                    .receiveStreamPacket(in);
+    }
+
+    public CompletionStage<Void> beginSnapshot(long snapshotId) {
+        synchronized (executionLock) {
+            if (jobFuture == null) {
+                throw new RetryableHazelcastException();
+            } else if (jobFuture.toCompletableFuture().isDone()) {
+                throw new CancellationException();
+            }
+
+            return snapshotContext.startNewSnapshot(snapshotId);
+        }
     }
 
     public boolean isParticipating(Address member) {

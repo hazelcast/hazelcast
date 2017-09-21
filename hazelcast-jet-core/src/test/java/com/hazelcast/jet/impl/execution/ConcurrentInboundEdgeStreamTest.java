@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,11 +31,13 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
+import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -49,101 +52,138 @@ public class ConcurrentInboundEdgeStreamTest {
     private OneToOneConcurrentArrayQueue<Object> q1;
     private OneToOneConcurrentArrayQueue<Object> q2;
     private ConcurrentInboundEdgeStream stream;
+    private ConcurrentConveyor<Object> conveyor;
 
     @Before
     public void setUp() {
         q1 = new OneToOneConcurrentArrayQueue<>(128);
         q2 = new OneToOneConcurrentArrayQueue<>(128);
         //noinspection unchecked
-        ConcurrentConveyor<Object> conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
+        conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
 
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, false);
     }
 
     @Test
     public void when_twoEmittersOneDoneFirst_then_madeProgress() {
-        ArrayList<Object> list = new ArrayList<>();
-        q1.add(1);
-        q1.add(2);
-        q1.add(DONE_ITEM);
-        q2.add(6);
-        ProgressState progressState = stream.drainTo(list);
-        assertEquals(Arrays.asList(1, 2, 6), list);
-        assertEquals(MADE_PROGRESS, progressState);
+        add(q1, 1, 2, DONE_ITEM);
+        add(q2, 6);
+        drainAndAssert(MADE_PROGRESS, 1, 2, 6);
 
-        list.clear();
-        q2.add(7);
-        q2.add(DONE_ITEM);
-        progressState = stream.drainTo(list);
-        // emitter2 returned 7 and now both emitters are done
-        assertEquals(Collections.singletonList(7), list);
-        assertEquals(DONE, progressState);
+        add(q2, 7, DONE_ITEM);
+        drainAndAssert(DONE, 7);
 
         // both emitters are now done and made no progress since last call
-        list.clear();
-        progressState = stream.drainTo(list);
-        assertEquals(0, list.size());
-        assertEquals(ProgressState.WAS_ALREADY_DONE, progressState);
+        drainAndAssert(WAS_ALREADY_DONE);
     }
 
     @Test
     public void when_twoEmittersDrainedAtOnce_then_firstCallDone() {
-        ArrayList<Object> list = new ArrayList<>();
-        q1.add(1);
-        q1.add(2);
-        q1.add(DONE_ITEM);
-        q2.add(6);
-        q2.add(DONE_ITEM);
-        ProgressState progressState = stream.drainTo(list);
-
+        add(q1, 1, 2, DONE_ITEM);
+        add(q2, 6, DONE_ITEM);
         // emitter1 returned 1 and 2; emitter2 returned 6
         // both are now done
-        assertEquals(Arrays.asList(1, 2, 6), list);
-        assertEquals(DONE, progressState);
+        drainAndAssert(DONE, 1, 2, 6);
     }
 
     @Test
     public void when_allEmittersInitiallyDone_then_firstCallDone() {
-        ArrayList<Object> list = new ArrayList<>();
         q1.add(DONE_ITEM);
         q2.add(DONE_ITEM);
-        ProgressState progressState = stream.drainTo(list);
-
-        assertEquals(0, list.size());
-        assertEquals(ProgressState.DONE, progressState);
-
-        list.clear();
-        progressState = stream.drainTo(list);
-        assertEquals(0, list.size());
-        assertEquals(ProgressState.WAS_ALREADY_DONE, progressState);
+        drainAndAssert(DONE);
+        drainAndAssert(WAS_ALREADY_DONE);
     }
 
     @Test
     public void when_oneEmitterWithNoProgress_then_noProgress() {
-        ArrayList<Object> list = new ArrayList<>();
-        q2.add(1);
-        q2.add(DONE_ITEM);
-        ProgressState progressState = stream.drainTo(list);
+        add(q2, 1, DONE_ITEM);
+        drainAndAssert(MADE_PROGRESS, 1);
 
-        assertEquals(Collections.singletonList(1), list);
-        assertEquals(MADE_PROGRESS, progressState);
         // now emitter2 is done, emitter1 is not but has no progress
-        list.clear();
-        progressState = stream.drainTo(list);
-        assertEquals(0, list.size());
-        assertEquals(ProgressState.NO_PROGRESS, progressState);
+        drainAndAssert(NO_PROGRESS);
 
         // now make emitter1 done, without returning anything
         q1.add(DONE_ITEM);
 
-        list.clear();
-        progressState = stream.drainTo(list);
-        assertEquals(0, list.size());
-        assertEquals(ProgressState.DONE, progressState);
+        drainAndAssert(DONE);
+        drainAndAssert(WAS_ALREADY_DONE);
+    }
 
-        list.clear();
-        progressState = stream.drainTo(list);
-        assertEquals(0, list.size());
-        assertEquals(ProgressState.WAS_ALREADY_DONE, progressState);
+    @Test
+    public void when_receivingWatermarks_then_coalesce() {
+        add(q1, wm(1));
+        add(q2, wm(2));
+        drainAndAssert(MADE_PROGRESS, wm(1));
+
+        add(q1, wm(3));
+        add(q2, wm(3));
+        drainAndAssert(MADE_PROGRESS, wm(3));
+    }
+
+    @Test
+    public void when_receivingSnapshots_then_coalesce() {
+        add(q1, barrier(0));
+        add(q2, 1);
+        drainAndAssert(MADE_PROGRESS, 1);
+
+        add(q1, 2);
+        add(q2, barrier(0));
+        drainAndAssert(MADE_PROGRESS, 2, barrier(0));
+    }
+
+    @Test
+    public void when_receivingSnapshots_then_waitForSnapshot() {
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true);
+
+        add(q1, barrier(0));
+        add(q2, 1);
+        drainAndAssert(MADE_PROGRESS, 1);
+
+        add(q1, 2);
+        drainAndAssert(NO_PROGRESS);
+
+        add(q2, barrier(0));
+        drainAndAssert(MADE_PROGRESS, barrier(0));
+        drainAndAssert(MADE_PROGRESS, 2);
+    }
+
+    @Test
+    public void when_receivingSnapshotsWhileDone_then_coalesce() {
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true);
+
+        add(q1, 1, barrier(0));
+        add(q2, DONE_ITEM);
+        drainAndAssert(MADE_PROGRESS, 1, barrier(0));
+
+        add(q1, DONE_ITEM);
+        drainAndAssert(DONE);
+    }
+
+    @Test
+    public void when_receiveOnlyBarrierAndDoneItemFromSameQueue_then_coalesce() {
+        add(q1, 1, barrier(0), DONE_ITEM);
+        drainAndAssert(MADE_PROGRESS, 1);
+        drainAndAssert(MADE_PROGRESS);
+
+        add(q2, barrier(0));
+        drainAndAssert(MADE_PROGRESS, barrier(0));
+    }
+
+    private void drainAndAssert(ProgressState expectedState, Object... expectedItems) {
+        List<Object> list = new ArrayList<>();
+        assertEquals("progressState", expectedState, stream.drainTo(list::add));
+        assertEquals(Arrays.asList(expectedItems), list);
+    }
+
+    private void add(OneToOneConcurrentArrayQueue<Object> q, Object... items) {
+        q.addAll(Arrays.asList(items));
+    }
+
+    private Watermark wm(long timestamp) {
+        return new Watermark(timestamp);
+    }
+
+    private SnapshotBarrier barrier(long snapshotId) {
+        return new SnapshotBarrier(snapshotId);
     }
 }

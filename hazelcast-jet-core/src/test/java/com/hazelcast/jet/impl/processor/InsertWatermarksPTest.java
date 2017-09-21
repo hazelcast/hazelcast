@@ -18,132 +18,284 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.Watermark;
-import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
-import com.hazelcast.jet.impl.util.ProgressTracker;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.jet.WatermarkEmissionPolicy;
+import com.hazelcast.jet.WatermarkPolicy;
+import com.hazelcast.jet.test.TestOutbox;
+import com.hazelcast.jet.test.TestProcessorContext;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByFrame;
+import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByMinStep;
 import static com.hazelcast.jet.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.WindowDefinition.tumblingWindowDef;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.WatermarkPolicyUtil.limitingTimestampAndWallClockLag;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class InsertWatermarksPTest {
 
     private static final long LAG = 3;
 
-    private MockClock clock;
+    @Parameter
+    public int outboxCapacity;
+
+    private MockClock clock = new MockClock(100);
     private InsertWatermarksP<Item> p;
-    private ArrayDequeOutbox outbox;
-    private List<String> resultToCheck = new ArrayList<>();
+    private TestOutbox outbox;
+    private List<Object> resultToCheck = new ArrayList<>();
+    private Context context;
+    private WatermarkPolicy wmPolicy = withFixedLag(LAG).get();
+    private WatermarkEmissionPolicy wmEmissionPolicy = (WatermarkEmissionPolicy) (currentWm, lastEmittedWm) ->
+            currentWm > lastEmittedWm;
 
-    public void setUp(int outboxCapacity) {
-        clock = new MockClock(100);
-        p = new InsertWatermarksP<>(Item::getTimestamp, withFixedLag(LAG).get(), suppressDuplicates());
+    @Parameters(name = "outboxCapacity={0}")
+    public static Collection<Object> parameters() {
+        return asList(1, 1024);
+    }
 
-        outbox = new ArrayDequeOutbox(new int[]{outboxCapacity}, new ProgressTracker());
-        Context context = mock(Context.class);
-
-        p.init(outbox, context);
+    @Before
+    public void setUp() {
+        outbox = new TestOutbox(outboxCapacity);
+        context = new TestProcessorContext();
     }
 
     @Test
-    public void smokeTest_oneItemOutbox() throws Exception {
-        smokeTest(1);
+    public void when_firstEventLate_then_dropped() {
+        wmPolicy = limitingTimestampAndWallClockLag(0, 0, clock::now).get();
+        doTest(
+                singletonList(item(clock.now - 1)),
+                singletonList(wm(100)));
     }
 
     @Test
-    public void smokeTest_outboxLargeEnough() throws Exception {
-        smokeTest(1024);
+    public void when_manyEvents_then_oneWm() {
+        doTest(
+                asList(
+                        item(10),
+                        item(10)),
+                asList(
+                        wm(7),
+                        item(10),
+                        item(10))
+        );
     }
 
-    public void smokeTest(int outboxCapacity) throws Exception {
-        setUp(outboxCapacity);
+    @Test
+    public void when_eventsIncrease_then_wmIncreases() {
+        doTest(
+                asList(
+                        item(10),
+                        item(11)),
+                asList(
+                        wm(7),
+                        item(10),
+                        wm(8),
+                        item(11))
+        );
+    }
 
-        // this is to make the capacity-one outbox initially full
-        assertTrue(outbox.offer("initialItem"));
+    @Test
+    public void when_eventsDecrease_then_oneWm() {
+        doTest(
+                asList(
+                        item(11),
+                        item(10)),
+                asList(
+                        wm(8),
+                        item(11),
+                        item(10))
+        );
+    }
 
-        String[] expected = {
-                "-- at 100",
-                "initialItem",
-                "Watermark{timestamp=7}",
-                "Item{timestamp=10}",
-                "Item{timestamp=8}",
-                "-- at 101",
-                "Watermark{timestamp=8}",
-                "Item{timestamp=11}",
-                "Item{timestamp=9}",
-                "-- at 102",
-                "Watermark{timestamp=9}",
-                "Item{timestamp=12}",
-                "Item{timestamp=10}",
-                "-- at 103",
-                "Watermark{timestamp=10}",
-                "Item{timestamp=13}",
-                "Item{timestamp=11}",
-                "-- at 104",
-                "-- at 105",
-                "-- at 106",
-                "-- at 107",
-                "-- at 108",
-                "-- at 109",
-                "-- at 110",
-                "Watermark{timestamp=17}",
-                "Item{timestamp=20}",
-                "Item{timestamp=18}",
-                "-- at 111",
-                "Watermark{timestamp=18}",
-                "Item{timestamp=21}",
-                "Item{timestamp=19}",
-                "-- at 112",
-                "-- at 113",
-                "-- at 114",
-                "-- at 115",
-                "-- at 116",
-                "-- at 117",
-                "-- at 118",
-                "-- at 119",
-        };
+    @Test
+    public void when_lateEvent_then_dropped() {
+        doTest(
+                asList(
+                        item(11),
+                        item(7)),
+                asList(
+                        wm(8),
+                        item(11))
+        );
+    }
 
-        for (int eventTime = 10; eventTime < 30; eventTime++) {
-            resultToCheck.add("-- at " + clock.now());
-            if (eventTime < 14 || eventTime >= 20 && eventTime <= 21) {
-                Item item = new Item(eventTime);
-                Item oldItem = new Item(eventTime - 2);
-                tryProcessAndDrain(item);
-                tryProcessAndDrain(oldItem);
+    @Test
+    public void when_gapBetweenEvents_then_oneWm() {
+        doTest(
+                asList(
+                        item(10),
+                        item(13)),
+                asList(
+                        wm(7),
+                        item(10),
+                        wm(10),
+                        item(13))
+        );
+    }
+
+    @Test
+    public void when_zeroLag() {
+        wmPolicy = withFixedLag(0).get();
+        doTest(
+                asList(
+                        item(10),
+                        item(13)),
+                asList(
+                        wm(10),
+                        item(10),
+                        wm(13),
+                        item(13))
+        );
+    }
+
+    @Test
+    public void emitByFrame_when_eventsIncrease_then_wmIncreases() {
+        wmEmissionPolicy = emitByFrame(tumblingWindowDef(2));
+        doTest(
+                asList(
+                        item(10),
+                        item(11),
+                        item(12),
+                        item(13)
+                ),
+                asList(
+                        wm(7), // corresponds to frame(6)
+                        item(10),
+                        wm(8), // corresponds to frame(8)
+                        item(11),
+                        item(12),
+                        wm(10), // corresponds to frame(10)
+                        item(13)
+                )
+        );
+    }
+
+    @Test
+    public void emitByFrame_when_eventsIncreaseAndStartAtVergeOfFrame_then_wmIncreases() {
+        wmEmissionPolicy = emitByFrame(tumblingWindowDef(2));
+        doTest(
+                asList(
+                        item(11),
+                        item(12),
+                        item(13),
+                        item(14)
+                ),
+                asList(
+                        wm(8),
+                        item(11),
+                        item(12),
+                        wm(10),
+                        item(13),
+                        item(14)
+                )
+        );
+
+    }
+
+    @Test
+    public void emitByFrame_when_gapBetweenEvents_then_gapInWms() {
+        wmEmissionPolicy = emitByFrame(tumblingWindowDef(2));
+        doTest(
+                asList(
+                        item(11),
+                        item(15)),
+                asList(
+                        wm(8),
+                        item(11),
+                        wm(12),
+                        item(15))
+        );
+    }
+
+    @Test
+    public void emitByMinStep_when_eventsIncrease_then_wmIncreases() {
+        wmEmissionPolicy = emitByMinStep(2);
+        doTest(
+                asList(
+                        item(11),
+                        item(12),
+                        item(13),
+                        item(14)
+                ),
+                asList(
+                        wm(8),
+                        item(11),
+                        item(12),
+                        wm(10),
+                        item(13),
+                        item(14)
+                )
+        );
+    }
+
+    @Test
+    public void emitByMinStep_when_gapBetweenEvents_then_oneWm() {
+        wmEmissionPolicy = emitByMinStep(2);
+        doTest(
+                asList(
+                        item(10),
+                        item(15),
+                        item(20)),
+                asList(
+                        wm(7),
+                        item(10),
+                        wm(12),
+                        item(15),
+                        wm(17),
+                        item(20))
+        );
+    }
+
+    private void doTest(List<Object> input, List<Object> expectedOutput) {
+        p = new InsertWatermarksP<>(Item::getTimestamp, wmPolicy, wmEmissionPolicy);
+        p.init(outbox, outbox, context);
+
+        for (Object inputItem : input) {
+            if (inputItem instanceof Tick) {
+                clock.set(((Tick) inputItem).timestamp);
+                resultToCheck.add(tick(clock.now));
+                doAndDrain(p::tryProcess);
+            } else {
+                assertTrue(inputItem instanceof Item);
+                doAndDrain(() -> uncheckCall(() -> p.tryProcess(0, inputItem)));
             }
-
-            p.tryProcess();
-            drainOutbox();
-
-            clock.advance();
         }
 
-        assertEquals(listToString(Arrays.asList(expected)), listToString(resultToCheck));
+        assertEquals(listToString(expectedOutput), listToString(resultToCheck));
     }
 
-    private void tryProcessAndDrain(Item item) throws Exception {
-        while (!p.tryProcess(0, item)) {
+    private void doAndDrain(BooleanSupplier action) {
+        boolean done;
+        do {
+            done = action.getAsBoolean();
             drainOutbox();
-        }
+        } while (!done);
     }
 
     private void drainOutbox() {
-        for (Object o; (o = outbox.queueWithOrdinal(0).poll()) != null; ) {
-            resultToCheck.add(myToString(o));
-        }
+        resultToCheck.addAll(outbox.queueWithOrdinal(0));
+        outbox.queueWithOrdinal(0).clear();
     }
 
     private String myToString(Object o) {
@@ -152,8 +304,33 @@ public class InsertWatermarksPTest {
                 : o.toString();
     }
 
-    private static String listToString(List<String> actual) {
-        return actual.stream().collect(Collectors.joining("\n"));
+    private String listToString(List<?> actual) {
+        return actual.stream().map(this::myToString).collect(Collectors.joining("\n"));
+    }
+
+    private static Item item(long timestamp) {
+        return new Item(timestamp);
+    }
+
+    private static Watermark wm(long timestamp) {
+        return new Watermark(timestamp);
+    }
+
+    private static Tick tick(long timestamp) {
+        return new Tick(timestamp);
+    }
+
+    private static final class Tick {
+        final long timestamp;
+
+        private Tick(long timestamp) {
+            this.timestamp = timestamp;
+        }
+
+        @Override
+        public String toString() {
+            return "-- at " + timestamp;
+        }
     }
 
     private static class Item {
@@ -163,7 +340,7 @@ public class InsertWatermarksPTest {
             this.timestamp = timestamp;
         }
 
-        public long getTimestamp() {
+        long getTimestamp() {
             return timestamp;
         }
 
@@ -194,8 +371,10 @@ public class InsertWatermarksPTest {
             return now;
         }
 
-        void advance() {
-            now++;
+        void set(long newNow) {
+            assert newNow >= now;
+            now = newNow;
         }
+
     }
 }

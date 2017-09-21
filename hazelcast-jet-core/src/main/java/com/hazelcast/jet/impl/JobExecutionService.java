@@ -24,9 +24,11 @@ import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp
 import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
-import com.hazelcast.jet.impl.execution.ExecutionService;
+import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.operation.SnapshotOperation;
+import com.hazelcast.jet.impl.operation.ExecuteOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -52,7 +54,7 @@ public class JobExecutionService {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    private final ExecutionService executionService;
+    private final TaskletExecutionService taskletExecutionService;
 
     private final Set<Long> executionContextJobIds = newSetFromMap(new ConcurrentHashMap<>());
 
@@ -65,10 +67,10 @@ public class JobExecutionService {
     // key: jobId
     private final ConcurrentHashMap<Long, JetClassLoader> classLoaders = new ConcurrentHashMap<>();
 
-    JobExecutionService(NodeEngineImpl nodeEngine, ExecutionService executionService) {
+    JobExecutionService(NodeEngineImpl nodeEngine, TaskletExecutionService taskletExecutionService) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
-        this.executionService = executionService;
+        this.taskletExecutionService = taskletExecutionService;
     }
 
     public ClassLoader getClassLoader(long jobId, PrivilegedAction<JetClassLoader> action) {
@@ -174,7 +176,7 @@ public class JobExecutionService {
         }
 
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ExecutionContext created = new ExecutionContext(nodeEngine, executionService,
+        ExecutionContext created = new ExecutionContext(nodeEngine, taskletExecutionService,
                 jobId, executionId, coordinator, addresses);
         try {
             created.initialize(plan);
@@ -225,11 +227,21 @@ public class JobExecutionService {
      */
     public CompletionStage<Void> execute(Address coordinator, long jobId, long executionId,
                                          Consumer<CompletionStage<Void>> doneCallback) {
+        ExecutionContext executionContext = verifyAndGetExecutionContext(coordinator, jobId, executionId,
+                ExecuteOperation.class.getSimpleName());
+
+        logger.info("Start execution of " + jobAndExecutionId(jobId, executionId) + " from coordinator " + coordinator);
+
+        return executionContext.execute(doneCallback);
+    }
+
+    private ExecutionContext verifyAndGetExecutionContext(Address coordinator, long jobId, long executionId,
+                                                          String operationName) {
         Address masterAddress = nodeEngine.getMasterAddress();
         if (!coordinator.equals(masterAddress)) {
             throw new IllegalStateException(String.format(
-                    "Coordinator %s cannot start %s: it is not the master, the master is %s",
-                    coordinator, jobAndExecutionId(jobId, executionId), masterAddress));
+                    "Coordinator %s cannot do '%s' for %s: it is not the master, the master is %s",
+                    coordinator, operationName, jobAndExecutionId(jobId, executionId), masterAddress));
         }
 
         if (!nodeEngine.isRunning()) {
@@ -239,18 +251,16 @@ public class JobExecutionService {
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
             throw new IllegalStateException(String.format(
-                    "%s not found for coordinator %s for execution start",
-                    jobAndExecutionId(jobId, executionId), coordinator));
+                    "%s not found for coordinator %s for '%s'",
+                    jobAndExecutionId(jobId, executionId), coordinator, operationName));
         } else if (!executionContext.verify(coordinator, jobId)) {
             throw new IllegalStateException(String.format(
-                    "%s, originally from coordinator %s, cannot be started by coordinator %s and execution %s",
+                    "%s, originally from coordinator %s, cannot do '%s' by coordinator %s and execution %s",
                     jobAndExecutionId(jobId, executionContext.getExecutionId()), executionContext.getCoordinator(),
-                    coordinator, idToString(executionId)));
+                    operationName, coordinator, idToString(executionId)));
         }
 
-        logger.info("Start execution of " + jobAndExecutionId(jobId, executionId) + " from coordinator " + coordinator);
-
-        return executionContext.execute(doneCallback);
+        return executionContext;
     }
 
     /**
@@ -266,5 +276,11 @@ public class JobExecutionService {
         } else {
             logger.fine("Execution " + idToString(executionId) + " not found for completion");
         }
+    }
+    public CompletionStage<Void> beginSnapshot(Address coordinator, long jobId, long executionId, long snapshotId) {
+        ExecutionContext executionContext = verifyAndGetExecutionContext(coordinator, jobId, executionId,
+                SnapshotOperation.class.getSimpleName());
+
+        return executionContext.beginSnapshot(snapshotId);
     }
 }

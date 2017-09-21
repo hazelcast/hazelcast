@@ -368,6 +368,14 @@ public final class SourceProcessors {
      * <p>
      * Each processor completes when the server closes its connection. It never
      * attempts to reconnect.
+     * <p><b>Note to jobs with snapshotting:</b>
+     * Current implementation uses blocking socket API which blocks until there
+     * are some data on the socket. Source processors have to return control to
+     * be able to do the snapshot. If they block for too long, the snapshot
+     * will be delayed. In {@link
+     * com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE exactly-once}
+     * mode the situation is even worse, because the job is stopped when one
+     * parallel instance sees some data until all other do.
      */
     @Nonnull
     public static DistributedSupplier<Processor> streamSocket(

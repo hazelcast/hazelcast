@@ -21,60 +21,61 @@ import javax.annotation.Nonnull;
 
 /**
  * Data sink for a {@link Processor}. The outbox consists of individual
- * output buckets, one per outbound edge of the vertex represented by
- * the associated processor. The processor must deliver its output items,
- * separated by destination edge, into the outbox by calling
- * {@link #offer(int, Object)} or {@link #offer(Object)}.
+ * output buckets, one per outbound edge of the vertex represented by the
+ * associated processor. The processor must deliver its output items, separated by destination edge,
+ * into the outbox by calling {@link #offer(int, Object)} or {@link
+ * #offer(Object)}.
  * <p>
- * In the case of a processor declared as <em>cooperative</em>, the
- * execution engine will not try to flush the outbox into downstream
- * queues until the processing method returns. Therefore the processor
- * must check the return value of {@code offer()} and refrain from
- * outputting more data when it returns {@code false}.
+ * A {@link Processor#isCooperative() cooperative} processor's outbox might
+ * not be able to accept the item if it is already full. The processor must
+ * check the return value of {@code offer()} and refrain from outputting
+ * more data when it returns {@code false}.
  * <p>
- * A non-cooperative processor's outbox will have auto-flushing behavior
- * and each item will be immediatelly flushed to the edge, blocking as
- * needed until success.
+ * A non-cooperative processor's outbox will block until the item can fit into
+ * the downstream buffers and the {@code offer} methods will always return
+ * {@code true}.
  */
 public interface Outbox {
 
     /**
-     * Returns the number of buckets in this outbox.
+     * Returns the number of buckets in this outbox. This is equal to the
+     * number of output edges of the vertex.
      */
     int bucketCount();
 
     /**
-     * Offers the supplied item to the output bucket with the supplied
+     * Offers the supplied item to the downstream edge with the supplied
      * ordinal. If {@code ordinal == -1}, offers the supplied item to
-     * all buckets (behaves the same as {@link #offer(Object)}).
-     * If any of the involved buckets is full, takes no action and
-     * returns {@code false}.
+     * all edges (behaves the same as {@link #offer(Object)}).
+     * <p>
+     * If any downstream queue is full, it is skipped and this method returns
+     * {@code false}. In that case the call must be retried later with the same
+     * (or equal) item. The outbox internally keeps track which queues already
+     * accepted the item.
      *
-     * @return whether the outbox accepted the item
+     * @return whether the outbox fully accepted the item
      */
     @CheckReturnValue
     boolean offer(int ordinal, @Nonnull Object item);
 
     /**
-     * First ensures that all the buckets identified in the supplied
-     * array of ordinals have room for another item, then adds the
-     * supplied item to them. If any of the buckets is full, takes no
-     * action and returns {@code false}.
+     * Offers the item to all supplied edge ordinals. See {@link #offer(int,
+     * Object)} for more details.
      *
-     * @return whether the outbox accepted the item
+     * @return whether the outbox fully accepted the item
      */
     @CheckReturnValue
     boolean offer(int[] ordinals, @Nonnull Object item);
 
     /**
-     * First ensures that all buckets have room for another item, then
-     * adds the supplied item to them. If any of the buckets is full,
-     * takes no action and returns {@code false}.
+     * Offers the item to all edges. See {@link #offer(int, Object)} for more
+     * details.
      *
-     * @return whether the outbox accepted the item
+     * @return whether the outbox fully accepted the item
      */
     @CheckReturnValue
     default boolean offer(@Nonnull Object item) {
         return offer(-1, item);
     }
+
 }

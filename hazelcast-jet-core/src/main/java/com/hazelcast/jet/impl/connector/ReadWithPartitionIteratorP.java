@@ -256,7 +256,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         }
 
         @Override @Nonnull
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresseses) {
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new LocalClusterProcessorSupplier<>(addrToPartitions.get(address), iteratorSupplier);
         }
     }

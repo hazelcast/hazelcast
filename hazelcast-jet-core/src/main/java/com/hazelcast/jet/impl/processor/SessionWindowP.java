@@ -17,24 +17,35 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Session;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -70,6 +81,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     private final DistributedFunction<? super A, R> finishAccumulationFn;
     private final DistributedBiConsumer<? super A, ? super A> combineAccFn;
     private final FlatMapper<Watermark, Session<K, R>> expiredSessionFlatmapper;
+    private Traverser snapshotTraverser;
 
     public SessionWindowP(
             long sessionTimeout,
@@ -92,8 +104,8 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
         final T event = (T) item;
         final long timestamp = getTimestampFn.applyAsLong(event);
         K key = getKeyFn.apply(event);
-        keyToWindows.computeIfAbsent(key, k -> new Windows())
-                    .addEvent(key, timestamp, event);
+        addEvent(keyToWindows.computeIfAbsent(key, k -> new Windows()),
+                key, timestamp, event);
         return true;
     }
 
@@ -117,9 +129,10 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
 
         deadlineToKeys.headMap(wm.timestamp()).clear();
 
-        Stream<Session<K, R>> sessions = distinctKeys.stream()
-                .map(key -> keyToWindows.get(key).closeWindows(key, wm.timestamp()))
-                .flatMap(List::stream);
+        Stream<List<Session<K, R>>> listStream = distinctKeys.stream()
+                                              .map(key -> closeWindows(keyToWindows.get(key), key, wm.timestamp()));
+        Stream<Session<K, R>> sessions = listStream
+                                                     .flatMap(List::stream);
 
         return traverseStream(sessions);
     }
@@ -136,76 +149,105 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
         }
     }
 
-    private class Windows {
+    @Override
+    public boolean saveSnapshot() {
+        if (snapshotTraverser == null) {
+            snapshotTraverser = Traversers.traverseIterable(keyToWindows.entrySet())
+                    .onFirstNull(() -> snapshotTraverser = null);
+        }
+        return emitFromTraverserToSnapshot(snapshotTraverser);
+    }
+
+    @Override
+    public void restoreSnapshot(@Nonnull Inbox inbox) {
+        for (Object o; (o = inbox.poll()) != null; ) {
+            Entry<K, Windows> entry = (Entry<K, Windows>) o;
+            keyToWindows.put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    @Override
+    public boolean finishSnapshotRestore() {
+        assert deadlineToKeys.isEmpty();
+        // populate deadlineToKeys
+        for (Entry<K, Windows> entry : keyToWindows.entrySet()) {
+            for (long end : entry.getValue().ends) {
+                addToDeadlines(entry.getKey(), end);
+            }
+        }
+        return true;
+    }
+
+    private void addEvent(Windows<A> w, K key, long timestamp, T event) {
+        accumulateFn.accept(resolveAcc(w, key, timestamp), event);
+    }
+
+    private List<Session<K, R>> closeWindows(Windows<A> w, K key, long wm) {
+        List<Session<K, R>> sessions = new ArrayList<>();
+        int i = 0;
+        for (; i < w.size && w.ends[i] < wm; i++) {
+            sessions.add(new Session<>(key, w.starts[i], w.ends[i], finishAccumulationFn.apply(w.accs[i])));
+        }
+        if (i != w.size) {
+            w.removeHead(i);
+        } else {
+            keyToWindows.remove(key);
+        }
+        return sessions;
+    }
+
+    private A resolveAcc(Windows<A> w, K key, long timestamp) {
+        long eventEnd = timestamp + sessionTimeout;
+        int i = 0;
+        for (; i < w.size && w.starts[i] <= eventEnd; i++) {
+            // the window `i` is not after the event interval
+
+            if (w.ends[i] < timestamp) {
+                // the window `i` is before the event interval
+                continue;
+            }
+            if (w.starts[i] <= timestamp && w.ends[i] >= eventEnd) {
+                // the window `i` fully covers the event interval
+                return w.accs[i];
+            }
+            // the window `i` overlaps the event interval
+
+            if (i + 1 == w.size || w.starts[i + 1] > eventEnd) {
+                // the window `i + 1` doesn't overlap the event interval
+                w.starts[i] = min(w.starts[i], timestamp);
+                if (w.ends[i] < eventEnd) {
+                    removeFromDeadlines(key, w.ends[i]);
+                    w.ends[i] = eventEnd;
+                    addToDeadlines(key, w.ends[i]);
+                }
+                return w.accs[i];
+            }
+            // both `i` and `i + 1` windows overlap the event interval
+            removeFromDeadlines(key, w.ends[i]);
+            w.ends[i] = w.ends[i + 1];
+            combineAccFn.accept(w.accs[i], w.accs[i + 1]);
+            w.removeWindow(i + 1);
+            return w.accs[i];
+        }
+        addToDeadlines(key, eventEnd);
+        return insertWindow(w, i, timestamp, eventEnd);
+    }
+
+    private A insertWindow(Windows<A> w, int idx, long windowStart, long windowEnd) {
+        w.expandIfNeeded();
+        w.copy(idx, idx + 1, w.size - idx);
+        w.size++;
+        w.starts[idx] = windowStart;
+        w.ends[idx] = windowEnd;
+        w.accs[idx] = newAccumulatorFn.get();
+        return w.accs[idx];
+    }
+
+    public static class Windows<A> implements IdentifiedDataSerializable {
         private int size;
         private long[] starts = new long[2];
         private long[] ends = new long[2];
         private A[] accs = (A[]) new Object[2];
-
-        void addEvent(K key, long timestamp, T event) {
-            accumulateFn.accept(resolveAcc(key, timestamp), event);
-        }
-
-        List<Session<K, R>> closeWindows(K key, long wm) {
-            List<Session<K, R>> sessions = new ArrayList<>();
-            int i = 0;
-            for (; i < size && ends[i] < wm; i++) {
-                sessions.add(new Session<>(key, starts[i], ends[i], finishAccumulationFn.apply(accs[i])));
-            }
-            if (i != size) {
-                removeHead(i);
-            } else {
-                keyToWindows.remove(key);
-            }
-            return sessions;
-        }
-
-        private A resolveAcc(K key, long timestamp) {
-            long eventEnd = timestamp + sessionTimeout;
-            int i = 0;
-            for (; i < size && starts[i] <= eventEnd; i++) {
-                // the window `i` is not after the event interval
-
-                if (ends[i] < timestamp) {
-                    // the window `i` is before the event interval
-                    continue;
-                }
-                if (starts[i] <= timestamp && ends[i] >= eventEnd) {
-                    // the window `i` fully covers the event interval
-                    return accs[i];
-                }
-                // the window `i` overlaps the event interval
-
-                if (i + 1 == size || starts[i + 1] > eventEnd) {
-                    // the window `i + 1` doesn't overlap the event interval
-                    starts[i] = min(starts[i], timestamp);
-                    if (ends[i] < eventEnd) {
-                        removeFromDeadlines(key, ends[i]);
-                        ends[i] = eventEnd;
-                        addToDeadlines(key, ends[i]);
-                    }
-                    return accs[i];
-                }
-                // both `i` and `i + 1` windows overlap the event interval
-                removeFromDeadlines(key, ends[i]);
-                ends[i] = ends[i + 1];
-                combineAccFn.accept(accs[i], accs[i + 1]);
-                removeWindow(i + 1);
-                return accs[i];
-            }
-            addToDeadlines(key, eventEnd);
-            return insertWindow(i, timestamp, eventEnd);
-        }
-
-        private A insertWindow(int idx, long windowStart, long windowEnd) {
-            expandIfNeeded();
-            copy(idx, idx + 1, size - idx);
-            size++;
-            starts[idx] = windowStart;
-            ends[idx] = windowEnd;
-            accs[idx] = newAccumulatorFn.get();
-            return accs[idx];
-        }
 
         private void removeWindow(int idx) {
             size--;
@@ -229,6 +271,58 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
                 ends = Arrays.copyOf(ends, 2 * ends.length);
                 accs = Arrays.copyOf(accs, 2 * accs.length);
             }
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return JetInitDataSerializerHook.SESSION_WINDOW_P_WINDOWS;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(size);
+            for (int i = 0; i < size; i++) {
+                out.writeLong(starts[i]);
+                out.writeLong(ends[i]);
+                out.writeObject(accs[i]);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            size = in.readInt();
+            if (size > starts.length) {
+                // round to next power of 2
+                @SuppressWarnings("checkstyle:magicnumber")
+                int newSize = 1 << (32 - Integer.numberOfLeadingZeros(size - 1));
+                starts = new long[newSize];
+                ends = new long[newSize];
+                accs = (A[]) new Object[newSize];
+            }
+
+            for (int i = 0; i < size; i++) {
+                starts[i] = in.readLong();
+                ends[i] = in.readLong();
+                accs[i] = in.readObject();
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringJoiner sj = new StringJoiner(", ", getClass().getSimpleName() + "{", "}");
+            for (int i = 0; i < size; i++) {
+                sj.add("[s=" + format(starts[i]) + ", e=" + format(ends[i]) + ", a=" + accs[i] + ']');
+            }
+            return sj.toString();
+        }
+
+        private String format(long time) {
+            return Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalTime().toString();
         }
     }
 }

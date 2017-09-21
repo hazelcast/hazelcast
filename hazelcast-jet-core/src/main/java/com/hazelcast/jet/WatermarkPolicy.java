@@ -30,6 +30,9 @@ public interface WatermarkPolicy {
      * Called to report the observation of an event with the given timestamp.
      * Returns the watermark that should be (or have been) emitted before
      * the event.
+     * <p>
+     * If the returned value is greater than the event's timestamp it means
+     * that the event should be dropped.
      *
      * @param timestamp event's timestamp
      * @return the watermark value. May be {@code Long.MIN_VALUE} if there is
@@ -40,7 +43,8 @@ public interface WatermarkPolicy {
 
     /**
      * Called to get the current watermark in the absence of an observed
-     * event. The watermark may advance just based on the passage of time.
+     * event. The watermark may advance based just on the passage of time.
      */
     long getCurrentWatermark();
+
 }

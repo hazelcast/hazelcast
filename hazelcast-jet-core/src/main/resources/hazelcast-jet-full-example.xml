@@ -33,9 +33,6 @@
         <!-- number of available slots for each concurrent queue between two vertices -->
        <queue-size>1024</queue-size>
 
-        <!-- number of slots in each outbox's bucket -->
-       <outbox-capacity>2048</outbox-capacity>
-
         <!-- maximum packet size in bytes, only applies to distributed edges -->
        <packet-size-limit>16384</packet-size-limit>
 

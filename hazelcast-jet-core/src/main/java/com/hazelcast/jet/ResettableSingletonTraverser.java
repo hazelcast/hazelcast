@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
@@ -44,7 +45,8 @@ public class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T
      * @param item the item to return from {@code next()}
      */
     @Override
-    public void accept(T item) {
+    public void accept(@Nullable T item) {
+        assert this.item == null || item == null : "Previous item not emitted. Old=" + this.item + ", new=" + item;
         this.item = item;
     }
 }

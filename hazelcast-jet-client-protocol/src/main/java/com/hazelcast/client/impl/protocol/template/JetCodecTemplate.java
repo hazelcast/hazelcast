@@ -25,11 +25,17 @@ import com.hazelcast.nio.serialization.Data;
 public interface JetCodecTemplate {
 
     @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
-    void joinJob(long jobId, Data dag, Data jobConfig);
+    void submitJob(long jobId, Data dag, Data jobConfig);
 
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void cancelJob(long jobId);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
     Object getJobStatus(long jobId);
+
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.DATA)
+    Object getJobIds();
+
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.DATA)
+    void joinSubmittedJob(long jobId);
 }

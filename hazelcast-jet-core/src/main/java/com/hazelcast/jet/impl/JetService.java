@@ -27,9 +27,7 @@ import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.coordination.JobCoordinationService;
-import com.hazelcast.jet.impl.coordination.JobRepository;
-import com.hazelcast.jet.impl.execution.ExecutionService;
+import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -54,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
@@ -69,10 +68,13 @@ public class JetService
     private JetConfig config;
     private JetInstance jetInstance;
     private Networking networking;
-    private ExecutionService executionService;
+    private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
+    private SnapshotRepository snapshotRepository;
     private JobCoordinationService jobCoordinationService;
     private JobExecutionService jobExecutionService;
+
+    private final AtomicInteger numConcurrentPutAllOps = new AtomicInteger();
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -96,13 +98,15 @@ public class JetService
         }
 
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
-        executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
+        taskletExecutionService = new TaskletExecutionService(nodeEngine.getHazelcastInstance(),
                 config.getInstanceConfig().getCooperativeThreadCount());
 
-        jobRepository = new JobRepository(jetInstance);
+        snapshotRepository = new SnapshotRepository(jetInstance);
+        jobRepository = new JobRepository(jetInstance, snapshotRepository);
 
-        jobExecutionService = new JobExecutionService(nodeEngine, executionService);
-        jobCoordinationService = new JobCoordinationService(nodeEngine, config, jobRepository, jobExecutionService);
+        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService);
+        jobCoordinationService = new JobCoordinationService(nodeEngine, config, jobRepository,
+                jobExecutionService, snapshotRepository);
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
@@ -129,7 +133,7 @@ public class JetService
     public void shutdown(boolean terminate) {
         jobExecutionService.reset("shutdown", HazelcastInstanceNotActiveException::new);
         networking.shutdown();
-        executionService.shutdown();
+        taskletExecutionService.shutdown();
     }
 
     @Override
@@ -219,7 +223,19 @@ public class JetService
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    public CompletableFuture<Boolean> startOrJoinJob(long jobId, Data dag, JobConfig config) {
-        return jobCoordinationService.startOrJoinJob(jobId, dag, config);
+    public CompletableFuture<Boolean> submitJob(long jobId, Data dag, JobConfig config) {
+        return jobCoordinationService.submitOrJoinJob(jobId, dag, config);
+    }
+
+    public CompletableFuture<Boolean> joinSubmittedJob(long jobId) {
+        return jobCoordinationService.joinSubmittedJob(jobId);
+    }
+
+    public Set<Long> getAllJobIds() {
+        return jobCoordinationService.getAllJobIds();
+    }
+
+    public AtomicInteger numConcurrentPutAllOps() {
+        return numConcurrentPutAllOps;
     }
 }

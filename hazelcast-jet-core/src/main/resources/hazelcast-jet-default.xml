@@ -26,9 +26,6 @@
         <!-- capacity of the concurrent SPSC queue between each two processors -->
        <queue-size>1024</queue-size>
 
-        <!-- number of slots in each outbox's bucket -->
-       <outbox-capacity>2048</outbox-capacity>
-
         <!-- network packet size limit in bytes, only applies to distributed edges -->
        <packet-size-limit>16384</packet-size-limit>
 

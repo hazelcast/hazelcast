@@ -20,12 +20,9 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStatus;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.coordination.JobRepository;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -36,41 +33,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.Util.idToString;
 
 public abstract class AbstractJobImpl implements Job {
 
-    private final JobRepository jobRepository;
+    private final ILogger logger;
     private final CompletableFuture<Void> future = new CompletableFuture<>();
-    private Long jobId;
-    private DAG dag;
-    private JobConfig config;
 
-    AbstractJobImpl(JetInstance jetInstance, DAG dag, JobConfig config) {
-        this.jobRepository = new JobRepository(jetInstance);
-        this.jobId = null;
-        this.dag = dag;
-        this.config = config;
+    AbstractJobImpl(ILogger logger) {
+        this.logger = logger;
     }
 
     @Nonnull
     @Override
-    public final JobConfig getConfig() {
-        return config;
-    }
-
-    @Nonnull
-    @Override
-    public final DAG getDAG() {
-        return dag;
-    }
-
-    @Nonnull
-    @Override
-    public final Future<Void> getFuture() {
-        if (jobId == null) {
-            throw new IllegalStateException("Job not yet started, use execute()");
-        }
-
+    public Future<Void> getFuture() {
         return future;
     }
 
@@ -80,30 +56,14 @@ public abstract class AbstractJobImpl implements Job {
 
     protected abstract JobStatus sendJobStatusRequest();
 
-    @Override
-    public final long getJobId() {
-        if (jobId == null) {
-            throw new IllegalStateException("ID not yet assigned");
-        }
-        return jobId;
-    }
-
     /**
-     * Create the job record and upload all the resources
-     *
-     * Also sends a JoinOp to ensure that the job is started as soon as possible
+     * Sends a JoinOp to ensure that the job is started as soon as possible
      */
-    final void init() {
-        if (jobId != null) {
-            throw new IllegalStateException("Job already started");
-        }
-
+    void init() {
         Address masterAddress = getMasterAddress();
         if (masterAddress == null) {
             throw new IllegalStateException("Master address is null");
         }
-
-        jobId = jobRepository.uploadJobResources(config);
 
         ICompletableFuture<Void> invocationFuture = sendJoinRequest(masterAddress);
         JobCallback callback = new JobCallback(invocationFuture);
@@ -143,22 +103,31 @@ public abstract class AbstractJobImpl implements Job {
 
         @Override
         public synchronized void onFailure(Throwable t) {
+            long jobId = getJobId();
             if (isSplitBrainMerge(t)) {
-                String msg = "Job failed because the cluster is performing split-brain merge";
+                String msg = "Job " + idToString(jobId) + " failed because the cluster is performing split-brain merge";
+                logger.fine(msg);
                 future.completeExceptionally(new CancellationException(msg));
             } else if (isRestartable(t)) {
                 try {
                     Address masterAddress = getMasterAddress();
                     if (masterAddress == null) {
                         // job data will be cleaned up eventually by coordinator
-                        String msg = "Job failed because cannot talk to the coordinator node";
+                        String msg = "Job " + idToString(jobId) + " failed because cannot talk to the coordinator node";
+                        logger.fine(msg);
                         future.completeExceptionally(new IllegalStateException(msg));
                         return;
                     }
 
+                    logger.fine("Re-joining to Job " + idToString(jobId) + " after " + t.getClass().getSimpleName());
+
                     ICompletableFuture<Void> invocationFuture = sendJoinRequest(masterAddress);
                     this.invocationFuture = invocationFuture;
                     invocationFuture.andThen(this);
+
+                    if (future.isCancelled()) {
+                        invocationFuture.cancel(true);
+                    }
                 } catch (Exception e) {
                     future.completeExceptionally(e);
                 }

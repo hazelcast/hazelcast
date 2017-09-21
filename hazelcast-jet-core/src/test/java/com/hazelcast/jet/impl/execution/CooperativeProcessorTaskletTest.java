@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.SnapshotOutbox;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,17 +33,22 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
+import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -52,7 +58,7 @@ public class CooperativeProcessorTaskletTest {
     private static final int CALL_COUNT_LIMIT = 10;
 
     private List<Object> mockInput;
-    private List<InboundEdgeStream> instreams;
+    private List<MockInboundStream> instreams;
     private List<OutboundEdgeStream> outstreams;
     private PassThroughProcessor processor;
     private ProcCtx context;
@@ -61,7 +67,7 @@ public class CooperativeProcessorTaskletTest {
     public void setUp() {
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.processor = new PassThroughProcessor();
-        this.context = new ProcCtx(null, null, null, 0);
+        this.context = new ProcCtx(null, null, null, null, 0, false);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
     }
@@ -129,8 +135,8 @@ public class CooperativeProcessorTaskletTest {
     public void when_3instreams_then_pushAllIntoOutstream() {
         // Given
         MockInboundStream instream1 = new MockInboundStream(0, mockInput.subList(0, 4), 4);
-        MockInboundStream instream2 = new MockInboundStream(1, mockInput.subList(4, 8), 4);
-        MockInboundStream instream3 = new MockInboundStream(2, mockInput.subList(8, 10), 4);
+        MockInboundStream instream2 = new MockInboundStream(0, mockInput.subList(4, 8), 4);
+        MockInboundStream instream3 = new MockInboundStream(0, mockInput.subList(8, 10), 4);
         instream1.push(DONE_ITEM);
         instream2.push(DONE_ITEM);
         instream3.push(DONE_ITEM);
@@ -151,7 +157,7 @@ public class CooperativeProcessorTaskletTest {
     public void when_outstreamRefusesItem_then_noProgress() {
         // Given
         MockInboundStream instream1 = new MockInboundStream(0, mockInput, mockInput.size());
-        MockOutboundStream outstream1 = new MockOutboundStream(0, 1, 1);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 1);
         instreams.add(instream1);
         outstreams.add(outstream1);
         Tasklet tasklet = createTasklet();
@@ -177,14 +183,15 @@ public class CooperativeProcessorTaskletTest {
         callUntil(tasklet, NO_PROGRESS);
 
         // Then
-        assertTrue(processor.nullaryProcessCallCountdown <= 0);
+        assertTrue("Expected: nullaryProcessCallCountdown<=0, was " + processor.nullaryProcessCallCountdown,
+                processor.nullaryProcessCallCountdown <= 0);
     }
 
     @Test
     public void when_completeReturnsFalse_then_retried() {
         // Given
-        MockInboundStream instream1 = new MockInboundStream(0, emptyList(), 1);
-        MockOutboundStream outstream1 = new MockOutboundStream(0, 1, 1);
+        MockInboundStream instream1 = new MockInboundStream(0, singletonList(DONE_ITEM), 1);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 1);
         instreams.add(instream1);
         outstreams.add(outstream1);
         CooperativeProcessorTasklet tasklet = createTasklet();
@@ -204,12 +211,51 @@ public class CooperativeProcessorTaskletTest {
 
         // Then
         assertTrue(processor.itemsToEmitInComplete <= 0);
+    }
 
+    @Test
+    public void when_differentPriorities_then_respected() {
+        // Given
+        MockInboundStream instream1 = new MockInboundStream(0, asList(1, 2, DONE_ITEM), 1);
+        MockInboundStream instream2 = new MockInboundStream(0, asList(3, 4, DONE_ITEM), 1);
+        MockInboundStream instream3 = new MockInboundStream(1, asList(5, 6, DONE_ITEM), 1);
+        MockInboundStream instream4 = new MockInboundStream(1, asList(7, 8, DONE_ITEM), 1);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 1);
+        instreams.add(instream1);
+        instreams.add(instream2);
+        instreams.add(instream3);
+        instreams.add(instream4);
+        outstreams.add(outstream1);
+        CooperativeProcessorTasklet tasklet = createTasklet();
+        processor.itemsToEmitInComplete = 1;
+        processor.itemsToEmitInEachCompleteEdge = 1;
+
+        // When
+
+        List<Object> expected = asList(1, 3, 2, 4, "completedEdge=0", "completedEdge=1",
+                5, 7, 6, 8, "completedEdge=2", "completedEdge=3");
+        List<Object> actual = new ArrayList<>();
+        boolean noItemInOutboxAllowed = true;
+        while (actual.size() < expected.size()) {
+            callUntil(tasklet, MADE_PROGRESS);
+            if (outstream1.getBuffer().isEmpty() && noItemInOutboxAllowed) {
+                noItemInOutboxAllowed = false;
+                continue;
+            }
+            noItemInOutboxAllowed = true;
+            assertEquals("Expected 1 item after " + actual, 1, outstream1.getBuffer().size());
+            actual.add(outstream1.getBuffer().remove(0));
+        }
+        assertEquals(expected, actual);
     }
 
     private CooperativeProcessorTasklet createTasklet() {
-        final CooperativeProcessorTasklet t = new CooperativeProcessorTasklet(
-                context, processor, instreams, outstreams);
+        for (int i = 0; i < instreams.size(); i++) {
+            instreams.get(i).setOrdinal(i);
+        }
+
+        final CooperativeProcessorTasklet t = new CooperativeProcessorTasklet(context, processor, instreams, outstreams,
+                mock(SnapshotContext.class), new MockOutboundCollector(10));
         t.init(new CompletableFuture<>());
         return t;
     }
@@ -217,10 +263,14 @@ public class CooperativeProcessorTaskletTest {
     private static class PassThroughProcessor implements Processor {
         int nullaryProcessCallCountdown;
         int itemsToEmitInComplete;
+        int itemsToEmitInEachCompleteEdge;
+        boolean completeReturnedTrue;
+        Set<Integer> completeEdgeReturnedTrue = new HashSet<>();
+        private int itemsToEmitInThisCompleteEdge;
         private Outbox outbox;
 
         @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+        public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
             this.outbox = outbox;
         }
 
@@ -235,14 +285,27 @@ public class CooperativeProcessorTaskletTest {
 
         @Override
         public boolean complete() {
-            if (itemsToEmitInComplete == 0) {
-                return true;
-            }
-            boolean accepted = outbox.offer("completing");
-            if (accepted) {
+            assertFalse(completeReturnedTrue);
+            if (itemsToEmitInComplete > 0 && outbox.offer("completing")) {
                 itemsToEmitInComplete--;
             }
-            return itemsToEmitInComplete == 0;
+            return completeReturnedTrue = itemsToEmitInComplete == 0;
+        }
+
+        @Override
+        public boolean completeEdge(int ordinal) {
+            assertFalse(completeEdgeReturnedTrue.contains(ordinal));
+            if (itemsToEmitInThisCompleteEdge == 0) {
+                itemsToEmitInThisCompleteEdge = itemsToEmitInEachCompleteEdge;
+            }
+            if (itemsToEmitInThisCompleteEdge > 0 && outbox.offer("completedEdge=" + ordinal)) {
+                itemsToEmitInThisCompleteEdge--;
+            }
+            if (itemsToEmitInThisCompleteEdge == 0) {
+                completeEdgeReturnedTrue.add(ordinal);
+                return true;
+            }
+            return false;
         }
 
         @Override

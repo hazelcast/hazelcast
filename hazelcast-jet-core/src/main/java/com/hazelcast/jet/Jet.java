@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
+import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 
@@ -36,6 +37,8 @@ import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
  * Entry point to the Jet product.
  */
 public final class Jet {
+
+    private static final String INTERNAL_JET_MAPS = "__jet.*";
 
     private Jet() {
     }
@@ -91,5 +94,10 @@ public final class Jet {
                                                       .setName(JetService.SERVICE_NAME)
                                                       .setClassName(JetService.class.getName())
                                                       .setConfigObject(jetConfig));
+
+        jetConfig.getHazelcastConfig().getMapConfig(INTERNAL_JET_MAPS)
+                 .setBackupCount(jetConfig.getJobMetadataBackupCount())
+                 .setStatisticsEnabled(false)
+                 .setMergePolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
     }
 }

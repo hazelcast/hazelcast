@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.SnapshotOutbox;
 import com.hazelcast.jet.processor.DiagnosticProcessors;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
@@ -62,12 +63,12 @@ public final class PeekWrappedP implements Processor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
         logger = context.logger();
         if (peekOutput) {
-            outbox = new LoggingOutbox(outbox);
+            outbox = new LoggingOutbox(outbox, snapshotOutbox);
         }
-        wrappedProcessor.init(outbox, context);
+        wrappedProcessor.init(outbox, snapshotOutbox, context);
     }
 
     @Override
@@ -100,6 +101,26 @@ public final class PeekWrappedP implements Processor {
         if (object != null && shouldLogFn.test(object)) {
             logger.info(toStringFn.apply(object));
         }
+    }
+
+    @Override
+    public boolean completeEdge(int ordinal) {
+        return wrappedProcessor.completeEdge(ordinal);
+    }
+
+    @Override
+    public boolean saveSnapshot() {
+        return wrappedProcessor.saveSnapshot();
+    }
+
+    @Override
+    public void restoreSnapshot(@Nonnull Inbox inbox) {
+        wrappedProcessor.restoreSnapshot(inbox);
+    }
+
+    @Override
+    public boolean finishSnapshotRestore() {
+        return wrappedProcessor.finishSnapshotRestore();
     }
 
     private class LoggingInbox implements Inbox {
@@ -141,11 +162,13 @@ public final class PeekWrappedP implements Processor {
         }
     }
 
-    private final class LoggingOutbox implements Outbox {
+    private final class LoggingOutbox implements Outbox, SnapshotOutbox {
         private final Outbox wrappedOutbox;
+        private final SnapshotOutbox snapshotOutbox;
 
-        private LoggingOutbox(Outbox wrappedOutbox) {
+        private LoggingOutbox(Outbox wrappedOutbox, SnapshotOutbox snapshotOutbox) {
             this.wrappedOutbox = wrappedOutbox;
+            this.snapshotOutbox = snapshotOutbox;
         }
 
         @Override
@@ -169,6 +192,18 @@ public final class PeekWrappedP implements Processor {
                 return true;
             }
             return false;
+        }
+
+        @Override
+        public boolean offer(Object key, Object value) {
+            //TODO: logging
+            return snapshotOutbox.offer(key, value);
+        }
+
+        @Override
+        public boolean offerBroadcast(Object key, Object value) {
+            //TODO: logging
+            return snapshotOutbox.offerBroadcast(key, value);
         }
     }
 }

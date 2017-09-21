@@ -17,6 +17,9 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.BroadcastKey;
+import com.hazelcast.jet.Inbox;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.TimestampedEntry;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -33,7 +36,13 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 
+import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyMap;
 
@@ -49,71 +58,120 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
 
     // package-visible for testing
     final Map<Long, Map<Object, A>> tsToKeyToAcc = new HashMap<>();
-    final Map<Object, A> slidingWindow = new HashMap<>();
+    Map<Object, A> slidingWindow;
 
     private final WindowDefinition wDef;
-    private final DistributedToLongFunction<? super T> getFrameTimestampFn;
+    private final DistributedToLongFunction<? super T> getFrameTsFn;
     private final Function<? super T, ?> getKeyFn;
     private final AggregateOperation1<? super T, A, R> aggrOp;
+    private final boolean isLastStage;
 
-    private final FlatMapper<Watermark, Object> flatMapper;
+    private final FlatMapper<Watermark, ?> wmFlatMapper;
 
-    private long nextFrameTsToEmit = Long.MIN_VALUE;
     private final A emptyAcc;
-    private Traverser<Object> finalTraverser;
+    private Traverser<Object> flushTraverser;
+    private Traverser<Entry> snapshotTraverser;
+
+    // This field tracks the upper bounds for the keyset of
+    // tsToKeyToAcc. It serves as an optimization that avoids a linear search
+    // over the entire keyset.
+    private long topTs = Long.MIN_VALUE;
+
+    private long nextWinToEmit = Long.MIN_VALUE;
 
     public SlidingWindowP(
             Function<? super T, ?> getKeyFn,
-            DistributedToLongFunction<? super T> getFrameTimestampFn,
+            DistributedToLongFunction<? super T> getFrameTsFn,
             WindowDefinition winDef,
-            AggregateOperation1<? super T, A, R> aggrOp
+            AggregateOperation1<? super T, A, R> aggrOp,
+            boolean isLastStage
     ) {
+        if (!winDef.isTumbling()) {
+            checkNotNull(aggrOp.combineFn(), "AggregateOperation lacks the combine primitive");
+        }
         this.wDef = winDef;
-        this.getFrameTimestampFn = getFrameTimestampFn;
+        this.getFrameTsFn = getFrameTsFn;
         this.getKeyFn = getKeyFn;
         this.aggrOp = aggrOp;
-
-        this.flatMapper = flatMapper(
-                wm -> windowTraverserAndEvictor(wm.timestamp())
-                            .append(wm));
+        this.isLastStage = isLastStage;
+        this.wmFlatMapper = flatMapper(wm -> windowTraverserAndEvictor(wm.timestamp()).append(wm));
         this.emptyAcc = aggrOp.createFn().get();
     }
 
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
+        @SuppressWarnings("unchecked")
         T t = (T) item;
-        final Long frameTimestamp = getFrameTimestampFn.applyAsLong(t);
-        assert frameTimestamp == wDef.floorFrameTs(frameTimestamp) : "timestamp not on the verge of a frame";
+        final long frameTs = getFrameTsFn.applyAsLong(t);
+        assert frameTs == wDef.floorFrameTs(frameTs) : "getFrameTsFn returned an invalid frame timestamp";
+        assert frameTs + wDef.windowLength() >= nextWinToEmit
+                : "late event received, it should have been filtered out by InsertWatermarksP: " + item;
         final Object key = getKeyFn.apply(t);
-        A acc = tsToKeyToAcc.computeIfAbsent(frameTimestamp, x -> new HashMap<>())
+        A acc = tsToKeyToAcc.computeIfAbsent(frameTs, x -> new HashMap<>())
                             .computeIfAbsent(key, k -> aggrOp.createFn().get());
         aggrOp.accumulateFn().accept(acc, t);
+        topTs = max(topTs, frameTs);
         return true;
     }
 
     @Override
     protected boolean tryProcessWm0(@Nonnull Watermark wm) {
-        return flatMapper.tryProcess(wm);
+        return wmFlatMapper.tryProcess(wm);
     }
 
     @Override
     public boolean complete() {
-        if (finalTraverser == null) {
-            if (tsToKeyToAcc.isEmpty()) {
-                return true;
-            }
-            long topTs = tsToKeyToAcc
-                    .keySet().stream()
-                    .max(naturalOrder())
-                    .get();
-            finalTraverser = windowTraverserAndEvictor(topTs + wDef.frameLength());
-        }
-        return emitFromTraverser(finalTraverser);
+        return flushBuffers();
     }
 
-    private Traverser<Object> windowTraverserAndEvictor(long endTsExclusive) {
-        if (nextFrameTsToEmit == Long.MIN_VALUE) {
+    @Override
+    public boolean saveSnapshot() {
+        if (!isLastStage || flushTraverser != null) {
+            return flushBuffers();
+        }
+        if (snapshotTraverser == null) {
+            snapshotTraverser = traverseIterable(tsToKeyToAcc.entrySet())
+                    .<Entry>flatMap(e -> traverseIterable(e.getValue().entrySet())
+                            .map(e2 -> entry(new SnapshotKey(e.getKey(), e2.getKey()), e2.getValue()))
+                    )
+                    .append(entry(Keys.NEXT_WIN_TO_EMIT, nextWinToEmit))
+                    .onFirstNull(() -> snapshotTraverser = null);
+        }
+        return emitFromTraverserToSnapshot(snapshotTraverser);
+    }
+
+    @Override
+    public void restoreSnapshot(@Nonnull Inbox inbox) {
+        for (Map.Entry e; (e = (Map.Entry) inbox.poll()) != null; ) {
+            if (e.getKey().equals(Keys.NEXT_WIN_TO_EMIT)) {
+                long newNextWinToEmit = (long) e.getValue();
+                assert nextWinToEmit == Long.MIN_VALUE || nextWinToEmit == newNextWinToEmit
+                        : "different values for nextWinToEmit restored, "
+                                + "before=" + nextWinToEmit + ", new=" + newNextWinToEmit;
+                nextWinToEmit = newNextWinToEmit;
+                continue;
+            }
+            Entry<SnapshotKey, A> entry = (Entry<SnapshotKey, A>) e;
+            SnapshotKey k = entry.getKey();
+            if (tsToKeyToAcc.computeIfAbsent(k.timestamp, x -> new HashMap<>())
+                            .put(k.key, entry.getValue()) != null) {
+                throw new JetException("Duplicate key in snapshot: " + k);
+            }
+            topTs = max(topTs, k.timestamp);
+        }
+    }
+
+    @Override
+    public boolean finishSnapshotRestore() {
+        logFine(getLogger(), "Restored snapshot to: %s", nextWinToEmit);
+        return true;
+    }
+
+    private Traverser<Object> windowTraverserAndEvictor(long wm) {
+        if (nextWinToEmit == Long.MIN_VALUE) {
             if (tsToKeyToAcc.isEmpty()) {
+                // no item was observed, but initialize nextWinToEmit to the next window
+                nextWinToEmit = wDef.higherFrameTs(wm);
                 return Traversers.empty();
             }
             // This is the first watermark we are acting upon. Find the lowest frame
@@ -127,44 +185,41 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
                     .keySet().stream()
                     .min(naturalOrder())
                     .orElseThrow(() -> new AssertionError("Failed to find the min key in a non-empty map"));
-            nextFrameTsToEmit = min(bottomTs, wDef.floorFrameTs(endTsExclusive));
+            nextWinToEmit = min(bottomTs, wDef.floorFrameTs(wm));
         }
-
-        long rangeStart = nextFrameTsToEmit;
-        nextFrameTsToEmit = wDef.higherFrameTs(endTsExclusive);
-        return Traversers.traverseStream(range(rangeStart, nextFrameTsToEmit, wDef.frameLength()).boxed())
-                         .flatMap(frameTs -> Traversers.traverseIterable(computeWindow(frameTs).entrySet())
-                               .map(e -> new TimestampedEntry<>(
-                                       frameTs, e.getKey(), aggrOp.finishFn().apply(e.getValue())))
-                               .onFirstNull(() -> completeWindow(frameTs)));
+        long rangeStart = nextWinToEmit;
+        nextWinToEmit = wDef.higherFrameTs(wm);
+        return traverseStream(range(rangeStart, wm, wDef.frameLength()).boxed())
+                .flatMap(window -> traverseIterable(computeWindow(window).entrySet())
+                        .map(e -> new TimestampedEntry<>(window, e.getKey(), aggrOp.finishFn().apply(e.getValue())))
+                        .onFirstNull(() -> completeWindow(window)));
     }
 
     private Map<Object, A> computeWindow(long frameTs) {
         if (wDef.isTumbling()) {
             return tsToKeyToAcc.getOrDefault(frameTs, emptyMap());
         }
-        if (aggrOp.deductFn() != null) {
+        if (aggrOp.deductFn() == null) {
+            return recomputeWindow(frameTs);
+        }
+        if (slidingWindow == null) {
+            slidingWindow = recomputeWindow(frameTs);
+        } else {
             // add leading-edge frame
             patchSlidingWindow(aggrOp.combineFn(), tsToKeyToAcc.get(frameTs));
-            return slidingWindow;
         }
-        // without deductFn we have to recompute the window from scratch
+        return slidingWindow;
+    }
+
+    private Map<Object, A> recomputeWindow(long frameTs) {
         Map<Object, A> window = new HashMap<>();
         for (long ts = frameTs - wDef.windowLength() + wDef.frameLength(); ts <= frameTs; ts += wDef.frameLength()) {
             tsToKeyToAcc.getOrDefault(ts, emptyMap())
                         .forEach((key, currAcc) -> aggrOp.combineFn().accept(
-                                  window.computeIfAbsent(key, k -> aggrOp.createFn().get()),
-                                  currAcc));
+                                window.computeIfAbsent(key, k -> aggrOp.createFn().get()),
+                                currAcc));
         }
         return window;
-    }
-
-    private void completeWindow(long frameTs) {
-        Map<Object, A> evictedFrame = tsToKeyToAcc.remove(frameTs - wDef.windowLength() + wDef.frameLength());
-        if (aggrOp.deductFn() != null) {
-            // deduct trailing-edge frame
-            patchSlidingWindow(aggrOp.deductFn(), evictedFrame);
-        }
     }
 
     private void patchSlidingWindow(BiConsumer<? super A, ? super A> patchOp, Map<Object, A> patchingFrame) {
@@ -180,9 +235,42 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         }
     }
 
+    private void completeWindow(long frameTs) {
+        long frameToEvict = frameTs - wDef.windowLength() + wDef.frameLength();
+        Map<Object, A> evictedFrame = tsToKeyToAcc.remove(frameToEvict);
+        if (!wDef.isTumbling() && aggrOp.deductFn() != null) {
+            // deduct trailing-edge frame
+            patchSlidingWindow(aggrOp.deductFn(), evictedFrame);
+        }
+    }
+
+    private boolean flushBuffers() {
+        if (flushTraverser == null) {
+            if (tsToKeyToAcc.isEmpty()) {
+                return true;
+            }
+            flushTraverser = windowTraverserAndEvictor(topTs + wDef.windowLength() - wDef.frameLength())
+                    .onFirstNull(() -> flushTraverser = null);
+        }
+        return emitFromTraverser(flushTraverser);
+    }
+
+    /**
+     * Returns a stream of {@code long}s:
+     * {@code for (long i = start; i <= end; i += step) yield i;}
+     */
     private static LongStream range(long start, long end, long step) {
-        return start >= end
+        return start > end
                 ? LongStream.empty()
-                : LongStream.iterate(start, n -> n + step).limit(1 + (end - start - 1) / step);
+                : LongStream.iterate(start, n -> n + step).limit(1 + (end - start) / step);
+    }
+
+    private enum Keys implements BroadcastKey<Keys> {
+        NEXT_WIN_TO_EMIT;
+
+        @Override
+        public Keys key() {
+            return this;
+        }
     }
 }

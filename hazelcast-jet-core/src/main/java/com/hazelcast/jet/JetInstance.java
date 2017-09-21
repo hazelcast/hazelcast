@@ -20,9 +20,11 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.stream.JetCacheManager;
+
+import java.util.Collection;
 
 /**
  * Represents either an instance of a Jet server node or a Jet client
@@ -68,6 +70,11 @@ public interface JetInstance {
      * @return a new {@code Job} instance
      */
     Job newJob(DAG dag, JobConfig config);
+
+    /**
+     * Returns all submitted jobs including running and completed ones
+     */
+    Collection<Job> getJobs();
 
     /**
      * Returns the distributed map instance with the specified name.

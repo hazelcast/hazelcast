@@ -45,7 +45,6 @@
                         <xs:all>
                             <xs:element name="queue-size" type="positive-int" minOccurs="0"/>
                             <xs:element name="packet-size-limit" type="positive-int" minOccurs="0"/>
-                            <xs:element name="outbox-capacity" type="positive-int" minOccurs="0"/>
                             <xs:element name="receive-window-multiplier" type="positive-int" minOccurs="0"/>
                         </xs:all>
                     </xs:complexType>

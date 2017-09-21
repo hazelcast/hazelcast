@@ -78,6 +78,10 @@ public class JetTestInstanceFactory {
         factory.terminateAll();
     }
 
+    public void terminate(JetInstance instance) {
+        factory.terminate(instance.getHazelcastInstance());
+    }
+
     public Address nextAddress() {
         return factory.nextAddress();
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -93,6 +94,30 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return JetInitDataSerializerHook.VERTEX_DEF;
+    }
+
+    /**
+     * Returns true, if either:<ul>
+     *     <li>this vertex is higher priority source for some of it's
+     *     downstream vertices
+     *
+     *     <li>some of it's downstream vertices is higher priority source
+     *     itself (determined by recursion)
+     *
+     *     <li>this vertex has
+     *     {@link MasterContext#SNAPSHOT_RESTORE_EDGE_PRIORITY} priority
+     * </ul>
+     */
+    boolean isHigherPriorityUpstream() {
+        for (EdgeDef outboundEdge : outboundEdges) {
+            if (outboundEdge.priority() == MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY
+                    || outboundEdge.destVertex().isHigherPriorityUpstream()
+                    || outboundEdge.destVertex().inboundEdges.stream()
+                              .anyMatch(edge -> edge.priority() > outboundEdge.priority())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

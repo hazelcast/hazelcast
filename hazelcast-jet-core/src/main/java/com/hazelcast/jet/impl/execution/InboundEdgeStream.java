@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.impl.util.ProgressState;
 
-import java.util.Collection;
+import java.util.function.Consumer;
 
 /**
  * The inbound side of a data stream corresponding to a single DAG edge identified by its ordinal. In the
@@ -31,14 +31,7 @@ public interface InboundEdgeStream {
 
     int priority();
 
-    /**
-     * Drains all currently available items to the supplied destination collection.
-     * The two {@code boolean} components of the return value have the following meaning:
-     * <ul><li>
-     *   {@link ProgressState#isMadeProgress()}: whether any items were drained from the stream.
-     * </li><li>
-     *   {@link ProgressState#isDone()}: whether the stream is exhausted and no more items will arrive.
-     * </li></ul>
-     */
-    ProgressState drainTo(Collection<Object> dest);
+    ProgressState drainTo(Consumer<Object> dest);
+
+    boolean isDone();
 }

@@ -19,14 +19,20 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.impl.JobRecord;
+import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
+import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
 import com.hazelcast.jet.impl.JobResult;
-import com.hazelcast.jet.impl.coordination.JobRepository.FilterExecutionIdByJobIdPredicate;
-import com.hazelcast.jet.impl.coordination.JobRepository.FilterJobIdPredicate;
+import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.operation.CompleteOperation;
 import com.hazelcast.jet.impl.operation.ExecuteOperation;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.InitOperation;
-import com.hazelcast.jet.impl.operation.JoinJobOperation;
+import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
+import com.hazelcast.jet.impl.operation.SnapshotOperation;
+import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.jet.impl.processor.SessionWindowP;
+import com.hazelcast.jet.impl.processor.SnapshotKey;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -43,10 +49,17 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int INIT_OP = 5;
     public static final int EXECUTE_OP = 6;
     public static final int COMPLETE_OP = 7;
-    public static final int JOIN_JOB_OP = 8;
+    public static final int SUBMIT_JOB_OP = 8;
     public static final int GET_JOB_STATUS_OP = 9;
-    public static final int FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE = 10;
-    public static final int FILTER_JOB_ID = 11;
+    public static final int SNAPSHOT_OP = 10;
+    public static final int MASTER_SNAPSHOT_RECORD = 11;
+    public static final int SESSION_WINDOW_P_WINDOWS = 12;
+    public static final int FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE = 13;
+    public static final int FILTER_JOB_ID = 14;
+    public static final int SLIDING_WINDOW_P_SNAPSHOT_KEY = 15;
+    public static final int GET_JOB_IDS = 16;
+    public static final int JOIN_SUBMITTED_JOB = 17;
+
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
 
@@ -81,14 +94,26 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new ExecuteOperation();
                 case COMPLETE_OP:
                     return new CompleteOperation();
-                case JOIN_JOB_OP:
-                    return new JoinJobOperation();
+                case SUBMIT_JOB_OP:
+                    return new SubmitJobOperation();
                 case GET_JOB_STATUS_OP:
                     return new GetJobStatusOperation();
+                case SNAPSHOT_OP:
+                    return new SnapshotOperation();
+                case MASTER_SNAPSHOT_RECORD:
+                    return new SnapshotRecord();
+                case SESSION_WINDOW_P_WINDOWS:
+                    return new SessionWindowP.Windows<>();
                 case FILTER_EXECUTION_ID_BY_JOB_ID_PREDICATE:
                     return new FilterExecutionIdByJobIdPredicate();
                 case FILTER_JOB_ID:
                     return new FilterJobIdPredicate();
+                case SLIDING_WINDOW_P_SNAPSHOT_KEY:
+                    return new SnapshotKey();
+                case GET_JOB_IDS:
+                    return new GetJobIdsOperation();
+                case JOIN_SUBMITTED_JOB:
+                    return new JoinSubmittedJobOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

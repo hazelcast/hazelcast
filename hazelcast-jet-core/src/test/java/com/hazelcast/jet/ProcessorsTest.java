@@ -20,10 +20,9 @@ import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.util.ArrayDequeInbox;
-import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
-import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.processor.Processors;
+import com.hazelcast.jet.test.TestInbox;
+import com.hazelcast.jet.test.TestOutbox;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -51,15 +50,15 @@ import static org.mockito.Mockito.mock;
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class ProcessorsTest {
-    private ArrayDequeInbox inbox;
-    private ArrayDequeOutbox outbox;
+    private TestInbox inbox;
+    private TestOutbox outbox;
     private Queue<Object> bucket;
     private Context context;
 
     @Before
     public void before() {
-        inbox = new ArrayDequeInbox();
-        outbox = new ArrayDequeOutbox(new int[]{1}, new ProgressTracker());
+        inbox = new TestInbox();
+        outbox = new TestOutbox(1);
         context = mock(Context.class);
         bucket = outbox.queueWithOrdinal(0);
     }
@@ -292,7 +291,7 @@ public class ProcessorsTest {
 
     private Processor processorFrom(Supplier<Processor> supplier) {
         Processor p = supplier.get();
-        p.init(outbox, context);
+        p.init(outbox, outbox, context);
         return p;
     }
 

@@ -84,7 +84,9 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
 
     @Override
     public String toString() {
-        return "TimestampedEntry{timestamp="
+        return "TimestampedEntry{ts="
+                + timestamp
+                + ", formattedTs="
                 + Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
                 + ", key=" + key + ", value=" + value + '}';
     }

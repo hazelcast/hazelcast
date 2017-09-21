@@ -17,58 +17,256 @@
 package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Inbox;
+import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
 
 import javax.annotation.Nonnull;
+import java.io.Closeable;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
+import java.util.Set;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 
 /**
  * See {@link com.hazelcast.jet.processor.KafkaProcessors#streamKafka(
  * Properties, String...)}.
  */
-public final class StreamKafkaP extends AbstractProcessor {
+public final class StreamKafkaP extends AbstractProcessor implements Closeable {
 
-    private static final int POLL_TIMEOUT_MS = 1000;
+    private static final long KAFKA_DEFAULT_REFRESH_INTERVAL = 300_000;
+    private static final int POLL_TIMEOUT_MS = 50;
+
     private final Properties properties;
-    private final String[] topicIds;
-    private CompletableFuture<Void> jobFuture;
+    private final List<String> topicIds;
+    private final int processorCount;
+    private boolean snapshottingEnabled;
+    private KafkaConsumer<?, ?> consumer;
 
-    public StreamKafkaP(Properties properties, String[] topicIds) {
+    // next possible partition index assignable to this processor, index is the topic index in topicIds
+    private final int[] nextAssignablePtions;
+
+    private long nextPartitionCheck = Long.MIN_VALUE;
+
+    private final Map<TopicPartition, Long> offsets = new HashMap<>();
+    private Traverser<Entry<TopicPartition, Long>> snapshotTraverser;
+    private Set<TopicPartition> assignment = new HashSet<>();
+    private long metadataRefreshInterval;
+
+    StreamKafkaP(Properties properties, List<String> topicIds, int processorCount, int processorIndex,
+                 long metadataRefreshInterval) {
         this.properties = properties;
-        this.topicIds = Arrays.copyOf(topicIds, topicIds.length);
+        this.properties.putAll(properties);
+
+        this.topicIds = topicIds;
+        this.processorCount = processorCount;
+
+        this.nextAssignablePtions = new int[topicIds.size()];
+        Arrays.fill(nextAssignablePtions, processorIndex);
+        this.metadataRefreshInterval = metadataRefreshInterval;
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        jobFuture = context.jobFuture();
+        snapshottingEnabled = context.snapshottingEnabled();
+        consumer = new KafkaConsumer<>(properties);
+        reassignPartitions();
+    }
+
+    private void reassignPartitions() {
+        boolean changed = false;
+        // check for added partitions (kafka doesn't support partition removal). Initially, all partitions are added.
+        for (int topicIdx = 0; topicIdx < topicIds.size(); topicIdx++) {
+            String topicName = topicIds.get(topicIdx);
+            List<PartitionInfo> partitionInfos = consumer.partitionsFor(topicName);
+            getLogger().finest("Num of ptions for topic " + topicName + ": " + partitionInfos.size());
+            while (nextAssignablePtions[topicIdx] < partitionInfos.size()) {
+                int partition = nextAssignablePtions[topicIdx];
+                nextAssignablePtions[topicIdx] += processorCount;
+                assert partitionInfos.get(partition).partition() == partition;
+                assignment.add(new TopicPartition(topicName, partition));
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            getLogger().info("Partition assignment changed: " + assignment);
+            consumer.assign(assignment);
+        }
+        nextPartitionCheck = System.nanoTime() + MILLISECONDS.toNanos(metadataRefreshInterval);
     }
 
     @Override
     public boolean complete() {
-        try (KafkaConsumer<?, ?> consumer = new KafkaConsumer<>(properties)) {
-            consumer.subscribe(Arrays.asList(topicIds));
-
-            while (!jobFuture.isDone()) {
-                ConsumerRecords<?, ?> records = consumer.poll(POLL_TIMEOUT_MS);
-
-                for (ConsumerRecord<?, ?> r : records) {
-                    emit(entry(r.key(), r.value()));
-                }
-                consumer.commitSync();
-            }
+        if (System.nanoTime() >= nextPartitionCheck) {
+            reassignPartitions();
         }
 
-        return true;
+        if (!assignment.isEmpty()) {
+            ConsumerRecords<?, ?> records = consumer.poll(POLL_TIMEOUT_MS);
+            for (ConsumerRecord<?, ?> r : records) {
+                if (snapshottingEnabled) {
+                    offsets.put(new TopicPartition(r.topic(), r.partition()), r.offset());
+                }
+                emit(entry(r.key(), r.value()));
+            }
+            if (!snapshottingEnabled) {
+                consumer.commitSync();
+            }
+        } else {
+            LockSupport.parkNanos(MILLISECONDS.toNanos(POLL_TIMEOUT_MS));
+        }
+
+        return false;
+    }
+
+    @Override
+    public void close() {
+        consumer.close();
     }
 
     @Override
     public boolean isCooperative() {
         return false;
+    }
+
+    @Override
+    public boolean saveSnapshot() {
+        if (snapshotTraverser == null) {
+            snapshotTraverser = Traversers.traverseIterable(offsets.entrySet())
+                    .onFirstNull(() -> snapshotTraverser = null);
+        }
+        return emitFromTraverserToSnapshot(snapshotTraverser);
+    }
+
+    @Override
+    public void restoreSnapshot(@Nonnull Inbox inbox) {
+        Set<TopicPartition> assignment = consumer.assignment();
+        for (Object o; (o = inbox.poll()) != null; ) {
+            Entry<TopicPartition, Long> entry = (Entry<TopicPartition, Long>) o;
+            if (assignment.contains(entry.getKey())) {
+                consumer.seek(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    /**
+     * Please use {@link com.hazelcast.jet.processor.KafkaProcessors#streamKafka(Properties, String...)}.
+     */
+    private static class Supplier implements ProcessorSupplier {
+
+        static final long serialVersionUID = 1L;
+
+        private final List<String> topicIds;
+        private final int memberCount;
+        private final int memberIndex;
+        private final long metadataRefreshInterval;
+
+        private final Properties properties;
+        private int localParallelism;
+
+        private transient List<StreamKafkaP> processors;
+        private transient ILogger logger;
+
+        Supplier(Properties properties, List<String> topicIds, int memberCount, int memberIndex,
+                 long metadataRefreshInterval) {
+            this.properties = properties;
+            this.topicIds = topicIds;
+            this.memberCount = memberCount;
+            this.memberIndex = memberIndex;
+            this.metadataRefreshInterval = metadataRefreshInterval;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            localParallelism = context.localParallelism();
+            logger = context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass());
+        }
+
+        @Override @Nonnull
+        public List<Processor> get(int count) {
+            // localParallelism is equal on all members
+            processors = IntStream.range(0, count)
+                                         .mapToObj(i -> new StreamKafkaP(properties, topicIds,
+                                                 memberCount * localParallelism, memberIndex * localParallelism + i,
+                                                 metadataRefreshInterval))
+                                         .collect(toList());
+            return (List) processors;
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            Throwable firstError = null;
+            // close all processors, ignoring their failures and throwing the first failure (if any)
+            for (StreamKafkaP p : processors) {
+                try {
+                    p.close();
+                } catch (Throwable e) {
+                    if (firstError == null) {
+                        firstError = e;
+                    } else {
+                        logger.severe(e);
+                    }
+                }
+            }
+
+            if (firstError != null) {
+                throw sneakyThrow(firstError);
+            }
+        }
+    }
+
+    public static class MetaSupplier implements ProcessorMetaSupplier {
+
+        private final Properties properties;
+        private final List<String> topicIds;
+        private final long metadataRefreshInterval;
+
+        public MetaSupplier(Properties properties, List<String> topicIds) {
+            this.properties = new Properties();
+            this.topicIds = topicIds;
+
+            this.properties.putAll(properties);
+
+            // Save the value of metadata.max.age.ms to a variable and zero it in the properties.
+            // We'll do metadata refresh on our own.
+            if (properties.containsKey("metadata.max.age.ms")) {
+                metadataRefreshInterval = Long.parseLong(properties.getProperty("metadata.max.age.ms"));
+            } else {
+                metadataRefreshInterval = KAFKA_DEFAULT_REFRESH_INTERVAL;
+            }
+            // Set metadata caching to 1 second: we get metadata for multiple partitions one by one, but
+            // internally it is fetched at once. This enables for the other calls to just query fetched metadata.
+            this.properties.setProperty("metadata.max.age.ms", "1000");
+        }
+
+        @Nonnull
+        @Override
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> new Supplier(properties, topicIds, addresses.size(), addresses.indexOf(address),
+                    metadataRefreshInterval);
+        }
     }
 }

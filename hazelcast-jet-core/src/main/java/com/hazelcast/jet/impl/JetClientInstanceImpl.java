@@ -19,9 +19,10 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec.ResponseParameters;
-import com.hazelcast.client.impl.protocol.codec.JetJoinJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
@@ -40,6 +41,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -48,6 +52,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.idToString;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Client-side {@code JetInstance} implementation
@@ -56,11 +61,13 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
+    private SerializationService serializationService;
 
     public JetClientInstanceImpl(HazelcastClientInstanceImpl hazelcastInstance) {
         super(hazelcastInstance);
         this.client = hazelcastInstance;
-        this.logger = hazelcastInstance.getLoggingService().getLogger(JetInstance.class);
+        this.logger = getLogger(JetInstance.class);
+        this.serializationService = client.getSerializationService();
 
         ExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
     }
@@ -72,29 +79,70 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
     @Override
     public Job newJob(DAG dag) {
-        JobImpl job = new JobImpl(dag, new JobConfig());
+        SubmittedJobImpl job = new SubmittedJobImpl(this, getLogger(SubmittedJobImpl.class), dag, new JobConfig());
         job.init();
         return job;
     }
 
     @Override
     public Job newJob(DAG dag, JobConfig config) {
-        JobImpl job = new JobImpl(dag, config);
+        SubmittedJobImpl job = new SubmittedJobImpl(this, getLogger(SubmittedJobImpl.class), dag, config);
         job.init();
         return job;
     }
 
-    private class JobImpl extends AbstractJobImpl {
+    @Override
+    public Collection<Job> getJobs() {
+        ClientMessage request = JetGetJobIdsCodec.encodeRequest();
+        ClientInvocation invocation = new ClientInvocation(client, request, masterAddress());
+        Set<Long> jobIds;
+        try {
+            ClientMessage clientMessage = invocation.invoke().get();
+            JetGetJobIdsCodec.ResponseParameters response = JetGetJobIdsCodec.decodeResponse(clientMessage);
+            jobIds = serializationService.toObject(response.response);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
 
-        JobImpl(DAG dag, JobConfig config) {
-            super(JetClientInstanceImpl.this, dag, config);
+        List<Job> jobs = jobIds.stream().map(jobId ->
+                new TrackedJobImpl(getLogger(TrackedJobImpl.class), jobId))
+                               .collect(toList());
+
+        jobs.forEach(job -> ((TrackedJobImpl) job).init());
+
+        return jobs;
+    }
+
+    private JobStatus sendJobStatusRequest(long jobId) {
+        ClientMessage request = JetGetJobStatusCodec.encodeRequest(jobId);
+        ClientInvocation invocation = new ClientInvocation(client, request, masterAddress());
+        try {
+            ClientMessage clientMessage = invocation.invoke().get();
+            JetGetJobStatusCodec.ResponseParameters response = JetGetJobStatusCodec.decodeResponse(clientMessage);
+            return serializationService.toObject(response.response);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    private ILogger getLogger(Class type) {
+        return client.getLoggingService().getLogger(type);
+    }
+
+    private Address masterAddress() {
+        Optional<Member> first = client.getCluster().getMembers().stream().findFirst();
+        return first.orElseThrow(() -> new IllegalStateException("No members found in cluster")).getAddress();
+    }
+
+    private class SubmittedJobImpl extends AbstractSubmittedJobImpl {
+
+        SubmittedJobImpl(JetInstance jetInstance, ILogger logger, DAG dag, JobConfig config) {
+            super(jetInstance, logger, dag, config);
         }
 
         @Override
         protected Address getMasterAddress() {
-            Set<Member> members = client.getCluster().getMembers();
-            Member master = members.iterator().next();
-            return master.getAddress();
+            return JetClientInstanceImpl.this.masterAddress();
         }
 
         @Override
@@ -105,23 +153,38 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
         @Override
         protected JobStatus sendJobStatusRequest() {
-            Address masterAddress = getMasterAddress();
-            ClientMessage request = JetGetJobStatusCodec.encodeRequest(getJobId());
-            ClientInvocation invocation = new ClientInvocation(client, request, masterAddress);
-            try {
-                ClientMessage clientMessage = invocation.invoke().get();
-                ResponseParameters response = JetGetJobStatusCodec.decodeResponse(clientMessage);
-                return JetClientInstanceImpl.this.client.getSerializationService().toObject(response.response);
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
+            return JetClientInstanceImpl.this.sendJobStatusRequest(getJobId());
         }
 
         private ClientMessage createJoinJobRequest() {
-            SerializationService serializationService = client.getSerializationService();
-            Data dag = serializationService.toData(getDAG());
-            Data jobConfig = serializationService.toData(getConfig());
-            return JetJoinJobCodec.encodeRequest(getJobId(), dag, jobConfig);
+            Data serializedDag = serializationService.toData(dag);
+            Data serializedConfig = serializationService.toData(config);
+            return JetSubmitJobCodec.encodeRequest(getJobId(), serializedDag, serializedConfig);
+        }
+
+    }
+
+    private class TrackedJobImpl extends AbstractTrackedJobImpl {
+
+        TrackedJobImpl(ILogger logger, long jobId) {
+            super(logger, jobId);
+        }
+
+        @Override
+        protected Address getMasterAddress() {
+            return JetClientInstanceImpl.this.masterAddress();
+        }
+
+        @Override
+        protected ICompletableFuture<Void> sendJoinRequest(Address masterAddress) {
+            ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getJobId());
+            ClientInvocation invocation = new ClientInvocation(client, request, masterAddress);
+            return new ExecutionFuture(invocation.invoke(), getJobId(), masterAddress);
+        }
+
+        @Override
+        protected JobStatus sendJobStatusRequest() {
+            return JetClientInstanceImpl.this.sendJobStatusRequest(getJobId());
         }
 
     }

@@ -17,16 +17,20 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.ResettableSingletonTraverser;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.WatermarkEmissionPolicy;
 import com.hazelcast.jet.WatermarkPolicy;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
+import java.util.Map.Entry;
 import java.util.function.ToLongFunction;
+
+import static com.hazelcast.jet.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * A processor that inserts watermark into a data stream. See
@@ -39,7 +43,7 @@ import java.util.function.ToLongFunction;
  */
 public class InsertWatermarksP<T> extends AbstractProcessor {
 
-    private final ToLongFunction<T> getTimestampFn;
+    private final ToLongFunction<T> getTimestampF;
     private final WatermarkPolicy wmPolicy;
     private final WatermarkEmissionPolicy wmEmitPolicy;
     private final ResettableSingletonTraverser<Object> singletonTraverser;
@@ -47,21 +51,30 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
 
     private long currWm = Long.MIN_VALUE;
     private long lastEmittedWm = Long.MIN_VALUE;
+    private int index;
+
+    // value to be used during temporarily snapshot restore
+    private long minRestoredWm = Long.MAX_VALUE;
 
     /**
-     * @param getTimestampFn function that extracts the timestamp from the item
+     * @param getTimestampF function that extracts the timestamp from the item
      * @param wmPolicy the watermark policy
      */
     public InsertWatermarksP(
-            @Nonnull DistributedToLongFunction<T> getTimestampFn,
+            @Nonnull DistributedToLongFunction<T> getTimestampF,
             @Nonnull WatermarkPolicy wmPolicy,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy
     ) {
-        this.getTimestampFn = getTimestampFn;
+        this.getTimestampF = getTimestampF;
         this.wmPolicy = wmPolicy;
         this.wmEmitPolicy = wmEmitPolicy;
         this.flatMapper = flatMapper(this::traverser);
         this.singletonTraverser = new ResettableSingletonTraverser<>();
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        index = context.globalProcessorIndex();
     }
 
     @Override
@@ -82,14 +95,33 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
         return flatMapper.tryProcess(item);
     }
 
-    private Traverser<Object> traverser(Object item) {
-        long timestamp = getTimestampFn.applyAsLong((T) item);
-        if (timestamp < currWm) {
-            // drop late event
-            return Traversers.empty();
+    @Override
+    public boolean saveSnapshot() {
+        return tryEmitToSnapshot(broadcastKey(index), lastEmittedWm);
+    }
+
+    @Override
+    public void restoreSnapshot(@Nonnull Inbox inbox) {
+        // we restart at the oldest WM any instance was at at the time of snapshot
+        for (Object o; (o = inbox.poll()) != null; ) {
+            minRestoredWm = Math.min(minRestoredWm, ((Entry<?, Long>) o).getValue());
         }
+    }
+
+    @Override
+    public boolean finishSnapshotRestore() {
+        lastEmittedWm = minRestoredWm;
+        logFine(getLogger(), "restored lastEmittedWm=%s", lastEmittedWm);
+        return true;
+    }
+
+    private Traverser<Object> traverser(Object item) {
+        long timestamp = getTimestampF.applyAsLong((T) item);
         currWm = wmPolicy.reportEvent(timestamp);
-        singletonTraverser.accept(item);
+        if (timestamp >= currWm) {
+            // only emit non-late events
+            singletonTraverser.accept(item);
+        }
         if (wmEmitPolicy.shouldEmit(currWm, lastEmittedWm)) {
             lastEmittedWm = currWm;
             return singletonTraverser.prepend(new Watermark(currWm));

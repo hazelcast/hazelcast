@@ -14,35 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.coordination;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.JobExecutionService;
-import com.hazelcast.jet.impl.JobRecord;
-import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
-import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
+import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.Clock;
 
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -50,10 +45,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.jet.JobStatus.COMPLETED;
-import static com.hazelcast.jet.JobStatus.FAILED;
 import static com.hazelcast.jet.JobStatus.NOT_STARTED;
-import static com.hazelcast.jet.config.JetConfig.JOB_RESULTS_MAP_NAME;
+import static com.hazelcast.jet.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
+import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.FAILED;
+import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUCCESSFUL;
+import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.VALIDATION_NEEDED;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.idToString;
@@ -71,16 +68,19 @@ public class JobCoordinationService {
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final JobExecutionService jobExecutionService;
+    private final SnapshotRepository snapshotRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
     private final IMap<Long, JobResult> jobResults;
 
     public JobCoordinationService(NodeEngineImpl nodeEngine, JetConfig config,
-                                  JobRepository jobRepository, JobExecutionService jobExecutionService) {
+                                  JobRepository jobRepository, JobExecutionService jobExecutionService,
+                                  SnapshotRepository snapshotRepository) {
         this.nodeEngine = nodeEngine;
         this.config = config;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
         this.jobExecutionService = jobExecutionService;
+        this.snapshotRepository = snapshotRepository;
         this.jobResults = nodeEngine.getHazelcastInstance().getMap(JOB_RESULTS_MAP_NAME);
     }
 
@@ -127,21 +127,16 @@ public class JobCoordinationService {
         return masterContext.completionFuture();
     }
 
-    public Map<MemberInfo, ExecutionPlan> createExecutionPlans(MembersView membersView, DAG dag) {
-        return ExecutionPlanBuilder.createExecutionPlans(nodeEngine, membersView, dag,
-                config.getInstanceConfig().getCooperativeThreadCount());
-    }
-
     /**
      * Starts the job if it is not already started or completed. Returns a future which represents result of the job.
      */
-    public CompletableFuture<Boolean> startOrJoinJob(long jobId, Data dag, JobConfig config) {
+    public CompletableFuture<Boolean> submitOrJoinJob(long jobId, Data dag, JobConfig config) {
         if (!isMaster()) {
             throw new JetException("Job cannot be started here. Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
-        // the order of operations are important.
+        // the order of operations is important.
 
         // first, check if the job is already completed
         JobResult jobResult = jobResults.get(jobId);
@@ -152,7 +147,7 @@ public class JobCoordinationService {
         }
 
         int quorumSize = config.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
-        JobRecord jobRecord = new JobRecord(jobId, dag, config, quorumSize);
+        JobRecord jobRecord = new JobRecord(jobId, Clock.currentTimeMillis(), dag, config, quorumSize);
         MasterContext masterContext = new MasterContext(nodeEngine, this, jobRecord);
 
         // just try to initiate the coordination
@@ -170,14 +165,33 @@ public class JobCoordinationService {
         // If there is no master context and job result at the same time, it means this is the first submission
         jobRepository.putNewJobRecord(jobRecord);
 
-        logger.info("Starting new job " + idToString(jobId));
+        logger.info("Starting job " + idToString(jobId) + " based on join/submit request from client");
         tryStartJob(masterContext);
         return masterContext.completionFuture();
     }
 
+    public CompletableFuture<Boolean> joinSubmittedJob(long jobId) {
+        if (!isMaster()) {
+            throw new JetException("Cannot join to submitted job jere. Master address: "
+                    + nodeEngine.getClusterService().getMasterAddress());
+        }
+
+        JobRecord jobRecord = jobRepository.getJob(jobId);
+        if (jobRecord != null) {
+            return submitOrJoinJob(jobId, jobRecord.getDag(), jobRecord.getConfig());
+        }
+
+        JobResult jobResult = jobResults.get(jobId);
+        if (jobResult != null) {
+            return jobResult.asCompletableFuture();
+        }
+
+        throw new IllegalArgumentException("Job " + idToString(jobId) + " not found to join!");
+    }
+
     // Tries to automatically start a job if it is not already running or completed
     private void startJobIfNotStartedOrCompleted(JobRecord jobRecord) {
-        // the order of operations are important.
+        // the order of operations is important.
 
         long jobId = jobRecord.getJobId();
         if (jobResults.containsKey(jobId) || masterContexts.containsKey(jobId)) {
@@ -197,7 +211,7 @@ public class JobCoordinationService {
             return;
         }
 
-        logger.info("Starting new job " + idToString(masterContext.getJobId()));
+        logger.info("Starting job " + idToString(masterContext.getJobId()) + " discovered by scanning of JobRecord-s");
         tryStartJob(masterContext);
     }
 
@@ -232,6 +246,13 @@ public class JobCoordinationService {
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).size();
     }
 
+    public Set<Long> getAllJobIds() {
+        Set<Long> jobIds = new HashSet<>(jobRepository.getJobIds());
+        jobIds.addAll(masterContexts.keySet());
+        jobIds.addAll(jobResults.keySet());
+        return jobIds;
+    }
+
     /**
      * Returns the job status or fails with {@link IllegalArgumentException} if the requested job is not found
      */
@@ -250,7 +271,7 @@ public class JobCoordinationService {
         if (jobRecord == null) {
             JobResult jobResult = jobResults.get(jobId);
             if (jobResult != null) {
-                return jobResult.isSuccessfulOrCancelled() ? COMPLETED : FAILED;
+                return jobResult.getJobStatus();
             }
 
             throw new IllegalArgumentException("Job " + idToString(jobId) + " not found");
@@ -262,20 +283,22 @@ public class JobCoordinationService {
     /**
      * Completes the job which is coordinated with the given master context object.
      */
-    void completeJob(MasterContext masterContext, long completionTime, Throwable error) {
-        // the order of operations are important.
+    void completeJob(MasterContext masterContext, long executionId, long completionTime, Throwable error) {
+        // the order of operations is important.
 
         long jobId = masterContext.getJobId();
-        long jobCreationTime = jobRepository.getJobCreationTimeOrFail(jobId);
+        JobRecord jobRecord = jobRepository.getJob(jobId);
+        if (jobRecord == null) {
+            throw new IllegalArgumentException("Job record not found for job id: " + idToString(jobId));
+        }
+
         String coordinator = nodeEngine.getNode().getThisUuid();
-        JobResult jobResult = new JobResult(jobId, coordinator, jobCreationTime, completionTime, error);
+        JobResult jobResult = new JobResult(jobId, coordinator, jobRecord.getCreationTime(), completionTime, error);
 
         JobResult prev = jobResults.putIfAbsent(jobId, jobResult);
         if (prev != null) {
             throw new IllegalStateException(jobResult + " already exists in the " + JOB_RESULTS_MAP_NAME + " map");
         }
-
-        long executionId = masterContext.getExecutionId();
 
         jobRepository.deleteJob(jobId);
 
@@ -298,11 +321,69 @@ public class JobCoordinationService {
     void scheduleRestart(long jobId) {
         MasterContext masterContext = masterContexts.get(jobId);
         if (masterContext != null) {
-            logger.fine("Scheduling master context restart for job " + idToString(jobId));
+            logger.fine("Scheduling restart on master for job " + idToString(jobId));
             nodeEngine.getExecutionService().schedule(COORDINATOR_EXECUTOR_NAME, () -> restartJob(jobId),
                     RETRY_DELAY_IN_MILLIS, MILLISECONDS);
         } else {
             logger.severe("Master context for job " + idToString(jobId) + " not found to schedule restart");
+        }
+    }
+
+    void scheduleSnapshot(long jobId, long executionId) {
+        MasterContext masterContext = masterContexts.get(jobId);
+        if (masterContext != null) {
+            long snapshotInterval = masterContext.getJobConfig().getSnapshotInterval();
+            InternalExecutionService executionService = nodeEngine.getExecutionService();
+            if (logger.isFineEnabled()) {
+                logger.fine(jobAndExecutionId(jobId, executionId) + " snapshot is scheduled in "
+                        + snapshotInterval + "ms");
+            }
+            executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> this.beginSnapshot(jobId, executionId),
+                    snapshotInterval, MILLISECONDS);
+        } else {
+            logger.warning("MasterContext not found to schedule snapshot of " + jobAndExecutionId(jobId, executionId));
+        }
+    }
+
+    private void beginSnapshot(long jobId, long executionId) {
+        MasterContext masterContext = masterContexts.get(jobId);
+        if (masterContext != null) {
+            if (masterContext.completionFuture().isDone() || masterContext.jobStatus() != RUNNING) {
+                logger.warning("Not starting snapshot since " + jobAndExecutionId(jobId, executionId) + " is done.");
+                return;
+            }
+
+            if (!shouldStartJobs()) {
+                scheduleSnapshot(jobId, executionId);
+            }
+
+            masterContext.beginSnapshot(executionId);
+        } else {
+            logger.warning("MasterContext not found to schedule snapshot of " + jobAndExecutionId(jobId, executionId));
+        }
+    }
+
+    void completeSnapshot(long jobId, long executionId, long snapshotId, boolean success) {
+        MasterContext masterContext = masterContexts.get(jobId);
+        if (masterContext != null) {
+            try {
+                SnapshotStatus status = success ? VALIDATION_NEEDED : FAILED;
+                long elapsed = snapshotRepository.setSnapshotStatus(jobId, snapshotId, status);
+                logger.info(String.format("Snapshot %s for job %s completed in %dms", snapshotId,
+                        idToString(jobId), elapsed));
+            } catch (Exception e) {
+                logger.warning("Cannot update snapshot status for " + jobAndExecutionId(jobId, executionId) + " snapshot "
+                        + snapshotId + " success: " + success);
+                return;
+            }
+            if (success) {
+                snapshotRepository.setSnapshotStatus(jobId, snapshotId, SUCCESSFUL);
+                snapshotRepository.deleteSnapshots(jobId, snapshotId);
+            }
+            scheduleSnapshot(jobId, executionId);
+        } else {
+            logger.warning("MasterContext not found for finalize snapshot of " + jobAndExecutionId(jobId, executionId)
+                    + " with result: " + success);
         }
     }
 
@@ -370,6 +451,10 @@ public class JobCoordinationService {
 
     private boolean isMaster() {
         return nodeEngine.getClusterService().isMaster();
+    }
+
+    public SnapshotRepository snapshotRepository() {
+        return snapshotRepository;
     }
 
 }

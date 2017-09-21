@@ -18,9 +18,11 @@ package com.hazelcast.jet.impl.execution;
 
 import java.io.Serializable;
 
-class DoneItem implements Serializable {
+final class DoneItem implements BroadcastItem, Serializable {
 
     static final DoneItem DONE_ITEM = new DoneItem();
+
+    private DoneItem() { }
 
     @Override
     public String toString() {

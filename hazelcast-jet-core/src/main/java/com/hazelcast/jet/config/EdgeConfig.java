@@ -26,11 +26,6 @@ import java.io.Serializable;
 public class EdgeConfig implements Serializable {
 
     /**
-     * The default value of the {@link #setOutboxCapacity(int) outbox bucket capacity}.
-     */
-    public static final int DEFAULT_OUTBOX_CAPACITY = 2048;
-
-    /**
      * The default size of the {@link #setQueueSize(int) concurrent queues}
      * connecting processors within a cluster member.
      */
@@ -46,7 +41,6 @@ public class EdgeConfig implements Serializable {
      */
     public static final int DEFAULT_PACKET_SIZE_LIMIT = 1 << 14;
 
-    private int outboxCapacity = DEFAULT_OUTBOX_CAPACITY;
     private int queueSize = DEFAULT_QUEUE_SIZE;
     private int receiveWindowMultiplier = DEFAULT_RECEIVE_WINDOW_MULTIPLIER;
     private int packetSizeLimit = DEFAULT_PACKET_SIZE_LIMIT;
@@ -76,29 +70,6 @@ public class EdgeConfig implements Serializable {
      */
     public int getQueueSize() {
         return queueSize;
-    }
-
-    /**
-     * Sets the capacity of the outbox bucket corresponding to this edge.
-     * <p>
-     * A cooperative processor's {@code Outbox} will contain a bucket dedicated
-     * to this edge. When the bucket reaches the configured capacity, it will
-     * refuse further items. At that time the processor must yield control back
-     * to its caller.
-     * <p>
-     * The default value is {@value #DEFAULT_OUTBOX_CAPACITY}.
-     */
-    public EdgeConfig setOutboxCapacity(int capacity) {
-        this.outboxCapacity = capacity;
-        return this;
-    }
-
-    /**
-     * Returns the {@link #setOutboxCapacity(int) capacity} of the {@code Outbox}
-     * bucket corresponding to this edge.
-     */
-    public int getOutboxCapacity() {
-        return outboxCapacity;
     }
 
     /**

@@ -3,6 +3,10 @@ com.hazelcast.jet.impl.serialization.SerializerHooks$ObjectArrayHook
 com.hazelcast.jet.impl.serialization.SerializerHooks$TimestampedEntryHook
 com.hazelcast.jet.impl.serialization.SerializerHooks$Tuple2Hook
 com.hazelcast.jet.impl.serialization.SerializerHooks$Tuple3Hook
+com.hazelcast.jet.impl.serialization.SerializerHooks$WatermarkHook
+com.hazelcast.jet.impl.serialization.SerializerHooks$SnapshotBarrierHook
+com.hazelcast.jet.impl.serialization.SerializerHooks$BroadcastEntryHook
+com.hazelcast.jet.impl.serialization.SerializerHooks$BroadcastKeyReferenceHook
 com.hazelcast.jet.impl.serialization.AccumulatorSerializerHooks$LongAccHook
 com.hazelcast.jet.impl.serialization.AccumulatorSerializerHooks$DoubleAccHook
 com.hazelcast.jet.impl.serialization.AccumulatorSerializerHooks$MutableReferenceHook

@@ -34,6 +34,7 @@ public class TestProcessorContext implements Processor.Context {
     private String vertexName = "testVertex";
     private int globalProcessorIndex;
     private CompletableFuture<Void> jobFuture = new CompletableFuture<>();
+    private boolean snapshottingEnabled;
 
     /**
      * Constructor with default values.
@@ -52,8 +53,9 @@ public class TestProcessorContext implements Processor.Context {
     /**
      * Set the jet instance.
      */
-    public void setJetInstance(JetInstance jetInstance) {
+    public TestProcessorContext setJetInstance(JetInstance jetInstance) {
         this.jetInstance = jetInstance;
+        return this;
     }
 
     @Override @Nonnull
@@ -64,8 +66,9 @@ public class TestProcessorContext implements Processor.Context {
     /**
      * Set the logger.
      */
-    public void setLogger(@Nonnull ILogger logger) {
+    public TestProcessorContext setLogger(@Nonnull ILogger logger) {
         this.logger = logger;
+        return this;
     }
 
     @Override @Nonnull
@@ -76,8 +79,9 @@ public class TestProcessorContext implements Processor.Context {
     /**
      * Set the vertex name.
      */
-    public void setVertexName(@Nonnull String vertexName) {
+    public TestProcessorContext setVertexName(@Nonnull String vertexName) {
         this.vertexName = vertexName;
+        return this;
     }
 
     @Override
@@ -88,8 +92,9 @@ public class TestProcessorContext implements Processor.Context {
     /**
      * Set the global processor index
      */
-    public void setGlobalProcessorIndex(int globalProcessorIndex) {
+    public TestProcessorContext setGlobalProcessorIndex(int globalProcessorIndex) {
         this.globalProcessorIndex = globalProcessorIndex;
+        return this;
     }
 
     @Override
@@ -97,10 +102,24 @@ public class TestProcessorContext implements Processor.Context {
         return jobFuture;
     }
 
+    @Override
+    public boolean snapshottingEnabled() {
+        return snapshottingEnabled;
+    }
+
+    /**
+     * Sets if snapshotting is enabled for the job.
+     */
+    public TestProcessorContext setSnapshottingEnabled(boolean snapshottingEnabled) {
+        this.snapshottingEnabled = snapshottingEnabled;
+        return this;
+    }
+
     /**
      * Set the job future.
      */
-    public void setJobFuture(CompletableFuture<Void> jobFuture) {
+    public TestProcessorContext setJobFuture(CompletableFuture<Void> jobFuture) {
         this.jobFuture = jobFuture;
+        return this;
     }
 }

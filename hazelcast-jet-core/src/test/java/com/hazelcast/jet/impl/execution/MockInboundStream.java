@@ -20,52 +20,66 @@ import com.hazelcast.jet.impl.util.ProgressState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
-import static java.util.Collections.emptyList;
 
 public class MockInboundStream implements InboundEdgeStream {
-    private final int chunkSize;
+    private int ordinal;
+    private int priority;
     private final List<Object> mockData;
-    private final int ordinal;
+    private final int chunkSize;
+
     private int dataIndex;
     private boolean done;
 
-    MockInboundStream(int ordinal, List<?> mockData, int chunkSize) {
-        this.ordinal = ordinal;
+    MockInboundStream(int priority, List<Object> mockData, int chunkSize) {
+        this.priority = priority;
         this.chunkSize = chunkSize;
-        if (mockData.isEmpty()) {
-            done = true;
-            this.mockData = emptyList();
-        } else {
-            this.mockData = new ArrayList<>(mockData);
-        }
+        this.mockData = new ArrayList<>(mockData);
     }
 
     void push(Object... items) {
         mockData.addAll(Arrays.asList(items));
     }
 
+    public void setOrdinal(int ordinal) {
+        this.ordinal = ordinal;
+    }
+
     @Override
-    public ProgressState drainTo(Collection<Object> dest) {
-        if (done || dataIndex == mockData.size()) {
+    public ProgressState drainTo(Consumer<Object> dest) {
+        if (done) {
             return WAS_ALREADY_DONE;
+        }
+        if (dataIndex == mockData.size()) {
+            return NO_PROGRESS;
         }
         final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
         for (; dataIndex < limit; dataIndex++) {
             final Object item = mockData.get(dataIndex);
             if (item == DONE_ITEM) {
                 done = true;
+                break;
+            } else if (item instanceof SnapshotBarrier) {
+                dest.accept(item);
+                dataIndex++;
+                break;
             } else {
-                dest.add(item);
+                dest.accept(item);
             }
         }
         return done ? DONE : MADE_PROGRESS;
+    }
+
+    @Override
+    public boolean isDone() {
+        return done;
     }
 
     @Override
@@ -75,6 +89,6 @@ public class MockInboundStream implements InboundEdgeStream {
 
     @Override
     public int priority() {
-        return 0;
+        return priority;
     }
 }

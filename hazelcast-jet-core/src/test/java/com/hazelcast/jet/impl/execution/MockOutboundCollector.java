@@ -45,8 +45,8 @@ class MockOutboundCollector implements OutboundCollector {
     }
 
     @Override
-    public ProgressState offerBroadcast(Object item) {
-        return offer((Object) item);
+    public ProgressState offerBroadcast(BroadcastItem item) {
+        return offer(item);
     }
 
     @Override

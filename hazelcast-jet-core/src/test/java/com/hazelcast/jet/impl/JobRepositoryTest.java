@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.coordination;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.DAG;
@@ -24,7 +24,6 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,6 +35,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
+import static com.hazelcast.jet.impl.JobRepository.RANDOM_IDS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RECORDS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -68,11 +69,11 @@ public class JobRepositoryTest extends JetTestSupport {
         properties.setProperty(JOB_SCAN_PERIOD.getName(), Long.toString(JOB_SCAN_PERIOD_IN_MILLIS));
 
         instance = factory.newMember(config);
-        jobRepository = new JobRepository(instance);
+        jobRepository = new JobRepository(instance, null);
         jobRepository.setJobExpirationDurationInMillis(JOB_EXPIRATION_TIME_IN_MILLIS);
 
-        jobIds = instance.getMap(JetConfig.IDS_MAP_NAME);
-        jobs = instance.getMap(JetConfig.JOB_RECORDS_MAP_NAME);
+        jobIds = instance.getMap(RANDOM_IDS_MAP_NAME);
+        jobs = instance.getMap(JOB_RECORDS_MAP_NAME);
     }
 
     @After
@@ -154,7 +155,7 @@ public class JobRepositoryTest extends JetTestSupport {
             jobRepository.uploadJobResources(jobConfig);
             fail();
         } catch (JetException e) {
-            assertTrue(instance.getMap(JetConfig.IDS_MAP_NAME).isEmpty());
+            assertTrue(instance.getMap(RANDOM_IDS_MAP_NAME).isEmpty());
         }
     }
 
@@ -168,7 +169,7 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private JobRecord createJobRecord(long jobIb, Data dag) {
-        return new JobRecord(jobIb, dag, jobConfig, 1);
+        return new JobRecord(jobIb, System.currentTimeMillis(), dag, jobConfig, 1);
     }
 
     private void sleepUntilJobExpires() {

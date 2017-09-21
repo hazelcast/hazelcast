@@ -92,7 +92,7 @@ public class SenderTasklet implements Tasklet {
             return;
         }
         progTracker.notDone();
-        final ProgressState result = inboundEdgeStream.drainTo(inbox);
+        final ProgressState result = inboundEdgeStream.drainTo(inbox::add);
         progTracker.madeProgress(result.isMadeProgress());
         instreamExhausted = result.isDone();
         if (instreamExhausted) {

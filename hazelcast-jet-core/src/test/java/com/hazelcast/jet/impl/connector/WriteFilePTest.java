@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.Outbox;
-import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.IStreamList;
@@ -35,7 +34,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -90,7 +88,7 @@ public class WriteFilePTest extends JetTestSupport {
 
         // Then
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
-            int[] count = { 0 };
+            int[] count = {0};
             stream.forEach(p -> count[0]++);
             assertEquals(2, count[0]);
         }
@@ -109,7 +107,7 @@ public class WriteFilePTest extends JetTestSupport {
 
         // Then
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
-            int[] count = { 0 };
+            int[] count = {0};
             stream.forEach(p -> count[0]++);
             assertEquals(2, count[0]);
         }
@@ -182,10 +180,10 @@ public class WriteFilePTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
-                .localParallelism(1);
+                           .localParallelism(1);
         Vertex sink = dag.newVertex("sink",
                 writeFile(directory.toString(), Object::toString, StandardCharsets.UTF_8, false))
-                .localParallelism(1);
+                         .localParallelism(1);
         dag.edge(between(source, sink));
 
         Job job = instance.newJob(dag);
@@ -225,10 +223,10 @@ public class WriteFilePTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
-                .localParallelism(1);
+                           .localParallelism(1);
         Vertex writer = dag.newVertex("writer",
                 writeFile(myFile.toString(), Object::toString, StandardCharsets.UTF_8, false))
-                .localParallelism(1);
+                           .localParallelism(1);
         dag.edge(between(reader, writer));
         addItemsToList(0, 10);
 
@@ -253,28 +251,23 @@ public class WriteFilePTest extends JetTestSupport {
         checkFileContents(StandardCharsets.UTF_8, 10);
     }
 
-    private static class SlowSourceP implements Processor {
+    private static class SlowSourceP extends AbstractProcessor {
 
         private final Semaphore semaphore;
         private final int limit;
-        private Outbox outbox;
 
         SlowSourceP(Semaphore semaphore, int limit) {
             this.semaphore = semaphore;
             this.limit = limit;
         }
 
-        @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-            this.outbox = outbox;
-        }
 
         @Override
         public boolean complete() {
             int number = 0;
             while (number < limit) {
                 uncheckRun(semaphore::acquire);
-                assertTrue(outbox.offer(String.valueOf(number)));
+                assertTrue(tryEmit(String.valueOf(number)));
                 number++;
             }
             return true;
@@ -312,9 +305,9 @@ public class WriteFilePTest extends JetTestSupport {
         }
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
-                .localParallelism(1);
+                           .localParallelism(1);
         Vertex writer = dag.newVertex("writer", writeFile(directory.toString(), toStringFn, charset, append))
-                .localParallelism(1);
+                           .localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;
     }

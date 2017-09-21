@@ -30,7 +30,6 @@
 
     <edge-defaults>
        <queue-size>999</queue-size>
-       <outbox-capacity>998</outbox-capacity>
        <packet-size-limit>997</packet-size-limit>
        <receive-window-multiplier>996</receive-window-multiplier>
     </edge-defaults>

@@ -26,7 +26,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isJobRestartRequired;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 public abstract class AsyncExecutionOperation extends Operation implements IdentifiedDataSerializable {
@@ -66,7 +66,8 @@ public abstract class AsyncExecutionOperation extends Operation implements Ident
         }
     }
 
-    public abstract void cancel();
+    public void cancel() {
+    }
 
     protected abstract void doRun() throws Exception;
 
@@ -85,7 +86,7 @@ public abstract class AsyncExecutionOperation extends Operation implements Ident
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return isJobRestartRequired(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override

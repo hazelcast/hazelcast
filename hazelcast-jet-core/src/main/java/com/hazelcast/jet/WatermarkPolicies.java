@@ -16,16 +16,14 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.function.DistributedLongSupplier;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.util.TimestampHistory;
+import com.hazelcast.jet.impl.util.WatermarkPolicyUtil;
+import com.hazelcast.jet.impl.util.WatermarkPolicyUtil.WatermarkPolicyBase;
 
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Utility class with factories of several useful watermark policies.
@@ -35,26 +33,6 @@ public final class WatermarkPolicies {
     private static final int DEFAULT_NUM_STORED_SAMPLES = 16;
 
     private WatermarkPolicies() {
-    }
-
-    private abstract static class WatermarkPolicyBase implements WatermarkPolicy {
-
-        private long wm = Long.MIN_VALUE;
-
-        long makeWmAtLeast(long proposedWm) {
-            wm = max(wm, proposedWm);
-            return wm;
-        }
-
-        long advanceWmBy(long amount) {
-            wm += amount;
-            return wm;
-        }
-
-        @Override
-        public long getCurrentWatermark() {
-            return wm;
-        }
     }
 
     /**
@@ -91,34 +69,8 @@ public final class WatermarkPolicies {
      */
     @Nonnull
     public static DistributedSupplier<WatermarkPolicy> limitingLagAndDelay(long lag, long maxDelayMs) {
-        return () -> limitingLagAndDelay(
+        return () -> WatermarkPolicyUtil.limitingLagAndDelay(
                 lag, MILLISECONDS.toNanos(maxDelayMs), DEFAULT_NUM_STORED_SAMPLES, System::nanoTime);
-    }
-
-    @Nonnull
-    static WatermarkPolicy limitingLagAndDelay(
-            long maxLag, long maxRetainNanos, int numStoredSamples, DistributedLongSupplier nanoClock
-    ) {
-        return new WatermarkPolicyBase() {
-
-            private long topTs = Long.MIN_VALUE;
-            private final TimestampHistory history = new TimestampHistory(maxRetainNanos, numStoredSamples);
-
-            @Override
-            public long reportEvent(long timestamp) {
-                topTs = Math.max(timestamp, topTs);
-                return applyMaxRetain(timestamp - maxLag);
-            }
-
-            @Override
-            public long getCurrentWatermark() {
-                return applyMaxRetain(super.getCurrentWatermark());
-            }
-
-            private long applyMaxRetain(long wm) {
-                return makeWmAtLeast(Math.max(wm, history.sample(nanoClock.getAsLong(), topTs)));
-            }
-        };
     }
 
     /**
@@ -143,33 +95,8 @@ public final class WatermarkPolicies {
     public static DistributedSupplier<WatermarkPolicy> limitingTimestampAndWallClockLag(
             long timestampLag, long wallClockLag
     ) {
-        return limitingTimestampAndWallClockLag(timestampLag, wallClockLag, System::currentTimeMillis);
-    }
-
-    @Nonnull
-    static DistributedSupplier<WatermarkPolicy> limitingTimestampAndWallClockLag(
-            long timestampLag, long wallClockLag, DistributedLongSupplier wallClock
-    ) {
-        checkNotNegative(timestampLag, "timestampLag must not be negative");
-        checkNotNegative(wallClockLag, "wallClockLag must not be negative");
-
-        return () -> new WatermarkPolicyBase() {
-
-            @Override
-            public long reportEvent(long timestamp) {
-                updateFromWallClock();
-                return makeWmAtLeast(timestamp - timestampLag);
-            }
-
-            @Override
-            public long getCurrentWatermark() {
-                return updateFromWallClock();
-            }
-
-            private long updateFromWallClock() {
-                return makeWmAtLeast(wallClock.getAsLong() - wallClockLag);
-            }
-        };
+        return WatermarkPolicyUtil.limitingTimestampAndWallClockLag(timestampLag, wallClockLag,
+                System::currentTimeMillis);
     }
 
     /**
@@ -198,45 +125,6 @@ public final class WatermarkPolicies {
      */
     @Nonnull
     public static DistributedSupplier<WatermarkPolicy> limitingLagAndLull(long lag, long maxLullMs) {
-        return limitingLagAndLull(lag, maxLullMs, System::nanoTime);
+        return WatermarkPolicyUtil.limitingLagAndLull(lag, maxLullMs, System::nanoTime);
     }
-
-    @Nonnull
-    static DistributedSupplier<WatermarkPolicy> limitingLagAndLull(
-            long lag, long maxLullMs, DistributedLongSupplier nanoClock
-    ) {
-        checkNotNegative(lag, "lag must not be negative");
-        checkNotNegative(maxLullMs, "maxLullMs must not be negative");
-
-        return () -> new WatermarkPolicyBase() {
-
-            private long maxLullAt = Long.MIN_VALUE;
-
-            @Override
-            public long reportEvent(long timestamp) {
-                maxLullAt = monotonicTimeMillis() + maxLullMs;
-                return makeWmAtLeast(timestamp - lag);
-            }
-
-            @Override
-            public long getCurrentWatermark() {
-                long now = monotonicTimeMillis();
-                ensureInitialized(now);
-                long millisPastMaxLull = max(0, now - maxLullAt);
-                maxLullAt += millisPastMaxLull;
-                return advanceWmBy(millisPastMaxLull);
-            }
-
-            private void ensureInitialized(long now) {
-                if (maxLullAt == Long.MIN_VALUE) {
-                    maxLullAt = now + maxLullMs;
-                }
-            }
-
-            private long monotonicTimeMillis() {
-                return NANOSECONDS.toMillis(nanoClock.getAsLong());
-            }
-        };
-    }
-
 }

@@ -20,6 +20,7 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.SnapshotOutbox;
 import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
@@ -53,7 +54,7 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
         this.buffer = newBufferFn.apply(context.globalProcessorIndex());
     }
 

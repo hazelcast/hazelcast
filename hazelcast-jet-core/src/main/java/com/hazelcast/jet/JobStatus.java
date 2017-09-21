@@ -27,7 +27,8 @@ public enum JobStatus {
     NOT_STARTED,
 
     /**
-     * The job is in the initialization phase, in which it starts the execution.
+     * The job is in the initialization phase on new coordinator, in which it
+     * starts the execution.
      */
     STARTING,
 
@@ -37,12 +38,13 @@ public enum JobStatus {
     RUNNING,
 
     /**
-     * The job is performing a restart, because a job participant has left while the job was running.
+     * The job is performing a restart by the same coordinator, because a job
+     * participant has left while the job was running.
      */
     RESTARTING,
 
     /**
-     * The job is failed with an exception thrown by the DAG.
+     * The job is failed with an exception.
      */
     FAILED,
 

@@ -19,10 +19,9 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
-import com.hazelcast.jet.impl.util.ArrayDequeInbox;
-import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
-import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.jet.test.TestInbox;
+import com.hazelcast.jet.test.TestOutbox;
+import com.hazelcast.jet.test.TestProcessorContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -41,9 +40,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.processor.DiagnosticProcessors.peekInput;
 import static com.hazelcast.jet.processor.DiagnosticProcessors.peekOutput;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -66,9 +65,9 @@ public class Processors_peekTest {
     @Parameter(2)
     public Class<Processor> processor;
 
-    private ArrayDequeInbox inbox;
-    private ArrayDequeOutbox outbox;
-    private Processor.Context context;
+    private TestInbox inbox;
+    private TestOutbox outbox;
+    private TestProcessorContext context;
     private ILogger logger;
 
     @Parameters(name = "toStringFn={0}, shouldLogFn={1}, processor={2}")
@@ -86,10 +85,10 @@ public class Processors_peekTest {
 
     @Before
     public void before() {
-        inbox = new ArrayDequeInbox();
-        outbox = new ArrayDequeOutbox(new int[]{128}, new ProgressTracker());
+        inbox = new TestInbox();
+        outbox = new TestOutbox(128);
         logger = mock(ILogger.class);
-        context = new ProcCtx(null, logger, null, 0);
+        context = new TestProcessorContext().setLogger(logger);
     }
 
     private DistributedSupplier<Processor> procSupplier() {
@@ -104,7 +103,7 @@ public class Processors_peekTest {
                 ? peekInput(passThroughPSupplier)
                 : peekInput(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get();
-        wrappedP.init(outbox, context);
+        wrappedP.init(outbox, outbox, context);
 
         // When+Then
         assertLogged(wrappedP);
@@ -118,7 +117,7 @@ public class Processors_peekTest {
                 ? peekInput(passThroughPSupplier)
                 : peekInput(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get(1).iterator().next();
-        wrappedP.init(outbox, context);
+        wrappedP.init(outbox, outbox, context);
 
         // When+Then
         assertLogged(wrappedP);
@@ -133,7 +132,7 @@ public class Processors_peekTest {
                 ? peekInput(passThroughPSupplier)
                 : peekInput(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
-        wrappedP.init(outbox, context);
+        wrappedP.init(outbox, outbox, context);
 
         // When+Then
         assertLogged(wrappedP);
@@ -148,7 +147,7 @@ public class Processors_peekTest {
                 : peekOutput(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get();
 
-        wrappedP.init(outbox, context);
+        wrappedP.init(outbox, outbox, context);
 
         // When+Then
         assertLogged(wrappedP);
@@ -162,7 +161,7 @@ public class Processors_peekTest {
                 ? peekOutput(passThroughPSupplier)
                 : peekOutput(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get(1).iterator().next();
-        wrappedP.init(outbox, context);
+        wrappedP.init(outbox, outbox, context);
 
         // When+Then
         assertLogged(wrappedP);
@@ -177,7 +176,7 @@ public class Processors_peekTest {
                 ? peekOutput(passThroughPSupplier)
                 : peekOutput(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
-        wrappedP.init(outbox, context);
+        wrappedP.init(outbox, outbox, context);
 
         // When+Then
         assertLogged(wrappedP);
@@ -209,7 +208,7 @@ public class Processors_peekTest {
         protected Outbox outbox;
 
         @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+        public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
             this.outbox = outbox;
         }
 

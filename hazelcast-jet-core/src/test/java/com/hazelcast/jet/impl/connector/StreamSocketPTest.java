@@ -18,11 +18,9 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
-import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
-import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.processor.SourceProcessors;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.jet.test.TestOutbox;
+import com.hazelcast.jet.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -41,22 +39,20 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamSocketPTest extends JetTestSupport {
 
     private Queue<Object> bucket;
-    private ArrayDequeOutbox outbox;
-    private ProcCtx context;
+    private TestOutbox outbox;
+    private TestProcessorContext context;
 
     @Before
     public void before() {
-        outbox = new ArrayDequeOutbox(new int[]{10}, new ProgressTracker());
-        ILogger logger = mock(ILogger.class);
-        context = new ProcCtx(null, logger, null, 0);
-        context.initJobFuture(new CompletableFuture<>());
+        outbox = new TestOutbox(10);
+        context = new TestProcessorContext();
+        context.setJobFuture(new CompletableFuture<>());
         bucket = outbox.queueWithOrdinal(0);
     }
 
@@ -74,7 +70,7 @@ public class StreamSocketPTest extends JetTestSupport {
             thread.start();
 
             Processor processor = SourceProcessors.streamSocket("localhost", serverSocket.getLocalPort(), UTF_8).get();
-            processor.init(outbox, context);
+            processor.init(outbox, outbox, context);
 
             assertTrue(processor.complete());
             assertEquals("hello", bucket.poll());

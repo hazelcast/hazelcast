@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
@@ -71,10 +72,10 @@ public class Edge implements IdentifiedDataSerializable {
 
     private EdgeConfig config;
 
-    Edge() {
+    protected Edge() {
     }
 
-    private Edge(@Nonnull Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
+    protected Edge(@Nonnull Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
         this.source = source;
         this.sourceName = source.getName();
         this.sourceOrdinal = sourceOrdinal;
@@ -188,9 +189,30 @@ public class Edge implements IdentifiedDataSerializable {
      * Example: there two incoming edges on a vertex, with priorities 1 and 2.
      * The data from the edge with priority 1 will be processed in full before
      * accepting any data from the edge with priority 2.
+     * <p>
+     * <i>Note:</i> having different priority edges will cause postponing of
+     * the first snapshot until after upstream vertices of higher priority
+     * edges are completed.
+     * Reason: after receiving a {@link
+     * com.hazelcast.jet.impl.execution.SnapshotBarrier barrier} we stop
+     * processing items on that edge until the barrier is received from all
+     * other edges. However, we also don't process lower priority edges until
+     * higher priority edges are done, which prevents receiving the barrier on
+     * them, which in the end stalls the job indefinitely. Technically this
+     * applies only to {@link
+     * com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE EXACTLY_ONCE}
+     * snapshot mode, but the snapshot is also postponed for {@link
+     * com.hazelcast.jet.config.ProcessingGuarantee#AT_LEAST_ONCE
+     * AT_LEAST_ONCE} jobs, because the snapshot won't complete until after all
+     * higher priority edges are completed and will increase the number of
+     * duplicately processed items.
      */
     @Nonnull
     public Edge priority(int priority) {
+        if (priority == MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY) {
+            throw new IllegalArgumentException("priority must not be Integer.MIN_VALUE ("
+                    + MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY + ')');
+        }
         this.priority = priority;
         return this;
     }
@@ -389,15 +411,15 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(@Nonnull ObjectDataOutput out) throws IOException {
-        out.writeUTF(sourceName);
-        out.writeInt(sourceOrdinal);
-        out.writeUTF(destName);
-        out.writeInt(destOrdinal);
-        out.writeInt(priority);
-        out.writeBoolean(isDistributed);
-        out.writeObject(routingPolicy);
-        CustomClassLoadedObject.write(out, partitioner);
-        out.writeObject(config);
+        out.writeUTF(getSourceName());
+        out.writeInt(getSourceOrdinal());
+        out.writeUTF(getDestName());
+        out.writeInt(getDestOrdinal());
+        out.writeInt(getPriority());
+        out.writeBoolean(isDistributed());
+        out.writeObject(getRoutingPolicy());
+        CustomClassLoadedObject.write(out, getPartitioner());
+        out.writeObject(getConfig());
     }
 
     @Override

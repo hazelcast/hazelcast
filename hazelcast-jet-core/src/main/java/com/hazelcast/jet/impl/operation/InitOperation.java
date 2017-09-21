@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isJobRestartRequired;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
@@ -73,7 +73,7 @@ public class InitOperation extends Operation implements IdentifiedDataSerializab
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return isJobRestartRequired(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override

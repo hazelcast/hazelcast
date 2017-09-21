@@ -16,11 +16,15 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -29,6 +33,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
@@ -40,11 +45,16 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.entry;
@@ -68,7 +78,7 @@ public final class Util {
     }
 
     public static <T> Supplier<T> memoizeConcurrent(Supplier<T> onceSupplier) {
-        return new ConcurrentMemoizingSupplier<T>(onceSupplier);
+        return new ConcurrentMemoizingSupplier<>(onceSupplier);
     }
 
     public static <T> T uncheckCall(@Nonnull Callable<T> callable) {
@@ -240,6 +250,10 @@ public final class Util {
         return "job " + idToString(jobId) + ", execution " + idToString(executionId);
     }
 
+    public static LocalDateTime toLocalDateTime(long startTime) {
+        return Instant.ofEpochMilli(startTime).atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+
     @SuppressWarnings("checkstyle:magicnumber")
     public static String idToString(long id) {
         char[] buf = Arrays.copyOf(ID_TEMPLATE, ID_TEMPLATE.length);
@@ -251,5 +265,52 @@ public final class Util {
             }
         }
         return new String(buf);
+    }
+
+    public static <K, V> EntryProcessor<K, V> entryProcessor(
+            DistributedBiFunction<? super K, ? super V, ? extends V> remappingFunction
+    ) {
+        return new AbstractEntryProcessor<K, V>() {
+            @Override
+            public Object process(Entry<K, V> entry) {
+                V newValue = remappingFunction.apply(entry.getKey(), entry.getValue());
+                entry.setValue(newValue);
+                return newValue;
+            }
+        };
+    }
+
+    public static <K, V> V compute(IMap<K, V> map, K key,
+                                  DistributedBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        return (V) map.executeOnKey(key, entryProcessor(remappingFunction));
+    }
+
+    /**
+     * Sequentially search through an array, return the index of first {@code
+     * needle} element in {@code haystack} or -1, if not found.
+     */
+    public static int arrayIndexOf(int needle, int[] haystack) {
+        for (int i = 0; i < haystack.length; i++) {
+            if (haystack[i] == needle) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Util method to get around findbugs issue https://github.com/findbugsproject/findbugs/issues/79
+     */
+    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
+    public static CompletableFuture<Void> completedVoidFuture() {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    /**
+     * Util method to get around findbugs issue https://github.com/findbugsproject/findbugs/issues/79
+     */
+    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
+    public static void completeVoidFuture(CompletableFuture<Void> future) {
+        future.complete(null);
     }
 }

@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.util.ThrottleWrappedP;
+import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -65,5 +69,16 @@ public final class TestUtil {
     }
 
     public static final class DummyUncheckedTestException extends RuntimeException {
+    }
+
+    @Nonnull
+    public static ProcessorMetaSupplier throttle(@Nonnull DistributedSupplier<Processor> wrapped, long itemsPerSecond) {
+        return new WrappingProcessorMetaSupplier(ProcessorMetaSupplier.of(wrapped), p -> new ThrottleWrappedP(p,
+                itemsPerSecond));
+    }
+
+    @Nonnull
+    public static ProcessorMetaSupplier throttle(@Nonnull ProcessorMetaSupplier wrapped, long itemsPerSecond) {
+        return new WrappingProcessorMetaSupplier(wrapped, p -> new ThrottleWrappedP(p, itemsPerSecond));
     }
 }

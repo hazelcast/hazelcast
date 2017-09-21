@@ -18,6 +18,10 @@ package com.hazelcast.jet.impl.serialization;
 
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.jet.TimestampedEntry;
+import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.impl.execution.BroadcastEntry;
+import com.hazelcast.jet.impl.execution.BroadcastKeyReference;
+import com.hazelcast.jet.impl.execution.SnapshotBarrier;
 import com.hazelcast.jet.pipeline.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.datamodel.Tuple3;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,6 +57,11 @@ public final class SerializerHooks {
     public static final int LONG_DOUBLE_ACC = -309;
     public static final int TUPLE2 = -310;
     public static final int TUPLE3 = -311;
+    public static final int WATERMARK = -312;
+    public static final int SNAPSHOT_BARRIER = -313;
+    public static final int BROADCAST_ENTRY = -314;
+    public static final int BROADCAST_KEY_REFERENCE = -315;
+
 
     // reserved for hadoop module: -380 to -390
 
@@ -267,4 +276,154 @@ public final class SerializerHooks {
         }
     }
 
+    public static final class WatermarkHook implements SerializerHook<Watermark> {
+
+        @Override
+        public Class<Watermark> getSerializationType() {
+            return Watermark.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<Watermark>() {
+                @Override
+                public int getTypeId() {
+                    return WATERMARK;
+                }
+
+                @Override
+                public void destroy() {
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, Watermark object) throws IOException {
+                    out.writeLong(object.timestamp());
+                }
+
+                @Override
+                public Watermark read(ObjectDataInput in) throws IOException {
+                    return new Watermark(in.readLong());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
+    public static final class SnapshotBarrierHook implements SerializerHook<SnapshotBarrier> {
+
+        @Override
+        public Class<SnapshotBarrier> getSerializationType() {
+            return SnapshotBarrier.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<SnapshotBarrier>() {
+                @Override
+                public int getTypeId() {
+                    return SNAPSHOT_BARRIER;
+                }
+
+                @Override
+                public void destroy() {
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, SnapshotBarrier object) throws IOException {
+                    out.writeLong(object.snapshotId());
+                }
+
+                @Override
+                public SnapshotBarrier read(ObjectDataInput in) throws IOException {
+                    return new SnapshotBarrier(in.readLong());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
+    public static final class BroadcastEntryHook implements SerializerHook<BroadcastEntry> {
+
+        @Override
+        public Class<BroadcastEntry> getSerializationType() {
+            return BroadcastEntry.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<BroadcastEntry>() {
+                @Override
+                public int getTypeId() {
+                    return BROADCAST_ENTRY;
+                }
+
+                @Override
+                public void destroy() {
+
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, BroadcastEntry object) throws IOException {
+                    out.writeObject(object.getKey());
+                    out.writeObject(object.getValue());
+                }
+
+                @Override
+                public BroadcastEntry read(ObjectDataInput in) throws IOException {
+                    return new BroadcastEntry(in.readObject(), in.readObject());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
+    public static final class BroadcastKeyReferenceHook implements SerializerHook<BroadcastKeyReference> {
+
+        @Override
+        public Class<BroadcastKeyReference> getSerializationType() {
+            return BroadcastKeyReference.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<BroadcastKeyReference>() {
+                @Override
+                public int getTypeId() {
+                    return BROADCAST_KEY_REFERENCE;
+                }
+
+                @Override
+                public void destroy() {
+
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, BroadcastKeyReference object) throws IOException {
+                    out.writeObject(object.key());
+                }
+
+                @Override
+                public BroadcastKeyReference read(ObjectDataInput in) throws IOException {
+                    return new BroadcastKeyReference(in.readObject());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
 }

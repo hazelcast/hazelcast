@@ -48,9 +48,9 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
-public class ExecutionService {
+public class TaskletExecutionService {
 
-    static final IdleStrategy IDLER =
+    private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
 
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
@@ -62,11 +62,11 @@ public class ExecutionService {
 
     private volatile boolean isShutdown;
 
-    public ExecutionService(HazelcastInstance hz, int threadCount) {
+    public TaskletExecutionService(HazelcastInstance hz, int threadCount) {
         this.hzInstanceName = hz.getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
         this.cooperativeThreadPool = new Thread[threadCount];
-        this.logger = hz.getLoggingService().getLogger(ExecutionService.class);
+        this.logger = hz.getLoggingService().getLogger(TaskletExecutionService.class);
     }
 
     /**

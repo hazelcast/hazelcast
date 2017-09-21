@@ -40,13 +40,12 @@ import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.TransformP;
-import com.hazelcast.nio.Address;
+import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
+import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.Function;
 
 import static com.hazelcast.jet.TimestampKind.EVENT;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
@@ -412,7 +411,8 @@ public final class Processors {
             @Nonnull WindowDefinition windowDef,
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp
     ) {
-        return Processors.<T, K, A, R>aggregateByKeyAndWindow(getKeyFn, getTimestampFn, timestampKind, windowDef, aggrOp);
+        return Processors.<T, K, A, R>aggregateByKeyAndWindow(getKeyFn, getTimestampFn, timestampKind,
+                windowDef, aggrOp, true);
     }
 
     /**
@@ -451,7 +451,7 @@ public final class Processors {
     ) {
         WindowDefinition tumblingByFrame = windowDef.toTumblingByFrame();
         return Processors.<T, K, A, A>aggregateByKeyAndWindow(getKeyFn, getTimestampFn, timestampKind, tumblingByFrame,
-                aggrOp.withFinishFn(identity())
+                aggrOp.withFinishFn(identity()), false
         );
     }
 
@@ -487,7 +487,7 @@ public final class Processors {
     ) {
         return aggregateByKeyAndWindow(
                 TimestampedEntry::getKey, TimestampedEntry::getTimestamp, TimestampKind.FRAME,
-                windowDef, aggrOp.withCombiningAccumulateFn(TimestampedEntry<K, A>::getValue)
+                windowDef, aggrOp.withCombiningAccumulateFn(TimestampedEntry<K, A>::getValue), true
         );
     }
 
@@ -502,6 +502,8 @@ public final class Processors {
      *                      event timestamp or the frame timestamp
      * @param windowDef definition of the window to compute
      * @param aggrOp aggregate operation to perform on each group in a window
+     * @param isLastStage if this is the last stage of multi-stage setup
+     *
      * @param <T> type of stream item
      * @param <K> type of grouping key
      * @param <A> type of the aggregate operation's accumulator
@@ -513,7 +515,8 @@ public final class Processors {
             @Nonnull DistributedToLongFunction<? super T> getTimestampFn,
             @Nonnull TimestampKind timestampKind,
             @Nonnull WindowDefinition windowDef,
-            @Nonnull AggregateOperation1<? super T, A, R> aggrOp
+            @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
+            boolean isLastStage
     ) {
         return () -> new SlidingWindowP<T, A, R>(
                 getKeyFn,
@@ -521,7 +524,8 @@ public final class Processors {
                         ? item -> windowDef.higherFrameTs(getTimestampFn.applyAsLong(item))
                         : getTimestampFn,
                 windowDef,
-                aggrOp);
+                aggrOp,
+                isLastStage);
     }
 
     /**
@@ -568,11 +572,11 @@ public final class Processors {
      */
     @Nonnull
     public static <T> DistributedSupplier<Processor> insertWatermarks(
-            @Nonnull DistributedToLongFunction<T> getTimestampFn,
-            @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyFn,
+            @Nonnull DistributedToLongFunction<T> getTimestampF,
+            @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyF,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy
     ) {
-        return () -> new InsertWatermarksP<>(getTimestampFn, newWmPolicyFn.get(), wmEmitPolicy);
+        return () -> new InsertWatermarksP<>(getTimestampF, newWmPolicyF.get(), wmEmitPolicy);
     }
 
     /**
@@ -648,18 +652,10 @@ public final class Processors {
      */
     @Nonnull
     public static ProcessorMetaSupplier nonCooperative(@Nonnull ProcessorMetaSupplier wrapped) {
-        return new ProcessorMetaSupplier() {
-            @Override
-            public void init(@Nonnull Context context) {
-                wrapped.init(context);
-            }
-
-            @Nonnull @Override
-            public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addrs) {
-                Function<Address, ProcessorSupplier> addrToProcSupplier = wrapped.get(addrs);
-                return addr -> nonCooperative(addrToProcSupplier.apply(addr));
-            }
-        };
+        return new WrappingProcessorMetaSupplier(wrapped, p -> {
+            ((AbstractProcessor) p).setCooperative(false);
+            return p;
+        });
     }
 
     /**
@@ -669,19 +665,10 @@ public final class Processors {
      */
     @Nonnull
     public static ProcessorSupplier nonCooperative(@Nonnull ProcessorSupplier wrapped) {
-        return new ProcessorSupplier() {
-            @Override
-            public void init(@Nonnull Context context) {
-                wrapped.init(context);
-            }
-
-            @Nonnull @Override
-            public Collection<? extends Processor> get(int count) {
-                Collection<? extends Processor> ps = wrapped.get(count);
-                ps.forEach(p -> ((AbstractProcessor) p).setCooperative(false));
-                return ps;
-            }
-        };
+        return new WrappingProcessorSupplier(wrapped, p -> {
+            ((AbstractProcessor) p).setCooperative(false);
+            return p;
+        });
     }
 
     /**

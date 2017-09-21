@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
@@ -36,18 +35,6 @@ public interface Job {
      *                               has no job id.
      */
     long getJobId();
-
-    /**
-     * Returns the DAG associated with this job
-     */
-    @Nonnull
-    DAG getDAG();
-
-    /**
-     * Returns the config associated with this job
-     */
-    @Nonnull
-    JobConfig getConfig();
 
     /**
      * Gets the future associated with the job, used to control the job.

@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.WatermarkPolicies.limitingLagAndDelay;
+import static com.hazelcast.jet.impl.util.WatermarkPolicyUtil.limitingLagAndDelay;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)

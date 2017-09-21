@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.WatermarkPolicies.limitingLagAndLull;
+import static com.hazelcast.jet.impl.util.WatermarkPolicyUtil.limitingLagAndLull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
@@ -64,7 +64,7 @@ public class WatermarkPolicies_limitingLagAndLullTest {
     }
 
     @Test
-    public void when_noEventEver_then_increaseFromLongMinValue() {
+    public void when_noEventEver_then_noIncrease() {
         // Given
         assertEquals(Long.MIN_VALUE, p.getCurrentWatermark()); // initializes maxLullAt
         long maxLullNanos = MILLISECONDS.toNanos(MAX_LULL_MS);
@@ -77,7 +77,7 @@ public class WatermarkPolicies_limitingLagAndLullTest {
         // Then - wm increases
         for (; currTime <= 10_000_000; currTime += 1_000_000) {
             assertEquals("at time=" + currTime,
-                    Long.MIN_VALUE + NANOSECONDS.toMillis(currTime - maxLullNanos),
+                    Long.MIN_VALUE,
                     p.getCurrentWatermark());
         }
     }

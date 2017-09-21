@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
-import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -111,11 +110,11 @@ public class ReceiverTasklet implements Tasklet {
             if (item == DONE_ITEM) {
                 receptionDone = true;
                 inbox.remove();
-                assert inbox.peek() == null : "Found something in the queue beyond the DONE_WM: " + inbox.remove();
+                assert inbox.peek() == null : "Found something in the queue beyond the DONE_ITEM: " + inbox.remove();
                 break;
             }
-            ProgressState outcome = item instanceof Watermark
-                    ? collector.offerBroadcast(item)
+            ProgressState outcome = item instanceof BroadcastItem
+                    ? collector.offerBroadcast((BroadcastItem) item)
                     : collector.offer(item, o.getPartitionId());
             if (!outcome.isDone()) {
                 tracker.madeProgress(outcome.isMadeProgress());

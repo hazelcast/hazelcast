@@ -21,15 +21,11 @@ import java.util.List;
 class MockOutboundStream extends OutboundEdgeStream {
 
     MockOutboundStream(int ordinal) {
-        this(ordinal, 1024, 1024);
+        this(ordinal, 1024);
     }
 
     MockOutboundStream(int ordinal, int capacity) {
-        this(ordinal, capacity, 1024);
-    }
-
-    MockOutboundStream(int ordinal, int capacity, int outboxCapacity) {
-        super(ordinal, outboxCapacity, new MockOutboundCollector(capacity));
+        super(ordinal, new MockOutboundCollector(capacity));
     }
 
     List<Object> getBuffer() {

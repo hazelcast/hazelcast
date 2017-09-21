@@ -41,9 +41,9 @@ import java.util.concurrent.CompletableFuture;
  * of finite capacity which is not emptied until the processor yields back
  * to the execution engine. As soon as the outbox refuses an offered item,
  * the processor should save its current state and return to the caller.
- * It should also limit the amount of time it spends per call because it
- * will participate in a cooperative multithreading scheme, sharing a
- * thread with other processors.
+ * It should also limit the amount of time it spends in the invocation of
+ * any of its methods because it will participate in a cooperative
+ * multithreading scheme, sharing a thread with other processors.
  * <p>
  * On the other hand, if the processor declares itself as "non-cooperative"
  * ({@link #isCooperative()} returns {@code false}), then each item it
@@ -63,14 +63,14 @@ import java.util.concurrent.CompletableFuture;
 public interface Processor {
 
     /**
-     * Initializes this processor with the outbox that the processing methods
+     * Initializes this processor with the outboxes that the processing methods
      * must use to deposit their output items. This method will be called
      * exactly once and strictly before any calls to processing methods ({@link
      * #process(int, Inbox)} and {@link #complete()}).
      * <p>
      * The default implementation does nothing.
      */
-    default void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    default void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
     }
 
     /**
@@ -79,12 +79,28 @@ public interface Processor {
      * removing each item after it is processed. Does not remove an item until it
      * is done with it.
      * <p>
+     * If the method returns with items still present in the inbox, it will be
+     * called again before proceeding to call any other methods. There is at
+     * least one item in the inbox when this method is called.
+     * <p>
      * The default implementation does nothing.
      *
      * @param ordinal ordinal of the inbound edge
      * @param inbox   the inbox containing the pending items
      */
     default void process(int ordinal, @Nonnull Inbox inbox) {
+    }
+
+    /**
+     * Called after the edge input with the supplied {@code ordinal} is
+     * exhausted. If it returns {@code false}, it will be called again before
+     * proceeding to call any other method.
+     *
+     * @return {@code true} if the processor is now done completing the edge,
+     *         {@code false} otherwise.
+     */
+    default boolean completeEdge(int ordinal) {
+        return true;
     }
 
     /**
@@ -104,7 +120,12 @@ public interface Processor {
      * Called after all the inbound edges' streams are exhausted. If it returns
      * {@code false}, it will be invoked again until it returns {@code true}.
      * After this method is called, no other processing methods will be called on
-     * this processor.
+     * this processor, except for {@link #saveSnapshot()}.
+     * <p>
+     * Non-cooperative processors are required to return from this method from
+     * time to time to give the system a chance to check for snapshot requests
+     * job cancellation. The time the processor spends in this method affects
+     * the latency of snapshots and job cancellations.
      *
      * @return {@code true} if the completing step is now done, {@code false}
      *         otherwise.
@@ -116,13 +137,22 @@ public interface Processor {
     /**
      * Tells whether this processor is able to participate in cooperative
      * multithreading. This means that each invocation of a processing method
-     * will take a reasonably small amount of time (up to a millisecond). A
-     * cooperative processor should not attempt any blocking I/O operations.
+     * will take a reasonably small amount of time (up to a millisecond).
+     * Violations will manifest themselves as increased latency due to slower
+     * switching of processors.
+     * <p>
+     * A cooperative processor should also not attempt any blocking operations,
+     * such as I/O operations, waiting for locks/semaphores or sleep
+     * operations. Violations to this rule will manifest themselves as less
+     * than 100% CPU usage under maximum load.
      * <p>
      * If this processor declares itself cooperative, it will get a
      * non-blocking, buffering outbox of limited capacity and share a thread
      * with other cooperative processors. Otherwise it will get an
      * auto-flushing, blocking outbox and run in a dedicated Java thread.
+     * <p>
+     * Processor instances on single vertex are allowed to return different
+     * value, but single processor instance must return constant value.
      * <p>
      * The default implementation returns {@code true}.
      */
@@ -130,6 +160,58 @@ public interface Processor {
         return true;
     }
 
+    /**
+     * Stores its snapshotted state by adding items to the outbox's snapshot
+     * bucket. If it returns {@code false}, it will be called again before
+     * proceeding to call any other method.
+     * <p>
+     * This method will only be called after a call to {@link #process(int,
+     * Inbox) process()} returns and the inbox is empty. After all the input is
+     * exhausted, it may also be called between {@link #complete()} calls. Once
+     * {@code complete()} returns {@code true}, this method won't be called
+     * anymore.
+     * <p>
+     * Processors must ensure they give a chance to the system to call this
+     * method. Especially, non-cooperative source processors must make sure not
+     * to spend too much time per invocation of {@code complete()}, as this
+     * will prolong the snapshotting phase and impede overall progress.
+     * <p>
+     * The default implementation takes no action and returns {@code true}.
+     */
+    default boolean saveSnapshot() {
+        return true;
+    }
+
+    /**
+     * Called when a batch of items is received during the "restore from
+     * snapshot" operation. The type of items in the inbox is {@code
+     * Map.Entry}. May emit items to the outbox.
+     * <p>
+     * If there is no snapshot to restore, this method won't be called at all,
+     * even if the processor is stateful and would otherwise be guaranteed to
+     * get at least one item in the inbox.
+     * <p>
+     * If the method returns with items still present in the inbox, it will be
+     * called again before proceeding to call any other methods. There is at
+     * least one item in the inbox when this method is called.
+     * <p>
+     * The default implementation throws an exception.
+     */
+    default void restoreSnapshot(@Nonnull Inbox inbox) {
+        throw new JetException("Processor " + getClass().getName() + " does not override the restoreSnapshot() method");
+    }
+
+    /**
+     * Called after all keys have been restored using {@link
+     * #restoreSnapshot(Inbox)}. If it returns {@code false}, it will be called
+     * again before proceeding to call any other method.
+     * <p>
+     * The default implementation takes no action and returns {@code true}.
+     *
+     */
+    default boolean finishSnapshotRestore() {
+        return true;
+    }
 
     /**
      * Context passed to the processor in the
@@ -162,16 +244,14 @@ public interface Processor {
         String vertexName();
 
         /**
-         * Returns the future to check for cancellation status.
+         * Returns the future that can be checked for job cancellation status.
          * <p>
-         * This is necessary, if the {@link #complete()} or
-         * {@link #process(int, Inbox) process()} methods do not return promptly
-         * after each blocking call (note, that blocking calls are allowed only
-         * in {@link #isCooperative() non-cooperative} processors). In this case,
-         * the methods should regularly check the {@code jobFuture}'s
-         * {@link CompletableFuture#isDone() isDone()} and return, when it returns
-         * {@code true}:
-         *
+         * This is necessary if the {@link #complete()} or {@link #process(int,
+         * Inbox) process()} methods don't return promptly after each blocking
+         * call (note that blocking calls are allowed only in {@link #isCooperative()
+         * non-cooperative} processors). In this case the methods should regularly
+         * check the {@code jobFuture}'s {@link CompletableFuture#isDone() isDone()}
+         * and return when it returns {@code true}:
          * <pre>
          * public boolean complete() {
          *     while (!jobFuture.isDone()) {
@@ -183,8 +263,16 @@ public interface Processor {
          *     }
          * }
          * </pre>
+         * A processor that supports snapshotting must regularly return from all
+         * method invocations, so the above idiom does not apply to such
+         * processors.
          */
         @Nonnull
         CompletableFuture<Void> jobFuture();
+
+        /**
+         * Returns true, if snapshots will be saved for this job.
+         */
+        boolean snapshottingEnabled();
     }
 }

@@ -28,6 +28,7 @@ import java.util.BitSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@FunctionalInterface
 public interface OutboundCollector {
     /**
      * Offers an item to this collector.
@@ -36,10 +37,11 @@ public interface OutboundCollector {
     ProgressState offer(Object item);
 
     /**
-     * Offer a watermark to this collector. Watermarks will be propagated to all sub-collectors
-     * if the collector is a composite one.
+     * Broadcasts an item to all sub-collectors, if any.
      */
-    ProgressState offerBroadcast(Object item);
+    default ProgressState offerBroadcast(BroadcastItem item) {
+        return offer(item);
+    }
 
     /**
      * Offers an item with a known partition id
@@ -51,7 +53,9 @@ public interface OutboundCollector {
     /**
      * Returns the list of partitions handled by this collector.
      */
-    int[] getPartitions();
+    default int[] getPartitions() {
+        throw new UnsupportedOperationException();
+    }
 
 
     static OutboundCollector compositeCollector(
@@ -89,13 +93,13 @@ public interface OutboundCollector {
         }
 
         @Override
-        public ProgressState offerBroadcast(Object wm) {
+        public ProgressState offerBroadcast(BroadcastItem item) {
             progTracker.reset();
             for (int i = 0; i < collectors.length; i++) {
                 if (broadcastTracker.get(i)) {
                     continue;
                 }
-                ProgressState result = collectors[i].offerBroadcast(wm);
+                ProgressState result = collectors[i].offerBroadcast(item);
                 progTracker.mergeWith(result);
                 if (result.isDone()) {
                     broadcastTracker.set(i);
@@ -208,5 +212,3 @@ public interface OutboundCollector {
         }
     }
 }
-
-

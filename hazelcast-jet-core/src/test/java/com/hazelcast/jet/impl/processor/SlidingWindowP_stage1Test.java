@@ -16,38 +16,42 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.Watermark;
-import com.hazelcast.jet.StreamingTestSupport;
 import com.hazelcast.jet.TimestampKind;
 import com.hazelcast.jet.TimestampedEntry;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
+import static com.hazelcast.jet.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
-public class SlidingWindowP_stage1Test extends StreamingTestSupport {
+public class SlidingWindowP_stage1Test {
 
     private static final long KEY = 77L;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
     private SlidingWindowP<Entry<Long, Long>, Long, ?> processor;
 
     @Before
@@ -57,10 +61,9 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
                 x -> KEY,
                 Entry::getKey,
                 TimestampKind.EVENT,
-                slidingWindowDef(16, 4),
+                slidingWindowDef(16, 4), // this will get converted to tumblingWindowDef(4)
                 summingLong(Entry<Long, Long>::getValue)
         ).get();
-        processor.init(outbox, mock(Context.class));
     }
 
     @After
@@ -71,91 +74,120 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
 
     @Test
     public void smokeTest() {
-        // Given
-        ArrayDequeInbox inbox = new ArrayDequeInbox();
-        inbox.addAll(asList(
-                entry(0L, 1L), // to frame 4
-                entry(1L, 1L), // to frame 4
-                wm(3), // does not close anything
-                wm(4), // closes frame 4
-                entry(4L, 1L), // to frame 8
-                entry(5L, 1L), // to frame 8
-                entry(8L, 1L), // to frame 12
-                wm(6), // no effect
-                wm(7), // no effect
-                entry(8L, 1L), // to frame 12
-                wm(8), // closes frame 8
-                entry(8L, 1L), // to frame 12
-                wm(21) // closes everything
-        ));
+        verifyProcessor(processor)
+                .disableSnapshots()
+                .disableCompleteCall()
+                .input(asList(
+                        entry(0L, 1L), // to frame 4
+                        entry(1L, 1L), // to frame 4
+                        wm(4), // closes frame 4
+                        entry(4L, 1L), // to frame 8
+                        entry(5L, 1L), // to frame 8
+                        entry(8L, 1L), // to frame 12
+                        entry(8L, 1L), // to frame 12
+                        wm(8), // closes frame 8
+                        entry(8L, 1L), // to frame 12
+                        wm(12),
+                        wm(16),
+                        wm(20) // closes everything
+                ))
+                .expectOutput(asList(
+                        frame(4, 2),
+                        wm(4),
+                        frame(8, 2),
+                        wm(8),
+                        frame(12, 3),
+                        wm(12),
+                        wm(16),
+                        wm(20)
+                ));
+    }
 
-        // When
-        processor.process(0, inbox);
-        assertTrue(inbox.isEmpty());
-
-        // Then
-        assertOutbox(asList(
-                wm(3),
-                frame(4, 2),
-                wm(4),
-                wm(6),
-                wm(7),
-                frame(8, 2),
-                wm(8),
-                frame(12, 3),
-                wm(21)
-        ));
+    @Test
+    public void when_gapInWmAfterEvent_then_frameAndWmEmitted() {
+        verifyProcessor(processor)
+                .disableSnapshots()
+                .disableCompleteCall()
+                .input(asList(
+                        entry(0L, 1L), // to frame 4
+                        entry(1L, 1L), // to frame 4
+                        wm(12) // closes frame
+                ))
+                .expectOutput(asList(
+                        frame(4, 2),
+                        wm(12)
+                ));
     }
 
     @Test
     public void when_noEvents_then_wmsEmitted() {
-        // Given
-        ArrayDequeInbox inbox = new ArrayDequeInbox();
         List<Watermark> someWms = asList(
-                wm(2),
-                wm(3),
                 wm(4),
-                wm(5),
-                wm(6),
                 wm(8),
-                wm(20)
+                wm(12)
         );
-        inbox.addAll(someWms);
 
-        // When
-        processor.process(0, inbox);
-
-        // Then
-        assertOutbox(someWms);
+        verifyProcessor(processor)
+                .disableSnapshots()
+                .disableCompleteCall()
+                .input(someWms)
+                .expectOutput(someWms);
     }
 
     @Test
     public void when_batch_then_emitEverything() {
-        // Given
-        ArrayDequeInbox inbox = new ArrayDequeInbox();
-        inbox.addAll(asList(
-                entry(0L, 1L), // to frame 4
-                wm(4) // closes frame 4
-        ));
+        verifyProcessor(processor)
+                .disableSnapshots()
+                .input(asList(
+                        entry(0L, 1L), // to frame 4
+                        entry(4L, 1L), // to frame 8
+                        entry(8L, 1L), // to frame 12
+                        wm(4) // closes frame 4
+                        // no WM to emit any window, everything should be emitted in complete as if we received
+                        // wm(4), wm(8), wm(12)
+                ))
+                .expectOutput(asList(
+                        frame(4, 1),
+                        wm(4),
+                        frame(8, 1),
+                        frame(12, 1)
+                ));
+    }
 
-        // When
-        processor.process(0, inbox);
-        long start = System.nanoTime();
-        processor.complete();
-        long processTime = System.nanoTime() - start;
-        // this is to test that there is no iteration from current watermark up to Long.MAX_VALUE, which
-        // will take too long.
-        assertTrue("process took too long: " + processTime, processTime < MILLISECONDS.toNanos(100));
-        assertTrue(inbox.isEmpty());
+    @Test
+    public void when_wmNeverReceived_then_emitEverythingInComplete() {
+        verifyProcessor(processor)
+                .disableSnapshots()
+                .input(asList(entry(0L, 1L), // to frame 4
+                        entry(4L, 1L) // to frame 8
+                        // no WM to emit any window, everything should be emitted in complete as if we received
+                        // wm(4), wm(8)
+                ))
+                .expectOutput(asList(
+                        frame(4, 1),
+                        frame(8, 1)
+                ));
+    }
 
-        // Then
-        assertOutbox(asList(
-                frame(4, 1),
-                wm(4)
-        ));
+    @Test
+    public void when_lateEvent_then_fail() {
+        exception.expect(AssertionError.class);
+        exception.expectMessage("late");
+
+        verifyProcessor(processor)
+                .disableSnapshots()
+                .disableCompleteCall()
+                .input(asList(wm(16),
+                        entry(7, 1)
+                ))
+                .expectOutput(emptyList());
     }
 
     private static TimestampedEntry<Long, LongAccumulator> frame(long timestamp, long value) {
         return new TimestampedEntry<>(timestamp, KEY, new LongAccumulator(value));
+    }
+
+    private static Watermark wm(long timestamp) {
+        return new Watermark(timestamp);
     }
 }

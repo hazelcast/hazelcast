@@ -16,65 +16,57 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.idToString;
 
-public class JoinJobOperation extends AsyncExecutionOperation implements IdentifiedDataSerializable {
+public class SnapshotOperation extends AsyncExecutionOperation {
 
+    private long executionId;
+    private long snapshotId;
 
-    private Data dag;
-    private JobConfig config;
-    private volatile CompletableFuture<Boolean> executionFuture;
-
-    public JoinJobOperation() {
+    // for deserialization
+    public SnapshotOperation() {
     }
 
-    public JoinJobOperation(long jobId, Data dag, JobConfig config) {
+    public SnapshotOperation(long jobId, long executionId, long snapshotId) {
         super(jobId);
-        this.dag = dag;
-        this.config = config;
+        this.executionId = executionId;
+        this.snapshotId = snapshotId;
     }
 
     @Override
-    protected void doRun() {
+    protected void doRun() throws Exception {
         JetService service = getService();
-        executionFuture = service.startOrJoinJob(jobId, dag, config);
-        executionFuture.whenComplete((r, t) -> doSendResponse(peel(t)));
-    }
-
-    @Override
-    public void cancel() {
-        if (executionFuture != null) {
-            executionFuture.cancel(true);
-        }
+        service.getJobExecutionService()
+               .beginSnapshot(getCallerAddress(), jobId, executionId, snapshotId).whenComplete((r, v) -> {
+            logFine(getLogger(), "Snapshot %s for job %s finished on member", snapshotId, idToString(jobId));
+            doSendResponse(null);
+        });
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.JOIN_JOB_OP;
+        return JetInitDataSerializerHook.SNAPSHOT_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(dag);
-        out.writeObject(config);
+        out.writeLong(executionId);
+        out.writeLong(snapshotId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        dag = in.readData();
-        config = in.readObject();
+        executionId = in.readLong();
+        snapshotId = in.readLong();
     }
 }

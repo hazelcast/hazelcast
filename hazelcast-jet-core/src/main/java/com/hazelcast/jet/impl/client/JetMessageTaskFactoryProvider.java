@@ -20,8 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
-import com.hazelcast.client.impl.protocol.codec.JetJoinJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -38,9 +40,11 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
     }
 
     public void initFactories() {
-        factories[JetJoinJobCodec.RequestParameters.TYPE.id()] = toFactory(JetJoinJobMessageTask::new);
+        factories[JetSubmitJobCodec.RequestParameters.TYPE.id()] = toFactory(JetSubmitJobMessageTask::new);
         factories[JetCancelJobCodec.RequestParameters.TYPE.id()] = toFactory(JetCancelJobMessageTask::new);
         factories[JetGetJobStatusCodec.RequestParameters.TYPE.id()] = toFactory(JetGetJobStatusMessageTask::new);
+        factories[JetGetJobIdsCodec.RequestParameters.TYPE.id()] = toFactory(GetJobIdsMessageTask::new);
+        factories[JetJoinSubmittedJobCodec.RequestParameters.TYPE.id()] = toFactory(JetJoinSubmittedJobMessageTask::new);
     }
 
     @Override
