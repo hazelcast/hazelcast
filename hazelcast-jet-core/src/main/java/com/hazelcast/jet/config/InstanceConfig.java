@@ -16,18 +16,31 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.config.MapConfig;
+
 import javax.annotation.Nonnull;
+
+import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 
 /**
  * General configuration options pertaining to a Jet instance.
  */
 public class InstanceConfig {
 
-    /** The default value of the {@link #setFlowControlPeriodMs(int) flow-control period}. */
+    /**
+     * The default value of the {@link #setFlowControlPeriodMs(int) flow-control period}.
+     */
     public static final int DEFAULT_FLOW_CONTROL_PERIOD_MS = 100;
+
+    /**
+     * The default value of the {@link #setBackupCount(int) backup-count}
+     */
+    public static final int DEFAULT_BACKUP_COUNT = MapConfig.DEFAULT_BACKUP_COUNT;
+
 
     private int cooperativeThreadCount = Runtime.getRuntime().availableProcessors();
     private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
+    private int backupCount = DEFAULT_BACKUP_COUNT;
     private String tempDir;
 
     /**
@@ -81,5 +94,32 @@ public class InstanceConfig {
      */
     public int getFlowControlPeriodMs() {
         return flowControlPeriodMs;
+    }
+
+    /**
+     * Sets the number of synchronous backups for storing job metadata and
+     * snapshots. Maximum allowed value is 6.
+     * <p>
+     * For example, if backup count is set to 2, all job metadata and snapshot data
+     * will be replicated to two other members. If snapshots are enabled
+     * in the case that at most two members fail simultaneously the job can be restarted
+     * and continued from latest snapshot.
+     */
+    public InstanceConfig setBackupCount(int newBackupCount) {
+        if (newBackupCount < 0) {
+            throw new IllegalArgumentException("backup count can't be smaller than 0");
+        } else if (newBackupCount > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("backup count can't be larger than than " + MAX_BACKUP_COUNT);
+        }
+        this.backupCount = newBackupCount;
+        return this;
+    }
+
+    /**
+     * Returns the {@link #setBackupCount(int) backup-count} used for job metadata
+     * and snapshots
+     */
+    public int getBackupCount() {
+        return backupCount;
     }
 }

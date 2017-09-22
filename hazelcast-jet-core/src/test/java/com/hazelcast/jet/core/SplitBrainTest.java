@@ -66,7 +66,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
     @Override
     protected void onJetConfigCreated(JetConfig jetConfig) {
-        jetConfig.setJobMetadataBackupCount(MAX_BACKUP_COUNT);
+        jetConfig.getInstanceConfig().setBackupCount(MAX_BACKUP_COUNT);
     }
 
     @Test

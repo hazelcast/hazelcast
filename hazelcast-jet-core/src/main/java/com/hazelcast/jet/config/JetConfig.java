@@ -17,11 +17,8 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 
 import java.util.Properties;
-
-import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 
 /**
  * Configuration object for a Jet instance.
@@ -34,16 +31,11 @@ public class JetConfig {
      */
     public static final int DEFAULT_JET_MULTICAST_PORT = 54326;
 
-    /**
-     * The default backup count to be used for storing job metadata in Hazelcast maps
-     */
-    public static final int JOB_METADATA_DEFAULT_BACKUP_COUNT = MapConfig.DEFAULT_BACKUP_COUNT;
 
     private Config hazelcastConfig = defaultHazelcastConfig();
     private InstanceConfig instanceConfig = new InstanceConfig();
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
     private Properties properties = new Properties();
-    private int jobMetadataBackupCount = JOB_METADATA_DEFAULT_BACKUP_COUNT;
 
     /**
      * Returns the configuration object for the underlying Hazelcast instance.
@@ -57,7 +49,6 @@ public class JetConfig {
      */
     public JetConfig setHazelcastConfig(Config config) {
         hazelcastConfig = config;
-        setJobMetadataBackupCount(jobMetadataBackupCount);
         return this;
     }
 
@@ -105,26 +96,6 @@ public class JetConfig {
     public JetConfig setDefaultEdgeConfig(EdgeConfig defaultEdgeConfig) {
         this.defaultEdgeConfig = defaultEdgeConfig;
         return this;
-    }
-
-    /**
-     * Sets the backup count which is used for storing job metadata objects
-     */
-    public JetConfig setJobMetadataBackupCount(int newBackupCount) {
-        if (newBackupCount < 0) {
-            throw new IllegalArgumentException("backup-count can't be smaller than 0");
-        } else if (newBackupCount > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("backup-count can't be larger than than " + MAX_BACKUP_COUNT);
-        }
-        this.jobMetadataBackupCount = newBackupCount;
-        return this;
-    }
-
-    /**
-     * Returns the backup count which is used for storing job metadata objects
-     */
-    public int getJobMetadataBackupCount() {
-        return jobMetadataBackupCount;
     }
 
     private static Config defaultHazelcastConfig() {

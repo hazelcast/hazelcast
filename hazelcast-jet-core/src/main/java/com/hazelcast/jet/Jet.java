@@ -96,7 +96,7 @@ public final class Jet {
                                                       .setConfigObject(jetConfig));
 
         jetConfig.getHazelcastConfig().getMapConfig(INTERNAL_JET_MAPS)
-                 .setBackupCount(jetConfig.getJobMetadataBackupCount())
+                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
                  .setStatisticsEnabled(false)
                  .setMergePolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
     }

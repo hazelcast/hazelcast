@@ -168,9 +168,6 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
                 case "edge-defaults":
                     parseEdgeDefaults(node);
                     break;
-                case "job-metadata-backup-count":
-                    parseJobMetadataBackupCount(node);
-                    break;
                 default:
                     throw new AssertionError("Unrecognized XML element: " + name);
             }
@@ -190,6 +187,9 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
                     break;
                 case "flow-control-period":
                     instanceConfig.setFlowControlPeriodMs(intValue(node));
+                    break;
+                case "backup-count":
+                    instanceConfig.setBackupCount(intValue(node));
                     break;
                 default:
                     throw new AssertionError("Unrecognized XML element: " + name);
@@ -216,10 +216,6 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
             }
         }
         return config;
-    }
-
-    private void parseJobMetadataBackupCount(Node node) {
-        jetConfig.setJobMetadataBackupCount(intValue(node));
     }
 
     private int intValue(Node node) {

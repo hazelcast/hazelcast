@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.util.Util;
-
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
@@ -131,12 +130,12 @@ public class XmlConfigTest {
     @Test
     public void when_configHasVariable_variablesAreReplaced() {
         // Given
-        String dir = "/var/tmp";
-        int threadCount = 55;
         Properties properties = new Properties();
         properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-with-variables.xml");
-        properties.put("working.directory", dir);
-        properties.put("thread.count", String.valueOf(threadCount));
+        properties.put("working.directory", "/var/tmp");
+        properties.put("thread.count", String.valueOf(55));
+        properties.put("flow.control.period", "50");
+        properties.put("backup.count", "2");
 
         // When
         JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
@@ -178,22 +177,11 @@ public class XmlConfigTest {
         assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
     }
 
-    @Test
-    public void when_jobMetadataBackupCount_usesSpecified() {
-        // Given
-        Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + TEST_XML_1);
-
-        // When
-        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
-
-        // Then
-        assertEquals("jobMetadataBackupCount", 4, jetConfig.getJobMetadataBackupCount());
-    }
-
     private static void assertConfig(JetConfig jetConfig) {
-        assertEquals(55, jetConfig.getInstanceConfig().getCooperativeThreadCount());
-        assertEquals("/var/tmp", jetConfig.getInstanceConfig().getTempDir());
+        assertEquals("cooperativeThreadCount", 55, jetConfig.getInstanceConfig().getCooperativeThreadCount());
+        assertEquals("tempDir", "/var/tmp", jetConfig.getInstanceConfig().getTempDir());
+        assertEquals("backupCount", 2, jetConfig.getInstanceConfig().getBackupCount());
+        assertEquals("flowControlMs", 50, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));

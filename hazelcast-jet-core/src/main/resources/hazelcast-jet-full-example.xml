@@ -25,6 +25,8 @@
        <flow-control-period>100</flow-control-period>
         <!-- working directory to use for placing temporary files -->
        <temp-dir>/var/tmp/jet</temp-dir>
+        <!-- number of backups for job specifics maps -->
+       <backup-count>1</backup-count>
     </instance>
     <properties>
        <property name="custom.property">custom property</property>

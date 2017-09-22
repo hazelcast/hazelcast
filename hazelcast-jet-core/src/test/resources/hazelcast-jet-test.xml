@@ -19,8 +19,10 @@
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <instance>
-       <cooperative-thread-count>55</cooperative-thread-count>
-       <temp-dir>/var/tmp</temp-dir>
+        <cooperative-thread-count>55</cooperative-thread-count>
+        <temp-dir>/var/tmp</temp-dir>
+        <flow-control-period>50</flow-control-period>
+        <backup-count>2</backup-count>
     </instance>
 
     <properties>
@@ -33,6 +35,4 @@
        <packet-size-limit>997</packet-size-limit>
        <receive-window-multiplier>996</receive-window-multiplier>
     </edge-defaults>
-
-    <job-metadata-backup-count>4</job-metadata-backup-count>
 </hazelcast-jet>

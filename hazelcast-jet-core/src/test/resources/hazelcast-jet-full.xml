@@ -19,9 +19,10 @@
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <instance>
-       <cooperative-thread-count>10</cooperative-thread-count>
-       <flow-control-period>100</flow-control-period>
-       <temp-dir>/var/tmp</temp-dir>
+        <cooperative-thread-count>10</cooperative-thread-count>
+        <flow-control-period>100</flow-control-period>
+        <temp-dir>/var/tmp</temp-dir>
+        <backup-count>1</backup-count>
     </instance>
     <properties>
        <property name="custom.property">custom property</property>

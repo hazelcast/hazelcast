@@ -30,6 +30,7 @@
                             <xs:element name="cooperative-thread-count" type="positive-int" minOccurs="0"/>
                             <xs:element name="temp-dir" type="xs:string" minOccurs="0"/>
                             <xs:element name="flow-control-period" type="positive-int" minOccurs="0"/>
+                            <xs:element name="backup-count" minOccurs="0" type="positive-int" />
                         </xs:all>
                     </xs:complexType>
                 </xs:element>
@@ -49,7 +50,6 @@
                         </xs:all>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="job-metadata-backup-count" minOccurs="0" type="positive-int" />
             </xs:all>
         </xs:complexType>
     </xs:element>
