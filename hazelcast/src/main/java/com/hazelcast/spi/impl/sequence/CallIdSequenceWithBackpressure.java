@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl.sequence;
 
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
@@ -69,7 +69,7 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
     }
 
     @Override
-    public long next() throws TimeoutException {
+    public long next() {
         if (!hasSpace()) {
             waitForSpace();
         }
@@ -94,13 +94,20 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
         return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
     }
 
-    private void waitForSpace() throws TimeoutException {
-        long deadline = System.nanoTime() + backoffTimeoutNanos;
+    private void waitForSpace() {
+        if (backoffTimeoutNanos <= 0) {
+            throw new HazelcastOverloadException(String.format(
+                    "Maximum invocation count reached." + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs",
+                    maxConcurrentInvocations, NANOSECONDS.toMillis(backoffTimeoutNanos)));
+        }
+
+        long start = System.nanoTime();
         for (long idleCount = 0; ; idleCount++) {
-            if (System.nanoTime() >= deadline) {
-                throw new TimeoutException(String.format("Timed out trying to acquire another call ID."
-                        + " maxConcurrentInvocations = %d, backoffTimeout = %d", maxConcurrentInvocations,
-                        NANOSECONDS.toMillis(backoffTimeoutNanos)));
+            long now = System.nanoTime();
+            if (now - start > backoffTimeoutNanos) {
+                throw new HazelcastOverloadException(String.format("Timed out trying to acquire another call ID."
+                        + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs, now:%d, start:%d", maxConcurrentInvocations,
+                        NANOSECONDS.toMillis(backoffTimeoutNanos), now, start));
             }
             IDLER.idle(idleCount);
             if (hasSpace()) {
