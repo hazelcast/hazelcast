@@ -20,13 +20,15 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.execution.BroadcastEntry;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
@@ -62,6 +64,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.core.JobStatus.RESTARTING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
@@ -70,8 +73,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
-import static com.hazelcast.jet.core.processor.Processors.map;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
@@ -196,16 +197,17 @@ public class MasterContext {
         for (Vertex vertex : dag) {
             String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
             if (!nodeEngine.getHazelcastInstance().getMap(mapName).isEmpty()) {
-                int parallelism = vertex.getLocalParallelism();
-                Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(), readMap(mapName))
-                                               .localParallelism(parallelism);
-                // TODO: get rid of this additional vertex by adding a mapping option to readMap()
-                Vertex mapSnapshotEntry = dag.newVertex("__map_snapshot_entry." + vertex.getName(), map(
-                        (Map.Entry e) -> (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry(e) : e)
-                ).localParallelism(parallelism);
+                // items with keys of type BroadcastKey need to be broadcast to all processors
+                DistributedPredicate<Entry<Object, Object>> predicate = (Entry<Object, Object> e) -> true;
+                DistributedFunction<Entry<Object, Object>, ?> projection = (Entry<Object, Object> e) ->
+                        (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry<>(e) : e;
+                Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(),
+                        readMap(mapName, predicate, projection));
+
+                readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
+
                 int destOrdinal = dag.getInboundEdges(vertex.getName()).size();
-                dag.edge(Edge.between(readSnapshotVertex, mapSnapshotEntry).isolated())
-                   .edge(new SnapshotRestoreEdge(mapSnapshotEntry, vertex, destOrdinal));
+                dag.edge(new SnapshotRestoreEdge(readSnapshotVertex, vertex, destOrdinal));
             }
         }
     }
