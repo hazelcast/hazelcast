@@ -127,6 +127,19 @@ public class JobCoordinationService {
         return masterContext.completionFuture();
     }
 
+    void checkQuorumValues() {
+        int currentQuorumSize = getQuorumSize();
+        for (JobRecord jobRecord : jobRepository.getJobRecords()) {
+            if (jobRecord.getConfig().isSplitBrainProtectionEnabled()) {
+                if (currentQuorumSize > jobRecord.getQuorumSize()) {
+                    logger.warning("Current quorum size: " + currentQuorumSize
+                            + " of cluster is larger than quorum size: " + jobRecord.getQuorumSize() + " of job "
+                            + idToString(jobRecord.getJobId()));
+                }
+            }
+        }
+    }
+
     /**
      * Starts the job if it is not already started or completed. Returns a future which represents result of the job.
      */

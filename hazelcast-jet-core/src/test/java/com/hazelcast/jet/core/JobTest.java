@@ -81,6 +81,8 @@ public class JobTest extends JetTestSupport {
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         instance1 = factory.newMember(config);
         instance2 = factory.newMember(config);
+
+        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
     }
 
     @After
