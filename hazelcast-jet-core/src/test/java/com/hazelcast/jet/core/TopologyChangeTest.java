@@ -140,6 +140,10 @@ public class TopologyChangeTest extends JetTestSupport {
 
             instances[i] = factory.newMember(config);
         }
+
+        for (JetInstance instance : instances) {
+            warmUpPartitions(instance.getHazelcastInstance());
+        }
     }
 
     @After

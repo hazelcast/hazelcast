@@ -104,7 +104,8 @@ public class ExecutionLifecycleTest extends JetTestSupport {
                 Integer.toString(TIMEOUT_MILLIS));
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         instance = factory.newMember(config);
-        factory.newMember(config);
+        JetInstance instance2 = factory.newMember(config);
+        warmUpPartitions(instance.getHazelcastInstance(), instance2.getHazelcastInstance());
     }
 
     @After
