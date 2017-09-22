@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
-
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -218,6 +217,7 @@ public class ClientCompatibilityNullTest_1_5 {
     inputStream.read(bytes);
     ClientGetPartitionsCodec.ResponseParameters params = ClientGetPartitionsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aPartitionTable, params.partitions));
+                assertTrue(isEqual(anInt, params.partitionStateVersion));
 }
 
 
@@ -417,8 +417,10 @@ public class ClientCompatibilityNullTest_1_5 {
 {
     class ClientAddPartitionListenerCodecHandler extends ClientAddPartitionListenerCodec.AbstractEventHandler {
         @Override
-        public void handle(  java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>> partitions   ) {
+        public void handle(  java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>> partitions ,   int
+ partitionStateVersion   ) {
                             assertTrue(isEqual(aPartitionTable, partitions));
+                            assertTrue(isEqual(anInt, partitionStateVersion));
         }
     }
     ClientAddPartitionListenerCodecHandler handler = new ClientAddPartitionListenerCodecHandler();

@@ -178,9 +178,10 @@ public class EncodeDecodeCompatibilityTest {
     ClientGetPartitionsCodec.RequestParameters params = ClientGetPartitionsCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = ClientGetPartitionsCodec.encodeResponse(    aPartitionTable   );
+    ClientMessage clientMessage = ClientGetPartitionsCodec.encodeResponse(    aPartitionTable ,    anInt   );
     ClientGetPartitionsCodec.ResponseParameters params = ClientGetPartitionsCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aPartitionTable, params.partitions));
+            assertTrue(isEqual(anInt, params.partitionStateVersion));
 }
 {
     ClientMessage clientMessage = ClientRemoveAllListenersCodec.encodeRequest( );
@@ -312,13 +313,15 @@ public class EncodeDecodeCompatibilityTest {
 {
     class ClientAddPartitionListenerCodecHandler extends ClientAddPartitionListenerCodec.AbstractEventHandler {
         @Override
-        public void handle(  java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>> partitions   ) {
+        public void handle(  java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>> partitions ,   int
+ partitionStateVersion   ) {
                           assertTrue(isEqual(aPartitionTable, partitions));
+                          assertTrue(isEqual(anInt, partitionStateVersion));
         }
     }
     ClientAddPartitionListenerCodecHandler handler = new ClientAddPartitionListenerCodecHandler();
     {
-        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent( aPartitionTable   );
+        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent( aPartitionTable ,  anInt   );
         handler.handle(ClientMessage.createForDecode(clientMessage.buffer(), 0));
      }
 }
