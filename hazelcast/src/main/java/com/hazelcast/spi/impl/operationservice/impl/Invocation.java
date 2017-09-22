@@ -781,7 +781,6 @@ public abstract class Invocation implements OperationResponseHandler {
         final ConnectionManager connectionManager;
         final InternalExecutionService executionService;
         final long defaultCallTimeoutMillis;
-        final boolean failOnIndeterminateOperationState;
         final InvocationRegistry invocationRegistry;
         final InvocationMonitor invocationMonitor;
         final ILogger logger;
@@ -802,7 +801,6 @@ public abstract class Invocation implements OperationResponseHandler {
                 ConnectionManager connectionManager,
                 InternalExecutionService executionService,
                 long defaultCallTimeoutMillis,
-                boolean failOnIndeterminateOperationState,
                 InvocationRegistry invocationRegistry,
                 InvocationMonitor invocationMonitor,
                 ILogger logger,
@@ -821,7 +819,6 @@ public abstract class Invocation implements OperationResponseHandler {
             this.connectionManager = connectionManager;
             this.executionService = executionService;
             this.defaultCallTimeoutMillis = defaultCallTimeoutMillis;
-            this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
             this.invocationRegistry = invocationRegistry;
             this.invocationMonitor = invocationMonitor;
             this.logger = logger;

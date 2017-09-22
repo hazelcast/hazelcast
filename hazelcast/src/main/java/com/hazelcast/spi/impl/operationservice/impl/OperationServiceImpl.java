@@ -129,6 +129,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     private final InboundResponseHandler inboundResponseHandler;
     private final int invocationMaxRetryCount;
     private final long invocationRetryPauseMillis;
+    private final boolean failOnIndeterminateOperationState;
 
     // contains the current executing asyncOperations. This information is needed for the operation-ping.
     // this is a temporary solution till we found a better async operation abstraction
@@ -145,6 +146,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         this.invocationMaxRetryCount = node.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
         this.invocationRetryPauseMillis = node.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
+        this.failOnIndeterminateOperationState = nodeEngine.getProperties().getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
 
         this.backpressureRegulator = new BackpressureRegulator(
                 node.getProperties(), node.getLogger(BackpressureRegulator.class));
@@ -267,7 +269,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         checkNotNegative(partitionId, "Partition ID cannot be negative!");
         return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId)
-                .setTryCount(invocationMaxRetryCount).setTryPauseMillis(invocationRetryPauseMillis);
+                .setTryCount(invocationMaxRetryCount).setTryPauseMillis(invocationRetryPauseMillis)
+                .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState);
     }
 
     @Override
@@ -301,7 +304,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         return new PartitionInvocation(
                 invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
-                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invoke();
     }
 
     @Override
@@ -309,7 +312,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op) {
         return new PartitionInvocation(
                 invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
-                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invoke();
     }
 
     @Override
@@ -328,7 +331,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         InvocationFuture future = new PartitionInvocation(invocationContext, op,
                 invocationMaxRetryCount, invocationRetryPauseMillis,
-                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invokeAsync();
 
         if (callback != null) {
             future.andThen(callback);
@@ -446,7 +449,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.connectionManager,
                 node.nodeEngine.getExecutionService(),
                 nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS),
-                nodeEngine.getProperties().getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE),
                 invocationRegistry,
                 invocationMonitor,
                 nodeEngine.getLogger(Invocation.class),
