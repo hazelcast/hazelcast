@@ -48,10 +48,10 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
             LINE_SEPARATOR + "                                                            ",
     };
 
-    //32 chars should be more than enough to encode primitives
+    // 32 chars should be more than enough to encode primitives
     private static final int CHARS_LENGTH = 32;
 
-    private final StringBuffer tmpSb = new StringBuffer();
+    private final StringBuilder tmpSb = new StringBuilder();
     private final boolean includeEpochTime;
 
     private int sectionLevel = -1;
@@ -61,10 +61,10 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     private final Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
     private final Date date = new Date();
 
-    // used for encoding primitives.
+    // used for encoding primitives
     private char[] chars = new char[CHARS_LENGTH];
 
-    // used to write primitives without causing litter.
+    // used to write primitives without causing litter
     private StringBuilder stringBuilder = new StringBuilder();
 
     public DiagnosticsLogWriterImpl() {
@@ -149,7 +149,7 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
         write(value);
     }
 
-    // we can't rely on NumberFormat since it generates a ton of garbage
+    // we can't rely on NumberFormat, since it generates a ton of garbage
     @SuppressWarnings("checkstyle:magicnumber")
     void writeLong(long value) {
         if (value == Long.MIN_VALUE) {
