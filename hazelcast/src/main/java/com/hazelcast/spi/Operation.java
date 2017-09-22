@@ -342,7 +342,16 @@ public abstract class Operation implements DataSerializable {
 
     public final void sendResponse(Object value) {
         OperationResponseHandler responseHandler = getOperationResponseHandler();
-        responseHandler.sendResponse(this, value);
+        if (responseHandler == null) {
+            if (value instanceof Throwable) {
+                // in case of a throwable, we want the stacktrace.
+                getLogger().warning("Missing responseHandler for " + toString(), (Throwable) value);
+            } else {
+                getLogger().warning("Missing responseHandler for " + toString() + " value[" + value + "]");
+            }
+        } else {
+            responseHandler.sendResponse(this, value);
+        }
     }
 
     /**
