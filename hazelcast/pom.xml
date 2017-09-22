@@ -104,11 +104,90 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${project.build.finalName}</finalName>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <shadeTestJar>true</shadeTestJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
+                                    <include>com.hazelcast:hazelcast-client-protocol</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.eclipsesource.json</pattern>
+                                    <shadedPattern>com.hazelcast.com.eclipsesource.json</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-hazelcast</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>${project.artifactId}</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <version>${maven.bundle.plugin.version}</version>
+                <configuration>
+                    <instructions>
+                        <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
+                        <Export-Package>
+                            com.hazelcast.*
+                        </Export-Package>
+                        <Import-Package>
+                            !org.junit,
+                            !com.hazelcast.*,
+                            !com.eclipsesource.json,
+                            sun.misc;resolution:=optional,
+                            javax.cache;resolution:=optional,
+                            javax.cache.*;resolution:=optional,
+                            org.apache.log4j;resolution:=optional,
+                            org.apache.log4j.spi;resolution:=optional,
+                            org.apache.logging.log4j;resolution:=optional,
+                            org.apache.logging.log4j.spi;resolution:=optional,
+                            org.slf4j;resolution:=optional,
+                            org.codehaus.groovy.jsr223;resolution:=optional,
+                            org.jruby.embed.jsr223;resolution:=optional,
+                            *
+                        </Import-Package>
+                    </instructions>
+                </configuration>
                 <executions>
                     <execution>
                         <id>bundle-manifest</id>
@@ -116,30 +195,13 @@
                         <goals>
                             <goal>manifest</goal>
                         </goals>
-                        <configuration>
-                            <instructions>
-                                <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
-                                <Export-Package>
-                                    com.hazelcast.*
-                                </Export-Package>
-                                <Import-Package>
-                                    !org.junit,
-                                    !com.hazelcast.*,
-                                    !com.eclipsesource.json,
-                                    sun.misc;resolution:=optional,
-                                    javax.cache;resolution:=optional,
-                                    javax.cache.*;resolution:=optional,
-                                    org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.spi;resolution:=optional,
-                                    org.apache.logging.log4j;resolution:=optional,
-                                    org.apache.logging.log4j.spi;resolution:=optional,
-                                    org.slf4j;resolution:=optional,
-                                    org.codehaus.groovy.jsr223;resolution:=optional,
-                                    org.jruby.embed.jsr223;resolution:=optional,
-                                    *
-                                </Import-Package>
-                            </instructions>
-                        </configuration>
+                   </execution>
+                    <execution>
+                        <id>bundle-manifest-phase-package</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -169,9 +231,17 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>test-jar</goal>
                             <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>latest-artifact</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -195,37 +265,6 @@
                                 <copy file="${basedir}/src/main/resources/hazelcast-full-example.xml"
                                       tofile="${basedir}/target/hazelcast-full-example.xml"/>
                             </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>${project.build.finalName}</finalName>
-                            <createSourcesJar>true</createSourcesJar>
-                            <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>true</shadeTestJar>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.eclipsesource.minimal-json:minimal-json</include>
-                                    <include>com.hazelcast:hazelcast-client-protocol</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.eclipsesource.json</pattern>
-                                    <shadedPattern>com.hazelcast.com.eclipsesource.json</shadedPattern>
-                                </relocation>
-                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
