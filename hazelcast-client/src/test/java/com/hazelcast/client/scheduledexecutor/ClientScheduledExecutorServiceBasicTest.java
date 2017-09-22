@@ -31,8 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceBasicTest {
@@ -47,9 +45,16 @@ public class ClientScheduledExecutorServiceBasicTest extends ScheduledExecutorSe
     }
 
     @Override
-    public HazelcastInstance[] createClusterWithCount(int count) {
+    protected HazelcastInstance[] createClusterWithCount(int count) {
+        return createClusterWithCount(count, new Config());
+    }
+
+    @Override
+    protected HazelcastInstance[] createClusterWithCount(int count, Config config) {
         factory = new TestHazelcastFactory();
-        return factory.newInstances(new Config(), count);
+        HazelcastInstance[] instances = factory.newInstances(config, count);
+        waitAllForSafeState(instances);
+        return instances;
     }
 
     @Override
@@ -59,16 +64,15 @@ public class ClientScheduledExecutorServiceBasicTest extends ScheduledExecutorSe
         return factory.newHazelcastClient(config).getScheduledExecutorService(name);
     }
 
-    @Override
-    @Test()
+    @Test
     @Ignore("Never supported feature")
+    @Override
     public void schedule_testPartitionLostEvent() {
     }
 
-    @Override
     @Test
     @Ignore("Never supported feature")
-    public void scheduleOnMember_testMemberLostEvent()
-            throws ExecutionException, InterruptedException {
+    @Override
+    public void scheduleOnMember_testMemberLostEvent() {
     }
 }
