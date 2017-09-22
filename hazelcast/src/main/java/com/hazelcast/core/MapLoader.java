@@ -26,12 +26,29 @@ import java.util.Map;
  * it can be backed by any type of data store such as RDBMS, OODBMS, or simply
  * a file based data store.
  * <p/>
- * IMap.get(key) normally returns the value that is available in-memory. If the entry
- * doesn't exist in-memory, Hazelcast returns null. If a Loader implementation
- * is provided then, instead of returning null, Hazelcast will load the unknown entry by
- * calling the implementation's load (key) or loadAll(keys) methods. Loaded entries
- * will be placed into the distributed map and they will stay in-memory until they are
- * explicitly removed or implicitly evicted (if eviction is configured).
+ * {@link com.hazelcast.core.IMap#get(Object)} normally returns the value that is available in-memory. If the entry
+ * doesn't exist in-memory, Hazelcast returns null. If a Loader implementation is provided then, instead of returning
+ * null, Hazelcast will attempt to load the unknown entry by calling the implementation's {@link #load(Object)} or
+ * {@link #loadAll(Collection)}  methods. Loaded entries will be placed into the distributed map and they will stay
+ * in-memory until they are explicitly removed or implicitly evicted (if eviction is configured).
+ * <p/>
+ * MapLoader implementations are executed by a partition thread, therefore care should
+ * be taken not to block the thread with an expensive operation or an operation that may potentially
+ * never return, the partition thread does not time out the operation.  Whilst the partition thread is
+ * executing the MapLoader it is unable to respond to requests for data on any other structure that
+ * may reside in the same partition. For example a very slow MapLoader for one map could block a request
+ * for data on another map, or even a queue. It is therefore strongly recommended not to use MapLoader
+ * to call across a WAN or to a system which will take on average longer than a few milliseconds to respond.
+ * <p/>
+ * MapLoaders should not be used to perform cascading operations on other data structures via a
+ * {@link HazelcastInstance}, the MapLoader should only concern itself with the operation on the assigned map.
+ * If the MapLoader attempts to access another data structure on a different partition to the key used in the MapLoader,
+ * a {@link java.lang.IllegalThreadStateException} is thrown.  A MapLoader can only interact with other data structures
+ * that reside on the same partition.
+ * <p/>
+ * If a blocked partition thread is called from a Hazelcast Client the caller will also block indefinitely, for example
+ * {@link com.hazelcast.core.IMap#get(Object)}. If the same call is made from another cluster member the operation will
+ * eventually timeout with a {@link OperationTimeoutException}.
  */
 public interface MapLoader<K, V> {
     /**
