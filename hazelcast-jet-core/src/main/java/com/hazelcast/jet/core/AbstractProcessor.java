@@ -321,11 +321,13 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Tries to restore the given key and value received from the
-     * latest snapshot.
+     * Called to restore one key-value pair from the snapshot to processor's
+     * internal state.
      * <p>
      * The default implementation throws an {@code UnsupportedOperationException}.
-     * <p>
+     * However, if you don't override {@link #saveToSnapshot()}, this method will
+     * never be called.
+     *
      * @param key      key of the entry from the snapshot
      * @param value    value of the entry from the snapshot
      */

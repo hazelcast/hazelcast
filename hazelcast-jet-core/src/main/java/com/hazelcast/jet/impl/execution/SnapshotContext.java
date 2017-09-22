@@ -30,6 +30,15 @@ import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 public class SnapshotContext {
 
     public static final int NO_SNAPSHOT = -1;
+
+    /**
+     * Remaining number of {@link StoreSnapshotTasklet}s in currently produced
+     * snapshot. When it is decremented to 0, the snapshot is complete and new
+     * one can start.
+     */
+    // package-visible for test
+    final AtomicInteger numRemainingTasklets = new AtomicInteger();
+
     private final ILogger logger;
 
     private final long jobId;
@@ -56,13 +65,6 @@ public class SnapshotContext {
      * tasklet completes. Snapshot is postponed until this counter is 0.
      */
     private int numHigherPriorityTasklets = Integer.MIN_VALUE;
-
-    /**
-     * Remaining number of {@link StoreSnapshotTasklet}s in currently produced
-     * snapshot. When it is decremented to 0, the snapshot is complete and new
-     * one can start.
-     */
-    private final AtomicInteger numRemainingTasklets = new AtomicInteger();
 
     /**
      * True, if a snapshot was started and postponed. If true, then when
@@ -153,7 +155,7 @@ public class SnapshotContext {
                         + " started");
             }
         }
-        if (this.lastSnapshotId.get() < lastSnapshotId) {
+        if (this.lastSnapshotId.get() > lastSnapshotId) {
             snapshotDoneForTasklet();
         }
     }
