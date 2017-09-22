@@ -191,6 +191,19 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutTransient() {
+        adapter.putTransient(42, "value", 1000, TimeUnit.MILLISECONDS);
+
+        String value = map.get(42);
+        if (value != null) {
+            assertEquals("value", value);
+
+            sleepMillis(1100);
+            assertNull(map.get(42));
+        }
+    }
+
+    @Test
     public void testPutIfAbsent() {
         map.put(42, "oldValue");
 

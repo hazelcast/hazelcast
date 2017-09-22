@@ -97,6 +97,12 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    @MethodNotAvailable
+    public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public boolean putIfAbsent(K key, V value) {
         return cache.putIfAbsent(key, value);
     }

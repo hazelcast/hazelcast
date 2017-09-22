@@ -129,6 +129,11 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
     }
 
     @Test(expected = MethodNotAvailableException.class)
+    public void testPutTransient() {
+        adapter.putTransient(42, "value", 1, TimeUnit.MILLISECONDS);
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
     public void testPutIfAbsent() {
         adapter.putIfAbsent(23, "value");
     }

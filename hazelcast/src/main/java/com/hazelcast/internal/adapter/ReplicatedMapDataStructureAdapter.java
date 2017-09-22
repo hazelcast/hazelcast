@@ -105,6 +105,12 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     @MethodNotAvailable
+    public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
     public boolean putIfAbsent(K key, V value) {
         throw new MethodNotAvailableException();
     }
