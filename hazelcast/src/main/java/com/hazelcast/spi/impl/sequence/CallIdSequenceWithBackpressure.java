@@ -103,11 +103,11 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
 
         long start = System.nanoTime();
         for (long idleCount = 0; ; idleCount++) {
-            long now = System.nanoTime();
-            if (now - start > backoffTimeoutNanos) {
+            long elapsedNanos = System.nanoTime() - start;
+            if (elapsedNanos > backoffTimeoutNanos) {
                 throw new HazelcastOverloadException(String.format("Timed out trying to acquire another call ID."
-                        + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs, now:%d, start:%d", maxConcurrentInvocations,
-                        NANOSECONDS.toMillis(backoffTimeoutNanos), now, start));
+                        + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs, elapsed:%d msecs", maxConcurrentInvocations,
+                        NANOSECONDS.toMillis(backoffTimeoutNanos), NANOSECONDS.toMillis(elapsedNanos)));
             }
             IDLER.idle(idleCount);
             if (hasSpace()) {
