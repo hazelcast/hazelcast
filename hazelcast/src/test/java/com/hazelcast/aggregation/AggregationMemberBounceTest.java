@@ -29,6 +29,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.aggregation.AggregatorsSpecTest.PERSONS_COUNT;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class AggregationMemberBounceTest extends HazelcastTestSupport {
@@ -52,7 +54,7 @@ public class AggregationMemberBounceTest extends HazelcastTestSupport {
         mapName = randomMapName();
         final HazelcastInstance steadyMember = bounceMemberRule.getSteadyMember();
         IMap<Integer, AggregatorsSpecTest.Person> map = steadyMember.getMap(mapName);
-        AggregatorsSpecTest.populateMapWithPersons(map, "");
+        AggregatorsSpecTest.populateMapWithPersons(map, "", PERSONS_COUNT);
     }
 
     @Test

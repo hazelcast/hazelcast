@@ -58,6 +58,8 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class AggregatorsSpecTest extends HazelcastTestSupport {
 
+    public static final int PERSONS_COUNT = 999;
+
     @Parameter(0)
     public InMemoryFormat inMemoryFormat;
 
@@ -85,7 +87,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     @Test
     public void testAggregators() {
         IMap<Integer, Person> map = getMapWithNodeCount(3, parallelAccumulation);
-        populateMapWithPersons(map, postfix);
+        populateMapWithPersons(map, postfix, PERSONS_COUNT);
 
         assertMinAggregators(map, postfix);
         assertMaxAggregators(map, postfix);
@@ -96,6 +98,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertMinAggregators(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, PERSONS_COUNT);
         assertEquals(Double.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMin("doubleValue" + p)));
         assertEquals(Long.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMin("longValue" + p)));
         assertEquals(Integer.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMin("intValue" + p)));
@@ -112,6 +115,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertMaxAggregators(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, PERSONS_COUNT);
         assertEquals(Double.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMax("doubleValue" + p)));
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMax("longValue" + p)));
         assertEquals(Integer.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMax("intValue" + p)));
@@ -128,6 +132,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertSumAggregators(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, PERSONS_COUNT);
         assertEquals(Double.valueOf(499500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleSum("doubleValue" + p)));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longSum("longValue" + p)));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerSum("intValue" + p)));
@@ -148,6 +153,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertAverageAggregators(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, PERSONS_COUNT);
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleAvg("doubleValue" + p)));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longAvg("longValue" + p)));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerAvg("intValue" + p)));
@@ -162,6 +168,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertCountAggregators(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, PERSONS_COUNT);
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("doubleValue" + p)));
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("longValue" + p)));
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("intValue" + p)));
@@ -172,6 +179,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
 
     public static void assertDistinctAggregators(IMap<Integer, Person> map, String p) {
         // projections do not support [any] but we have one element only so here we go.
+        assertNoDataMissing(map, PERSONS_COUNT);
         String projection = p.contains("[any]") ? "[0]" : "";
         assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Double>singleAttribute("doubleValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>distinct("doubleValue" + p)));
@@ -226,6 +234,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     private void assertMinAggregatorsAnyCornerCase(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, 1);
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMin("doubleValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMin("longValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMin("intValue" + p)));
@@ -242,6 +251,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertMaxAggregatorsAnyCornerCase(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, 1);
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMax("doubleValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMax("longValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMax("intValue" + p)));
@@ -258,6 +268,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertSumAggregatorsAnyCornerCase(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, 1);
         assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleSum("doubleValue" + p)));
         assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longSum("longValue" + p)));
         assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerSum("intValue" + p)));
@@ -278,6 +289,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertAverageAggregatorsAnyCornerCase(IMap<Integer, Person> map, String p) {
+        assertNoDataMissing(map, 1);
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleAvg("doubleValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longAvg("longValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerAvg("intValue" + p)));
@@ -292,6 +304,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertCountAggregatorsAnyCornerCase(IMap<Integer, Person> map, String p, long value) {
+        assertNoDataMissing(map, 1);
         assertEquals(Long.valueOf(value), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("doubleValue" + p)));
         assertEquals(Long.valueOf(value), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("longValue" + p)));
         assertEquals(Long.valueOf(value), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("intValue" + p)));
@@ -301,6 +314,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     public static void assertDistinctAggregatorsAnyCornerCase(IMap<Integer, Person> map, String p, Set result) {
+        assertNoDataMissing(map, 1);
         assertEquals(result, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>distinct("doubleValue" + p)));
         assertEquals(result, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>distinct("longValue" + p)));
         assertEquals(result, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>distinct("intValue" + p)));
@@ -334,10 +348,15 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(aSorted, bSorted);
     }
 
-    public static void populateMapWithPersons(IMap<Integer, Person> map, String postfix) {
-        for (int i = 1; i < 1000; i++) {
+    private static void assertNoDataMissing(IMap<Integer, Person> map, int expectedSize) {
+        assertEquals("There is missing data in the map!", expectedSize, map.size());
+    }
+
+    public static void populateMapWithPersons(IMap<Integer, Person> map, String postfix, int count) {
+        for (int i = 1; i <= count; i++) {
             map.put(i, postfix.contains("[any]") ? new PersonAny(i) : new Person(i));
         }
+        assertNoDataMissing(map, count);
     }
 
     @SuppressWarnings("WeakerAccess")
