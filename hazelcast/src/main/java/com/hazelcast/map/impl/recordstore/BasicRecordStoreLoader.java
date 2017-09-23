@@ -29,7 +29,6 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ExceptionUtil;
@@ -44,7 +43,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.spi.ExecutionService.MAP_LOADER_EXECUTOR;
@@ -54,8 +52,6 @@ import static com.hazelcast.spi.ExecutionService.MAP_LOADER_EXECUTOR;
  */
 class BasicRecordStoreLoader implements RecordStoreLoader {
 
-    private final RecordStore recordStore;
-    private final AtomicBoolean loaded;
     private final ILogger logger;
     private final String name;
     private final MapServiceContext mapServiceContext;
@@ -64,13 +60,11 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
     BasicRecordStoreLoader(RecordStore recordStore) {
         final MapContainer mapContainer = recordStore.getMapContainer();
-        this.recordStore = recordStore;
         this.name = mapContainer.getName();
         this.mapServiceContext = mapContainer.getMapServiceContext();
         this.partitionId = recordStore.getPartitionId();
         this.mapDataStore = recordStore.getMapDataStore();
         this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
-        this.loaded = new AtomicBoolean(false);
     }
 
     @Override
@@ -118,7 +112,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         removeUnloadableKeys(keys);
 
         if (keys.isEmpty()) {
-            loaded.set(true);
             return;
         }
 
@@ -144,9 +137,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             final List<Data> chunk = batchChunks.poll();
             final List<Data> keyValueSequence = loadAndGet(chunk);
             if (keyValueSequence.isEmpty()) {
-                if (finishedBatchCounter.decrementAndGet() == 0) {
-                    loaded.set(true);
-                }
                 continue;
             }
             futures.add(sendOperation(keyValueSequence, finishedBatchCounter));
@@ -225,14 +215,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
         MapOperation operation = operationProvider.createPutFromLoadAllOperation(name, keyValueSequence);
         operation.setNodeEngine(nodeEngine);
-        operation.setOperationResponseHandler(new OperationResponseHandler() {
-            @Override
-            public void sendResponse(Operation op, Object obj) {
-                if (finishedBatchCounter.decrementAndGet() == 0) {
-                    loaded.set(true);
-                }
-            }
-        });
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
