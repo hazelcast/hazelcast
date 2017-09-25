@@ -18,6 +18,7 @@ package com.hazelcast.aws.impl;
 
 import com.hazelcast.aws.utility.Environment;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,7 +28,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.aws.utility.MetadataUtil.IAM_SECURITY_CREDENTIALS_URI;
 import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
@@ -39,6 +42,9 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DescribeInstancesTest {
+
+    private static final int CALL_SERVICE_TIMEOUT = 1000; //in ms
+    private static final int TIMEOUT_FACTOR = 2;
 
     @Test(expected = IllegalArgumentException.class)
     public void test_whenAccessKey_And_IamRole_And_IamTaskRoleEnvVar_Null_With_No_DefaultRole() throws IOException {
@@ -68,15 +74,15 @@ public class DescribeInstancesTest {
         final String token = "FQoDYXdzEKX//////////wEaDN2Xh+ekVbV1KJrCqCK3A/Quuw8xCdZZbOPjzKLNc89n72z61BLt96hzlxTV6Vx1hDXLQNWRIx07hZVgmgGzzyr0DzYAcqKq7s2GUznWlaXhGHxhyo4nJUeBFbLyYPjbDAcnl84HItjy5bvtQ6fbDM7h2ZGuJrHi51KAhxWN/uEHyBKAIJd5RdXxVH4UTNxJFiqEw8GdaXDGK07186TfqSFCdlG+rhL35bN7WcJZuykIpynbeQpPeY4rJ0WJGoSJwt/RSkGwP+JRcYmv8Y7L1uSD2spJWO6etFeyyU63y0BL42MXWL38SQypxjLz+s1PozSDrV7zxsp4DQONn+adbSyAoveskD3xtDYsip1Ra0UCSYNKzmmh2XXF4fBBb6EPRixc1fnCIVDp0rfyCGO0VMuIloF5nWP9XsaRcR1mbJ7K/TuWgugduRBgyV2s1KgJuPni5cZ6ptEkPBb2b+92DjxEdQCAi6+WAdWliFiJ/P3T+qSJGLaxAeu0P0yb8E2xfCjEH6qOH3EM0KfgyJM5WJbXlYZTOZZXHaj26rlhe2k3wdL+UXf4geAzczphyOyp4QIGqaxe0xj08BKvSqngQb5X44oVR40oi7fOvwU=";
 
         final String someDummyIamRole =
-          "        {\n" +
-            "          \"Code\" : \"Success\",\n" +
-            "          \"LastUpdated\" : \"2016-10-04T12:08:24Z\",\n" +
-            "          \"Type\" : \"AWS-HMAC\",\n" +
-            "          \"AccessKeyId\" : \""+accessKeyId+"\",\n" +
-            "          \"SecretAccessKey\" : \""+secretAccessKey+"\",\n" +
-            "          \"Token\" : \""+token+"\",\n" +
-            "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" +
-            "        }\n";
+                "        {\n" +
+                        "          \"Code\" : \"Success\",\n" +
+                        "          \"LastUpdated\" : \"2016-10-04T12:08:24Z\",\n" +
+                        "          \"Type\" : \"AWS-HMAC\",\n" +
+                        "          \"AccessKeyId\" : \"" + accessKeyId + "\",\n" +
+                        "          \"SecretAccessKey\" : \"" + secretAccessKey + "\",\n" +
+                        "          \"Token\" : \"" + token + "\",\n" +
+                        "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" +
+                        "        }\n";
 
 
         // test when <iam-role>DEFAULT</iam-role>
@@ -137,15 +143,15 @@ public class DescribeInstancesTest {
         final String token = "FQoDYXdzEKX//////////wEaDN2Xh+ekVbV1KJrCqCK3A/Quuw8xCdZZbOPjzKLNc89n72z61BLt96hzlxTV6Vx1hDXLQNWRIx07hZVgmgGzzyr0DzYAcqKq7s2GUznWlaXhGHxhyo4nJUeBFbLyYPjbDAcnl84HItjy5bvtQ6fbDM7h2ZGuJrHi51KAhxWN/uEHyBKAIJd5RdXxVH4UTNxJFiqEw8GdaXDGK07186TfqSFCdlG+rhL35bN7WcJZuykIpynbeQpPeY4rJ0WJGoSJwt/RSkGwP+JRcYmv8Y7L1uSD2spJWO6etFeyyU63y0BL42MXWL38SQypxjLz+s1PozSDrV7zxsp4DQONn+adbSyAoveskD3xtDYsip1Ra0UCSYNKzmmh2XXF4fBBb6EPRixc1fnCIVDp0rfyCGO0VMuIloF5nWP9XsaRcR1mbJ7K/TuWgugduRBgyV2s1KgJuPni5cZ6ptEkPBb2b+92DjxEdQCAi6+WAdWliFiJ/P3T+qSJGLaxAeu0P0yb8E2xfCjEH6qOH3EM0KfgyJM5WJbXlYZTOZZXHaj26rlhe2k3wdL+UXf4geAzczphyOyp4QIGqaxe0xj08BKvSqngQb5X44oVR40oi7fOvwU=";
 
         final String someDummyIamRole =
-          "        {\n" +
-            "          \"Code\" : \"Success\",\n" +
-            "          \"LastUpdated\" : \"2016-10-04T12:08:24Z\",\n" +
-            "          \"Type\" : \"AWS-HMAC\",\n" +
-            "          \"AccessKeyId\" : \""+accessKeyId+"\",\n" +
-            "          \"SecretAccessKey\" : \""+secretAccessKey+"\",\n" +
-            "          \"Token\" : \""+token+"\",\n" +
-            "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" +
-            "        }\n";
+                "        {\n" +
+                        "          \"Code\" : \"Success\",\n" +
+                        "          \"LastUpdated\" : \"2016-10-04T12:08:24Z\",\n" +
+                        "          \"Type\" : \"AWS-HMAC\",\n" +
+                        "          \"AccessKeyId\" : \"" + accessKeyId + "\",\n" +
+                        "          \"SecretAccessKey\" : \"" + secretAccessKey + "\",\n" +
+                        "          \"Token\" : \"" + token + "\",\n" +
+                        "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" +
+                        "        }\n";
 
 
         AwsConfig awsConfig = new AwsConfig();
@@ -169,13 +175,13 @@ public class DescribeInstancesTest {
 
         // Note the below role is different from the regular IAM role, in that it doesn't contain new lines.
         final String someDummyIamTaskRole =
-          "{" +
-            "  \"RoleArn\":\"arn:aws:iam::123456789012:role/hazelcastIamTaskRole\"," +
-            "  \"AccessKeyId\":\""+accessKeyId+"\"," +
-            "  \"SecretAccessKey\":\""+secretAccessKey+"\"," +
-            "  \"Token\":\""+token+"\"," +
-            "  \"Expiration\":\"2016-10-04T17:39:48Z\"" +
-            "  }";
+                "{" +
+                        "  \"RoleArn\":\"arn:aws:iam::123456789012:role/hazelcastIamTaskRole\"," +
+                        "  \"AccessKeyId\":\"" + accessKeyId + "\"," +
+                        "  \"SecretAccessKey\":\"" + secretAccessKey + "\"," +
+                        "  \"Token\":\"" + token + "\"," +
+                        "  \"Expiration\":\"2016-10-04T17:39:48Z\"" +
+                        "  }";
 
 
         final String ecsEnvVarCredsUri = "someURL";
@@ -205,7 +211,7 @@ public class DescribeInstancesTest {
             throws Exception {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setSecurityGroupName("launch-wizard-147");
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setSecurityGroupName("launch-wizard-147");
 
         getInstancesAndVerify(awsConfig);
     }
@@ -215,7 +221,7 @@ public class DescribeInstancesTest {
             throws Exception {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag").setTagValue("aws-tag-value-1");
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag").setTagValue("aws-tag-value-1");
 
         getInstancesAndVerify(awsConfig);
     }
@@ -225,7 +231,7 @@ public class DescribeInstancesTest {
             throws Exception {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag");
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag");
 
         getInstancesAndVerify(awsConfig);
     }
@@ -235,9 +241,28 @@ public class DescribeInstancesTest {
             throws Exception {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagValue("aws-tag-value-1");
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagValue("aws-tag-value-1");
 
         getInstancesAndVerify(awsConfig);
+    }
+
+    @Test(timeout = TIMEOUT_FACTOR * CALL_SERVICE_TIMEOUT, expected = SocketTimeoutException.class)
+    public void test_CallService_Timeout() throws Exception {
+        final String nonRoutable = "10.255.255.254";
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT));
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
+        describeInstances.callService(nonRoutable);
+    }
+
+    @Test(timeout = TIMEOUT_FACTOR * CALL_SERVICE_TIMEOUT, expected = InvalidConfigurationException.class)
+    public void test_RetrieveMetaData_Timeout() {
+        final String nonRoutable = "http://10.255.255.254";
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT));
+
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
+        describeInstances.retrieveRoleFromURI(nonRoutable);
     }
 
     private void getInstancesAndVerify(AwsConfig awsConfig)

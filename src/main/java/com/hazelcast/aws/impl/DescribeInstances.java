@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -132,7 +133,7 @@ public class DescribeInstances {
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
     String retrieveRoleFromURI(String uri) {
-        return MetadataUtil.retrieveMetadataFromURI(uri);
+        return MetadataUtil.retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds());
     }
 
     /**
@@ -231,12 +232,13 @@ public class DescribeInstances {
         }
     }
 
-    private InputStream callService(String endpoint) throws Exception {
+    // visible for testing
+    InputStream callService(String endpoint) throws Exception {
         String query = getRequestSigner().getCanonicalizedQueryString(attributes);
         URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(Constants.GET);
-        httpConnection.setConnectTimeout(awsConfig.getConnectionTimeoutSeconds());
+        httpConnection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(awsConfig.getConnectionTimeoutSeconds()));
         httpConnection.setDoOutput(false);
         httpConnection.connect();
         return httpConnection.getInputStream();

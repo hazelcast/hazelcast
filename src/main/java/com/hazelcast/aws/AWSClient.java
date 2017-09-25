@@ -58,7 +58,7 @@ public class AWSClient {
 
     public String getAvailabilityZone() {
         String uri = INSTANCE_METADATA_URI.concat(AVAILABILITY_ZONE_URI);
-        return retrieveMetadataFromURI(uri);
+        return retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds());
     }
 
     public void setEndpoint(String s) {

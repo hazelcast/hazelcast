@@ -24,6 +24,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
+import java.util.concurrent.TimeUnit;
 
 public final class MetadataUtil {
 
@@ -54,14 +56,15 @@ public final class MetadataUtil {
      * @param uri the full URI where a `GET` request will retrieve the metadata information, represented as JSON.
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
-    public static String retrieveMetadataFromURI(String uri) {
+    public static String retrieveMetadataFromURI(String uri, int timeoutInSeconds) {
         StringBuilder response = new StringBuilder();
 
         InputStreamReader is = null;
         BufferedReader reader = null;
         try {
-            URL url = new URL(uri);
-            is = new InputStreamReader(url.openStream(), "UTF-8");
+            URLConnection url = new URL(uri).openConnection();
+            url.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(timeoutInSeconds));
+            is = new InputStreamReader(url.getInputStream(), "UTF-8");
             reader = new BufferedReader(is);
             String resp;
             while ((resp = reader.readLine()) != null) {
