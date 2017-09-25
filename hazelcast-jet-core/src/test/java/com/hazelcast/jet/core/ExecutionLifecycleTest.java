@@ -106,6 +106,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         instance = factory.newMember(config);
         JetInstance instance2 = factory.newMember(config);
         warmUpPartitions(instance.getHazelcastInstance(), instance2.getHazelcastInstance());
+        waitClusterForSafeState(instance.getHazelcastInstance());
     }
 
     @After

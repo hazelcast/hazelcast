@@ -133,6 +133,8 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
             warmUpPartitions(instance.getHazelcastInstance());
         }
 
+        waitClusterForSafeState(instances[0].getHazelcastInstance());
+
         return instances;
     }
 

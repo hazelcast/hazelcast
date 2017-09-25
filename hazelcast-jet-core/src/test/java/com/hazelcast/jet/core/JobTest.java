@@ -83,6 +83,7 @@ public class JobTest extends JetTestSupport {
         instance2 = factory.newMember(config);
 
         warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
+        waitClusterForSafeState(instance1.getHazelcastInstance());
     }
 
     @After

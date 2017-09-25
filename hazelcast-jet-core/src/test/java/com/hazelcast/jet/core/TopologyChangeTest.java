@@ -144,6 +144,8 @@ public class TopologyChangeTest extends JetTestSupport {
         for (JetInstance instance : instances) {
             warmUpPartitions(instance.getHazelcastInstance());
         }
+
+        waitClusterForSafeState(instances[0].getHazelcastInstance());
     }
 
     @After

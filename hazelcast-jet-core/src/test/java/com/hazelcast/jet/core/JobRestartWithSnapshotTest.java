@@ -92,6 +92,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JetInstance[] instances = factory.newMembers(config, 2);
         instance1 = instances[0];
         instance2 = instances[1];
+        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
+        waitClusterForSafeState(instance1.getHazelcastInstance());
     }
 
     @After
