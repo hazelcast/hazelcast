@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 
 /**
@@ -26,7 +27,7 @@ public class JobTrackerConfig {
     /**
      * Default size of thread.
      */
-    public static final int DEFAULT_MAX_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
+    public static final int DEFAULT_MAX_THREAD_SIZE = RuntimeAvailableProcessors.get();
     /**
      * Default value of retry counter.
      */
