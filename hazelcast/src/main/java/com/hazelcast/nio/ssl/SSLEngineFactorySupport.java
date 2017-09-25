@@ -43,25 +43,37 @@ public abstract class SSLEngineFactorySupport {
     protected void load(Properties properties) throws Exception {
         String keyStorePassword = getProperty(properties, "keyStorePassword");
         String keyStore = getProperty(properties, "keyStore");
+        String keyManagerAlgorithm = getProperty(properties, "keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
+        String keyStoreType = getProperty(properties, "keyStoreType", "JKS");
+
         String trustStore = getProperty(properties, "trustStore", keyStore);
         String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
-        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
-        String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
-        this.protocol = properties.getProperty("protocol", "TLS");
-        this.kmf = loadKeyManagerFactory(keyStorePassword, keyStore, keyManagerAlgorithm);
-        this.tmf = loadTrustManagerFactory(trustStorePassword, trustStore, trustManagerAlgorithm);
+        String trustManagerAlgorithm
+                = getProperty(properties, "trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+        String trustStoreType = getProperty(properties, "trustStoreType", "JKS");
+
+        this.protocol = getProperty(properties, "protocol", "TLS");
+        this.kmf = loadKeyManagerFactory(keyStorePassword, keyStore, keyManagerAlgorithm, keyStoreType);
+        this.tmf = loadTrustManagerFactory(trustStorePassword, trustStore, trustManagerAlgorithm, trustStoreType);
     }
 
     public static TrustManagerFactory loadTrustManagerFactory(String trustStorePassword,
                                                               String trustStore,
                                                               String trustManagerAlgorithm) throws Exception {
+        return loadTrustManagerFactory(trustStorePassword, trustStore, trustManagerAlgorithm, "JKS");
+    }
+
+    public static TrustManagerFactory loadTrustManagerFactory(String trustStorePassword,
+                                                              String trustStore,
+                                                              String trustManagerAlgorithm,
+                                                              String trustStoreType) throws Exception {
         if (trustStore == null) {
             return null;
         }
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
         char[] passPhrase = trustStorePassword == null ? null : trustStorePassword.toCharArray();
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ts = KeyStore.getInstance(trustStoreType);
         loadKeyStore(ts, passPhrase, trustStore);
         tmf.init(ts);
         return tmf;
@@ -70,13 +82,20 @@ public abstract class SSLEngineFactorySupport {
     public static KeyManagerFactory loadKeyManagerFactory(String keyStorePassword,
                                                           String keyStore,
                                                           String keyManagerAlgorithm) throws Exception {
+        return loadKeyManagerFactory(keyStorePassword, keyStore, keyManagerAlgorithm, "JKS");
+    }
+
+    public static KeyManagerFactory loadKeyManagerFactory(String keyStorePassword,
+                                                          String keyStore,
+                                                          String keyManagerAlgorithm,
+                                                          String keyStoreType) throws Exception {
         if (keyStore == null) {
             return null;
         }
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
         char[] passPhrase = keyStorePassword == null ? null : keyStorePassword.toCharArray();
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
         loadKeyStore(ks, passPhrase, keyStore);
         kmf.init(ks, passPhrase);
         return kmf;

@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.security.KeyStoreException;
 import java.util.Properties;
 
 import static com.hazelcast.nio.ssl.TestKeyStoreUtil.JAVAX_NET_SSL_KEY_STORE;
@@ -42,6 +43,16 @@ public class BasicSSLContextFactoryTest {
         assertSSLContext();
     }
 
+    @Test(expected = KeyStoreException.class)
+    public void testInit_withUnknownKeyStoreType() throws Exception {
+        Properties properties = createSslProperties();
+        properties.put(SSLEngineFactorySupport.JAVA_NET_SSL_PREFIX + "keyStoreType", "unknown");
+
+        factory.init(properties);
+
+        assertSSLContext();
+    }
+
     @Test
     public void testInit_withWrongKeyStore() throws Exception {
         Properties properties = createSslProperties();
@@ -58,6 +69,16 @@ public class BasicSSLContextFactoryTest {
         properties.setProperty(JAVAX_NET_SSL_KEY_STORE, getMalformedKeyStoreFilePath());
 
         factory.init(properties);
+    }
+
+    @Test(expected = KeyStoreException.class)
+    public void testInit_withUnknownTrustStoreType() throws Exception {
+        Properties properties = createSslProperties();
+        properties.put(SSLEngineFactorySupport.JAVA_NET_SSL_PREFIX + "trustStoreType", "unknown");
+
+        factory.init(properties);
+
+        assertSSLContext();
     }
 
     private void assertSSLContext() {
