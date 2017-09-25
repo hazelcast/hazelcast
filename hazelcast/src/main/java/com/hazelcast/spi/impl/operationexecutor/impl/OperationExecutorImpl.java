@@ -20,6 +20,7 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -126,7 +127,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         int threadCount = properties.getInteger(GENERIC_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
             // default generic operation thread count
-            int coreSize = Runtime.getRuntime().availableProcessors();
+            int coreSize = RuntimeAvailableProcessors.get();
             threadCount = Math.max(2, coreSize / 2);
         }
 
@@ -144,7 +145,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
             // default partition operation thread count
-            int coreSize = Runtime.getRuntime().availableProcessors();
+            int coreSize = RuntimeAvailableProcessors.get();
             threadCount = Math.max(2, coreSize);
         }
 

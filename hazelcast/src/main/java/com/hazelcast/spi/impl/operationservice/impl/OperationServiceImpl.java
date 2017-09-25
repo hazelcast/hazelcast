@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -447,8 +448,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     private void initInvocationContext() {
         ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
-                    ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
-                    ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+                ExecutionService.ASYNC_EXECUTOR, RuntimeAvailableProcessors.get(),
+                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
         this.invocationContext = new Invocation.Context(
                 asyncExecutor,

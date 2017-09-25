@@ -42,6 +42,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -155,7 +156,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     private Executor newClientExecutor() {
         final ExecutionService executionService = nodeEngine.getExecutionService();
-        int coreSize = Runtime.getRuntime().availableProcessors();
+        int coreSize = RuntimeAvailableProcessors.get();
 
         int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
         if (threadCount <= 0) {
@@ -170,7 +171,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     private Executor newClientQueryExecutor() {
         final ExecutionService executionService = nodeEngine.getExecutionService();
-        int coreSize = Runtime.getRuntime().availableProcessors();
+        int coreSize = RuntimeAvailableProcessors.get();
 
         int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_QUERY_THREAD_COUNT);
         if (threadCount <= 0) {

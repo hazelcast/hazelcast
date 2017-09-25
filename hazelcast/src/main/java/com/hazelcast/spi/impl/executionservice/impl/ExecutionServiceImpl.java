@@ -22,6 +22,7 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.TaskScheduler;
@@ -142,7 +143,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
         enableRemoveOnCancelIfAvailable();
 
-        int coreSize = Runtime.getRuntime().availableProcessors();
+        int coreSize = RuntimeAvailableProcessors.get();
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
         register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);

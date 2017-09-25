@@ -22,6 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Iterator;
@@ -70,7 +71,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         this.logger = logger;
         this.callIdSequence = callIdSequence;
 
-        int coreSize = Runtime.getRuntime().availableProcessors();
+        int coreSize = RuntimeAvailableProcessors.get();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
