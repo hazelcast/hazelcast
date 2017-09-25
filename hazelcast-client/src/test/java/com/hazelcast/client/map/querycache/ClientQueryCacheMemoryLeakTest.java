@@ -38,6 +38,7 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -120,14 +121,25 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         }
 
         pool.shutdown();
-        pool.awaitTermination(60, TimeUnit.SECONDS);
+        pool.awaitTermination(120, TimeUnit.SECONDS);
 
         SubscriberContext subscriberContext = getSubscriberContext(client, mapName);
-        QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
-        QueryCacheFactory queryCacheFactory = subscriberContext.getQueryCacheFactory();
+        final QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
+        final QueryCacheFactory queryCacheFactory = subscriberContext.getQueryCacheFactory();
 
-        assertEquals(0, provider.getQueryCacheCount(mapName));
-        assertEquals(0, queryCacheFactory.getQueryCacheCount());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, provider.getQueryCacheCount(mapName));
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, queryCacheFactory.getQueryCacheCount());
+            }
+        });
 
         assertNoListenerLeftOnEventService(node);
         assertNoRegisteredListenerLeft(node, mapName);
@@ -157,7 +169,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         PublisherContext publisherContext = getPublisherContext(node);
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
         PublisherRegistry registry = mapPublisherRegistry.getOrCreate(mapName);
-        if(registry == null) {
+        if (registry == null) {
             return;
         }
 
