@@ -18,6 +18,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
@@ -76,6 +78,24 @@ public final class Sources {
 
     /**
      * Returns a source that fetches entries from the Hazelcast {@code IMap}
+     * with the specified name, filters them using the supplied predicate,
+     * transforms them using the supplied projection function, and emits
+     * the results. Its processors will leverage data locality by fetching
+     * only those entries that are stored on the member where they are running.
+     * <p>
+     * If the {@code IMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
+     */
+    public static <K, V, T> Source<T> readMap(String mapName,
+                                              DistributedPredicate<Map.Entry<K, V>> predicate,
+                                              DistributedFunction<Map.Entry<K, V>, T> projectionFn) {
+        return new SourceImpl<T>("readMap(" + mapName + ')',
+                SourceProcessors.readMap(mapName, predicate, projectionFn));
+    }
+
+    /**
+     * Returns a source that fetches entries from the Hazelcast {@code IMap}
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}. Its processors
      * will leverage data locality by fetching only those entries that are
@@ -88,6 +108,26 @@ public final class Sources {
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return new SourceImpl<>("readMap(" + mapName + ')', SourceProcessors.readMap(mapName, clientConfig));
+    }
+
+    /**
+     * Returns a source that fetches entries from the Hazelcast {@code IMap}
+     * with the specified name in a remote cluster identified by the supplied
+     * {@code ClientConfig}, filters them using the supplied predicate,
+     * transforms them using the supplied projection function, and emits
+     * the results. Its processors will leverage data locality by fetching
+     * only those entries that are stored on the member where they are running.
+     * <p>
+     * If the {@code IMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
+     */
+    public static <K, V, T> Source<T> readMap(String mapName,
+                                              DistributedPredicate<Map.Entry<K, V>> predicate,
+                                              DistributedFunction<Map.Entry<K, V>, T> projectionFn,
+                                              ClientConfig clientConfig) {
+        return new SourceImpl<T>("readMap(" + mapName + ')',
+                SourceProcessors.readMap(mapName, predicate, projectionFn, clientConfig));
     }
 
     /**
