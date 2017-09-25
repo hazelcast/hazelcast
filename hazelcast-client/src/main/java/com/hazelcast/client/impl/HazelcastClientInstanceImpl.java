@@ -141,6 +141,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressureFailFast;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -247,6 +248,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
         if (maxAllowedConcurrentInvocations == Integer.MAX_VALUE) {
             callIdSequence = new CallIdSequenceWithoutBackpressure();
+        } else if (backofftimeoutMs <= 0) {
+            callIdSequence = new CallIdSequenceWithBackpressureFailFast(maxAllowedConcurrentInvocations);
         } else {
             callIdSequence = new CallIdSequenceWithBackpressure(maxAllowedConcurrentInvocations, backofftimeoutMs);
         }

@@ -17,16 +17,11 @@
 package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * A {@link CallIdSequence} that provides backpressure by taking
@@ -39,12 +34,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * </ul>
  * The latter cause is not a problem since the capacity is exceeded temporarily and it isn't sustainable.
  * So perhaps there are a few threads that at the same time see that the there is space and do a next.
- * But any following invocation needs to wait till there is is capacity.
  */
-public final class CallIdSequenceWithBackpressure implements CallIdSequence {
-    static final int MAX_DELAY_MS = 500;
-    private static final IdleStrategy IDLER = new BackoffIdleStrategy(
-            0, 0, MILLISECONDS.toNanos(1), MILLISECONDS.toNanos(MAX_DELAY_MS));
+public final class CallIdSequenceWithBackpressureFailFast implements CallIdSequence {
     private static final int INDEX_HEAD = 7;
     private static final int INDEX_TAIL = 15;
 
@@ -52,15 +43,9 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
     private final AtomicLongArray longs = new AtomicLongArray(3 * CACHE_LINE_LENGTH / LONG_SIZE_IN_BYTES);
 
     private final int maxConcurrentInvocations;
-    private final long backoffTimeoutNanos;
 
-    public CallIdSequenceWithBackpressure(int maxConcurrentInvocations, long backoffTimeoutMs) {
-        checkPositive(maxConcurrentInvocations,
-                "maxConcurrentInvocations should be a positive number. maxConcurrentInvocations=" + maxConcurrentInvocations);
-        checkPositive(backoffTimeoutMs, "backoffTimeoutMs should be a positive number. backoffTimeoutMs=" + backoffTimeoutMs);
-
+    public CallIdSequenceWithBackpressureFailFast(int maxConcurrentInvocations) {
         this.maxConcurrentInvocations = maxConcurrentInvocations;
-        this.backoffTimeoutNanos = MILLISECONDS.toNanos(backoffTimeoutMs);
     }
 
     @Override
@@ -76,7 +61,8 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
     @Override
     public long next() {
         if (!hasSpace()) {
-            waitForSpace();
+            throw new HazelcastOverloadException(
+                    "Maximum invocation count is reached. maxConcurrentInvocations = " + maxConcurrentInvocations);
         }
         return forceNext();
     }
@@ -99,25 +85,4 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
         return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
     }
 
-    private void waitForSpace() {
-        if (backoffTimeoutNanos <= 0) {
-            throw new HazelcastOverloadException(String.format(
-                    "Maximum invocation count reached." + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs",
-                    maxConcurrentInvocations, NANOSECONDS.toMillis(backoffTimeoutNanos)));
-        }
-
-        long start = System.nanoTime();
-        for (long idleCount = 0; ; idleCount++) {
-            long elapsedNanos = System.nanoTime() - start;
-            if (elapsedNanos > backoffTimeoutNanos) {
-                throw new HazelcastOverloadException(String.format("Timed out trying to acquire another call ID."
-                        + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs, elapsed:%d msecs", maxConcurrentInvocations,
-                        NANOSECONDS.toMillis(backoffTimeoutNanos), NANOSECONDS.toMillis(elapsedNanos)));
-            }
-            IDLER.idle(idleCount);
-            if (hasSpace()) {
-                return;
-            }
-        }
-    }
 }
