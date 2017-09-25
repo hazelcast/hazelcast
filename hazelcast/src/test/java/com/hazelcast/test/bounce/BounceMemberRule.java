@@ -45,6 +45,7 @@ import static com.hazelcast.nio.ClassLoaderUtil.isClassAvailable;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
+import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.MEMBER;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Math.max;
@@ -80,7 +81,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ul>
  * <b>Defaults: </b> when {@code com.hazelcast.client.test.TestHazelcastFactory} is available on the
  * classpath, then defaults to preparing 5 {@code CLIENT} test drivers, otherwise uses
- * {@code ALWAYS_UP_MEMBER} as test driver.<br/>
+ * {@code MEMBER} as test driver.<br/>
  * <b>Configuration: </b>test driver type and count can be configured with the
  * {@link Builder#driverType(DriverType)} and {@link Builder#driverCount(int)} methods. For more control
  * over the configuration of test drivers, you may also specify a {@link DriverFactory} with
@@ -461,15 +462,22 @@ public class BounceMemberRule implements TestRule {
         }
 
         public BounceMemberRule build() {
+
             if (testDriverType == null) {
                 // guess driver: if HazelcastTestFactory class is available, then use the client driver,
-                // otherwise default to always-up member as test driver
+                // otherwise use member driver as default
                 if (isClassAvailable(null, "com.hazelcast.client.test.TestHazelcastFactory")) {
                     testDriverType = CLIENT;
                 } else {
-                    testDriverType = ALWAYS_UP_MEMBER;
+                    testDriverType = MEMBER;
                 }
             }
+
+            if (testDriverType == ALWAYS_UP_MEMBER) {
+                assert driversCount == 1
+                        : "Driver count can only be 1 when driver type is ALWAYS_UP_MEMBER but found " + driversCount;
+            }
+
             if (driverFactory == null) {
                 // choose a default driver factory
                 switch (testDriverType) {
