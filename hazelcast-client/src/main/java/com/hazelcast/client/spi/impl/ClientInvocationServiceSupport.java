@@ -49,7 +49,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIME
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
 
-abstract class ClientInvocationServiceSupport implements ClientInvocationService {
+public abstract class ClientInvocationServiceSupport implements ClientInvocationService {
 
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");

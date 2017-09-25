@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
@@ -65,12 +66,46 @@ public class ListenerTests extends ClientTestSupport {
             public void run() {
                 node.getLifecycleService().terminate();
             }
-        }, 1, TimeUnit.SECONDS);
+        }, 500, TimeUnit.MILLISECONDS);
 
         EntryAdapter listener = new EntryAdapter();
 
         LinkedList<String> registrationIds = new LinkedList<String>();
         while (client.getCluster().getMembers().size() == nodeCount) {
+            registrationIds.add(map.addEntryListener(listener, false));
+        }
+
+        for (String registrationId : registrationIds) {
+            assertTrue(map.removeEntryListener(registrationId));
+        }
+        executorService.shutdown();
+
+    }
+
+    @Test
+    public void testSmartListenerRegister_whenNodeJoined() {
+        int nodeCount = 5;
+        for (int i = 0; i < nodeCount - 1; i++) {
+            factory.newHazelcastInstance();
+        }
+
+        HazelcastInstance client = factory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap("test");
+
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                factory.newHazelcastInstance();
+            }
+        }, 500, TimeUnit.MILLISECONDS);
+
+        EntryAdapter listener = new EntryAdapter();
+
+        LinkedList<String> registrationIds = new LinkedList<String>();
+
+        HazelcastClientInstanceImpl clientInstance = getHazelcastClientInstanceImpl(client);
+        while (clientInstance.getConnectionManager().getActiveConnections().size() < nodeCount) {
             registrationIds.add(map.addEntryListener(listener, false));
         }
 
