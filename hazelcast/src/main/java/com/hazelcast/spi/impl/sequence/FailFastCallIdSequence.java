@@ -35,7 +35,7 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
  * The latter cause is not a problem since the capacity is exceeded temporarily and it isn't sustainable.
  * So perhaps there are a few threads that at the same time see that the there is space and do a next.
  */
-public final class CallIdSequenceWithBackpressureFailFast implements CallIdSequence {
+public class FailFastCallIdSequence implements CallIdSequence {
     private static final int INDEX_HEAD = 7;
     private static final int INDEX_TAIL = 15;
 
@@ -44,7 +44,7 @@ public final class CallIdSequenceWithBackpressureFailFast implements CallIdSeque
 
     private final int maxConcurrentInvocations;
 
-    public CallIdSequenceWithBackpressureFailFast(int maxConcurrentInvocations) {
+    public FailFastCallIdSequence(int maxConcurrentInvocations) {
         this.maxConcurrentInvocations = maxConcurrentInvocations;
     }
 
@@ -81,7 +81,7 @@ public final class CallIdSequenceWithBackpressureFailFast implements CallIdSeque
         return longs.get(INDEX_TAIL);
     }
 
-    private boolean hasSpace() {
+    protected boolean hasSpace() {
         return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
     }
 

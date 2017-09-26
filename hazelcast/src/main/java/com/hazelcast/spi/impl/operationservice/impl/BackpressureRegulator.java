@@ -20,9 +20,8 @@ import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
-import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressure;
-import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Random;
@@ -153,11 +152,7 @@ class BackpressureRegulator {
     }
 
     CallIdSequence newCallIdSequence() {
-        if (enabled) {
-            return new CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs);
-        } else {
-            return new CallIdSequenceWithoutBackpressure();
-        }
+        return CallIdFactory.newCallIdSequence(enabled, maxConcurrentInvocations, backoffTimeoutMs);
     }
 
     /**

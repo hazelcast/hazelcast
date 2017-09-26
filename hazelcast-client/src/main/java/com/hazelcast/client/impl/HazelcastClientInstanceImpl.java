@@ -139,10 +139,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
-import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressure;
-import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressureFailFast;
-import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -246,13 +244,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
         long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
-        if (maxAllowedConcurrentInvocations == Integer.MAX_VALUE) {
-            callIdSequence = new CallIdSequenceWithoutBackpressure();
-        } else if (backofftimeoutMs <= 0) {
-            callIdSequence = new CallIdSequenceWithBackpressureFailFast(maxAllowedConcurrentInvocations);
-        } else {
-            callIdSequence = new CallIdSequenceWithBackpressure(maxAllowedConcurrentInvocations, backofftimeoutMs);
-        }
+        boolean isBackPressureDisabled = maxAllowedConcurrentInvocations == Integer.MAX_VALUE;
+        callIdSequence = CallIdFactory
+                .newCallIdSequence(isBackPressureDisabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
 
         invocationService = initInvocationService();
         listenerService = initListenerService();
