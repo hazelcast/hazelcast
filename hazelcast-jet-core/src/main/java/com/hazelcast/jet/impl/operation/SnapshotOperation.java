@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -45,10 +46,20 @@ public class SnapshotOperation extends AsyncExecutionOperation {
     protected void doRun() throws Exception {
         JetService service = getService();
         service.getJobExecutionService()
-               .beginSnapshot(getCallerAddress(), jobId, executionId, snapshotId).whenComplete((r, v) -> {
-            logFine(getLogger(), "Snapshot %s for job %s finished on member", snapshotId, idToString(jobId));
-            doSendResponse(null);
-        });
+               .beginSnapshot(getCallerAddress(), jobId, executionId, snapshotId)
+               .thenAccept(r -> {
+                   logFine(getLogger(),
+                           "Snapshot %s for job %s finished successfully on member",
+                           snapshotId, idToString(jobId));
+                   doSendResponse(null);
+               })
+               .exceptionally(e -> {
+                   getLogger().warning(String.format("Snapshot %d for job %s finished with error on member",
+                           snapshotId, idToString(jobId)), e);
+                   doSendResponse(new JetException("Exception during snapshot", e));
+                   return null;
+               });
+
     }
 
     @Override

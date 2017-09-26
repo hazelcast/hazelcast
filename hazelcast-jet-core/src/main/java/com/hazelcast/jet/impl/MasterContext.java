@@ -38,6 +38,7 @@ import com.hazelcast.jet.impl.operation.InitOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -57,6 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
@@ -71,6 +73,7 @@ import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.safeWhenComplete;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.emptyList;
@@ -157,7 +160,7 @@ public class MasterContext {
         long lastSnapshotId = NO_SNAPSHOT;
         if (jobRecord.getConfig().getSnapshotInterval() > 0) {
             Long snapshotIdToRestore = snapshotRepository.latestCompleteSnapshot(jobId);
-            snapshotRepository.deleteSnapshots(jobId, snapshotIdToRestore);
+            snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotIdToRestore);
             Long lastStartedSnapshot = snapshotRepository.latestStartedSnapshot(jobId);
             if (snapshotIdToRestore != null) {
                 logger.info("State of " + jobAndExecutionId(jobId, executionId) + " will be restored from snapshot "
@@ -374,24 +377,17 @@ public class MasterContext {
     }
 
     private void onSnapshotCompleted(Map<MemberInfo, Object> responses, long executionId, long snapshotId) {
-        // check if all members were successful
-        // we don't check member list in execution plan on purpose since this snapshot might be stale
-        Map<Boolean, List<Entry<MemberInfo, Object>>> grouped = groupResponses(responses);
-        List<Entry<MemberInfo, Object>> failures = grouped.get(true);
-        List<Entry<MemberInfo, Object>> nonTopologicalFailures = failures.stream()
-                                                                         .filter(e -> !(e.getValue()
-                                                                                 instanceof CancellationException ||
-                                                                                 isTopologicalFailure(e.getValue())))
-                                                                         .collect(toList());
+        Map<Address, Throwable> errors = responses.entrySet().stream()
+            .filter(e -> e.getValue() instanceof Throwable)
+            .filter(e -> !(e.getValue() instanceof CancellationException) || !isTopologicalFailure(e.getValue()))
+            .collect(Collectors.toMap(e -> e.getKey().getAddress(), e -> (Throwable) e.getValue()));
 
-        if (!nonTopologicalFailures.isEmpty()) {
+        boolean isSuccess = errors.isEmpty();
+        if (!isSuccess) {
             logger.warning(jobAndExecutionId(jobId, executionId) + " snapshot " + snapshotId + " has failures: "
-                    + nonTopologicalFailures);
+                    + errors);
         }
-
-        boolean successful = failures.isEmpty();
-
-        coordinationService.completeSnapshot(jobId, executionId, snapshotId, successful);
+        coordinationService.completeSnapshot(jobId, executionId, snapshotId, isSuccess);
     }
 
     // Called as callback when all ExecuteOperation invocations are done
@@ -523,7 +519,7 @@ public class MasterContext {
         invokeOnParticipants(futures, doneFuture, operationCtor);
 
         // once all invocations return, notify the completion callback
-        doneFuture.whenComplete((aVoid, throwable) -> {
+        doneFuture.whenComplete(safeWhenComplete(logger, (aVoid, throwable) -> {
             Map<MemberInfo, Object> responses = new HashMap<>();
             for (Entry<MemberInfo, InternalCompletableFuture<Object>> entry : futures.entrySet()) {
                 Object val;
@@ -538,18 +534,18 @@ public class MasterContext {
                 responses.put(entry.getKey(), val);
             }
             completionCallback.accept(responses);
-        });
+        }));
 
         boolean cancelOnFailure = (cancellationFuture != null);
 
         // if cancelOnFailure is true, we should cancel invocations when the future is cancelled, or any invocation fail
 
         if (cancelOnFailure) {
-            cancellationFuture.whenComplete((r, e) -> {
+            cancellationFuture.whenComplete(safeWhenComplete(logger, (r, e) -> {
                 if (e instanceof CancellationException) {
                     futures.values().forEach(f -> f.cancel(true));
                 }
-            });
+            }));
 
             ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
                 @Override
@@ -570,7 +566,6 @@ public class MasterContext {
                                       CompletableFuture<Void> doneFuture,
                                       Function<ExecutionPlan, Operation> opCtor) {
         AtomicInteger remainingCount = new AtomicInteger(executionPlanMap.size());
-
         for (Entry<MemberInfo, ExecutionPlan> e : executionPlanMap.entrySet()) {
             MemberInfo member = e.getKey();
             Operation op = opCtor.apply(e.getValue());

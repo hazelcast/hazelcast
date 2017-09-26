@@ -27,7 +27,6 @@ import java.util.Set;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.FAILED;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.ONGOING;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUCCESSFUL;
-import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.VALIDATION_NEEDED;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.util.Preconditions.checkFalse;
@@ -41,7 +40,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 public class SnapshotRecord implements IdentifiedDataSerializable {
 
     public enum SnapshotStatus {
-        ONGOING, VALIDATION_NEEDED, SUCCESSFUL, FAILED, TO_DELETE
+        ONGOING, SUCCESSFUL, FAILED, TO_DELETE
     }
 
     private long jobId;
@@ -74,16 +73,10 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
     public void setStatus(SnapshotStatus newStatus) {
         checkFalse((newStatus == null || newStatus == ONGOING), "new status cannot be null or " + ONGOING);
 
-        if (newStatus == VALIDATION_NEEDED || newStatus == FAILED) {
+        if (newStatus == SUCCESSFUL || newStatus == FAILED) {
             checkTrue(status == ONGOING, "new status can be " + newStatus
                     + " only when current status is " + status);
         }
-
-        if (newStatus == SUCCESSFUL) {
-            checkTrue(status == VALIDATION_NEEDED, "new status can be " + newStatus
-                    + " only when current status is " + status);
-        }
-
         this.status = newStatus;
     }
 

@@ -22,9 +22,9 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
 import com.hazelcast.logging.ILogger;
@@ -50,10 +50,9 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.FAILED;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUCCESSFUL;
-import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.VALIDATION_NEEDED;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -351,7 +350,7 @@ public class JobCoordinationService {
                 logger.fine(jobAndExecutionId(jobId, executionId) + " snapshot is scheduled in "
                         + snapshotInterval + "ms");
             }
-            executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> this.beginSnapshot(jobId, executionId),
+            executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> beginSnapshot(jobId, executionId),
                     snapshotInterval, MILLISECONDS);
         } else {
             logger.warning("MasterContext not found to schedule snapshot of " + jobAndExecutionId(jobId, executionId));
@@ -376,27 +375,28 @@ public class JobCoordinationService {
         }
     }
 
-    void completeSnapshot(long jobId, long executionId, long snapshotId, boolean success) {
+    void completeSnapshot(long jobId, long executionId, long snapshotId, boolean isSuccess) {
         MasterContext masterContext = masterContexts.get(jobId);
         if (masterContext != null) {
             try {
-                SnapshotStatus status = success ? VALIDATION_NEEDED : FAILED;
+                SnapshotStatus status = isSuccess ? SUCCESSFUL : FAILED;
                 long elapsed = snapshotRepository.setSnapshotStatus(jobId, snapshotId, status);
-                logger.info(String.format("Snapshot %s for job %s completed in %dms", snapshotId,
-                        idToString(jobId), elapsed));
+                logger.info(String.format("Snapshot %s for job %s completed with status %s in %dms", snapshotId,
+                        idToString(jobId), status, elapsed));
             } catch (Exception e) {
                 logger.warning("Cannot update snapshot status for " + jobAndExecutionId(jobId, executionId) + " snapshot "
-                        + snapshotId + " success: " + success);
+                        + snapshotId + " isSuccess: " + isSuccess);
                 return;
             }
-            if (success) {
-                snapshotRepository.setSnapshotStatus(jobId, snapshotId, SUCCESSFUL);
-                snapshotRepository.deleteSnapshots(jobId, snapshotId);
+            if (isSuccess) {
+                snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotId);
+            } else {
+                snapshotRepository.deleteSingleSnapshot(jobId, snapshotId);
             }
             scheduleSnapshot(jobId, executionId);
         } else {
-            logger.warning("MasterContext not found for finalize snapshot of " + jobAndExecutionId(jobId, executionId)
-                    + " with result: " + success);
+            logger.warning("MasterContext not found to finalize snapshot of " + jobAndExecutionId(jobId, executionId)
+                    + " with result: " + isSuccess);
         }
     }
 
@@ -469,5 +469,4 @@ public class JobCoordinationService {
     public SnapshotRepository snapshotRepository() {
         return snapshotRepository;
     }
-
 }

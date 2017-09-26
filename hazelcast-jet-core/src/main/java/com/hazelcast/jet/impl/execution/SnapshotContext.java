@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.impl.util.Util.completeVoidFuture;
 import static com.hazelcast.jet.impl.util.Util.completedVoidFuture;
@@ -65,6 +66,11 @@ public class SnapshotContext {
      * tasklet completes. Snapshot is postponed until this counter is 0.
      */
     private int numHigherPriorityTasklets = Integer.MIN_VALUE;
+
+    /**
+     * Holder for the snapshot error, if any
+     */
+    private final AtomicReference<Throwable> snapshotError = new AtomicReference<>();
 
     /**
      * True, if a snapshot was started and postponed. If true, then when
@@ -170,8 +176,18 @@ public class SnapshotContext {
         assert oldValue > 0 : "oldValue=" + oldValue;
 
         if (numRemainingTasklets.decrementAndGet() == 0) {
-            completeVoidFuture(future);
+            Throwable t = snapshotError.get();
+            if (t == null) {
+                completeVoidFuture(future);
+            } else {
+                future.completeExceptionally(t);
+            }
             future = null;
+            snapshotError.set(null);
         }
+    }
+
+    void reportError(Throwable ex) {
+        snapshotError.compareAndSet(null, ex);
     }
 }

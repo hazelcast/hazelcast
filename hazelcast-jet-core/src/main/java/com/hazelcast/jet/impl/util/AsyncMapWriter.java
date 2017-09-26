@@ -18,11 +18,13 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
@@ -41,6 +43,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -69,6 +72,8 @@ public class AsyncMapWriter {
 
     private final MapEntries[] outputBuffers; // one buffer per partition
     private final AtomicInteger numConcurrentOps; // num concurrent ops across whole instance
+    private final ExecutionService executionService;
+    private final ILogger logger;
 
     private String mapName;
     private MapOperationProvider opProvider;
@@ -79,7 +84,8 @@ public class AsyncMapWriter {
         this.mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         this.outputBuffers = new MapEntries[partitionService.getPartitionCount()];
         this.serializationService = nodeEngine.getSerializationService();
-
+        this.executionService = nodeEngine.getExecutionService();
+        this.logger = nodeEngine.getLogger(AsyncMapWriter.class);
         JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
         this.numConcurrentOps = jetService.numConcurrentPutAllOps();
     }
@@ -120,7 +126,7 @@ public class AsyncMapWriter {
                                                           .filter(Objects::nonNull)
                                                           .collect(Collectors.toList());
 
-        if (!invokeOnCluster(ops, completionFuture)) {
+        if (!invokeOnCluster(ops, completionFuture, true)) {
             return false;
         }
         resetBuffers();
@@ -133,7 +139,7 @@ public class AsyncMapWriter {
         for (int index = 0; index < partitions.length; index++) {
             int partition = partitions[index];
             MapEntries entries = entriesPerPtion[index];
-            Address owner = partitionService.getPartitionOwnerOrWait(index);
+            Address owner = partitionService.getPartitionOwnerOrWait(partition);
             assert owner != null : "null owner was returned";
             Entry<List<Integer>, List<MapEntries>> ptionsAndEntries
                     = addrToEntries.computeIfAbsent(owner, a -> entry(new ArrayList<>(), new ArrayList<>()));
@@ -152,7 +158,7 @@ public class AsyncMapWriter {
                     return h;
                 }).collect(Collectors.toList());
 
-        return invokeOnCluster(retryOps, completionFuture);
+        return invokeOnCluster(retryOps, completionFuture, false);
     }
 
     private PartitionOpBuilder opForMember(Address member, List<Integer> partitions, MapEntries[] partitionToEntries) {
@@ -198,7 +204,9 @@ public class AsyncMapWriter {
         return true;
     }
 
-    private boolean invokeOnCluster(List<PartitionOpBuilder> opBuilders, CompletableFuture<Void> completionFuture) {
+    private boolean invokeOnCluster(List<PartitionOpBuilder> opBuilders,
+                                    CompletableFuture<Void> completionFuture,
+                                    boolean shouldRetry) {
         if (opBuilders.isEmpty()) {
             completeVoidFuture(completionFuture);
             return true;
@@ -215,13 +223,13 @@ public class AsyncMapWriter {
                 // try to cherry-pick partitions which failed in this operation
                 List<Integer> failedPartitions = new ArrayList<>();
                 List<MapEntries> failedEntries = new ArrayList<>();
-                Throwable t = null;
+                Throwable error = null;
                 Object[] results = r.getResults();
                 for (int idx = 0; idx < results.length; idx++) {
                     Object o = results[idx];
                     if (o instanceof Throwable) {
-                        t = (Throwable) o;
-                        if (t instanceof RetryableException) {
+                        error = (Throwable) o;
+                        if (error instanceof RetryableException) {
                             failedPartitions.add(builder.partitions[idx]);
                             failedEntries.add(builder.entries[idx]);
                         } else {
@@ -230,11 +238,27 @@ public class AsyncMapWriter {
                         }
                     }
                 }
-                if (t != null) {
-                    if (!tryRetry(toIntArray(failedPartitions),
-                            failedEntries.toArray(new MapEntries[failedEntries.size()]), completionFuture)) {
-                        completionFuture.completeExceptionally(t);
+                if (error != null) {
+                    if (!shouldRetry) {
+                        completionFuture.completeExceptionally(error);
+                        return;
                     }
+
+                    // retry once
+                    final MapEntries[] entries = failedEntries.toArray(new MapEntries[failedEntries.size()]);
+                    final int[] partitions = toIntArray(failedPartitions);
+                    final Throwable originalErr = error;
+                    executionService.schedule(() -> {
+                        try {
+                            if (!tryRetry(partitions, entries, completionFuture)) {
+                                completionFuture.completeExceptionally(originalErr);
+                            }
+
+                        } catch (Exception e) {
+                            logger.severe("Exception during retry", e);
+                            completionFuture.completeExceptionally(originalErr);
+                        }
+                    }, TRY_PAUSE_MILLIS, TimeUnit.MILLISECONDS);
                     return;
                 }
                 if (doneLatch.decrementAndGet() == 0) {

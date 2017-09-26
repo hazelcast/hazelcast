@@ -21,6 +21,7 @@ import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.util.AsyncMapWriter;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
@@ -33,6 +34,7 @@ import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.DONE;
 import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.DRAIN;
 import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.FLUSH;
 import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.REACHED_BARRIER;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.safeWhenComplete;
 
 public class StoreSnapshotTasklet implements Tasklet {
 
@@ -43,10 +45,11 @@ public class StoreSnapshotTasklet implements Tasklet {
     private final AsyncMapWriter mapWriter;
     private final boolean isHigherPrioritySource;
     private final String vertexName;
+    private final ILogger logger;
 
     private long pendingSnapshotId;
 
-    private AtomicInteger numActiveFlushes = new AtomicInteger();
+    private final AtomicInteger numActiveFlushes = new AtomicInteger();
 
     private State state = DRAIN;
     private boolean hasReachedBarrier;
@@ -63,6 +66,7 @@ public class StoreSnapshotTasklet implements Tasklet {
         this.mapWriter = new AsyncMapWriter(nodeEngine);
         this.mapWriter.setMapName(currMapName());
         this.pendingSnapshotId = snapshotContext.lastSnapshotId() + 1;
+        this.logger = nodeEngine.getLogger(StoreSnapshotTasklet.class + "." + vertexName + "#snapshot");
     }
 
     @Nonnull
@@ -100,14 +104,15 @@ public class StoreSnapshotTasklet implements Tasklet {
             case FLUSH:
                 progTracker.notDone();
                 CompletableFuture<Void> future = new CompletableFuture<>();
-                future.whenComplete((r, t) -> {
-                    if (t == null) {
-                        numActiveFlushes.decrementAndGet();
-                    } else {
-                        //TODO: error handling
-                        t.printStackTrace();
+                future.whenComplete(safeWhenComplete(logger, (r, t) -> {
+                    // this callback may be called from a non-tasklet thread
+                    if (t != null) {
+                        logger.severe("Error writing to snapshot map '" + currMapName() + "'", t);
+                        snapshotContext.reportError(t);
                     }
-                });
+                    // numActiveFlushes must be decremented last otherwise we may miss the error
+                    numActiveFlushes.decrementAndGet();
+                }));
                 if (mapWriter.tryFlushAsync(future)) {
                     progTracker.madeProgress();
                     numActiveFlushes.incrementAndGet();

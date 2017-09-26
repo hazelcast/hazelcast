@@ -22,6 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
@@ -30,6 +31,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EXCEPTIONS_RANGE_START;
 
@@ -102,6 +104,35 @@ public final class ExceptionUtil {
         } else {
             throw peeledAndUnchecked(t);
         }
+    }
+
+
+    /**
+     * Utility to make sure exceptions inside
+     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
+     */
+    @Nonnull
+    public static <T> BiConsumer<T, ? super Throwable> safeWhenComplete(
+            @Nonnull ILogger logger, @Nonnull BiConsumer<T, ? super Throwable> consumer
+    ) {
+        return safeWhenComplete(logger, "Exception during callback", consumer);
+    }
+
+    /**
+     * Utility to make sure exceptions inside
+     * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
+     */
+    @Nonnull
+    public static <T> BiConsumer<T, ? super Throwable> safeWhenComplete(
+            @Nonnull ILogger logger, @Nonnull String message, @Nonnull BiConsumer<T, ? super Throwable> consumer
+    ) {
+        return (r, t) -> {
+            try {
+                consumer.accept(r, t);
+            } catch (Throwable e) {
+                logger.severe(message, e);
+            }
+        };
     }
 
     @SuppressWarnings("unchecked")

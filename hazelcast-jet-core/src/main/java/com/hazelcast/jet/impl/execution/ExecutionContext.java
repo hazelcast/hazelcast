@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.safeWhenComplete;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -98,12 +99,12 @@ public class ExecutionContext {
     public CompletionStage<Void> execute(Consumer<CompletionStage<Void>> doneCallback) {
         synchronized (executionLock) {
             if (jobFuture != null) {
-                jobFuture.whenComplete((r, e) -> doneCallback.accept(jobFuture));
+                jobFuture.whenComplete(safeWhenComplete(logger, (r, e) -> doneCallback.accept(jobFuture)));
             } else {
                 JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
                 ClassLoader cl = service.getClassLoader(jobId);
                 jobFuture = execService.execute(tasklets, doneCallback, cl);
-                jobFuture.whenComplete((r, e) -> tasklets.clear());
+                jobFuture.whenComplete(safeWhenComplete(logger, (r, e) -> tasklets.clear()));
             }
 
             return jobFuture;

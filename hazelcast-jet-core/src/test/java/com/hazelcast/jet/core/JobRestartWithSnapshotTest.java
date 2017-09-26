@@ -48,19 +48,19 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
-import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindow;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarks;
 import static com.hazelcast.jet.core.processor.Processors.map;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMap;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.joining;
@@ -229,7 +229,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     private void waitForNextSnapshot(IStreamMap<Long, Object> snapshotsMap, int timeout) {
         SnapshotRecord maxRecord = findMaxRecord(snapshotsMap);
-        assertNotNull(maxRecord);
+        assertNotNull("no snapshot found", maxRecord);
         // wait until there is at least one more snapshot
         assertTrueEventually(() -> assertTrue("No more snapshots produced after restart",
                 findMaxRecord(snapshotsMap).snapshotId() > maxRecord.snapshotId()), timeout);
