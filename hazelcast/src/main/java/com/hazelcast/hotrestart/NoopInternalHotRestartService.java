@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Empty implementation of InternalHotRestartService to avoid null checks. This will provide default behaviour when hot restart
@@ -63,5 +64,9 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
 
     @Override
     public void resetHotRestartData() {
+    }
+
+    @Override
+    public void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit) {
     }
 }

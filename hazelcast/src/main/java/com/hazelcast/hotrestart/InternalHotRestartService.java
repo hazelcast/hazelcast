@@ -21,6 +21,7 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.nio.Address;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Internal service for interacting with hot restart related functionalities (e.g. force and partial start)
@@ -86,4 +87,13 @@ public interface InternalHotRestartService {
      * it is excluded in cluster start.
      */
     void resetHotRestartData();
+
+    /**
+     * Waits until partition replicas (primaries and backups) get in sync.
+     *
+     * @param timeout timeout
+     * @param unit time unit
+     * @throws IllegalStateException when timeout happens or a member leaves the cluster while waiting
+     */
+    void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit);
 }

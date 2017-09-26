@@ -228,11 +228,13 @@ public interface Cluster {
      * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
      * <p>
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
-     * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
+     * either all other nodes leave the cluster or a configurable timeout occurs
+     * (see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
      *
      * @throws IllegalStateException if member-list changes during the transaction
      *                               or there are ongoing/pending migration operations
+     *                               or shutdown process times out
      * @throws TransactionException  if there's already an ongoing transaction
      *                               or this transaction fails
      *                               or this transaction timeouts
@@ -251,12 +253,14 @@ public interface Cluster {
      * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
      * <p>
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
-     * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
+     * either all other nodes leave the cluster or a configurable timeout occurs
+     * (see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}). If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
      *
      * @param transactionOptions transaction options
      * @throws IllegalStateException if member-list changes during the transaction
      *                               or there are ongoing/pending migration operations
+     *                               or shutdown process times out
      * @throws TransactionException  if there's already an ongoing transaction
      *                               or this transaction fails
      *                               or this transaction timeouts
