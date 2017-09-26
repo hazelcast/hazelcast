@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.bounce.DriverFactory;
@@ -60,10 +61,9 @@ public class ClientDriverFactory implements DriverFactory {
         config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         config.getNetworkConfig().setSmartRouting(false);
 
-        InetSocketAddress socketAddress = member.getCluster().getLocalMember().getSocketAddress();
+        Address serverAddress = member.getCluster().getLocalMember().getAddress();
 
-        config.getNetworkConfig().
-                addAddress(socketAddress.getHostName() + ":" + socketAddress.getPort());
+        config.getNetworkConfig().addAddress(serverAddress.getHost() + ":" + serverAddress.getPort());
 
         return config;
     }
