@@ -290,7 +290,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
 
     public static class RetryableMapStore extends AMapStore implements Serializable {
 
-        private static boolean failOnNext;
+        private static volatile boolean failOnNext;
 
         @Override
         public void store(Object o, Object o2) {
