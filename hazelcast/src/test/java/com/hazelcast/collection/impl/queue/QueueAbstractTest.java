@@ -550,7 +550,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         @Override
         public void run() {
             try {
-                queue.poll(2, TimeUnit.SECONDS);
+                queue.poll(15, TimeUnit.SECONDS);
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
