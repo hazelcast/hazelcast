@@ -16,57 +16,71 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.core.SnapshotOutbox;
-import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.SnapshotOutbox;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import java.util.BitSet;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * A wrapper processor to peek at input or output of other processor.
- * See {@link DiagnosticProcessors#peekInput(DistributedSupplier)}.
+ * A wrapper processor to peek at the input or output of a processor.
+ * See {@link DiagnosticProcessors#peekInput(DistributedSupplier)},
+ * {@link DiagnosticProcessors#peekOutput(DistributedSupplier)}.
+ * and {@link DiagnosticProcessors#peekSnapshot(DistributedSupplier)}.
  */
-public final class PeekWrappedP implements Processor {
+public final class PeekWrappedP<T> implements Processor {
 
     private final Processor wrappedProcessor;
-    private final DistributedFunction<Object, String> toStringFn;
-    private final Predicate<Object> shouldLogFn;
-    private final boolean peekInput;
-    private final boolean peekOutput;
-
+    private final DistributedFunction<T, String> toStringFn;
+    private final Predicate<T> shouldLogFn;
     private final LoggingInbox loggingInbox;
     private ILogger logger;
 
-    public PeekWrappedP(Processor wrappedProcessor, DistributedFunction<Object, String> toStringFn,
-            Predicate<Object> shouldLogFn, boolean peekInput, boolean peekOutput
-    ) {
-        if (!peekInput && !peekOutput) {
-            throw new IllegalArgumentException("Peeking neither on input nor on output");
-        }
+    private final boolean peekInput;
+    private final boolean peekOutput;
+    private final boolean peekSnapshot;
+
+    public PeekWrappedP(@Nonnull Processor wrappedProcessor, @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull Predicate<T> shouldLogFn, boolean peekInput, boolean peekOutput, boolean peekSnapshot) {
         checkNotNull(wrappedProcessor, "wrappedProcessor");
+        checkNotNull(toStringFn, "toStringFn");
+        checkNotNull(shouldLogFn, "shouldLogFn");
 
         this.wrappedProcessor = wrappedProcessor;
         this.toStringFn = toStringFn;
         this.shouldLogFn = shouldLogFn;
         this.peekInput = peekInput;
         this.peekOutput = peekOutput;
-
+        this.peekSnapshot = peekSnapshot;
         loggingInbox = peekInput ? new LoggingInbox() : null;
     }
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
         logger = context.logger();
+        if (peekSnapshot) {
+            SnapshotOutbox wrappedOutbox = snapshotOutbox;
+            snapshotOutbox = (key, value) -> {
+                if (!wrappedOutbox.offer(key, value)) {
+                    return false;
+                }
+                log("Output to snapshot", (T) entry(key, value));
+                return true;
+            };
+        }
         if (peekOutput) {
-            outbox = new LoggingOutbox(outbox, snapshotOutbox);
+            outbox = new LoggingOutbox(outbox);
         }
         wrappedProcessor.init(outbox, snapshotOutbox, context);
     }
@@ -80,6 +94,7 @@ public final class PeekWrappedP implements Processor {
     public void process(int ordinal, @Nonnull Inbox inbox) {
         if (peekInput) {
             loggingInbox.wrappedInbox = inbox;
+            loggingInbox.ordinal = ordinal;
             wrappedProcessor.process(ordinal, loggingInbox);
         } else {
             wrappedProcessor.process(ordinal, inbox);
@@ -96,10 +111,10 @@ public final class PeekWrappedP implements Processor {
         return wrappedProcessor.complete();
     }
 
-    private void log(Object object) {
+    private void log(String prefix, T object) {
         // null object can come from poll()
         if (object != null && shouldLogFn.test(object)) {
-            logger.info(toStringFn.apply(object));
+            logger.info(prefix + ": " + toStringFn.apply(object));
         }
     }
 
@@ -129,6 +144,7 @@ public final class PeekWrappedP implements Processor {
 
         /** A flag, whether the last peeked item was already logged */
         private boolean wasLogged;
+        private int ordinal;
 
         @Override
         public boolean isEmpty() {
@@ -137,7 +153,7 @@ public final class PeekWrappedP implements Processor {
 
         @Override
         public Object peek() {
-            Object res = wrappedInbox.peek();
+            T res = (T) wrappedInbox.peek();
             if (!wasLogged && res != null) {
                 log(res);
                 wasLogged = true;
@@ -147,12 +163,16 @@ public final class PeekWrappedP implements Processor {
 
         @Override
         public Object poll() {
-            Object res = wrappedInbox.poll();
+            T res = (T) wrappedInbox.poll();
             if (!wasLogged && res != null) {
                 log(res);
             }
             wasLogged = false;
             return res;
+        }
+
+        private void log(T res) {
+            PeekWrappedP.this.log("Input from " + ordinal, res);
         }
 
         @Override
@@ -162,13 +182,16 @@ public final class PeekWrappedP implements Processor {
         }
     }
 
-    private final class LoggingOutbox implements Outbox, SnapshotOutbox {
+    private final class LoggingOutbox implements Outbox {
         private final Outbox wrappedOutbox;
-        private final SnapshotOutbox snapshotOutbox;
+        private final int[] all;
+        private final BitSet broadcastTracker;
 
-        private LoggingOutbox(Outbox wrappedOutbox, SnapshotOutbox snapshotOutbox) {
+
+        private LoggingOutbox(Outbox wrappedOutbox) {
             this.wrappedOutbox = wrappedOutbox;
-            this.snapshotOutbox = snapshotOutbox;
+            this.broadcastTracker = new BitSet(wrappedOutbox.bucketCount());
+            this.all = IntStream.range(0, wrappedOutbox.bucketCount()).toArray();
         }
 
         @Override
@@ -178,32 +201,36 @@ public final class PeekWrappedP implements Processor {
 
         @Override
         public boolean offer(int ordinal, @Nonnull Object item) {
-            if (wrappedOutbox.offer(ordinal, item)) {
-                log(item);
-                return true;
+            if (ordinal == -1) {
+                return offer(all, item);
             }
-            return false;
+
+            if (!wrappedOutbox.offer(ordinal, item)) {
+                return false;
+            }
+            log("Output to " + ordinal, (T) item);
+            return true;
         }
 
         @Override
         public boolean offer(int[] ordinals, @Nonnull Object item) {
-            if (wrappedOutbox.offer(ordinals, item)) {
-                log(item);
-                return true;
+            // use broadcast logic to be able to report accurately
+            // which queue was pushed to when.
+            boolean done = true;
+            for (int i = 0; i < ordinals.length; i++) {
+                if (broadcastTracker.get(i)) {
+                    continue;
+                }
+                if (offer(i, item)) {
+                    broadcastTracker.set(i);
+                } else {
+                    done = false;
+                }
             }
-            return false;
-        }
-
-        @Override
-        public boolean offer(Object key, Object value) {
-            //TODO: logging
-            return snapshotOutbox.offer(key, value);
-        }
-
-        @Override
-        public boolean offerBroadcast(Object key, Object value) {
-            //TODO: logging
-            return snapshotOutbox.offerBroadcast(key, value);
+            if (done) {
+                broadcastTracker.clear();
+            }
+            return done;
         }
     }
 }
