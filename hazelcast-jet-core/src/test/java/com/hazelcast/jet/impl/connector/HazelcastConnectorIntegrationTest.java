@@ -29,6 +29,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.stream.IStreamCache;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -77,13 +78,21 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
         hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         hazelcastConfig.addEventJournalConfig(new EventJournalConfig().setCacheName("stream*").setMapName("stream*"));
         jetInstance = createJetMember(jetConfig);
-        createJetMember(jetConfig);
+        JetInstance jetInstance2 = createJetMember(jetConfig);
 
         sourceName = randomString();
         sinkName = randomString();
 
         streamSourceName = "stream" + sourceName;
         streamSinkName = "stream" + sinkName;
+
+        // workaround for `cache is not created` exception, create cache locally on all nodes
+        JetCacheManager cacheManager = jetInstance2.getCacheManager();
+        cacheManager.getCache(sourceName);
+        cacheManager.getCache(sinkName);
+        cacheManager.getCache(streamSourceName);
+        cacheManager.getCache(streamSinkName);
+
     }
 
     @Test

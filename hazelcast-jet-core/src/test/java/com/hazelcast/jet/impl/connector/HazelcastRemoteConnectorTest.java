@@ -69,6 +69,8 @@ import static org.junit.Assert.assertTrue;
 public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     private static final int ITEM_COUNT = 20;
+    private static final String SOURCE_NAME = "source";
+    private static final String SINK_NAME = "sink";
 
     private JetTestInstanceFactory factory;
     private JetInstance jet;
@@ -82,19 +84,25 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         factory = new JetTestInstanceFactory();
         jet = factory.newMember(jetConfig);
-        factory.newMember(jetConfig);
+        JetInstance jet2 = factory.newMember(jetConfig);
 
         Config config = new Config();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         config.addEventJournalConfig(new EventJournalConfig().setCacheName("default").setMapName("default"));
         hz = Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("dev");
         clientConfig.getGroupConfig().setPassword("dev-pass");
         Address address = hz.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
+
+        // workaround for `cache is not created` exception, create cache locally on all nodes
+        jet2.getCacheManager().getCache(SOURCE_NAME);
+        jet2.getCacheManager().getCache(SINK_NAME);
+        hz2.getCacheManager().getCache(SOURCE_NAME);
+        hz2.getCacheManager().getCache(SINK_NAME);
     }
 
     @After
@@ -105,43 +113,43 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @Test
     public void when_listReaderConfiguredWithClientConfig_then_readFromRemoteCluster() throws Exception {
-        populateList(hz.getList("source"));
+        populateList(hz.getList(SOURCE_NAME));
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readList("source", clientConfig)).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex source = dag.newVertex(SOURCE_NAME, readList(SOURCE_NAME, clientConfig)).localParallelism(1);
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, jet.getList("sink").size());
+        assertEquals(ITEM_COUNT, jet.getList(SINK_NAME).size());
     }
 
     @Test
     public void when_listWriterConfiguredWithClientConfig_then_writeToRemoteCluster() throws Exception {
-        populateList(jet.getList("source"));
+        populateList(jet.getList(SOURCE_NAME));
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readList("source")).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeList("sink", clientConfig));
+        Vertex source = dag.newVertex(SOURCE_NAME, readList(SOURCE_NAME)).localParallelism(1);
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME, clientConfig));
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, hz.getList("sink").size());
+        assertEquals(ITEM_COUNT, hz.getList(SINK_NAME).size());
     }
 
     @Test
     public void when_mapReaderConfiguredWithClientConfigAndFilter_then_readFromRemoteCluster_withPredicate()
             throws Exception {
-        populateMap(hz.getMap("source"));
+        populateMap(hz.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readMap("source",
+        Vertex source = dag.newVertex(SOURCE_NAME, readMap(SOURCE_NAME,
                 e -> !e.getKey().equals(0), Entry::getValue, clientConfig)).localParallelism(4);
-        Vertex sink = dag.newVertex("sink", SinkProcessors.writeList("sink")).localParallelism(1);
+        Vertex sink = dag.newVertex(SINK_NAME, SinkProcessors.writeList(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        IStreamList<Object> list = jet.getList("sink");
+        IStreamList<Object> list = jet.getList(SINK_NAME);
         assertEquals(ITEM_COUNT - 1, list.size());
         assertFalse(list.contains(0));
         assertTrue(list.contains(1));
@@ -149,88 +157,88 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @Test
     public void when_mapWriterConfiguredWithClientConfig_then_writeToRemoteCluster() throws Exception {
-        populateMap(jet.getMap("producer"));
+        populateMap(jet.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", readMap("producer"));
-        Vertex consumer = dag.newVertex("consumer", writeMap("consumer", clientConfig));
+        Vertex producer = dag.newVertex(SOURCE_NAME, readMap(SOURCE_NAME));
+        Vertex consumer = dag.newVertex(SINK_NAME, writeMap(SINK_NAME, clientConfig));
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, hz.getMap("consumer").size());
+        assertEquals(ITEM_COUNT, hz.getMap(SINK_NAME).size());
     }
 
     @Test
     public void when_cacheReaderConfiguredWithClientConfig_then_readFromRemoteCluster() throws Exception {
-        populateCache(hz.getCacheManager().getCache("source"));
+        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readCache("source", clientConfig));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex source = dag.newVertex(SOURCE_NAME, readCache(SOURCE_NAME, clientConfig));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, jet.getList("sink").size());
+        assertEquals(ITEM_COUNT, jet.getList(SINK_NAME).size());
     }
 
     @Test
     public void when_cacheWriterConfiguredWithClientConfig_then_writeToRemoteCluster() throws Exception {
-        populateCache(jet.getCacheManager().getCache("producer"));
+        populateCache(jet.getCacheManager().getCache(SOURCE_NAME));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", readCache("producer"));
-        Vertex consumer = dag.newVertex("consumer", writeCache("consumer", clientConfig));
+        Vertex producer = dag.newVertex(SOURCE_NAME, readCache(SOURCE_NAME));
+        Vertex consumer = dag.newVertex(SINK_NAME, writeCache(SINK_NAME, clientConfig));
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, hz.getCacheManager().getCache("consumer").size());
+        assertEquals(ITEM_COUNT, hz.getCacheManager().getCache(SINK_NAME).size());
     }
 
     @Test
     public void when_mapStreamerConfiguredWithClientConfig_then_streamFromRemoteCluster() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamMap("source", clientConfig, false));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex source = dag.newVertex(SOURCE_NAME, streamMap(SOURCE_NAME, clientConfig, false));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateMap(hz.getMap("source"));
+        populateMap(hz.getMap(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT, jet.getList("sink"));
+        assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
         future.cancel(true);
     }
 
     @Test
     public void when_mapStreamerConfiguredWithClientConfig_withFilter_then_streamFromRemoteCluster() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamMap("source", clientConfig,
+        Vertex source = dag.newVertex(SOURCE_NAME, streamMap(SOURCE_NAME, clientConfig,
                 event -> !event.getKey().equals(0), null, false));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateMap(hz.getMap("source"));
+        populateMap(hz.getMap(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT - 1, jet.getList("sink"));
+        assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
         future.cancel(true);
     }
 
     @Test
     public void when_mapStreamerConfiguredWithClientConfig_withProjection_then_streamFromRemoteCluster() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamMap("source", clientConfig,
+        Vertex source = dag.newVertex(SOURCE_NAME, streamMap(SOURCE_NAME, clientConfig,
                 null, EventJournalMapEvent::getKey, false));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateMap(hz.getMap("source"));
+        populateMap(hz.getMap(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT, jet.getList("sink"));
-        assertTrue(jet.getList("sink").contains(0));
+        assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
+        assertTrue(jet.getList(SINK_NAME).contains(0));
         future.cancel(true);
     }
 
@@ -238,49 +246,49 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_mapStreamerConfiguredWithClientConfig_withFilter_withProjection_then_streamFromRemoteCluster()
             throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamMap("source", clientConfig,
+        Vertex source = dag.newVertex(SOURCE_NAME, streamMap(SOURCE_NAME, clientConfig,
                 event -> !event.getKey().equals(0), EventJournalMapEvent::getKey, false));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateMap(hz.getMap("source"));
+        populateMap(hz.getMap(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT - 1, jet.getList("sink"));
-        assertFalse(jet.getList("sink").contains(0));
-        assertTrue(jet.getList("sink").contains(1));
+        assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
+        assertFalse(jet.getList(SINK_NAME).contains(0));
+        assertTrue(jet.getList(SINK_NAME).contains(1));
         future.cancel(true);
     }
 
     @Test
     public void when_cacheStreamerConfiguredWithClientConfig_then_streamFromRemoteCluster() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamCache("source", clientConfig, false)).localParallelism(4);
-        Vertex sink = dag.newVertex("sink", writeList("sink")).localParallelism(1);
+        Vertex source = dag.newVertex(SOURCE_NAME, streamCache(SOURCE_NAME, clientConfig, false)).localParallelism(4);
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateCache(hz.getCacheManager().getCache("source"));
+        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT, jet.getList("sink"));
+        assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
         future.cancel(true);
     }
 
     @Test
     public void when_cacheStreamerConfiguredWithClientConfig_withFilter_then_streamFromRemoteCluster() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamCache("source", clientConfig,
+        Vertex source = dag.newVertex(SOURCE_NAME, streamCache(SOURCE_NAME, clientConfig,
                 event -> !event.getKey().equals(0), null, false));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateCache(hz.getCacheManager().getCache("source"));
+        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT - 1, jet.getList("sink"));
+        assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
         future.cancel(true);
     }
 
@@ -288,17 +296,17 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_cacheStreamerConfiguredWithClientConfig_withProjection_then_streamFromRemoteCluster()
             throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamCache("source", clientConfig,
+        Vertex source = dag.newVertex(SOURCE_NAME, streamCache(SOURCE_NAME, clientConfig,
                 null, EventJournalCacheEvent::getKey, false));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateCache(hz.getCacheManager().getCache("source"));
+        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT, jet.getList("sink"));
-        assertTrue(jet.getList("sink").contains(0));
+        assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
+        assertTrue(jet.getList(SINK_NAME).contains(0));
         future.cancel(true);
     }
 
@@ -306,18 +314,18 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_cacheStreamerConfiguredWithClientConfig_withFilter_withProjection_then_streamFromRemoteCluster()
             throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamCache("source", clientConfig,
+        Vertex source = dag.newVertex(SOURCE_NAME, streamCache(SOURCE_NAME, clientConfig,
                 event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey, false));
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex(SINK_NAME, writeList(SINK_NAME));
         dag.edge(between(source, sink));
 
         Future<Void> future = jet.newJob(dag).getFuture();
 
-        populateCache(hz.getCacheManager().getCache("source"));
+        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT - 1, jet.getList("sink"));
-        assertFalse(jet.getList("sink").contains(0));
-        assertTrue(jet.getList("sink").contains(1));
+        assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
+        assertFalse(jet.getList(SINK_NAME).contains(0));
+        assertTrue(jet.getList(SINK_NAME).contains(1));
         future.cancel(true);
     }
 
