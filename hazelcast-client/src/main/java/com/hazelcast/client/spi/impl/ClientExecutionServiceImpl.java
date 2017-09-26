@@ -20,6 +20,7 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -59,7 +60,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
         }
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
-            executorPoolSize = Runtime.getRuntime().availableProcessors();
+            executorPoolSize = RuntimeAvailableProcessors.get();
         }
         logger = loggingService.getLogger(ClientExecutionService.class);
         internalExecutor = new LoggingScheduledExecutor(logger, internalPoolSize,

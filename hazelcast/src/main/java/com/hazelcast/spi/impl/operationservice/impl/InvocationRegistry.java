@@ -19,11 +19,12 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         this.logger = logger;
         this.callIdSequence = callIdSequence;
 
-        int coreSize = Runtime.getRuntime().availableProcessors();
+        int coreSize = RuntimeAvailableProcessors.get();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
