@@ -17,10 +17,8 @@
 package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * A container of three bags (collections), each with its own element
@@ -31,7 +29,7 @@ import java.util.List;
  * @param <E1> type of items in bag-1
  * @param <E2> type of items in bag-2
  */
-public class ThreeBags<E0, E1, E2> implements Serializable {
+public class ThreeBags<E0, E1, E2> {
     private final Collection<E0> bag0;
     private final Collection<E1> bag1;
     private final Collection<E2> bag2;
@@ -43,7 +41,7 @@ public class ThreeBags<E0, E1, E2> implements Serializable {
         this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
-    private ThreeBags(@Nonnull List<E0> bag0, @Nonnull List<E1> bag1, @Nonnull List<E2> bag2) {
+    ThreeBags(@Nonnull Collection<E0> bag0, @Nonnull Collection<E1> bag1, @Nonnull Collection<E2> bag2) {
         this.bag0 = bag0;
         this.bag1 = bag1;
         this.bag2 = bag2;
@@ -81,6 +79,24 @@ public class ThreeBags<E0, E1, E2> implements Serializable {
         bag0.addAll(that.bag0());
         bag1.addAll(that.bag1());
         bag2.addAll(that.bag2());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        ThreeBags<?, ?, ?> that;
+        return this == o ||
+                o instanceof ThreeBags
+                && this.bag0.equals((that = (ThreeBags<?, ?, ?>) o).bag0)
+                && this.bag1.equals(that.bag1)
+                && this.bag2.equals(that.bag2);
+    }
+
+    @Override
+    public int hashCode() {
+        int hc = bag0.hashCode();
+        hc = 73 * hc + bag1.hashCode();
+        hc = 73 * hc + bag2.hashCode();
+        return hc;
     }
 
     @Override

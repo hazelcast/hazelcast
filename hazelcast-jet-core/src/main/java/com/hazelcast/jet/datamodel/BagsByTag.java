@@ -18,11 +18,12 @@ package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * A heterogeneous map from {@code Tag<E>} to {@code Collection<E>}, where
@@ -36,7 +37,7 @@ import java.util.Map;
  * BagsByTag} has a variable number of tag-indexed fields whose whose
  * static type is encoded in the tags.
  */
-public class BagsByTag implements Serializable {
+public class BagsByTag {
     private final Map<Tag<?>, Collection> components = new HashMap<>();
 
     /**
@@ -81,7 +82,30 @@ public class BagsByTag implements Serializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        return this == o
+                || o instanceof BagsByTag
+                && this.components.equals(((BagsByTag) o).components);
+    }
+
+    @Override
+    public int hashCode() {
+        return components.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "BagsByTag " + components.toString();
+    }
+
+
+    // These two methods are used by the Hazelcast serializer hook
+
+    Set<Entry<Tag<?>, Collection>> entrySet() {
+        return components.entrySet();
+    }
+
+    void put(@Nonnull Tag<?> tag, @Nonnull ArrayList list) {
+        components.put(tag, list);
     }
 }

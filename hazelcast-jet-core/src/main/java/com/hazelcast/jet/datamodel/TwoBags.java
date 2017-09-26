@@ -17,7 +17,6 @@
 package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -29,7 +28,7 @@ import java.util.Collection;
  * @param <E0> type of items in bag-0
  * @param <E1> type of items in bag-1
  */
-public class TwoBags<E0, E1> implements Serializable {
+public class TwoBags<E0, E1> {
     private final Collection<E0> bag0;
     private final Collection<E1> bag1;
 
@@ -40,7 +39,7 @@ public class TwoBags<E0, E1> implements Serializable {
         this(new ArrayList<>(), new ArrayList<>());
     }
 
-    private TwoBags(Collection<E0> bag0, Collection<E1> bag1) {
+    TwoBags(Collection<E0> bag0, Collection<E1> bag1) {
         this.bag0 = bag0;
         this.bag1 = bag1;
     }
@@ -59,5 +58,21 @@ public class TwoBags<E0, E1> implements Serializable {
     @Nonnull
     public Collection<E1> bag1() {
         return bag1;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        TwoBags<?, ?> that;
+        return this == o ||
+                o instanceof TwoBags
+                        && this.bag0.equals((that = (TwoBags<?, ?>) o).bag0)
+                        && this.bag1.equals(that.bag1);
+    }
+
+    @Override
+    public int hashCode() {
+        int hc = bag0.hashCode();
+        hc = 73 * hc + bag1.hashCode();
+        return hc;
     }
 }

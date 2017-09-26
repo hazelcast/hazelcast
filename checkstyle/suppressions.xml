@@ -6,9 +6,6 @@
 <suppressions>
 
 
-    <!-- TEMPORARY SUPPRESSION OF PROTOTYPE CODE -->
-    <suppress checks="" files="com[\\/]hazelcast[\\/]jet[\\/]samples[\\/]"/>
-
     <!-- impl packages are private API by contract, allow public members -->
     <suppress checks="VisibilityModifier" files="[\\/]impl[\\/]"/>
 

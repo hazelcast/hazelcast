@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.serialization;
+package com.hazelcast.jet.core;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
@@ -29,18 +29,15 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
 
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-public class SerializerHooksTest {
+public class CoreSerializerHooksTest {
 
     @Parameter
     public Object instance;
@@ -48,24 +45,17 @@ public class SerializerHooksTest {
     @Parameters
     public static Collection<Object> data() throws Exception {
         return Arrays.asList(
-                new Object[]{new String[]{"a", "b", "c"}},
-                new SimpleImmutableEntry<>("key", "value")
+                new Watermark(13L)
         );
     }
 
     @Test
-    public void testSerializerHooks() throws Exception {
+    public void testSerializerHook() throws Exception {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         Data serialized = serializationService.toData(instance);
         Object deserialized = serializationService.toObject(serialized);
 
-        assertNotSame("serialization/deserialization didn't take place", instance, deserialized);
-        if (instance instanceof Object[]) {
-            assertArrayEquals("objects are not equal after serialize/deserialize",
-                    (Object[]) instance, (Object[]) deserialized);
-        } else {
-            assertEquals("objects are not equal after serialize/deserialize", instance, deserialized);
-        }
+        assertEquals("objects are not equal after serialize/deserialize", instance, deserialized);
     }
 }

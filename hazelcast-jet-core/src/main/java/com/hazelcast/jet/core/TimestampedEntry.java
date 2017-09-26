@@ -22,7 +22,8 @@ import java.time.ZoneId;
 import java.util.Map;
 
 /**
- * {@code Map.Entry} extended with a {@code long timestamp}.
+ * A {@code Map.Entry} extended with a {@code long timestamp}, used for
+ * event time-based data processing.
  *
  * @param <K> type of grouping key
  * @param <V> type of the stream item
@@ -48,12 +49,12 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
         return timestamp;
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     public K getKey() {
         return key;
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     public V getValue() {
         return value;
     }

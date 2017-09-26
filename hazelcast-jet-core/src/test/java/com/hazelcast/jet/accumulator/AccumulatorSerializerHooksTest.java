@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.serialization;
+package com.hazelcast.jet.accumulator;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
@@ -29,18 +29,19 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.AbstractMap.SimpleImmutableEntry;
+import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-public class SerializerHooksTest {
+public class AccumulatorSerializerHooksTest {
 
     @Parameter
     public Object instance;
@@ -48,24 +49,23 @@ public class SerializerHooksTest {
     @Parameters
     public static Collection<Object> data() throws Exception {
         return Arrays.asList(
-                new Object[]{new String[]{"a", "b", "c"}},
-                new SimpleImmutableEntry<>("key", "value")
+                new LongAccumulator(2),
+                new DoubleAccumulator(3),
+                new MutableReference<>("foo"),
+                new LinTrendAccumulator(7,
+                        BigInteger.valueOf(9), BigInteger.valueOf(11), BigInteger.valueOf(13), BigInteger.valueOf(15)),
+                new LongLongAccumulator(2, 3),
+                new LongDoubleAccumulator(3, 4.5)
         );
     }
 
     @Test
-    public void testSerializerHooks() throws Exception {
+    public void testSerializerHook() throws Exception {
+        assertFalse("Type implements java.io.Serializable", instance instanceof Serializable);
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-
         Data serialized = serializationService.toData(instance);
         Object deserialized = serializationService.toObject(serialized);
-
         assertNotSame("serialization/deserialization didn't take place", instance, deserialized);
-        if (instance instanceof Object[]) {
-            assertArrayEquals("objects are not equal after serialize/deserialize",
-                    (Object[]) instance, (Object[]) deserialized);
-        } else {
-            assertEquals("objects are not equal after serialize/deserialize", instance, deserialized);
-        }
+        assertEquals("objects are not equal after serialize/deserialize", instance, deserialized);
     }
 }

@@ -18,37 +18,71 @@ package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * A heterogeneous map from {@code Tag<E>} to {@code E}, where {@code E}
- * can be different for each tag.
+ * can be different for each tag. The value associated with a tag may be
+ * {@code null}.
  * <p>
  * This is a less typesafe, but more flexible alternative to a tuple. The
- * tuple has a fixed (and limited) number of integer-indexed,
- * statically-typed fields, and {@code ItemsByTag} has a variable number of
- * tag-indexed fields whose whose static type is encoded in the tags.
+ * tuple has a fixed number of integer-indexed, statically-typed fields,
+ * and {@code ItemsByTag} has a variable number of tag-indexed fields whose
+ * whose static type is encoded in the tags.
  */
-public class ItemsByTag implements Serializable {
-    private final Map<Tag, Object> map = new HashMap<>();
+public class ItemsByTag {
+    static final Object NONE = new Object();
+
+    private final Map<Tag<?>, Object> map = new HashMap<>();
 
     /**
-     * Retrieves the object associated with the supplied tag, or {@code null}
-     * if there is none. The argument must not be {@code null}.
+     * Retrieves the value associated with the supplied tag and throws an
+     * exception if there is none. The tag argument must not be {@code null},
+     * but the returned value may be, if a {@code null} value is explicitly
+     * associated with a tag.
+     *
+     * @throws IllegalArgumentException if there is no value associated with the supplied tag
      */
     @Nullable
     @SuppressWarnings("unchecked")
     public <E> E get(@Nonnull Tag<E> tag) {
-        return (E) map.get(tag);
+        Object got = map.get(tag);
+        if (got == null) {
+            throw new IllegalArgumentException("No value associated with " + tag);
+        }
+        return got != NONE ? (E) got : null;
     }
 
     /**
-     * Associates the supplied object with the supplied tag. Neither the tag
-     * nor object may be {@code null}.
+     * Associates the supplied value with the supplied tag. The tag must not be
+     * {@code null}, but the value may be, and in that case the tag will be
+     * associated with a {@code null} value.
      */
-    public <E> void put(@Nonnull Tag<E> tag, @Nonnull E value) {
-        map.put(tag, value);
+    public <E> void put(@Nonnull Tag<E> tag, E value) {
+        map.put(tag, value != null ? value : NONE);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof ItemsByTag
+                && this.map.equals(((ItemsByTag) o).map);
+    }
+
+    @Override
+    public int hashCode() {
+        return map.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ItemsByTag" + map;
+    }
+
+    // For the Hazelcast serializer hook
+    Set<Entry<Tag<?>, Object>> entrySet() {
+        return map.entrySet();
     }
 }

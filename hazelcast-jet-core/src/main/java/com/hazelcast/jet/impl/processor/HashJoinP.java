@@ -23,6 +23,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -94,6 +95,7 @@ public class HashJoinP<E0> extends AbstractProcessor {
         return tryEmit(new Tuple2<>(e0, map));
     }
 
+    @Nullable
     private Object lookupJoined(int ordinal, E0 item) {
         return lookupTables.get(ordinal).get(keyFs.get(ordinal).apply(item));
     }
