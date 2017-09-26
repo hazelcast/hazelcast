@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 
-import static com.hazelcast.internal.nearcache.impl.invalidation.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
 public class WanEventHolder {
     private final Data key;
