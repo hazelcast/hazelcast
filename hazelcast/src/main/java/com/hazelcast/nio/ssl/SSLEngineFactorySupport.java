@@ -50,9 +50,10 @@ abstract class SSLEngineFactorySupport {
         String keyStore = getProperty(properties, "keyStore");
         String trustStore = getProperty(properties, "trustStore", keyStore);
         String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
-        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
-        String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
-        this.protocol = properties.getProperty("protocol", "TLS");
+        String keyManagerAlgorithm = getProperty(properties, "keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
+        String trustManagerAlgorithm = getProperty(
+                properties, "trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+        this.protocol = getProperty(properties, "protocol", "TLS");
 
         kmf = loadKeyManagerFactory(ks, keyStorePassword, keyStore, keyManagerAlgorithm);
         tmf = loadTrustManagerFactory(ts, trustStore, trustStorePassword, trustManagerAlgorithm);
