@@ -39,6 +39,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -516,7 +517,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("Memory max: " + BYTES.toMegaBytes(max) + "MB");
         println("Memory free: " + BYTES.toMegaBytes(free) + "MB " + (int) (free * ONE_HUNDRED / max) + "%");
         println("Used Memory:" + BYTES.toMegaBytes(total - free) + "MB");
-        println("# procs: " + Runtime.getRuntime().availableProcessors());
+        println("# procs: " + RuntimeAvailableProcessors.get());
         println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
                 + " " + ManagementFactory.getOperatingSystemMXBean().getName()
                 + " " + ManagementFactory.getOperatingSystemMXBean().getVersion());

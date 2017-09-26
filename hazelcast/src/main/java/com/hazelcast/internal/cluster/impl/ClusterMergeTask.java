@@ -35,7 +35,6 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGE_FAILED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
-import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -47,6 +46,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 class ClusterMergeTask implements Runnable {
 
     private static final long MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
+    private static final String MERGE_TASKS_EXECUTOR = "hz:cluster-merge";
 
     private final Node node;
 
@@ -128,7 +128,7 @@ class ClusterMergeTask implements Runnable {
         // execute merge tasks
         Collection<Future> futures = new LinkedList<Future>();
         for (Runnable task : tasks) {
-            Future f = node.nodeEngine.getExecutionService().submit(SYSTEM_EXECUTOR, task);
+            Future f = node.nodeEngine.getExecutionService().submit(MERGE_TASKS_EXECUTOR, task);
             futures.add(f);
         }
         long callTimeoutMillis = node.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);

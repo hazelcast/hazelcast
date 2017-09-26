@@ -33,6 +33,7 @@ import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
@@ -221,6 +222,16 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     @Test
     public void testTcpIp_MergeAfterSplitBrain() throws InterruptedException {
         testMergeAfterSplitBrain(false);
+    }
+
+    @Test
+    public void test_MergeAfterSplitBrain_withSingleCore() throws InterruptedException {
+        RuntimeAvailableProcessors.override(1);
+        try {
+            testMergeAfterSplitBrain(false);
+        } finally {
+            RuntimeAvailableProcessors.resetOverride();
+        }
     }
 
     private void testMergeAfterSplitBrain(boolean multicast) throws InterruptedException {
