@@ -47,20 +47,23 @@ public class HyperLogLogImplTest {
     private static final int PRIME_PRECISION = 25;
     private static final int DEFAULT_RUN_LENGTH = 10000000;
 
-    @Parameters(name = "precision:{0}")
-    public static Collection<Integer[]> params() {
-        return asList(new Integer[][]{
-                {11},
-                {12},
-                {13},
-                {14},
-                {15},
-                {16},
+    @Parameters(name = "precision:{0}, errorRange:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {11, 6.5f},
+                {12, 5.5f},
+                {13, 3.5f},
+                {14, 3.0f},
+                {15, 2.5f},
+                {16, 2.0f},
         });
     }
 
     @Parameter
     public int precision;
+
+    @Parameter(value = 1)
+    public double errorRange;
 
     private HyperLogLog hyperLogLog;
 
@@ -87,14 +90,14 @@ public class HyperLogLogImplTest {
      * <li>Samples the actual count, and the estimate respectively every 100 operations.</li>
      * <li>Computes the error rate, of the measurements and store it in a histogram.</li>
      * <li>Asserts that the 99th percentile of the histogram is less than the expected max error,
-     * which is the result of std error (1.04 / sqrt(m)) + 3% (2% is the typical accuracy,
-     * but tests on the implementation showed up rare occurrences of 3%).</li>
+     * which is the result of std error (1.04 / sqrt(m)) + [2.0, 6.5]% (2% is the typical accuracy,
+     * but tests with a lower precision need a higher error range).</li>
      * </ul>
      */
     @Test
     public void testEstimateErrorRateForBigCardinalities() {
         double stdError = (1.04f / Math.sqrt(1 << precision)) * 100;
-        double maxError = Math.ceil(stdError + 3.0f);
+        double maxError = Math.ceil(stdError + errorRange);
 
         IntHashSet actualCount = new IntHashSet(DEFAULT_RUN_LENGTH, -1);
         Random random = new Random();
