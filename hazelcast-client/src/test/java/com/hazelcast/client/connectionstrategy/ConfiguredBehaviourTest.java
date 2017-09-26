@@ -75,7 +75,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         // trying 8.8.8.8 address will delay the initial connection since no such server exist
         clientConfig.getNetworkConfig().addAddress("8.8.8.8", memberAddress.getHost() + ":" + memberAddress.getPort())
-                    .setConnectionAttemptLimit(Integer.MAX_VALUE);
+                .setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -104,12 +104,22 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
+                    disconnectedLatch.countDown();
+                }
+            }
+        });
 
         // no exception at this point
         IMap<Integer, Integer> map = client.getMap(randomMapName());
         map.put(1, 5);
 
         hazelcastInstance.shutdown();
+        assertOpenEventually(disconnectedLatch);
 
         map.put(1, 5);
     }
@@ -122,6 +132,16 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
+                    disconnectedLatch.countDown();
+                }
+            }
+        });
+
         // no exception at this point
         IMap<Integer, Integer> map = client.getMap(randomMapName());
         map.put(1, 5);
@@ -130,6 +150,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, clientInstanceImpl);
         ownerServer.shutdown();
 
+        assertOpenEventually(disconnectedLatch);
         map.put(1, 5);
     }
 
@@ -141,8 +162,18 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
+                    disconnectedLatch.countDown();
+                }
+            }
+        });
 
         hazelcastInstance.shutdown();
+        assertOpenEventually(disconnectedLatch);
 
         client.getMap(randomMapName());
     }

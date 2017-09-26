@@ -76,12 +76,25 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     public void onDisconnectFromCluster() {
         disconnectedFromCluster = true;
         if (reconnectMode == OFF) {
-            clientContext.getLifecycleService().shutdown();
+            shutdownWithExternalThread();
             return;
         }
         if (clientContext.getLifecycleService().isRunning()) {
             clientContext.getConnectionManager().connectToClusterAsync();
         }
+    }
+
+    private void shutdownWithExternalThread() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    clientContext.getLifecycleService().shutdown();
+                } catch (Exception exception) {
+                    logger.severe("Exception during client shutdown ", exception);
+                }
+            }
+        }, clientContext.getName() + ".clientShutdown-").start();
     }
 
     @Override
