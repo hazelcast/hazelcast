@@ -27,6 +27,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -40,13 +42,11 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -127,9 +127,25 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             }
         });
 
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                LifecycleEvent.LifecycleState state = event.getState();
+                if (state.equals(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED)) {
+                    disconnectedLatch.countDown();
+                } else if (state.equals(LifecycleEvent.LifecycleState.CLIENT_CONNECTED)) {
+                    connectedLatch.countDown();
+                }
+            }
+        });
+
         hazelcastInstance.shutdown();
 
-        assertTrue(clientStateListener.awaitConnected(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS));
+        assertOpenEventually(disconnectedLatch);
+
+        assertOpenEventually(connectedLatch);
 
         assertEquals(1, connectionManager.getActiveConnections().size());
     }
