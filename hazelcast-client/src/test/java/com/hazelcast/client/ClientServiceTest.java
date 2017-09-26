@@ -30,6 +30,7 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
@@ -46,7 +47,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -535,5 +535,21 @@ public class ClientServiceTest extends ClientTestSupport {
                 assertEquals(1, atomicInteger.get());
             }
         }, 4);
+    }
+
+    @Test
+    public void testAddingListenersOpenConnectionsToAllCluster() {
+        int memberCount = 4;
+        for (int i = 0; i < memberCount; i++) {
+            hazelcastFactory.newHazelcastInstance();
+        }
+
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
+        ClientConnectionManager connectionManager = client.getConnectionManager();
+        IMap<Object, Object> map = client.getMap("test");
+        map.addEntryListener(mock(EntryListener.class), false);
+
+        assertEquals(memberCount, connectionManager.getActiveConnections().size());
+
     }
 }
