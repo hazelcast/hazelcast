@@ -36,9 +36,10 @@ import java.util.Map;
  * be taken not to block the thread with an expensive operation or an operation that may potentially
  * never return, the partition thread does not time out the operation.  Whilst the partition thread is
  * executing the MapLoader it is unable to respond to requests for data on any other structure that
- * may reside in the same partition. For example a very slow MapLoader for one map could block a request
- * for data on another map, or even a queue. It is therefore strongly recommended not to use MapLoader
- * to call across a WAN or to a system which will take on average longer than a few milliseconds to respond.
+ * may reside in the same partition, or to respond to other partitions mapped to the same partition thread. For example
+ * a very slow MapLoader for one map could block a request for data on another map, or even a queue. It is 
+ * therefore strongly recommended not to use MapLoader to call across a WAN or to a system which will take 
+ * on average longer than a few milliseconds to respond.
  * <p/>
  * MapLoaders should not be used to perform cascading operations on other data structures via a
  * {@link HazelcastInstance}, the MapLoader should only concern itself with the operation on the assigned map.
