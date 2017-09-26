@@ -47,8 +47,6 @@ public final class CallIdSequenceWithBackpressure extends AbstractCallIdSequence
     public CallIdSequenceWithBackpressure(int maxConcurrentInvocations, long backoffTimeoutMs) {
         super(maxConcurrentInvocations);
 
-        checkPositive(maxConcurrentInvocations,
-                "maxConcurrentInvocations should be a positive number. maxConcurrentInvocations=" + maxConcurrentInvocations);
         checkPositive(backoffTimeoutMs, "backoffTimeoutMs should be a positive number. backoffTimeoutMs=" + backoffTimeoutMs);
 
         this.backoffTimeoutNanos = MILLISECONDS.toNanos(backoffTimeoutMs);

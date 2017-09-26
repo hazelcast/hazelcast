@@ -244,9 +244,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
         long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
-        boolean isBackPressureDisabled = maxAllowedConcurrentInvocations == Integer.MAX_VALUE;
+        boolean isBackPressureEnabled = maxAllowedConcurrentInvocations != Integer.MAX_VALUE;
         callIdSequence = CallIdFactory
-                .newCallIdSequence(isBackPressureDisabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
+                .newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
 
         invocationService = initInvocationService();
         listenerService = initListenerService();

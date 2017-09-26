@@ -20,9 +20,9 @@ public final class CallIdFactory {
     private CallIdFactory() {
     }
 
-    public static CallIdSequence newCallIdSequence(boolean isBackPressureDisabled, int maxAllowedConcurrentInvocations,
+    public static CallIdSequence newCallIdSequence(boolean isBackPressureEnabled, int maxAllowedConcurrentInvocations,
                                                    long backofftimeoutMs) {
-        if (isBackPressureDisabled) {
+        if (!isBackPressureEnabled) {
             return new CallIdSequenceWithoutBackpressure();
         } else if (backofftimeoutMs <= 0) {
             return new FailFastCallIdSequence(maxAllowedConcurrentInvocations);

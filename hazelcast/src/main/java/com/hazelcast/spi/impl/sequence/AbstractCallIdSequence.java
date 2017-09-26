@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * A {@link CallIdSequence} that provides backpressure by taking
@@ -43,6 +44,9 @@ public abstract class AbstractCallIdSequence implements CallIdSequence {
     private final int maxConcurrentInvocations;
 
     public AbstractCallIdSequence(int maxConcurrentInvocations) {
+        checkPositive(maxConcurrentInvocations,
+                "maxConcurrentInvocations should be a positive number. maxConcurrentInvocations=" + maxConcurrentInvocations);
+
         this.maxConcurrentInvocations = maxConcurrentInvocations;
     }
 
