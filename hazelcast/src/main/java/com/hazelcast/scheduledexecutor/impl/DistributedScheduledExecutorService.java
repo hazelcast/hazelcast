@@ -225,7 +225,9 @@ public class DistributedScheduledExecutorService
                 new PartitionLostListener() {
                     @Override
                     public void partitionLost(PartitionLostEvent event) {
-                        for (ScheduledFutureProxy future : lossListeners) {
+                        // use toArray before iteration since it is done under mutex
+                        ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[lossListeners.size()]);
+                        for (ScheduledFutureProxy future : futures) {
                             future.notifyPartitionLost(event);
                         }
                     }
@@ -254,7 +256,9 @@ public class DistributedScheduledExecutorService
         this.membershipListenerRegistration = getNodeEngine().getClusterService().addMembershipListener(new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent event) {
-                for (ScheduledFutureProxy future : lossListeners) {
+                // use toArray before iteration since it is done under mutex
+                ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[lossListeners.size()]);
+                for (ScheduledFutureProxy future : futures) {
                     future.notifyMemberLost(event);
                 }
             }
