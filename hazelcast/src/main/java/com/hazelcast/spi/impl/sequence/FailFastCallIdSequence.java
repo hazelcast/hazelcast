@@ -18,11 +18,6 @@ package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
 
-import java.util.concurrent.atomic.AtomicLongArray;
-
-import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
-
 /**
  * A {@link CallIdSequence} that provides backpressure by taking
  * the number of in-flight operations into account when before creating a new call-id.
@@ -35,54 +30,17 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
  * The latter cause is not a problem since the capacity is exceeded temporarily and it isn't sustainable.
  * So perhaps there are a few threads that at the same time see that the there is space and do a next.
  */
-public class FailFastCallIdSequence implements CallIdSequence {
-    private static final int INDEX_HEAD = 7;
-    private static final int INDEX_TAIL = 15;
-
-    // instead of using 2 AtomicLongs, we use an array if width of 3 cache lines to prevent any false sharing.
-    private final AtomicLongArray longs = new AtomicLongArray(3 * CACHE_LINE_LENGTH / LONG_SIZE_IN_BYTES);
-
-    private final int maxConcurrentInvocations;
-
+public class FailFastCallIdSequence extends AbstractCallIdSequence {
     public FailFastCallIdSequence(int maxConcurrentInvocations) {
-        this.maxConcurrentInvocations = maxConcurrentInvocations;
-    }
-
-    @Override
-    public long getLastCallId() {
-        return longs.get(INDEX_HEAD);
-    }
-
-    @Override
-    public int getMaxConcurrentInvocations() {
-        return maxConcurrentInvocations;
+        super(maxConcurrentInvocations);
     }
 
     @Override
     public long next() {
         if (!hasSpace()) {
             throw new HazelcastOverloadException(
-                    "Maximum invocation count is reached. maxConcurrentInvocations = " + maxConcurrentInvocations);
+                    "Maximum invocation count is reached. maxConcurrentInvocations = " + getMaxConcurrentInvocations());
         }
         return forceNext();
     }
-
-    @Override
-    public void complete() {
-        long newTail = longs.incrementAndGet(INDEX_TAIL);
-        assert newTail <= longs.get(INDEX_HEAD);
-    }
-
-    public long forceNext() {
-        return longs.incrementAndGet(INDEX_HEAD);
-    }
-
-    long getTail() {
-        return longs.get(INDEX_TAIL);
-    }
-
-    protected boolean hasSpace() {
-        return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
-    }
-
 }
