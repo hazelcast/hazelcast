@@ -16,13 +16,14 @@
 
 package com.hazelcast.cache.impl.journal;
 
-import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -42,6 +43,7 @@ import static com.hazelcast.cache.CacheEventType.EVICTED;
 import static com.hazelcast.cache.CacheEventType.EXPIRED;
 import static com.hazelcast.cache.CacheEventType.REMOVED;
 import static com.hazelcast.cache.CacheEventType.UPDATED;
+import static java.lang.String.format;
 
 
 /**
@@ -147,6 +149,12 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
     @Override
     public EventJournalConfig getEventJournalConfig(ObjectNamespace namespace) {
+        // when the cluster version is less than 3.9 we act as if the journal is disabled
+        // this is because some members might not know how to save journal events
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
+            return null;
+        }
+
         final String name = namespace.getObjectName();
         final CacheConfig cacheConfig = getCacheService().getCacheConfig(name);
         if (cacheConfig == null) {
@@ -213,16 +221,17 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
         final EventJournalConfig config = getEventJournalConfig(namespace);
         if (config == null) {
-            throw new IllegalStateException("There is no event journal configured for cache with name: "
-                    + namespace.getObjectName());
+            throw new IllegalStateException(format(
+                    "There is no event journal configured for cache %s or the journal is disabled",
+                    namespace.getObjectName()));
         }
         return getOrCreateRingbufferContainer(namespace, partitionId, config);
     }
 
     /**
      * Gets or creates a ringbuffer for an event journal or returns {@link null} if no
-     * event journal is configured. The cache record store should have been already created
-     * at the point when this method is invoked.
+     * event journal is configured, it is disabled or not available. The cache record
+     * store should have been already created at the point when this method is invoked.
      * This method can be used to get the ringbuffer when we already know that the cache record
      * store has been created.
      * <p>
@@ -233,6 +242,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      * @param partitionId the cache partition ID
      * @return the cache partition event journal or {@code null} if no journal is configured for this cache
      * @throws CacheNotExistsException if the cache hasn't been already created
+     * @see #getEventJournalConfig(ObjectNamespace)
      */
     private RingbufferContainer<InternalEventJournalCacheEvent> getRingbufferOrNull(ObjectNamespace namespace, int partitionId) {
         final RingbufferService ringbufferService = getRingbufferService();
