@@ -40,8 +40,10 @@ import org.junit.runners.Parameterized;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -402,7 +404,6 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
     public void testEntryProcessorWithKey_offloadableModifying_throwsException_keyNotLocked() {
         String key = generateKeyOwnedBy(instances[0]);
@@ -415,6 +416,33 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         map.executeOnKey(key, new EntryIncOffloadableException());
 
         assertFalse(map.isLocked(key));
+    }
+
+    @Test
+    public void puts_multiple_entry_into_empty_map() {
+        IMap map = instances[1].getMap(MAP_NAME);
+
+        Set keySet = new HashSet(asList(1, 2, 3, 4, 5));
+
+        Object value = -1;
+
+        map.executeOnKeys(keySet, new EntryAdderOffloadable(value));
+
+        for (Object key : keySet) {
+            assertEquals(value, map.get(key));
+        }
+    }
+
+    @Test
+    public void puts_entry_into_empty_map() {
+        IMap map = instances[1].getMap(MAP_NAME);
+
+        Object key = 1;
+        Object value = -1;
+
+        map.executeOnKey(key, new EntryAdderOffloadable(value));
+
+        assertEquals(value, map.get(key));
     }
 
     private static class EntryIncOffloadableException implements EntryProcessor<String, SimpleValue>, Offloadable,
@@ -439,6 +467,27 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
             process(entry);
         }
     }
+
+    private static class EntryAdderOffloadable extends AbstractEntryProcessor implements Offloadable {
+
+        private final Object value;
+
+        public EntryAdderOffloadable(Object value) {
+            this.value = value;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+
+        @Override
+        public Object process(Map.Entry entry) {
+            entry.setValue(value);
+            return null;
+        }
+    }
+
 
     void assertBackupEventually(final HazelcastInstance instance, final String mapName, final Object key, Object expected) {
         assertEqualsEventually(new Callable<Object>() {
