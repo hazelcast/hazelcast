@@ -270,7 +270,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         checkNotNegative(partitionId, "Partition ID cannot be negative!");
         return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId)
-                .setTryCount(invocationMaxRetryCount).setTryPauseMillis(invocationRetryPauseMillis)
+                .setTryCount(invocationMaxRetryCount)
+                .setTryPauseMillis(invocationRetryPauseMillis)
                 .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState);
     }
 
@@ -278,7 +279,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         checkNotNull(target, "Target cannot be null!");
         return new InvocationBuilderImpl(invocationContext, serviceName, op, target)
-                .setTryCount(invocationMaxRetryCount).setTryPauseMillis(invocationRetryPauseMillis);
+                .setTryCount(invocationMaxRetryCount)
+                .setTryPauseMillis(invocationRetryPauseMillis);
     }
 
     @Override
