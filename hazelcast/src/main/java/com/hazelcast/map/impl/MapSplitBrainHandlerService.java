@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 class MapSplitBrainHandlerService implements SplitBrainHandlerService {
@@ -64,9 +65,18 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
         final int partitionCount = partitionService.getPartitionCount();
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
 
+        ILogger logger = nodeEngine.getLogger(getClass());
         for (MapContainer mapContainer : mapContainers.values()) {
+            if (NATIVE.equals(mapContainer.getMapConfig().getInMemoryFormat())) {
+                logger.warning("Split-brain recovery can not be applied NATIVE in-memory-formatted map ["
+                        + mapContainer.name + ']');
+                continue;
+            }
+
             for (int i = 0; i < partitionCount; i++) {
-                RecordStore recordStore = mapServiceContext.getPartitionContainer(i).getRecordStore(mapContainer.getName());
+                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(i);
+                RecordStore recordStore = partitionContainer.getRecordStore(mapContainer.getName());
+
                 // add your owned entries to the map so they will be merged
                 if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
                     MapMergePolicy finalMergePolicy = getMapMergePolicy(mapContainer);
