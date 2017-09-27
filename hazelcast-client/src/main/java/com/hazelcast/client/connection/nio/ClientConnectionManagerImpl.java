@@ -71,6 +71,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -885,13 +886,20 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             addresses.add(member.getAddress());
         }
 
-        for (AddressProvider addressProvider : addressProviders) {
-            addresses.addAll(addressProvider.loadAddresses());
-        }
-
         if (shuffleMemberList) {
             Collections.shuffle(addresses);
         }
+
+        List<Address> providerAddresses = new ArrayList<Address>();
+        for (AddressProvider addressProvider : addressProviders) {
+            providerAddresses.addAll(addressProvider.loadAddresses());
+        }
+
+        if (shuffleMemberList) {
+            Collections.shuffle(providerAddresses);
+        }
+
+        addresses.addAll(providerAddresses);
 
         return addresses;
     }
