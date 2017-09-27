@@ -367,6 +367,7 @@ public class JobCoordinationService {
 
             if (!shouldStartJobs()) {
                 scheduleSnapshot(jobId, executionId);
+                return;
             }
 
             masterContext.beginSnapshot(executionId);
@@ -388,10 +389,14 @@ public class JobCoordinationService {
                         + snapshotId + " isSuccess: " + isSuccess);
                 return;
             }
-            if (isSuccess) {
-                snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotId);
-            } else {
-                snapshotRepository.deleteSingleSnapshot(jobId, snapshotId);
+            try {
+                if (isSuccess) {
+                    snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotId);
+                } else {
+                    snapshotRepository.deleteSingleSnapshot(jobId, snapshotId);
+                }
+            } catch (Exception e) {
+                logger.warning("Cannot delete old snapshots for " + jobAndExecutionId(jobId, executionId));
             }
             scheduleSnapshot(jobId, executionId);
         } else {

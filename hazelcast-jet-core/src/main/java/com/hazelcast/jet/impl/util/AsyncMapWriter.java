@@ -287,7 +287,7 @@ public class AsyncMapWriter {
         return true;
     }
 
-    private <T> ExecutionCallback<T> callbackOf(Consumer<T> onResponse, Consumer<Throwable> onError) {
+    private static <T> ExecutionCallback<T> callbackOf(Consumer<T> onResponse, Consumer<Throwable> onError) {
         return new ExecutionCallback<T>() {
             @Override
             public void onResponse(T o) {

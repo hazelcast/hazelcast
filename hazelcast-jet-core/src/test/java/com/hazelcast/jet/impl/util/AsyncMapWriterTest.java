@@ -71,7 +71,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         JetConfig jetConfig = new JetConfig();
         Config config = jetConfig.getHazelcastConfig();
 
-        // use one partition per member
+        // use two partitions per member
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(NODE_COUNT * 2));
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
         config.getMapConfig("default")
@@ -123,10 +123,11 @@ public class AsyncMapWriterTest extends JetTestSupport {
         assertEquals("value1", map.get("key1"));
         assertEquals("value2", map.get("key2"));
         assertEquals("value3", map.get("key3"));
+        assertEquals(3, map.size());
     }
 
     @Test
-    public void when_emptyFlush_then_futureIscompleted() throws Exception {
+    public void when_emptyFlush_then_futureIsCompleted() throws Exception {
         // Given
         CompletableFuture<Void> future = new CompletableFuture<>();
 

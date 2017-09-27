@@ -218,8 +218,7 @@ public class JobRepository {
         // Delete the job record
         jobs.remove(jobId);
         // Delete the execution ids, but keep the job id
-        Set<Long> executionIds = randomIds.keySet(new FilterExecutionIdByJobIdPredicate(jobId));
-        executionIds.forEach(randomIds::remove);
+        randomIds.removeAll(new FilterExecutionIdByJobIdPredicate(jobId));
 
         // Delete job resources
         cleanupJobResourcesAndSnapshots(jobId, getJobResources(jobId));

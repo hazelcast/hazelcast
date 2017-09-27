@@ -115,7 +115,7 @@ public class PartitionAlignmentTest {
 
         @Override
         public boolean complete() {
-            counts.entrySet().forEach(e -> tryEmit(describe(e.getKey(), e.getValue())));
+            counts.forEach((key, value) -> emit(describe(key, value)));
             return true;
         }
     }
