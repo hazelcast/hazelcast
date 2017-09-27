@@ -51,13 +51,13 @@ import static com.hazelcast.util.StringUtil.timeToString;
 public class ClientSmartListenerService extends ClientListenerServiceImpl
         implements ConnectionListener, ConnectionHeartbeatListener {
 
+    private final long invocationTimeoutMillis;
+    private final long invocationRetryPauseMillis;
     private final Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, Map<Connection, ClientEventRegistration>>();
     private final ClientConnectionManager clientConnectionManager;
     private final Map<Connection, Collection<ClientRegistrationKey>> failedRegistrations
             = new ConcurrentHashMap<Connection, Collection<ClientRegistrationKey>>();
-    private final long invocationTimeoutMillis;
-    private final long invocationRetryPauseMillis;
 
     public ClientSmartListenerService(HazelcastClientInstanceImpl client,
                                       int eventThreadCount, int eventQueueCapacity) {
@@ -216,23 +216,24 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
         long startMillis = System.currentTimeMillis();
 
         do {
-            Member lastTriedMember = null;
-            Exception lastGotException = null;
+            Member lastFailedMember = null;
+            Exception lastException = null;
+
             for (Member member : clientClusterService.getMemberList()) {
                 try {
                     clientConnectionManager.getOrConnect(member.getAddress());
                 } catch (Exception e) {
-                    lastTriedMember = member;
-                    lastGotException = e;
+                    lastFailedMember = member;
+                    lastException = e;
                 }
             }
 
-            if (lastGotException == null) {
+            if (lastException == null) {
                 // successfully connected to all members, break loop.
                 break;
             }
 
-            timeOutOrSleepBeforeNextTry(startMillis, lastTriedMember, lastGotException);
+            timeOutOrSleepBeforeNextTry(startMillis, lastFailedMember, lastException);
 
         } while (client.getLifecycleService().isRunning());
     }
@@ -246,25 +247,26 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
         }
     }
 
-    private void timeOutOrSleepBeforeNextTry(long startMillis, Member lastMember, Exception lastException) {
+    private void timeOutOrSleepBeforeNextTry(long startMillis, Member lastFailedMember, Exception lastException) {
         long nowInMillis = System.currentTimeMillis();
         long elapsedMillis = nowInMillis - startMillis;
         boolean timedOut = elapsedMillis > invocationTimeoutMillis;
 
         if (timedOut) {
-            throwOperationTimeoutException(startMillis, nowInMillis, elapsedMillis, lastMember, lastException);
+            throwOperationTimeoutException(startMillis, nowInMillis, elapsedMillis, lastFailedMember, lastException);
         } else {
             sleepBeforeNextTry();
         }
     }
 
     private void throwOperationTimeoutException(long startMillis, long nowInMillis,
-                                                long elapsedTime, Member member, Exception e) {
-        throw new OperationTimeoutException("Registering listeners is timed out. Last failed member : " + member + ", "
-                + " Current Time: " + timeToString(nowInMillis) + ", "
-                + " Start Time : " + timeToString(startMillis) + ", "
-                + " Client Invocation Timeout Millis : " + invocationTimeoutMillis + " ms, "
-                + " Elapsed time : " + elapsedTime + " ms. ", e);
+                                                long elapsedMillis, Member lastFailedMember, Exception lastException) {
+        throw new OperationTimeoutException("Registering listeners is timed out."
+                + " Last failed member : " + lastFailedMember + ", "
+                + " Current time: " + timeToString(nowInMillis) + ", "
+                + " Start time : " + timeToString(startMillis) + ", "
+                + " Client invocation timeout : " + invocationTimeoutMillis + " ms, "
+                + " Elapsed time : " + elapsedMillis + " ms. ", lastException);
     }
 
     @Override
