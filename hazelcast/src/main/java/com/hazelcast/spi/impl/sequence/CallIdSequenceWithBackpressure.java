@@ -53,14 +53,7 @@ public final class CallIdSequenceWithBackpressure extends AbstractCallIdSequence
     }
 
     @Override
-    public long next() {
-        if (!hasSpace()) {
-            waitForSpace();
-        }
-        return forceNext();
-    }
-
-    private void waitForSpace() {
+    protected void handleNoSpaceLeft() {
         long start = System.nanoTime();
         for (long idleCount = 0; ; idleCount++) {
             long elapsedNanos = System.nanoTime() - start;

@@ -40,91 +40,47 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
 
-    FailFastCallIdSequence sequence = new FailFastCallIdSequence(100);
-
     @Test
-    public void test() {
+    public void testGettersAndDefaults() {
+        CallIdSequence sequence = new FailFastCallIdSequence(100);
         assertEquals(0, sequence.getLastCallId());
         assertEquals(100, sequence.getMaxConcurrentInvocations());
     }
 
     @Test
     public void whenNext_thenSequenceIncrements() {
-        // regular operation
-        testNext(new DummyOperation());
-
-        // backup-aware operation
-        testNext(new DummyBackupAwareOperation());
-
-        // urgent operation
-        testNext(new DummyPriorityOperation());
-    }
-
-    private void testNext(Operation operation) {
+        CallIdSequence sequence = new FailFastCallIdSequence(100);
         long oldSequence = sequence.getLastCallId();
-        long result = nextCallId(sequence, operation.isUrgent());
+        long result = sequence.next();
         assertEquals(oldSequence + 1, result);
         assertEquals(oldSequence + 1, sequence.getLastCallId());
     }
 
     @Test (expected = HazelcastOverloadException.class)
     public void next_whenNoCapacity_thenThrowException() throws InterruptedException {
-        sequence = new FailFastCallIdSequence(1);
-        final long oldLastCallId = sequence.getLastCallId();
+        CallIdSequence sequence = new FailFastCallIdSequence(1);
 
-        final CountDownLatch nextCalledLatch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                DummyBackupAwareOperation op = new DummyBackupAwareOperation();
-                long callId = nextCallId(sequence, op.isUrgent());
-                setCallId(op, callId);
-                nextCalledLatch.countDown();
-                sleepSeconds(3);
-                sequence.complete();
-            }
-        });
+        // take the only slot available
+        sequence.next();
 
-        nextCalledLatch.await();
-
-        nextCallId(sequence, false);
+        // this next is going to fail with an exception
+        sequence.next();
     }
 
     @Test
-    public void next_whenNoCapacity_thenBlockTillTimeout() {
-        sequence = new FailFastCallIdSequence(1);
+    public void when_overCapacityButPriorityItem_then_noException() {
+        CallIdSequence sequence = new FailFastCallIdSequence(1);
 
-        // first invocation consumes the available call ID
-        nextCallId(sequence, false);
+        // take the only slot available
+        assertEquals(1, sequence.next());
 
-        long oldLastCallId = sequence.getLastCallId();
-        try {
-            sequence.next();
-            fail();
-        } catch (HazelcastOverloadException e) {
-            // expected
-        }
-
-        assertEquals(oldLastCallId, sequence.getLastCallId());
-    }
-
-    @Test
-    public void when_overCapacityButPriorityItem_then_noBackpressure() {
-        final FailFastCallIdSequence sequence = new FailFastCallIdSequence(1);
-
-        // occupy the single call ID slot
-        nextCallId(sequence, true);
-
-        long oldLastCallId = sequence.getLastCallId();
-
-        long result = nextCallId(sequence, true);
-        assertEquals(oldLastCallId + 1, result);
-        assertEquals(oldLastCallId + 1, sequence.getLastCallId());
+        assertEquals(2, sequence.forceNext());
     }
 
     @Test
     public void whenComplete_thenTailIncrements() {
-        nextCallId(sequence, false);
+        FailFastCallIdSequence sequence = new FailFastCallIdSequence(100);
+        sequence.next();
 
         long oldSequence = sequence.getLastCallId();
         long oldTail = sequence.getTail();
@@ -137,12 +93,11 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void complete_whenNoMatchingNext() {
-        nextCallId(sequence, false);
+        CallIdSequence sequence = new FailFastCallIdSequence(100);
+
+        sequence.next();
         sequence.complete();
         sequence.complete();
     }
 
-    static long nextCallId(CallIdSequence seq, boolean isUrgent) {
-        return isUrgent ? seq.forceNext() : seq.next();
-    }
 }

@@ -51,6 +51,16 @@ public abstract class AbstractCallIdSequence implements CallIdSequence {
     }
 
     @Override
+    public long next() {
+        if (!hasSpace()) {
+            handleNoSpaceLeft();
+        }
+        return forceNext();
+    }
+
+    protected abstract void handleNoSpaceLeft();
+
+    @Override
     public long getLastCallId() {
         return longs.get(INDEX_HEAD);
     }

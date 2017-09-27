@@ -36,11 +36,8 @@ public class FailFastCallIdSequence extends AbstractCallIdSequence {
     }
 
     @Override
-    public long next() {
-        if (!hasSpace()) {
-            throw new HazelcastOverloadException(
-                    "Maximum invocation count is reached. maxConcurrentInvocations = " + getMaxConcurrentInvocations());
-        }
-        return forceNext();
+    protected void handleNoSpaceLeft() {
+        throw new HazelcastOverloadException(
+                "Maximum invocation count is reached. maxConcurrentInvocations = " + getMaxConcurrentInvocations());
     }
 }
