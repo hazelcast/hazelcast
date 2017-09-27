@@ -32,8 +32,6 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -47,7 +45,6 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     private final HazelcastClientInstanceImpl client;
     private final ClientCacheProxyFactory clientCacheProxyFactory;
-    private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
     public HazelcastClientCacheManager(HazelcastClientCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -92,13 +89,11 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     @Override
     protected <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig) {
-        configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
         clientCacheProxyFactory.addCacheConfig(cacheConfig.getNameWithPrefix(), cacheConfig);
     }
 
     @Override
     protected void removeCacheConfigFromLocal(String cacheNameWithPrefix) {
-        configs.remove(cacheNameWithPrefix);
         clientCacheProxyFactory.removeCacheConfig(cacheNameWithPrefix);
     }
 
@@ -125,7 +120,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     @Override
     protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName, String simpleCacheName, boolean createAlsoOnOthers,
                                                        boolean syncCreate) {
-        CacheConfig<K, V> config = configs.get(cacheName);
+        CacheConfig<K, V> config = clientCacheProxyFactory.getCacheConfig(cacheName);
         if (config == null) {
             // if cache config not found, try to find it from partition
             config = getCacheConfig(cacheName, simpleCacheName);
@@ -140,7 +135,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     @Override
     protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName, CacheConfig<K, V> config,
                                                          boolean createAlsoOnOthers, boolean syncCreate) {
-        return ClientCacheHelper.createCacheConfig(client, configs, cacheName, config,
+        return ClientCacheHelper.createCacheConfig(client, clientCacheProxyFactory.getCacheConfig(cacheName), config,
                 createAlsoOnOthers, syncCreate);
     }
 
@@ -161,7 +156,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected void postDestroy() {
-        Iterator<Map.Entry<String, CacheConfig>> iter = configs.entrySet().iterator();
+        Iterator<Map.Entry<String, CacheConfig>> iter = clientCacheProxyFactory.configs().iterator();
         while (iter.hasNext()) {
             Map.Entry<String, CacheConfig> entry = iter.next();
             String cacheName = entry.getKey();

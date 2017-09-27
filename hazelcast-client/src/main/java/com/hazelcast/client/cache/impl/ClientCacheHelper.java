@@ -37,7 +37,6 @@ import com.hazelcast.util.FutureUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -98,27 +97,27 @@ final class ClientCacheHelper {
     }
 
     /**
-     * Sends the cache configuration to server.
+     * Creates a new cache configuration on Hazelcast members.
      *
      * @param client             the client instance which will send the operation to server
-     * @param configs            {@link ConcurrentMap} based store that holds cache configurations
-     * @param cacheName          full cache name with prefixes
+     * @param existingConfig     an existing {@link CacheConfig}, already known to the client
      * @param newCacheConfig     the cache configuration to be sent to server
-     * @param createAlsoOnOthers flag which represents whether cache config
-     *                           will be sent to other nodes by the target node
-     * @param syncCreate         flag which represents response will be waited from the server
+     * @param createAlsoOnOthers when {@code true} the {@code newCacheConfig}
+     *                           will be sent to all cluster members by the target member that receives the
+     *                           invocation
+     * @param syncCreate         when {@code true}, this call will block until response is received from the member. This does not
+     *                           imply that when this method exits the {@code CacheConfig} is already created on all members.
      * @param <K>                type of the key of the cache
      * @param <V>                type of the value of the cache
      * @return the created cache configuration
+     * @see com.hazelcast.cache.impl.operation.CacheCreateConfigOperation
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
-                                                      ConcurrentMap<String, CacheConfig> configs,
-                                                      String cacheName,
+                                                      CacheConfig<K, V> existingConfig,
                                                       CacheConfig<K, V> newCacheConfig,
                                                       boolean createAlsoOnOthers,
                                                       boolean syncCreate) {
         try {
-            CacheConfig<K, V> currentCacheConfig = configs.get(cacheName);
             int partitionId = client.getClientPartitionService().getPartitionId(newCacheConfig.getNameWithPrefix());
 
             Object resolvedConfig = resolveCacheConfig(client, newCacheConfig, partitionId);
@@ -132,7 +131,7 @@ final class ClientCacheHelper {
                 final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
                 return resolveCacheConfig(client, clientInvocation, data);
             } else {
-                return currentCacheConfig;
+                return existingConfig;
             }
         } catch (Exception e) {
             throw rethrow(e);

@@ -119,21 +119,21 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
 
     @Test
     public void testCreateCacheConfig_whenSyncCreate_thenReturnNewConfig() {
-        CacheConfig<String, String> actualConfig = createCacheConfig(client, configs, CACHE_NAME, newCacheConfig, false, true);
+        CacheConfig<String, String> actualConfig = createCacheConfig(client, cacheConfig, newCacheConfig, false, true);
 
         assertNotEquals(cacheConfig, actualConfig);
     }
 
     @Test
     public void testCreateCacheConfig_whenNotSyncCreate_thenReturnCurrentConfig() {
-        CacheConfig<String, String> actualConfig = createCacheConfig(client, configs, CACHE_NAME, newCacheConfig, false, false);
+        CacheConfig<String, String> actualConfig = createCacheConfig(client, cacheConfig, newCacheConfig, false, false);
 
         assertEquals(cacheConfig, actualConfig);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateCacheConfig_rethrowsExceptions() {
-        createCacheConfig(exceptionThrowingClient, configs, CACHE_NAME, newCacheConfig, false, false);
+        createCacheConfig(exceptionThrowingClient, cacheConfig, newCacheConfig, false, false);
     }
 
     @Test
