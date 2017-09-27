@@ -63,23 +63,25 @@ import static org.junit.Assert.assertNotNull;
 @Category(NightlyTest.class)
 public class JoinStressTest extends HazelcastTestSupport {
 
+    private static final long TEN_MINUTES_IN_MILLIS = 10 * 60 * 1000L;
+
     @Before
     @After
     public void tearDown() throws Exception {
         HazelcastInstanceFactory.terminateAll();
     }
 
-    @Test
+    @Test(timeout = TEN_MINUTES_IN_MILLIS)
     public void testTCPIPJoinWithManyNodes() throws InterruptedException {
         testJoinWithManyNodes(false);
     }
 
-    @Test
+    @Test(timeout = TEN_MINUTES_IN_MILLIS)
     public void testMulticastJoinWithManyNodes() throws InterruptedException {
         testJoinWithManyNodes(true);
     }
 
-    @Test
+    @Test(timeout = TEN_MINUTES_IN_MILLIS)
     public void testJoinCompletesCorrectlyWhenMultipleNodesStartedParallel() throws Exception {
         int count = 10;
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
@@ -151,12 +153,12 @@ public class JoinStressTest extends HazelcastTestSupport {
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(rand));
     }
 
-    @Test
+    @Test(timeout = TEN_MINUTES_IN_MILLIS)
     public void testTCPIPJoinWithManyNodesMultipleGroups() throws InterruptedException {
         testJoinWithManyNodesMultipleGroups(false);
     }
 
-    @Test
+    @Test(timeout = TEN_MINUTES_IN_MILLIS)
     public void testMulticastJoinWithManyNodesMultipleGroups() throws InterruptedException {
         testJoinWithManyNodesMultipleGroups(true);
     }
