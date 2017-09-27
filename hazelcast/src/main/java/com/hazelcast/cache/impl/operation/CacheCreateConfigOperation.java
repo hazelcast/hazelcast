@@ -46,6 +46,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * This operation's purpose is to pass the required parameters into
  * {@link ICacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.
+ * <p/>
+ * Caveat: This operation does not return a response when {@code createAlsoOnOthers} is {@code true} and there are at least one
+ * remote members on which the new {@code CacheConfig} needs to be created. When this operation returns {@code null} with {@code
+ * createAlsoOnOthers == true}, it is impossible to tell whether it is because the {@code CacheConfig} was not already registered
+ * or due to sending out the operation to other remote members.
  */
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation
