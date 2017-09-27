@@ -205,7 +205,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                     node1FinishedLoading.countDown();
                     assertTrueEventually(new AssertTask() {
                         @Override
-                        public void run() throws Exception {
+                        public void run() {
                             assertEquals(PRELOAD_SIZE, map.size());
                         }
                     }, 5);

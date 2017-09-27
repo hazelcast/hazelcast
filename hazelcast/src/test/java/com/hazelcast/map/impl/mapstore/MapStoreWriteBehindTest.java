@@ -75,7 +75,7 @@ import static org.junit.Assert.fail;
 public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
-    public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
+    public void testOneMemberWriteBehindWithMaxIdle() {
         final EventBasedMapStore testMapStore = new EventBasedMapStore();
         Config config = newConfig(testMapStore, 5, InitialLoadMode.EAGER);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
@@ -86,7 +86,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         final int total = 10;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.getEvents().poll());
             }
         });
@@ -98,7 +98,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         sleepSeconds(11);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, map.size());
             }
         });
@@ -127,7 +127,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         assertOpenEventually(testMapStore.storeLatch);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, writeBehindQueueSize(instance, mapName));
             }
         });
@@ -235,14 +235,14 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         map.put("key", "value2");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("value2", testMapStore.getStore().get("key"));
             }
         });
     }
 
     @Test(timeout = 120000)
-    public void testOneMemberWriteBehindFlush() throws Exception {
+    public void testOneMemberWriteBehindFlush() {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         int writeDelaySeconds = 2;
@@ -276,7 +276,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testOneMemberWriteBehind2() throws Exception {
+    public void testOneMemberWriteBehind2() {
         final EventBasedMapStore testMapStore = new EventBasedMapStore();
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 1, InitialLoadMode.EAGER);
@@ -285,7 +285,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Object event = testMapStore.getEvents().poll();
                 assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, event);
             }
@@ -295,14 +295,14 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(EventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.getEvents().poll());
             }
         });
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(EventBasedMapStore.STORE_EVENTS.STORE, testMapStore.getEvents().poll());
             }
         });
@@ -311,7 +311,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(EventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.getEvents().poll());
             }
         });
@@ -320,7 +320,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     @Test(timeout = 120000)
     @Category(NightlyTest.class)
     // issue #2747: when MapStore configured with write behind, distributed objects' destroy method does not work
-    public void testWriteBehindDestroy() throws InterruptedException {
+    public void testWriteBehindDestroy() {
         final int writeDelaySeconds = 5;
         String mapName = randomMapName();
 
@@ -340,7 +340,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testKeysWithPredicateShouldLoadMapStore() throws InterruptedException {
+    public void testKeysWithPredicateShouldLoadMapStore() {
         EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>()
                 .insert("key1", 17)
                 .insert("key2", 23)
@@ -351,7 +351,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Set result = map.keySet();
                 assertContains(result, "key1");
                 assertContains(result, "key2");
@@ -361,7 +361,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testIssue1085WriteBehindBackup() throws InterruptedException {
+    public void testIssue1085WriteBehindBackup() {
         Config config = getConfig();
         String name = "testIssue1085WriteBehindBackup";
         MapConfig writeBehindBackup = config.getMapConfig(name);
@@ -383,7 +383,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
+    public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() {
         final String name = randomMapName("testIssue1085WriteBehindBackup");
         final int expectedStoreCount = 3;
         final int nodeCount = 3;
@@ -416,7 +416,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         // we should see at least expected store count.
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int storeOperationCount = mapStore.count.intValue();
                 assertTrue("expected: " + expectedStoreCount
                         + ", actual: " + storeOperationCount, expectedStoreCount <= storeOperationCount);
@@ -426,7 +426,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
 
     @Test(timeout = 120000)
-    public void testMapDelete_whenLoadFails() throws Exception {
+    public void testMapDelete_whenLoadFails() {
         final FailingLoadMapStore mapStore = new FailingLoadMapStore();
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
@@ -442,7 +442,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000, expected = IllegalStateException.class)
-    public void testMapRemove_whenMapStoreLoadFails() throws Exception {
+    public void testMapRemove_whenMapStoreLoadFails() {
         final FailingLoadMapStore mapStore = new FailingLoadMapStore();
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
@@ -454,7 +454,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testIssue1085WriteBehindBackupTransactional() throws InterruptedException {
+    public void testIssue1085WriteBehindBackupTransactional() {
         final String name = randomMapName();
         final int size = 1000;
         MapStoreTest.MapStoreWithStoreCount mapStore = new MapStoreTest.MapStoreWithStoreCount(size, 120);
@@ -476,7 +476,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testWriteBehindSameSecondSameKey() throws Exception {
+    public void testWriteBehindSameSecondSameKey() {
         final TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 2);
@@ -494,20 +494,20 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("value" + (size1 - 1), testMapStore.getStore().get("key"));
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("value" + (size2 - 1), testMapStore.getStore().get("key" + (size2 - 1)));
             }
         });
     }
 
     @Test(timeout = 120000)
-    public void testWriteBehindWriteRemoveOrderOfSameKey() throws Exception {
+    public void testWriteBehindWriteRemoveOrderOfSameKey() {
         final String mapName = randomMapName("_testWriteBehindWriteRemoveOrderOfSameKey_");
         final int iterationCount = 5;
         final int delaySeconds = 1;
@@ -534,7 +534,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expectedStoreSizeEventually, store.getStore().size());
             }
         });
@@ -542,7 +542,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void mapStore_setOnIMapDoesNotRemoveKeyFromWriteBehindDeleteQueue() throws Exception {
+    public void mapStore_setOnIMapDoesNotRemoveKeyFromWriteBehindDeleteQueue() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(new SimpleMapStore<String, String>())
@@ -561,7 +561,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testDelete_thenPutIfAbsent_withWriteBehindEnabled() throws Exception {
+    public void testDelete_thenPutIfAbsent_withWriteBehindEnabled() {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         Config config = newConfig(testMapStore, 100);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);

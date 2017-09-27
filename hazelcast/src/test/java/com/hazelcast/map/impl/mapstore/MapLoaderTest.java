@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -42,7 +43,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.CoreMatchers;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -73,6 +74,7 @@ import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -82,15 +84,17 @@ public class MapLoaderTest extends HazelcastTestSupport {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void testSenderAndBackupTerminates_AfterInitialLoad() throws InterruptedException {
+    public void testSenderAndBackupTerminates_AfterInitialLoad() {
         String name = randomString();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setImplementation(new DummyMapLoader());
+
         Config config = new Config();
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new DummyMapLoader());
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
+
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(5);
         HazelcastInstance[] instances = instanceFactory.newInstances(config);
 
@@ -124,24 +128,26 @@ public class MapLoaderTest extends HazelcastTestSupport {
         String name = randomString();
         int keysInMapStore = 10000;
 
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setImplementation(new DummyMapLoader(keysInMapStore));
+
         Config config = new Config();
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new DummyMapLoader(keysInMapStore));
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
+
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = instanceFactory.newInstances(config);
         IMap<Integer, Integer> map = instances[0].getMap(name);
 
-        //load specific keys
+        // load specific keys
         map.loadAll(setOfValuesBetween(0, keysInMapStore), true);
 
-        //remove everything
+        // remove everything
         map.clear();
 
-        //assert loadAll with load all entries provided by the mapLoader
+        // assert loadAll() with load all entries provided by the mapLoader
         map.loadAll(true);
         assertEquals(keysInMapStore, map.size());
     }
@@ -149,15 +155,17 @@ public class MapLoaderTest extends HazelcastTestSupport {
     @Test
     public void testNullChecks_withMapStore_nullInKeys() {
         String name = "testNullChecks_withMapStore";
-
         int keysInMapStore = 10000;
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setImplementation(new MapLoaderTest.DummyMapLoader(keysInMapStore));
+
         Config config = new Config();
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapLoaderTest.DummyMapLoader(keysInMapStore));
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
+
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
@@ -170,61 +178,66 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNullKey_loadAll() throws InterruptedException {
-        String name = "testNullIn_loadAllKeys";
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/11244")
+    public void testNullKey_loadAll() {
+        String name = "testNullIn_loadAll";
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY)
+                .setImplementation(new MapLoader<String, String>() {
+                    @Override
+                    public String load(String key) {
+                        if (key.equals("1")) {
+                            return "1";
+                        }
+                        if (key.equals("2")) {
+                            return "2";
+                        }
+                        if (key.equals("3")) {
+                            return "3";
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public Map<String, String> loadAll(Collection<String> keys) {
+                        Map<String, String> val = new HashMap<String, String>();
+                        if (keys.contains("1")) {
+                            val.put("1", "1");
+                        }
+                        if (keys.contains("2")) {
+                            val.put(null, "2");
+                        }
+                        if (keys.contains("3")) {
+                            val.put("3", "3");
+                        }
+                        return val;
+                    }
+
+                    @Override
+                    public Iterable<String> loadAllKeys() {
+                        List<String> keys = new ArrayList<String>();
+                        keys.add("1");
+                        keys.add("2");
+                        keys.add("3");
+                        return keys;
+                    }
+                });
 
         Config config = new Config();
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
 
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapLoader() {
-            @Override
-            public Object load(Object key) {
-                if (key.equals("1")) {
-                    return "1";
-                }
-                if (key.equals("2")) {
-                    return "2";
-                }
-                if (key.equals("3")) {
-                    return "3";
-                }
-                return null;
-            }
-
-            @Override
-            public Map loadAll(Collection keys) {
-                Map val = new HashMap();
-                if (keys.contains("1")) {
-                    val.put("1", "1");
-                }
-                if (keys.contains("2")) {
-                    val.put(null, "2");
-                }
-                if (keys.contains("3")) {
-                    val.put("3", "3");
-                }
-                return val;
-            }
-
-            @Override
-            public Iterable loadAllKeys() {
-                List keys = new ArrayList();
-                keys.add("1");
-                keys.add("2");
-                keys.add("3");
-                return keys;
-            }
-        });
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(CoreMatchers.is("Key loaded by a MapLoader cannot be null."));
-        map.size();
+        try {
+            map.size();
+            fail("Expected a NPE due to a null key in a MapLoader");
+        } catch (NullPointerException e) {
+            assertEquals("Key loaded by a MapLoader cannot be null.", e.getMessage());
+        }
 
         assertEquals(2, map.size());
         assertEquals("1", map.get("1"));
@@ -233,55 +246,56 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNullValue_loadAll() throws InterruptedException {
-        String name = "testNullIn_loadAllKeys";
+    public void testNullValue_loadAll() {
+        String name = "testNullIn_loadAll";
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY)
+                .setImplementation(new MapLoader<String, String>() {
+                    @Override
+                    public String load(String key) {
+                        if (key.equals("1")) {
+                            return "1";
+                        }
+                        if (key.equals("2")) {
+                            return null;
+                        }
+                        if (key.equals("3")) {
+                            return "3";
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public Map<String, String> loadAll(Collection<String> keys) {
+                        Map<String, String> val = new HashMap<String, String>();
+                        if (keys.contains("1")) {
+                            val.put("1", "1");
+                        }
+                        if (keys.contains("2")) {
+                            val.put("2", null);
+                        }
+                        if (keys.contains("3")) {
+                            val.put("3", "3");
+                        }
+                        return val;
+                    }
+
+                    @Override
+                    public Iterable<String> loadAllKeys() {
+                        List<String> keys = new ArrayList<String>();
+                        keys.add("1");
+                        keys.add("2");
+                        keys.add("3");
+                        return keys;
+                    }
+                });
 
         Config config = new Config();
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
 
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapLoader() {
-            @Override
-            public Object load(Object key) {
-                if (key.equals("1")) {
-                    return "1";
-                }
-                if (key.equals("2")) {
-                    return null;
-                }
-                if (key.equals("3")) {
-                    return "3";
-                }
-                return null;
-            }
-
-            @Override
-            public Map loadAll(Collection keys) {
-                Map val = new HashMap();
-                if (keys.contains("1")) {
-                    val.put("1", "1");
-                }
-                if (keys.contains("2")) {
-                    val.put("2", null);
-                }
-                if (keys.contains("3")) {
-                    val.put("3", "3");
-                }
-                return val;
-            }
-
-            @Override
-            public Iterable loadAllKeys() {
-                List keys = new ArrayList();
-                keys.add("1");
-                keys.add("2");
-                keys.add("3");
-                return keys;
-            }
-        });
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
@@ -296,62 +310,66 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
     @Test
     public void testNullValue_loadAll_withInterceptor() {
-        String name = "testNullIn_loadAllKeys";
+        String name = "testNullIn_loadAll";
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY)
+                .setImplementation(new MapLoader<String, String>() {
+                    @Override
+                    public String load(String key) {
+                        if (key.equals("1")) {
+                            return "1";
+                        }
+                        if (key.equals("2")) {
+                            return null;
+                        }
+                        if (key.equals("3")) {
+                            return "3";
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public Map<String, String> loadAll(Collection<String> keys) {
+                        Map<String, String> val = new HashMap<String, String>();
+                        if (keys.contains("1")) {
+                            val.put("1", "1");
+                        }
+                        if (keys.contains("2")) {
+                            val.put("2", null);
+                        }
+                        if (keys.contains("3")) {
+                            val.put("3", "3");
+                        }
+                        return val;
+                    }
+
+                    @Override
+                    public Iterable<String> loadAllKeys() {
+                        List<String> keys = new ArrayList<String>();
+                        keys.add("1");
+                        keys.add("2");
+                        keys.add("3");
+                        return keys;
+                    }
+                });
 
         Config config = new Config();
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
 
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapLoader() {
-            @Override
-            public Object load(Object key) {
-                if (key.equals("1")) {
-                    return "1";
-                }
-                if (key.equals("2")) {
-                    return null;
-                }
-                if (key.equals("3")) {
-                    return "3";
-                }
-                return null;
-            }
-
-            @Override
-            public Map loadAll(Collection keys) {
-                Map val = new HashMap();
-                if (keys.contains("1")) {
-                    val.put("1", "1");
-                }
-                if (keys.contains("2")) {
-                    val.put("2", null);
-                }
-                if (keys.contains("3")) {
-                    val.put("3", "3");
-                }
-                return val;
-            }
-
-            @Override
-            public Iterable loadAllKeys() {
-                List keys = new ArrayList();
-                keys.add("1");
-                keys.add("2");
-                keys.add("3");
-                return keys;
-            }
-        });
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        map.addInterceptor(new MyIntercepter());
+        map.addInterceptor(new TestInterceptor());
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(CoreMatchers.is("Value loaded by a MapLoader cannot be null."));
-        map.size();
+        try {
+            map.size();
+            fail("Expected a NPE due to a null value in a MapLoader");
+        } catch (NullPointerException e) {
+            assertEquals("Value loaded by a MapLoader cannot be null.", e.getMessage());
+        }
 
         assertEquals(2, map.size());
         assertEquals("1", map.get("1"));
@@ -359,98 +377,70 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertEquals("3", map.get("3"));
     }
 
-    private static class MyIntercepter implements MapInterceptor, Serializable {
-        @Override
-        public Object interceptGet(Object value) {
-            return null;
-        }
-
-        @Override
-        public void afterGet(Object value) {
-
-        }
-
-        @Override
-        public Object interceptPut(Object oldValue, Object newValue) {
-            return null;
-        }
-
-        @Override
-        public void afterPut(Object value) {
-
-        }
-
-        @Override
-        public Object interceptRemove(Object removedValue) {
-            return null;
-        }
-
-        @Override
-        public void afterRemove(Object value) {
-
-        }
-    }
-
     @Test
-    public void testNullKey_loadAllKeys() throws InterruptedException {
+    public void testNullKey_loadAllKeys() {
         String name = "testNullIn_loadAllKeys";
 
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY)
+                .setImplementation(new MapLoader<String, String>() {
+                    @Override
+                    public String load(String key) {
+                        if (key.equals("1")) {
+                            return "1";
+                        }
+                        if (key.equals("2")) {
+                            return "2";
+                        }
+                        if (key.equals("3")) {
+                            return "3";
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public Map<String, String> loadAll(Collection keys) {
+                        Map<String, String> val = new HashMap<String, String>();
+                        if (keys.contains("1")) {
+                            val.put("1", "1");
+                        }
+                        if (keys.contains("2")) {
+                            val.put("2", "2");
+                        }
+                        if (keys.contains("3")) {
+                            val.put("3", "3");
+                        }
+                        return val;
+                    }
+
+                    @Override
+                    public Iterable<String> loadAllKeys() {
+                        List<String> keys = new ArrayList<String>();
+                        keys.add("1");
+                        keys.add(null);
+                        keys.add("3");
+                        return keys;
+                    }
+                });
+
         Config config = new Config();
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
 
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapLoader() {
-            @Override
-            public Object load(Object key) {
-                if (key.equals("1")) {
-                    return "1";
-                }
-                if (key.equals("2")) {
-                    return "2";
-                }
-                if (key.equals("3")) {
-                    return "3";
-                }
-                return null;
-            }
-
-            @Override
-            public Map loadAll(Collection keys) {
-                Map val = new HashMap();
-                if (keys.contains("1")) {
-                    val.put("1", "1");
-                }
-                if (keys.contains("2")) {
-                    val.put("2", "2");
-                }
-                if (keys.contains("3")) {
-                    val.put("3", "3");
-                }
-                return val;
-            }
-
-            @Override
-            public Iterable loadAllKeys() {
-                List keys = new ArrayList();
-                keys.add("1");
-                keys.add(null);
-                keys.add("3");
-                return keys;
-            }
-        });
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(CoreMatchers.is("Key loaded by a MapLoader cannot be null."));
-        map.size();
+        try {
+            map.size();
+            fail("Expected a NPE due to a null key in a MapLoader");
+        } catch (NullPointerException e) {
+            assertEquals("Key loaded by a MapLoader cannot be null.", e.getMessage());
+        }
 
-        assertEquals(2, map.size());
+        assertEquals(0, map.size());
         assertEquals("1", map.get("1"));
-        assertEquals(null, map.get("2"));
+        assertEquals("2", map.get("2"));
         assertEquals("3", map.get("3"));
     }
 
@@ -459,13 +449,15 @@ public class MapLoaderTest extends HazelcastTestSupport {
         String name = "testNullChecks_withMapStore";
         int keysInMapStore = 10000;
 
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setImplementation(new MapLoaderTest.DummyMapLoader(keysInMapStore));
+
         Config config = new Config();
-        MapConfig mapConfig = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapLoaderTest.DummyMapLoader(keysInMapStore));
-        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
+
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(name);
 
@@ -473,47 +465,41 @@ public class MapLoaderTest extends HazelcastTestSupport {
         map.loadAll(null, true);
     }
 
-    private HazelcastInstance getInstanceForAddress(HazelcastInstance[] instances, Address address) {
-        for (HazelcastInstance instance : instances) {
-            Address instanceAddress = instance.getCluster().getLocalMember().getAddress();
-            if (address.equals(instanceAddress)) {
-                return instance;
-            }
-        }
-        throw new IllegalArgumentException();
-    }
-
-    // https://github.com/hazelcast/hazelcast/issues/1770
+    /**
+     * https://github.com/hazelcast/hazelcast/issues/1770
+     */
     @Test
-    public void test1770() throws InterruptedException {
-        Config config = getConfig();
-        config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl("http://127.0.0.1:8090/mancenter");
-
-        MapConfig mapConfig = config.getMapConfig("foo");
-
+    public void test1770() {
         final AtomicBoolean loadAllCalled = new AtomicBoolean();
-        MapLoader<Object, Object> mapLoader = new MapLoader<Object, Object>() {
-            @Override
-            public Object load(Object key) {
-                return null;
-            }
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setImplementation(new MapLoader<Object, Object>() {
+                    @Override
+                    public Object load(Object key) {
+                        return null;
+                    }
 
-            @Override
-            public Map<Object, Object> loadAll(Collection keys) {
-                loadAllCalled.set(true);
-                return new HashMap<Object, Object>();
-            }
+                    @Override
+                    public Map<Object, Object> loadAll(Collection keys) {
+                        loadAllCalled.set(true);
+                        return new HashMap<Object, Object>();
+                    }
 
-            @Override
-            public Set<Object> loadAllKeys() {
-                return new HashSet<Object>(Collections.singletonList(1));
-            }
-        };
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(mapLoader);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+                    @Override
+                    public Set<Object> loadAllKeys() {
+                        return new HashSet<Object>(Collections.singletonList(1));
+                    }
+                });
+
+        ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
+                .setEnabled(true)
+                .setUrl("http://127.0.0.1:8090/mancenter");
+
+        Config config = getConfig()
+                .setManagementCenterConfig(managementCenterConfig);
+
+        MapConfig mapConfig = config.getMapConfig("foo")
+                .setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMap(mapConfig.getName());
@@ -527,7 +513,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapLoaderLoadUpdatingIndex_noPreload() throws Exception {
+    public void testMapLoaderLoadUpdatingIndex_noPreload() {
         final int nodeCount = 3;
         String mapName = randomString();
         SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
@@ -546,7 +532,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapLoaderLoadUpdatingIndex_withPreload() throws Exception {
+    public void testMapLoaderLoadUpdatingIndex_withPreload() {
         final int nodeCount = 3;
         String mapName = randomString();
         SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
@@ -564,7 +550,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAll_putsLoadedItemsToIMap() throws Exception {
+    public void testGetAll_putsLoadedItemsToIMap() {
         Integer[] requestedKeys = {1, 2, 3};
         AtomicInteger loadedKeysCounter = new AtomicInteger(0);
         MapStore<Integer, Integer> mapStore = createMapLoader(loadedKeysCounter);
@@ -586,7 +572,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testMapCanBeLoaded_whenLoadAllKeysThrowsExceptionFirstTime() throws InterruptedException {
+    public void testMapCanBeLoaded_whenLoadAllKeysThrowsExceptionFirstTime() {
         Config config = getConfig();
         MapLoader failingMapLoader = new FailingMapLoader();
         MapStoreConfig mapStoreConfig = new MapStoreConfig().setImplementation(failingMapLoader);
@@ -608,33 +594,37 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapLoaderHittingEvictionOnInitialLoad() throws InterruptedException {
-        final String mapName = "testMapLoaderHittingEvictionOnInitialLoad";
+    @SuppressWarnings("deprecation")
+    public void testMapLoaderHittingEvictionOnInitialLoad() {
+        String mapName = "testMapLoaderHittingEvictionOnInitialLoad";
         int sizePerPartition = 1;
         int partitionCount = 10;
-        Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
-        final MapConfig mc = cfg.getMapConfig(mapName);
-        mc.setEvictionPolicy(EvictionPolicy.LRU);
-        mc.setEvictionPercentage(50);
-        mc.setMinEvictionCheckMillis(0);
-        final MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(PER_PARTITION);
-        msc.setSize(sizePerPartition);
-        mc.setMaxSizeConfig(msc);
+        int entriesCount = 1000000;
 
-        final int entriesCount = 1000000;
-        MapStoreConfig storeConfig = new MapStoreConfig();
-        storeConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        storeConfig.setImplementation(new SimpleLoader(entriesCount));
-        storeConfig.setEnabled(true);
-        mc.setMapStoreConfig(storeConfig);
+        MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
+                .setMaxSizePolicy(PER_PARTITION)
+                .setSize(sizePerPartition);
 
-        final HazelcastInstance instance = createHazelcastInstance(cfg);
+        MapStoreConfig storeConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setImplementation(new SimpleLoader(entriesCount));
+
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+
+        config.getMapConfig(mapName)
+                .setEvictionPolicy(EvictionPolicy.LRU)
+                .setEvictionPercentage(50)
+                .setMinEvictionCheckMillis(0)
+                .setMaxSizeConfig(maxSizeConfig)
+                .setMapStoreConfig(storeConfig);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
         IMap imap = instance.getMap(mapName);
-        imap.addInterceptor(new MyIntercepter());
+        imap.addInterceptor(new TestInterceptor());
 
-        assertEquals(sizePerPartition * partitionCount , imap.size());
+        assertEquals(sizePerPartition * partitionCount, imap.size());
     }
 
     private MapStore<Integer, Integer> createMapLoader(final AtomicInteger loadAllCounter) {
@@ -662,7 +652,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         private final int entriesCount;
 
-        public SimpleLoader(int entriesCount) {
+        SimpleLoader(int entriesCount) {
             this.entriesCount = entriesCount;
         }
 
@@ -690,8 +680,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }
     }
 
-    ;
-
     private Config createMapConfig(String mapName, SampleIndexableObjectMapLoader loader) {
         Config config = getConfig();
 
@@ -707,10 +695,11 @@ public class MapLoaderTest extends HazelcastTestSupport {
         return config;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void assertLoadAllKeysCount(final SampleIndexableObjectMapLoader loader, final int instanceCount) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("call-count of loadAllKeys method is problematic", instanceCount, loader.loadAllKeysCallCount.get());
             }
         });
@@ -719,7 +708,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final SqlPredicate predicate) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int mapSize = map.size();
                 final String message = format("Map size is %d", mapSize);
 
@@ -728,6 +717,46 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 assertEquals(message, 5, (int) result.iterator().next().getValue().value);
             }
         });
+    }
+
+    private static HazelcastInstance getInstanceForAddress(HazelcastInstance[] instances, Address address) {
+        for (HazelcastInstance instance : instances) {
+            Address instanceAddress = instance.getCluster().getLocalMember().getAddress();
+            if (address.equals(instanceAddress)) {
+                return instance;
+            }
+        }
+        throw new IllegalArgumentException();
+    }
+
+    private static class TestInterceptor implements MapInterceptor, Serializable {
+
+        @Override
+        public Object interceptGet(Object value) {
+            return null;
+        }
+
+        @Override
+        public void afterGet(Object value) {
+        }
+
+        @Override
+        public Object interceptPut(Object oldValue, Object newValue) {
+            return null;
+        }
+
+        @Override
+        public void afterPut(Object value) {
+        }
+
+        @Override
+        public Object interceptRemove(Object removedValue) {
+            return null;
+        }
+
+        @Override
+        public void afterRemove(Object value) {
+        }
     }
 
     public static class DummyMapLoader implements MapLoader<Integer, Integer> {

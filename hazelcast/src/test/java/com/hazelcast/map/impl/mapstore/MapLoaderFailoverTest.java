@@ -52,13 +52,13 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     private CountingMapLoader mapLoader;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         nodeFactory = createHazelcastInstanceFactory(NODE_COUNT + 2);
         mapLoader = new CountingMapLoader(MAP_STORE_ENTRY_COUNT);
     }
 
     @Test(timeout = MINUTE)
-    public void testDoesntLoadAgain_whenLoaderNodeGoesDown() throws Exception {
+    public void testDoesntLoadAgain_whenLoaderNodeGoesDown() {
         Config cfg = newConfig("default", LAZY);
         HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
         HazelcastInstance hz3 = nodes[2];
@@ -77,7 +77,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoads_whenInitialLoaderNodeRemoved() throws Exception {
+    public void testLoads_whenInitialLoaderNodeRemoved() {
         Config cfg = newConfig("default", LAZY);
         HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
         HazelcastInstance hz3 = nodes[2];
@@ -95,7 +95,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
     @Test(timeout = MINUTE)
     // FIXES https://github.com/hazelcast/hazelcast/issues/6056
-    public void testLoadsAll_whenInitialLoaderNodeRemovedAfterLoading() throws Exception {
+    public void testLoadsAll_whenInitialLoaderNodeRemovedAfterLoading() {
         Config cfg = newConfig("default", LAZY);
         HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
         HazelcastInstance hz3 = nodes[2];
@@ -144,7 +144,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
     @Test(timeout = MINUTE)
     // FIXES https://github.com/hazelcast/hazelcast/issues/7959
-    public void testLoadsAll_whenInitialLoaderNodeRemovedWhileLoadingAndNoBackups() throws Exception {
+    public void testLoadsAll_whenInitialLoaderNodeRemovedWhileLoadingAndNoBackups() {
         PausingMapLoader<Integer, Integer> pausingLoader = new PausingMapLoader<Integer, Integer>(mapLoader, 5000);
 
         Config cfg = newConfig("default", LAZY, 0, pausingLoader);
@@ -179,16 +179,19 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     private Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
-        Config cfg = new Config();
-        cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
-        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE));
-        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "13");
+        Config config = new Config()
+                .setGroupConfig(new GroupConfig(getClass().getSimpleName()))
+                .setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE))
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "13");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setImplementation(loader).setInitialLoadMode(loadMode);
+                .setInitialLoadMode(loadMode)
+                .setImplementation(loader);
 
-        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig).setBackupCount(backups);
+        config.getMapConfig(mapName)
+                .setBackupCount(backups)
+                .setMapStoreConfig(mapStoreConfig);
 
-        return cfg;
+        return config;
     }
 }

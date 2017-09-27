@@ -50,7 +50,7 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
     // https://github.com/hazelcast/hazelcast/issues/2721
     @Test
-    public void testIssue2721() throws InterruptedException {
+    public void testIssue2721() {
         final Config config = new Config();
 
         // get map config
@@ -88,10 +88,8 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
     private class InMemoryMapStore implements MapStore<String, String> {
 
-        private final ConcurrentHashMap<String, String> store =
-                new ConcurrentHashMap<String, String>();
-        private final ConcurrentHashMap<String, Boolean> contextClassLoaders =
-                new ConcurrentHashMap<String, Boolean>();
+        private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
+        private final ConcurrentHashMap<String, Boolean> contextClassLoaders = new ConcurrentHashMap<String, Boolean>();
 
         public TreeMap<String, Boolean> getContextClassLoaders() {
             return new TreeMap<String, Boolean>(contextClassLoaders);

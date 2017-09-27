@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -96,7 +95,7 @@ class CountingMapLoader extends SimpleMapLoader {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             loadAllKeysClosed.set(true);
         }
     }

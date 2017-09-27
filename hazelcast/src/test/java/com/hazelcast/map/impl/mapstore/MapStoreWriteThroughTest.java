@@ -83,7 +83,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testOneMemberWriteThroughWithLRU() throws Exception {
+    public void testOneMemberWriteThroughWithLRU() {
         final int size = 10000;
         TestMapStore testMapStore = new TestMapStore(size * 2, 1, 1);
         testMapStore.setLoadAllKeys(false);
@@ -108,7 +108,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         }, false);
 
         for (int i = 0; i < size * 2; i++) {
-            // trigger eviction.
+            // trigger eviction
             if (i == (size * 2) - 1 || i == size) {
                 sleepMillis(1001);
             }
@@ -236,7 +236,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testOneMemberWriteThroughFailingStore() throws Exception {
+    public void testOneMemberWriteThroughFailingStore() {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
         testMapStore.setFail(true, true);
         Config config = newConfig(testMapStore, 0);
@@ -269,7 +269,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    public void testOneMemberWriteThroughFailingStore2() throws Exception {
+    public void testOneMemberWriteThroughFailingStore2() {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
         testMapStore.setFail(true, false);
         Config config = newConfig(testMapStore, 0);

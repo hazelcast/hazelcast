@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 public class MapCreationDelayWithMapStoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
-    public void testMapCreation__notAffectedByUnresponsiveLoader() throws Exception {
+    public void testMapCreation__notAffectedByUnresponsiveLoader() {
         final UnresponsiveLoader<Integer, Integer> unresponsiveLoader = new UnresponsiveLoader<Integer, Integer>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(unresponsiveLoader)

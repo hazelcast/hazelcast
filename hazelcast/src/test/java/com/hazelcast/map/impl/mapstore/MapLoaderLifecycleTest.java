@@ -50,7 +50,7 @@ public class MapLoaderLifecycleTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInitCalled_whenMapCreated() throws Exception {
+    public void testInitCalled_whenMapCreated() {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -62,7 +62,7 @@ public class MapLoaderLifecycleTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDestroyCalled_whenNodeShutdown() throws Exception {
+    public void testDestroyCalled_whenNodeShutdown() {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 

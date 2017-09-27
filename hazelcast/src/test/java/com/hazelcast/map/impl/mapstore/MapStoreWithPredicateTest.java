@@ -54,7 +54,7 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Set expected = map.keySet(Predicates.greaterThan("value", 1));
                 assertEquals(3, expected.size());
                 assertContains(expected, "key1");
@@ -80,7 +80,7 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final Collection values = map.values(Predicates.greaterThan("value", 1));
                 assertEquals(3, values.size());
                 assertContains(values, 17);
@@ -91,7 +91,7 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testEntrySetWithPredicate_checksMapStoreLoad() throws InterruptedException {
+    public void testEntrySetWithPredicate_checksMapStoreLoad() {
         EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>();
 
         Map<String, Integer> mapForStore = new HashMap<String, Integer>();
@@ -106,7 +106,7 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final Set<Map.Entry<String, Integer>> entrySet = map.entrySet(Predicates.greaterThan("value", 1));
                 assertEquals(3, entrySet.size());
             }
