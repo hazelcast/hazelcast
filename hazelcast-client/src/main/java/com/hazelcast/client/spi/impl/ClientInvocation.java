@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
@@ -124,11 +123,7 @@ public class ClientInvocation implements Runnable {
 
     public ClientInvocationFuture invoke() {
         assert (clientMessage != null);
-        try {
-            clientMessage.setCorrelationId(callIdSequence.next());
-        } catch (TimeoutException e) {
-            throw new HazelcastOverloadException("Timed out trying to acquire another call ID.", e);
-        }
+        clientMessage.setCorrelationId(callIdSequence.next());
         invokeOnSelection();
         return clientInvocationFuture;
     }

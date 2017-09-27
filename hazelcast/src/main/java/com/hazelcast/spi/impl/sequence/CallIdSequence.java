@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.sequence;
 
 
-import java.util.concurrent.TimeoutException;
+import com.hazelcast.core.HazelcastOverloadException;
 
 /**
  * Responsible for generating invocation callIds.
@@ -53,13 +53,12 @@ public interface CallIdSequence {
     /**
      * Generates the next unique call ID. When the implementation
      * supports backpressure, it will not return unless the number of outstanding invocations is within the
-     * configured limit. Instead it will block until the condition is met and eventually throw a timeout exception.
+     * configured limit. Instead it will block until the condition is met and eventually throw HazelcastOverloadException.
      *
      * @return the generated call ID
-     * @throws TimeoutException if the outstanding invocation count hasn't dropped below the configured limit
-     * within the configured timeout
+     * @throws HazelcastOverloadException if the outstanding invocation count hasn't dropped below the configured limit
      */
-    long next() throws TimeoutException;
+    long next();
 
     /**
      * Generates the next unique call ID.

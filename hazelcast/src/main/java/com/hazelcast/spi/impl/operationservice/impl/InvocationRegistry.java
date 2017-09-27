@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.OperationAccessor.deactivate;
@@ -111,10 +110,10 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      */
     public boolean register(Invocation invocation) {
         final long callId;
+        boolean force = invocation.op.isUrgent() || invocation.isRetryCandidate();
         try {
-            boolean force = invocation.op.isUrgent() || invocation.isRetryCandidate();
             callId = force ? callIdSequence.forceNext() : callIdSequence.next();
-        } catch (TimeoutException e) {
+        } catch (HazelcastOverloadException e) {
             throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation, e);
         }
         try {

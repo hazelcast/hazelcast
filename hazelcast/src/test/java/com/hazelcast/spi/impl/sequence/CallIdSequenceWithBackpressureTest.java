@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.sequence;
 
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
@@ -30,7 +31,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static org.junit.Assert.assertEquals;
@@ -103,7 +103,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
         try {
             sequence.next();
             fail();
-        } catch (TimeoutException e) {
+        } catch (HazelcastOverloadException e) {
             // expected
         }
 
@@ -145,10 +145,6 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
     }
 
     static long nextCallId(CallIdSequence seq, boolean isUrgent) {
-        try {
-            return isUrgent ? seq.forceNext() : seq.next();
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
-        }
+        return isUrgent ? seq.forceNext() : seq.next();
     }
 }

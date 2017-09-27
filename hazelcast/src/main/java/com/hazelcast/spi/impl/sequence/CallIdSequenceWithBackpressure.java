@@ -16,14 +16,11 @@
 
 package com.hazelcast.spi.impl.sequence;
 
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLongArray;
-
-import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -40,67 +37,31 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * So perhaps there are a few threads that at the same time see that the there is space and do a next.
  * But any following invocation needs to wait till there is is capacity.
  */
-public final class CallIdSequenceWithBackpressure implements CallIdSequence {
+public final class CallIdSequenceWithBackpressure extends AbstractCallIdSequence {
     static final int MAX_DELAY_MS = 500;
     private static final IdleStrategy IDLER = new BackoffIdleStrategy(
             0, 0, MILLISECONDS.toNanos(1), MILLISECONDS.toNanos(MAX_DELAY_MS));
-    private static final int INDEX_HEAD = 7;
-    private static final int INDEX_TAIL = 15;
 
-    // instead of using 2 AtomicLongs, we use an array if width of 3 cache lines to prevent any false sharing.
-    private final AtomicLongArray longs = new AtomicLongArray(3 * CACHE_LINE_LENGTH / LONG_SIZE_IN_BYTES);
-
-    private final int maxConcurrentInvocations;
     private final long backoffTimeoutNanos;
 
     public CallIdSequenceWithBackpressure(int maxConcurrentInvocations, long backoffTimeoutMs) {
-        this.maxConcurrentInvocations = maxConcurrentInvocations;
+        super(maxConcurrentInvocations);
+
+        checkPositive(backoffTimeoutMs, "backoffTimeoutMs should be a positive number. backoffTimeoutMs=" + backoffTimeoutMs);
+
         this.backoffTimeoutNanos = MILLISECONDS.toNanos(backoffTimeoutMs);
     }
 
     @Override
-    public long getLastCallId() {
-        return longs.get(INDEX_HEAD);
-    }
-
-    @Override
-    public int getMaxConcurrentInvocations() {
-        return maxConcurrentInvocations;
-    }
-
-    @Override
-    public long next() throws TimeoutException {
-        if (!hasSpace()) {
-            waitForSpace();
-        }
-        return forceNext();
-    }
-
-    @Override
-    public void complete() {
-        long newTail = longs.incrementAndGet(INDEX_TAIL);
-        assert newTail <= longs.get(INDEX_HEAD);
-    }
-
-    public long forceNext() {
-        return longs.incrementAndGet(INDEX_HEAD);
-    }
-
-    long getTail() {
-        return longs.get(INDEX_TAIL);
-    }
-
-    private boolean hasSpace() {
-        return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
-    }
-
-    private void waitForSpace() throws TimeoutException {
-        long deadline = System.nanoTime() + backoffTimeoutNanos;
+    protected void handleNoSpaceLeft() {
+        long start = System.nanoTime();
         for (long idleCount = 0; ; idleCount++) {
-            if (System.nanoTime() >= deadline) {
-                throw new TimeoutException(String.format("Timed out trying to acquire another call ID."
-                        + " maxConcurrentInvocations = %d, backoffTimeout = %d", maxConcurrentInvocations,
-                        NANOSECONDS.toMillis(backoffTimeoutNanos)));
+            long elapsedNanos = System.nanoTime() - start;
+            if (elapsedNanos > backoffTimeoutNanos) {
+                throw new HazelcastOverloadException(String.format("Timed out trying to acquire another call ID."
+                                + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs, elapsed:%d msecs",
+                        getMaxConcurrentInvocations(), NANOSECONDS.toMillis(backoffTimeoutNanos),
+                        NANOSECONDS.toMillis(elapsedNanos)));
             }
             IDLER.idle(idleCount);
             if (hasSpace()) {
