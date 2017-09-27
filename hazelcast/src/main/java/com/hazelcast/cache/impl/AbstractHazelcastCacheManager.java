@@ -118,25 +118,24 @@ public abstract class AbstractHazelcastCacheManager
             throw new CacheException("A cache named " + cacheName + " already exists.");
         }
         // Create cache config on all nodes as sync
-        CacheConfig<K, V> currentCacheConfig = createCacheConfig(cacheName, newCacheConfig, true, true);
+        createCacheConfig(cacheName, newCacheConfig, true, true);
         // Create cache proxy object with cache config
         ICacheInternal<K, V> cacheProxy = createCacheProxy(newCacheConfig);
-        if (currentCacheConfig == null) {
-            // Put created cache config.
-            // Single thread region because "createConfigOnPartition" is single threaded by partition thread
-            addCacheConfigIfAbsent(newCacheConfig);
-            // Put created cache. No need to a "putIfAbsent" as this is a single threaded region
-            caches.put(newCacheConfig.getNameWithPrefix(), cacheProxy);
-            // Register listeners
+        // Add created cache config to local configurations map
+        addCacheConfigIfAbsent(newCacheConfig);
+        ICacheInternal<?, ?> existingCache = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
+        if (existingCache == null) {
+            // Register listeners on new cache
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
+        } else {
+            CacheConfig config = existingCache.getConfiguration(CacheConfig.class);
+            if (config.equals(newCacheConfig)) {
+                return (ICacheInternal<K, V>) existingCache;
+            } else {
+                throw new CacheException("A cache named " + cacheName + " already exists.");
+            }
         }
-        ICacheInternal<?, ?> cache = getOrPutIfAbsent(currentCacheConfig.getNameWithPrefix(), cacheProxy);
-        CacheConfig config = cache.getConfiguration(CacheConfig.class);
-        if (config.equals(newCacheConfig)) {
-            return (ICacheInternal<K, V>) cache;
-        }
-        throw new CacheException("A cache named " + cacheName + " already exists.");
     }
 
     @Override
