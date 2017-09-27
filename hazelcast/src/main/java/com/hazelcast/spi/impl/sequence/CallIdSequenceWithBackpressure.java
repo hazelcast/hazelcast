@@ -53,9 +53,16 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
     private final int maxConcurrentInvocations;
     private final long backoffTimeoutNanos;
 
+    /**
+     * Creates a CallIdSequenceWithBackpressure.
+     *
+     * @param maxConcurrentInvocations maximum number of concurrent invocations.
+     * @param backoffTimeoutMs the maximum backoff in miliseconds. The value can be negative and will be interpreted as
+     *                         not waiting at all and immediately throw a TimeoutException if there is no space.
+     */
     public CallIdSequenceWithBackpressure(int maxConcurrentInvocations, long backoffTimeoutMs) {
         this.maxConcurrentInvocations = maxConcurrentInvocations;
-        this.backoffTimeoutNanos = MILLISECONDS.toNanos(backoffTimeoutMs);
+        this.backoffTimeoutNanos = MILLISECONDS.toNanos(backoffTimeoutMs < 0 ? 0 : backoffTimeoutMs);
     }
 
     @Override
@@ -95,11 +102,12 @@ public final class CallIdSequenceWithBackpressure implements CallIdSequence {
     }
 
     private void waitForSpace() throws TimeoutException {
-        long deadline = System.nanoTime() + backoffTimeoutNanos;
+        long startNanos = System.nanoTime();
         for (long idleCount = 0; ; idleCount++) {
-            if (System.nanoTime() >= deadline) {
+            // See System.nanoTime documentation for overflow problems.
+            if (System.nanoTime() - startNanos >= backoffTimeoutNanos) {
                 throw new TimeoutException(String.format("Timed out trying to acquire another call ID."
-                        + " maxConcurrentInvocations = %d, backoffTimeout = %d", maxConcurrentInvocations,
+                                + " maxConcurrentInvocations = %d, backoffTimeout = %d", maxConcurrentInvocations,
                         NANOSECONDS.toMillis(backoffTimeoutNanos)));
             }
             IDLER.idle(idleCount);
