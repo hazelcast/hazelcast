@@ -7,7 +7,7 @@ import java.util.Properties;
 public class AddressLocatorConfig {
     private boolean enabled;
     private String classname;
-    private Properties properties;
+    private Properties properties = new Properties();
     private AddressLocator implementation;
 
 

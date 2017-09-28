@@ -1362,6 +1362,19 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="address-locator" type="address-locator" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Address locator allows to plug in own strategy to customize:
+                          1. Address Hazelcast is binding to
+                          2. Address Hazelcast will advertise to others
+
+                        In most environments you don't need to customize this and the default strategy will work just
+                        fine. However in some cloud environments the default strategy does not make the right choice and
+                        address locator delegates the process of address picking to external code.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="tcp-ip">
@@ -1429,6 +1442,19 @@
                 <xs:attribute name="port-count" type="xs:unsignedInt" use="optional" default="100"/>
             </xs:extension>
         </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="address-locator">
+        <xs:all>
+            <xs:element name="classname" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the address locator SPI is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="outbound-ports">
         <xs:sequence>

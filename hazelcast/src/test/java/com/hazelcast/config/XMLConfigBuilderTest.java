@@ -1793,6 +1793,56 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         buildConfig(xml);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testAddressLocator_classnameIsMandatory() {
+        String xml = HAZELCAST_START_TAG
+                + "<network> "
+                + "  <address-locator enabled=\"true\">"
+                + "  </address-locator>"
+                + "</network> "
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Test
+    public void testAddressLocatorEnabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<network> "
+                + "  <address-locator enabled=\"true\">"
+                + "    <classname>foo.bar.Clazz</classname>"
+                + "  </address-locator>"
+                + "</network> "
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        AddressLocatorConfig addressLocatorConfig = config.getNetworkConfig().getAddressLocatorConfig();
+
+        assertTrue(addressLocatorConfig.isEnabled());
+        assertEquals("foo.bar.Clazz", addressLocatorConfig.getClassname());
+    }
+
+    @Test
+    public void testAddressLocatorEnabled_withProperties() {
+        String xml = HAZELCAST_START_TAG
+                + "<network> "
+                + "  <address-locator enabled=\"true\">"
+                + "    <classname>foo.bar.Clazz</classname>"
+                + "    <properties>"
+                + "       <property name=\"propName1\">propValue1</property>"
+                + "    </properties>"
+                + "  </address-locator>"
+                + "</network> "
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        AddressLocatorConfig addressLocatorConfig = config.getNetworkConfig().getAddressLocatorConfig();
+
+        Properties properties = addressLocatorConfig.getProperties();
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
+    }
+
     private static void assertPermissionConfig(PermissionConfig expected, Config config) {
         Iterator<PermissionConfig> permConfigs = config.getSecurityConfig().getClientPermissionConfigs().iterator();
         PermissionConfig configured = permConfigs.next();

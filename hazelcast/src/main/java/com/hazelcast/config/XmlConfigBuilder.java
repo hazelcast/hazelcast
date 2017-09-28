@@ -613,6 +613,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleSSLConfig(child);
             } else if ("socket-interceptor".equals(nodeName)) {
                 handleSocketInterceptorConfig(child);
+            } else if ("address-locator".equals(nodeName)) {
+               handleAddressLocator(child);
             }
         }
     }
@@ -1784,6 +1786,22 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
 
         config.getManagementCenterConfig().setMutualAuthConfig(mcMutualAuthConfig);
+    }
+
+    private void handleAddressLocator(Node node) {
+        Node enabledNode = node.getAttributes().getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        AddressLocatorConfig addressLocatorConfig = config.getNetworkConfig().getAddressLocatorConfig();
+        addressLocatorConfig.setEnabled(enabled);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if (nodeName.equals("classname")) {
+                String className = getTextContent(n);
+                addressLocatorConfig.setClassname(className);
+            } if (nodeName.equals("properties")) {
+                fillProperties(n, addressLocatorConfig.getProperties());
+            }
+        }
     }
 
     private void handleSocketInterceptorConfig(Node node) {
