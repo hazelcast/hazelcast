@@ -57,20 +57,32 @@ public interface JetInstance {
     JetConfig getConfig();
 
     /**
-     * Creates and returns an executable job based on a given DAG.
-     *
-     * @param dag The DAG that will be used to for the execution of the job
-     * @return a new {@link Job} instance
+     * Creates and returns a Jet job based on the supplied DAG. Jet will
+     * asynchronously start executing the job.
      */
     Job newJob(DAG dag);
 
     /**
-     * Creates and returns an executable Job based on the supplied DAG and job
-     * configuration.
-     *
-     * @return a new {@code Job} instance
+     * Creates and returns a Jet job based on the supplied DAG and job
+     * configuration. Jet will asynchronously start executing the job.
      */
     Job newJob(DAG dag, JobConfig config);
+
+    /**
+     * Creates and returns an executable job based on the supplied pipeline.
+     * Jet will asynchronously start executing the job.
+     */
+    default Job newJob(Pipeline pipeline) {
+        return newJob(pipeline.toDag());
+    }
+
+    /**
+     * Creates and returns a Jet job based on the supplied pipeline and job
+     * configuration. Jet will asynchronously start executing the job.
+     */
+    default Job newJob(Pipeline pipeline, JobConfig config) {
+        return newJob(pipeline.toDag(), config);
+    }
 
     /**
      * Returns all submitted jobs including running and completed ones
