@@ -175,12 +175,16 @@ public class MigrationManager {
     }
 
     /**
-     * Finalizes a migration that has finished with {@link MigrationStatus#SUCCESS} or {@link MigrationStatus#FAILED}
-     * by invoking {@link FinalizeMigrationOperation} locally if this is the source or destination and removes the active
-     * migration. Clears the migration flag if this node is the partition owner of a backup migration.
-     * Otherwise, the migration flag is cleared asynchronously within {@link FinalizeMigrationOperation}
+     * Finalizes a migration that has finished with {@link MigrationStatus#SUCCESS}
+     * or {@link MigrationStatus#FAILED} by invoking {@link FinalizeMigrationOperation}
+     * locally if this is the source or destination. The finalization is asynchronous
+     * and there might be other ongoing migration finalizations.
      * <p>
-     * This method should not be called on a node which is not the source, destination or partition owner for this migration.
+     * It will also cleanup the migration state by removing the active migration and
+     * clearing the migration flag on the partition owner.
+     * <p>
+     * This method should not be called on a node which is not the source, destination
+     * or partition owner for this migration.
      *
      * @param migrationInfo the migration to be finalized
      */
