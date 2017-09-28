@@ -18,16 +18,16 @@ package com.hazelcast.jet.benchmark;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
-import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -43,14 +43,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.noop;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMap;
-import static java.util.Arrays.asList;
+import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
@@ -77,8 +76,6 @@ public class BackpressureTest extends JetTestSupport {
         factory = new JetTestInstanceFactory();
         jet1 = factory.newMember(config);
         jet2 = factory.newMember(config);
-        warmUpPartitions(asList(jet1.getHazelcastInstance(), jet2.getHazelcastInstance()));
-        assertEquals(2, jet1.getCluster().getMembers().size());
     }
 
     @After

@@ -106,16 +106,17 @@ public abstract class AbstractJobImpl implements Job {
             long jobId = getJobId();
             if (isSplitBrainMerge(t)) {
                 String msg = "Job " + idToString(jobId) + " failed because the cluster is performing split-brain merge";
-                logger.fine(msg);
+                logger.fine(msg, t);
                 future.completeExceptionally(new CancellationException(msg));
             } else if (isRestartable(t)) {
                 try {
                     Address masterAddress = getMasterAddress();
                     if (masterAddress == null) {
                         // job data will be cleaned up eventually by coordinator
-                        String msg = "Job " + idToString(jobId) + " failed because cannot talk to the coordinator node";
-                        logger.fine(msg);
-                        future.completeExceptionally(new IllegalStateException(msg));
+                        String msg = "Job " + idToString(jobId) + " failed because the cluster is performing "
+                                + " split-brain merge and coordinator is not known";
+                        logger.fine(msg, t);
+                        future.completeExceptionally(new CancellationException(msg));
                         return;
                     }
 

@@ -140,12 +140,6 @@ public class TopologyChangeTest extends JetTestSupport {
 
             instances[i] = factory.newMember(config);
         }
-
-        for (JetInstance instance : instances) {
-            warmUpPartitions(instance.getHazelcastInstance());
-        }
-
-        waitClusterForSafeState(instances[0].getHazelcastInstance());
     }
 
     @After
@@ -384,6 +378,7 @@ public class TopologyChangeTest extends JetTestSupport {
             @Override
             public void run() throws Exception {
                 assertEquals(STARTING, masterContext.jobStatus());
+                assertNotEquals(0, masterContext.getExecutionId());
             }
         });
 

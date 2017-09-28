@@ -128,13 +128,6 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
             JetInstance hz = createJetMember(config);
             instances[i] = hz;
         }
-
-        for (JetInstance instance : instances) {
-            warmUpPartitions(instance.getHazelcastInstance());
-        }
-
-        waitClusterForSafeState(instances[0].getHazelcastInstance());
-
         return instances;
     }
 

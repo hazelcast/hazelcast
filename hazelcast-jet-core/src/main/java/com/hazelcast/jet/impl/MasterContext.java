@@ -146,7 +146,7 @@ public class MasterContext {
             return;
         }
 
-        if (scheduleRestartIfQuorumAbsent()) {
+        if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
             return;
         }
 
@@ -258,8 +258,17 @@ public class MasterContext {
             return false;
         }
 
-        logger.fine("Rescheduling job " + idToString(jobId) + " restart since quorum size " + quorumSize
-                + " is not met");
+        logger.fine("Rescheduling restart of job " + idToString(jobId) + ": quorum size " + quorumSize + " is not met");
+        scheduleRestart();
+        return true;
+    }
+
+    private boolean scheduleRestartIfClusterIsNotSafe() {
+        if (coordinationService.shouldStartJobs()) {
+            return false;
+        }
+
+        logger.fine("Rescheduling restart of job " + idToString(jobId) + ": cluster is not safe");
         scheduleRestart();
         return true;
     }
@@ -465,8 +474,6 @@ public class MasterContext {
             return;
         }
 
-        long executionId = resetExecutionId();
-
         long completionTime = System.currentTimeMillis();
         if (failure instanceof TopologyChangedException) {
             scheduleRestart();
@@ -489,12 +496,6 @@ public class MasterContext {
         } finally {
             setFinalResult(failure);
         }
-    }
-
-    private long resetExecutionId() {
-        long executionId = this.executionId;
-        this.executionId = 0;
-        return executionId;
     }
 
     void setFinalResult(Throwable failure) {

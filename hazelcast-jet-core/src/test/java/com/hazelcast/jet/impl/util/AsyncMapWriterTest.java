@@ -95,8 +95,6 @@ public class AsyncMapWriterTest extends JetTestSupport {
         writer = new AsyncMapWriter(nodeEngine);
         map = instance1.getMap("testMap");
         writer.setMapName(map.getName());
-
-        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
     }
 
     @After

@@ -100,15 +100,13 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelledOnMultipleNodes_then_terminatedEventually() throws Throwable {
         // Given
-        JetInstance instance1 = newInstance();
-        JetInstance instance2 = newInstance();
-        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
-        waitClusterForSafeState(instance1.getHazelcastInstance());
+        newInstance();
+        JetInstance instance = newInstance();
 
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
 
-        Job job = instance2.newJob(dag);
+        Job job = instance.newJob(dag);
         assertExecutionStarted();
 
         // When
@@ -146,11 +144,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelledFromClient_then_terminatedEventually() throws Throwable {
         // Given
-        final JetInstance instance1 = newInstance();
-        final JetInstance instance2 = newInstance();
-        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
-        waitClusterForSafeState(instance1.getHazelcastInstance());
-
+        newInstance();
+        newInstance();
         JetInstance client = factory.newClient();
 
         DAG dag = new DAG();
@@ -171,11 +166,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelledFromClient_then_jobStatusIsSetEventually() throws Throwable {
         // Given
-        JetInstance instance1 = newInstance();
-        JetInstance instance2 = newInstance();
-        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
-        waitClusterForSafeState(instance1.getHazelcastInstance());
-
+        newInstance();
+        newInstance();
         JetInstance client = factory.newClient();
 
         DAG dag = new DAG();
@@ -199,19 +191,16 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobFailsOnOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
         // Given
-        JetInstance instance1 = newInstance();
-        JetInstance instance2 = newInstance();
-        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
-        waitClusterForSafeState(instance1.getHazelcastInstance());
+        JetInstance instance = newInstance();
+        newInstance();
 
         RuntimeException fault = new RuntimeException("fault");
         DAG dag = new DAG();
 
-        Address instance1Address = getAddress(instance1.getHazelcastInstance());
-        SingleNodeFaultSupplier supplier = new SingleNodeFaultSupplier(instance1Address, fault);
+        SingleNodeFaultSupplier supplier = new SingleNodeFaultSupplier(getAddress(instance.getHazelcastInstance()), fault);
         dag.newVertex("faulty", supplier).localParallelism(4);
 
-        Job job = instance1.newJob(dag);
+        Job job = instance.newJob(dag);
         assertExecutionStarted();
 
         // Then
@@ -230,17 +219,15 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobFailsOnOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
         // Given
-        JetInstance instance1 = newInstance();
-        JetInstance instance2 = newInstance();
-        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
-        waitClusterForSafeState(instance1.getHazelcastInstance());
+        JetInstance instance = newInstance();
+        JetInstance other = newInstance();
 
         RuntimeException fault = new RuntimeException("fault");
         DAG dag = new DAG();
-        dag.newVertex("faulty", new SingleNodeFaultSupplier(getAddress(instance2.getHazelcastInstance()), fault))
+        dag.newVertex("faulty", new SingleNodeFaultSupplier(getAddress(other.getHazelcastInstance()), fault))
            .localParallelism(4);
 
-        Job job = instance1.newJob(dag);
+        Job job = instance.newJob(dag);
         assertExecutionStarted();
 
         // Then
