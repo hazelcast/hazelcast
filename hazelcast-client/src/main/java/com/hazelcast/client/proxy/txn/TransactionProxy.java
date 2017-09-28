@@ -22,15 +22,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionRollbackCodec;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadUtil;
-
-import java.util.concurrent.Future;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -84,7 +81,7 @@ final class TransactionProxy {
             startTime = Clock.currentTimeMillis();
             ClientMessage request = TransactionCreateCodec.encodeRequest(options.getTimeoutMillis(),
                     options.getDurability(), options.getTransactionType().id(), threadId);
-            ClientMessage response = invoke(request);
+            ClientMessage response = ClientTransactionUtil.invoke(request, client, connection);
             TransactionCreateCodec.ResponseParameters result = TransactionCreateCodec.decodeResponse(response);
             txnId = result.response;
             state = ACTIVE;
@@ -103,7 +100,7 @@ final class TransactionProxy {
             checkThread();
             checkTimeout();
             ClientMessage request = TransactionCommitCodec.encodeRequest(txnId, threadId);
-            invoke(request);
+            ClientTransactionUtil.invoke(request, client, connection);
             state = COMMITTED;
         } catch (Exception e) {
             state = COMMIT_FAILED;
@@ -122,7 +119,7 @@ final class TransactionProxy {
             checkThread();
             try {
                 ClientMessage request = TransactionRollbackCodec.encodeRequest(txnId, threadId);
-                invoke(request);
+                ClientTransactionUtil.invoke(request, client, connection);
             } catch (Exception exception) {
                 logger.warning("Exception while rolling back the transaction", exception);
             }
@@ -144,13 +141,4 @@ final class TransactionProxy {
         }
     }
 
-    private ClientMessage invoke(ClientMessage request) {
-        try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
-            final Future<ClientMessage> future = clientInvocation.invoke();
-            return future.get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
 }

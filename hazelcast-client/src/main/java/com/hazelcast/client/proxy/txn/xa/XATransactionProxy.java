@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
-import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.proxy.txn.ClientTransactionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -33,7 +33,6 @@ import com.hazelcast.util.Clock;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -75,7 +74,7 @@ public class XATransactionProxy {
         try {
             startTime = Clock.currentTimeMillis();
             ClientMessage request = XATransactionCreateCodec.encodeRequest(xid, timeout);
-            ClientMessage response = invoke(request);
+            ClientMessage response = ClientTransactionUtil.invoke(request, client, connection);
             txnId = XATransactionCreateCodec.decodeResponse(response).response;
             state = ACTIVE;
         } catch (Exception e) {
@@ -90,7 +89,7 @@ public class XATransactionProxy {
                 throw new TransactionNotActiveException("Transaction is not active");
             }
             ClientMessage request = XATransactionPrepareCodec.encodeRequest(txnId);
-            invoke(request);
+            ClientTransactionUtil.invoke(request, client, connection);
             state = PREPARED;
         } catch (Exception e) {
             state = ROLLING_BACK;
@@ -109,7 +108,7 @@ public class XATransactionProxy {
             }
             state = COMMITTING;
             ClientMessage request = XATransactionCommitCodec.encodeRequest(txnId, onePhase);
-            invoke(request);
+            ClientTransactionUtil.invoke(request, client, connection);
             state = COMMITTED;
         } catch (Exception e) {
             state = COMMIT_FAILED;
@@ -121,7 +120,7 @@ public class XATransactionProxy {
         state = ROLLING_BACK;
         try {
             ClientMessage request = XATransactionRollbackCodec.encodeRequest(txnId);
-            invoke(request);
+            ClientTransactionUtil.invoke(request, client, connection);
         } catch (Exception exception) {
             logger.warning("Exception while rolling back the transaction", exception);
         }
@@ -143,13 +142,4 @@ public class XATransactionProxy {
         }
     }
 
-    private ClientMessage invoke(ClientMessage request) {
-        try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
-            final Future<ClientMessage> future = clientInvocation.invoke();
-            return future.get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
 }

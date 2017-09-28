@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.After;
 import org.junit.Before;
@@ -102,7 +103,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
 
             context.commitTransaction();
             fail("commit should throw exception!!!");
-        } catch (Exception e) {
+        } catch (TransactionException e) {
             context.rollbackTransaction();
             txnRollbackLatch.countDown();
         }
@@ -138,7 +139,7 @@ public class ClientTxnTest extends HazelcastTestSupport {
         try {
             context.commitTransaction();
             fail("commit should throw exception !");
-        } catch (Exception e) {
+        } catch (TransactionException e) {
             context.rollbackTransaction();
             txnRollbackLatch.countDown();
         }
@@ -161,11 +162,15 @@ public class ClientTxnTest extends HazelcastTestSupport {
         TransactionContext context = client.newTransactionContext(options);
         context.beginTransaction();
         try {
-            context.getQueue(name).take();
+            try {
+                context.getQueue(name).take();
+            } catch (InterruptedException e) {
+                fail();
+            }
             sleepAtLeastSeconds(5);
             context.commitTransaction();
             fail();
-        } catch (Exception e) {
+        } catch (TransactionException e) {
             context.rollbackTransaction();
         }
         assertEquals("Queue size should be 1", 1, queue.size());

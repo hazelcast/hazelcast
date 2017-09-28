@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,7 +132,7 @@ public class ClientTxnMultiMapTest {
                         context.commitTransaction();
 
                         assertEquals(3, multiMap.get(key).size());
-                    } catch (Exception e) {
+                    } catch (TransactionException e) {
                         error.compareAndSet(null, e);
                     } finally {
                         latch.countDown();
