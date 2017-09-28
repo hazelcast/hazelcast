@@ -345,6 +345,7 @@ public class BounceMemberRule implements TestRule {
             LOGGER.info("Tearing down BounceMemberRule");
             if (taskExecutor != null) {
                 taskExecutor.shutdownNow();
+                taskExecutor = null;
             }
             // shutdown test drivers first
             if (testDrivers != null) {
