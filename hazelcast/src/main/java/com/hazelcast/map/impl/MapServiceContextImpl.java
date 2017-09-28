@@ -80,6 +80,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
@@ -97,7 +98,7 @@ import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 
 /**
- * Default implementation of map service context.
+ * Default implementation of {@link MapServiceContext}.
  */
 class MapServiceContextImpl implements MapServiceContext {
     protected static final long DESTROY_TIMEOUT_SECONDS = 30;
@@ -394,11 +395,23 @@ class MapServiceContextImpl implements MapServiceContext {
         return partitions;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The method will set the owned partition set in a CAS loop because
+     * this method can be called concurrently.
+     */
     @Override
     public void reloadOwnedPartitions() {
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-        ownedPartitions.set(Collections.unmodifiableSet(new LinkedHashSet<Integer>(partitions)));
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        for (; ; ) {
+            final Collection<Integer> expected = ownedPartitions.get();
+            final Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+            final Set<Integer> newSet = Collections.unmodifiableSet(new LinkedHashSet<Integer>(partitions));
+            if (ownedPartitions.compareAndSet(expected, newSet)) {
+                return;
+            }
+        }
     }
 
     @Override

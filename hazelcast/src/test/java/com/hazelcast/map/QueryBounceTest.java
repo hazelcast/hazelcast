@@ -114,7 +114,7 @@ public class QueryBounceTest {
     // Thread-safe querying runnable
     public static class QueryRunnable implements Runnable {
 
-        private final IMap map;
+        private final IMap<String, SampleObjects.Employee> map;
         // query age min-max range, min is randomized, max = min+1000
         private final Random random = new Random();
         private final int numberOfResults = 1000;
