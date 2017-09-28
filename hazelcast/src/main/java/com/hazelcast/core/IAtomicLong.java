@@ -40,6 +40,14 @@ package com.hazelcast.core;
  * </pre>
  * </p>
  *
+ * During a network partition event it is possible for the {@link IAtomicLong} to exist in each of the partitioned
+ * clusters or to not exist at all. Under these circumstances the values held in the {@link IAtomicLong} may diverge.
+ * Once the network partition heals, Hazelcast will use the value held in the largest cluster, in this case updates
+ * made to the {@link IAtomicLong} in the smaller clusters will be lost. To prevent updates to the {@link IAtomicLong} in the
+ * smaller clusters a <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#configuring-quorum">quorum</a>
+ * may be configured, even so there is still a time window between the split brain and its detection in which updates
+ * may still occur.
+ *
  * @see IAtomicReference
  */
 public interface IAtomicLong extends DistributedObject {
