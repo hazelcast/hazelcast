@@ -73,7 +73,7 @@ import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.safeWhenComplete;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.emptyList;
@@ -520,7 +520,7 @@ public class MasterContext {
         invokeOnParticipants(futures, doneFuture, operationCtor);
 
         // once all invocations return, notify the completion callback
-        doneFuture.whenComplete(safeWhenComplete(logger, (aVoid, throwable) -> {
+        doneFuture.whenComplete(withTryCatch(logger, (aVoid, throwable) -> {
             Map<MemberInfo, Object> responses = new HashMap<>();
             for (Entry<MemberInfo, InternalCompletableFuture<Object>> entry : futures.entrySet()) {
                 Object val;
@@ -542,7 +542,7 @@ public class MasterContext {
         // if cancelOnFailure is true, we should cancel invocations when the future is cancelled, or any invocation fail
 
         if (cancelOnFailure) {
-            cancellationFuture.whenComplete(safeWhenComplete(logger, (r, e) -> {
+            cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
                 if (e instanceof CancellationException) {
                     futures.values().forEach(f -> f.cancel(true));
                 }

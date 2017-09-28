@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 
 public abstract class AbstractJobImpl implements Job {
@@ -68,11 +69,11 @@ public abstract class AbstractJobImpl implements Job {
         ICompletableFuture<Void> invocationFuture = sendJoinRequest(masterAddress);
         JobCallback callback = new JobCallback(invocationFuture);
         invocationFuture.andThen(callback);
-        future.whenComplete((aVoid, throwable) -> {
+        future.whenComplete(withTryCatch(logger, (aVoid, throwable) -> {
             if (throwable instanceof CancellationException) {
                 callback.cancel();
             }
-        });
+        }));
     }
 
     @Nonnull @Override

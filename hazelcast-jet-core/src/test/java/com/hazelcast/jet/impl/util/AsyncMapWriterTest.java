@@ -40,7 +40,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.impl.util.AsyncMapWriter.MAX_PARALLEL_ASYNC_OPS;
 import static org.junit.Assert.assertEquals;
@@ -243,13 +242,9 @@ public class AsyncMapWriterTest extends JetTestSupport {
         // Then
         assertTrue("tryFlush() returned false", flushed);
 
-        final Throwable[] actual = new Exception[1];
-        future.whenComplete((r, e) -> actual[0] = e);
-        try {
-            future.join();
-        } catch (CompletionException ignored) {
-        }
-        assertNotNull("No exception was thrown", actual[0]);
+        Throwable actual = future.handle((r, e) -> e).join();
+        assertNotNull("No exception was thrown", actual);
+        assertEquals("Always failing store", actual.getMessage());
     }
 
     @Test

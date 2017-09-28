@@ -24,11 +24,11 @@ import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
-import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
+import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.ExecuteOperation;
+import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -45,8 +45,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.newSetFromMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -120,11 +121,11 @@ public class JobExecutionService {
 
     private void cancelAndComplete(ExecutionContext exeCtx, String message, Throwable t) {
         try {
-            exeCtx.cancel().whenComplete((r, e) -> {
+            exeCtx.cancel().whenComplete(withTryCatch(logger, (r, e) -> {
                 long executionId = exeCtx.getExecutionId();
                 logger.fine(message);
                 completeExecution(executionId, t);
-            });
+            }));
         } catch (Exception e) {
             logger.severe(String.format("Local cancellation of %s failed",
                     jobAndExecutionId(exeCtx.getJobId(), exeCtx.getExecutionId())), e);

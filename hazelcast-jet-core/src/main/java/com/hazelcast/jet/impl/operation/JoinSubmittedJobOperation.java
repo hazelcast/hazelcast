@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
 public class JoinSubmittedJobOperation extends AsyncExecutionOperation implements IdentifiedDataSerializable {
 
@@ -43,7 +44,7 @@ public class JoinSubmittedJobOperation extends AsyncExecutionOperation implement
     protected void doRun() {
         JetService service = getService();
         executionFuture = service.joinSubmittedJob(jobId);
-        executionFuture.whenComplete((r, t) -> doSendResponse(peel(t)));
+        executionFuture.whenComplete(withTryCatch(getLogger(), (r, t) -> doSendResponse(peel(t))));
     }
 
     @Override

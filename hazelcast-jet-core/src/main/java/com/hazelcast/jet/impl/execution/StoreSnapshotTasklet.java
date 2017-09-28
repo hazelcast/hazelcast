@@ -34,7 +34,7 @@ import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.DONE;
 import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.DRAIN;
 import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.FLUSH;
 import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.REACHED_BARRIER;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.safeWhenComplete;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
 public class StoreSnapshotTasklet implements Tasklet {
 
@@ -104,7 +104,7 @@ public class StoreSnapshotTasklet implements Tasklet {
             case FLUSH:
                 progTracker.notDone();
                 CompletableFuture<Void> future = new CompletableFuture<>();
-                future.whenComplete(safeWhenComplete(logger, (r, t) -> {
+                future.whenComplete(withTryCatch(logger, (r, t) -> {
                     // this callback may be called from a non-tasklet thread
                     if (t != null) {
                         logger.severe("Error writing to snapshot map '" + currMapName() + "'", t);

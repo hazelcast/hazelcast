@@ -106,24 +106,25 @@ public final class ExceptionUtil {
         }
     }
 
-
     /**
      * Utility to make sure exceptions inside
      * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
+     * Exceptions will be caught and logged using the supplied logger.
      */
     @Nonnull
-    public static <T> BiConsumer<T, ? super Throwable> safeWhenComplete(
+    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
             @Nonnull ILogger logger, @Nonnull BiConsumer<T, ? super Throwable> consumer
     ) {
-        return safeWhenComplete(logger, "Exception during callback", consumer);
+        return withTryCatch(logger, "Exception during callback", consumer);
     }
 
     /**
      * Utility to make sure exceptions inside
      * {@link java.util.concurrent.CompletionStage#whenComplete(BiConsumer)} are not swallowed.
+     * Exceptions will be caught and logged using the supplied logger and message.
      */
     @Nonnull
-    public static <T> BiConsumer<T, ? super Throwable> safeWhenComplete(
+    public static <T> BiConsumer<T, ? super Throwable> withTryCatch(
             @Nonnull ILogger logger, @Nonnull String message, @Nonnull BiConsumer<T, ? super Throwable> consumer
     ) {
         return (r, t) -> {
