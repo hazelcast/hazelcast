@@ -73,9 +73,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
 
 /**
- *
  * Maintains migration system state and manages migration operations performed within the cluster.
- *
  */
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
 public class MigrationManager {
@@ -177,6 +175,20 @@ public class MigrationManager {
         return migrationAllowed.get();
     }
 
+    /**
+     * Finalizes a migration that has finished with {@link MigrationStatus#SUCCESS}
+     * or {@link MigrationStatus#FAILED} by invoking {@link FinalizeMigrationOperation}
+     * locally if this is the source or destination. The finalization is asynchronous
+     * and there might be other ongoing migration finalizations.
+     * <p>
+     * It will also cleanup the migration state by removing the active migration and
+     * clearing the migration flag on the partition owner.
+     * <p>
+     * This method should not be called on a node which is not the source, destination
+     * or partition owner for this migration.
+     *
+     * @param migrationInfo the migration to be finalized
+     */
     private void finalizeMigration(MigrationInfo migrationInfo) {
         try {
             Address thisAddress = node.getThisAddress();

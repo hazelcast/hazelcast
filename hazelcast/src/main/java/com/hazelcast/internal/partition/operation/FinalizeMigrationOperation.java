@@ -34,7 +34,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-// runs locally...
+/**
+ * Invoked locally on the source or destination of the migration to finalize the migration.
+ * This will notify the {@link MigrationAwareService}s that the migration finished, updates the replica versions,
+ * clears the migration flag and notifies the node engine when successful.
+ * There might be ongoing concurrent finalization operations for different partitions.
+ */
 public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
