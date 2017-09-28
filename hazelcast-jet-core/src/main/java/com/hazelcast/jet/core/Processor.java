@@ -126,7 +126,7 @@ public interface Processor {
      * <p>
      * Non-cooperative processors are required to return from this method from
      * time to time to give the system a chance to check for snapshot requests
-     * job cancellation. The time the processor spends in this method affects
+     * and job cancellation. The time the processor spends in this method affects
      * the latency of snapshots and job cancellations.
      *
      * @return {@code true} if the completing step is now done, {@code false}
@@ -172,11 +172,6 @@ public interface Processor {
      * exhausted, it may also be called between {@link #complete()} calls. Once
      * {@code complete()} returns {@code true}, this method won't be called
      * anymore.
-     * <p>
-     * Processors must ensure they give a chance to the system to call this
-     * method. Especially, non-cooperative source processors must make sure not
-     * to spend too much time per invocation of {@code complete()}, as this
-     * will prolong the snapshotting phase and impede overall progress.
      * <p>
      * The default implementation takes no action and returns {@code true}.
      */

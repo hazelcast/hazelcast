@@ -18,16 +18,26 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.core.BroadcastKey;
 
+import javax.annotation.Nonnull;
+
 public class BroadcastKeyReference<K> implements BroadcastKey<K> {
+
+    private final long id;
     private final K key;
 
-    public BroadcastKeyReference(K key) {
+    public BroadcastKeyReference(long id, K key) {
+        this.id = id;
         this.key = key;
     }
 
+    @Nonnull
     @Override
     public K key() {
         return key;
+    }
+
+    public long id() {
+        return id;
     }
 
     @Override
@@ -40,16 +50,25 @@ public class BroadcastKeyReference<K> implements BroadcastKey<K> {
         }
 
         BroadcastKeyReference<?> that = (BroadcastKeyReference<?>) o;
-        return key.equals(that.key);
+
+        if (id != that.id) {
+            return false;
+        }
+        return key != null ? key.equals(that.key) : that.key == null;
     }
 
     @Override
     public int hashCode() {
-        return key.hashCode();
+        int result = (int) (id ^ (id >>> 32));
+        result = 31 * result + (key != null ? key.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
-        return key.toString();
+        return "BroadcastKey{" +
+                "id=" + id +
+                ", key=" + key +
+                '}';
     }
 }

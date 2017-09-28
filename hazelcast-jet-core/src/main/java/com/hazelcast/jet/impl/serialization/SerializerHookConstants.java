@@ -28,27 +28,26 @@ public final class SerializerHookConstants {
     public static final int JET_RESERVED_SPACE_START = SerializationConstants.JET_SERIALIZER_FIRST;
 
     public static final int MAP_ENTRY = -300;
-    public static final int ARRAY_LIST = -301;
-    public static final int CUSTOM_CLASS_LOADED_OBJECT = -302;
-    public static final int OBJECT_ARRAY = -303;
-    public static final int TIMESTAMPED_ENTRY = -304;
-    public static final int LONG_ACC = -305;
-    public static final int DOUBLE_ACC = -306;
-    public static final int MUTABLE_REFERENCE = -307;
-    public static final int LIN_TREND_ACC = -308;
-    public static final int LONG_LONG_ACC = -309;
-    public static final int LONG_DOUBLE_ACC = -310;
-    public static final int TUPLE2 = -311;
-    public static final int TUPLE3 = -312;
-    public static final int TWO_BAGS = -313;
-    public static final int THREE_BAGS = -314;
-    public static final int TAG = -315;
-    public static final int ITEMS_BY_TAG = -316;
-    public static final int BAGS_BY_TAG = -317;
-    public static final int WATERMARK = -318;
-    public static final int SNAPSHOT_BARRIER = -319;
-    public static final int BROADCAST_ENTRY = -320;
-    public static final int BROADCAST_KEY_REFERENCE = -321;
+    public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
+    public static final int OBJECT_ARRAY = -302;
+    public static final int TIMESTAMPED_ENTRY = -303;
+    public static final int LONG_ACC = -304;
+    public static final int DOUBLE_ACC = -305;
+    public static final int MUTABLE_REFERENCE = -306;
+    public static final int LIN_TREND_ACC = -307;
+    public static final int LONG_LONG_ACC = -308;
+    public static final int LONG_DOUBLE_ACC = -309;
+    public static final int TUPLE2 = -310;
+    public static final int TUPLE3 = -311;
+    public static final int TWO_BAGS = -312;
+    public static final int THREE_BAGS = -313;
+    public static final int TAG = -314;
+    public static final int ITEMS_BY_TAG = -315;
+    public static final int BAGS_BY_TAG = -316;
+    public static final int WATERMARK = -317;
+    public static final int SNAPSHOT_BARRIER = -318;
+    public static final int BROADCAST_ENTRY = -319;
+    public static final int BROADCAST_KEY_REFERENCE = -320;
 
 
 

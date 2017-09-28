@@ -51,7 +51,7 @@ public class ExecutionSerializerHooksTest {
         return Arrays.asList(
                 new SnapshotBarrier(17L),
                 new BroadcastEntry<>("key", "value"),
-                new BroadcastKeyReference<>("broadcast-key")
+                new BroadcastKeyReference<>(17L, "broadcast-key")
         );
     }
 

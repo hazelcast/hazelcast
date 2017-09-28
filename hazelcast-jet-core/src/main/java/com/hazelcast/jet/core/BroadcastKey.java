@@ -18,6 +18,10 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.impl.execution.BroadcastKeyReference;
 
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.jet.impl.util.Util.secureRandomNextLong;
+
 /**
  * Marker interface for a key in the snapshot state that indicates the
  * corresponding entry should be broadcast to all processors
@@ -30,13 +34,19 @@ public interface BroadcastKey<K> {
     /**
      * Returns the underlying key
      */
+    @Nonnull
     K key();
 
     /**
-     * Returns a given key as a broadcast key
+     * Returns a given key as a broadcast key.
+     * <p>
+     * Note: Several processor instances can use the returned {@code BroadcastKey}
+     * with the same {@code key} to store unique values and the values will not
+     * overwrite each other. Upon a snapshot restore, each processor
+     * will receive multiple key-value pairs with the given BroadcastKey
      */
-    static <K> BroadcastKey<K> broadcastKey(K key) {
-        return new BroadcastKeyReference<>(key);
+    @Nonnull
+    static <K> BroadcastKey<K> broadcastKey(@Nonnull K key) {
+        return new BroadcastKeyReference<>(secureRandomNextLong(), key);
     }
-
 }

@@ -16,9 +16,10 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.BroadcastKey;
+import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
@@ -32,10 +33,9 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * A processor that inserts watermark into a data stream. See
- * {@link com.hazelcast.jet.core.processor.Processors#insertWatermarks(
- *     DistributedToLongFunction,
- *     com.hazelcast.jet.function.DistributedSupplier,
- *     WatermarkEmissionPolicy) Processors.insertWatermarks()}.
+ * {@link com.hazelcast.jet.core.processor.Processors#insertWatermarks(DistributedToLongFunction,
+ * com.hazelcast.jet.function.DistributedSupplier,
+ * WatermarkEmissionPolicy) Processors.insertWatermarks()}.
  *
  * @param <T> type of the stream item
  */
@@ -49,14 +49,13 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
 
     private long currWm = Long.MIN_VALUE;
     private long lastEmittedWm = Long.MIN_VALUE;
-    private int index;
 
     // value to be used during temporarily snapshot restore
     private long minRestoredWm = Long.MAX_VALUE;
 
     /**
      * @param getTimestampF function that extracts the timestamp from the item
-     * @param wmPolicy the watermark policy
+     * @param wmPolicy      the watermark policy
      */
     public InsertWatermarksP(
             @Nonnull DistributedToLongFunction<T> getTimestampF,
@@ -68,11 +67,6 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
         this.wmEmitPolicy = wmEmitPolicy;
         this.flatMapper = flatMapper(this::traverser);
         this.singletonTraverser = new ResettableSingletonTraverser<>();
-    }
-
-    @Override
-    protected void init(@Nonnull Context context) throws Exception {
-        index = context.globalProcessorIndex();
     }
 
     @Override
@@ -95,11 +89,12 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
 
     @Override
     public boolean saveToSnapshot() {
-        return tryEmitToSnapshot(broadcastKey(index), lastEmittedWm);
+        return tryEmitToSnapshot(broadcastKey(Keys.LAST_EMITTED_WM), lastEmittedWm);
     }
 
     @Override
-    public void restoreFromSnapshot(@Nonnull Object key, @Nonnull  Object value) {
+    public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        assert ((BroadcastKey) key).key().equals(Keys.LAST_EMITTED_WM) : "Unexpected key: " + key;
         // we restart at the oldest WM any instance was at at the time of snapshot
         minRestoredWm = Math.min(minRestoredWm, (long) value);
     }
@@ -123,5 +118,9 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
             return singletonTraverser.prepend(new Watermark(currWm));
         }
         return singletonTraverser;
+    }
+
+    private enum Keys {
+        LAST_EMITTED_WM
     }
 }

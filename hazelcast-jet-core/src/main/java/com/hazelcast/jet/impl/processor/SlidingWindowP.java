@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.core.TimestampedEntry;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.BroadcastKey;
+import com.hazelcast.jet.core.TimestampedEntry;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WindowDefinition;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
@@ -38,6 +38,7 @@ import java.util.stream.LongStream;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -133,7 +134,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
                     .<Entry>flatMap(e -> traverseIterable(e.getValue().entrySet())
                             .map(e2 -> entry(new SnapshotKey(e.getKey(), e2.getKey()), e2.getValue()))
                     )
-                    .append(entry(Keys.NEXT_WIN_TO_EMIT, nextWinToEmit))
+                    .append(entry(broadcastKey(Keys.NEXT_WIN_TO_EMIT), nextWinToEmit))
                     .onFirstNull(() -> snapshotTraverser = null);
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
@@ -141,11 +142,11 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        if (key.equals(Keys.NEXT_WIN_TO_EMIT)) {
+        if (key instanceof BroadcastKey) {
+            assert Keys.NEXT_WIN_TO_EMIT.equals(((BroadcastKey) key).key());
             long newNextWinToEmit = (long) value;
             assert nextWinToEmit == Long.MIN_VALUE || nextWinToEmit == newNextWinToEmit
-                    : "different values for nextWinToEmit restored, "
-                            + "before=" + nextWinToEmit + ", new=" + newNextWinToEmit;
+                    : "different values for nextWinToEmit restored, before=" + nextWinToEmit + ", new=" + newNextWinToEmit;
             nextWinToEmit = newNextWinToEmit;
             return;
         }
@@ -261,12 +262,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
                 : LongStream.iterate(start, n -> n + step).limit(1 + (end - start) / step);
     }
 
-    private enum Keys implements BroadcastKey<Keys> {
-        NEXT_WIN_TO_EMIT;
-
-        @Override
-        public Keys key() {
-            return this;
-        }
+    private enum Keys {
+        NEXT_WIN_TO_EMIT
     }
 }

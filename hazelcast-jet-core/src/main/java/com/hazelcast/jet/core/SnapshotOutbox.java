@@ -18,8 +18,6 @@ package com.hazelcast.jet.core;
 
 import javax.annotation.CheckReturnValue;
 
-import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-
 /**
  * An {@link Outbox} which is used for offering items to processor's state snapshot.
  * <p>
@@ -35,24 +33,15 @@ public interface SnapshotOutbox {
 
     /**
      * Offers the specified key and value pair to the processor's snapshot storage.
-     * State stored this way, once restored, will be distributed among all
-     * processor instances using default partitioning.
+     *
+     * During a snapshot restore the type of key offered determines which processors
+     * receive the key and value pair. If the key is of type {@link BroadcastKey},
+     * the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning and
+     * only a single processor instance will receive the key.
      *
      * @return whether the outbox fully accepted the item
      */
     @CheckReturnValue
     boolean offer(Object key, Object value);
-
-    /**
-     * Offers the specified key and value pair to the processor's snapshot storage.
-     * State stored this way, once restored, will be broadcast to all
-     * processor instances, meaning all processor instances will receive
-     * all key and value pairs which were broadcast using this method.
-     *
-     * @return whether the outbox fully accepted the item
-     */
-    @CheckReturnValue
-    default boolean offerBroadcast(Object key, Object value) {
-        return offer(broadcastKey(key), value);
-    }
 }
