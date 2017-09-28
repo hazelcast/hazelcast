@@ -1798,7 +1798,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if (nodeName.equals("classname")) {
                 String className = getTextContent(n);
                 addressLocatorConfig.setClassname(className);
-            } if (nodeName.equals("properties")) {
+            } else if (nodeName.equals("properties")) {
                 fillProperties(n, addressLocatorConfig.getProperties());
             }
         }

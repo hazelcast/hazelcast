@@ -78,9 +78,9 @@ public class DefaultNodeContext implements NodeContext {
             if (parameterTypes.length == 0) {
                 //we have only the no-arg constructor -> we have to fail-fast when some properties were configured
                 if (properties != null && !properties.isEmpty()) {
-                    throw new IllegalStateException("Cannot find a matching constructor for AddressLocator.  " +
-                            "The address locator has properties configured, but the class " + "'" + classname + "' " +
-                            "does not have a public constructor accepting properties.");
+                    throw new IllegalStateException("Cannot find a matching constructor for AddressLocator.  "
+                            + "The address locator has properties configured, but the class " + "'" + classname
+                            + "' does not have a public constructor accepting properties.");
                 }
 
                 return (AddressLocator) constructor.newInstance();
@@ -117,7 +117,7 @@ public class DefaultNodeContext implements NodeContext {
         try {
             return ClassLoaderUtil.loadClass(classLoader, classname);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Cannot create a new instance of AddressLocator '" + classname +"'", e);
+            throw new IllegalStateException("Cannot create a new instance of AddressLocator '" + classname + "'", e);
         }
     }
 
