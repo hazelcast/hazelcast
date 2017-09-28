@@ -73,8 +73,10 @@ public final class ClientContext {
             return newRepairingTask(serviceName);
         }
     };
+    private final String name;
 
     public ClientContext(HazelcastClientInstanceImpl client) {
+        this.name = client.getName();
         this.serializationService = client.getSerializationService();
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();
@@ -126,6 +128,10 @@ public final class ClientContext {
         }
 
         throw new IllegalArgumentException(format("%s is not a known service-name to fetch metadata for", serviceName));
+    }
+
+    public String getName() {
+        return name;
     }
 
     /**
