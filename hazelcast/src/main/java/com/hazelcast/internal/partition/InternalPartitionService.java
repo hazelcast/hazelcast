@@ -43,16 +43,6 @@ public interface InternalPartitionService extends IPartitionService {
     long MIGRATION_RETRY_PAUSE = 10000;
 
     /**
-     * Delay for anti-entropy replica synchronization in milliseconds.
-     */
-    long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
-
-    /**
-     * Retry delay for replica synchronization in milliseconds.
-     */
-    long REPLICA_SYNC_RETRY_DELAY = 500L;
-
-    /**
      * Static constant for dispatching and listening migration events
      */
     String MIGRATION_EVENT_TOPIC = ".migration";
