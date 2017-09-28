@@ -19,8 +19,7 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.nio.Address;
-
-import java.io.IOException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 public class ClientNonSmartInvocationServiceImpl extends ClientInvocationServiceImpl {
 
@@ -29,32 +28,32 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
     }
 
     @Override
-    public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
+    public void invokeOnRandomTarget(ClientInvocation invocation) {
         send(invocation, getOwnerConnection());
     }
 
     @Override
-    public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException {
+    public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) {
         assert connection != null;
         send(invocation, connection);
     }
 
     @Override
-    public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
+    public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) {
         invocation.getClientMessage().setPartitionId(partitionId);
         send(invocation, getOwnerConnection());
     }
 
     @Override
-    public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
+    public void invokeOnTarget(ClientInvocation invocation, Address target) {
         send(invocation, getOwnerConnection());
     }
 
-    private ClientConnection getOwnerConnection() throws IOException {
+    private ClientConnection getOwnerConnection() {
         Address ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
         ClientConnection ownerConnection = (ClientConnection) connectionManager.getActiveConnection(ownerConnectionAddress);
         if (ownerConnection == null) {
-            throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
+            throw new RetryableHazelcastException("Owner connection is not available.");
         }
         return ownerConnection;
     }

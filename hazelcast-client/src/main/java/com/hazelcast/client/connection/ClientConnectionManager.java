@@ -22,8 +22,8 @@ import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListenable;
+import com.hazelcast.spi.exception.WrongTargetException;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.Future;
 
@@ -49,22 +49,25 @@ public interface ClientConnectionManager extends ConnectionListenable {
     /**
      * @param address to be connected
      * @return associated connection if available, creates new connection otherwise
-     * @throws IOException if connection is not established
+     * @throws WrongTargetException                                    if connection is not established
+     * @throws com.hazelcast.spi.exception.RetryableHazelcastException if connection is not able to established because
+     *                                                                 owner connection is not available
      */
-    Connection getOrConnect(Address address) throws IOException;
+    Connection getOrConnect(Address address);
 
     /**
      * @param address to be connected
      * @return associated connection if available, returns null and triggers new connection creation otherwise
-     * @throws IOException if connection is not able to triggered
+     * @throws com.hazelcast.spi.exception.RetryableHazelcastException if connection is not able to triggered because
+     *                                                                 owner connection is not available
      */
-    Connection getOrTriggerConnect(Address address) throws IOException;
+    Connection getOrTriggerConnect(Address address);
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
     Collection<ClientConnection> getActiveConnections();
 
-    Address getOwnerConnectionAddress() ;
+    Address getOwnerConnectionAddress();
 
     ClientPrincipal getPrincipal();
 

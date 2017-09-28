@@ -59,6 +59,8 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.AddressUtil;
@@ -322,12 +324,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     @Override
-    public Connection getOrConnect(Address address) throws IOException {
+    public Connection getOrConnect(Address address) {
         return getOrConnect(address, false);
     }
 
     @Override
-    public Connection getOrTriggerConnect(Address target) throws IOException {
+    public Connection getOrTriggerConnect(Address target) {
         Connection connection = getConnection(target, false);
         if (connection != null) {
             return connection;
@@ -336,12 +338,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return null;
     }
 
-    private Connection getConnection(Address target, boolean asOwner) throws IOException {
+    private Connection getConnection(Address target, boolean asOwner) {
         if (!asOwner) {
             connectionStrategy.beforeGetConnection(target);
         }
         if (!asOwner && getOwnerConnection() == null) {
-            throw new IOException("Owner connection is not available!");
+            throw new RetryableHazelcastException("Owner connection is not available!");
         }
         if (target == null) {
             throw new IllegalStateException("Address can not be null");
@@ -369,7 +371,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
-    private Connection getOrConnect(Address address, boolean asOwner) throws IOException {
+    private Connection getOrConnect(Address address, boolean asOwner) {
         try {
             while (true) {
                 ClientConnection connection = (ClientConnection) getConnection(address, asOwner);
@@ -759,8 +761,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 try {
                     connection = createSocketConnection(addressTranslator.translate(target));
                 } catch (Exception e) {
-                    logger.finest(e);
-                    callback.onFailure(e);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(e);
+                    }
+                    callback.onFailure(new WrongTargetException(e.getMessage()));
                     connectionsInProgress.remove(target);
                     return;
                 }

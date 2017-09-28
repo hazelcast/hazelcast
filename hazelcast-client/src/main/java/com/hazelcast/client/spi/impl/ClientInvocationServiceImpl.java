@@ -33,9 +33,9 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -113,27 +113,24 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
         return client.getClientConfig().getNetworkConfig().isRedoOperation();
     }
 
-    protected void send(ClientInvocation invocation, ClientConnection connection) throws IOException {
+    protected void send(ClientInvocation invocation, ClientConnection connection) {
         if (isShutdown) {
             throw new HazelcastClientNotActiveException("Client is shut down");
         }
         registerInvocation(invocation);
 
         ClientMessage clientMessage = invocation.getClientMessage();
-        if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
-            final long callId = clientMessage.getCorrelationId();
-            ClientInvocation clientInvocation = deRegisterCallId(callId);
-            if (clientInvocation != null) {
-                throw new IOException("Packet not send to " + connection.getEndPoint());
-            } else {
-                if (invocationLogger.isFinestEnabled()) {
-                    invocationLogger.finest("Invocation not found to deregister for call ID " + callId);
-                }
-                return;
-            }
+        if (isAllowedToSendRequest(connection, invocation) && writeToConnection(connection, clientMessage)) {
+            invocation.setSendConnection(connection);
+            return;
         }
 
-        invocation.setSendConnection(connection);
+        long callId = clientMessage.getCorrelationId();
+        ClientInvocation clientInvocation = deRegisterCallId(callId);
+        if (clientInvocation != null) {
+            throw new WrongTargetException("Could not found member " + connection.getEndPoint()
+                    + ", partitionId: " + invocation.getPartitionId());
+        }
     }
 
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {

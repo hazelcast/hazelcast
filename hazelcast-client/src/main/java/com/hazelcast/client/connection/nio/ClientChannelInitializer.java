@@ -24,7 +24,6 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.InitResult;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
@@ -47,7 +46,7 @@ class ClientChannelInitializer implements ChannelInitializer {
     }
 
     @Override
-    public InitResult<ChannelInboundHandler> initInbound(final Channel channel) throws IOException {
+    public InitResult<ChannelInboundHandler> initInbound(final Channel channel) {
         ByteBuffer inputBuffer = newByteBuffer(bufferSize, direct);
 
         final ClientConnection connection = (ClientConnection) channel.attributeMap().get(ClientConnection.class);

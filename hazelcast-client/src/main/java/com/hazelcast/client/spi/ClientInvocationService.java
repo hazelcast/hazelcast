@@ -22,8 +22,6 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
-import java.io.IOException;
-
 /**
  * Invocation service for Hazelcast clients.
  *
@@ -32,13 +30,13 @@ import java.io.IOException;
  */
 public interface ClientInvocationService {
 
-    void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
+    void invokeOnConnection(ClientInvocation invocation, ClientConnection connection);
 
-    void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException;
+    void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId);
 
-    void invokeOnRandomTarget(ClientInvocation invocation) throws IOException;
+    void invokeOnRandomTarget(ClientInvocation invocation);
 
-    void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException;
+    void invokeOnTarget(ClientInvocation invocation, Address target);
 
     boolean isRedoOperation();
 

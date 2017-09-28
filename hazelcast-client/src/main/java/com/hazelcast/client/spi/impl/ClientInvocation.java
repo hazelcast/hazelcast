@@ -33,9 +33,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
-import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -231,7 +231,7 @@ public class ClientInvocation implements Runnable {
     }
 
     private boolean isNotAllowedToRetryOnSelection(Throwable exception) {
-        if (isBindToSingleConnection() && exception instanceof IOException) {
+        if (isBindToSingleConnection() && exception instanceof WrongTargetException) {
             return true;
         }
 
@@ -283,8 +283,7 @@ public class ClientInvocation implements Runnable {
     }
 
     public static boolean isRetrySafeException(Throwable t) {
-        return t instanceof IOException
-                || t instanceof HazelcastInstanceNotActiveException
+        return t instanceof HazelcastInstanceNotActiveException
                 || t instanceof RetryableException;
     }
 

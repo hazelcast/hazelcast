@@ -120,7 +120,7 @@ public class MemberChannelInitializer implements ChannelInitializer {
         return protocol;
     }
 
-    private InitResult<ChannelInboundHandler> initInboundClusterProtocol(Channel channel) throws IOException {
+    private InitResult<ChannelInboundHandler> initInboundClusterProtocol(Channel channel) {
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
         connection.setType(MEMBER);
 
@@ -128,14 +128,10 @@ public class MemberChannelInitializer implements ChannelInitializer {
 
         ChannelInboundHandler inboundHandler = ioService.createInboundHandler(connection);
 
-        if (inboundHandler == null) {
-            throw new IOException("Could not initialize ChannelInboundHandler!");
-        }
-
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 
-    private InitResult<ChannelInboundHandler> initInboundClientProtocol(Channel channel) throws IOException {
+    private InitResult<ChannelInboundHandler> initInboundClientProtocol(Channel channel) {
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
 
         ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketClientReceiveBufferSize());
