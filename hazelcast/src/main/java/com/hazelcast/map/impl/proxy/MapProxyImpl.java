@@ -23,9 +23,9 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Immutable;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.journal.EventJournalReader;
@@ -223,7 +223,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void removeAll(Predicate<K, V> predicate) {
         checkNotNull(predicate, "predicate cannot be null");
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
 
         removeAllInternal(predicate);
     }
@@ -394,7 +394,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addInterceptor(MapInterceptor interceptor) {
         checkNotNull(interceptor, "Interceptor should not be null!");
-        handleHazelcastInstanceAwareParams(interceptor);
+        initializeManagedContext(interceptor);
 
         return addMapInterceptorInternal(interceptor);
     }
@@ -409,7 +409,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addLocalEntryListener(MapListener listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
+        initializeManagedContext(listener);
 
         return addLocalEntryListenerInternal(listener);
     }
@@ -417,7 +417,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addLocalEntryListener(EntryListener listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
+        initializeManagedContext(listener);
 
         return addLocalEntryListenerInternal(listener);
     }
@@ -426,7 +426,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
     }
@@ -435,7 +436,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
     }
@@ -444,7 +446,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addLocalEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
@@ -453,7 +456,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addLocalEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
@@ -461,7 +465,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addEntryListener(MapListener listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
+        initializeManagedContext(listener);
 
         return addEntryListenerInternal(listener, null, includeValue);
     }
@@ -469,7 +473,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addEntryListener(EntryListener listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
+        initializeManagedContext(listener);
 
         return addEntryListenerInternal(listener, null, includeValue);
     }
@@ -478,7 +482,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addEntryListener(MapListener listener, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
+        initializeManagedContext(listener);
 
         return addEntryListenerInternal(listener, toDataWithStrategy(key), includeValue);
     }
@@ -487,7 +491,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
+        initializeManagedContext(listener);
 
         return addEntryListenerInternal(listener, toDataWithStrategy(key), includeValue);
     }
@@ -496,7 +500,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
@@ -505,7 +510,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
@@ -514,7 +520,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addEntryListenerInternal(listener, predicate, null, includeValue);
     }
@@ -523,7 +530,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return addEntryListenerInternal(listener, predicate, null, includeValue);
     }
@@ -538,7 +546,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
+        initializeManagedContext(listener);
 
         return addPartitionLostListenerInternal(listener);
     }
@@ -627,7 +635,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
         return executePredicate(predicate, IterationType.KEY, true);
     }
 
@@ -638,7 +646,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
         return executePredicate(predicate, IterationType.ENTRY, true);
     }
 
@@ -650,7 +658,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(Predicate predicate) {
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
         return executePredicate(predicate, IterationType.VALUE, false);
     }
 
@@ -663,17 +671,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             Data key = toData(partitionPredicate.getPartitionKey());
             int partitionId = partitionService.getPartitionId(key);
             Query query = Query.of()
-                    .mapName(getName())
-                    .predicate(partitionPredicate.getTarget())
-                    .iterationType(iterationType)
-                    .build();
+                               .mapName(getName())
+                               .predicate(partitionPredicate.getTarget())
+                               .iterationType(iterationType)
+                               .build();
             result = queryEngine.execute(query, Target.of().partitionOwner(partitionId).build());
         } else {
             Query query = Query.of()
-                    .mapName(getName())
-                    .predicate(predicate)
-                    .iterationType(iterationType)
-                    .build();
+                               .mapName(getName())
+                               .predicate(predicate)
+                               .iterationType(iterationType)
+                               .build();
             result = queryEngine.execute(query, Target.ALL_NODES);
         }
         return transformToSet(serializationService, result, predicate, iterationType, uniqueResult);
@@ -688,14 +696,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @SuppressWarnings("unchecked")
     public Set<K> localKeySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(predicate)
-                .iterationType(IterationType.KEY)
-                .build();
+                           .mapName(getName())
+                           .predicate(predicate)
+                           .iterationType(IterationType.KEY)
+                           .build();
         QueryResult result = queryEngine.execute(query, Target.LOCAL_NODE);
         return transformToSet(serializationService, result, predicate, IterationType.KEY, false);
     }
@@ -703,7 +711,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor);
+        initializeManagedContext(entryProcessor);
 
         Data result = executeOnKeyInternal(key, entryProcessor);
         return toObject(result);
@@ -712,7 +720,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor);
+        initializeManagedContext(entryProcessor);
 
         if (keys.isEmpty()) {
             return emptyMap();
@@ -724,7 +732,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor, callback);
+        initializeManagedContext(entryProcessor);
+        initializeManagedContext(callback);
 
         executeOnKeyInternal(key, entryProcessor, callback);
     }
@@ -732,7 +741,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor);
+        initializeManagedContext(entryProcessor);
 
         InternalCompletableFuture future = executeOnKeyInternal(key, entryProcessor, null);
         return new DelegatingFuture(future, serializationService);
@@ -745,7 +754,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
-        handleHazelcastInstanceAwareParams(entryProcessor, predicate);
+        initializeManagedContext(entryProcessor);
+        initializeManagedContext(predicate);
         List<Data> result = new ArrayList<Data>();
 
         executeOnEntriesInternal(entryProcessor, predicate, result);
@@ -769,15 +779,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
-        // HazelcastInstanceAware handled by cloning
-        aggregator = serializationService.toObject(serializationService.toData(aggregator));
+        aggregator = cloneIfNecessary(aggregator);
+        initializeManagedContext(aggregator);
 
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(TruePredicate.INSTANCE)
-                .iterationType(IterationType.ENTRY)
-                .aggregator(aggregator)
-                .build();
+                           .mapName(getName())
+                           .predicate(TruePredicate.INSTANCE)
+                           .iterationType(IterationType.ENTRY)
+                           .aggregator(aggregator)
+                           .build();
         AggregationResult result = queryEngine.execute(query, Target.ALL_NODES);
         return result.<R>getAggregator().aggregate();
     }
@@ -786,21 +796,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator, Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
 
-        // HazelcastInstanceAware handled by cloning
-        aggregator = serializationService.toObject(serializationService.toData(aggregator));
+        aggregator = cloneIfNecessary(aggregator);
+        initializeManagedContext(aggregator);
+
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("PagingPredicate now allowed with EntryAggregator.");
         }
 
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(predicate)
-                .iterationType(IterationType.ENTRY)
-                .aggregator(aggregator)
-                .build();
+                           .mapName(getName())
+                           .predicate(predicate)
+                           .iterationType(IterationType.ENTRY)
+                           .aggregator(aggregator)
+                           .build();
         AggregationResult result = queryEngine.execute(query, Target.ALL_NODES);
         return result.<R>getAggregator().aggregate();
     }
@@ -810,15 +821,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
-        // HazelcastInstanceAware handled by cloning
-        projection = serializationService.toObject(serializationService.toData(projection));
+        projection = cloneIfNecessary(projection);
+        initializeManagedContext(projection);
 
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(TruePredicate.INSTANCE)
-                .iterationType(IterationType.VALUE)
-                .projection(projection)
-                .build();
+                           .mapName(getName())
+                           .predicate(TruePredicate.INSTANCE)
+                           .iterationType(IterationType.VALUE)
+                           .projection(projection)
+                           .build();
         QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
         return transformToSet(serializationService, result, TruePredicate.INSTANCE, IterationType.VALUE, false);
     }
@@ -827,18 +838,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
 
-        // HazelcastInstanceAware handled by cloning
-        projection = serializationService.toObject(serializationService.toData(projection));
+        projection = cloneIfNecessary(projection);
+        initializeManagedContext(projection);
+
         MapQueryEngine queryEngine = getMapQueryEngine();
 
         Query query = Query.of()
-                .mapName(getName())
-                .predicate(predicate)
-                .iterationType(IterationType.VALUE)
-                .projection(projection)
-                .build();
+                           .mapName(getName())
+                           .predicate(predicate)
+                           .iterationType(IterationType.VALUE)
+                           .projection(projection)
+                           .build();
         QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
         return transformToSet(serializationService, result, predicate, IterationType.VALUE, false);
     }
@@ -958,9 +970,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         }
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        // HazelcastInstanceAware handled by cloning
-        projection = serializationService.toObject(serializationService.toData(projection));
-        handleHazelcastInstanceAwareParams(predicate);
+        projection = cloneIfNecessary(projection);
+        initializeManagedContext(projection);
+        initializeManagedContext(predicate);
         return new MapQueryPartitionIterator<K, V, R>(this, fetchSize, partitionId, predicate, projection);
     }
 
@@ -979,9 +991,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, T> projection) {
-        handleHazelcastInstanceAwareParams(predicate);
-        // HazelcastInstanceAware handled by cloning
-        projection = serializationService.toObject(serializationService.toData(projection));
+        initializeManagedContext(predicate);
+        projection = cloneIfNecessary(projection);
+        initializeManagedContext(projection);
+
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<K, V, T>(
                 name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
@@ -1005,7 +1018,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
         checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
-        handleHazelcastInstanceAwareParams(predicate);
+        initializeManagedContext(predicate);
 
         return getQueryCacheInternal(name, null, predicate, includeValue, this);
     }
@@ -1015,7 +1028,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
         checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
-        handleHazelcastInstanceAwareParams(listener, predicate);
+        initializeManagedContext(listener);
+        initializeManagedContext(predicate);
 
         return getQueryCacheInternal(name, listener, predicate, includeValue, this);
     }
@@ -1044,11 +1058,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 new NodeQueryCacheEndToEndConstructor(request));
     }
 
-    private void handleHazelcastInstanceAwareParams(Object... objects) {
-        for (Object object : objects) {
-            if (object instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-            }
-        }
+    /**
+     * Handles injection of managed context into the provided object
+     * if any object implements a context-aware interface such as
+     * {@link com.hazelcast.core.HazelcastInstanceAware} or {@link com.hazelcast.spi.NodeAware}.
+     *
+     * @param o the objects which should have the contexts injected
+     */
+    private void initializeManagedContext(Object o) {
+        serializationService.getManagedContext().initialize(o);
+    }
+
+    /**
+     * Clones the object if the object does not implement {@link Immutable},
+     * otherwise returns the provided object
+     *
+     * @param object the object
+     * @param <T>    the type of the object
+     * @return the object clone or the provided object if it implements {@link Immutable}
+     */
+    private <T> T cloneIfNecessary(T object) {
+        return object instanceof Immutable
+                ? object
+                : serializationService.<T>toObject(serializationService.toData(object));
     }
 }
