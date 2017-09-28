@@ -124,6 +124,9 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     Collection<Integer> getOwnedPartitions();
 
+    /**
+     * Reloads the cached collection of partitions owned by this node.
+     */
     void reloadOwnedPartitions();
 
     AtomicInteger getWriteBehindQueueItemCounter();

@@ -119,7 +119,7 @@ public class QueryBounceTest {
         // query age min-max range, min is randomized, max = min+1000
         private final Random random = new Random();
         private final int numberOfResults = 1000;
-        private IMap map;
+        private IMap<String, SampleTestObjects.Employee> map;
 
         public QueryRunnable(HazelcastInstance hazelcastInstance) {
             this.hazelcastInstance = hazelcastInstance;
