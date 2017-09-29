@@ -1022,26 +1022,38 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void shutdown() {
-        changeClusterState(ClusterState.PASSIVE, true);
-        shutdownNodes();
+        shutdownCluster(null);
     }
 
     @Override
     public void shutdown(TransactionOptions options) {
-        changeClusterState(ClusterState.PASSIVE, options, true);
-        shutdownNodes();
+        shutdownCluster(options);
     }
 
-    private void shutdownNodes() {
+    private void shutdownCluster(TransactionOptions options) {
+        if (options == null) {
+            changeClusterState(ClusterState.PASSIVE, true);
+        } else {
+            changeClusterState(ClusterState.PASSIVE, options, true);
+        }
+
+        long timeoutNanos = node.getProperties().getNanos(GroupProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        long startNanos = System.nanoTime();
+        node.getNodeExtension().getInternalHotRestartService()
+                .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+        timeoutNanos -= (System.nanoTime() - startNanos);
+        shutdownNodes(timeoutNanos);
+    }
+
+    private void shutdownNodes(final long timeoutNanos) {
         final Operation op = new ShutdownNodeOp();
 
         logger.info("Sending shutting down operations to all members...");
 
         Collection<Member> members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
-        final long timeout = node.getProperties().getNanos(GroupProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
         final long startTime = System.nanoTime();
 
-        while ((System.nanoTime() - startTime) < timeout && !members.isEmpty()) {
+        while ((System.nanoTime() - startTime) < timeoutNanos && !members.isEmpty()) {
             for (Member member : members) {
                 nodeEngine.getOperationService().send(op, member.getAddress());
             }
