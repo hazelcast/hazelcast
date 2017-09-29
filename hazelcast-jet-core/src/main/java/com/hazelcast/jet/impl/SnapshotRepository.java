@@ -46,7 +46,7 @@ public class SnapshotRepository {
      * <pre>SNAPSHOT_NAME_PREFIX + jobId + '.' + snapshotId + '.' + vertexName</pre>
      */
     public static final String SNAPSHOT_NAME_PREFIX = "__jet.snapshots.";
-    public static final String SNAPSHOT_DATA_NAME_PREFIX = "__jet.snapshots.data.";
+    public static final String SNAPSHOT_DATA_NAME_PREFIX = SNAPSHOT_NAME_PREFIX + "data.";
 
     // key for the entry that points to the latest snapshot
     private static final long LATEST_STARTED_SNAPSHOT_ID_KEY = -1;

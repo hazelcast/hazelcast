@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * A record stored in the {@link
- * com.hazelcast.jet.impl.SnapshotRepository#SNAPSHOT_NAME_PREFIX}
+ * com.hazelcast.jet.impl.SnapshotRepository#snapshotsMapName(long)}
  * map.
  */
 public class SnapshotRecord implements IdentifiedDataSerializable {
@@ -68,6 +68,10 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
 
     public Set<String> vertices() {
         return vertices;
+    }
+
+    public SnapshotStatus status() {
+        return status;
     }
 
     public void setStatus(SnapshotStatus newStatus) {
