@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.AddressLocatorConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
@@ -78,7 +79,7 @@ public class DefaultNodeContext implements NodeContext {
             if (parameterTypes.length == 0) {
                 //we have only the no-arg constructor -> we have to fail-fast when some properties were configured
                 if (properties != null && !properties.isEmpty()) {
-                    throw new IllegalStateException("Cannot find a matching constructor for AddressLocator.  "
+                    throw new ConfigurationException("Cannot find a matching constructor for AddressLocator.  "
                             + "The address locator has properties configured, but the class " + "'" + classname
                             + "' does not have a public constructor accepting properties.");
                 }
@@ -91,11 +92,11 @@ public class DefaultNodeContext implements NodeContext {
                 return (AddressLocator) constructor.newInstance(properties);
             }
         } catch (InstantiationException e) {
-            throw new IllegalStateException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
+            throw new ConfigurationException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
         } catch (IllegalAccessException e) {
-            throw new IllegalStateException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
+            throw new ConfigurationException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
         } catch (InvocationTargetException e) {
-            throw new IllegalStateException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
+            throw new ConfigurationException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
         }
     }
 
@@ -107,7 +108,7 @@ public class DefaultNodeContext implements NodeContext {
             try {
                 constructor = clazz.getConstructor();
             } catch (NoSuchMethodException e1) {
-                throw new IllegalStateException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
+                throw new ConfigurationException("Cannot create a new instance of AddressLocator '" + clazz + "'", e);
             }
         }
         return constructor;
@@ -117,7 +118,7 @@ public class DefaultNodeContext implements NodeContext {
         try {
             return ClassLoaderUtil.loadClass(classLoader, classname);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Cannot create a new instance of AddressLocator '" + classname + "'", e);
+            throw new ConfigurationException("Cannot create a new instance of AddressLocator '" + classname + "'", e);
         }
     }
 

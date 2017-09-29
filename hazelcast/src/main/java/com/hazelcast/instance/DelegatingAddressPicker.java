@@ -16,12 +16,14 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.AddressLocator;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
@@ -92,8 +94,13 @@ public class DelegatingAddressPicker implements AddressPicker {
     }
 
     private void validatePublicAddress(InetSocketAddress inetSocketAddress) {
-        if (inetSocketAddress.getAddress().isAnyLocalAddress()) {
-            throw new IllegalStateException("Address locator has to return a specific public address to broadcast to"
+        InetAddress address = inetSocketAddress.getAddress();
+        if (address == null) {
+            throw new ConfigurationException("Cannot resolve address '" + inetSocketAddress + "'");
+        }
+
+        if (address.isAnyLocalAddress()) {
+            throw new ConfigurationException("Address locator has to return a specific public address to broadcast to"
                     + " other members.");
         }
     }
