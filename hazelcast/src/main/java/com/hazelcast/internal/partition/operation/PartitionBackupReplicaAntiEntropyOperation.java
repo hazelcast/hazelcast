@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -56,11 +57,16 @@ public final class PartitionBackupReplicaAntiEntropyOperation
 
     @Override
     public void run() throws Exception {
+        if (!isNodeStartCompleted()) {
+            response = false;
+            return;
+        }
+
         InternalPartitionServiceImpl partitionService = getService();
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
-        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
 
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         replicaManager.retainNamespaces(partitionId, versions.keySet());
 
         Iterator<Map.Entry<ServiceNamespace, Long>> iter = versions.entrySet().iterator();
@@ -83,6 +89,19 @@ public final class PartitionBackupReplicaAntiEntropyOperation
             replicaManager.triggerPartitionReplicaSync(partitionId, versions.keySet(), replicaIndex);
             response = false;
         }
+    }
+
+    private boolean isNodeStartCompleted() {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        boolean startCompleted = nodeEngine.getNode().getNodeExtension().isStartCompleted();
+        if (!startCompleted) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Anti-entropy operation for partitionId=" + getPartitionId()
+                        + ", replicaIndex=" + getReplicaIndex() + " is received before startup is completed.");
+            }
+        }
+        return startCompleted;
     }
 
     private void logBackupVersionMismatch(ServiceNamespace ns, long currentVersion, long primaryVersion) {

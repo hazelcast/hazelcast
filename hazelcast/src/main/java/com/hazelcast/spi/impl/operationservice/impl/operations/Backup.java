@@ -26,10 +26,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -43,7 +43,8 @@ import java.util.Arrays;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 
-public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
+public final class Backup extends Operation implements BackupOperation, AllowedDuringPassiveState,
+        IdentifiedDataSerializable {
 
     private Address originalCaller;
     private ServiceNamespace namespace;
@@ -53,7 +54,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     private Operation backupOp;
     private Data backupOpData;
 
-    private transient boolean valid = true;
+    private transient Throwable validationFailure;
 
     public Backup() {
     }
@@ -88,9 +89,9 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     public void beforeRun() throws Exception {
-        NodeEngine nodeEngine = getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         int partitionId = getPartitionId();
-        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         ILogger logger = getLogger();
 
         IPartition partition = partitionService.getPartition(partitionId);
@@ -100,19 +101,33 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
         namespace = versionManager.getServiceNamespace(backupOp);
 
-        if (!nodeEngine.getThisAddress().equals(owner)) {
-            valid = false;
+        if (!nodeEngine.getNode().getNodeExtension().isStartCompleted()) {
+            validationFailure = new IllegalStateException("Ignoring backup! "
+                    + "Backup operation is received before startup is completed.");
             if (logger.isFinestEnabled()) {
-                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+                logger.finest(validationFailure.getMessage());
             }
-        } else if (versionManager.isPartitionReplicaVersionStale(getPartitionId(), namespace,
+            return;
+        }
+        if (!nodeEngine.getThisAddress().equals(owner)) {
+            validationFailure = new IllegalStateException("Wrong target! " + toString()
+                    + " cannot be processed! Target should be: " + owner);
+            if (logger.isFinestEnabled()) {
+                logger.finest(validationFailure.getMessage());
+            }
+            return;
+        }
+        if (versionManager.isPartitionReplicaVersionStale(getPartitionId(), namespace,
                 replicaVersions, getReplicaIndex())) {
-            valid = false;
+            validationFailure = new IllegalStateException("Ignoring stale backup with namespace: " + namespace
+                    + ", versions: " + Arrays.toString(replicaVersions));
             if (logger.isFineEnabled()) {
                 long[] currentVersions = versionManager.getPartitionReplicaVersions(partitionId, namespace);
-                logger.fine("Ignoring stale backup! Current-versions: " + Arrays.toString(currentVersions)
+                logger.fine("Ignoring stale backup! namespace: " + namespace
+                        + ", Current-versions: " + Arrays.toString(currentVersions)
                         + ", Backup-versions: " + Arrays.toString(replicaVersions));
             }
+            return;
         }
     }
 
@@ -130,8 +145,8 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     public void run() throws Exception {
-        if (!valid) {
-            onExecutionFailure(new IllegalStateException("Wrong target! " + toString() + " cannot be processed!"));
+        if (validationFailure != null) {
+            onExecutionFailure(validationFailure);
             return;
         }
 
@@ -148,7 +163,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     public void afterRun() throws Exception {
-        if (!valid || !sync || getCallId() == 0 || originalCaller == null) {
+        if (validationFailure != null || !sync || getCallId() == 0 || originalCaller == null) {
             return;
         }
 
