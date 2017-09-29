@@ -26,6 +26,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -58,6 +60,14 @@ public class ClientCacheProxyFactory extends ClientProxyFactoryWithContext {
 
     void removeCacheConfig(String cacheName) {
         configs.remove(cacheName);
+    }
+
+    CacheConfig getCacheConfig(String cacheName) {
+        return configs.get(cacheName);
+    }
+
+    Set<Map.Entry<String, CacheConfig>> configs() {
+        return configs.entrySet();
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
