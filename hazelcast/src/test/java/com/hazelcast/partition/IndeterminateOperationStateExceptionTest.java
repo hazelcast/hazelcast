@@ -15,12 +15,12 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,19 +38,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class IndeterminateOperationStateExceptionTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance1;
 
     private HazelcastInstance instance2;
-
-    @Before
-    public void init() {
-        SilentOperation.executionStarted = false;
-        DummyReadOperation.lastInvocationAddress = null;
-    }
 
     private void setup(boolean enableFailOnIndeterminateOperationState) {
         Config config = new Config();
@@ -114,9 +108,8 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
-                assertTrue(SilentOperation.executionStarted);
+            public void run() throws Exception {
+                assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED));
             }
         });
 
@@ -153,7 +146,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         });
         boolean response = future.get(2, TimeUnit.MINUTES);
         assertTrue(response);
-        assertEquals(getAddress(instance1), DummyReadOperation.lastInvocationAddress);
+        assertEquals(getAddress(instance1), instance1.getUserContext().get(DummyReadOperation.LAST_INVOCATION_ADDRESS));
     }
 
     @Test
@@ -197,9 +190,8 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
-                assertTrue(SilentOperation.executionStarted);
+            public void run() throws Exception {
+                assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED));
             }
         });
 
@@ -252,16 +244,15 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         public void run() throws Exception {
 
         }
-
     }
 
     public static class SilentOperation extends Operation {
 
-        static volatile boolean executionStarted;
+        static final String EXECUTION_STARTED = "execution-started";
 
         @Override
         public void run() throws Exception {
-            executionStarted = true;
+            getNodeEngine().getHazelcastInstance().getUserContext().put(EXECUTION_STARTED, new Object());
         }
 
         @Override
@@ -273,11 +264,12 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
 
     public static class DummyReadOperation extends Operation implements ReadonlyOperation {
 
-        static volatile Address lastInvocationAddress;
+        static final String LAST_INVOCATION_ADDRESS = "last-invocation-address";
 
         @Override
         public void run() throws Exception {
-            lastInvocationAddress = getNodeEngine().getThisAddress();
+            Address address = getNodeEngine().getThisAddress();
+            getNodeEngine().getHazelcastInstance().getUserContext().put(LAST_INVOCATION_ADDRESS, address);
         }
 
         @Override
