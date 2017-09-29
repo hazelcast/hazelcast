@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
@@ -34,6 +35,7 @@ import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
@@ -45,15 +47,20 @@ import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
 import com.hazelcast.internal.eviction.EvictableEntryView;
@@ -66,22 +73,21 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static org.junit.Assert.assertEquals;
 
-// todo tests still missing
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DynamicConfigTest extends HazelcastTestSupport {
@@ -174,25 +180,10 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListConfig_withItemListenerConfig_byClassName() {
+    public void testListConfig_withItemListenerConfigs() {
         ListConfig config = getListConfig();
-        List<ItemListenerConfig> itemListenerConfigs = new ArrayList<ItemListenerConfig>();
-        ItemListenerConfig listenerConfig = new ItemListenerConfig("com.hazelcast.ItemListener", true);
-        itemListenerConfigs.add(listenerConfig);
-        config.setItemListenerConfigs(itemListenerConfigs);
-
-        driver.getConfig().addListConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
-    }
-
-    @Test
-    public void testListConfig_withItemListenerConfig_byImplementation() {
-        ListConfig config = getListConfig();
-        List<ItemListenerConfig> itemListenerConfigs = new ArrayList<ItemListenerConfig>();
-        ItemListenerConfig listenerConfig = new ItemListenerConfig(new SampleItemListener(), true);
-        itemListenerConfigs.add(listenerConfig);
-        config.setItemListenerConfigs(itemListenerConfigs);
+        config.addItemListenerConfig(getItemListenerConfig_byClassName());
+        config.addItemListenerConfig(getItemListenerConfig_byImplementation());
 
         driver.getConfig().addListConfig(config);
 
@@ -238,24 +229,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueueConfig() {
-        QueueConfig config = getQueueConfig();
-
-        driver.getConfig().addQueueConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
-    }
-
-    @Test
-    public void testQueueConfig_withListeners() {
-        QueueConfig config = getQueueConfig_withListeners();
-
-        driver.getConfig().addQueueConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
-    }
-
-    @Test
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig().setEnabled(true).setClassName("com.hazelcast.Foo");
@@ -296,6 +269,31 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testQueueConfig() {
+        QueueConfig config = getQueueConfig();
+
+        driver.getConfig().addQueueConfig(config);
+
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testQueueConfig_withListeners() {
+        QueueConfig config = getQueueConfig_withListeners();
+
+        driver.getConfig().addQueueConfig(config);
+
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testReplicatedMapDefaultConfig() {
+        ReplicatedMapConfig config = new ReplicatedMapConfig(name);
+        driver.getConfig().addReplicatedMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
     public void testReplicatedMapConfig_withListenerByClassName() {
         ReplicatedMapConfig config = new ReplicatedMapConfig(name);
         config.setStatisticsEnabled(true);
@@ -325,7 +323,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testSetConfig() {
-        String name = randomName();
         SetConfig setConfig = getSetConfig(name);
 
         driver.getConfig().addSetConfig(setConfig);
@@ -401,6 +398,16 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSetConfig_whenItemListenersConfigured() {
+        SetConfig setConfig = getSetConfig(name);
+        setConfig.addItemListenerConfig(getItemListenerConfig_byImplementation());
+        setConfig.addItemListenerConfig(getItemListenerConfig_byClassName());
+
+        driver.getConfig().addSetConfig(setConfig);
+        assertConfigurationsEqualsOnAllMembers(setConfig);
+    }
+
+    @Test
     public void testDefaultCacheConfig() {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setName(name);
@@ -465,43 +472,107 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         assertConfigurationsEqualsOnAllMembers(config);
     }
 
-    private CacheSimpleConfig getCacheConfig() {
-        CacheSimpleConfig config = new CacheSimpleConfig();
-        config.setName(name);
-        config.setQuorumName("quorum");
-        config.setInMemoryFormat(InMemoryFormat.OBJECT);
-        config.setBackupCount(3);
-        config.setAsyncBackupCount(2);
-        config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
-                Collections.singletonList("filter"), true));
-        CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
-        entryListenerConfig.setCacheEntryListenerFactory("CacheEntryListenerFactory");
-        entryListenerConfig.setSynchronous(true);
-        entryListenerConfig.setOldValueRequired(true);
-        entryListenerConfig.setCacheEntryEventFilterFactory("CacheEntryEventFilterFactory");
-        config.addEntryListenerConfig(entryListenerConfig);
-        config.setMergePolicy("mergePolicy");
-        config.setStatisticsEnabled(true);
-        config.setManagementEnabled(true);
-        config.setDisablePerEntryInvalidationEvents(true);
-        config.setKeyType("keyType");
-        config.setValueType("valueType");
-        config.setReadThrough(true);
-        config.setWriteThrough(true);
-        config.setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true));
-        return config;
+    @Test
+    public void testEventJournalConfig() {
+        EventJournalConfig cacheJournalConfig = new EventJournalConfig();
+        cacheJournalConfig.setEnabled(true)
+              .setCacheName(randomName())
+              .setCapacity(39)
+              .setTimeToLiveSeconds(98);
+        EventJournalConfig mapJournalConfig = new EventJournalConfig();
+        mapJournalConfig.setEnabled(true)
+              .setMapName(randomName())
+              .setCapacity(42)
+              .setTimeToLiveSeconds(52);
+        driver.getConfig().addEventJournalConfig(cacheJournalConfig);
+        driver.getConfig().addEventJournalConfig(mapJournalConfig);
+        assertConfigurationsEqualsOnAllMembers(mapJournalConfig, cacheJournalConfig);
     }
 
-    private EvictionConfig getEvictionConfigByPolicy() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.RANDOM);
+    @Test
+    public void testSemaphoreConfig() {
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+        semaphoreConfig.setName(name)
+                       .setInitialPermits(33)
+                       .setAsyncBackupCount(4)
+                       .setBackupCount(2);
+        driver.getConfig().addSemaphoreConfig(semaphoreConfig);
+        assertConfigurationsEqualsOnAllMembers(semaphoreConfig);
     }
 
-    private EvictionConfig getEvictionConfigByClassName() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, "com.hazelcast.Comparator");
+    @Test
+    public void testTopicConfig() {
+        TopicConfig topicConfig = new TopicConfig(name);
+        topicConfig.setGlobalOrderingEnabled(true)
+                   .setMultiThreadingEnabled(false)
+                   .setStatisticsEnabled(true);
+        driver.getConfig().addTopicConfig(topicConfig);
+        assertConfigurationsEqualsOnAllMembers(topicConfig);
     }
 
-    private EvictionConfig getEvictionConfigByImplementation() {
-        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, new SampleEvictionPolicyComparator());
+    @Test
+    public void testTopicConfig_whenListenerConfigByClassName() {
+        TopicConfig topicConfig = new TopicConfig(name);
+        topicConfig.setGlobalOrderingEnabled(false)
+                   .setMultiThreadingEnabled(true)
+                   .setStatisticsEnabled(true)
+                   .addMessageListenerConfig(getListenerConfig_byClassName());
+        driver.getConfig().addTopicConfig(topicConfig);
+        assertConfigurationsEqualsOnAllMembers(topicConfig);
+    }
+
+    @Test
+    public void testTopicConfig_whenListenerConfigByImplementation() {
+        TopicConfig topicConfig = new TopicConfig(name);
+        topicConfig.setGlobalOrderingEnabled(false)
+                   .setMultiThreadingEnabled(true)
+                   .setStatisticsEnabled(true)
+                   .addMessageListenerConfig(getMessageListenerConfig_byImplementation());
+        driver.getConfig().addTopicConfig(topicConfig);
+        assertConfigurationsEqualsOnAllMembers(topicConfig);
+    }
+
+    @Test
+    public void testReliableTopicConfig() {
+        ReliableTopicConfig reliableTopicConfig = new ReliableTopicConfig(name);
+        reliableTopicConfig.setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST)
+                           .setReadBatchSize(42)
+                           .setStatisticsEnabled(true);
+        driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
+        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+    }
+
+    @Test
+    public void testReliableTopicConfig_whenListenerConfigByClassName() {
+        ReliableTopicConfig reliableTopicConfig = new ReliableTopicConfig(name);
+        reliableTopicConfig.setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST)
+                           .setReadBatchSize(42)
+                           .setStatisticsEnabled(true)
+                           .addMessageListenerConfig(getListenerConfig_byClassName());
+        driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
+        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+    }
+
+    @Test
+    public void testReliableTopicConfig_whenListenerConfigByImplementation() {
+        ReliableTopicConfig reliableTopicConfig = new ReliableTopicConfig(name);
+        reliableTopicConfig.setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST)
+                           .setReadBatchSize(42)
+                           .setStatisticsEnabled(true)
+                           .addMessageListenerConfig(getMessageListenerConfig_byImplementation());
+        driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
+        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+    }
+
+    @Test
+    public void testReliableTopicConfig_whenHasExecutor() {
+        ReliableTopicConfig reliableTopicConfig = new ReliableTopicConfig(name);
+        reliableTopicConfig.setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST)
+                           .setReadBatchSize(42)
+                           .setStatisticsEnabled(true)
+                           .setExecutor(new SampleExecutor());
+        driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
+        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
     }
 
     private void assertConfigurationsEqualsOnAllMembers(CacheSimpleConfig config) {
@@ -510,8 +581,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
             CacheSimpleConfig registeredConfig = instance.getConfig().getCacheConfig(name);
             assertEquals(config, registeredConfig);
         }
-    }
 
+    }
     private void assertConfigurationsEqualsOnAllMembers(QueueConfig queueConfig) {
         String name = queueConfig.getName();
         for (HazelcastInstance instance : members) {
@@ -608,10 +679,87 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
+    private void assertConfigurationsEqualsOnAllMembers(EventJournalConfig mapEventJournalConfig,
+                                                        EventJournalConfig cacheEventJournalConfig) {
+        String cacheName = cacheEventJournalConfig.getCacheName();
+        String mapName = mapEventJournalConfig.getMapName();
+        for (HazelcastInstance instance : members) {
+            EventJournalConfig registeredConfig = instance.getConfig().getCacheEventJournalConfig(cacheName);
+            assertEquals(cacheEventJournalConfig, registeredConfig);
+            registeredConfig = instance.getConfig().getMapEventJournalConfig(mapName);
+            assertEquals(mapEventJournalConfig, registeredConfig);
+        }
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(TopicConfig topicConfig) {
+        String name = topicConfig.getName();
+        for (HazelcastInstance instance : members) {
+            TopicConfig registeredConfig = instance.getConfig().getTopicConfig(name);
+            assertEquals(topicConfig, registeredConfig);
+        }
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(ReliableTopicConfig reliableTopicConfig) {
+        String name = reliableTopicConfig.getName();
+        for (HazelcastInstance instance : members) {
+            ReliableTopicConfig registeredConfig = instance.getConfig().getReliableTopicConfig(name);
+            assertEquals(reliableTopicConfig, registeredConfig);
+        }
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(SemaphoreConfig semaphoreConfig) {
+        String name = semaphoreConfig.getName();
+        for (HazelcastInstance instance : members) {
+            SemaphoreConfig registeredConfig = instance.getConfig().getSemaphoreConfig(name);
+            assertEquals(semaphoreConfig, registeredConfig);
+        }
+    }
+
+    private CacheSimpleConfig getCacheConfig() {
+        CacheSimpleConfig config = new CacheSimpleConfig();
+        config.setName(name);
+        config.setQuorumName("quorum");
+        config.setInMemoryFormat(InMemoryFormat.OBJECT);
+        config.setBackupCount(3);
+        config.setAsyncBackupCount(2);
+        config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
+                Collections.singletonList("filter"), true));
+        CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
+        entryListenerConfig.setCacheEntryListenerFactory("CacheEntryListenerFactory");
+        entryListenerConfig.setSynchronous(true);
+        entryListenerConfig.setOldValueRequired(true);
+        entryListenerConfig.setCacheEntryEventFilterFactory("CacheEntryEventFilterFactory");
+        config.addEntryListenerConfig(entryListenerConfig);
+        config.setMergePolicy("mergePolicy");
+        config.setStatisticsEnabled(true);
+        config.setManagementEnabled(true);
+        config.setDisablePerEntryInvalidationEvents(true);
+        config.setKeyType("keyType");
+        config.setValueType("valueType");
+        config.setReadThrough(true);
+        config.setWriteThrough(true);
+        config.setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true));
+        return config;
+    }
+
+    private EvictionConfig getEvictionConfigByPolicy() {
+        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.RANDOM);
+    }
+
+    private EvictionConfig getEvictionConfigByClassName() {
+        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, "com.hazelcast.Comparator");
+    }
+
+    private EvictionConfig getEvictionConfigByImplementation() {
+        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, new SampleEvictionPolicyComparator());
+    }
+
     private SetConfig getSetConfig(String name) {
         SetConfig setConfig = new SetConfig(name);
-        setConfig.addItemListenerConfig(new ItemListenerConfig("foo.bar.Class", true));
         setConfig.setBackupCount(2);
+        setConfig.setAsyncBackupCount(3);
+        setConfig.setMaxSize(99);
+        setConfig.setStatisticsEnabled(true);
         return setConfig;
     }
 
@@ -710,8 +858,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public QueueConfig getQueueConfig_withListeners() {
         String name = randomName();
         QueueConfig queueConfig = new QueueConfig(name);
-        queueConfig.addItemListenerConfig(new ItemListenerConfig("foo.bar.SampleItemListener", true));
-        queueConfig.addItemListenerConfig(new ItemListenerConfig(new SampleItemListener(), false));
+        queueConfig.addItemListenerConfig(getItemListenerConfig_byClassName());
+        queueConfig.addItemListenerConfig(getItemListenerConfig_byImplementation());
         queueConfig.setBackupCount(2);
         queueConfig.setAsyncBackupCount(2);
         queueConfig.setMaxSize(1000);
@@ -720,6 +868,22 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         queueConfig.setStatisticsEnabled(false);
         queueConfig.setQuorumName("myQuorum");
         return queueConfig;
+    }
+
+    private ListenerConfig getListenerConfig_byClassName() {
+        return new ListenerConfig("com.hazelcast.ListenerClassName");
+    }
+
+    private ListenerConfig getMessageListenerConfig_byImplementation() {
+        return new ListenerConfig(new SampleMessageListener());
+    }
+
+    private ItemListenerConfig getItemListenerConfig_byClassName() {
+        return new ItemListenerConfig("com.hazelcast.ItemListener", true);
+    }
+
+    private ItemListenerConfig getItemListenerConfig_byImplementation() {
+        return new ItemListenerConfig(new SampleItemListener(), true);
     }
 
     public static class SampleEntryListener implements EntryAddedListener, Serializable {
@@ -833,6 +997,28 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         @Override
         public boolean equals(Object obj) {
             return (obj instanceof SampleCachePartitionLostListener);
+        }
+    }
+
+    public static class SampleMessageListener implements MessageListener, Serializable {
+        @Override
+        public void onMessage(Message message) {
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof SampleMessageListener);
+        }
+    }
+
+    public static class SampleExecutor implements Executor, Serializable {
+        @Override
+        public void execute(Runnable command) {
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof SampleExecutor);
         }
     }
 }

@@ -6412,6 +6412,24 @@ public class ServerCompatibilityTest_1_5 {
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    DynamicConfigAddEventJournalConfigCodec.RequestParameters params = DynamicConfigAddEventJournalConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.mapName));
+                assertTrue(isEqual(aString, params.cacheName));
+                assertTrue(isEqual(aBoolean, params.enabled));
+                assertTrue(isEqual(anInt, params.capacity));
+                assertTrue(isEqual(anInt, params.timeToLiveSeconds));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddEventJournalConfigCodec.encodeResponse( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
         inputStream.close();
         input.close();
     }
