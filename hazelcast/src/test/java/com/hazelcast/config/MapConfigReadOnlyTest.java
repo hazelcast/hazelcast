@@ -107,7 +107,7 @@ public class MapConfigReadOnlyTest {
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig());
 
         PartitioningStrategyConfig partitioningStrategyConfig = config.getAsReadOnly().getPartitioningStrategyConfig();
-        partitioningStrategyConfig.setPartitionStrategy(null);
+        partitioningStrategyConfig.setPartitioningStrategy(null);
     }
 
     @Test

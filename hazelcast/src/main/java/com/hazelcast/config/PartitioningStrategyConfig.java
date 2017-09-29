@@ -30,7 +30,7 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     private String partitioningStrategyClass;
 
-    private PartitioningStrategy partitionStrategy;
+    private PartitioningStrategy partitioningStrategy;
 
     private transient PartitioningStrategyConfigReadOnly readOnly;
 
@@ -39,15 +39,15 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     public PartitioningStrategyConfig(PartitioningStrategyConfig config) {
         partitioningStrategyClass = config.getPartitioningStrategyClass();
-        partitionStrategy = config.getPartitioningStrategy();
+        partitioningStrategy = config.getPartitioningStrategy();
     }
 
     public PartitioningStrategyConfig(String partitioningStrategyClass) {
         this.partitioningStrategyClass = partitioningStrategyClass;
     }
 
-    public PartitioningStrategyConfig(PartitioningStrategy partitionStrategy) {
-        this.partitionStrategy = partitionStrategy;
+    public PartitioningStrategyConfig(PartitioningStrategy partitioningStrategy) {
+        this.partitioningStrategy = partitioningStrategy;
     }
 
     /**
@@ -73,11 +73,17 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     }
 
     public PartitioningStrategy getPartitioningStrategy() {
-        return partitionStrategy;
+        return partitioningStrategy;
     }
 
+    @Deprecated
     public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
-        this.partitionStrategy = partitionStrategy;
+        this.partitioningStrategy = partitionStrategy;
+        return this;
+    }
+
+    public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
+        this.partitioningStrategy = partitionStrategy;
         return this;
     }
 
@@ -85,7 +91,7 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "PartitioningStrategyConfig{"
                 + "partitioningStrategyClass='" + partitioningStrategyClass + '\''
-                + ", partitionStrategy=" + partitionStrategy
+                + ", partitioningStrategy=" + partitioningStrategy
                 + '}';
     }
 
@@ -102,13 +108,13 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(partitioningStrategyClass);
-        out.writeObject(partitionStrategy);
+        out.writeObject(partitioningStrategy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         partitioningStrategyClass = in.readUTF();
-        partitionStrategy = in.readObject();
+        partitioningStrategy = in.readObject();
     }
 
     @Override
@@ -127,14 +133,14 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
                 : that.partitioningStrategyClass != null) {
             return false;
         }
-        return partitionStrategy != null ? partitionStrategy.equals(that.partitionStrategy)
-                : that.partitionStrategy == null;
+        return partitioningStrategy != null ? partitioningStrategy.equals(that.partitioningStrategy)
+                : that.partitioningStrategy == null;
     }
 
     @Override
     public int hashCode() {
         int result = partitioningStrategyClass != null ? partitioningStrategyClass.hashCode() : 0;
-        result = 31 * result + (partitionStrategy != null ? partitionStrategy.hashCode() : 0);
+        result = 31 * result + (partitioningStrategy != null ? partitioningStrategy.hashCode() : 0);
         return result;
     }
 }

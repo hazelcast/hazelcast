@@ -38,4 +38,9 @@ public class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConf
     public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
+
+    @Override
+    public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
 }
