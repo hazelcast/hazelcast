@@ -30,7 +30,6 @@ import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -198,9 +197,10 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that groups items by key and performs
-     * the provided aggregate operation on each group. After exhausting all
-     * its input it emits one {@code Map.Entry<K, R>} per observed key.
+     * Returns a supplier of processors for a vertex that groups items by key
+     * and performs the provided aggregate operation on each group. After
+     * exhausting all its input it emits one {@code Map.Entry<K, R>} per
+     * distinct key.
      *
      * @param getKeyFn computes the key from the entry
      * @param aggrOp the aggregate operation to perform
@@ -220,12 +220,12 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of the first-stage processor in a two-stage
-     * group-and-aggregate setup. The processor groups items by the grouping
-     * key (as obtained from the given key-extracting function) and applies the
-     * {@link AggregateOperation1#accumulateFn()} accumulate} primitive to
-     * each group. After exhausting all its input it emits one {@code
-     * Map.Entry<K, A>} per observed key.
+     * Returns a supplier of processors for the first-stage vertex in a
+     * two-stage group-and-aggregate setup. The vertex groups items by the
+     * grouping key (as obtained from the given key-extracting function) and
+     * applies the {@link AggregateOperation1#accumulateFn()} accumulate}
+     * primitive to each group. After exhausting all its input it emits one
+     * {@code Map.Entry<K, A>} per observed key.
      *
      * @param getKeyFn computes the key from the entry
      * @param aggrOp the aggregate operation to perform
@@ -242,11 +242,12 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that groups items by key and performs
-     * the provided aggregate operation on each group. After exhausting all
-     * its input it emits one {@code Map.Entry<K, R>} per observed key.
+     * Returns a supplier of processors for a vertex that groups items by key
+     * and performs the provided aggregate operation on each group. After
+     * exhausting all its input it emits one {@code Map.Entry<K, R>} per
+     * distinct key.
      * <p>
-     * The processor accepts input from one or more inbound edges. The type of
+     * The vertex accepts input from one or more inbound edges. The type of
      * items may be different on each edge. For each edge a separate key
      * extracting function must be supplied and the aggregate operation must
      * contain a separate accumulation function for each edge.
@@ -266,14 +267,14 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of the first-stage processor in a two-stage
-     * group-and-aggregate setup. The processor groups items by the grouping
-     * key and applies the {@link AggregateOperation#accumulateFn(
-     * com.hazelcast.jet.datamodel.Tag)
-     * accumulate} primitive to each group. After exhausting all its input it
-     * emits one {@code Map.Entry<K, A>} per observed key.
+     * Returns a supplier of processors for the first-stage vertex in a
+     * two-stage group-and-aggregate setup. The vertex groups items by the
+     * grouping key and applies the {@link AggregateOperation#accumulateFn(
+     * com.hazelcast.jet.datamodel.Tag) accumulate} primitive to each group.
+     * After exhausting all its input it emits one {@code Map.Entry<K, A>} per
+     * distinct key.
      * <p>
-     * The processor accepts input from one or more inbound edges. The type of
+     * The vertex accepts input from one or more inbound edges. The type of
      * items may be different on each edge. For each edge a separate key
      * extracting function must be supplied and the aggregate operation must
      * contain a separate accumulation function for each edge.
@@ -292,22 +293,21 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of the second-stage processor in a two-stage
-     * group-and-aggregate setup. It applies the {@link
-     * AggregateOperation1#combineFn() combine} aggregation
-     * primitive to the entries received from several upstream instances of
-     * {@link #accumulateByKey(DistributedFunction, AggregateOperation1)
+     * Returns a supplier of processors for the second-stage vertex in a
+     * two-stage group-and-aggregate setup. Each processor applies the {@link
+     * AggregateOperation1#combineFn() combine} aggregation primitive to the
+     * entries received from several upstream instances of {@link
+     * #accumulateByKey(DistributedFunction, AggregateOperation1)
      * accumulateByKey()}. After exhausting all its input it emits one
-     * {@code Map.Entry<K, R>} per observed key.
+     * {@code Map.Entry<K, R>} per distinct key.
      * <p>
-     * Since the input to this processor must be bounded, its primary use case
+     * Since the input to this vertex must be bounded, its primary use case
      * are batch jobs.
      *
      * @param aggrOp the aggregate operation to perform
-     * @param <A> type of accumulator returned from {@code
-     *            aggrOp.createAccumulatorFn()}
-     * @param <R> type of the finished result returned from {@code aggrOp.
-     *            finishAccumulationFn()}
+     * @param <A> type of accumulator returned from {@code aggrOp.createAccumulatorFn()}
+     * @param <R> type of the finished result returned from
+     *            {@code aggrOp.finishAccumulationFn()}
      */
     @Nonnull
     public static <A, R> DistributedSupplier<Processor> combineByKey(
@@ -317,13 +317,13 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that performs the provided aggregate
-     * operation on all the items it receives. After exhausting all its input
-     * it emits a single item of type {@code R} &mdash;the result of the
-     * aggregate operation.
+     * Returns a supplier of processors for a vertex that performs the provided
+     * aggregate operation on all the items it receives. After exhausting all
+     * its input it emits a single item of type {@code R} &mdash;the result of
+     * the aggregate operation.
      * <p>
-     * Since the input to this processor must be bounded, its primary use case
-     * is batch jobs.
+     * Since the input to this vertex must be bounded, its primary use case are
+     * batch jobs.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T> type of received item
@@ -340,13 +340,13 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that performs the provided aggregate
-     * operation on all the items it receives. After exhausting all its input
-     * it emits a single item of type {@code R} &mdash;the result of the
-     * aggregate operation.
+     * Returns a supplier of processors for a vertex that performs the provided
+     * aggregate operation on all the items it receives. After exhausting all
+     * its input it emits a single item of type {@code R} &mdash;the result of
+     * the aggregate operation.
      * <p>
-     * Since the input to this processor must be bounded, its primary use case
-     * are batch jobs.
+     * Since the input to this vertex must be bounded, its primary use case are
+     * batch jobs.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T> type of received item
@@ -363,13 +363,13 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that performs the provided aggregate
-     * operation on all the items it receives. After exhausting all its input
-     * it emits a single item of type {@code R} &mdash;the result of the
-     * aggregate operation.
+     * Returns a supplier of processors for a vertex that performs the provided
+     * aggregate operation on all the items it receives. After exhausting all
+     * its input it emits a single item of type {@code R} &mdash;the result of
+     * the aggregate operation.
      * <p>
-     * Since the input to this processor must be bounded, its primary use case
-     * are batch jobs.
+     * Since the input to this vertex must be bounded, its primary use case are
+     * batch jobs.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T> type of received item
@@ -386,17 +386,17 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that aggregates events into a sliding
-     * window in a single stage (see the {@link Processors class
-     * Javadoc} for an explanation of aggregation stages). The processor groups
-     * items by the grouping key (as obtained from the given key-extracting
-     * function) and by <em>frame</em>, which is a range of timestamps equal to
-     * the sliding step. It emits sliding window results labeled with the
-     * timestamp denoting the window's end time. This timestamp is equal to the
-     * exclusive upper bound of timestamps belonging to the window.
+     * Returns a supplier of processors for a vertex that aggregates events
+     * into a sliding window in a single stage (see the {@link Processors
+     * class Javadoc} for an explanation of aggregation stages). The vertex
+     * groups items by the grouping key (as obtained from the given
+     * key-extracting function) and by <em>frame</em>, which is a range of
+     * timestamps equal to the sliding step. It emits sliding window results
+     * labeled with the timestamp denoting the window's end time (the exclusive
+     * upper bound of the timestamps belonging to the window).
      * <p>
-     * When the processor receives a watermark with a given {@code wmVal},
-     * it emits the result of aggregation for all positions of the sliding
+     * When the vertex receives a watermark with a given {@code wmVal}, it
+     * emits the result of aggregation for all the positions of the sliding
      * window with {@code windowTimestamp <= wmVal}. It computes the window
      * result by combining the partial results of the frames belonging to it
      * and finally applying the {@code finish} aggregation primitive. After this
@@ -417,12 +417,12 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of the first-stage processor in a two-stage sliding
-     * window aggregation setup (see the {@link Processors class
-     * Javadoc} for an explanation of aggregation stages). The processor groups
-     * items by the grouping key (as obtained from the given key-extracting
-     * function) and by <em>frame</em>, which is a range of timestamps equal to
-     * the sliding step. It applies the {@link
+     * Returns a supplier of processors for the first-stage vertex in a
+     * two-stage sliding window aggregation setup (see the {@link Processors
+     * class Javadoc} for an explanation of aggregation stages). The vertex
+     * groups items by the grouping key (as obtained from the given
+     * key-extracting function) and by <em>frame</em>, which is a range of
+     * timestamps equal to the sliding step. It applies the {@link
      * AggregateOperation1#accumulateFn() accumulate} aggregation primitive to
      * each key-frame group.
      * <p>
@@ -431,8 +431,8 @@ public final class Processors {
      * WindowDefinition#higherFrameTs(long)} maps the event timestamp to the
      * timestamp of the frame it belongs to.
      * <p>
-     * When the processor receives a watermark with a given {@code wmVal},
-     * it emits the current accumulated state of all frames with {@code
+     * When the processor receives a watermark with a given {@code wmVal}, it
+     * emits the current accumulated state of all frames with {@code
      * timestamp <= wmVal} and deletes these frames from its storage.
      * The type of emitted items is {@link TimestampedEntry
      * TimestampedEntry&lt;K, A>} so there is one item per key per frame.
@@ -457,13 +457,14 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of the second-stage processor in a two-stage sliding
-     * window aggregation setup (see the {@link Processors class
-     * Javadoc} for an explanation of aggregation stages). It applies the
-     * {@link AggregateOperation1#combineFn() combine} aggregation
-     * primitive to frames received from several upstream instances of {@link
-     * #accumulateByFrame(DistributedFunction, DistributedToLongFunction,
-     * TimestampKind, WindowDefinition, AggregateOperation1)
+     * Returns a supplier of processors for the second-stage vertex in a
+     * two-stage sliding window aggregation setup (see the {@link Processors
+     * class Javadoc} for an explanation of aggregation stages). Each
+     * processor applies the {@link AggregateOperation1#combineFn() combine}
+     * aggregation primitive to frames received from several upstream instances
+     * of {@link #accumulateByFrame(
+     *      DistributedFunction, DistributedToLongFunction,
+     *      TimestampKind, WindowDefinition, AggregateOperation1)
      * accumulateByFrame()}. It emits sliding window results labeled with
      * the timestamp denoting the window's end time. This timestamp is equal to
      * the exclusive upper bound of timestamps belonging to the window.
@@ -493,7 +494,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that performs a general
+     * Returns a supplier of processors for a vertexs that performs a general
      * group-by-key-and-window operation and applies the provided aggregate
      * operation on groups.
      *
@@ -530,12 +531,12 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that aggregates events into session
-     * windows. Events and windows under different grouping keys are treated
-     * independently.
+     * Returns a supplier of processors for a vetex that aggregates events into
+     * session windows. Events and windows under different grouping keys are
+     * treated independently.
      * <p>
-     * The functioning of this processor is easiest to explain in terms of
-     * the <em>event interval</em>: the range {@code [timestamp, timestamp +
+     * The functioning of this vertex is easiest to explain in terms of the
+     * <em>event interval</em>: the range {@code [timestamp, timestamp +
      * sessionTimeout]}. Initially an event causes a new session window to be
      * created, covering exactly the event interval. A following event under
      * the same key belongs to this window iff its interval overlaps it. The
@@ -543,10 +544,10 @@ public final class Processors {
      * event may happen to belong to two existing windows if its interval
      * bridges the gap between them; in that case they are combined into one.
      *
-     * @param sessionTimeout     maximum gap between consecutive events in the same session window
-     * @param getTimestampFn      function to extract the timestamp from the item
-     * @param getKeyFn            function to extract the grouping key from the item
-     * @param aggrOp contains aggregation logic
+     * @param sessionTimeout maximum gap between consecutive events in the same session window
+     * @param getTimestampFn function to extract the timestamp from the item
+     * @param getKeyFn       function to extract the grouping key from the item
+     * @param aggrOp         the aggregate operation
      *
      * @param <T> type of the stream event
      * @param <K> type of the item's grouping key
@@ -564,10 +565,10 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that inserts
-     * {@link Watermark watermark items} into a data
-     * (sub)stream. The value of the watermark is determined by a separate
-     * policy object of type {@link WatermarkPolicy}.
+     * Returns a supplier of processors for a vertex that inserts {@link
+     * com.hazelcast.jet.core.Watermark watermark items} into a stream. The
+     * value of the watermark is determined by the supplied {@link
+     * WatermarkPolicy} instance.
      *
      * @param <T> the type of the stream item
      */
@@ -581,10 +582,10 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor which, for each received item, emits the
-     * result of applying the given mapping function to it. If the result is
-     * {@code null}, it emits nothing. Therefore this processor can be used to
-     * implement filtering semantics as well.
+     * Returns a supplier of processors for a vertex which, for each received
+     * item, emits the result of applying the given mapping function to it. If
+     * the result is {@code null}, it emits nothing. Therefore this vertex can
+     * be used to implement filtering semantics as well.
      *
      * @param mapper the mapping function
      * @param <T> type of received item
@@ -604,8 +605,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor which emits the same items it receives,
-     * but only those that pass the given predicate.
+     * Returns a supplier of processors for a vertex that emits the same items
+     * it receives, but only those that pass the given predicate.
      *
      * @param predicate the predicate to test each received item against
      * @param <T> type of received item
@@ -622,7 +623,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor which applies the provided
+     * Returns a supplier of processors for a vertex that applies the provided
      * item-to-traverser mapping function to each received item and emits all
      * the items from the resulting traverser.
      *

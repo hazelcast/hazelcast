@@ -197,7 +197,7 @@ public interface ComputeStage<E> extends Stage {
      * emit any. The supplied argument specifies what to do with the received
      * data (typically push it to some outside resource).
      */
-    SinkStage drainTo(Sink sink);
+    SinkStage drainTo(Sink<? super E> sink);
 
     /**
      * Attaches to this stage a stage with a custom transform based on the

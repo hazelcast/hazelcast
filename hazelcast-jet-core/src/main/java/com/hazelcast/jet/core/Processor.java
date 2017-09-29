@@ -24,11 +24,16 @@ import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Does the computation needed to transform zero or more input data streams
- * into zero or more output streams. Each input/output stream corresponds
- * to one edge on the vertex represented by this processor. The
- * correspondence between a stream and an edge is established via the
- * edge's <em>ordinal</em>.
+ * When Jet executes a DAG, it creates one or more instances of {@code
+ * Processor} on each cluster member to do the work of a given vertex. The
+ * vertex's {@code localParallelism} property controls the number of
+ * processors per member.
+ * <p>
+ * The processor is a single-threaded processing unit that performs the
+ * computation needed to transform zero or more input data streams into
+ * zero or more output streams. Each input/output stream corresponds to
+ * an edge on the vertex. The correspondence between a stream and an
+ * edge is established via the edge's <em>ordinal</em>.
  * <p>
  * The special case of zero input streams applies to a <em>source</em>
  * vertex, which gets its data from the environment. The special case of

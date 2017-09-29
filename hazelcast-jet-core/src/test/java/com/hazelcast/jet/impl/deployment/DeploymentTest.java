@@ -26,11 +26,13 @@ import com.hazelcast.util.FilteringClassLoader;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
+@Ignore
 public class DeploymentTest extends AbstractDeploymentTest {
 
     private JetInstance instance;

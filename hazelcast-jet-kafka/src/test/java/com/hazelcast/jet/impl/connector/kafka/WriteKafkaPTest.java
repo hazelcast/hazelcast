@@ -16,9 +16,10 @@
 
 package com.hazelcast.jet.impl.connector.kafka;
 
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.KafkaProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,13 +32,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
-import static com.hazelcast.jet.core.processor.KafkaProcessors.writeKafka;
 import static java.util.stream.IntStream.range;
 
 @Category(QuickTest.class)
@@ -66,7 +67,8 @@ public class WriteKafkaPTest extends KafkaTestSupport {
         properties.setProperty("bootstrap.servers", brokerConnectionString);
         properties.setProperty("key.serializer", StringSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
-        Vertex sink = dag.newVertex("sink", writeKafka(topic, properties)).localParallelism(4);
+        Vertex sink = dag.newVertex("sink", KafkaProcessors.<Entry<String, String>, String, String>writeKafka(
+                topic, properties, Entry::getKey, Entry::getValue)).localParallelism(4);
 
         dag.edge(between(source, sink));
 

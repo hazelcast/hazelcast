@@ -18,12 +18,13 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.SinkImpl;
-import com.hazelcast.jet.core.processor.SinkProcessors;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
+import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -45,16 +46,16 @@ public final class Sinks {
      * @param sinkName user-friendly sink name
      * @param metaSupplier the processor meta-supplier
      */
-    public static Sink fromProcessor(String sinkName, ProcessorMetaSupplier metaSupplier) {
-        return new SinkImpl(sinkName, metaSupplier);
+    public static <E> Sink<E> fromProcessor(String sinkName, ProcessorMetaSupplier metaSupplier) {
+        return new SinkImpl<>(sinkName, metaSupplier);
     }
 
     /**
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code IMap} with the specified name.
      */
-    public static Sink writeMap(String mapName) {
-        return new SinkImpl("writeMap(" + mapName + ')', SinkProcessors.writeMap(mapName));
+    public static <E extends Map.Entry> Sink<E> writeMap(String mapName) {
+        return new SinkImpl<>("writeMap(" + mapName + ')', SinkProcessors.writeMap(mapName));
     }
 
     /**
@@ -62,16 +63,16 @@ public final class Sinks {
      * {@code IMap} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      */
-    public static Sink writeMap(String mapName, ClientConfig clientConfig) {
-        return new SinkImpl("writeMap(" + mapName + ')', SinkProcessors.writeMap(mapName, clientConfig));
+    public static <E extends Map.Entry> Sink<E> writeMap(String mapName, ClientConfig clientConfig) {
+        return new SinkImpl<>("writeMap(" + mapName + ')', SinkProcessors.writeMap(mapName, clientConfig));
     }
 
     /**
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code ICache} with the specified name.
      */
-    public static Sink writeCache(String cacheName) {
-        return new SinkImpl("writeCache(" + cacheName + ')', SinkProcessors.writeCache(cacheName));
+    public static <E extends Map.Entry> Sink<E> writeCache(String cacheName) {
+        return new SinkImpl<>("writeCache(" + cacheName + ')', SinkProcessors.writeCache(cacheName));
     }
 
     /**
@@ -79,16 +80,16 @@ public final class Sinks {
      * {@code ICache} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      */
-    public static Sink writeCache(String cacheName, ClientConfig clientConfig) {
-        return new SinkImpl("writeCache(" + cacheName + ')', SinkProcessors.writeCache(cacheName, clientConfig));
+    public static <E extends Map.Entry> Sink<E> writeCache(String cacheName, ClientConfig clientConfig) {
+        return new SinkImpl<>("writeCache(" + cacheName + ')', SinkProcessors.writeCache(cacheName, clientConfig));
     }
 
     /**
      * Returns a sink that adds the items it receives to a Hazelcast {@code
      * IList} with the specified name.
      */
-    public static Sink writeList(String listName) {
-        return new SinkImpl("writeList(" + listName + ')', SinkProcessors.writeList(listName));
+    public static <E> Sink<E> writeList(String listName) {
+        return new SinkImpl<>("writeList(" + listName + ')', SinkProcessors.writeList(listName));
     }
 
     /**
@@ -96,8 +97,8 @@ public final class Sinks {
      * IList} with the specified name in a remote cluster identified by the
      * supplied {@code ClientConfig}.
      */
-    public static Sink writeList(String listName, ClientConfig clientConfig) {
-        return new SinkImpl("writeList(" + listName + ')', SinkProcessors.writeList(listName, clientConfig));
+    public static <E> Sink<E> writeList(String listName, ClientConfig clientConfig) {
+        return new SinkImpl<>("writeList(" + listName + ')', SinkProcessors.writeList(listName, clientConfig));
     }
 
     /**
@@ -107,13 +108,13 @@ public final class Sinks {
      * function and encodes the string using the supplied {@code Charset}. It
      * follows each item with a newline character.
      */
-    public static <T> Sink writeSocket(
+    public static <E> Sink<E> writeSocket(
             @Nonnull String host,
             int port,
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<E, String> toStringFn,
             @Nonnull Charset charset
     ) {
-        return new SinkImpl("writeSocket(" + host + ':' + port + ')',
+        return new SinkImpl<>("writeSocket(" + host + ':' + port + ')',
                 SinkProcessors.writeSocket(host, port, toStringFn, charset));
     }
 
@@ -121,12 +122,12 @@ public final class Sinks {
      * Convenience for {@link #writeSocket(String, int, DistributedFunction,
      * Charset)} with UTF-8 as the charset.
      */
-    public static <T> Sink writeSocket(
+    public static <E> Sink<E> writeSocket(
             @Nonnull String host,
             int port,
-            @Nonnull DistributedFunction<T, String> toStringFn
+            @Nonnull DistributedFunction<E, String> toStringFn
     ) {
-        return new SinkImpl("writeSocket(" + host + ':' + port + ')',
+        return new SinkImpl<>("writeSocket(" + host + ':' + port + ')',
                 SinkProcessors.writeSocket(host, port, toStringFn, UTF_8));
     }
 
@@ -135,8 +136,8 @@ public final class Sinks {
      * Charset)} with {@code Object.toString} as the conversion function and
      * UTF-8 as the charset.
      */
-    public static <T> Sink writeSocket(@Nonnull String host, int port) {
-        return new SinkImpl("writeSocket(" + host + ':' + port + ')',
+    public static <E> Sink<E> writeSocket(@Nonnull String host, int port) {
+        return new SinkImpl<>("writeSocket(" + host + ':' + port + ')',
                 SinkProcessors.writeSocket(host, port, Object::toString, UTF_8));
     }
 
@@ -160,13 +161,13 @@ public final class Sinks {
      *               an existing file
      */
     @Nonnull
-    public static <T> Sink writeFile(
+    public static <E> Sink<E> writeFile(
             @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<E, String> toStringFn,
             @Nonnull Charset charset,
             boolean append
     ) {
-        return new SinkImpl("writeFile(" + directoryName + ')',
+        return new SinkImpl<>("writeFile(" + directoryName + ')',
                 SinkProcessors.writeFile(directoryName, toStringFn, charset, append));
     }
 
@@ -175,8 +176,8 @@ public final class Sinks {
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      */
     @Nonnull
-    public static <T> Sink writeFile(
-            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringFn
+    public static <E> Sink<E> writeFile(
+            @Nonnull String directoryName, @Nonnull DistributedFunction<E, String> toStringFn
     ) {
         return writeFile(directoryName, toStringFn, UTF_8, false);
     }
@@ -186,7 +187,7 @@ public final class Sinks {
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      */
     @Nonnull
-    public static Sink writeFile(@Nonnull String directoryName) {
+    public static <E> Sink<E> writeFile(@Nonnull String directoryName) {
         return writeFile(directoryName, Object::toString, UTF_8, false);
     }
 }

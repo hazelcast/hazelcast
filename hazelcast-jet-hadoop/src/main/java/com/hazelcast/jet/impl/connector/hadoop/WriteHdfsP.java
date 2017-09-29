@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -26,14 +27,15 @@ import com.hazelcast.nio.Address;
 import org.apache.hadoop.mapred.JobContextImpl;
 import org.apache.hadoop.mapred.JobID;
 import org.apache.hadoop.mapred.OutputCommitter;
+import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -46,29 +48,32 @@ import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
  * See {@link com.hazelcast.jet.core.processor.HdfsProcessors#writeHdfs(
  * org.apache.hadoop.mapred.JobConf, DistributedFunction, DistributedFunction)}.
  */
-public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
+public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
 
-    private final RecordWriter<KM, VM> recordWriter;
+    private final RecordWriter<K, V> recordWriter;
     private final TaskAttemptContextImpl taskAttemptContext;
     private final OutputCommitter outputCommitter;
-    private final DistributedFunction<K, KM> keyMapper;
-    private final DistributedFunction<V, VM> valueMapper;
+    private final DistributedFunction<? super T, K> extractKeyFn;
+    private final DistributedFunction<? super T, V> extractValueFn;
 
-    private WriteHdfsP(RecordWriter<KM, VM> recordWriter, TaskAttemptContextImpl taskAttemptContext,
+    private WriteHdfsP(RecordWriter<K, V> recordWriter,
+                       TaskAttemptContextImpl taskAttemptContext,
                        OutputCommitter outputCommitter,
-                       DistributedFunction<K, KM> keyMapper, DistributedFunction<V, VM> valueMapper
+                       DistributedFunction<? super T, K> extractKeyFn,
+                       DistributedFunction<? super T, V> extractValueFn
     ) {
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
         this.outputCommitter = outputCommitter;
-        this.keyMapper = keyMapper;
-        this.valueMapper = valueMapper;
+        this.extractKeyFn = extractKeyFn;
+        this.extractValueFn = extractValueFn;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        Map.Entry<K, V> entry = (Map.Entry<K, V>) item;
-        recordWriter.write(keyMapper.apply(entry.getKey()), valueMapper.apply(entry.getValue()));
+        @SuppressWarnings("unchecked")
+        T t = (T) item;
+        recordWriter.write(extractKeyFn.apply(t), extractValueFn.apply(t));
         return true;
     }
 
@@ -88,23 +93,23 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
         return false;
     }
 
-    public static class MetaSupplier<K, KM, V, VM> implements ProcessorMetaSupplier {
+    public static class MetaSupplier<T, K, V> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final SerializableJobConf jobConf;
-        private final DistributedFunction<K, KM> keyMapper;
-        private final DistributedFunction<V, VM> valueMapper;
+        private final DistributedFunction<? super T, K> extractKeyFn;
+        private final DistributedFunction<? super T, V> extractValueFn;
 
         private transient Address address;
 
         public MetaSupplier(SerializableJobConf jobConf,
-                            DistributedFunction<K, KM> keyMapper,
-                            DistributedFunction<V, VM> valueMapper
+                            DistributedFunction<? super T, K> extractKeyFn,
+                            DistributedFunction<? super T, V> extractValueFn
         ) {
             this.jobConf = jobConf;
-            this.keyMapper = keyMapper;
-            this.valueMapper = valueMapper;
+            this.extractKeyFn = extractKeyFn;
+            this.extractValueFn = extractValueFn;
         }
 
         @Override
@@ -114,18 +119,18 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
 
         @Override @Nonnull
         public DistributedFunction<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new Supplier<>(address.equals(this.address), jobConf, keyMapper, valueMapper);
+            return address -> new Supplier<>(address.equals(this.address), jobConf, extractKeyFn, extractValueFn);
         }
     }
 
-    private static class Supplier<K, KM, V, VM> implements ProcessorSupplier {
+    private static class Supplier<T, K, V> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final boolean commitJob;
         private final SerializableJobConf jobConf;
-        private final DistributedFunction<K, KM> keyMapper;
-        private final DistributedFunction<V, VM> valueMapper;
+        private final DistributedFunction<? super T, K> extractKeyFn;
+        private final DistributedFunction<? super T, V> extractValueFn;
 
         private transient Context context;
         private transient OutputCommitter outputCommitter;
@@ -133,13 +138,13 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
 
         Supplier(boolean commitJob,
                  SerializableJobConf jobConf,
-                 DistributedFunction<K, KM> keyMapper,
-                 DistributedFunction<V, VM> valueMapper
+                 DistributedFunction<? super T, K> extractKeyFn,
+                 DistributedFunction<? super T, V> extractValueFn
         ) {
             this.commitJob = commitJob;
             this.jobConf = jobConf;
-            this.keyMapper = keyMapper;
-            this.valueMapper = valueMapper;
+            this.extractKeyFn = extractKeyFn;
+            this.extractValueFn = extractValueFn;
         }
 
         @Override
@@ -159,24 +164,26 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
         @Override @Nonnull
         public List<Processor> get(int count) {
             return range(0, count).mapToObj(i -> {
-                if (i == 0) {
-                    uncheckCall(() -> {
+                try {
+                    if (i == 0) {
                         outputCommitter.setupJob(jobContext);
-                        return null;
-                    });
-                }
-                String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
-                TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),
-                        JOB_SETUP, i, 0);
-                jobConf.set("mapred.task.id", taskAttemptID.toString());
-                jobConf.setInt("mapred.task.partition", i);
+                    }
+                    String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
+                    TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),
+                            JOB_SETUP, i, 0);
+                    jobConf.set("mapred.task.id", taskAttemptID.toString());
+                    jobConf.setInt("mapred.task.partition", i);
 
-                TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(jobConf, taskAttemptID);
-                RecordWriter recordWriter = uncheckCall(() ->
-                        jobConf.getOutputFormat()
-                               .getRecordWriter(null,
-                                       jobConf, uuid + '-' + valueOf(i), Reporter.NULL));
-                return new WriteHdfsP(recordWriter, taskAttemptContext, outputCommitter, keyMapper, valueMapper);
+                    TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(jobConf, taskAttemptID);
+                    @SuppressWarnings("unchecked")
+                    OutputFormat<K, V> outFormat = jobConf.getOutputFormat();
+                    RecordWriter<K, V> recordWriter = outFormat.getRecordWriter(
+                            null, jobConf, uuid + '-' + valueOf(i), Reporter.NULL);
+                    return new WriteHdfsP<>(
+                            recordWriter, taskAttemptContext, outputCommitter, extractKeyFn, extractValueFn);
+                } catch (IOException e) {
+                    throw new JetException(e);
+                }
 
             }).collect(toList());
         }

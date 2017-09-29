@@ -17,10 +17,12 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.HdfsProcessors;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,6 +48,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
@@ -53,7 +56,6 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfs;
-import static com.hazelcast.jet.core.processor.HdfsProcessors.writeHdfs;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
@@ -71,8 +73,8 @@ public class WriteHdfsPTest extends JetTestSupport {
     @Parameterized.Parameters(name = "Executing: {0} {1}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(
-                new Object[]{TextOutputFormat.class, TextInputFormat.class}, //
-                new Object[]{SequenceFileOutputFormat.class, SequenceFileInputFormat.class} //
+                new Object[]{TextOutputFormat.class, TextInputFormat.class},
+                new Object[]{SequenceFileOutputFormat.class, SequenceFileInputFormat.class}
         );
     }
 
@@ -101,8 +103,9 @@ public class WriteHdfsPTest extends JetTestSupport {
 
         FileOutputFormat.setOutputPath(conf, path);
 
-
-        Vertex consumer = dag.newVertex("consumer", writeHdfs(conf))
+        Vertex consumer = dag.newVertex("consumer",
+                HdfsProcessors.<Entry<IntWritable, IntWritable>, IntWritable, IntWritable>writeHdfs(
+                        conf, Entry::getKey, Entry::getValue))
                              .localParallelism(4);
 
         dag.edge(between(producer, consumer));
@@ -115,7 +118,7 @@ public class WriteHdfsPTest extends JetTestSupport {
         JobConf readJobConf = new JobConf();
         readJobConf.setInputFormat(inputFormatClass);
         FileInputFormat.addInputPath(readJobConf, path);
-        producer = dag.newVertex("producer", readHdfs(readJobConf))
+        producer = dag.newVertex("producer", readHdfs(readJobConf, Util::entry))
                       .localParallelism(8);
 
         consumer = dag.newVertex("consumer", writeList("results"))

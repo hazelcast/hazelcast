@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.connector.kafka.StreamKafkaP;
 import com.hazelcast.jet.impl.connector.kafka.WriteKafkaP;
 import com.hazelcast.util.Preconditions;
@@ -25,7 +26,8 @@ import java.util.Arrays;
 import java.util.Properties;
 
 /**
- * Static utility class with factories of Apache Kafka source and sink processors.
+ * Static utility class with factories of Apache Kafka source and sink
+ * processors.
  */
 public final class KafkaProcessors {
 
@@ -33,13 +35,14 @@ public final class KafkaProcessors {
     }
 
     /**
-     * Returns a supplier of processor that consumes one or more Apache Kafka
-     * topics and emits items from them as {@code Map.Entry} instances.
+     * Returns a supplier of processors for a vertex that consumes one or
+     * more Apache Kafka topics and emits items from them as {@code Map.Entry}
+     * instances.
      * <p>
-     * One {@code KafkaConsumer} is created per {@code Processor} instance
-     * using the supplied {@code properties}. Subset of Kafka partitions is
-     * assigned to each of them using manual partition assignment (the {@code
-     * group.id} property is ignored).
+     * The meta-supplier creates a {@code KafkaConsumer} for each {@code
+     * Processor} instance using the supplied {@code properties}. It assigns a
+     * subset of Kafka partitions to each of them using manual partition
+     * assignment (the {@code group.id} property is ignored).
      * <p>
      * If snapshotting is enabled, partition offsets are saved to the snapshot.
      * After restart, the events are emitted from the same offset.
@@ -64,25 +67,34 @@ public final class KafkaProcessors {
     }
 
     /**
-     * Returns a meta-supplier of processor that publishes messages to an
-     * Apache Kafka topic. It expects items of type {@code Map.Entry<K,V>} on
-     * input and publishes them to Apache Kafka.
+     * Returns a meta-supplier of processors for a vertex that publishes
+     * messages to an Apache Kafka topic. It transforms each received item
+     * to a key-value pair using the two supplied mapping functions.
      * <p>
-     * A single {@code KafkaProducer} is created per node using the supplied
-     * properties file. The producer instance is shared across all {@code
-     * Processor} instances on that node.
+     * The meta-supplier creates a single {@code KafkaProducer} per cluster
+     * member using the supplied properties. All {@code Processor}
+     * instances on that member share the same producer.
      * <p>
      * Behavior on job restart: the processor is stateless. If the job is
      * restarted, duplicate events can occur. If you need exactly once
      * behaviour, idempotence must be ensured on the application level.
      *
-     * @param <K>        type of keys written
-     * @param <V>        type of values written
-     * @param topic      Kafka topic name to publish to
-     * @param properties producer properties which should contain broker
-     *                   address and key/value serializers
+     * @param topic          name of the Kafka topic to publish to
+     * @param properties     producer properties which should contain broker
+     *                       address and key/value serializers
+     * @param extractKeyFn   function that extracts the key from the stream item
+     * @param extractValueFn function that extracts the value from the stream item
+     *
+     * @param <T> type of stream item
+     * @param <K> type of the key published to Kafka
+     * @param <V> type of the value published to Kafka
+     *
      */
-    public static <K, V> ProcessorMetaSupplier writeKafka(String topic, Properties properties) {
-        return ProcessorMetaSupplier.of(new WriteKafkaP.Supplier<K, V>(topic, properties));
+    public static <T, K, V> ProcessorMetaSupplier writeKafka(
+            String topic, Properties properties,
+            DistributedFunction<? super T, K> extractKeyFn,
+            DistributedFunction<? super T, V> extractValueFn
+    ) {
+        return ProcessorMetaSupplier.of(new WriteKafkaP.Supplier<>(topic, properties, extractKeyFn, extractValueFn));
     }
 }

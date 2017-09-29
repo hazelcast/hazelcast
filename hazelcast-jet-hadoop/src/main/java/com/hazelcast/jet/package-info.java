@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
-
 /**
- * A transform which accepts an input stream and produces no output
- * streams.
- *
- * @param <E> the type of items the sink will receive
+ * Hazelcast Jet's base package. This module contributes source and sink
+ * factory classes to it.
  */
-public interface Sink<E> extends Transform {
-    /**
-     * Returns the name of this sink.
-     */
-    String name();
-}
+package com.hazelcast.jet;

@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.Sink;
 
-public class SinkImpl<E> implements Sink {
+public class SinkImpl<E> implements Sink<E> {
     private final String name;
     private final ProcessorMetaSupplier metaSupplier;
 

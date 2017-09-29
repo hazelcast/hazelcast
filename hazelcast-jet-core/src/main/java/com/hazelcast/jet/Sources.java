@@ -17,9 +17,12 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
@@ -63,6 +66,27 @@ public final class Sources {
     }
 
     /**
+     * Returns a source constructed directly from the given Core API processor
+     * supplier.
+     *
+     * @param sourceName user-friendly source name
+     * @param supplier the processor supplier
+     */
+    public static <T> Source<T> fromProcessor(String sourceName, ProcessorSupplier supplier) {
+        return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
+    }
+
+    /**
+     * Returns a source constructed directly from the given supplier of Core API processors.
+     *
+     * @param sourceName user-friendly source name
+     * @param supplier the supplier of processors
+     */
+    public static <T> Source<T> fromProcessor(String sourceName, DistributedSupplier<Processor> supplier) {
+        return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
+    }
+
+    /**
      * Returns a source that fetches entries from the Hazelcast {@code IMap}
      * with the specified name and emits them as {@code Map.Entry}. Its
      * processors will leverage data locality by fetching only those entries
@@ -73,7 +97,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     public static <K, V> Source<Map.Entry<K, V>> readMap(String mapName) {
-        return new SourceImpl<>("readMap(" + mapName + ')', SourceProcessors.readMap(mapName));
+        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMap(mapName));
     }
 
     /**
@@ -90,7 +114,7 @@ public final class Sources {
     public static <K, V, T> Source<T> readMap(String mapName,
                                               DistributedPredicate<Map.Entry<K, V>> predicate,
                                               DistributedFunction<Map.Entry<K, V>, T> projectionFn) {
-        return new SourceImpl<T>("readMap(" + mapName + ')',
+        return fromProcessor("readMap(" + mapName + ')',
                 SourceProcessors.readMap(mapName, predicate, projectionFn));
     }
 
@@ -107,7 +131,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return new SourceImpl<>("readMap(" + mapName + ')', SourceProcessors.readMap(mapName, clientConfig));
+        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMap(mapName, clientConfig));
     }
 
     /**
@@ -126,7 +150,7 @@ public final class Sources {
                                               DistributedPredicate<Map.Entry<K, V>> predicate,
                                               DistributedFunction<Map.Entry<K, V>, T> projectionFn,
                                               ClientConfig clientConfig) {
-        return new SourceImpl<T>("readMap(" + mapName + ')',
+        return fromProcessor("readMap(" + mapName + ')',
                 SourceProcessors.readMap(mapName, predicate, projectionFn, clientConfig));
     }
 
@@ -142,7 +166,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> readCache(@Nonnull String cacheName) {
-        return new SourceImpl<>("readCache(" + cacheName + ')', SourceProcessors.readCache(cacheName));
+        return fromProcessor("readCache(" + cacheName + ')', SourceProcessors.readCache(cacheName));
     }
 
     /**
@@ -160,7 +184,7 @@ public final class Sources {
     public static <K, V> Source<Map.Entry<K, V>> readCache(
             @Nonnull String cacheName, @Nonnull ClientConfig clientConfig
     ) {
-        return new SourceImpl<>("readCache(" + cacheName + ')',
+        return fromProcessor("readCache(" + cacheName + ')',
                 ReadWithPartitionIteratorP.readCache(cacheName, clientConfig)
         );
     }
@@ -172,7 +196,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> readList(@Nonnull String listName) {
-        return new SourceImpl<>("readList(" + listName + ')', ReadIListP.supplier(listName));
+        return fromProcessor("readList(" + listName + ')', ReadIListP.supplier(listName));
     }
 
     /**
@@ -183,7 +207,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> readList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return new SourceImpl<>("readList(" + listName + ')', ReadIListP.supplier(listName, clientConfig));
+        return fromProcessor("readList(" + listName + ')', ReadIListP.supplier(listName, clientConfig));
     }
 
     /**
@@ -201,7 +225,7 @@ public final class Sources {
     public static Source<String> streamSocket(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
-        return new SourceImpl<>("streamSocket(" + host + ':' + port + ')',
+        return fromProcessor("streamSocket(" + host + ':' + port + ')',
                 StreamSocketP.supplier(host, port, charset.name()));
     }
 
@@ -224,7 +248,7 @@ public final class Sources {
     public static Source<String> readFiles(
             @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return new SourceImpl<>("readFiles(" + directory + '/' + glob + ')',
+        return fromProcessor("readFiles(" + directory + '/' + glob + ')',
                 ReadFilesP.supplier(directory, charset.name(), glob)
         );
     }
@@ -281,7 +305,7 @@ public final class Sources {
     public static Source<String> streamFiles(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return new SourceImpl<>("streamFiles(" + watchedDirectory + '/' + glob + ')',
+        return fromProcessor("streamFiles(" + watchedDirectory + '/' + glob + ')',
                 StreamFilesP.supplier(watchedDirectory, charset.name(), glob)
         );
     }

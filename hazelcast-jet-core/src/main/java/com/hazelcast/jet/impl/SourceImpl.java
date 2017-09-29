@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.Source;
 
 public class SourceImpl<E> implements Source<E> {
@@ -30,14 +27,6 @@ public class SourceImpl<E> implements Source<E> {
     public SourceImpl(String name, ProcessorMetaSupplier metaSupplier) {
         this.metaSupplier = metaSupplier;
         this.name = name;
-    }
-
-    public SourceImpl(String name, ProcessorSupplier supplier) {
-        this(name, ProcessorMetaSupplier.of(supplier));
-    }
-
-    public SourceImpl(String name, DistributedSupplier<Processor> supplier) {
-        this(name, ProcessorMetaSupplier.of(supplier));
     }
 
     @Override

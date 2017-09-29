@@ -17,19 +17,15 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.impl.connector.hadoop.ReadHdfsP;
 import com.hazelcast.jet.impl.connector.hadoop.ReadHdfsP.MetaSupplier;
 import com.hazelcast.jet.impl.connector.hadoop.SerializableJobConf;
 import com.hazelcast.jet.impl.connector.hadoop.WriteHdfsP;
 import org.apache.hadoop.mapred.JobConf;
 
 import javax.annotation.Nonnull;
-import java.util.Map.Entry;
 
-import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.impl.connector.hadoop.SerializableJobConf.asSerializable;
 
 /**
@@ -42,30 +38,14 @@ public final class HdfsProcessors {
     }
 
     /**
-     * Convenience for {@link #readHdfs(JobConf, DistributedBiFunction)}
-     * emitting output as a {@link java.util.Map.Entry}.
-     */
-    @Nonnull
-    public static <K, V> ReadHdfsP.MetaSupplier<K, V, Entry<K, V>> readHdfs(@Nonnull JobConf jobConf) {
-        return readHdfs(jobConf, Util::entry);
-    }
-
-    /**
-     * A meta-supplier of processor which reads and emits records from Apache
-     * Hadoop HDFS.
-     *
-     * The input according to the given {@code InputFormat} is split among the
-     * processor instances and each processor instance is responsible for
-     * reading a part of the input. The records are emitted as {@code
-     * Map.Entry<K,V>} by default, but this can also be transformed to another
-     * type using an optional {@code mapper}.
-     *
-     * Jet cluster should be run on the same machines as the Apache Hadoop
-     * cluster for best read performance. If the hosts are aligned, each
-     * processor instance will try to read as much local data as possible. A
-     * heuristic algorithm is used to assign replicated blocks across the
-     * cluster to ensure a well-balanced work distribution between processor
-     * instances.
+     * Returns a meta-supplier of processors for a vertex that reads records
+     * from Apache Hadoop HDFS and emits the results of transforming each
+     * record with the supplied mapping function.
+     * <p>
+     * The vertex splits and balances the input data among processors, doing
+     * its best to achieve data locality. To this end the Jet cluster topology
+     * should be aligned with Hadoop's &mdash; on each Hadoop member there
+     * should be a Jet member.
      *
      * @param <K> key type of the records
      * @param <V> value type of the records
@@ -82,44 +62,33 @@ public final class HdfsProcessors {
     }
 
     /**
-     * Convenience for {@link #writeHdfs(JobConf, DistributedFunction,
-     * DistributedFunction)} with {@code identity()} mapping functions.
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier writeHdfs(@Nonnull JobConf jobConf) {
-        return writeHdfs(jobConf, identity(), identity());
-    }
-
-    /**
-     * Returns a meta-supplier of processor that writes to Apache Hadoop HDFS.
-     * The processor expects items of type {@code Map.Entry<K,V>} on input and
-     * takes optional mappers for converting the key and the value to types
-     * required by the output format. For example, the mappers can be used to
-     * map the keys and the values to their {@code Writable} equivalents.
-     *
-     * Each processor instance creates a single file in the output path identified by
-     * the member ID and the processor ID. Unlike MapReduce, the output files
-     * are not sorted by key.
-     *
+     * Returns a meta-supplier of processors for a vertex that writes to Apache
+     * Hadoop HDFS. It transforms each received item to a key-value pair using
+     * the two supplied mapping functions. The type of key and value must
+     * conform to the expectations of the output format specified in {@code
+     * JobConf}.
+     * <p>
+     * Each processor instance creates a single file in the output path
+     * identified by the member ID and the processor ID. Unlike MapReduce, the
+     * data in the files is not sorted by key.
+     * <p>
      * The supplied {@code JobConf} must specify an {@code OutputFormat} with
      * a path.
      *
-     * @param jobConf     {@code JobConf} used for output format configuration
-     * @param keyMapper   mapper to map a key to another key
-     * @param valueMapper mapper to map a value to another value
+     * @param jobConf        {@code JobConf} used for output format configuration
+     * @param extractKeyFn   mapper to map a key to another key
+     * @param extractValueFn mapper to map a value to another value
      *
-     * @param <K>         input key type
-     * @param <KM>        the type of the key after mapping
-     * @param <V>         input value type
-     * @param <VM>        the type of the value after mapping
+     * @param <E> stream item type
+     * @param <K> type of key to write to HDFS
+     * @param <V> type of value to write to HDFS
      */
     @Nonnull
-    public static <K, KM, V, VM> ProcessorMetaSupplier writeHdfs(
+    public static <E, K, V> ProcessorMetaSupplier writeHdfs(
             @Nonnull JobConf jobConf,
-            @Nonnull DistributedFunction<K, KM> keyMapper,
-            @Nonnull DistributedFunction<V, VM> valueMapper
+            @Nonnull DistributedFunction<? super E, K> extractKeyFn,
+            @Nonnull DistributedFunction<? super E, V> extractValueFn
     ) {
-        return new WriteHdfsP.MetaSupplier<>(SerializableJobConf.asSerializable(jobConf), keyMapper, valueMapper);
+        return new WriteHdfsP.MetaSupplier<>(SerializableJobConf.asSerializable(jobConf), extractKeyFn, extractValueFn);
     }
-
 }

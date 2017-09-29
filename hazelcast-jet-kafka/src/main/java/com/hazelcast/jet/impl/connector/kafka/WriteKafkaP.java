@@ -24,24 +24,32 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
 /**
- * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#writeKafka(String,
- * Properties)}.
+ * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#writeKafka(
+ *      String, Properties, com.hazelcast.jet.function.DistributedFunction,
+ *      com.hazelcast.jet.function.DistributedFunction)
+ * KafkaProcessors.writeKafka()}.
  */
-public final class WriteKafkaP<K, V> extends AbstractProcessor {
+public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
 
     private final String topic;
     private final KafkaProducer<K, V> producer;
+    private final Function<? super T, K> extractKeyFn;
+    private final Function<? super T, V> extractValueFn;
 
-    WriteKafkaP(String topic, KafkaProducer<K, V> producer) {
+    WriteKafkaP(String topic, KafkaProducer<K, V> producer,
+                Function<? super T, K> extractKeyFn, Function<? super T, V> extractValueFn
+    ) {
         this.topic = topic;
         this.producer = producer;
+        this.extractKeyFn = extractKeyFn;
+        this.extractValueFn = extractValueFn;
     }
 
     @Override
@@ -50,9 +58,10 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        Map.Entry<K, V> entry = (Map.Entry<K, V>) item;
-        producer.send(new ProducerRecord<>(topic, entry.getKey(), entry.getValue()));
+        T t =  (T) item;
+        producer.send(new ProducerRecord<>(topic, extractKeyFn.apply(t), extractValueFn.apply(t)));
         return true;
     }
 
@@ -62,18 +71,24 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
         return true;
     }
 
-    public static class Supplier<K, V> implements ProcessorSupplier {
+    public static class Supplier<T, K, V> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String topicId;
         private final Properties properties;
+        private final Function<? super T, K> extractKeyFn;
+        private final Function<? super T, V> extractValueFn;
 
         private transient KafkaProducer<K, V> producer;
 
-        public Supplier(String topicId, Properties properties) {
+        public Supplier(String topicId, Properties properties,
+                        Function<? super T, K> extractKeyFn, Function<? super T, V> extractValueFn
+        ) {
             this.topicId = topicId;
             this.properties = properties;
+            this.extractKeyFn = extractKeyFn;
+            this.extractValueFn = extractValueFn;
         }
 
         @Override
@@ -83,7 +98,7 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new WriteKafkaP<>(topicId, producer))
+            return Stream.generate(() -> new WriteKafkaP<>(topicId, producer, extractKeyFn, extractValueFn))
                          .limit(count)
                          .collect(toList());
         }
