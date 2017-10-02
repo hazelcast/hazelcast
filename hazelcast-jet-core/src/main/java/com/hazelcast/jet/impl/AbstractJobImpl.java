@@ -30,7 +30,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -47,7 +46,7 @@ public abstract class AbstractJobImpl implements Job {
 
     @Nonnull
     @Override
-    public Future<Void> getFuture() {
+    public CompletableFuture<Void> getFuture() {
         return future;
     }
 
@@ -134,7 +133,7 @@ public abstract class AbstractJobImpl implements Job {
                     future.completeExceptionally(e);
                 }
             } else {
-                future.completeExceptionally(t);
+                future.completeExceptionally(peel(t));
             }
         }
 

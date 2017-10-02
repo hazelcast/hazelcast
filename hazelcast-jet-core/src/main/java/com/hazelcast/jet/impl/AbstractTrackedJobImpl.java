@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractTrackedJobImpl extends AbstractJobImpl {
 
@@ -32,7 +32,7 @@ public abstract class AbstractTrackedJobImpl extends AbstractJobImpl {
 
     @Nonnull
     @Override
-    public final Future<Void> getFuture() {
+    public final CompletableFuture<Void> getFuture() {
         return super.getFuture();
     }
 

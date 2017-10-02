@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A Jet computation job created from a {@link DAG}. Jet will start executing
@@ -44,7 +44,7 @@ public interface Job {
      * @throws IllegalStateException If the job was not started yet.
      */
     @Nonnull
-    Future<Void> getFuture();
+    CompletableFuture<Void> getFuture();
     /**
      * Returns the status of this job.
      */
@@ -77,7 +77,7 @@ public interface Job {
      * @deprecated Use {@link #getFuture()} instead. This method will be removed in the next release.
      */
     @Deprecated
-    default Future<Void> execute() {
+    default CompletableFuture<Void> execute() {
         return getFuture();
     }
 

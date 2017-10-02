@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractSubmittedJobImpl extends AbstractJobImpl {
 
@@ -41,7 +41,7 @@ public abstract class AbstractSubmittedJobImpl extends AbstractJobImpl {
 
     @Nonnull
     @Override
-    public final Future<Void> getFuture() {
+    public final CompletableFuture<Void> getFuture() {
         if (jobId == null) {
             throw new IllegalStateException("Job is not initialized yet!");
         }
