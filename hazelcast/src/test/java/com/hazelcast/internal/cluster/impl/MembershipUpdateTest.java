@@ -16,7 +16,10 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import classloading.domain.Person;
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -43,13 +46,16 @@ import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.FilteringClassLoader;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.spi.CachingProvider;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -667,6 +673,28 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         sleepSeconds(5);
         sendOpsFromMaster.cancel(true);
         assertFalse(service.otherOpExecutedBeforePreJoin.get());
+    }
+
+    @Test
+    public void shouldShutdown_whenExceptionDeserializing_prePostJoinOps() {
+        // create a HazelcastInstance with a CacheConfig referring to a Class not resolvable on the joining member
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
+        cachingProvider.getCacheManager().createCache("test", new CacheConfig<String, Person>()
+                .setTypes(String.class, Person.class).setManagementEnabled(true));
+
+        // joining member cannot resolve Person class
+        List<String> excludes = Arrays.asList("classloading");
+        ClassLoader classLoader = new FilteringClassLoader(excludes, null);
+        Config config = new Config();
+        config.setClassLoader(classLoader);
+        try {
+            factory.newHazelcastInstance(config);
+            fail("Second HazelcastInstance should not have started");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+        assertClusterSize(1, hz1);
     }
 
     private Config getConfigWithPreJoinAwareService(PreJoinAwareService service) {
