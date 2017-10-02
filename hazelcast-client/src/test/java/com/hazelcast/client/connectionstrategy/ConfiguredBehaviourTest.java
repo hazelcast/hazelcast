@@ -64,6 +64,17 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         client.getMap(randomMapName());
     }
 
+    @Test(expected = HazelcastClientNotActiveException.class)
+    public void testAsyncStartTrueNoCluster_thenShutdown() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        client.shutdown();
+
+        client.getMap(randomMapName());
+    }
+
+
     @Test
     public void testAsyncStartTrue() {
         final CountDownLatch connectedLatch = new CountDownLatch(1);
@@ -161,6 +172,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
@@ -174,7 +186,6 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         hazelcastInstance.shutdown();
         assertOpenEventually(disconnectedLatch);
-
         client.getMap(randomMapName());
     }
 
