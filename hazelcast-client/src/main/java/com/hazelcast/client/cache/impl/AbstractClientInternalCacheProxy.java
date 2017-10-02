@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
@@ -42,7 +43,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -691,7 +691,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 }
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
                 if (!getContext().isActive()) {
-                    throw new HazelcastInstanceNotActiveException();
+                    throw new HazelcastClientNotActiveException("Client is not active.");
                 } else if (isClosed()) {
                     throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed!");
                 } else if (isDestroyed()) {
