@@ -832,17 +832,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 throw new IllegalStateException("Client is being shutdown.");
             }
 
-            final long remainingTime = nextTry - Clock.currentTimeMillis();
-            logger.warning(String.format("Unable to get alive cluster connection, try in %d ms later, attempt %d of %d.",
-                    Math.max(0, remainingTime), attempt, connectionAttemptLimit));
+            if (attempt < connectionAttemptLimit) {
+                final long remainingTime = nextTry - Clock.currentTimeMillis();
+                logger.warning(String.format("Unable to get alive cluster connection, try in %d ms later, attempt %d of %d.",
+                        Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
-            if (remainingTime > 0) {
-                try {
-                    Thread.sleep(remainingTime);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+                if (remainingTime > 0) {
+                    try {
+                        Thread.sleep(remainingTime);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
+            } else {
+                logger.warning(String.format("Unable to get alive cluster connection, attempt %d of %d.", attempt,
+                        connectionAttemptLimit));
             }
         }
         throw new IllegalStateException(

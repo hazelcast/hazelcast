@@ -149,7 +149,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
             }
 
             if (invocationLogger.isFinestEnabled()) {
-                invocationLogger.warning("Connection is not heart-beating, won't write client message -> "
+                invocationLogger.finest("Connection is not heart-beating, won't write client message -> "
                         + invocation.getClientMessage());
             }
             return false;
