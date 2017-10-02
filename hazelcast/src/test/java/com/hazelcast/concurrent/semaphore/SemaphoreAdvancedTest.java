@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -110,13 +109,7 @@ public class SemaphoreAdvancedTest extends HazelcastTestSupport {
         ISemaphore semaphore1 = instance3.getSemaphore(semaphoreName);
         semaphore1.release();
 
-        try {
-            assertTrue(countDownLatch.await(15, TimeUnit.SECONDS));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            thread.interrupt();
-        }
+        assertOpenEventually(countDownLatch);
     }
 
     @Test(timeout = 300000)
