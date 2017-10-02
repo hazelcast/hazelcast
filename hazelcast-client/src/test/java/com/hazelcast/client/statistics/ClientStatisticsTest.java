@@ -203,6 +203,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
+    @Ignore
     public void testStatisticsTwoClients() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         HazelcastClientInstanceImpl client1 = createHazelcastClient();
