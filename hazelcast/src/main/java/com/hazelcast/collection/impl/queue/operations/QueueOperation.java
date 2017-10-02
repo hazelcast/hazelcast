@@ -42,8 +42,6 @@ import java.util.Collection;
 public abstract class QueueOperation extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation {
 
-    protected transient Object response;
-
     private transient QueueContainer container;
 
     protected QueueOperation() {
@@ -69,11 +67,6 @@ public abstract class QueueOperation extends AbstractNamedOperation
         } catch (Exception e) {
             throw new RetryableHazelcastException(e);
         }
-    }
-
-    @Override
-    public final Object getResponse() {
-        return response;
     }
 
     @Override

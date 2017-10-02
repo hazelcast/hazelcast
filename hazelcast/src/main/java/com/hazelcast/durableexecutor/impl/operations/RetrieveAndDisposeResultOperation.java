@@ -23,9 +23,9 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class RetrieveAndDisposeResultOperation extends DisposeResultOperation implements BlockingOperation {
+import static com.hazelcast.spi.CallStatus.WAIT;
 
-    private transient Object result;
+public class RetrieveAndDisposeResultOperation extends DisposeResultOperation implements BlockingOperation {
 
     public RetrieveAndDisposeResultOperation() {
     }
@@ -35,14 +35,13 @@ public class RetrieveAndDisposeResultOperation extends DisposeResultOperation im
     }
 
     @Override
-    public void run() throws Exception {
-        DurableExecutorContainer executorContainer = getExecutorContainer();
-        result = executorContainer.retrieveAndDisposeResult(sequence);
-    }
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
 
-    @Override
-    public Object getResponse() {
-        return result;
+        DurableExecutorContainer executorContainer = getExecutorContainer();
+        return executorContainer.retrieveAndDisposeResult(sequence);
     }
 
     @Override
@@ -51,7 +50,6 @@ public class RetrieveAndDisposeResultOperation extends DisposeResultOperation im
         return new DurableExecutorWaitNotifyKey(name, uniqueId);
     }
 
-    @Override
     public boolean shouldWait() {
         DurableExecutorContainer executorContainer = getExecutorContainer();
         return executorContainer.shouldWait(sequence);

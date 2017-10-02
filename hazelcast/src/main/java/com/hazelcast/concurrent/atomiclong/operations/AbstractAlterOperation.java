@@ -26,7 +26,6 @@ import java.io.IOException;
 public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperation {
 
     protected IFunction<Long, Long> function;
-    protected long response;
     protected long backup;
 
     public AbstractAlterOperation() {
@@ -35,11 +34,6 @@ public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperat
     public AbstractAlterOperation(String name, IFunction<Long, Long> function) {
         super(name);
         this.function = function;
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
     }
 
     @Override

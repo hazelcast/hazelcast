@@ -50,7 +50,6 @@ public abstract class AbstractLockOperation extends Operation
     protected Data key;
     protected long threadId;
     protected long leaseTime = -1L;
-    protected transient Object response;
     private volatile long referenceCallId;
     private transient boolean asyncBackup;
 
@@ -76,11 +75,6 @@ public abstract class AbstractLockOperation extends Operation
         this.threadId = threadId;
         this.leaseTime = leaseTime;
         setWaitTimeout(timeout);
-    }
-
-    @Override
-    public final Object getResponse() {
-        return response;
     }
 
     protected final LockStoreImpl getLockStore() {

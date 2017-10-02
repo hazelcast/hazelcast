@@ -24,7 +24,6 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_BACKUP_OPERATION;
-import static java.lang.Boolean.TRUE;
 
 public class CountDownLatchBackupOperation extends AbstractCountDownLatchOperation implements BackupOperation {
 
@@ -39,14 +38,10 @@ public class CountDownLatchBackupOperation extends AbstractCountDownLatchOperati
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         CountDownLatchService service = getService();
         service.setCountDirect(name, count);
-    }
-
-    @Override
-    public Object getResponse() {
-        return TRUE;
+        return true;
     }
 
     @Override

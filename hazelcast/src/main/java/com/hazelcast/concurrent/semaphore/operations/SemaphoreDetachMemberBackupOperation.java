@@ -30,12 +30,13 @@ public class SemaphoreDetachMemberBackupOperation extends SemaphoreBackupOperati
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         SemaphoreService service = getService();
         if (service.containsSemaphore(name)) {
             SemaphoreContainer semaphoreContainer = service.getSemaphoreContainer(name);
-            response = semaphoreContainer.detachAll(firstCaller);
+            return semaphoreContainer.detachAll(firstCaller);
         }
+        return null;
     }
 
     @Override

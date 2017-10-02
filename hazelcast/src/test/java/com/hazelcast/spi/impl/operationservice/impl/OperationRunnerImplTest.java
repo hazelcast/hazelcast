@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -166,18 +167,15 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
     @Test
     public void runOperation_whenWaitingNeeded() {
-        final AtomicLong counter = new AtomicLong();
-
         DummyWaitingOperation op = new DummyWaitingOperation() {
             @Override
-            public void run() throws Exception {
-                counter.incrementAndGet();
+            public CallStatus call() throws Exception {
+                return CallStatus.WAIT;
             }
         };
         op.setPartitionId(operationRunner.getPartitionId());
 
         operationRunner.run(op);
-        assertEquals(0, counter.get());
         // verify that the response handler was not called
         verify(responseHandler, never()).sendResponse(same(op), any());
     }
@@ -240,11 +238,6 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         @Override
         public WaitNotifyKey getWaitKey() {
             return waitNotifyKey;
-        }
-
-        @Override
-        public boolean shouldWait() {
-            return true;
         }
 
         @Override

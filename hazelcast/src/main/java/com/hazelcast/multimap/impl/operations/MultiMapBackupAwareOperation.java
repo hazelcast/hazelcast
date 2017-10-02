@@ -17,6 +17,7 @@
 package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,7 +31,6 @@ import java.io.IOException;
 
 public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation
         implements BackupAwareOperation, BlockingOperation {
-
 
     protected MultiMapBackupAwareOperation() {
     }
@@ -59,9 +59,8 @@ public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOpera
         return new LockWaitNotifyKey(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
     }
 
-    @Override
-    public boolean shouldWait() {
-        return !getOrCreateContainer().canAcquireLock(dataKey, getCallerUuid(), threadId);
+    protected boolean shouldWait(MultiMapContainer container) {
+        return !container.canAcquireLock(dataKey, getCallerUuid(), threadId);
     }
 
     @Override

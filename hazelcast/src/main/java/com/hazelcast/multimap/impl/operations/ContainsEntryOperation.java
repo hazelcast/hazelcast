@@ -30,6 +30,8 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class ContainsEntryOperation extends MultiMapOperation implements BlockingOperation {
 
     private Data key;
@@ -53,7 +55,11 @@ public class ContainsEntryOperation extends MultiMapOperation implements Blockin
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         if (key != null && value != null) {
@@ -63,6 +69,18 @@ public class ContainsEntryOperation extends MultiMapOperation implements Blockin
         } else {
             response = container.containsValue(isBinary(), value);
         }
+        return response;
+    }
+
+    private boolean shouldWait() {
+        if (key == null) {
+            return false;
+        }
+        MultiMapContainer container = getOrCreateContainer();
+        if (container.isTransactionallyLocked(key)) {
+            return !container.canAcquireLock(key, getCallerUuid(), threadId);
+        }
+        return false;
     }
 
     public long getThreadId() {
@@ -99,17 +117,6 @@ public class ContainsEntryOperation extends MultiMapOperation implements Blockin
         return new LockWaitNotifyKey(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name), key);
     }
 
-    @Override
-    public boolean shouldWait() {
-        if (key == null) {
-            return false;
-        }
-        MultiMapContainer container = getOrCreateContainer();
-        if (container.isTransactionallyLocked(key)) {
-            return !container.canAcquireLock(key, getCallerUuid(), threadId);
-        }
-        return false;
-    }
 
     @Override
     public void onWaitExpire() {

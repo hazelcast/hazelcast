@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_MANY_OPERATION;
+import static com.hazelcast.spi.CallStatus.WAIT;
 
 public class ReadManyOperation<O> extends AbstractRingBufferOperation implements BlockingOperation {
     transient long sequence;
@@ -66,7 +67,6 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation implements
         ringbuffer.checkBlockableReadSequence(startSequence);
     }
 
-    @Override
     public boolean shouldWait() {
         if (resultSet == null) {
             resultSet = new ReadResultSetImpl<O, O>(minSize, maxSize, getNodeEngine().getSerializationService(), filter);
@@ -97,7 +97,11 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation implements
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+        return getResponse();
         // no-op; we already did the work in the shouldWait method.
     }
 

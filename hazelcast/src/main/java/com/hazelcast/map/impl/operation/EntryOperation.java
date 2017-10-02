@@ -49,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.spi.CallStatus.OFFLOADED;
+import static com.hazelcast.spi.CallStatus.WAIT;
 import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
@@ -138,9 +140,6 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     private transient boolean offloading;
 
-    // EntryOperation
-    private transient Object response;
-
     // EntryOffloadableOperation
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
@@ -170,11 +169,16 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     }
 
     @Override
-    public void run() {
+    public Object call() {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         if (offloading) {
             runOffloaded();
+            return OFFLOADED;
         } else {
-            runVanilla();
+            return runVanilla();
         }
     }
 
@@ -367,31 +371,8 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
         updateAndUnlock(null, null, null, caller, threadId, result, now);
     }
 
-    @Override
-    public void onExecutionFailure(Throwable e) {
-        if (offloading) {
-            // This is required since if the returnsResponse() method returns false there won't be any response sent
-            // to the invoking party - this means that the operation won't be retried if the exception is instanceof
-            // HazelcastRetryableException
-            sendResponse(e);
-        } else {
-            super.onExecutionFailure(e);
-        }
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        if (offloading) {
-            // This has to be false, since the operation uses the deferred-response mechanism.
-            // This method returns false, but the response will be send later on using the response handler
-            return false;
-        } else {
-            return super.returnsResponse();
-        }
-    }
-
-    private void runVanilla() {
-        response = operator(this, entryProcessor)
+    private Object runVanilla() {
+        return operator(this, entryProcessor)
                 .operateOnKey(dataKey)
                 .doPostOperateOps()
                 .getResult();
@@ -402,7 +383,6 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
         return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
     }
 
-    @Override
     public boolean shouldWait() {
         // optimisation for ReadOnly processors -> they will not wait for the lock
         if (entryProcessor instanceof ReadOnly) {
@@ -436,27 +416,13 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     }
 
     @Override
-    public Object getResponse() {
-        if (offloading) {
-            return null;
-        }
-        return response;
-    }
-
-    @Override
     public Operation getBackupOperation() {
-        if (offloading) {
-            return null;
-        }
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
-        if (offloading) {
-            return false;
-        }
         return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 

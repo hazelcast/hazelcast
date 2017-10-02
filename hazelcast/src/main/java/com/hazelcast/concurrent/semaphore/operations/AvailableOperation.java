@@ -29,9 +29,9 @@ public class AvailableOperation extends SemaphoreOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Integer call() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
-        response = semaphoreContainer.getAvailable();
+        return semaphoreContainer.getAvailable();
     }
 
     @Override

@@ -38,8 +38,8 @@ import java.io.IOException;
  */
 public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier, MutatingOperation {
 
-
     private Data data;
+    private transient boolean response;
 
     public TxnOfferOperation() {
     }
@@ -58,7 +58,7 @@ public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier
     @Override
     public void afterRun() throws Exception {
         LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
-        if (Boolean.TRUE.equals(response)) {
+        if (response) {
             queueStats.incrementOffers();
             publishEvent(ItemEventType.ADDED, data);
         } else {
@@ -68,7 +68,7 @@ public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier
 
     @Override
     public boolean shouldNotify() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override

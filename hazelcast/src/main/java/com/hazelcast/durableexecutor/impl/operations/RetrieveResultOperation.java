@@ -27,14 +27,14 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 /**
  * Used to retrieve the response of an execution with the given sequence
  */
 public class RetrieveResultOperation extends AbstractDurableExecutorOperation implements BlockingOperation {
 
     private int sequence;
-
-    private transient Object result;
 
     public RetrieveResultOperation() {
     }
@@ -45,14 +45,13 @@ public class RetrieveResultOperation extends AbstractDurableExecutorOperation im
     }
 
     @Override
-    public void run() throws Exception {
-        DurableExecutorContainer executorContainer = getExecutorContainer();
-        result = executorContainer.retrieveResult(sequence);
-    }
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
 
-    @Override
-    public Object getResponse() {
-        return result;
+        DurableExecutorContainer executorContainer = getExecutorContainer();
+        return executorContainer.retrieveResult(sequence);
     }
 
     @Override
@@ -61,7 +60,6 @@ public class RetrieveResultOperation extends AbstractDurableExecutorOperation im
         return new DurableExecutorWaitNotifyKey(name, uniqueId);
     }
 
-    @Override
     public boolean shouldWait() {
         DurableExecutorContainer executorContainer = getExecutorContainer();
         return executorContainer.shouldWait(sequence);

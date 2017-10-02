@@ -58,11 +58,6 @@ public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
     }
 
     @Override
-    public boolean shouldWait() {
-        return false;
-    }
-
-    @Override
     public Operation getBackupOperation() {
         return new TxnPrepareBackupOperation(name, dataKey, getCallerUuid(), threadId);
     }

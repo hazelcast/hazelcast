@@ -44,9 +44,9 @@ public class ContainsOperation extends QueueOperation implements ReadonlyOperati
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() {
         QueueContainer queueContainer = getContainer();
-        response = queueContainer.contains(dataList);
+        return queueContainer.contains(dataList);
     }
 
     @Override

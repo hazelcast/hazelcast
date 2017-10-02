@@ -21,6 +21,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -130,18 +131,13 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
-
+        public CallStatus call() throws Exception {
+            return CallStatus.WAIT;
         }
 
         @Override
         public WaitNotifyKey getWaitKey() {
             return waitNotifyKey;
-        }
-
-        @Override
-        public boolean shouldWait() {
-            return true;
         }
 
         @Override

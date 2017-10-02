@@ -23,9 +23,11 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-import static java.lang.Boolean.TRUE;
+import static com.hazelcast.spi.CallStatus.WAIT;
 
 public class AcquireOperation extends SemaphoreBackupAwareOperation implements BlockingOperation {
+
+    private transient boolean response;
 
     public AcquireOperation() {
     }
@@ -36,9 +38,13 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation implements B
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         response = semaphoreContainer.acquire(getCallerUuid(), permitCount);
+        return response;
     }
 
     @Override
@@ -46,7 +52,6 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation implements B
         return new SemaphoreWaitNotifyKey(name, "acquire");
     }
 
-    @Override
     public boolean shouldWait() {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         return getWaitTimeout() != 0 && !semaphoreContainer.isAvailable(permitCount);
@@ -59,7 +64,7 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation implements B
 
     @Override
     public boolean shouldBackup() {
-        return TRUE.equals(response);
+        return response;
     }
 
     @Override

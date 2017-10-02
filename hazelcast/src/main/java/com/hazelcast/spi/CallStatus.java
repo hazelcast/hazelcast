@@ -17,13 +17,22 @@
 package com.hazelcast.spi;
 
 /**
- * An interface that can be implemented by an operation that can block. For example an ILock.acquire.
+ *
  */
-public interface BlockingOperation {
+public enum CallStatus {
 
-    WaitNotifyKey getWaitKey();
+    /**
+     * When an operation has completed.
+     */
+    COMPLETE,
 
-    long getWaitTimeout();
+    /**
+     * When the operation needs to get wait to be notified later on.
+     */
+    WAIT,
 
-    void onWaitExpire();
+    /**
+     * When the operation currently isn't completed. This can be used for e.g. offloading or implementing a real continuation.
+     */
+    OFFLOADED
 }

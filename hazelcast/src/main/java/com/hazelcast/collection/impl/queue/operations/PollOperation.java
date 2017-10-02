@@ -21,12 +21,15 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.MutatingOperation;
+
+import static com.hazelcast.spi.CallStatus.WAIT;
 
 /**
  * Pool operation for Queue.
@@ -35,6 +38,7 @@ public final class PollOperation extends QueueBackupAwareOperation
         implements BlockingOperation, Notifier, IdentifiedDataSerializable, MutatingOperation {
 
     private QueueItem item;
+    private transient Data response;
 
     public PollOperation() {
     }
@@ -44,12 +48,17 @@ public final class PollOperation extends QueueBackupAwareOperation
     }
 
     @Override
-    public void run() {
+    public Object call() {
+        if (shouldWait()) {
+            return WAIT;
+        }
         QueueContainer queueContainer = getContainer();
         item = queueContainer.poll();
         if (item != null) {
             response = item.getData();
         }
+
+        return response;
     }
 
     @Override
@@ -88,7 +97,6 @@ public final class PollOperation extends QueueBackupAwareOperation
         return getContainer().getPollWaitNotifyKey();
     }
 
-    @Override
     public boolean shouldWait() {
         return getWaitTimeout() != 0 && getContainer().size() == 0;
     }

@@ -38,10 +38,10 @@ public class IteratorOperation extends QueueOperation implements ReadonlyOperati
     }
 
     @Override
-    public void run() {
+    public SerializableList call() {
         QueueContainer queueContainer = getContainer();
         List<Data> dataList = queueContainer.getAsDataList();
-        response = new SerializableList(dataList);
+        return new SerializableList(dataList);
     }
 
     @Override

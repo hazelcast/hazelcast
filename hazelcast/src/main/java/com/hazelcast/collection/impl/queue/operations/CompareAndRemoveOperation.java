@@ -41,6 +41,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     private Collection<Data> dataList;
     private Map<Long, Data> dataMap;
     private boolean retain;
+    private transient boolean response;
 
     public CompareAndRemoveOperation() {
     }
@@ -52,10 +53,11 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     }
 
     @Override
-    public void run() {
+    public Boolean call() {
         QueueContainer queueContainer = getContainer();
         dataMap = queueContainer.compareAndRemove(dataList, retain);
         response = dataMap.size() > 0;
+        return response;
     }
 
     @Override
@@ -71,7 +73,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override
@@ -81,7 +83,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
 
     @Override
     public boolean shouldNotify() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override

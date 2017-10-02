@@ -23,9 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
+import static com.hazelcast.spi.CallStatus.WAIT;
 
-    private transient boolean containsKey;
+public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
     public ContainsKeyOperation() {
     }
@@ -36,8 +36,11 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
     }
 
     @Override
-    public void run() {
-        containsKey = recordStore.containsKey(dataKey);
+    public Object call() {
+        if (shouldWait()) {
+            return WAIT;
+        }
+        return recordStore.containsKey(dataKey);
     }
 
     @Override
@@ -46,16 +49,10 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
     }
 
     @Override
-    public Object getResponse() {
-        return containsKey;
-    }
-
-    @Override
     public WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(getServiceNamespace(), dataKey);
     }
 
-    @Override
     public boolean shouldWait() {
         if (recordStore.isTransactionallyLocked(dataKey)) {
             return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());

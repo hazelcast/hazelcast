@@ -27,6 +27,8 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class CountOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
 
     public CountOperation() {
@@ -37,11 +39,20 @@ public class CountOperation extends MultiMapKeyBasedOperation implements Blockin
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
+
+        if (shouldWait(container)) {
+            return WAIT;
+        }
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         response = multiMapValue == null ? 0 : multiMapValue.getCollection(false).size();
+        return response;
+    }
+
+    private boolean shouldWait(MultiMapContainer container) {
+        return container.isTransactionallyLocked(dataKey) && !container.canAcquireLock(dataKey, getCallerUuid(), threadId);
     }
 
     @Override
@@ -55,17 +66,7 @@ public class CountOperation extends MultiMapKeyBasedOperation implements Blockin
     }
 
     @Override
-    public boolean shouldWait() {
-        MultiMapContainer container = getOrCreateContainer();
-        if (container.isTransactionallyLocked(dataKey)) {
-            return !container.canAcquireLock(dataKey, getCallerUuid(), threadId);
-        }
-        return false;
-    }
-
-    @Override
     public void onWaitExpire() {
         sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
-
 }

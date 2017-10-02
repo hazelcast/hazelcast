@@ -32,6 +32,8 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 /**
  * Contains offer operation for the Queue.
  */
@@ -40,6 +42,7 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     private Data data;
     private long itemId;
+    private transient boolean response;
 
     public OfferOperation() {
     }
@@ -50,7 +53,11 @@ public final class OfferOperation extends QueueBackupAwareOperation
     }
 
     @Override
-    public void run() {
+    public Object call() {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         QueueContainer queueContainer = getContainer();
         if (queueContainer.hasEnoughCapacity()) {
             itemId = queueContainer.offer(data);
@@ -58,12 +65,13 @@ public final class OfferOperation extends QueueBackupAwareOperation
         } else {
             response = false;
         }
+        return response;
     }
 
     @Override
     public void afterRun() throws Exception {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
-        if (Boolean.TRUE.equals(response)) {
+        if (response) {
             stats.incrementOffers();
             publishEvent(ItemEventType.ADDED, data);
         } else {
@@ -78,12 +86,12 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override
     public boolean shouldNotify() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override
@@ -96,7 +104,6 @@ public final class OfferOperation extends QueueBackupAwareOperation
         return getContainer().getOfferWaitNotifyKey();
     }
 
-    @Override
     public boolean shouldWait() {
         QueueContainer container = getContainer();
         return getWaitTimeout() != 0 && !container.hasEnoughCapacity();

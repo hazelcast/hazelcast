@@ -28,7 +28,6 @@ import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.A
 public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
 
     private long delta;
-    private long returnValue;
 
     public AddAndGetOperation() {
     }
@@ -39,14 +38,9 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Long call() throws Exception {
         AtomicLongContainer container = getLongContainer();
-        returnValue = container.addAndGet(delta);
-    }
-
-    @Override
-    public Object getResponse() {
-        return returnValue;
+        return container.addAndGet(delta);
     }
 
     @Override

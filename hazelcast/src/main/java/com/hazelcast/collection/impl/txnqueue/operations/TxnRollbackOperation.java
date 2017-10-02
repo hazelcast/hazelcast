@@ -49,15 +49,17 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         QueueContainer queueContainer = getContainer();
         for (long itemId : itemIds) {
             if (CollectionTxnUtil.isRemove(itemId)) {
-                response = queueContainer.txnRollbackPoll(itemId, false);
+                return queueContainer.txnRollbackPoll(itemId, false);
             } else {
-                response = queueContainer.txnRollbackOffer(-itemId);
+                return queueContainer.txnRollbackOffer(-itemId);
             }
         }
+
+        return null;
     }
 
     @Override

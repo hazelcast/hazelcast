@@ -40,13 +40,12 @@ abstract class BaseSignalOperation extends AbstractLockOperation {
     }
 
     @Override
-    public void run() throws Exception {
-        response = true;
-
+    public Boolean call() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         int signalCount = all ? Integer.MAX_VALUE : 1;
 
         lockStore.signal(key, conditionId, signalCount, namespace.getObjectName());
+        return true;
     }
 
     @Override

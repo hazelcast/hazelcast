@@ -20,9 +20,9 @@ import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.spi.Operation;
 
-import static java.lang.Boolean.TRUE;
-
 public class InitOperation extends SemaphoreBackupAwareOperation {
+
+    private transient boolean response;
 
     public InitOperation() {
     }
@@ -32,14 +32,15 @@ public class InitOperation extends SemaphoreBackupAwareOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         response = semaphoreContainer.init(permitCount);
+        return response;
     }
 
     @Override
     public boolean shouldBackup() {
-        return TRUE.equals(response);
+        return response;
     }
 
     @Override

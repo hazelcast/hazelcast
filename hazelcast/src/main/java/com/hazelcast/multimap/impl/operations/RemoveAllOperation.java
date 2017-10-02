@@ -26,6 +26,8 @@ import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
     private Collection<MultiMapRecord> coll;
@@ -38,10 +40,15 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
+        if (shouldWait(container)) {
+            return WAIT;
+        }
+
         coll = remove(executedLocally());
         response = new MultiMapResponse(coll, getValueCollectionType(container));
+        return response;
     }
 
     @Override

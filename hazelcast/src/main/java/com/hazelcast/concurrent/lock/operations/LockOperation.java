@@ -28,7 +28,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.MutatingOperation;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class LockOperation extends AbstractLockOperation implements BlockingOperation, BackupAwareOperation, MutatingOperation {
+
+    private transient boolean response;
 
     public LockOperation() {
     }
@@ -43,8 +47,21 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
     }
 
     @Override
-    public void run() throws Exception {
-        response = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);
+    public Object call() throws Exception {
+        LockStoreImpl lockStore = getLockStore();
+        if (shouldWait(lockStore)) {
+            //System.out.println("Lock.lock IsBlocked");
+            return WAIT;
+        }
+
+        //System.out.println("Lock.lock Is not blocked");
+
+        response = lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);
+        return response;
+    }
+
+    public final boolean shouldWait(LockStoreImpl lockStore) {
+        return getWaitTimeout() != 0 && !lockStore.canAcquireLock(key, getCallerUuid(), threadId);
     }
 
     @Override
@@ -56,18 +73,12 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override
     public final WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(namespace, key);
-    }
-
-    @Override
-    public final boolean shouldWait() {
-        LockStoreImpl lockStore = getLockStore();
-        return getWaitTimeout() != 0 && !lockStore.canAcquireLock(key, getCallerUuid(), threadId);
     }
 
     @Override

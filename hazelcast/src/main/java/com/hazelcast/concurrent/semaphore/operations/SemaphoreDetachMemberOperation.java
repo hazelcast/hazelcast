@@ -35,6 +35,7 @@ import java.io.IOException;
 public class SemaphoreDetachMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
     private String detachedMemberUuid;
+    private Object response;
 
     public SemaphoreDetachMemberOperation() {
     }
@@ -45,7 +46,7 @@ public class SemaphoreDetachMemberOperation extends SemaphoreBackupAwareOperatio
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         SemaphoreService service = getService();
         if (service.containsSemaphore(name)) {
             SemaphoreContainer semaphoreContainer = service.getSemaphoreContainer(name);
@@ -56,6 +57,7 @@ public class SemaphoreDetachMemberOperation extends SemaphoreBackupAwareOperatio
         if (logger.isFineEnabled()) {
             logger.fine("Removing permits attached to " + detachedMemberUuid + ". Result: " + response);
         }
+        return response;
     }
 
     @Override

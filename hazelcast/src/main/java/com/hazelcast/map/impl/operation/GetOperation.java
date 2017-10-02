@@ -23,9 +23,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
-    private Data result;
+    private transient Data result;
 
     public GetOperation() {
     }
@@ -37,8 +39,20 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public void run() {
+    public Object call() {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         result = mapServiceContext.toData(recordStore.get(dataKey, false));
+        return result;
+    }
+
+    public boolean shouldWait() {
+        if (recordStore.isTransactionallyLocked(dataKey)) {
+            return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
+        }
+        return false;
     }
 
     @Override
@@ -52,21 +66,8 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public boolean shouldWait() {
-        if (recordStore.isTransactionallyLocked(dataKey)) {
-            return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
-        }
-        return false;
-    }
-
-    @Override
     public void onWaitExpire() {
         sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
-    }
-
-    @Override
-    public Data getResponse() {
-        return result;
     }
 
     @Override

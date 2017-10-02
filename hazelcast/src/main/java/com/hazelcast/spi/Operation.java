@@ -97,7 +97,18 @@ public abstract class Operation implements DataSerializable {
     }
 
     // runs after wait-support, supposed to do actual operation
-    public abstract void run() throws Exception;
+    public void run() throws Exception {
+    }
+
+    public Object call() throws Exception {
+        run();
+
+        if (returnsResponse()) {
+            return getResponse();
+        }
+
+        return CallStatus.COMPLETE;
+    }
 
     // runs after backups, before wait-notify
     public void afterRun() throws Exception {

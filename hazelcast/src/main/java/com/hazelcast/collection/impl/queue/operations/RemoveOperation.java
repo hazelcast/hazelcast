@@ -37,6 +37,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
 
     private Data data;
     private long itemId = -1;
+    private transient boolean response;
 
     public RemoveOperation() {
     }
@@ -47,10 +48,11 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         QueueContainer queueContainer = getContainer();
         itemId = queueContainer.remove(data);
         response = itemId != -1;
+        return response;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override

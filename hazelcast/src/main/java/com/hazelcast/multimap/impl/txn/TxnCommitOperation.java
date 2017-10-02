@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.operations.MultiMapBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,6 +30,8 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.spi.CallStatus.WAIT;
 
 public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
@@ -45,7 +48,12 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        MultiMapContainer container = getOrCreateContainer();
+        if (shouldWait(container)) {
+            return WAIT;
+        }
+
         for (Operation op : opList) {
             op.setNodeEngine(getNodeEngine())
                     .setServiceName(getServiceName())
@@ -54,7 +62,8 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
             op.run();
             op.afterRun();
         }
-        getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId, getCallId());
+        container.unlock(dataKey, getCallerUuid(), threadId, getCallId());
+        return null;
     }
 
     @Override

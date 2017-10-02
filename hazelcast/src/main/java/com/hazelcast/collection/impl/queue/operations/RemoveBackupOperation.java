@@ -41,10 +41,10 @@ public class RemoveBackupOperation extends QueueOperation implements BackupOpera
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         QueueContainer queueContainer = getContainer();
         queueContainer.removeBackup(itemId);
-        response = true;
+        return true;
     }
 
     @Override

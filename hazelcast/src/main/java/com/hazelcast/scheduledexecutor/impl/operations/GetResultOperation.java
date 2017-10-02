@@ -28,16 +28,14 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 public class GetResultOperation<V>
         extends AbstractSchedulerOperation implements BlockingOperation {
 
     private String taskName;
-
     private ScheduledTaskHandler handler;
-
-    private Object result;
 
     public GetResultOperation() {
     }
@@ -49,14 +47,11 @@ public class GetResultOperation<V>
     }
 
     @Override
-    public void run()
-            throws Exception {
-        result = getContainer().get(taskName);
-    }
-
-    @Override
-    public Object getResponse() {
-        return result;
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+        return getContainer().get(taskName);
     }
 
     @Override
@@ -64,7 +59,6 @@ public class GetResultOperation<V>
         return new ScheduledExecutorWaitNotifyKey(getSchedulerName(), handler.toUrn());
     }
 
-    @Override
     public boolean shouldWait() {
         try {
             return getContainer().shouldParkGetResult(taskName);

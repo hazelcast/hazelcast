@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class AwaitOperation extends AbstractLockOperation
         implements BlockingOperation, BackupAwareOperation, MutatingOperation {
 
@@ -52,7 +54,11 @@ public class AwaitOperation extends AbstractLockOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         LockStoreImpl lockStore = getLockStore();
         if (!lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime)) {
             throw new IllegalMonitorStateException(
@@ -60,11 +66,11 @@ public class AwaitOperation extends AbstractLockOperation
         }
 
         if (expired) {
-            response = false;
+            return false;
         } else {
             lockStore.removeSignalKey(getWaitKey());
             lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
-            response = true;
+            return true;
         }
     }
 
@@ -80,8 +86,7 @@ public class AwaitOperation extends AbstractLockOperation
         return new ConditionKey(namespace.getObjectName(), key, conditionId, getCallerUuid(), threadId);
     }
 
-    @Override
-    public boolean shouldWait() {
+    private boolean shouldWait() {
         LockStoreImpl lockStore = getLockStore();
         boolean canAcquireLock = lockStore.canAcquireLock(key, getCallerUuid(), threadId);
         if (!canAcquireLock) {

@@ -31,7 +31,7 @@ public class AlterAndGetOperation extends AbstractAlterOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Long call() throws Exception {
         AtomicLongContainer container = getLongContainer();
 
         long input = container.get();
@@ -42,7 +42,7 @@ public class AlterAndGetOperation extends AbstractAlterOperation {
             container.set(output);
         }
 
-        response = output;
+        return output;
     }
 
     @Override

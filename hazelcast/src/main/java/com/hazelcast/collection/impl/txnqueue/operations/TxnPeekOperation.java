@@ -18,6 +18,7 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +29,8 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 /**
  * Peek operation for the transactional queue.
  */
@@ -35,6 +38,7 @@ public class TxnPeekOperation extends QueueOperation implements BlockingOperatio
 
     private long itemId;
     private String transactionId;
+    private transient QueueItem response;
 
     public TxnPeekOperation() {
     }
@@ -46,9 +50,14 @@ public class TxnPeekOperation extends QueueOperation implements BlockingOperatio
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         QueueContainer queueContainer = getContainer();
         response = queueContainer.txnPeek(itemId, transactionId);
+        return response;
     }
 
     @Override
@@ -84,8 +93,6 @@ public class TxnPeekOperation extends QueueOperation implements BlockingOperatio
         return queueContainer.getPollWaitNotifyKey();
     }
 
-
-    @Override
     public boolean shouldWait() {
         final QueueContainer queueContainer = getContainer();
         return getWaitTimeout() != 0 && itemId == -1 && queueContainer.size() == 0;

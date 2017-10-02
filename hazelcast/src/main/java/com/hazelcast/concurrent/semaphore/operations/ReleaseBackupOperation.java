@@ -29,10 +29,10 @@ public class ReleaseBackupOperation extends SemaphoreBackupOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         semaphoreContainer.release(firstCaller, permitCount);
-        response = true;
+        return true;
     }
 
     @Override

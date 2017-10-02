@@ -29,6 +29,8 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Collection;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class GetAllOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
 
     public GetAllOperation() {
@@ -39,8 +41,11 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements Blocki
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
+        if (shouldWait(container)) {
+            return WAIT;
+        }
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         Collection coll = null;
         if (multiMapValue != null) {
@@ -48,6 +53,11 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements Blocki
             coll = multiMapValue.getCollection(executedLocally());
         }
         response = new MultiMapResponse(coll, getValueCollectionType(container));
+        return response;
+    }
+
+    private boolean shouldWait(MultiMapContainer container) {
+        return container.isTransactionallyLocked(dataKey) && !container.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 
     @Override
@@ -58,15 +68,6 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements Blocki
     @Override
     public WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
-    }
-
-    @Override
-    public boolean shouldWait() {
-        MultiMapContainer container = getOrCreateContainer();
-        if (container.isTransactionallyLocked(dataKey)) {
-            return !container.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
-        }
-        return false;
     }
 
     @Override

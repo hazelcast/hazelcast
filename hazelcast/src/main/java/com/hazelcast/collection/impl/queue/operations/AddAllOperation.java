@@ -40,6 +40,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
 
     private Collection<Data> dataList;
     private Map<Long, Data> dataMap;
+    private transient boolean response;
 
     public AddAllOperation() {
     }
@@ -50,7 +51,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     @Override
-    public void run() {
+    public Boolean call() {
         QueueContainer queueContainer = getContainer();
         if (queueContainer.hasEnoughCapacity()) {
             dataMap = queueContainer.addAll(dataList);
@@ -58,6 +59,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         } else {
             response = false;
         }
+        return response;
     }
 
     @Override
@@ -73,7 +75,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override
@@ -83,7 +85,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
 
     @Override
     public boolean shouldNotify() {
-        return Boolean.TRUE.equals(response);
+        return response;
     }
 
     @Override

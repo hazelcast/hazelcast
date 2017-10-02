@@ -32,7 +32,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
 public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier, MutatingOperation {
 
     private Data data;
-
+    private transient boolean response;
     public TxnPollOperation() {
     }
 
@@ -50,11 +50,11 @@ public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier,
     @Override
     public void afterRun() throws Exception {
         LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
-        if (response == null) {
-            queueStats.incrementEmptyPolls();
-        } else {
+        if (response) {
             queueStats.incrementPolls();
             publishEvent(ItemEventType.REMOVED, data);
+        } else {
+            queueStats.incrementEmptyPolls();
         }
     }
 

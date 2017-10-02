@@ -28,7 +28,6 @@ import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.A
 public class ApplyOperation<R> extends AbstractAtomicLongOperation {
 
     private IFunction<Long, R> function;
-    private R returnValue;
 
     public ApplyOperation() {
     }
@@ -39,14 +38,9 @@ public class ApplyOperation<R> extends AbstractAtomicLongOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public R call() throws Exception {
         AtomicLongContainer container = getLongContainer();
-        returnValue = function.apply(container.get());
-    }
-
-    @Override
-    public R getResponse() {
-        return returnValue;
+        return function.apply(container.get());
     }
 
     @Override

@@ -20,9 +20,9 @@ import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.spi.Operation;
 
-import static java.lang.Boolean.TRUE;
-
 public class ReduceOperation extends SemaphoreBackupAwareOperation {
+
+    private transient boolean response;
 
     public ReduceOperation() {
     }
@@ -39,7 +39,7 @@ public class ReduceOperation extends SemaphoreBackupAwareOperation {
 
     @Override
     public boolean shouldBackup() {
-        return TRUE.equals(response);
+        return response;
     }
 
     @Override

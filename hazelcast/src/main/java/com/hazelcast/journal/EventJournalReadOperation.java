@@ -27,10 +27,14 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.CallStatus.COMPLETE;
+import static com.hazelcast.spi.CallStatus.WAIT;
 
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
@@ -101,8 +105,8 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         waitNotifyKey = journal.getWaitNotifyKey(namespace, partitionId);
     }
 
+
     /**
-     * {@inheritDoc}
      * On every invocation this method reads from the event journal until
      * it has collected the minimum required number of response items.
      * Returns {@code true} if there are currently not enough
@@ -111,7 +115,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
      * @return if the operation should wait on the wait/notify key
      */
     @Override
-    public boolean shouldWait() {
+    public CallStatus call() throws Exception {
         if (resultSet == null) {
             resultSet = createResultSet();
             sequence = startSequence;
@@ -124,26 +128,21 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
             if (!journal.isNextAvailableSequence(namespace, partitionId, sequence)) {
                 sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
             }
-            return false;
+            return COMPLETE;
         }
 
         if (resultSet.isMinSizeReached()) {
             // enough items have been read, we are done.
-            return false;
+            return COMPLETE;
         }
 
         if (journal.isNextAvailableSequence(namespace, partitionId, sequence)) {
             // the sequence is not readable
-            return true;
+            return COMPLETE;
         }
 
         sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
-        return !resultSet.isMinSizeReached();
-    }
-
-    @Override
-    public void run() throws Exception {
-        // no-op; we already did the work in the shouldWait method.
+        return !resultSet.isMinSizeReached() ? COMPLETE : WAIT;
     }
 
     @Override

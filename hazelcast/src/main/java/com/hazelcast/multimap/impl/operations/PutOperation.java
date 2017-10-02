@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class PutOperation extends MultiMapBackupAwareOperation {
 
     private Data value;
@@ -45,8 +47,12 @@ public class PutOperation extends MultiMapBackupAwareOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
+        if (shouldWait(container)) {
+            return WAIT;
+        }
+
         recordId = container.nextId();
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
         Collection<MultiMapRecord> coll = container.getOrCreateMultiMapValue(dataKey).getCollection(false);
@@ -60,6 +66,8 @@ public class PutOperation extends MultiMapBackupAwareOperation {
                 response = e;
             }
         }
+
+        return response;
     }
 
     @Override

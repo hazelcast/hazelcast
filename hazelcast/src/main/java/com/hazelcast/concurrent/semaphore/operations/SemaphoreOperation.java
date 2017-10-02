@@ -31,7 +31,6 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected int permitCount;
-    protected transient Object response;
 
     protected SemaphoreOperation() {
     }
@@ -44,11 +43,6 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation
     @Override
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
     }
 
     public SemaphoreContainer getSemaphoreContainer() {

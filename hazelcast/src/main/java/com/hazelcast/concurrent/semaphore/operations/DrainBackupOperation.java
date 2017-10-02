@@ -29,10 +29,10 @@ public class DrainBackupOperation extends SemaphoreBackupOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         semaphoreContainer.drain(firstCaller);
-        response = true;
+        return true;
     }
 
     @Override
