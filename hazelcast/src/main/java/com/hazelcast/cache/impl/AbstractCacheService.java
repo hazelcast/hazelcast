@@ -73,9 +73,16 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     private static final String SETUP_REF = "setupRef";
 
+    /** Map from full prefixed cache name to {@link CacheConfig} */
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
+
+    /** Map from full prefixed cache name to {@link CacheContext} */
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
+
+    /** Map from full prefixed cache name to {@link CacheStatisticsImpl} */
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
+
+    /** Map from full prefixed cache name to set of {@link Closeable} resources */
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
     protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
@@ -133,7 +140,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     protected abstract CachePartitionSegment newPartitionSegment(int partitionId);
 
-    protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
+    protected abstract ICacheRecordStore createNewRecordStore(String cacheNameWithPrefix, int partitionId);
 
     @Override
     public void reset() {
@@ -257,13 +264,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public ICacheRecordStore getOrCreateRecordStore(String name, int partitionId) {
-        return segments[partitionId].getOrCreateRecordStore(name);
+    public ICacheRecordStore getOrCreateRecordStore(String cacheNameWithPrefix, int partitionId) {
+        return segments[partitionId].getOrCreateRecordStore(cacheNameWithPrefix);
     }
 
     @Override
-    public ICacheRecordStore getRecordStore(String name, int partitionId) {
-        return segments[partitionId].getRecordStore(name);
+    public ICacheRecordStore getRecordStore(String cacheNameWithPrefix, int partitionId) {
+        return segments[partitionId].getRecordStore(cacheNameWithPrefix);
     }
 
     @Override
@@ -324,8 +331,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public CacheConfig deleteCacheConfig(String name) {
-        CacheConfig config = configs.remove(name);
+    public CacheConfig deleteCacheConfig(String cacheNameWithPrefix) {
+        CacheConfig config = configs.remove(cacheNameWithPrefix);
         if (config != null) {
             logger.info("Removed cache config: " + config);
         }
@@ -333,8 +340,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statistics, name, cacheStatisticsConstructorFunction);
+    public CacheStatisticsImpl createCacheStatIfAbsent(String cacheNameWithPrefix) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statistics, cacheNameWithPrefix, cacheStatisticsConstructorFunction);
     }
 
     public CacheContext getCacheContext(String name) {
@@ -342,13 +349,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public CacheContext getOrCreateCacheContext(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, name, cacheContextsConstructorFunction);
+    public CacheContext getOrCreateCacheContext(String cacheNameWithPrefix) {
+        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, cacheNameWithPrefix, cacheContextsConstructorFunction);
     }
 
     @Override
-    public void deleteCacheStat(String name) {
-        statistics.remove(name);
+    public void deleteCacheStat(String cacheNameWithPrefix) {
+        statistics.remove(cacheNameWithPrefix);
     }
 
     @Override
@@ -385,8 +392,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public CacheConfig getCacheConfig(String name) {
-        return configs.get(name);
+    public CacheConfig getCacheConfig(String cacheNameWithPrefix) {
+        return configs.get(cacheNameWithPrefix);
     }
 
     @Override
@@ -439,8 +446,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
-        cacheEventHandler.publishEvent(cacheName, eventSet, orderKey);
+    public void publishEvent(String cacheNameWithPrefix, CacheEventSet eventSet, int orderKey) {
+        cacheEventHandler.publishEvent(cacheNameWithPrefix, eventSet, orderKey);
     }
 
     @Override
@@ -454,30 +461,33 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public String registerListener(String name, CacheEventListener listener, boolean isLocal) {
-        return registerListenerInternal(name, listener, null, isLocal);
+    public String registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal) {
+        return registerListenerInternal(cacheNameWithPrefix, listener, null, isLocal);
     }
 
     @Override
-    public String registerListener(String name, CacheEventListener listener, EventFilter eventFilter, boolean isLocal) {
-        return registerListenerInternal(name, listener, eventFilter, isLocal);
+    public String registerListener(String cacheNameWithPrefix, CacheEventListener listener,
+                                   EventFilter eventFilter, boolean isLocal) {
+        return registerListenerInternal(cacheNameWithPrefix, listener, eventFilter, isLocal);
     }
 
-    protected String registerListenerInternal(String name, CacheEventListener listener,
+    protected String registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
                                               EventFilter eventFilter, boolean isLocal) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration reg;
         if (isLocal) {
             if (eventFilter == null) {
-                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, name, listener);
+                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
             } else {
-                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix,
+                        eventFilter, listener);
             }
         } else {
             if (eventFilter == null) {
-                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, listener);
+                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
             } else {
-                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix,
+                        eventFilter, listener);
             }
         }
 
@@ -494,9 +504,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public boolean deregisterListener(String name, String registrationId) {
+    public boolean deregisterListener(String cacheNameWithPrefix, String registrationId) {
         EventService eventService = getNodeEngine().getEventService();
-        boolean result = eventService.deregisterListener(SERVICE_NAME, name, registrationId);
+        boolean result = eventService.deregisterListener(SERVICE_NAME, cacheNameWithPrefix, registrationId);
         Closeable listener = closeableListeners.remove(registrationId);
         if (listener != null) {
             IOUtil.closeResource(listener);
@@ -505,9 +515,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public void deregisterAllListener(String name) {
+    public void deregisterAllListener(String cacheNameWithPrefix) {
         EventService eventService = getNodeEngine().getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheNameWithPrefix);
         if (registrations != null) {
             for (EventRegistration registration : registrations) {
                 Closeable listener = closeableListeners.remove(registration.getId());
@@ -516,8 +526,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 }
             }
         }
-        eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, name);
-        CacheContext cacheContext = cacheContexts.get(name);
+        eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix);
+        CacheContext cacheContext = cacheContexts.get(cacheNameWithPrefix);
         if (cacheContext != null) {
             cacheContext.resetCacheEntryListenerCount();
             cacheContext.resetInvalidationListenerCount();
@@ -525,30 +535,30 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public CacheStatisticsImpl getStatistics(String name) {
-        return statistics.get(name);
+    public CacheStatisticsImpl getStatistics(String cacheNameWithPrefix) {
+        return statistics.get(cacheNameWithPrefix);
     }
 
     @Override
-    public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
+    public CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat inMemoryFormat) {
         if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
             throw new IllegalArgumentException("Native memory is available only in Hazelcast Enterprise."
                     + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }
-        CacheOperationProvider cacheOperationProvider = operationProviderCache.get(nameWithPrefix);
+        CacheOperationProvider cacheOperationProvider = operationProviderCache.get(cacheNameWithPrefix);
         if (cacheOperationProvider != null) {
             return cacheOperationProvider;
         }
-        cacheOperationProvider = createOperationProvider(nameWithPrefix, inMemoryFormat);
-        CacheOperationProvider current = operationProviderCache.putIfAbsent(nameWithPrefix, cacheOperationProvider);
+        cacheOperationProvider = createOperationProvider(cacheNameWithPrefix, inMemoryFormat);
+        CacheOperationProvider current = operationProviderCache.putIfAbsent(cacheNameWithPrefix, cacheOperationProvider);
         return current == null ? cacheOperationProvider : current;
     }
 
     protected abstract CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat);
 
-    public void addCacheResource(String name, Closeable resource) {
-        Set<Closeable> cacheResources = ConcurrencyUtil.getOrPutSynchronized(resources, name, cacheResourcesMutexFactory,
-                cacheResourcesConstructorFunction);
+    public void addCacheResource(String cacheNameWithPrefix, Closeable resource) {
+        Set<Closeable> cacheResources = ConcurrencyUtil.getOrPutSynchronized(
+                resources, cacheNameWithPrefix, cacheResourcesMutexFactory, cacheResourcesConstructorFunction);
         cacheResources.add(resource);
     }
 
@@ -663,22 +673,24 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     /**
-     * Registers and {@link com.hazelcast.cache.impl.CacheEventListener} for specified <code>cacheName</code>.
+     * Registers and {@link com.hazelcast.cache.impl.CacheEventListener} for specified {@code cacheNameWithPrefix}
      *
-     * @param name      the name of the cache that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
-     * @param listener  the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered for specified <code>cache</code>
-     * @param localOnly true if only events originated from this member wants be listened, false if all invalidation events in the
-     *                  cluster wants to be listened
+     * @param cacheNameWithPrefix the full name of the cache (including manager scope prefix)
+     *                            that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
+     * @param listener            the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered
+     *                            for specified {@code cacheNameWithPrefix}
+     * @param localOnly           true if only events originated from this member wants be listened, false if all
+     *                            invalidation events in the cluster wants to be listened
      * @return the ID which is unique for current registration
      */
     @Override
-    public String addInvalidationListener(String name, CacheEventListener listener, boolean localOnly) {
+    public String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
         if (localOnly) {
-            registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
+            registration = eventService.registerLocalListener(SERVICE_NAME, cacheNameWithPrefix, listener);
         } else {
-            registration = eventService.registerListener(SERVICE_NAME, name, listener);
+            registration = eventService.registerListener(SERVICE_NAME, cacheNameWithPrefix, listener);
         }
         return registration.getId();
     }
@@ -687,13 +699,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
      * from mentioned source with <code>sourceUuid</code>.
      *
-     * @param name       the name of the cache that invalidation event is sent for
-     * @param key        the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
-     * @param sourceUuid an ID that represents the source for invalidation event
+     * @param cacheNameWithPrefix the name of the cache that invalidation event is sent for
+     * @param key                 the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
+     * @param sourceUuid          an ID that represents the source for invalidation event
      */
     @Override
-    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
-        cacheEventHandler.sendInvalidationEvent(name, key, sourceUuid);
+    public void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid) {
+        cacheEventHandler.sendInvalidationEvent(cacheNameWithPrefix, key, sourceUuid);
     }
 
     @Override

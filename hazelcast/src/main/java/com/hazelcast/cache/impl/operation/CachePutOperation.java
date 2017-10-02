@@ -46,8 +46,9 @@ public class CachePutOperation
     public CachePutOperation() {
     }
 
-    public CachePutOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get, int completionId) {
-        super(name, key, completionId);
+    public CachePutOperation(String cacheNameWithPrefix, Data key, Data value,
+                             ExpiryPolicy expiryPolicy, boolean get, int completionId) {
+        super(cacheNameWithPrefix, key, completionId);
         this.value = value;
         this.expiryPolicy = expiryPolicy;
         this.get = get;

@@ -43,9 +43,9 @@ public class CacheReplaceOperation
     public CacheReplaceOperation() {
     }
 
-    public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy,
+    public CacheReplaceOperation(String cacheNameWithPrefix, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy,
                                  int completionId) {
-        super(name, key, completionId);
+        super(cacheNameWithPrefix, key, completionId);
         this.newValue = newValue;
         this.oldValue = oldValue;
         this.expiryPolicy = expiryPolicy;

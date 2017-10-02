@@ -64,9 +64,9 @@ public class CacheRecordStore
     protected SerializationService serializationService;
     protected CacheRecordFactory cacheRecordFactory;
 
-    public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
+    public CacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
                             AbstractCacheService cacheService) {
-        super(name, partitionId, nodeEngine, cacheService);
+        super(cacheNameWithPrefix, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
         this.cacheRecordFactory = createCacheRecordFactory();
     }
