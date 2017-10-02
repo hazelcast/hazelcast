@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.util.Clock;
 
@@ -31,10 +32,13 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
             newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES =
             newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
+    @Probe
     private long creationTime;
 
     // These fields are only accessed through the updaters
+    @Probe
     private volatile long totalPublishes;
+    @Probe
     private volatile long totalReceivedMessages;
 
     public LocalTopicStatsImpl() {

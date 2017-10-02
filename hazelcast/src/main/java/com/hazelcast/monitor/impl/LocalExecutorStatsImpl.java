@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.util.Clock;
 
@@ -41,11 +42,17 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
     private long creationTime;
 
     // These fields are only accessed through the updaters
+    @Probe
     private volatile long pending;
+    @Probe
     private volatile long started;
+    @Probe
     private volatile long completed;
+    @Probe
     private volatile long cancelled;
+    @Probe
     private volatile long totalStartLatency;
+    @Probe
     private volatile long totalExecutionTime;
 
     public LocalExecutorStatsImpl() {

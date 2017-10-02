@@ -18,6 +18,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
@@ -66,13 +67,21 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
 
     // These fields are only accessed through the updaters
+    @Probe
     private volatile long lastAccessTime;
+    @Probe
     private volatile long lastUpdateTime;
+    @Probe
     private volatile long hits;
+    @Probe
     private volatile long numberOfOtherOperations;
+    @Probe
     private volatile long numberOfEvents;
+    @Probe
     private volatile long getCount;
+    @Probe
     private volatile long putCount;
+    @Probe
     private volatile long removeCount;
     private volatile long totalGetLatenciesNanos;
     private volatile long totalPutLatenciesNanos;
@@ -81,17 +90,26 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
 
+    @Probe
     private volatile long creationTime;
+    @Probe
     private volatile long ownedEntryCount;
+    @Probe
     private volatile long backupEntryCount;
+    @Probe
     private volatile long ownedEntryMemoryCost;
+    @Probe
     private volatile long backupEntryMemoryCost;
     /**
      * Holds total heap cost of map & Near Cache & backups.
      */
+    @Probe
     private volatile long heapCost;
+    @Probe
     private volatile long lockedEntryCount;
+    @Probe
     private volatile long dirtyEntryCount;
+    @Probe
     private volatile int backupCount;
 
     private volatile NearCacheStats nearCacheStats;
@@ -241,31 +259,37 @@ public class LocalMapStatsImpl implements LocalMapStats {
         setMax(this, MAX_REMOVE_LATENCY, latencyNanos);
     }
 
+    @Probe
     @Override
     public long getTotalPutLatency() {
         return NANOSECONDS.toMillis(totalPutLatenciesNanos);
     }
 
+    @Probe
     @Override
     public long getTotalGetLatency() {
         return NANOSECONDS.toMillis(totalGetLatenciesNanos);
     }
 
+    @Probe
     @Override
     public long getTotalRemoveLatency() {
         return NANOSECONDS.toMillis(totalRemoveLatenciesNanos);
     }
 
+    @Probe
     @Override
     public long getMaxPutLatency() {
         return NANOSECONDS.toMillis(maxPutLatency);
     }
 
+    @Probe
     @Override
     public long getMaxGetLatency() {
         return NANOSECONDS.toMillis(maxGetLatency);
     }
 
+    @Probe
     @Override
     public long getMaxRemoveLatency() {
         return NANOSECONDS.toMillis(maxRemoveLatency);

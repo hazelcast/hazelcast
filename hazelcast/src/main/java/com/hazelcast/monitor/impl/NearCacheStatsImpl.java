@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -46,18 +47,30 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> PERSISTENCE_COUNT =
             newUpdater(NearCacheStatsImpl.class, "persistenceCount");
 
+    @Probe
     private volatile long creationTime;
+    @Probe
     private volatile long ownedEntryCount;
+    @Probe
     private volatile long ownedEntryMemoryCost;
+    @Probe
     private volatile long hits;
+    @Probe
     private volatile long misses;
+    @Probe
     private volatile long evictions;
+    @Probe
     private volatile long expirations;
 
+    @Probe
     private volatile long persistenceCount;
+    @Probe
     private volatile long lastPersistenceTime;
+    @Probe
     private volatile long lastPersistenceDuration;
+    @Probe
     private volatile long lastPersistenceWrittenBytes;
+    @Probe
     private volatile long lastPersistenceKeyCount;
     private volatile String lastPersistenceFailure = "";
 

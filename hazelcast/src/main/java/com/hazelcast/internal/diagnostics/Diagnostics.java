@@ -53,6 +53,16 @@ public class Diagnostics {
     public static final HazelcastProperty METRICS_LEVEL =
             new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
                     .setDeprecatedName("hazelcast.performance.metric.level");
+
+    /**
+     * If metrics should be tracked on distributed data-structures like IMap, IQueue etc.
+     *
+     * By default these data-structures are not tracked, but in a future release this will probably be changed to true.
+     */
+    public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES =
+            new HazelcastProperty(PREFIX + ".metric.distributed.datastructures", false);
+
+
     /**
      * Use the {@link Diagnostics} to see internal performance metrics and cluster related information.
      * <p/>
