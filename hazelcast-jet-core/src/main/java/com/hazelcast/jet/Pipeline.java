@@ -20,7 +20,6 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.PipelineImpl;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.Future;
 
 /**
  * Models a distributed computation job using an analogy with a system of
@@ -52,17 +51,6 @@ public interface Pipeline {
      */
     @Nonnull
     <E> ComputeStage<E> drawFrom(@Nonnull Source<E> source);
-
-    /**
-     * Transforms the pipeline into a Jet job and executes it.
-     *
-     * @param jet the Jet instance that will execute the job
-     * @return the job's {@link com.hazelcast.jet.Job#getFuture() future} object
-     */
-    @Nonnull
-    default Future<Void> execute(@Nonnull JetInstance jet) {
-        return jet.newJob(toDag()).getFuture();
-    }
 
     /**
      * Transforms the pipeline into a Jet DAG, which can be submitted for
