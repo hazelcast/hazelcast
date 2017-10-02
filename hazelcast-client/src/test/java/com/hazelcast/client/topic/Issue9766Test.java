@@ -15,7 +15,7 @@
  */
 
 package com.hazelcast.client.topic;/*
- * Copyright (c) 2008, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ package com.hazelcast.client.topic;/*
  * limitations under the License.
  */
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
@@ -67,8 +68,10 @@ public class Issue9766Test {
     public void serverRestartWhenReliableTopicListenerRegistered() {
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
 
-        HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient();
-        HazelcastInstance hazelcastClient2 = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastInstance hazelcastClient2 = hazelcastFactory.newHazelcastClient(clientConfig);
         ITopic<Integer> topic = hazelcastClient.getReliableTopic(topicName);
         final ITopic<Integer> topic2 = hazelcastClient2.getReliableTopic(topicName);
 
