@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -25,7 +26,6 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICacheManager;
@@ -293,7 +293,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     protected HazelcastClientInstanceImpl getClient() {
         final HazelcastClientInstanceImpl c = client;
         if (c == null || !c.getLifecycleService().isRunning()) {
-            throw new HazelcastInstanceNotActiveException();
+            throw new HazelcastClientNotActiveException("Client is not active.");
         }
         return c;
     }

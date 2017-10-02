@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ProxyManager;
@@ -132,8 +133,18 @@ public class ProxyManagerTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "1");
+        config.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         HazelcastInstance client = factory.newHazelcastClient(config);
         instance.shutdown();
+        client.getMap("test");
+    }
+
+    @Test(expected = HazelcastClientNotActiveException.class)
+    public void testProxyCreate_whenClientShutdown() {
+        factory.newHazelcastInstance();
+        ClientConfig config = new ClientConfig();
+        HazelcastInstance client = factory.newHazelcastClient(config);
+        client.shutdown();
         client.getMap("test");
     }
 }
