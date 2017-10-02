@@ -80,7 +80,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Consumer<JetInstance[]> beforeSplit = instances -> {
             MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtectionEnabled(true));
+            jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(StuckProcessor.executionStarted);
         };
 
@@ -144,7 +144,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Consumer<JetInstance[]> beforeSplit = instances -> {
             MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtectionEnabled(true));
+            jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(StuckProcessor.executionStarted);
         };
 
@@ -233,7 +233,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
             MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = secondSubCluster[1].newJob(dag, new JobConfig().setSplitBrainProtectionEnabled(true));
+            jobRef[0] = secondSubCluster[1].newJob(dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(StuckProcessor.executionStarted);
         };
 

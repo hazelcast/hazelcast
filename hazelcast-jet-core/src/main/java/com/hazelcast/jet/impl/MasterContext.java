@@ -363,7 +363,7 @@ public class MasterContext {
         Function<ExecutionPlan, Operation> operationCtor = plan -> new ExecuteOperation(jobId, executionId);
         invoke(operationCtor, this::onExecuteStepCompleted, completionFuture);
 
-        if (getJobConfig().isSnapshottingEnabled()) {
+        if (getJobConfig().getSnapshotInterval() > 0) {
             coordinationService.scheduleSnapshot(jobId, executionId);
         }
     }
@@ -475,7 +475,7 @@ public class MasterContext {
         }
 
         long completionTime = System.currentTimeMillis();
-        if (failure instanceof TopologyChangedException) {
+        if (failure instanceof TopologyChangedException && jobRecord.getConfig().isAutoRestartOnMemberFailureEnabled()) {
             scheduleRestart();
             return;
         }

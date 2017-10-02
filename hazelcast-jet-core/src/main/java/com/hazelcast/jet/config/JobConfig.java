@@ -36,19 +36,68 @@ public class JobConfig implements Serializable {
 
     private boolean splitBrainProtectionEnabled;
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
+    private boolean autoRestartEnabled = true;
 
     /**
-     * Returns true if split brain protection is enabled
+     * Returns true if {@link #setSplitBrainProtection(boolean) split brain protection}
+     * is enabled.
      */
     public boolean isSplitBrainProtectionEnabled() {
         return splitBrainProtectionEnabled;
     }
 
     /**
-     * Sets split brain protection configuration
+     * Configures the split brain protection feature. When enabled, the job will
+     * only be restarted after a topology change if the quorum size can be met.
+     * The quorum size is calculated as
+     * {@code cluster size at job submission time / 2 + 1}. As a result,
+     * the job can only be restarted if the actual cluster size is at least
+     * the quorum value.
+     * <p>
+     * For example, if at the time of job submission the cluster size is 5 and
+     * a network partition splits the cluster into two sub-clusters with one
+     * having size 3 and the other 2, the job will only be restarted on the
+     * sub-cluster with size 3.
+     * <p>
+     * Note that if you add new nodes to the cluster after a job has already
+     * started the quorum size might be invalidated by the new cluster size.
+     * For instance, if there are 5 instances at submission time
+     * (i.e. the quorum value is 3) and later a new node joins, a split
+     * of two equal sub-clusters of size 3 causes the job to be restarted
+     * on both sub-clusters.
+     * <p>
+     * The default is set to {@code false}.
+     * <p>
+     * This setting has no effect if
+     * {@link #setAutoRestartOnMemberFailure(boolean) auto restart on member failure}
+     * is disabled.
      */
-    public JobConfig setSplitBrainProtectionEnabled(boolean splitBrainProtectionEnabled) {
-        this.splitBrainProtectionEnabled = splitBrainProtectionEnabled;
+    public JobConfig setSplitBrainProtection(boolean isEnabled) {
+        this.splitBrainProtectionEnabled = isEnabled;
+        return this;
+    }
+
+    /**
+     * Returns if {@link #setAutoRestartOnMemberFailure(boolean) auto restart on member failure}
+     * is enabled.
+     */
+    public boolean isAutoRestartOnMemberFailureEnabled() {
+        return this.autoRestartEnabled;
+    }
+
+    /**
+     * Configure if the job should automatically restarted when one of the
+     * participating nodes leave the cluster. When set to true, upon a
+     * member failure the job will be automatically restarted on the
+     * remaining members.
+     * <p>
+     * If snapshotting is enabled, the job will be restored from the latest
+     * snapshot.
+     * <p>
+     * The default is set to {@code true}.
+     */
+    public JobConfig setAutoRestartOnMemberFailure(boolean isEnabled) {
+        this.autoRestartEnabled = isEnabled;
         return this;
     }
 
@@ -71,13 +120,6 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * TODO [basri] add javadoc
-     */
-    public boolean isSnapshottingEnabled() {
-        return snapshotInterval > 0;
-    }
-
-    /**
      * Return current {@link #setSnapshotIntervalMillis(long) snapshot interval}.
      */
     public long getSnapshotInterval() {
@@ -88,6 +130,8 @@ public class JobConfig implements Serializable {
      * Set the snapshot interval in milliseconds. Negative value means
      * snapshots are disabled. This is the interval between completion of
      * previous snapshot and the start of the new one.
+     * <p>
+     * By default, snapshots are turned off.
      */
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
         this.snapshotInterval = snapshotInterval;

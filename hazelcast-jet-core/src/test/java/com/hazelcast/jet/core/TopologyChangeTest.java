@@ -23,6 +23,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
@@ -223,6 +224,23 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
+    public void when_nonCoordinatorLeavesDuringExecutionAndNoRestartConfigured_then_jobFails() throws Throwable {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        JobConfig config = new JobConfig().setAutoRestartOnMemberFailure(false);
+
+        // When
+        Job job = instances[0].newJob(dag, config);
+        StuckProcessor.executionStarted.await();
+
+        instances[2].getHazelcastInstance().getLifecycleService().terminate();
+        StuckProcessor.proceedLatch.countDown();
+
+        Throwable ex = job.getFuture().handle((r, e) -> e).get();
+        assertInstanceOf(TopologyChangedException.class, ex);
+    }
+
+    @Test
     public void when_nonCoordinatorLeavesDuringExecution_then_clientStillGetsJobResult() throws Throwable {
         // Given
         JetClientInstanceImpl client = factory.newClient();
@@ -287,6 +305,24 @@ public class TopologyChangeTest extends JetTestSupport {
                         || error instanceof HazelcastInstanceNotActiveException);
             }
         });
+    }
+
+    @Test
+    public void when_coordinatorLeavesDuringExecutionAndNoRestartConfigured_then_jobFails() throws Throwable {
+        // Given
+        JetClientInstanceImpl client = factory.newClient();
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        JobConfig config = new JobConfig().setAutoRestartOnMemberFailure(false);
+
+        // When
+        Job job = client.newJob(dag, config);
+        StuckProcessor.executionStarted.await();
+
+        instances[2].getHazelcastInstance().getLifecycleService().terminate();
+        StuckProcessor.proceedLatch.countDown();
+
+        Throwable ex = job.getFuture().handle((r, e) -> e).get();
+        assertInstanceOf(TopologyChangedException.class, ex);
     }
 
     @Test
