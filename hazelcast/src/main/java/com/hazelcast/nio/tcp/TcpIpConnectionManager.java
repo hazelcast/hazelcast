@@ -72,7 +72,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     // TODO Introducing this to allow disabling the spoofing checks on-demand
     // if there is a use-case that gets affected by the change. If there are no reports of misbehaviour we can remove than in
     // next release.
-    private static final boolean SPOOFING_CHECKS = parseBoolean(getProperty("hazelcast.nio.tcp.spoofing.checks", "true"));
+    private static final boolean SPOOFING_CHECKS = parseBoolean(getProperty("hazelcast.nio.tcp.spoofing.checks", "false"));
 
     final LoggingService loggingService;
 
