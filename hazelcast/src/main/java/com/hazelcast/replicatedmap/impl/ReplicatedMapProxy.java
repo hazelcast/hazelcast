@@ -33,7 +33,7 @@ import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.replicatedmap.impl.record.ResultSet;
+import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.InitializingObject;

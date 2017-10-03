@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap.impl.record;
+package com.hazelcast.internal.util;
 
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.test.HazelcastParallelClassRunner;
