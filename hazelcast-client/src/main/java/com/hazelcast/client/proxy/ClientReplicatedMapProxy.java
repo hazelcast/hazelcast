@@ -53,7 +53,7 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.replicatedmap.impl.record.ResultSet;
+import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.IterationType;
 

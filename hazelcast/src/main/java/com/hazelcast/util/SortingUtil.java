@@ -16,10 +16,10 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.replicatedmap.impl.record.ResultSet;
 
 import java.util.Collections;
 import java.util.Comparator;

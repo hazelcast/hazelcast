@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap.impl.record;
+package com.hazelcast.internal.util;
 
 import com.hazelcast.util.IterationType;
 
@@ -24,6 +24,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ *
+ * A result set of {@link Map.Entry} objects that can be iterated according to {@link IterationType}
+ *
+ * @param <K> the type of {@link Map.Entry} keys
+ * @param <V> the type of {@link Map.Entry} values
+ */
 public class ResultSet<K, V> extends AbstractSet<Map.Entry<K, V>> {
 
     private final List<Map.Entry<K, V>> entries;
