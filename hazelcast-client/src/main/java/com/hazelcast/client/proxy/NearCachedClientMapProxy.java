@@ -114,7 +114,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     @SuppressWarnings("unchecked")
     protected V getInternal(Object key) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         V value = (V) getCachedValue(key, true);
         if (value != NOT_CACHED) {
             return value;
@@ -136,7 +136,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public ICompletableFuture<V> getAsyncInternal(Object keyParameter) {
-        final Object key = serializeKeys ? toData(keyParameter) : keyParameter;
+        final Object key = toNearCacheKey(keyParameter);
         Object value = getCachedValue(key, false);
         if (value != NOT_CACHED) {
             ExecutorService executor = getContext().getExecutionService().getUserExecutor();
@@ -172,7 +172,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected MapRemoveCodec.ResponseParameters removeInternal(Object key) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         MapRemoveCodec.ResponseParameters responseParameters;
         try {
             responseParameters = super.removeInternal(key);
@@ -184,7 +184,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected boolean removeInternal(Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         boolean removed;
         try {
             removed = super.removeInternal(key, value);
@@ -205,7 +205,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected void deleteInternal(Object key) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         try {
             super.deleteInternal(key);
         } finally {
@@ -215,7 +215,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         ICompletableFuture<V> future;
         try {
             future = super.putAsyncInternal(ttl, timeunit, key, value);
@@ -227,7 +227,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         ICompletableFuture<Void> future;
         try {
             future = super.setAsyncInternal(ttl, timeunit, key, value);
@@ -239,7 +239,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected ICompletableFuture<V> removeAsyncInternal(Object key) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         ICompletableFuture<V> future;
         try {
             future = super.removeAsyncInternal(key);
@@ -251,7 +251,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected boolean tryRemoveInternal(long timeout, TimeUnit timeunit, Object key) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         boolean removed;
         try {
             removed = super.tryRemoveInternal(timeout, timeunit, key);
@@ -263,7 +263,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         boolean putInternal;
         try {
             putInternal = super.tryPutInternal(timeout, timeunit, key, value);
@@ -275,7 +275,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected V putInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         V previousValue;
         try {
             previousValue = super.putInternal(ttl, timeunit, key, value);
@@ -287,7 +287,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected void putTransientInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         try {
             super.putTransientInternal(ttl, timeunit, key, value);
         } finally {
@@ -297,7 +297,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         V previousValue;
         try {
             previousValue = super.putIfAbsentInternal(ttl, timeunit, key, value);
@@ -309,7 +309,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected boolean replaceIfSameInternal(Object key, Object oldValue, Object newValue) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         boolean replaceIfSame;
         try {
             replaceIfSame = super.replaceIfSameInternal(key, oldValue, newValue);
@@ -321,7 +321,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected V replaceInternal(Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         V v;
         try {
             v = super.replaceInternal(key, value);
@@ -333,7 +333,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected void setInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         try {
             super.setInternal(ttl, timeunit, key, value);
         } finally {
@@ -343,7 +343,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected boolean evictInternal(Object key) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         boolean evicted;
         try {
             evicted = super.evictInternal(key);
@@ -473,7 +473,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public Object executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         Object response;
         try {
             response = super.executeOnKeyInternal(key, entryProcessor);
@@ -485,7 +485,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public ICompletableFuture submitToKeyInternal(Object key, EntryProcessor entryProcessor) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         ICompletableFuture future;
         try {
             future = super.submitToKeyInternal(key, entryProcessor);
@@ -497,7 +497,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public void submitToKeyInternal(Object key, EntryProcessor entryProcessor, ExecutionCallback callback) {
-        key = serializeKeys ? toData(key) : key;
+        key = toNearCacheKey(key);
         try {
             super.submitToKeyInternal(key, entryProcessor, callback);
         } finally {
@@ -563,6 +563,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         getContext().getNearCacheManager().destroyNearCache(name);
 
         super.onShutdown();
+    }
+
+    private Object toNearCacheKey(Object key) {
+        return serializeKeys ? toData(key) : key;
     }
 
     private Object tryPublishReserved(Object key, Object value, long reservationId) {
