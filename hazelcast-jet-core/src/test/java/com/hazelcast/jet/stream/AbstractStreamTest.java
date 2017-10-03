@@ -124,6 +124,10 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         return cache;
     }
 
+    protected JetInstance getInstance() {
+        return testMode.getInstance();
+    }
+
     protected <E> IStreamList<E> getList() {
         return getList(testMode.getInstance());
     }

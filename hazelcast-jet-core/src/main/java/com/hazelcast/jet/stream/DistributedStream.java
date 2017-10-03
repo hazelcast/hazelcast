@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
@@ -29,7 +31,10 @@ import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToIntFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
+import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipe;
+import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.reducers.CollectorReducer;
+import com.hazelcast.util.UuidUtil;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -58,6 +63,23 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface DistributedStream<T> extends Stream<T> {
+
+    /**
+     * Returns a distributed {@code Stream} with given processors as its source.
+     */
+    static <T> DistributedStream<T> fromSource(JetInstance instance, ProcessorMetaSupplier metaSupplier) {
+        return new AbstractSourcePipe<T>(new StreamContext(instance)) {
+            @Override
+            protected ProcessorMetaSupplier getSourceMetaSupplier() {
+                return metaSupplier;
+            }
+
+            @Override
+            protected String getName() {
+                return UuidUtil.newUnsecureUuidString();
+            }
+        };
+    }
 
     /**
      * Returns a stream consisting of the elements of this stream that match

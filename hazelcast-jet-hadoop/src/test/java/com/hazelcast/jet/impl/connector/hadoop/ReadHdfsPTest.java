@@ -17,13 +17,16 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.stream.DistributedCollectors;
+import com.hazelcast.jet.stream.DistributedStream;
+import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -60,9 +63,9 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfs;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfs;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -132,6 +135,15 @@ public class ReadHdfsPTest extends JetTestSupport {
         IList list = instance.getList("sink");
         assertEquals(16, list.size());
         assertTrue(list.get(0).toString().contains("value"));
+    }
+
+    @Test
+    public void testJus() {
+        IStreamList sink = (IStreamList) DistributedStream
+                .fromSource(instance, readHdfs(jobConf, mapper))
+                .collect(DistributedCollectors.toIList("sink"));
+
+        assertEquals(16, sink.size());
     }
 
     private void writeToFile() throws IOException {
