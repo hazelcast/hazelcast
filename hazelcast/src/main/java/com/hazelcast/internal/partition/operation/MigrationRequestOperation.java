@@ -102,8 +102,8 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         try {
             executeBeforeMigrations();
             namespacesContext = new ServiceNamespacesContext(nodeEngine, getPartitionReplicationEvent());
-            ReplicaFragmentMigrationState migrationState
-                    = fragmentedMigrationEnabled ? createNextReplicaFragmentMigrationState()
+            ReplicaFragmentMigrationState migrationState = fragmentedMigrationEnabled
+                    ? createNextReplicaFragmentMigrationState()
                     : createAllReplicaFragmentsMigrationState();
             invokeMigrationOperation(destination, migrationState, true);
             returnResponse = false;
