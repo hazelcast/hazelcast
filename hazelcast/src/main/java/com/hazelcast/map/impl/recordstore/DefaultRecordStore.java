@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
@@ -343,6 +344,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         final long now = getNow();
         Collection<Record> records = storage.values();
+
+        if (!records.isEmpty()) {
+            // optimisation to skip serialisation/deserialisation
+            // in each call to RecordComparator.isEqual()
+            value = inMemoryFormat == InMemoryFormat.OBJECT
+                    ? serializationService.toObject(value)
+                    : serializationService.toData(value);
+        }
+
         for (Record record : records) {
             if (getOrNullIfExpired(record, now, false) == null) {
                 continue;
