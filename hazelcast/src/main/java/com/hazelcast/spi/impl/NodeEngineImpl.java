@@ -22,22 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
-import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.internal.diagnostics.EventQueuePlugin;
-import com.hazelcast.internal.diagnostics.InvocationPlugin;
-import com.hazelcast.internal.diagnostics.MemberHazelcastInstanceInfoPlugin;
-import com.hazelcast.internal.diagnostics.MemberHeartbeatPlugin;
-import com.hazelcast.internal.diagnostics.MetricsPlugin;
-import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
-import com.hazelcast.internal.diagnostics.OperationHeartbeatPlugin;
-import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
-import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
-import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
-import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
-import com.hazelcast.internal.diagnostics.SystemLogPlugin;
-import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -246,24 +231,7 @@ public class NodeEngineImpl implements NodeEngine {
         quorumService.start();
         diagnostics.start();
 
-        // static loggers at beginning of file
-        diagnostics.register(new BuildInfoPlugin(this));
-        diagnostics.register(new SystemPropertiesPlugin(this));
-        diagnostics.register(new ConfigPropertiesPlugin(this));
-
-        // periodic loggers
-        diagnostics.register(new OverloadedConnectionsPlugin(this));
-        diagnostics.register(new EventQueuePlugin(this, eventService.getEventExecutor()));
-        diagnostics.register(new PendingInvocationsPlugin(this));
-        diagnostics.register(new MetricsPlugin(this));
-        diagnostics.register(new SlowOperationPlugin(this));
-        diagnostics.register(new InvocationPlugin(this));
-        diagnostics.register(new MemberHazelcastInstanceInfoPlugin(this));
-        diagnostics.register(new SystemLogPlugin(this));
-        diagnostics.register(new StoreLatencyPlugin(this));
-        diagnostics.register(new MemberHeartbeatPlugin(this));
-        diagnostics.register(new NetworkingImbalancePlugin(this));
-        diagnostics.register(new OperationHeartbeatPlugin(this));
+        node.getNodeExtension().registerPlugins(diagnostics);
     }
 
     public Diagnostics getDiagnostics() {

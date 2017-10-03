@@ -212,7 +212,7 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
         write('=');
     }
 
-    protected void init(PrintWriter printWriter) {
+    public void init(PrintWriter printWriter) {
         this.printWriter = printWriter;
     }
 
