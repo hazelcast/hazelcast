@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -29,6 +30,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -55,6 +57,7 @@ public class FinalizeJoinOp extends MembersUpdateOp {
     private Version clusterVersion;
 
     private transient boolean finalized;
+    private transient Exception deserializationFailure;
 
     public FinalizeJoinOp() {
     }
@@ -83,6 +86,8 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         Address callerAddress = getConnectionEndpointOrThisAddress();
         String callerUuid = getCallerUuid();
 
+        checkDeserializationFailure(clusterService);
+
         preparePostOp(preJoinOp);
         finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid,
                 clusterId, clusterState, clusterVersion, clusterStartTime, masterTime, preJoinOp);
@@ -92,6 +97,15 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         }
 
         processPartitionState();
+    }
+
+    private void checkDeserializationFailure(ClusterServiceImpl clusterService) {
+        if (deserializationFailure != null) {
+            getLogger().severe("Node could not join cluster.", deserializationFailure);
+            Node node = clusterService.getNodeEngine().getNode();
+            node.shutdown(true);
+            throw ExceptionUtil.rethrow(deserializationFailure);
+        }
     }
 
     @Override
@@ -167,15 +181,26 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         boolean hasPostJoinOp = in.readBoolean();
         if (hasPostJoinOp) {
             postJoinOp = new OnJoinOp();
-            postJoinOp.readData(in);
+            try {
+                postJoinOp.readData(in);
+            } catch (Exception e) {
+                deserializationFailure = e;
+                // return immediately, do not attempt to read further
+                return;
+            }
         }
         clusterId = in.readUTF();
         clusterStartTime = in.readLong();
         String stateName = in.readUTF();
         clusterState = ClusterState.valueOf(stateName);
         clusterVersion = in.readObject();
+
         if (clusterVersion.isGreaterOrEqual(V3_9)) {
-            preJoinOp = in.readObject();
+            try {
+                preJoinOp = in.readObject();
+            } catch (Exception e) {
+                deserializationFailure = e;
+            }
         }
     }
 
