@@ -139,7 +139,7 @@ class Planner {
         addEdges(stage, pv.v);
     }
 
-    private void handleGroupBy(AbstractStage stage, GroupByTransform<Object, Object, Object> groupBy) {
+    private void handleGroupBy(AbstractStage stage, GroupByTransform<Object, Object, Object, Object> groupBy) {
         String name = "groupByKey." + randomSuffix() + ".stage";
         Vertex v1 = dag.newVertex(name + '1',
                 Processors.accumulateByKey(groupBy.keyFn(), groupBy.aggregateOperation()));

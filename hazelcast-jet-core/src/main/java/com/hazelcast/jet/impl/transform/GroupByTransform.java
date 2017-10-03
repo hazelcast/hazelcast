@@ -21,11 +21,13 @@ import com.hazelcast.jet.function.DistributedFunction;
 
 import java.util.Map.Entry;
 
-public class GroupByTransform<E, K, R> implements UnaryTransform<E, Entry<K, R>> {
+public class GroupByTransform<E, K, A, R> implements UnaryTransform<E, Entry<K, R>> {
     private final DistributedFunction<? super E, ? extends K> keyFn;
-    private final AggregateOperation1<E, ?, R> aggrOp;
+    private final AggregateOperation1<? super E, A, R> aggrOp;
 
-    public GroupByTransform(DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<E, ?, R> aggrOp) {
+    public GroupByTransform(DistributedFunction<? super E, ? extends K> keyFn,
+                            AggregateOperation1<? super E, A, R> aggrOp
+    ) {
         this.keyFn = keyFn;
         this.aggrOp = aggrOp;
     }
@@ -39,7 +41,7 @@ public class GroupByTransform<E, K, R> implements UnaryTransform<E, Entry<K, R>>
         return keyFn;
     }
 
-    public AggregateOperation1<E, ?, R> aggregateOperation() {
+    public AggregateOperation1<? super E, A, R> aggregateOperation() {
         return aggrOp;
     }
 }

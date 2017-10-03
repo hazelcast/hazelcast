@@ -77,16 +77,17 @@ public interface ComputeStage<E> extends Stage {
      * @param keyFn the function that extracts the grouping key from an item
      * @param aggrOp the aggregate operation to perform
      * @param <K> the type of key
+     * @param <A> the type of the accumulator
      * @param <R> the type of the aggregation result
      */
-    <K, R> ComputeStage<Entry<K, R>> groupBy(
-            DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<E, ?, R> aggrOp
+    <K, A, R> ComputeStage<Entry<K, R>> groupBy(
+            DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<? super E, A, R> aggrOp
     );
 
     /**
      * Attaches to both this and the supplied stage a hash-joining stage and
      * returns it. This stage plays the role of the <em>primary stage</em> in
-     * the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
+     * the hash-join. Please refer to the {@link com.hazelcast.jet
      * package Javadoc} for a detailed description of the hash-join transform.
      *
      * @param stage1     the stage to hash-join with this one
@@ -147,10 +148,10 @@ public interface ComputeStage<E> extends Stage {
      * @param <E1>      the type of {@code stage1} items
      * @param <R>       the result type of the aggregate operation
      */
-    <K, A, E1, R> ComputeStage<Tuple2<K, R>> coGroup(
+    <K, A, E1, R> ComputeStage<Entry<K, R>> coGroup(
             DistributedFunction<? super E, ? extends K> thisKeyFn,
             ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
-            AggregateOperation2<E, E1, A, R> aggrOp
+            AggregateOperation2<? super E, ? super E1, A, R> aggrOp
     );
 
     /**
@@ -170,11 +171,11 @@ public interface ComputeStage<E> extends Stage {
      * @param <E2>      the type of {@code stage1} items
      * @param <R>       the result type of the aggregate operation
      */
-    <K, A, E1, E2, R> ComputeStage<Tuple2<K, R>> coGroup(
+    <K, A, E1, E2, R> ComputeStage<Entry<K, R>> coGroup(
             DistributedFunction<? super E, ? extends K> thisKeyFn,
             ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
             ComputeStage<E2> stage2, DistributedFunction<? super E2, ? extends K> key2Fn,
-            AggregateOperation3<E, E1, E2, A, R> aggrOp
+            AggregateOperation3<? super E, ? super E1, ? super E2, A, R> aggrOp
     );
 
     /**

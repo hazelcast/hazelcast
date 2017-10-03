@@ -84,8 +84,8 @@ public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E
     }
 
     @Override
-    public <K, R> ComputeStage<Entry<K, R>> groupBy(
-            DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<E, ?, R> aggrOp
+    public <K, A, R> ComputeStage<Entry<K, R>> groupBy(
+            DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<? super E, A, R> aggrOp
     ) {
         return attach(new GroupByTransform<>(keyFn, aggrOp));
     }
@@ -109,21 +109,21 @@ public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E
 
     @Override
     @SuppressWarnings("unchecked")
-    public <K, A, E1, R> ComputeStage<Tuple2<K, R>> coGroup(
+    public <K, A, E1, R> ComputeStage<Entry<K, R>> coGroup(
             DistributedFunction<? super E, ? extends K> thisKeyFn,
             ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
-            AggregateOperation2<E, E1, A, R> aggrOp
+            AggregateOperation2<? super E, ? super E1, A, R> aggrOp
     ) {
         return attach(new CoGroupTransform<K, A, R>(asList(thisKeyFn, key1Fn), aggrOp), singletonList(stage1));
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <K, A, E1, E2, R> ComputeStage<Tuple2<K, R>> coGroup(
+    public <K, A, E1, E2, R> ComputeStage<Entry<K, R>> coGroup(
             DistributedFunction<? super E, ? extends K> thisKeyFn,
             ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
             ComputeStage<E2> stage2, DistributedFunction<? super E2, ? extends K> key2Fn,
-            AggregateOperation3<E, E1, E2, A, R> aggrOp
+            AggregateOperation3<? super E, ? super E1, ? super E2, A, R> aggrOp
     ) {
         return attach(new CoGroupTransform<K, A, R>(asList(thisKeyFn, key1Fn, key2Fn), aggrOp), asList(stage1, stage2));
     }
