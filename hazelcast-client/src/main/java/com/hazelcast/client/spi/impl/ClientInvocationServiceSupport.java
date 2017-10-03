@@ -175,7 +175,6 @@ public abstract class ClientInvocationServiceSupport implements ClientInvocation
             iterator.remove();
             invocation.notifyException(new HazelcastClientNotActiveException("Client is shutting down"));
         }
-        assert callIdMap.isEmpty();
     }
 
     private class CleanResourcesTask implements Runnable {
