@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * <p>
- *     Responsible for all cache data of a partition. Creates and
+ * Responsible for all cache data of a partition. Creates and
  * looks up {@link com.hazelcast.cache.impl.ICacheRecordStore CacheRecordStore}s by name.
  * </p>
  * A {@link CacheService} manages all <code>CachePartitionSegment</code>s.
@@ -47,8 +47,9 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         this.partitionId = partitionId;
     }
 
-    @Override public ICacheRecordStore createNew(String name) {
-        return cacheService.createNewRecordStore(name, partitionId);
+    @Override
+    public ICacheRecordStore createNew(String cacheNameWithPrefix) {
+        return cacheService.createNewRecordStore(cacheNameWithPrefix, partitionId);
     }
 
     public Iterator<ICacheRecordStore> recordStoreIterator() {
@@ -63,12 +64,26 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         return partitionId;
     }
 
-    public ICacheRecordStore getOrCreateRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(recordStores, name, mutex, this);
+    /**
+     * Gets or creates a cache record store with the prefixed {@code cacheNameWithPrefix}.
+     *
+     * @param cacheNameWithPrefix the full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix
+     * @return the cache partition record store
+     */
+    public ICacheRecordStore getOrCreateRecordStore(String cacheNameWithPrefix) {
+        return ConcurrencyUtil.getOrPutSynchronized(recordStores, cacheNameWithPrefix, mutex, this);
     }
 
-    public ICacheRecordStore getRecordStore(String name) {
-        return recordStores.get(name);
+    /**
+     * Returns a cache record store with the prefixed
+     * {@code cacheNameWithPrefix} or {@code null} if one doesn't exist.
+     *
+     * @param cacheNameWithPrefix the full name of the {@link com.hazelcast.cache.ICache},
+     *                            including the manager scope prefix
+     * @return the cache partition record store or {@code null} if it doesn't exist
+     */
+    public ICacheRecordStore getRecordStore(String cacheNameWithPrefix) {
+        return recordStores.get(cacheNameWithPrefix);
     }
 
     public ICacheService getCacheService() {
@@ -134,7 +149,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         }
     }
 
-   public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+    public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
         Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
         for (ICacheRecordStore recordStore : recordStores.values()) {
             if (recordStore.getConfig().getTotalBackupCount() >= replicaIndex) {

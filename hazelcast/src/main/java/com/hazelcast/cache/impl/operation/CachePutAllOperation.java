@@ -57,9 +57,9 @@ public class CachePutAllOperation
     public CachePutAllOperation() {
     }
 
-    public CachePutAllOperation(String name, List<Map.Entry<Data, Data>> entries,
+    public CachePutAllOperation(String cacheNameWithPrefix, List<Map.Entry<Data, Data>> entries,
                                 ExpiryPolicy expiryPolicy, int completionId) {
-        super(name);
+        super(cacheNameWithPrefix);
         this.entries = entries;
         this.expiryPolicy = expiryPolicy;
         this.completionId = completionId;

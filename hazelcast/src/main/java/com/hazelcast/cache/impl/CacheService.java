@@ -65,8 +65,8 @@ public class CacheService extends AbstractCacheService {
     }
 
     @Override
-    protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
-        CacheRecordStore recordStore = new CacheRecordStore(name, partitionId, nodeEngine, this);
+    protected ICacheRecordStore createNewRecordStore(String cacheNameWithPrefix, int partitionId) {
+        CacheRecordStore recordStore = new CacheRecordStore(cacheNameWithPrefix, partitionId, nodeEngine, this);
         recordStore.instrument(nodeEngine);
         return recordStore;
     }
@@ -148,7 +148,7 @@ public class CacheService extends AbstractCacheService {
     }
 
     @Override
-    public boolean isWanReplicationEnabled(String cacheName) {
+    public boolean isWanReplicationEnabled(String cacheNameWithPrefix) {
         return false;
     }
 

@@ -78,6 +78,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public static final String SOURCE_NOT_AVAILABLE = "<NA>";
     protected static final int DEFAULT_INITIAL_CAPACITY = 256;
 
+    /** the full name of the cache, including the manager scope prefix */
     protected final String name;
     protected final int partitionId;
     protected final int partitionCount;
@@ -103,26 +104,26 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean primary;
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
-    public AbstractCacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
+    public AbstractCacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
                                     AbstractCacheService cacheService) {
-        this.name = name;
+        this.name = cacheNameWithPrefix;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.cacheService = cacheService;
-        this.cacheConfig = cacheService.getCacheConfig(name);
+        this.cacheConfig = cacheService.getCacheConfig(cacheNameWithPrefix);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
+            throw new CacheNotExistsException("Cache " + cacheNameWithPrefix + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
         evictionConfig = cacheConfig.getEvictionConfig();
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null!");
         }
-        wanReplicationEnabled = cacheService.isWanReplicationEnabled(name);
+        wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
         disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
         if (cacheConfig.isStatisticsEnabled()) {
-            statistics = cacheService.createCacheStatIfAbsent(name);
+            statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
         }
         if (cacheConfig.getCacheLoaderFactory() != null) {
             Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
@@ -145,12 +146,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new IllegalStateException("Expiry policy factory cannot be null!");
         }
 
-        cacheContext = cacheService.getOrCreateCacheContext(name);
+        cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
         records = createRecordCacheMap();
         evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
         evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         evictionStrategy = createEvictionStrategy(evictionConfig);
-        objectNamespace = CacheService.getObjectNamespace(name);
+        objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
 
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
         registerResourceIfItIsClosable(cacheWriter);
@@ -1486,6 +1487,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return cacheConfig;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the full name of the cache, including the manager scope prefix
+     */
     @Override
     public String getName() {
         return name;

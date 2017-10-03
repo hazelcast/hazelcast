@@ -110,10 +110,10 @@ public class CacheEventHandler {
                 eventData, cacheEventContext.getOrderKey());
     }
 
-    void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
+    void publishEvent(String cacheNameWithPrefix, CacheEventSet eventSet, int orderKey) {
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> candidates =
-                eventService.getRegistrations(SERVICE_NAME, cacheName);
+                eventService.getRegistrations(SERVICE_NAME, cacheNameWithPrefix);
         if (candidates.isEmpty()) {
             return;
         }

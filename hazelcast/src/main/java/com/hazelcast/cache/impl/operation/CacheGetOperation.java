@@ -39,8 +39,8 @@ public class CacheGetOperation
     public CacheGetOperation() {
     }
 
-    public CacheGetOperation(String name, Data key, ExpiryPolicy expiryPolicy) {
-        super(name, key);
+    public CacheGetOperation(String cacheNameWithPrefix, Data key, ExpiryPolicy expiryPolicy) {
+        super(cacheNameWithPrefix, key);
         this.expiryPolicy = expiryPolicy;
     }
 

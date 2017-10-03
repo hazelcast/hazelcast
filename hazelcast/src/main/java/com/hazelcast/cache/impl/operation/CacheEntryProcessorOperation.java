@@ -47,9 +47,9 @@ public class CacheEntryProcessorOperation
     public CacheEntryProcessorOperation() {
     }
 
-    public CacheEntryProcessorOperation(String name, Data key, int completionId,
+    public CacheEntryProcessorOperation(String cacheNameWithPrefix, Data key, int completionId,
                                         javax.cache.processor.EntryProcessor entryProcessor, Object... arguments) {
-        super(name, key, completionId);
+        super(cacheNameWithPrefix, key, completionId);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
         this.completionId = completionId;

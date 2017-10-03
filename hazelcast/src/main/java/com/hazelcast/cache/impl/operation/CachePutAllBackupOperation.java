@@ -53,8 +53,8 @@ public class CachePutAllBackupOperation
     public CachePutAllBackupOperation() {
     }
 
-    public CachePutAllBackupOperation(String name, Map<Data, CacheRecord> cacheRecords) {
-        super(name);
+    public CachePutAllBackupOperation(String cacheNameWithPrefix, Map<Data, CacheRecord> cacheRecords) {
+        super(cacheNameWithPrefix);
         this.cacheRecords = cacheRecords;
     }
 

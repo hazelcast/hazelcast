@@ -48,9 +48,9 @@ public class CacheBackupEntryProcessorOperation
     public CacheBackupEntryProcessorOperation() {
     }
 
-    public CacheBackupEntryProcessorOperation(String name, Data key, EntryProcessor entryProcessor,
+    public CacheBackupEntryProcessorOperation(String cacheNameWithPrefix, Data key, EntryProcessor entryProcessor,
                                               Object... arguments) {
-        super(name, key);
+        super(cacheNameWithPrefix, key);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
     }

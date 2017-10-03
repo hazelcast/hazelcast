@@ -639,6 +639,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
                 + ", hotRestart=" + hotRestartConfig
+                + ", wanReplicationRef=" + wanReplicationRef
                 + '}';
     }
 }

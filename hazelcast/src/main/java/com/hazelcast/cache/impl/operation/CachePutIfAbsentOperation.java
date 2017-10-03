@@ -42,8 +42,9 @@ public class CachePutIfAbsentOperation
     public CachePutIfAbsentOperation() {
     }
 
-    public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, int completionId) {
-        super(name, key, completionId);
+    public CachePutIfAbsentOperation(String cacheNameWithPrefix, Data key, Data value,
+                                     ExpiryPolicy expiryPolicy, int completionId) {
+        super(cacheNameWithPrefix, key, completionId);
         this.value = value;
         this.expiryPolicy = expiryPolicy;
     }
