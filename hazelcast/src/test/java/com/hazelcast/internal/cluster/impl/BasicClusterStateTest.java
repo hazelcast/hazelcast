@@ -25,9 +25,14 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.BackupOperation;
 import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.SilentOperation;
 import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -53,6 +58,7 @@ import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
@@ -423,6 +429,28 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         future.get();
     }
 
+    @Test
+    public void backupOperation_shouldBeAllowed_whenClusterState_PASSIVE() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        warmUpPartitions(hz1, hz2);
+
+        int partitionId = getPartitionId(hz2);
+        changeClusterStateEventually(hz1, ClusterState.PASSIVE);
+
+        InternalCompletableFuture future = getOperationService(hz1).invokeOnPartition(null,
+                new PrimaryAllowedDuringPassiveStateOperation(), partitionId);
+        future.join();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(hz1.getUserContext().containsKey(BackupOperation.EXECUTION_DONE));
+            }
+        });
+    }
+
     private static void assertNodeState(HazelcastInstance[] instances, NodeState expectedState) {
         for (HazelcastInstance instance : instances) {
             Node node = getNode(instance);
@@ -444,4 +472,31 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         });
     }
 
+    private static class PrimaryAllowedDuringPassiveStateOperation extends Operation
+            implements BackupAwareOperation, AllowedDuringPassiveState {
+
+        @Override
+        public void run() throws Exception {
+        }
+
+        @Override
+        public boolean shouldBackup() {
+            return true;
+        }
+
+        @Override
+        public int getSyncBackupCount() {
+            return 1;
+        }
+
+        @Override
+        public int getAsyncBackupCount() {
+            return 0;
+        }
+
+        @Override
+        public Operation getBackupOperation() {
+            return new BackupOperation();
+        }
+    }
 }

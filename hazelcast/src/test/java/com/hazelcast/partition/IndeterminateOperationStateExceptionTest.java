@@ -239,10 +239,11 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     }
 
     public static class BackupOperation extends Operation {
+        public static final String EXECUTION_DONE = "execution-done";
 
         @Override
         public void run() throws Exception {
-
+            getNodeEngine().getHazelcastInstance().getUserContext().put(EXECUTION_DONE, new Object());
         }
     }
 
