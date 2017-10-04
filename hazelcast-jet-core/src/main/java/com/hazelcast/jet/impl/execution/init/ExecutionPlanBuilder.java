@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -78,7 +79,9 @@ public final class ExecutionPlanBuilder {
             final List<EdgeDef> outbound = toEdgeDefs(dag.getOutboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> vertexIdMap.get(e.getDestName()), isJobDistributed);
             final ProcessorMetaSupplier metaSupplier = vertex.getSupplier();
-            metaSupplier.init(new MetaSupplierCtx(instance, totalParallelism, localParallelism,
+            ILogger logger = nodeEngine.getLogger(metaSupplier.getClass().getName() + "." + vertex.getName() +
+                    "#ProcessorMetaSupplier");
+            metaSupplier.init(new MetaSupplierCtx(instance, logger, totalParallelism, localParallelism,
                     jobConfig.getSnapshotInterval() >= 0));
 
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);

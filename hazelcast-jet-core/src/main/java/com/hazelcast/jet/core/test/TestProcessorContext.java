@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.core.test;
 
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingServiceImpl;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.jet.core.test.TestSupport.getLogger;
 
 /**
  * Simple implementation of {@link Processor.Context}.
@@ -40,9 +40,8 @@ public class TestProcessorContext implements Processor.Context {
      * Constructor with default values.
      */
     public TestProcessorContext() {
-        LoggingServiceImpl loggingService = new LoggingServiceImpl("test-group", null, BuildInfoProvider.getBuildInfo());
         globalProcessorIndex = 0;
-        logger = loggingService.getLogger(vertexName + "#" + globalProcessorIndex);
+        logger = getLogger(vertexName + "#" + globalProcessorIndex);
     }
 
     @Override

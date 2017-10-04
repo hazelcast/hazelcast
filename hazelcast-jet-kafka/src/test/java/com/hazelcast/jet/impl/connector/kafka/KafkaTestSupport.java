@@ -99,8 +99,16 @@ public class KafkaTestSupport extends JetTestSupport {
         AdminUtils.createTopic(zkUtils, topicId, 1, 1, new Properties(), MODULE$);
     }
 
+    void addPartitions(String topicId, int numPartitions) {
+        AdminUtils.addPartitions(zkUtils, topicId, numPartitions, "", true, null);
+    }
+
     Future<RecordMetadata> produce(String topic, Integer key, String value) {
         return getProducer().send(new ProducerRecord<>(topic, key, value));
+    }
+
+    void resetProducer() {
+        this.producer = null;
     }
 
     private KafkaProducer<Integer, String> getProducer() {

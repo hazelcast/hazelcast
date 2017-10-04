@@ -17,15 +17,19 @@
 package com.hazelcast.jet.core.test;
 
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestOutbox.MockData;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -125,6 +129,9 @@ public final class TestSupport {
     // parallel tests or GC.
     private static final long COOPERATIVE_TIME_LIMIT_MS_FAIL = 1000;
     private static final long COOPERATIVE_TIME_LIMIT_MS_WARN = 5;
+    private static final LoggingServiceImpl LOGGING_SERVICE = new LoggingServiceImpl(
+            "test-group", null, BuildInfoProvider.getBuildInfo()
+    );
 
     static {
         try {
@@ -407,14 +414,16 @@ public final class TestSupport {
     }
 
     /**
-     * Move all items from the outbox to the {@code outputList}.
+     * Move all items from the outbox to the {@code target} list and make the
+     * outbox available to accept more items.
+     *
      * @param outboxBucket the queue from Outbox to drain
-     * @param outputList target list
-     * @param logItems Whether to log drained items to System.out
+     * @param target target list
+     * @param logItems whether to log drained items to {@code System.out}
      */
-    public static void drainOutbox(Queue<Object> outboxBucket, List<Object> outputList, boolean logItems) {
-        for (Object o; (o = outboxBucket.poll()) != null; ) {
-            outputList.add(o);
+    public static <T> void drainOutbox(Queue<T> outboxBucket, Collection<? super T> target, boolean logItems) {
+        for (T o; (o = outboxBucket.poll()) != null; ) {
+            target.add(o);
             if (logItems) {
                 System.out.println("Output: " + o);
             }
@@ -435,6 +444,14 @@ public final class TestSupport {
     public static Supplier<Processor> supplierFrom(ProcessorMetaSupplier supplier) {
         supplier.init(new TestProcessorMetaSupplierContext());
         return supplierFrom(supplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS));
+    }
+
+    static ILogger getLogger(String name) {
+        return LOGGING_SERVICE.getLogger(name);
+    }
+
+    static ILogger getLogger(Class clazz) {
+        return LOGGING_SERVICE.getLogger(clazz);
     }
 
     private static String listToString(List<?> list) {

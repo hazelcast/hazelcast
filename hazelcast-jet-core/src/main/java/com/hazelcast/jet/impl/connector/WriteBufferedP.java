@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
@@ -27,13 +28,9 @@ import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedIntFunction;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.IntStream;
+import java.io.Closeable;
 
-import static java.util.stream.Collectors.toList;
-
-public final class WriteBufferedP<B, T> implements Processor {
+public final class WriteBufferedP<B, T> implements Processor, Closeable {
 
     private final DistributedIntFunction<B> newBufferFn;
     private final DistributedBiConsumer<B, T> addToBufferFn;
@@ -72,27 +69,8 @@ public final class WriteBufferedP<B, T> implements Processor {
             DistributedConsumer<B> flushBufferFn,
             DistributedConsumer<B> disposeBufferFn
     ) {
-        return new ProcessorSupplier() {
-            private transient List<WriteBufferedP<B, T>> processors;
-
-            @Nonnull @Override
-            public Collection<? extends Processor> get(int count) {
-                return processors = IntStream
-                        .range(0, count)
-                        .mapToObj(i -> new WriteBufferedP<>(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn))
-                        .collect(toList());
-            }
-
-            @Override
-            public void complete(Throwable error) {
-                if (processors == null) {
-                    return;
-                }
-                for (WriteBufferedP<B, T> p : processors) {
-                    p.close();
-                }
-            }
-        };
+        return new CloseableProcessorSupplier<>(
+                () -> new WriteBufferedP<>(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn));
     }
 
     @Override

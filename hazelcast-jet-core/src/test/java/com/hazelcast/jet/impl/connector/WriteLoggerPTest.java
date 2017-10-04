@@ -19,8 +19,8 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.SnapshotOutbox;
-import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,7 +41,7 @@ public class WriteLoggerPTest {
     public void test() {
         // Given
         Processor p = DiagnosticProcessors.writeLogger().get();
-        ArrayDequeInbox inbox = new ArrayDequeInbox();
+        TestInbox inbox = new TestInbox();
         Outbox outbox = mock(Outbox.class);
         SnapshotOutbox ssOutbox = mock(SnapshotOutbox.class);
         ILogger logger = mock(ILogger.class);

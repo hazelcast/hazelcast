@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
@@ -137,6 +138,12 @@ public interface ProcessorMetaSupplier extends Serializable {
          * Returns true, if snapshots will be saved for this job.
          */
         boolean snapshottingEnabled();
+
+        /**
+         * Returns a logger for the associated {@code ProcessorSupplier}.
+         */
+        @Nonnull
+        ILogger logger();
     }
 
 }

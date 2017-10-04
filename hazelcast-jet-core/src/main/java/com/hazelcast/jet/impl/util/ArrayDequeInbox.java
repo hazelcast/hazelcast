@@ -33,14 +33,6 @@ public final class ArrayDequeInbox extends ArrayDeque<Object> implements Inbox {
     private final ProgressTracker progTracker;
 
     /**
-     * Constructor to be used just for testing. Uses a private progress
-     * tracker.
-     */
-    public ArrayDequeInbox() {
-        this.progTracker = new ProgressTracker();
-    }
-
-    /**
      * Constructs the inbox with the provided progress tracker.
      */
     public ArrayDequeInbox(ProgressTracker progTracker) {

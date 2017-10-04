@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -29,8 +29,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -64,7 +64,7 @@ public class WriteBufferedPTest extends JetTestSupport {
         Processor p = getLoggingBufferedWriter().get(1).iterator().next();
         Outbox outbox = mock(Outbox.class);
         p.init(outbox, mock(SnapshotOutbox.class), mock(Context.class));
-        ArrayDequeInbox inbox = new ArrayDequeInbox();
+        TestInbox inbox = new TestInbox();
         inbox.add(1);
         inbox.add(2);
         p.process(0, inbox);

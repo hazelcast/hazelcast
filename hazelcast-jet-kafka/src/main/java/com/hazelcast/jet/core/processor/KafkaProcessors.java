@@ -52,6 +52,10 @@ public final class KafkaProcessors {
      * commitSync()}. Note however, that offsets can be committed before or
      * after the event is fully processed.
      * <p>
+     * At the start of the job, partition offsets are reset depending on the key
+     * {@code auto.offset.reset} property. Added partitions that are detected
+     * later are always consumed from the earliest offset.
+     * <p>
      * The processor completes only in case of an error or if the job is
      * cancelled.
      *

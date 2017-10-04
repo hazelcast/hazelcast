@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 
@@ -39,22 +40,21 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Private API. Access via {@link
@@ -319,37 +319,9 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
     public static ProcessorSupplier supplier(
             @Nonnull String watchedDirectory, @Nonnull String charset, @Nonnull String glob
     ) {
-        return new Supplier(watchedDirectory, charset, glob);
-    }
-
-    private static final class Supplier implements ProcessorSupplier {
-
-        static final long serialVersionUID = 1L;
-        private final String watchedDirectory;
-        private final String charset;
-        private final String glob;
-
-        private transient ArrayList<StreamFilesP> processors;
-
-        private Supplier(String watchedDirectory, String charset, String glob) {
-            this.watchedDirectory = watchedDirectory;
-            this.charset = charset;
-            this.glob = glob;
-        }
-
-        @Override @Nonnull
-        public List<StreamFilesP> get(int count) {
-            processors = new ArrayList<>(count);
-            Charset charsetObj = Charset.forName(charset);
-            for (int i = 0; i < count; i++) {
-                processors.add(new StreamFilesP(watchedDirectory, charsetObj, glob, count, i));
-            }
-            return processors;
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            processors.forEach(r -> uncheckRun(r::close));
-        }
+        return new CloseableProcessorSupplier<>(
+                count -> IntStream.range(0, count)
+                        .mapToObj(i -> new StreamFilesP(watchedDirectory, Charset.forName(charset), glob, count, i))
+                        .collect(toList()));
     }
 }

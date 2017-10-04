@@ -223,7 +223,9 @@ public final class Util {
                 .mapToObj(i -> entry(i, ownedPartitions.get(i)))
                 .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
 
-        range(0, count).forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
+        for (int processor = 0; processor < count; processor++) {
+            processorToPartitions.computeIfAbsent(processor, x -> emptyList());
+        }
         return processorToPartitions;
     }
 

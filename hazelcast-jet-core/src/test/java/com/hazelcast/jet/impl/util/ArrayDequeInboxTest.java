@@ -36,7 +36,7 @@ public class ArrayDequeInboxTest {
 
     private static final Integer ITEM = 1;
 
-    private ArrayDequeInbox inbox = new ArrayDequeInbox();
+    private ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
     @Before
     public void before() throws Exception {

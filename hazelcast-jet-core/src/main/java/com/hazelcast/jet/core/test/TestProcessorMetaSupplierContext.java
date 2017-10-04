@@ -18,8 +18,11 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+
+import static com.hazelcast.jet.core.test.TestSupport.getLogger;
 
 /**
  * Simple implementation of {@link ProcessorMetaSupplier.Context}.
@@ -64,6 +67,11 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Override
     public boolean snapshottingEnabled() {
         return snapshottingEnabled;
+    }
+
+    @Nonnull @Override
+    public ILogger logger() {
+        return getLogger(getClass());
     }
 
     /**
