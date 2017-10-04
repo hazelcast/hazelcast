@@ -39,6 +39,8 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
  * {@link #removeHandler(MigratableHandler)}
  */
 class LoadTracker {
+    final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
+
     private final ILogger logger;
 
     //all known IO ioThreads. we assume no. of ioThreads is constant during a lifespan of a member
@@ -57,8 +59,6 @@ class LoadTracker {
     private final Set<MigratableHandler> handlers = new HashSet<MigratableHandler>();
 
     private final LoadImbalance imbalance;
-
-    private final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
 
     LoadTracker(NioThread[] ioThreads, ILogger logger) {
         this.logger = logger;

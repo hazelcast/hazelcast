@@ -100,11 +100,23 @@ public class IOBalancer {
     }
 
     public void channelAdded(MigratableHandler readHandler, MigratableHandler writeHandler) {
+        // if not enabled, then don't schedule tasks that will not get processed.
+        // See https://github.com/hazelcast/hazelcast/issues/11501
+        if (!enabled) {
+            return;
+        }
+
         inLoadTracker.notifyHandlerAdded(readHandler);
         outLoadTracker.notifyHandlerAdded(writeHandler);
     }
 
     public void channelRemoved(MigratableHandler readHandler, MigratableHandler writeHandler) {
+        // if not enabled, then don't schedule tasks that will not get processed.
+        // See https://github.com/hazelcast/hazelcast/issues/11501
+        if (!enabled) {
+            return;
+        }
+
         inLoadTracker.notifyHandlerRemoved(readHandler);
         outLoadTracker.notifyHandlerRemoved(writeHandler);
     }
