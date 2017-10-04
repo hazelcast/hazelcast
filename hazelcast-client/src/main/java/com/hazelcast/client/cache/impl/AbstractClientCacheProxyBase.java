@@ -212,9 +212,8 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     protected ClientMessage invoke(ClientMessage clientMessage) {
         try {
             Future<ClientMessage> future = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage, getName()).invoke();
             return future.get();
-
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -224,7 +223,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
             Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                    clientMessage, partitionId).invoke();
+                    clientMessage, getName(), partitionId).invoke();
             return (ClientMessage) future.get();
 
         } catch (Exception e) {
@@ -240,7 +239,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
             final long start = System.nanoTime();
             ClientInvocationFuture future = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request).invoke();
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, getName()).invoke();
             SerializationService serializationService = clientContext.getSerializationService();
             delegatingFuture = new ClientDelegatingFuture<V>(future, serializationService, LOAD_ALL_DECODER);
             final Future delFuture = delegatingFuture;

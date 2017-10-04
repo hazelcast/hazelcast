@@ -144,7 +144,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                     "Can not load initial members list because owner connection is null. Address "
                             + ownerConnectionAddress);
         }
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, connection);
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, connection);
         invocation.setEventHandler(this);
         invocation.invokeUrgent().get();
         waitInitialMemberListFetched();

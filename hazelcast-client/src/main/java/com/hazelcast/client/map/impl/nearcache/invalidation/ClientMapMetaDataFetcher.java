@@ -70,7 +70,7 @@ public class ClientMapMetaDataFetcher extends MetaDataFetcher {
         for (Member member : members) {
             Address address = member.getAddress();
             ClientMessage message = encodeRequest(names, address);
-            ClientInvocation invocation = new ClientInvocation(clientImpl, message, address);
+            ClientInvocation invocation = new ClientInvocation(clientImpl, message, null, address);
             try {
                 futures.add(invocation.invoke());
             } catch (Exception e) {

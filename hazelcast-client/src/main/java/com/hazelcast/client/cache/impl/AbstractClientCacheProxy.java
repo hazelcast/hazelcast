@@ -118,7 +118,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
             final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionId);
             future = clientInvocation.invoke();
         } catch (Throwable t) {
             invalidateNearCache(keyData);

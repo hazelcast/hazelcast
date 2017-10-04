@@ -66,7 +66,7 @@ final class ClientCacheHelper {
         ClientMessage request = CacheGetConfigCodec.encodeRequest(cacheName, simpleCacheName);
         try {
             int partitionId = client.getClientPartitionService().getPartitionId(cacheName);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
             ClientMessage responseMessage = future.get();
             SerializationService serializationService = client.getSerializationService();
@@ -119,13 +119,14 @@ final class ClientCacheHelper {
                                                       boolean syncCreate) {
         try {
             CacheConfig<K, V> currentCacheConfig = configs.get(cacheName);
-            int partitionId = client.getClientPartitionService().getPartitionId(newCacheConfig.getNameWithPrefix());
+            String nameWithPrefix = newCacheConfig.getNameWithPrefix();
+            int partitionId = client.getClientPartitionService().getPartitionId(nameWithPrefix);
 
             Object resolvedConfig = resolveCacheConfig(client, newCacheConfig, partitionId);
 
             Data configData = client.getSerializationService().toData(resolvedConfig);
             ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, createAlsoOnOthers);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
             if (syncCreate) {
                 final ClientMessage response = future.get();
@@ -184,7 +185,7 @@ final class ClientCacheHelper {
             try {
                 Address address = member.getAddress();
                 ClientMessage request = CacheManagementConfigCodec.encodeRequest(cacheName, statOrMan, enabled, address);
-                ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
+                ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, address);
                 Future<ClientMessage> future = clientInvocation.invoke();
                 futures.add(future);
             } catch (Exception e) {

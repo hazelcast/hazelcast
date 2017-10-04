@@ -23,7 +23,6 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 /**
@@ -53,11 +52,9 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
 
     protected <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
                                                                    ClientMessageDecoder clientMessageDecoder) {
-        SerializationService serializationService = getContext().getSerializationService();
-
         try {
-            final ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
-            return new ClientDelegatingFuture<T>(future, serializationService, clientMessageDecoder);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

@@ -53,7 +53,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
     private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
     private final AtomicBoolean updating = new AtomicBoolean(false);
-    private final ClientExecutionServiceImpl clientExecutionService ;
+    private final ClientExecutionServiceImpl clientExecutionService;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
 
@@ -135,7 +135,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private ClientInvocationFuture getPartitionsFrom(Connection connection) {
         ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
-        return new ClientInvocation(client, requestMessage, connection).invokeUrgent();
+        return new ClientInvocation(client, requestMessage, null, connection).invokeUrgent();
     }
 
     private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {

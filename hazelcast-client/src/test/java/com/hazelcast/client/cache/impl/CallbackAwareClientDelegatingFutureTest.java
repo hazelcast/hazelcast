@@ -110,7 +110,7 @@ public class CallbackAwareClientDelegatingFutureTest extends HazelcastTestSuppor
 
         ClientMessage getRequest = createGetRequest(1);
         ClientMessageDecoder decoder = CACHE_GET_RESPONSE_DECODER;
-        ClientInvocation invocation = new ClientInvocation(client, getRequest, 0);
+        ClientInvocation invocation = new ClientInvocation(client, getRequest, null, 0);
         ClientInvocationFuture invocationFuture = invocation.invoke();
 
         final AtomicBoolean responseCalled = new AtomicBoolean();

@@ -69,11 +69,12 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
 
     protected List fetch() {
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
+        String name = cacheProxy.getPrefixedName();
         if (prefetchValues) {
             ClientMessage request = CacheIterateEntriesCodec
                     .encodeRequest(cacheProxy.getPrefixedName(), partitionIndex, lastTableIndex, fetchSize);
             try {
-                ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionIndex);
+                ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture f = clientInvocation.invoke();
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.
                         decodeResponse(f.get());
@@ -86,7 +87,7 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
             ClientMessage request = CacheIterateCodec
                     .encodeRequest(cacheProxy.getPrefixedName(), partitionIndex, lastTableIndex, fetchSize);
             try {
-                ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionIndex);
+                ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture f = clientInvocation.invoke();
                 CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(f.get());
                 setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);

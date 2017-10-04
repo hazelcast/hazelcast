@@ -493,7 +493,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
                 if (now - connection.lastReadTimeMillis() > heartbeatInterval) {
                     ClientMessage request = ClientPingCodec.encodeRequest();
-                    final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
+                    final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
                     clientInvocation.setBypassHeartbeatCheck(true);
                     connection.onHeartbeatRequested();
                     clientInvocation.invokeUrgent().andThen(new ExecutionCallback<ClientMessage>() {
@@ -550,7 +550,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         final ClientPrincipal principal = clusterService.getPrincipal();
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
-        ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
+        ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture future = clientInvocation.invokeUrgent();
         if (asOwner && clientInvocation.getSendConnection() != null) {
             correlationIddOfLastAuthentication.set(clientInvocation.getClientMessage().getCorrelationId());

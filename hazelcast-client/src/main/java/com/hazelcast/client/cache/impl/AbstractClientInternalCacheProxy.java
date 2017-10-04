@@ -278,7 +278,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
         try {
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-            ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(client, req, name, partitionId);
             ClientInvocationFuture f = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId, f);
