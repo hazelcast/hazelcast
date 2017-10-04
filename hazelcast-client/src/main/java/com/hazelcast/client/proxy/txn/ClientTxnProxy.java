@@ -21,15 +21,10 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.spi.ClientTransactionContext;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
-
-import java.util.concurrent.Future;
-
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 abstract class ClientTxnProxy implements TransactionalObject {
 
@@ -61,15 +56,9 @@ abstract class ClientTxnProxy implements TransactionalObject {
     abstract void onDestroy();
 
     final ClientMessage invoke(ClientMessage request) {
-        try {
-            HazelcastClientInstanceImpl client = transactionContext.getClient();
-            ClientConnection connection = transactionContext.getConnection();
-            ClientInvocation invocation = new ClientInvocation(client, request, connection);
-            Future<ClientMessage> future = invocation.invoke();
-            return future.get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        HazelcastClientInstanceImpl client = transactionContext.getClient();
+        ClientConnection connection = transactionContext.getConnection();
+        return ClientTransactionUtil.invoke(request, client, connection);
     }
 
     String getTransactionId() {

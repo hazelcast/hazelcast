@@ -254,7 +254,7 @@ public class ClientTxnMapTest {
                     tryPutResult.set(result);
 
                     afterTryPutResult.countDown();
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
                 }
             }
         };
@@ -267,7 +267,7 @@ public class ClientTxnMapTest {
                     txMap.getForUpdate(key);
                     getKeyForUpdateLatch.countDown();
                     afterTryPutResult.await(30, TimeUnit.SECONDS);
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
                 }
                 return true;
             }

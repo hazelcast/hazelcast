@@ -57,7 +57,7 @@ import java.util.concurrent.TimeUnit;
  *
  *      transaction.delistResource(xaResource, XAResource.TMSUCCESS);
  *      tm.commit();
- * } catch (Throwable t) {
+ * } catch (TransactionException t) {
  *      t.printStackTrace();
  *      transaction.delistResource(xaResource, XAResource.TMFAIL);
  *      tm.rollback();

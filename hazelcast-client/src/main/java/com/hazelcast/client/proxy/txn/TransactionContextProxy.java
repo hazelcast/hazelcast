@@ -23,7 +23,6 @@ import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalMultiMap;
@@ -64,7 +63,7 @@ public class TransactionContextProxy implements ClientTransactionContext {
         try {
             connection = transactionManager.connect();
         } catch (Exception e) {
-            throw new HazelcastException("Could not obtain Connection!", e);
+            throw new TransactionException("Could not obtain a connection!", e);
         }
         this.transaction = new TransactionProxy(client, options, connection);
     }

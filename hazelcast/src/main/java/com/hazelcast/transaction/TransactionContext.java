@@ -21,6 +21,8 @@ import javax.transaction.xa.XAResource;
 /**
  * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
  * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
+ * Any method accessed through TransactionContext interface can throw TransactionException if transaction is
+ * no longer valid and rolled back.
  */
 public interface TransactionContext extends TransactionalTaskContext {
 
