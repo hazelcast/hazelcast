@@ -52,4 +52,11 @@ public class SetConfig extends CollectionConfig<SetConfig> {
     public int getId() {
         return ConfigDataSerializerHook.SET_CONFIG;
     }
+
+    @Override
+    public String toString() {
+        return "SetConfig{"
+                + super.fieldsToString()
+                + "}";
+    }
 }

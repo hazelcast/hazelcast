@@ -53,4 +53,11 @@ public class ListConfig extends CollectionConfig<ListConfig> {
         return ConfigDataSerializerHook.LIST_CONFIG;
     }
 
+    @Override
+    public String toString() {
+        return "ListConfig{"
+                + super.fieldsToString()
+                + "}";
+    }
+
 }
