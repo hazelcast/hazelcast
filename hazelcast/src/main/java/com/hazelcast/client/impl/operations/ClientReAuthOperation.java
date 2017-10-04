@@ -65,6 +65,13 @@ public class ClientReAuthOperation
     }
 
     @Override
+    public void logError(Throwable e) {
+        if (!(e instanceof AuthenticationException)) {
+            super.logError(e);
+        }
+    }
+
+    @Override
     public boolean returnsResponse() {
         return Boolean.TRUE;
     }
