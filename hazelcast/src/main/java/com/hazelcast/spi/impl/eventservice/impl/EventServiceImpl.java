@@ -22,15 +22,20 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -99,7 +104,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @see #sendEvent(Address, EventEnvelope, int)
      */
     public static final String EVENT_SYNC_FREQUENCY_PROP = "hazelcast.event.sync.frequency";
-
+    public static final int RETRY_COUNT = 10;
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
     /**
@@ -157,7 +162,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Probe(name = "syncDeliveryFailureCount")
     private final MwCounter syncDeliveryFailureCount = newMwCounter();
 
-    private  final int sendEventSyncTimeoutMillis;
+    private final int sendEventSyncTimeoutMillis;
 
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
@@ -288,7 +293,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
 
         if (!localOnly) {
-            invokeRegistrationOnOtherNodes(serviceName, reg);
+            InvocationUtil.invokeOnStableClusterSerial(nodeEngine, new OpFactory(reg), RETRY_COUNT);
         }
         return reg;
     }
@@ -347,6 +352,40 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
 
         waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS, registrationExceptionHandler);
+    }
+
+    private static final class OpFactory implements OperationFactory {
+
+        private final Registration reg;
+
+        public OpFactory(Registration reg) {
+            this.reg = reg;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getId() {
+            return 1;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+
+        }
+
+        @Override
+        public Operation createOperation() {
+            return new RegistrationOperation(reg);
+        }
     }
 
     private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
