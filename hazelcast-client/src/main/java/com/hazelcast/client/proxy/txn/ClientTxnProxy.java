@@ -58,7 +58,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
     final ClientMessage invoke(ClientMessage request) {
         HazelcastClientInstanceImpl client = transactionContext.getClient();
         ClientConnection connection = transactionContext.getConnection();
-        return ClientTransactionUtil.invoke(request, client, connection);
+        return ClientTransactionUtil.invoke(request, getName(), client, connection);
     }
 
     String getTransactionId() {

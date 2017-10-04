@@ -964,7 +964,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     private void invoke(ClientMessage request) {
         try {
-            ClientInvocation invocation = new ClientInvocation(instance, request);
+            ClientInvocation invocation = new ClientInvocation(instance, request, null);
             ClientInvocationFuture future = invocation.invoke();
             ClientMessage response = future.get();
         } catch (Exception e) {

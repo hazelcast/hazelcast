@@ -41,6 +41,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.util.StringUtil.timeToString;
+
 /**
  * Handles the routing of a request from a Hazelcast client.
  * <p>
@@ -66,8 +69,9 @@ public class ClientInvocation implements Runnable {
     private final Address address;
     private final int partitionId;
     private final Connection connection;
-    private final long retryExpirationMillis;
+    private final long startTimeMillis;
     private final long retryPauseMillis;
+    private final String objectName;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
     private EventHandler handler;
@@ -75,6 +79,7 @@ public class ClientInvocation implements Runnable {
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
+                               String objectName,
                                int partitionId,
                                Address address,
                                Connection connection) {
@@ -82,11 +87,12 @@ public class ClientInvocation implements Runnable {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = client.getClientExecutionService();
+        this.objectName = objectName;
         this.clientMessage = clientMessage;
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-        this.retryExpirationMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
+        this.startTimeMillis = System.currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = client.getCallIdSequence();
@@ -94,23 +100,23 @@ public class ClientInvocation implements Runnable {
                 clientMessage, logger, callIdSequence);
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
-        this(client, clientMessage, UNASSIGNED_PARTITION, null, null);
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName) {
+        this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, null);
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
                             int partitionId) {
-        this(client, clientMessage, partitionId, null, null);
+        this(client, clientMessage, objectName, partitionId, null, null);
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
                             Address address) {
-        this(client, clientMessage, UNASSIGNED_PARTITION, address, null);
+        this(client, clientMessage, objectName, UNASSIGNED_PARTITION, address, null);
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
                             Connection connection) {
-        this(client, clientMessage, UNASSIGNED_PARTITION, null, connection);
+        this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, connection);
     }
 
     public int getPartitionId() {
@@ -201,13 +207,13 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        long remainingMillis = retryExpirationMillis - System.currentTimeMillis();
-        if (remainingMillis < 0) {
+        long timePassed = System.currentTimeMillis() - startTimeMillis;
+        if (timePassed > invocationService.getInvocationTimeoutMillis()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
             }
-            clientInvocationFuture.complete(new OperationTimeoutException(this + " timed out by "
-                    + Math.abs(remainingMillis) + " ms", exception));
+
+            clientInvocationFuture.complete(newOperationTimeoutException(exception));
             return;
         }
 
@@ -292,6 +298,19 @@ public class ClientInvocation implements Runnable {
         return executionService.getUserExecutor();
     }
 
+    private Object newOperationTimeoutException(Throwable e) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this);
+        sb.append(" timed out because exception occurred after client invocation timeout ");
+        sb.append(invocationService.getInvocationTimeoutMillis()).append(" ms. ");
+        sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
+        sb.append("Start time: ").append(timeToString(startTimeMillis)).append(". ");
+        sb.append("Total elapsed time: ").append(currentTimeMillis() - startTimeMillis).append(" ms. ");
+        String msg = sb.toString();
+        return new OperationTimeoutException(msg, e);
+    }
+
+
     @Override
     public String toString() {
         String target;
@@ -305,8 +324,9 @@ public class ClientInvocation implements Runnable {
             target = "random";
         }
         return "ClientInvocation{"
-                + "clientMessageType=" + clientMessage.getMessageType()
-                + ", target=" + target
-                + ", sendConnection=" + sendConnection + '}';
+                + "clientMessage = " + clientMessage
+                + ", objectName = " + objectName
+                + ", target = " + target
+                + ", sendConnection = " + sendConnection + '}';
     }
 }

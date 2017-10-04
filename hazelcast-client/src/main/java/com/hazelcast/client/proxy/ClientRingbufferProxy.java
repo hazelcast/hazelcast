@@ -165,7 +165,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         Data element = toData(item);
         ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
             return new ClientDelegatingFuture<Long>(invocationFuture, getSerializationService(),
                     ADD_ASYNC_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
@@ -194,7 +194,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, dataCollection, overflowPolicy.getId());
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
             return new ClientDelegatingFuture<Long>(invocationFuture, getSerializationService(), ADD_ALL_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
@@ -218,7 +218,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
                 toData(filter));
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
             return new ClientDelegatingFuture<ReadResultSet<E>>(invocationFuture, getSerializationService(),
                     readManyAsyncResponseDecoder);
         } catch (Exception e) {
@@ -234,7 +234,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     protected <T> T invoke(ClientMessage clientMessage, int partitionId) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
             return (T) future.get();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof StaleSequenceException) {

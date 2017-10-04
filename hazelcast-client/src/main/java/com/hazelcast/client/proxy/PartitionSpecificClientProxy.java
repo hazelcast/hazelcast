@@ -56,7 +56,7 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
     protected <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
                                                                    ClientMessageDecoder clientMessageDecoder) {
         try {
-            final ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);

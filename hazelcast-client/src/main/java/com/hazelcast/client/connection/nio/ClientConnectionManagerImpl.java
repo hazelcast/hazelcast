@@ -626,7 +626,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                               final AuthenticationFuture callback) {
         final ClientPrincipal principal = getPrincipal();
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
-        ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
+        ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture future = clientInvocation.invokeUrgent();
         if (asOwner && clientInvocation.getSendConnection() != null) {
             correlationIddOfLastAuthentication.set(clientInvocation.getClientMessage().getCorrelationId());

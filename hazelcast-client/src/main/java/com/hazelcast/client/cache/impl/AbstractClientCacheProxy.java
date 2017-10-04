@@ -125,7 +125,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
 
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, name, partitionId);
         ClientInvocationFuture future = clientInvocation.invoke();
         return newDelegatingFuture(future, CACHE_GET_RESPONSE_DECODER, deserializeResponse);
     }

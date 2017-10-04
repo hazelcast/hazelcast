@@ -83,7 +83,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         EventHandler handler = registrationKey.getHandler();
         handler.beforeListenerRegister();
         ClientMessage request = registrationKey.getCodec().encodeAddRequest(false);
-        ClientInvocation invocation = new ClientInvocation(client, request);
+        ClientInvocation invocation = new ClientInvocation(client, request, null);
         invocation.setEventHandler(handler);
 
         ClientInvocationFuture future = invocation.invoke();
@@ -115,7 +115,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
                 ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
                 try {
-                    Future future = new ClientInvocation(client, request).invoke();
+                    Future future = new ClientInvocation(client, request, null).invoke();
                     future.get();
                     removeEventHandler(registration.getCallId());
                     activeRegistrations.remove(key);

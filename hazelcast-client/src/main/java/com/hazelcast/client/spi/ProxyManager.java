@@ -369,7 +369,7 @@ public final class ProxyManager {
         }
         ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getDistributedObjectName(),
                 clientProxy.getServiceName(), initializationTarget);
-        new ClientInvocation(client, clientMessage, initializationTarget).invoke().get();
+        new ClientInvocation(client, clientMessage, clientProxy.getServiceName(), initializationTarget).invoke().get();
         clientProxy.onInitialize();
     }
 

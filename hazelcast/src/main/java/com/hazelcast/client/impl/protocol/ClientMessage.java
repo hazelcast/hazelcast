@@ -107,6 +107,7 @@ public class ClientMessage
 
     private transient int writeOffset;
     private transient boolean isRetryable;
+    private transient String operationName;
 
     protected ClientMessage() {
     }
@@ -374,6 +375,10 @@ public class ClientMessage
         this.isRetryable = isRetryable;
     }
 
+    public void setOperationName(String operationName) {
+        this.operationName = operationName;
+    }
+
     @Override
     public String toString() {
         int len = index();
@@ -381,6 +386,7 @@ public class ClientMessage
         sb.append("length=").append(len);
         if (len >= HEADER_SIZE) {
             sb.append(", correlationId=").append(getCorrelationId());
+            sb.append(", operation=").append(operationName);
             sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
             sb.append(", partitionId=").append(getPartitionId());
             sb.append(", isComplete=").append(isComplete());

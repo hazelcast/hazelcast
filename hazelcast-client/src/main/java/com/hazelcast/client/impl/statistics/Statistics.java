@@ -327,7 +327,7 @@ public class Statistics {
     private void sendStats(String newStats, ClientConnection ownerConnection) {
         ClientMessage request = ClientStatisticsCodec.encodeRequest(newStats);
         try {
-            new ClientInvocation(client, request, ownerConnection).invoke();
+            new ClientInvocation(client, request, null, ownerConnection).invoke();
         } catch (Exception e) {
             // suppress exception, do not print too many messages
             if (logger.isFinestEnabled()) {

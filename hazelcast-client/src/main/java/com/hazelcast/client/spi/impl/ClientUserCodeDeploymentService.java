@@ -168,7 +168,7 @@ public class ClientUserCodeDeploymentService {
             return;
         }
         ClientMessage request = ClientDeployClassesCodec.encodeRequest(classDefinitionList);
-        ClientInvocation invocation = new ClientInvocation(client, request, ownerConnection);
+        ClientInvocation invocation = new ClientInvocation(client, request, null, ownerConnection);
         ClientInvocationFuture future = invocation.invoke();
         future.get();
     }
