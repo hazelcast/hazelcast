@@ -101,16 +101,26 @@ public class IOBalancer {
     }
 
     public void connectionAdded(MigratableHandler readHandler, MigratableHandler writeHandler) {
+        if (!enabled) {
+            return;
+        }
         inLoadTracker.notifyHandlerAdded(readHandler);
         outLoadTracker.notifyHandlerAdded(writeHandler);
     }
 
     public void connectionRemoved(MigratableHandler readHandler, MigratableHandler writeHandler) {
+        // if not enabled, then don't schedule tasks that will not get processed.
+        // See https://github.com/hazelcast/hazelcast/issues/11501
+        if (!enabled) {
+            return;
+        }
         inLoadTracker.notifyHandlerRemoved(readHandler);
         outLoadTracker.notifyHandlerRemoved(writeHandler);
     }
 
     public void start() {
+        // if not enabled, then don't schedule tasks that will not get processed.
+        // See https://github.com/hazelcast/hazelcast/issues/11501
         if (enabled) {
             ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, hzName, logger);
             ioBalancerThread.start();
