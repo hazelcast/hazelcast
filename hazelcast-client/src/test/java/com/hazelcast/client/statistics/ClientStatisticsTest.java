@@ -273,6 +273,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
                 .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
                 .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
 
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(20);
+
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         return getHazelcastClientInstanceImpl(clientInstance);
     }
