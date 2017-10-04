@@ -19,6 +19,7 @@ package com.hazelcast.spring.cache;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,6 +42,7 @@ public class JCacheCacheManagerDITest {
     private JCacheCacheManager springCacheManager;
 
     @BeforeClass
+    @AfterClass
     public static void start() {
         Hazelcast.shutdownAll();
     }
