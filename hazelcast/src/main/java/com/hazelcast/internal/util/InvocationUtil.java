@@ -63,8 +63,6 @@ public final class InvocationUtil {
     public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
                                                                          OperationFactory operationFactory,
                                                                          int maxRetries) {
-        warmUpPartitions(nodeEngine);
-
         final OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
 

@@ -240,9 +240,9 @@ public class NodeEngineImpl implements NodeEngine {
 
         metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
 
+        operationService.start();
         serviceManager.start();
         proxyService.init();
-        operationService.start();
         quorumService.start();
         diagnostics.start();
 
