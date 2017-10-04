@@ -285,4 +285,12 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         return result;
     }
+
+    /**
+     * Returns field names with values as concatenated String so it can be used in child classes' toString() methods.
+     */
+    protected String fieldsToString() {
+        return "name='" + name + "', listenerConfigs=" + listenerConfigs + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount + ", maxSize=" + maxSize + ", statisticsEnabled=" + statisticsEnabled;
+    }
 }
