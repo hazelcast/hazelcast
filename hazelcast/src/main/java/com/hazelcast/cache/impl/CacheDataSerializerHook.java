@@ -147,8 +147,9 @@ public final class CacheDataSerializerHook
     public static final short EVENT_JOURNAL_DESERIALIZING_CACHE_EVENT = 58;
     public static final short EVENT_JOURNAL_INTERNAL_CACHE_EVENT = 59;
     public static final short EVENT_JOURNAL_READ_RESULT_SET = 60;
+    public static final int PRE_JOIN_CACHE_CONFIG = 61;
 
-    private static final int LEN = EVENT_JOURNAL_READ_RESULT_SET + 1;
+    private static final int LEN = PRE_JOIN_CACHE_CONFIG + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -449,6 +450,13 @@ public final class CacheDataSerializerHook
                 return new CacheEventJournalReadResultSetImpl<Object, Object, Object>();
             }
         };
+        constructors[PRE_JOIN_CACHE_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new PreJoinCacheConfig();
+                    }
+                };
 
         return new ArrayDataSerializableFactory(constructors);
     }

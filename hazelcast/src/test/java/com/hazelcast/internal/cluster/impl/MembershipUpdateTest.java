@@ -16,10 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import classloading.domain.Person;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,6 +30,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
@@ -46,16 +44,14 @@ import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.FilteringClassLoader;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.spi.CachingProvider;
+import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -189,7 +185,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void parallel_member_join_whenPreJoinOperationPresent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
-        final Config config = getConfigWithPreJoinAwareService(service);
+        final Config config = getConfigWithService(service);
 
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(6);
         for (int i = 0; i < instances.length(); i++) {
@@ -635,7 +631,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void noOperationExecuted_beforePreJoinOpIsDone() {
         CountDownLatch latch = new CountDownLatch(1);
         PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
-        final Config config = getConfigWithPreJoinAwareService(service);
+        final Config config = getConfigWithService(service);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         final Address instance2Address = factory.nextAddress();
@@ -676,18 +672,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void shouldShutdown_whenExceptionDeserializing_prePostJoinOps() {
-        // create a HazelcastInstance with a CacheConfig referring to a Class not resolvable on the joining member
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        cachingProvider.getCacheManager().createCache("test", new CacheConfig<String, Person>()
-                .setTypes(String.class, Person.class).setManagementEnabled(true));
+    public void joiningMemberShouldShutdown_whenExceptionDeserializingPreJoinOp() {
+        Config config = getConfigWithService(new FailingPreJoinOpService());
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
 
-        // joining member cannot resolve Person class
-        List<String> excludes = Arrays.asList("classloading");
-        ClassLoader classLoader = new FilteringClassLoader(excludes, null);
-        Config config = new Config();
-        config.setClassLoader(classLoader);
+        // joining member fails while deserializing pre-join op and should shutdown
         try {
             factory.newHazelcastInstance(config);
             fail("Second HazelcastInstance should not have started");
@@ -697,9 +686,24 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSize(1, hz1);
     }
 
-    private Config getConfigWithPreJoinAwareService(PreJoinAwareService service) {
+    @Test
+    public void joiningMemberShouldShutdown_whenExceptionDeserializingPostJoinOp() {
+        Config config = getConfigWithService(new FailingPostJoinOpService());
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+
+        // joining member fails while deserializing post-join op and should shutdown
+        try {
+            factory.newHazelcastInstance(config);
+            fail("Second HazelcastInstance should not have started");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+        assertClusterSize(1, hz1);
+    }
+
+    private Config getConfigWithService(Object service) {
         final Config config = new Config();
-        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("pre-join-service")
+        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("custom-service")
                                                                        .setImplementation(service));
         return config;
     }
@@ -833,6 +837,33 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         @Override
         public String getServiceName() {
             return PreJoinAwareServiceImpl.SERVICE_NAME;
+        }
+    }
+
+    private static class FailingPreJoinOpService implements PreJoinAwareService {
+        @Override
+        public Operation getPreJoinOperation() {
+            return new FailsDeserializationOperation();
+        }
+    }
+
+    private static class FailingPostJoinOpService implements PostJoinAwareService {
+        @Override
+        public Operation getPostJoinOperation() {
+            return new FailsDeserializationOperation();
+        }
+    }
+
+    public static class FailsDeserializationOperation extends Operation {
+
+        @Override
+        public void run() throws Exception {
+
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            throw new RuntimeException("This operation always fails during deserialization");
         }
     }
 }

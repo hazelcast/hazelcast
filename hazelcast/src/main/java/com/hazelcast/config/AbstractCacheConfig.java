@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
@@ -34,26 +36,20 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Base class for {@link CacheConfig}
+ *
+ * @param <K> the key type
+ * @param <V> the value type
  */
 @BinaryInterface
-abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, DataSerializable {
+@SuppressWarnings("checkstyle:methodcount")
+public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, DataSerializable {
+
+    private static final String DEFAULT_KEY_VALUE_TYPE = "java.lang.Object";
 
     /**
      * The {@link CacheEntryListenerConfiguration}s for the {@link javax.cache.configuration.Configuration}.
      */
     protected Set<CacheEntryListenerConfiguration<K, V>> listenerConfigurations;
-
-    /**
-     * The type of keys for {@link javax.cache.Cache}s configured with this
-     * {@link javax.cache.configuration.Configuration}.
-     */
-    protected Class<K> keyType;
-
-    /**
-     * The type of values for {@link javax.cache.Cache}s configured with this
-     * {@link javax.cache.configuration.Configuration}.
-     */
-    protected Class<V> valueType;
 
     /**
      * The {@link javax.cache.configuration.Factory} for the {@link javax.cache.integration.CacheLoader}.
@@ -97,9 +93,26 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    /**
+     * The type of keys for {@link javax.cache.Cache}s configured with this
+     * {@link javax.cache.configuration.Configuration}.
+     */
+    private Class<K> keyType;
+    private String keyClassName = DEFAULT_KEY_VALUE_TYPE;
+
+    /**
+     * The type of values for {@link javax.cache.Cache}s configured with this
+     * {@link javax.cache.configuration.Configuration}.
+     */
+    private Class<V> valueType;
+    private String valueClassName = DEFAULT_KEY_VALUE_TYPE;
+
+    /**
+     * The ClassLoader to be used to resolve key & value types, if set
+     */
+    private transient ClassLoader classLoader;
+
     public AbstractCacheConfig() {
-        this.keyType = (Class<K>) Object.class;
-        this.valueType = (Class<V>) Object.class;
         this.listenerConfigurations = createConcurrentSet();
         this.cacheLoaderFactory = null;
         this.cacheWriterFactory = null;
@@ -112,8 +125,8 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     public AbstractCacheConfig(CompleteConfiguration<K, V> configuration) {
-        this.keyType = configuration.getKeyType();
-        this.valueType = configuration.getValueType();
+        setKeyType(configuration.getKeyType());
+        setValueType(configuration.getValueType());
         this.listenerConfigurations = createConcurrentSet();
         for (CacheEntryListenerConfiguration<K, V> listenerConf : configuration.getCacheEntryListenerConfigurations()) {
             listenerConfigurations.add(listenerConf);
@@ -287,12 +300,55 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     @Override
     public Class<K> getKeyType() {
-        return keyType;
+        return keyType != null ? keyType : resolveKeyType();
+    }
+
+    public String getKeyClassName() {
+        return keyClassName;
+    }
+
+    public CacheConfiguration<K, V> setKeyClassName(String keyClassName) {
+        this.keyClassName = keyClassName;
+        return this;
     }
 
     @Override
     public Class<V> getValueType() {
+        return valueType != null ? valueType : resolveValueType();
+    }
+
+    public String getValueClassName() {
+        return valueClassName;
+    }
+
+    public CacheConfiguration<K, V> setValueClassName(String valueClassName) {
+        this.valueClassName = valueClassName;
+        return this;
+    }
+
+    private Class<K> resolveKeyType() {
+        keyType = resolve(keyClassName);
+        return keyType;
+    }
+
+    private Class<V> resolveValueType() {
+        valueType = resolve(valueClassName);
         return valueType;
+    }
+
+    private Class resolve(String className) {
+        Class type = null;
+        if (className != null) {
+            try {
+                type = ClassLoaderUtil.loadClass(classLoader, className);
+            } catch (ClassNotFoundException e) {
+                throw new HazelcastException("Could not resolve type " + className, e);
+            }
+        }
+        if (type == null) {
+            type = Object.class;
+        }
+        return type;
     }
 
     /**
@@ -318,8 +374,8 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
         if (keyType == null || valueType == null) {
             throw new NullPointerException("keyType and/or valueType can't be null");
         }
-        this.keyType = keyType;
-        this.valueType = valueType;
+        setKeyType(keyType);
+        setValueType(valueType);
         return this;
     }
 
@@ -348,11 +404,17 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     public CacheConfiguration<K, V> setKeyType(Class<K> keyType) {
         this.keyType = keyType;
+        if (keyType != null) {
+            this.keyClassName = keyType.getName();
+        }
         return this;
     }
 
     public CacheConfiguration<K, V> setValueType(Class<V> valueType) {
         this.valueType = valueType;
+        if (valueType != null) {
+            this.valueClassName = valueType.getName();
+        }
         return this;
     }
 
@@ -412,13 +474,24 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
                 ? !expiryPolicyFactory.equals(that.expiryPolicyFactory) : that.expiryPolicyFactory != null) {
             return false;
         }
-        if (!keyType.equals(that.keyType)) {
-            return false;
-        }
         if (!listenerConfigurations.equals(that.listenerConfigurations)) {
             return false;
         }
-        if (!valueType.equals(that.valueType)) {
+
+        return keyValueTypesEqual(that);
+    }
+
+    protected void setClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+
+    @SuppressWarnings("checkstyle:illegaltype")
+    protected boolean keyValueTypesEqual(AbstractCacheConfig that) {
+        if (!getKeyType().equals(that.getKeyType())) {
+            return false;
+        }
+
+        if (!getValueType().equals(that.getValueType())) {
             return false;
         }
 
