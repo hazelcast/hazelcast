@@ -20,20 +20,25 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
+/**
+ * Does not create recordstore on demand
+ */
 public class IsPartitionLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
 
     public IsPartitionLoadedOperation() {
+        createRecordStoreOnDemand = false;
     }
 
     public IsPartitionLoadedOperation(String name) {
         super(name);
+        createRecordStoreOnDemand = false;
     }
 
     @Override
     public void run() {
-        isFinished = recordStore.isLoaded();
+        isFinished = recordStore == null || recordStore.isLoaded();
     }
 
     @Override

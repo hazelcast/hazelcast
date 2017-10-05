@@ -54,17 +54,16 @@ import static com.hazelcast.spi.ExecutionService.MAP_LOADER_EXECUTOR;
  */
 class BasicRecordStoreLoader implements RecordStoreLoader {
 
-    private final RecordStore recordStore;
     private final AtomicBoolean loaded;
     private final ILogger logger;
     private final String name;
     private final MapServiceContext mapServiceContext;
     private final MapDataStore mapDataStore;
     private final int partitionId;
+    private volatile boolean destroyed;
 
     BasicRecordStoreLoader(RecordStore recordStore) {
         final MapContainer mapContainer = recordStore.getMapContainer();
-        this.recordStore = recordStore;
         this.name = mapContainer.getName();
         this.mapServiceContext = mapContainer.getMapServiceContext();
         this.partitionId = recordStore.getPartitionId();
@@ -75,8 +74,16 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
     @Override
     public Future<?> loadValues(List<Data> keys, boolean replaceExistingValues) {
+        if (isDestroyed()) {
+            throw new IllegalStateException("The RecordStoreLoader has been destroyed");
+        }
         final Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
         return executeTask(MAP_LOADER_EXECUTOR, task);
+    }
+
+    @Override
+    public void destroy() {
+        this.destroyed = true;
     }
 
     private Future<?> executeTask(String executorName, Callable task) {
@@ -140,7 +147,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         final AtomicInteger finishedBatchCounter = new AtomicInteger(size);
         List<Future> futures = new ArrayList<Future>();
 
-        while (!batchChunks.isEmpty()) {
+        while (!batchChunks.isEmpty() && !isDestroyed()) {
             final List<Data> chunk = batchChunks.poll();
             final List<Data> keyValueSequence = loadAndGet(chunk);
             if (keyValueSequence.isEmpty()) {
@@ -245,7 +252,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             return;
         }
         final Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
+        while (iterator.hasNext() && !isDestroyed()) {
             final Data key = iterator.next();
             if (!mapDataStore.loadable(key)) {
                 iterator.remove();
@@ -255,5 +262,9 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
     private int getLoadBatchSize() {
         return mapServiceContext.getNodeEngine().getProperties().getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE);
+    }
+
+    private boolean isDestroyed() {
+        return destroyed;
     }
 }

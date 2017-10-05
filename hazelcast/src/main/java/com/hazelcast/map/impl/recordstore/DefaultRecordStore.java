@@ -165,6 +165,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
+        recordStoreLoader.destroy();
+        keyLoader.destroy();
         clearPartition(false);
         storage.destroy(false);
         eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
