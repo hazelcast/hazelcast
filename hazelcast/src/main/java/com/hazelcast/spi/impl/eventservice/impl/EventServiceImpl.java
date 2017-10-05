@@ -16,8 +16,9 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -31,36 +32,39 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
-import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
-import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
-import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperationFactory;
+import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationFactory;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -87,6 +91,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * and we don't wait for the response before publishing the next event. The previously published
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:eventService";
@@ -115,16 +120,14 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     private static final int SEND_RETRY_COUNT = 50;
     /**
-     * The timeout in seconds for registering a listener registration on other
-     * nodes of the cluster. This is used when the registration is not local.
-     */
-    private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
-    private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
-    /**
      * How often failures are logged with {@link Level#WARNING}. Otherwise the failures are
      * logged with a lower log level.
      */
     private static final int WARNING_LOG_FREQUENCY = 1000;
+    /**
+     * Retry count for registration & deregistration operation invocations.
+     */
+    private static final int MAX_RETRIES = 100;
 
     final ILogger logger;
     final NodeEngineImpl nodeEngine;
@@ -288,7 +291,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
 
         if (!localOnly) {
-            invokeRegistrationOnOtherNodes(serviceName, reg);
+            OperationFactory operationFactory = new RegistrationOperationFactory(reg, nodeEngine.getClusterService());
+            invokeOnAllMembers(operationFactory);
         }
         return reg;
     }
@@ -307,11 +311,24 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         if (segment != null) {
             final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
             if (reg != null && !reg.isLocalOnly()) {
-                invokeDeregistrationOnOtherNodes(serviceName, topic, String.valueOf(id));
+                OperationFactory operationFactory = new DeregistrationOperationFactory(reg, nodeEngine.getClusterService());
+                invokeOnAllMembers(operationFactory);
             }
             return reg != null;
         }
         return false;
+    }
+
+    private void invokeOnAllMembers(OperationFactory operationFactory) {
+        ICompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine, operationFactory, MAX_RETRIES);
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw rethrow(e);
+        } catch (ExecutionException e) {
+            throw rethrow(e);
+        }
     }
 
     @Override
@@ -324,44 +341,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     public StripedExecutor getEventExecutor() {
         return eventExecutor;
-    }
-
-    /**
-     * Sends a {@link RegistrationOperation} to other cluster members to register the listener.
-     * The method waits for {@value REGISTRATION_TIMEOUT_SECONDS} seconds before invoking the
-     * {@link #registrationExceptionHandler}.
-     *
-     * @param serviceName the service responsible for the events
-     * @param reg         the listener registration
-     */
-    private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
-        OperationService operationService = nodeEngine.getOperationService();
-        Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (Member member : members) {
-            if (!member.localMember()) {
-                RegistrationOperation operation = new RegistrationOperation(reg);
-                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
-                calls.add(f);
-            }
-        }
-
-        waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS, registrationExceptionHandler);
-    }
-
-    private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
-        OperationService operationService = nodeEngine.getOperationService();
-        Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (Member member : members) {
-            if (!member.localMember()) {
-                DeregistrationOperation operation = new DeregistrationOperation(topic, id);
-                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
-                calls.add(f);
-            }
-        }
-
-        waitWithDeadline(calls, DEREGISTER_TIMEOUT_SECONDS, TimeUnit.SECONDS, deregistrationExceptionHandler);
     }
 
     @Override
@@ -622,13 +601,34 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
-    /**
-     * Collects all non-local registrations and returns them as a {@link PostJoinRegistrationOperation}.
-     *
-     * @return the post join operation containing all non-local registrations
-     */
     @Override
-    public PostJoinRegistrationOperation getPostJoinOperation() {
+    public Operation getPreJoinOperation() {
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        if (clusterVersion.isLessThan(V3_9)) {
+            return null;
+        }
+        // pre-join operations are only sent by master member
+        return getOnJoinRegistrationOperation();
+    }
+
+    @Override
+    public Operation getPostJoinOperation() {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        Version clusterVersion = clusterService.getClusterVersion();
+        if (clusterVersion.isLessThan(V3_9)) {
+            return getOnJoinRegistrationOperation();
+        }
+        // Send post join registration operation only if this is the newly joining member.
+        // Master will send registrations with pre-join operation.
+        return clusterService.isMaster() ? null : getOnJoinRegistrationOperation();
+    }
+
+    /**
+     * Collects all non-local registrations and returns them as a {@link OnJoinRegistrationOperation}.
+     *
+     * @return the on join operation containing all non-local registrations
+     */
+    private OnJoinRegistrationOperation getOnJoinRegistrationOperation() {
         final Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
             //todo: this should be moved into the Segment.
@@ -638,7 +638,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                 }
             }
         }
-        return registrations.isEmpty() ? null : new PostJoinRegistrationOperation(registrations);
+        return registrations.isEmpty() ? null : new OnJoinRegistrationOperation(registrations);
     }
 
     public void shutdown() {

@@ -18,16 +18,13 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
 
 import java.io.IOException;
 
-public class DeregistrationOperation extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
+public class DeregistrationOperation extends AbstractRegistrationOperation {
 
     private String topic;
     private String id;
@@ -35,13 +32,14 @@ public class DeregistrationOperation extends Operation implements AllowedDuringP
     public DeregistrationOperation() {
     }
 
-    public DeregistrationOperation(String topic, String id) {
+    public DeregistrationOperation(String topic, String id, int memberListVersion) {
+        super(memberListVersion);
         this.topic = topic;
         this.id = id;
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() throws Exception {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
         EventServiceSegment segment = eventService.getSegment(getServiceName(), false);
         if (segment != null) {
@@ -55,20 +53,15 @@ public class DeregistrationOperation extends Operation implements AllowedDuringP
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         out.writeUTF(topic);
         out.writeUTF(id);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternalImpl(ObjectDataInput in) throws IOException {
         topic = in.readUTF();
         id = in.readUTF();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
     }
 
     @Override

@@ -16,26 +16,27 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.Iterator;
+import java.util.concurrent.Executor;
 
 import static com.hazelcast.util.IterableUtil.map;
 
@@ -43,8 +44,6 @@ import static com.hazelcast.util.IterableUtil.map;
  * Utility methods for invocations.
  */
 public final class InvocationUtil {
-
-    private static final int WARMUP_SLEEPING_TIME_MILLIS = 10;
 
     private InvocationUtil() {
     }
@@ -63,11 +62,15 @@ public final class InvocationUtil {
     public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
                                                                          OperationFactory operationFactory,
                                                                          int maxRetries) {
+
+        ClusterService clusterService = nodeEngine.getClusterService();
+        if (!clusterService.isJoined()) {
+            return new CompletedFuture<Object>(null, null, new CallerRunsExecutor());
+        }
+
         warmUpPartitions(nodeEngine);
 
-        final OperationService operationService = nodeEngine.getOperationService();
-        ClusterService clusterService = nodeEngine.getClusterService();
-
+        OperationService operationService = nodeEngine.getOperationService();
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
 
         // we are going to iterate over all members and invoke an operation on each of them
@@ -85,15 +88,26 @@ public final class InvocationUtil {
     }
 
     private static void warmUpPartitions(NodeEngine nodeEngine) {
-        final PartitionService ps = nodeEngine.getHazelcastInstance().getPartitionService();
-        for (Partition partition : ps.getPartitions()) {
-            while (partition.getOwner() == null) {
-                try {
-                    Thread.sleep(WARMUP_SLEEPING_TIME_MILLIS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new HazelcastException("Thread interrupted while initializing a partition table", e);
+        ClusterService clusterService = nodeEngine.getClusterService();
+        if (!clusterService.getClusterState().isMigrationAllowed()) {
+            return;
+        }
+
+        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
+        if (partitionService.getMemberGroupsSize() == 0) {
+            return;
+        }
+
+        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
+            try {
+                partitionService.getPartitionOwnerOrWait(i);
+            } catch (IllegalStateException e) {
+                if (!clusterService.getClusterState().isMigrationAllowed()) {
+                    return;
                 }
+                throw e;
+            } catch (NoDataMemberInClusterException e) {
+                return;
             }
         }
     }
@@ -117,6 +131,13 @@ public final class InvocationUtil {
             String serviceName = operation.getServiceName();
 
             return operationService.invokeOnTarget(serviceName, operation, address);
+        }
+    }
+
+    private static class CallerRunsExecutor implements Executor {
+        @Override
+        public void execute(Runnable command) {
+            command.run();
         }
     }
 }
