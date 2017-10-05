@@ -25,7 +25,7 @@ import java.util.Objects;
  * @param <E1> the type of the field 1
  * @param <E2> the type of the field 2
  */
-public class Tuple3<E0, E1, E2> {
+public final class Tuple3<E0, E1, E2> {
     private E0 f0;
     private E1 f1;
     private E2 f2;
@@ -33,11 +33,19 @@ public class Tuple3<E0, E1, E2> {
     /**
      * Constructs a new 3-tuple with the supplied values.
      */
-    public Tuple3(E0 f0, E1 f1, E2 f2) {
+    private Tuple3(E0 f0, E1 f1, E2 f2) {
         this.f0 = f0;
         this.f1 = f1;
         this.f2 = f2;
     }
+
+    /**
+     * Returns a new 3-tuple with the supplied values.
+     */
+    public static <E0, E1, E2> Tuple3<E0, E1, E2> tuple3(E0 f0, E1 f1, E2 f2) {
+        return new Tuple3<>(f0, f1, f2);
+    }
+
 
     /**
      * Returns the value of the field 0.

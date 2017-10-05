@@ -19,8 +19,6 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.datamodel.Tuple3;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -85,14 +85,14 @@ public class HashJoinP<E0> extends AbstractProcessor {
         ordinal0consumed = true;
         if (tags.isEmpty()) {
             return tryEmit(keyFs.size() == 2
-                    ? new Tuple2<>(e0, lookupJoined(1, e0))
-                    : new Tuple3<>(e0, lookupJoined(1, e0), lookupJoined(2, e0)));
+                    ? tuple2(e0, lookupJoined(1, e0))
+                    : tuple3(e0, lookupJoined(1, e0), lookupJoined(2, e0)));
         }
         ItemsByTag map = new ItemsByTag();
         for (int i = 1; i < keyFs.size(); i++) {
             map.put(tags.get(i), lookupJoined(i, e0));
         }
-        return tryEmit(new Tuple2<>(e0, map));
+        return tryEmit(tuple2(e0, map));
     }
 
     @Nullable

@@ -37,6 +37,8 @@ import java.util.Map;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.datamodel.Tag.tag2;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,8 +56,8 @@ public class DataModelSerializerHooksTest {
     public static Collection<Object> data() throws Exception {
         return asList(
                 new TimestampedEntry<>(1, "key", "value"),
-                new Tuple2<>("value-0", "value-1"),
-                new Tuple3<>("value-0", "value-1", "value-2"),
+                tuple2("value-0", "value-1"),
+                tuple3("value-0", "value-1", "value-2"),
                 new TwoBags<>(asList("v1", "v2"), asList("v3", "v4")),
                 new ThreeBags<>(asList("v1", "v2"), asList("v3", "v4"), asList("v5", "v6")),
                 tag0(),

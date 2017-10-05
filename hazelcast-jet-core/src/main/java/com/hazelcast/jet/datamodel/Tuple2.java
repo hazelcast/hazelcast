@@ -26,16 +26,23 @@ import java.util.Objects;
  * @param <E0> the type of the field 0
  * @param <E1> the type of the field 1
  */
-public class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
+public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     private E0 f0;
     private E1 f1;
 
     /**
      * Constructs a new 2-tuple with the supplied values.
      */
-    public Tuple2(E0 f0, E1 f1) {
+    private Tuple2(E0 f0, E1 f1) {
         this.f0 = f0;
         this.f1 = f1;
+    }
+
+    /**
+     * Returns a new 2-tuple with the supplied values.
+     */
+    public static <E0, E1> Tuple2<E0, E1> tuple2(E0 f0, E1 f1) {
+        return new Tuple2<>(f0, f1);
     }
 
     /**

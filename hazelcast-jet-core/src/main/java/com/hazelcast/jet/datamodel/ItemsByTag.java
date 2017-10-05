@@ -39,6 +39,20 @@ public class ItemsByTag {
     private final Map<Tag<?>, Object> map = new HashMap<>();
 
     /**
+     * Accepts an argument list of alternating tags and values, interprets
+     * them as a list of tag-value pairs, and returns an {@code ItemsByTag}
+     * populated with these pairs.
+     */
+    @SuppressWarnings("unchecked")
+    public static ItemsByTag itemsByTag(Object... tagsAndVals) {
+        ItemsByTag ibt = new ItemsByTag();
+        for (int i = 0; i < tagsAndVals.length;) {
+            ibt.put((Tag) tagsAndVals[i++], tagsAndVals[i++]);
+        }
+        return ibt;
+    }
+
+    /**
      * Retrieves the value associated with the supplied tag and throws an
      * exception if there is none. The tag argument must not be {@code null},
      * but the returned value may be, if a {@code null} value is explicitly

@@ -30,6 +30,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.ItemsByTag.NONE;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 /**
  * Hazelcast serializer hooks for the classes in the
@@ -95,7 +97,7 @@ public class DataModelSerializerHooks {
 
                 @Override
                 public Tuple2 read(ObjectDataInput in) throws IOException {
-                    return new Tuple2<>(in.readObject(), in.readObject());
+                    return tuple2(in.readObject(), in.readObject());
                 }
 
                 @Override
@@ -133,7 +135,7 @@ public class DataModelSerializerHooks {
 
                 @Override
                 public Tuple3 read(ObjectDataInput in) throws IOException {
-                    return new Tuple3<>(in.readObject(), in.readObject(), in.readObject());
+                    return tuple3(in.readObject(), in.readObject(), in.readObject());
                 }
 
                 @Override
