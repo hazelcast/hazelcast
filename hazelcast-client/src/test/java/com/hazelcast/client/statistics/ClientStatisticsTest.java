@@ -38,7 +38,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -173,7 +172,6 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
-    @Ignore
     public void testStatisticsClusterReconnect() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         HazelcastClientInstanceImpl client = createHazelcastClient();
@@ -202,7 +200,6 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
-    @Ignore
     public void testStatisticsTwoClients() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         HazelcastClientInstanceImpl client1 = createHazelcastClient();
@@ -272,6 +269,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
                 // add IMap and ICache with Near Cache config
                 .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
                 .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
+
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(20);
 
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         return getHazelcastClientInstanceImpl(clientInstance);
