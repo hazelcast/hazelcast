@@ -37,7 +37,8 @@ public interface Outbox {
 
     /**
      * Returns the number of buckets in this outbox. This is equal to the
-     * number of output edges of the vertex.
+     * number of output edges of the vertex and does not include the snapshot
+     * bucket.
      */
     int bucketCount();
 
@@ -68,14 +69,15 @@ public interface Outbox {
     /**
      * Offers the specified key and value pair to the processor's snapshot storage.
      * <p>
-     * During a snapshot restore the type of key offered determines which processors
-     * receive the key and value pair. If the key is of type {@link BroadcastKey},
-     * the entry will be restored to all processor instances.
-     * Otherwise, the key will be distributed according to default partitioning and
-     * only a single processor instance will receive the key.
-     *
-     * The methods in this class may only be called from inside the
-     * {@link Processor#saveToSnapshot()} method.
+     * <b>Note:</b> During a snapshot restore the type of the offered key
+     * determines which processors receive the key and value pair. If the key
+     * is of type {@link BroadcastKey}, the entry will be restored to all
+     * processor instances. Otherwise, the key will be distributed according to
+     * default partitioning and only a single processor instance will receive
+     * the key.
+     * <p>
+     * This method may only be called from the {@link
+     * Processor#saveToSnapshot()} method.
      *
      * @return whether the outbox fully accepted the item
      */

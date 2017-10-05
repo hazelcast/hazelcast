@@ -345,7 +345,7 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Offers the item to all the outbox buckets.
+     * Offers the item to all the outbox buckets (except the snapshot outbox).
      *
      * @return whether the outbox accepted the item
      */
@@ -367,13 +367,7 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Offers one key-value pair to the snapshot bucket.
      * <p>
-     * During a snapshot restore the type of key offered determines which processors
-     * receive the key and value pair. If the key is of type {@link BroadcastKey},
-     * the entry will be restored to all processor instances.
-     * Otherwise, the key will be distributed according to default partitioning and
-     * only a single processor instance will receive the key.
-     * <p>
-     * This method may only be called from inside the {@link Processor#saveToSnapshot()} method.
+     * Also see note in {@link Outbox#offerToSnapshot(Object, Object)}.
      *
      * @return whether the outbox accepted the item
      */

@@ -173,7 +173,8 @@ public final class DiagnosticProcessors {
      * Returns a meta-supplier that will add logging to the processors created
      * by the provided meta-supplier. Each item the processor adds to the
      * outbox will be logged. Items are logged at the INFO level to the
-     * following logging category: {@link PeekWrappedP}.
+     * following logging category: {@link PeekWrappedP}. Does not log items
+     * output to snapshot outbox, see {@code peekSnapshot()} methods.
      * <p>
      * <strong>Warning:</strong> The {@code toStringFn} and {@code shouldLogFn}
      * functions will see all items, including {@link Watermark}s.
