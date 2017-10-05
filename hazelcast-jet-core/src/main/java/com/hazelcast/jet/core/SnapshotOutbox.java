@@ -19,21 +19,16 @@ package com.hazelcast.jet.core;
 import javax.annotation.CheckReturnValue;
 
 /**
- * An {@link Outbox} which is used for offering items to processor's state snapshot.
+ * An outbox which is used for offering items to processor's state snapshot.
  * <p>
  * The methods in this class may only be called from inside the
  * {@link Processor#saveToSnapshot()} method.
- * <p>
- * As with the regular {@link Outbox}, a non-cooperative processor's outbox will
- * block until the item can fit into the downstream buffers
- * and the {@code offer} methods will always return
- * {@code true}.
  */
 public interface SnapshotOutbox {
 
     /**
      * Offers the specified key and value pair to the processor's snapshot storage.
-     *
+     * <p>
      * During a snapshot restore the type of key offered determines which processors
      * receive the key and value pair. If the key is of type {@link BroadcastKey},
      * the entry will be restored to all processor instances.

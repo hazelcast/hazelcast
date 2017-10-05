@@ -58,7 +58,7 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class SnapshottableProcessorTaskletTest {
+public class ProcessorTaskletTest_Snapshots {
 
     private static final int MOCK_INPUT_SIZE = 10;
     private static final int CALL_COUNT_LIMIT = 10;
@@ -192,13 +192,13 @@ public class SnapshottableProcessorTaskletTest {
         assertEquals(asList(ssEntry1.getValue(), ssEntry2.getValue(), barrier(0), DONE_ITEM), getSnapshotBufferValues());
     }
 
-    private CooperativeProcessorTasklet createTasklet(ProcessingGuarantee guarantee) {
+    private ProcessorTasklet createTasklet(ProcessingGuarantee guarantee) {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
         snapshotContext = new SnapshotContext(mock(ILogger.class), 0, 0, -1, guarantee);
         snapshotContext.initTaskletCount(1, 0);
-        final CooperativeProcessorTasklet t = new CooperativeProcessorTasklet(context, processor, instreams, outstreams,
+        final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
                 snapshotContext, snapshotCollector);
         t.init(new CompletableFuture<>());
         return t;

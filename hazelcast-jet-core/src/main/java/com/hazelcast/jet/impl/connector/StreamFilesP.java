@@ -202,7 +202,9 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
                     closeCurrentFile();
                     break;
                 }
-                emit(line);
+                if (!tryEmit(line)) {
+                    break;
+                }
             }
         } catch (IOException e) {
             close();

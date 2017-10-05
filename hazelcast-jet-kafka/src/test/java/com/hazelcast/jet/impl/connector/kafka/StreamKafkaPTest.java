@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.DAG;
@@ -28,6 +29,9 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestOutbox.MockData;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.impl.SnapshotRepository;
+import com.hazelcast.jet.impl.execution.SnapshotRecord;
+import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -42,6 +46,7 @@ import org.junit.runner.RunWith;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,6 +56,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekSnapshot;
 import static com.hazelcast.jet.core.processor.KafkaProcessors.streamKafka;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static java.util.Arrays.asList;
@@ -99,7 +105,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         DAG dag = new DAG();
 
         Vertex source = dag.newVertex("source",
-                streamKafka(properties, topic1Name, topic2Name)).localParallelism(4);
+                peekSnapshot(streamKafka(properties, topic1Name, topic2Name))).localParallelism(4);
 
         Vertex sink = dag.newVertex("sink", writeList("sink"))
                          .localParallelism(1);
@@ -108,7 +114,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
         JobConfig config = new JobConfig();
         config.setSnapshotIntervalMillis(withSnapshotting ? 500 : 0);
-        Future<Void> jobFuture = instances[0].newJob(dag, config).getFuture();
+        Job job = instances[0].newJob(dag, config);
         sleepAtLeastSeconds(3);
         for (int i = 0; i < messageCount; i++) {
             produce(topic1Name, i, Integer.toString(i));
@@ -125,6 +131,17 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         }, 5);
 
         if (withSnapshotting) {
+            // wait until the items are consumed and a new snapshot appears
+            assertTrueEventually(() -> assertTrue(list.size() == messageCount * 2));
+            IStreamMap<Long, Object> snapshotsMap =
+                    instances[0].getMap(SnapshotRepository.snapshotsMapName(job.getJobId()));
+            Long currentMax = maxSuccessfulSnapshot(snapshotsMap);
+            assertTrueEventually(() -> {
+                Long newMax = maxSuccessfulSnapshot(snapshotsMap);
+                assertTrue("no snapshot produced", newMax != null && !newMax.equals(currentMax));
+                System.out.println("xxx: snapshot " + newMax + " found, previous was " + currentMax);
+            });
+
             // Bring down one member. Job should restart and drain additional items (and maybe
             // some of the previous duplicately).
             instances[1].shutdown();
@@ -144,11 +161,24 @@ public class StreamKafkaPTest extends KafkaTestSupport {
             }, 10);
         }
 
-        assertFalse(jobFuture.isDone());
+        assertFalse(job.getFuture().isDone());
 
         // cancel the job
-        jobFuture.cancel(true);
-        assertTrueEventually(() -> assertTrue(jobFuture.isDone()));
+        job.cancel();
+        assertTrueEventually(() -> assertTrue(job.getFuture().isDone()));
+    }
+
+    /**
+     * @return maximum ID of successful snapshot or null, if there is no successful snapshot.
+     */
+    private Long maxSuccessfulSnapshot(IStreamMap<Long, Object> snapshotsMap) {
+        return snapshotsMap.entrySet().stream()
+                                 .filter(e -> e.getValue() instanceof SnapshotRecord)
+                                 .map(e -> (SnapshotRecord) e.getValue())
+                                 .filter(SnapshotRecord::isSuccessful)
+                                 .map(SnapshotRecord::snapshotId)
+                                 .max(Comparator.naturalOrder())
+                                 .orElse(null);
     }
 
     @Test

@@ -50,7 +50,7 @@ public final class Traversers {
      * and return it.
      */
     @Nonnull
-    public static <T> Traverser<T> iterate(@Nonnull Iterator<T> iterator) {
+    public static <T> Traverser<T> iterate(@Nonnull Iterator<? extends T> iterator) {
         return () -> iterator.hasNext() ? iterator.next() : null;
     }
 
@@ -93,7 +93,7 @@ public final class Traversers {
      * immediately.
      */
     @Nonnull
-    public static <T> Traverser<T> traverseIterable(@Nonnull Iterable<T> iterable) {
+    public static <T> Traverser<T> traverseIterable(@Nonnull Iterable<? extends T> iterable) {
         return iterate(iterable.iterator());
     }
 

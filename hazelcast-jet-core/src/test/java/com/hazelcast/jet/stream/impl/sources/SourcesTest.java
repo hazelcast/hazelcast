@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.stream.impl.sources;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -104,12 +105,11 @@ public class SourcesTest extends AbstractStreamTest {
     }
 
     private static class DummySource extends AbstractProcessor {
+        private Traverser<String> traverser = Traverser.over("Hello World!", "How are you?");
 
         @Override
         public boolean complete() {
-            emit("Hello World!");
-            emit("How are you?");
-            return true;
+            return emitFromTraverser(traverser);
         }
     }
 }

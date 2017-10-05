@@ -18,12 +18,10 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
@@ -38,14 +36,13 @@ import java.util.Map;
 
 /**
  * Static utility class with factories of source processors (the DAG
- * entry points). For other kinds for a vertexs refer to the {@link
+ * entry points). For other kinds for a vertices refer to the {@link
  * com.hazelcast.jet.core.processor package-level documentation}.
  */
 public final class SourceProcessors {
 
     private SourceProcessors() {
     }
-
 
     /**
      * Returns a meta-supplier of processors for a vertex that fetches entries
@@ -123,8 +120,8 @@ public final class SourceProcessors {
      * {@code localParallelism * clusterSize}, otherwise some processors will have
      * no partitions assigned to them.
      * <p>
-     * In order to stream from a map, event-journal should be configured
-     * Please see {@link com.hazelcast.config.EventJournalConfig}
+     * In order to stream from a map, event-journal should be configured,
+     * see {@link com.hazelcast.config.EventJournalConfig}.
      *
      * @param mapName                 The name of the map
      * @param predicate               The predicate to filter the events
@@ -378,7 +375,7 @@ public final class SourceProcessors {
      * parallel instance sees some data until all other do.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> streamSocket(
+    public static ProcessorSupplier streamSocket(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
         return StreamSocketP.supplier(host, port, charset.name());

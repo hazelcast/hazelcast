@@ -27,19 +27,6 @@ public class TestProcessors {
         }
     }
 
-    public static class BlockingIdentity extends AbstractProcessor {
-        @Override
-        public boolean isCooperative() {
-            return false;
-        }
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-            emit(item);
-            return true;
-        }
-    }
-
     public static class ProcessorThatFailsInComplete implements Processor {
 
         private final RuntimeException e;

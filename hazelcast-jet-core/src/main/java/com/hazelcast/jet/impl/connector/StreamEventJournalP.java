@@ -22,15 +22,16 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Partition;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.journal.EventJournalReader;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -38,25 +39,24 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.util.concurrent.IdleStrategy;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -68,8 +68,6 @@ import static java.util.stream.IntStream.range;
  */
 public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
-    private static final IdleStrategy IDLER =
-            new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(100));
     private static final int MIN_FETCH_SIZE = 0;
     private static final int MAX_FETCH_SIZE = 100;
 
@@ -79,9 +77,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     private final SerializablePredicate<E> predicate;
     private final Projection<E, T> projection;
     private final boolean startFromLatestSequence;
-
-    private CompletableFuture<Void> jobFuture;
-    private boolean fetched;
+    private Map<Integer, ICompletableFuture<ReadResultSet<T>>> futureMap = emptyMap();
+    private Traverser<T> traverser;
 
     private StreamEventJournalP(EventJournalReader<E> eventJournalReader,
                                 List<Integer> partitions,
@@ -97,8 +94,6 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        jobFuture = context.jobFuture();
-
         List<ICompletableFuture<EventJournalInitialSubscriberState>> futures = new ArrayList<>(partitions.size());
         for (Integer partitionId : partitions) {
             futures.add(eventJournalReader.subscribeToEventJournal(partitionId));
@@ -118,49 +113,59 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        long idleCount = 0;
-        while (!jobFuture.isDone()) {
-            boolean fetched = poll();
-            if (fetched) {
-                idleCount = 0;
-            } else {
-                IDLER.idle(++idleCount);
-            }
+        pollIfNeeded();
+        nextTraverserIfNeeded();
+        if (traverser != null) {
+            emitFromTraverser(traverser);
         }
-        return true;
+        return false;
     }
 
-    private boolean poll() {
-        Map<Integer, ICompletableFuture<ReadResultSet<T>>> futureMap =
-                offsetMap.entrySet().stream().collect(toMap(Map.Entry::getKey,
+    private void nextTraverserIfNeeded() {
+        if (traverser != null) {
+            return;
+        }
+        ReadResultSet<T> resultSet = null;
+        Iterator<Entry<Integer, ICompletableFuture<ReadResultSet<T>>>> iterator = futureMap.entrySet().iterator();
+        while (iterator.hasNext() && resultSet == null) {
+            Entry<Integer, ICompletableFuture<ReadResultSet<T>>> entry = iterator.next();
+            if (!entry.getValue().isDone()) {
+                continue;
+            }
+            iterator.remove(); // remove the entry from futureMap
+            try {
+                resultSet = entry.getValue().get();
+            } catch (ExecutionException e) {
+                // this happens if the ringbuffer storing the journal overflows
+                if (e.getCause() instanceof StaleSequenceException) {
+                    long headSeq = ((StaleSequenceException) e.getCause()).getHeadSeq();
+                    long oldOffset = offsetMap.put(entry.getKey(), headSeq);
+                    getLogger().severe("Stale sequence, requested: " + oldOffset + ", currentHead: " + headSeq);
+                    continue;
+                }
+                throw ExceptionUtil.rethrow(e);
+            } catch (InterruptedException e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+            offsetMap.merge(entry.getKey(), (long) resultSet.readCount(), Long::sum);
+            if (resultSet.size() == 0) {
+                resultSet = null;
+            }
+        }
+        if (resultSet != null) {
+            traverser = traverseIterable(resultSet)
+                .onFirstNull(() -> traverser = null);
+        }
+    }
+
+    private void pollIfNeeded() {
+        if (!futureMap.isEmpty()) {
+            return;
+        }
+        futureMap = offsetMap.entrySet().stream().collect(toMap(Map.Entry::getKey,
                         e -> eventJournalReader.readFromEventJournal(e.getValue(),
                                 MIN_FETCH_SIZE, MAX_FETCH_SIZE, e.getKey(), predicate, projection)
                 ));
-        fetched = false;
-        futureMap.forEach((key, future) -> {
-                    try {
-                        ReadResultSet<T> resultSet = future.get();
-                        resultSet.forEach(this::emitEvent);
-                        offsetMap.compute(key, (k, v) -> v + resultSet.readCount());
-                    } catch (ExecutionException e) {
-                        if (e.getCause() instanceof StaleSequenceException) {
-                            long headSeq = ((StaleSequenceException) e.getCause()).getHeadSeq();
-                            long oldOffset = offsetMap.put(key, headSeq);
-                            getLogger().severe("Stale sequence, requested: " + oldOffset + ", currentHead: " + headSeq);
-                            return;
-                        }
-                        throw ExceptionUtil.rethrow(e);
-                    } catch (InterruptedException e) {
-                        throw ExceptionUtil.rethrow(e);
-                    }
-                }
-        );
-        return fetched;
-    }
-
-    private void emitEvent(T event) {
-        emit(event);
-        fetched = true;
     }
 
     @Override

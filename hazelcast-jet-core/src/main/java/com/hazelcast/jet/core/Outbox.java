@@ -26,14 +26,9 @@ import javax.annotation.Nonnull;
  * into the outbox by calling {@link #offer(int, Object)} or {@link
  * #offer(Object)}.
  * <p>
- * A {@link Processor#isCooperative() cooperative} processor's outbox might
- * not be able to accept the item if it is already full. The processor must
- * check the return value of {@code offer()} and refrain from outputting
- * more data when it returns {@code false}.
- * <p>
- * A non-cooperative processor's outbox will block until the item can fit into
- * the downstream buffers and the {@code offer} methods will always return
- * {@code true}.
+ * Outbox might not be able to accept the item if it is already full. The
+ * processor must check the return value of {@code offer()} and refrain from
+ * outputting more data if it returns {@code false}.
  */
 public interface Outbox {
 

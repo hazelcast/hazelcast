@@ -52,7 +52,7 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class CooperativeProcessorTaskletTest {
+public class ProcessorTaskletTest {
 
     private static final int MOCK_INPUT_SIZE = 10;
     private static final int CALL_COUNT_LIMIT = 10;
@@ -176,7 +176,7 @@ public class CooperativeProcessorTaskletTest {
         MockOutboundStream outstream1 = new MockOutboundStream(0);
         instreams.add(instream1);
         outstreams.add(outstream1);
-        CooperativeProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
         processor.nullaryProcessCallCountdown = 1;
 
         // When
@@ -194,7 +194,7 @@ public class CooperativeProcessorTaskletTest {
         MockOutboundStream outstream1 = new MockOutboundStream(0, 1);
         instreams.add(instream1);
         outstreams.add(outstream1);
-        CooperativeProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
         processor.itemsToEmitInComplete = 2;
 
         // When
@@ -226,7 +226,7 @@ public class CooperativeProcessorTaskletTest {
         instreams.add(instream3);
         instreams.add(instream4);
         outstreams.add(outstream1);
-        CooperativeProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
         processor.itemsToEmitInComplete = 1;
         processor.itemsToEmitInEachCompleteEdge = 1;
 
@@ -249,12 +249,12 @@ public class CooperativeProcessorTaskletTest {
         assertEquals(expected, actual);
     }
 
-    private CooperativeProcessorTasklet createTasklet() {
+    private ProcessorTasklet createTasklet() {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
 
-        final CooperativeProcessorTasklet t = new CooperativeProcessorTasklet(context, processor, instreams, outstreams,
+        final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
                 mock(SnapshotContext.class), new MockOutboundCollector(10));
         t.init(new CompletableFuture<>());
         return t;

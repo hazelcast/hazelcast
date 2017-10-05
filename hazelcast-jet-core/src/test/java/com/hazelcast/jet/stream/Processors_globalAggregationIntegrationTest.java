@@ -17,12 +17,13 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,8 +39,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.accumulate;
 import static com.hazelcast.jet.core.processor.Processors.aggregate;
 import static com.hazelcast.jet.core.processor.Processors.combine;
@@ -113,23 +115,15 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
      * A processor that will emit contents of a list and then complete.
      */
     private static class EmitListP extends AbstractProcessor {
-        private final List<?> list;
+        private final Traverser<Object> traverser;
 
         EmitListP(List<?> list) {
-            this.list = list;
+            this.traverser = traverseIterable(list);
         }
 
         @Override
         public boolean complete() {
-            for (Object o : list) {
-                emit(o);
-            }
-            return true;
-        }
-
-        @Override
-        public boolean isCooperative() {
-            return false;
+            return emitFromTraverser(traverser);
         }
     }
 

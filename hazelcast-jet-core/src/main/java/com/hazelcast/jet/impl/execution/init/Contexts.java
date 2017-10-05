@@ -24,7 +24,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.CompletableFuture;
 
 public final class Contexts {
 
@@ -38,7 +37,6 @@ public final class Contexts {
         private final String vertexName;
         private final int index;
         private final SerializationService serService;
-        private CompletableFuture<Void> jobFuture;
         private final boolean snapshottingEnabled;
 
         public ProcCtx(JetInstance instance, SerializationService serService,
@@ -74,25 +72,9 @@ public final class Contexts {
             return vertexName;
         }
 
-        /**
-         * Note that method is marked sa {@link Nonnull}, however, it's only
-         * non-null after {@link #initJobFuture(CompletableFuture)} is called,
-         * which means it's <i>practically non-null</i>.
-         */
-        @Nonnull
-        @Override
-        public CompletableFuture<Void> jobFuture() {
-            return jobFuture;
-        }
-
         @Override
         public boolean snapshottingEnabled() {
             return snapshottingEnabled;
-        }
-
-        public void initJobFuture(CompletableFuture<Void> jobFuture) {
-            assert this.jobFuture == null : "jobFuture already initialized";
-            this.jobFuture = jobFuture;
         }
 
         public SerializationService getSerializationService() {

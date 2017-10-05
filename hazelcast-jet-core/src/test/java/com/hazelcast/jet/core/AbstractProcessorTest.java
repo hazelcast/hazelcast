@@ -419,44 +419,6 @@ public class AbstractProcessorTest {
     }
 
     @Test
-    public void when_emitToAll_then_emittedToAll() {
-        // When
-        p.emit(MOCK_ITEM);
-
-        // Then
-        validateReceptionAtOrdinals(MOCK_ITEM, ALL_ORDINALS);
-    }
-
-    @Test
-    public void when_emitTo1_then_emittedTo1() {
-        // When
-        p.emit(ORDINAL_1, MOCK_ITEM);
-
-        // Then
-        validateReceptionAtOrdinals(MOCK_ITEM, ORDINAL_1);
-    }
-
-    @Test
-    public void when_emitTo1And2_then_emittedTo1And2() {
-        // When
-        p.emit(ORDINALS_1_2, MOCK_ITEM);
-
-        // Then
-        validateReceptionAtOrdinals(MOCK_ITEM, ORDINALS_1_2);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void when_emitToFullOutbox_then_exception() {
-        // Given -- fills outbox
-        p.emit(MOCK_ITEM);
-
-        // When
-        p.emit(MOCK_ITEM);
-
-        // Then don't reach this line
-    }
-
-    @Test
     public void when_emitFromTraverserToAll_then_emittedToAll() {
         // Given
         Traverser<Object> trav = Traverser.over(MOCK_ITEM);

@@ -16,36 +16,42 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
+import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.util.stream.Collectors.toList;
 
 /**
  * @see SourceProcessors#readFiles(String, Charset, String)
  */
-public final class ReadFilesP extends AbstractProcessor {
+public final class ReadFilesP extends AbstractProcessor implements Closeable {
 
     private final Charset charset;
     private final int parallelism;
     private final int id;
     private final Path directory;
     private final String glob;
+    private DirectoryStream<Path> directoryStream;
+    private Traverser<String> outputTraverser;
+    private Stream<String> currentFileLines;
 
     private ReadFilesP(String directory, Charset charset, String glob, int parallelism, int id) {
         this.directory = Paths.get(directory);
@@ -56,16 +62,20 @@ public final class ReadFilesP extends AbstractProcessor {
     }
 
     @Override
-    public boolean complete() {
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, glob)) {
-            StreamSupport.stream(directoryStream.spliterator(), false)
-                    .filter(this::shouldProcessEvent)
-                    .forEach(this::processFile);
-        } catch (IOException e) {
-            throw sneakyThrow(e);
-        }
+    protected void init(@Nonnull Context context) throws Exception {
+        directoryStream = Files.newDirectoryStream(directory, glob);
+        outputTraverser = Traversers.iterate(directoryStream.iterator())
+                                    .filter(this::shouldProcessEvent)
+                                    .flatMap(this::processFile)
+                                    .onFirstNull(() -> {
+                                        uncheckRun(this::close);
+                                        directoryStream = null;
+                                    });
+    }
 
-        return true;
+    @Override
+    public boolean complete() {
+        return emitFromTraverser(outputTraverser);
     }
 
     private boolean shouldProcessEvent(Path file) {
@@ -76,17 +86,38 @@ public final class ReadFilesP extends AbstractProcessor {
         return ((hashCode & Integer.MAX_VALUE) % parallelism) == id;
     }
 
-    private void processFile(Path file) {
+    private Traverser<String> processFile(Path file) {
         if (getLogger().isFinestEnabled()) {
             getLogger().finest("Processing file " + file);
         }
-
-        try (BufferedReader reader = Files.newBufferedReader(file, charset)) {
-            for (String line; (line = reader.readLine()) != null; ) {
-                emit(line);
-            }
+        try {
+            assert currentFileLines == null : "currentFileLines != null";
+            currentFileLines = Files.lines(file, charset);
+            return traverseStream(currentFileLines)
+                    .onFirstNull(() -> {
+                        currentFileLines.close();
+                        currentFileLines = null;
+                    });
         } catch (IOException e) {
             throw sneakyThrow(e);
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        IOException ex = null;
+        if (directoryStream != null) {
+            try {
+                directoryStream.close();
+            } catch (IOException e) {
+                ex = e;
+            }
+        }
+        if (currentFileLines != null) {
+            currentFileLines.close();
+        }
+        if (ex != null) {
+            throw ex;
         }
     }
 
@@ -100,17 +131,9 @@ public final class ReadFilesP extends AbstractProcessor {
      * instead.
      */
     public static ProcessorSupplier supplier(@Nonnull String directory, @Nonnull String charset, @Nonnull String glob) {
-        return new ProcessorSupplier() {
-            static final long serialVersionUID = 1L;
-
-            @Nonnull
-            @Override
-            public Collection<? extends Processor> get(int count) {
-                Charset charsetObj = Charset.forName(charset);
-                return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadFilesP(directory, charsetObj, glob, count, i))
-                        .collect(Collectors.toList());
-            }
-        };
+        return new CloseableProcessorSupplier<>(
+                count -> IntStream.range(0, count)
+                                  .mapToObj(i -> new ReadFilesP(directory, Charset.forName(charset), glob, count, i))
+                                  .collect(toList()));
     }
 }

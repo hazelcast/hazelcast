@@ -19,24 +19,22 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
-import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.Edge.RoutingPolicy;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.execution.BlockingProcessorTasklet;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
-import com.hazelcast.jet.impl.execution.CooperativeProcessorTasklet;
 import com.hazelcast.jet.impl.execution.InboundEdgeStream;
 import com.hazelcast.jet.impl.execution.OutboundCollector;
 import com.hazelcast.jet.impl.execution.OutboundEdgeStream;
-import com.hazelcast.jet.impl.execution.ProcessorTaskletBase;
+import com.hazelcast.jet.impl.execution.ProcessorTasklet;
 import com.hazelcast.jet.impl.execution.ReceiverTasklet;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
@@ -165,10 +163,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
                 OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, processorIdx, null);
 
-                ProcessorTaskletBase processorTasklet = p.isCooperative()
-                        ? new CooperativeProcessorTasklet(context, p, inboundStreams, outboundStreams,
-                        snapshotContext, snapshotCollector)
-                        : new BlockingProcessorTasklet(context, p, inboundStreams, outboundStreams,
+                ProcessorTasklet processorTasklet = new ProcessorTasklet(context, p, inboundStreams, outboundStreams,
                         snapshotContext, snapshotCollector);
                 tasklets.add(processorTasklet);
                 this.processors.add(p);

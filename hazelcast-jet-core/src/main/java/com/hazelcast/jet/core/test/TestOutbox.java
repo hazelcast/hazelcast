@@ -73,7 +73,9 @@ public final class TestOutbox implements Outbox, SnapshotOutbox {
                     ? e -> addToQueue(buckets[i], edgeCapacities[i], e)
                     : e -> addToQueue(snapshotQueue, snapshotCapacity, (Entry<MockData, MockData>) e));
 
-        outbox = new OutboxImpl(outstreams, snapshotCapacity > 0, new ProgressTracker(), IDENTITY_SERIALIZER);
+        outbox = new OutboxImpl(outstreams, snapshotCapacity > 0, new ProgressTracker(), IDENTITY_SERIALIZER,
+                Integer.MAX_VALUE);
+        outbox.resetBatch();
     }
 
     private static <E> ProgressState addToQueue(Queue<? super E> queue, int capacity, E o) {

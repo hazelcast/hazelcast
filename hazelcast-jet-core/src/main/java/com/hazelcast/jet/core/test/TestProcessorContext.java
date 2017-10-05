@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.test.TestSupport.getLogger;
 
@@ -33,7 +32,6 @@ public class TestProcessorContext implements Processor.Context {
     private ILogger logger;
     private String vertexName = "testVertex";
     private int globalProcessorIndex;
-    private CompletableFuture<Void> jobFuture = new CompletableFuture<>();
     private boolean snapshottingEnabled;
 
     /**
@@ -97,11 +95,6 @@ public class TestProcessorContext implements Processor.Context {
     }
 
     @Override
-    public CompletableFuture<Void> jobFuture() {
-        return jobFuture;
-    }
-
-    @Override
     public boolean snapshottingEnabled() {
         return snapshottingEnabled;
     }
@@ -111,14 +104,6 @@ public class TestProcessorContext implements Processor.Context {
      */
     public TestProcessorContext setSnapshottingEnabled(boolean snapshottingEnabled) {
         this.snapshottingEnabled = snapshottingEnabled;
-        return this;
-    }
-
-    /**
-     * Set the job future.
-     */
-    public TestProcessorContext setJobFuture(CompletableFuture<Void> jobFuture) {
-        this.jobFuture = jobFuture;
         return this;
     }
 }

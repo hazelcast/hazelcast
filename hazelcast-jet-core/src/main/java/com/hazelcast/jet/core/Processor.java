@@ -21,7 +21,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * When Jet executes a DAG, it creates one or more instances of {@code
@@ -43,29 +42,8 @@ import java.util.concurrent.CompletableFuture;
  * The processor accepts input from instances of {@link Inbox} and pushes
  * its output to an instance of {@link Outbox}.
  * <p>
- * By default the processor declares itself as "cooperative" ({@link
- * #isCooperative()} returns {@code true}). It will be assigned an outbox
- * of finite capacity which is not emptied until the processor yields back
- * to the execution engine. As soon as the outbox refuses an offered item,
- * the processor should save its current state and return to the caller.
- * It should also limit the amount of time it spends in the invocation of
- * any of its methods because it will participate in a cooperative
- * multithreading scheme, sharing a thread with other processors.
- * <p>
- * On the other hand, if the processor declares itself as "non-cooperative"
- * ({@link #isCooperative()} returns {@code false}), then each item it
- * emits to the outbox will be immediately pushed into the outbound edge's
- * queue, blocking as needed until the queue accepts it. Therefore there is
- * no limit on the number of items that can be emitted during a single
- * processor call, and there is no limit on the time spent per call. For
- * example, a source processor can do all of its work in a single
- * invocation of {@link Processor#complete() complete()}, even if the stream
- * it generates is infinite.
- * <p>
- * Jet prefers cooperative processors because they result in greater overall
- * throughput. A processor should be non-cooperative only if it involves
- * blocking operations, which would cause all other processors on the same
- * shared thread to starve.
+ * See the {@link #isCooperative()} for important restrictions to how the
+ * processor should work.
  */
 public interface Processor {
 
@@ -114,10 +92,6 @@ public interface Processor {
      * Called when there is no pending data in the inbox. Allows the processor
      * to produce output in the absence of input. If it returns {@code false},
      * it will be called again before proceeding to call any other method.
-     * <p>
-     * <strong>NOTE:</strong> a processor that declares itself {@link
-     * #isCooperative() non-cooperative} must strictly return {@code true} from
-     * this method.
      */
     default boolean tryProcess() {
         return true;
@@ -151,12 +125,18 @@ public interface Processor {
      * A cooperative processor should also not attempt any blocking operations,
      * such as I/O operations, waiting for locks/semaphores or sleep
      * operations. Violations to this rule will manifest themselves as less
-     * than 100% CPU usage under maximum load.
+     * than 100% CPU usage under maximum load. The processor should also return
+     * as soon as an item is rejected by the outbox (that is when the {@link
+     * Outbox#offer(Object) offer()} method returns {@code false}).
      * <p>
-     * If this processor declares itself cooperative, it will get a
-     * non-blocking, buffering outbox of limited capacity and share a thread
-     * with other cooperative processors. Otherwise it will get an
-     * auto-flushing, blocking outbox and run in a dedicated Java thread.
+     * If this processor declares itself cooperative, it will share a thread
+     * with other cooperative processors. Otherwise it will run in a dedicated
+     * Java thread.
+     * <p>
+     * Jet prefers cooperative processors because they result in greater overall
+     * throughput. A processor should be non-cooperative only if it involves
+     * blocking operations, which would cause all other processors on the same
+     * shared thread to starve.
      * <p>
      * Processor instances on single vertex are allowed to return different
      * value, but single processor instance must return constant value.
@@ -245,33 +225,6 @@ public interface Processor {
          */
         @Nonnull
         String vertexName();
-
-        /**
-         * Returns the future that can be checked for job cancellation status.
-         * <p>
-         * This is necessary if the {@link #complete()} or {@link #process(int,
-         * Inbox) process()} methods don't return promptly after each blocking
-         * call (note that blocking calls are allowed only in {@link #isCooperative()
-         * non-cooperative} processors). In this case the methods should regularly
-         * check the {@code jobFuture}'s {@link CompletableFuture#isDone() isDone()}
-         * and return when it returns {@code true}:
-         * <pre>
-         * public boolean complete() {
-         *     while (!jobFuture.isDone()) {
-         *         // we should not block indefinitely, but rather with a timeout
-         *         Collection data = blockingRead(timeout);
-         *         for (Object item : data) {
-         *             emit(item);
-         *         }
-         *     }
-         * }
-         * </pre>
-         * A processor that supports snapshotting must regularly return from all
-         * method invocations, so the above idiom does not apply to such
-         * processors.
-         */
-        @Nonnull
-        CompletableFuture<Void> jobFuture();
 
         /**
          * Returns true, if snapshots will be saved for this job.

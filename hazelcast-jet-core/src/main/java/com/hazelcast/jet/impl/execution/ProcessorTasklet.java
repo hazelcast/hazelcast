@@ -17,14 +17,13 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -51,8 +50,9 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
 
-public abstract class ProcessorTaskletBase implements Tasklet {
+public class ProcessorTasklet implements Tasklet {
 
+    private static final int OUTBOX_BATCH_SIZE = 2048;
     private final ProgressTracker progTracker = new ProgressTracker();
     private final OutboundEdgeStream[] outstreams;
     private final OutboxImpl outbox;
@@ -71,12 +71,12 @@ public abstract class ProcessorTaskletBase implements Tasklet {
     private ProcessorState state;
     private long pendingSnapshotId;
 
-    ProcessorTaskletBase(@Nonnull ProcCtx context,
-                         @Nonnull Processor processor,
-                         @Nonnull List<? extends InboundEdgeStream> instreams,
-                         @Nonnull List<? extends OutboundEdgeStream> outstreams,
-                         @Nonnull SnapshotContext ssContext,
-                         @Nonnull OutboundCollector ssCollector) {
+    public ProcessorTasklet(@Nonnull ProcCtx context,
+                            @Nonnull Processor processor,
+                            @Nonnull List<? extends InboundEdgeStream> instreams,
+                            @Nonnull List<? extends OutboundEdgeStream> outstreams,
+                            @Nonnull SnapshotContext ssContext,
+                            @Nonnull OutboundCollector ssCollector) {
         Preconditions.checkNotNull(processor, "processor");
         this.context = context;
         this.processor = processor;
@@ -108,22 +108,19 @@ public abstract class ProcessorTaskletBase implements Tasklet {
         if (ssCollector != null) {
             collectors[outstreams.length] = ssCollector;
         }
-        return createOutboxInt(collectors, ssCollector != null, progTracker,
-                context.getSerializationService());
+        return new OutboxImpl(collectors, ssCollector != null, progTracker,
+                context.getSerializationService(), OUTBOX_BATCH_SIZE);
     }
-
-    protected abstract OutboxImpl createOutboxInt(OutboundCollector[] outstreams, boolean hasSnapshot,
-                                                  ProgressTracker progTracker, SerializationService serializationService);
 
     @Override
     public void init(CompletableFuture<Void> jobFuture) {
-        context.initJobFuture(jobFuture);
         processor.init(outbox, outbox, context);
     }
 
     @Override @Nonnull
     public ProgressState call() {
         progTracker.reset();
+        outbox.resetBatch();
         stateMachineStep();
         return progTracker.toProgressState();
     }
@@ -303,5 +300,10 @@ public abstract class ProcessorTaskletBase implements Tasklet {
      */
     private boolean isSnapshotInbox() {
         return currInstream != null && currInstream.priority() == Integer.MIN_VALUE;
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return processor.isCooperative();
     }
 }

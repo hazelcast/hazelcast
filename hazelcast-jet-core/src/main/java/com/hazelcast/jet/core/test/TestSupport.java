@@ -52,7 +52,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * A utility to test processors. It will initialize the processor instance,
  * pass input items to it and assert the outbox contents.
  * <p>
- * This method does the following:
+ * The test process does the following:
  * <ul>
  *     <li>initializes the processor by calling {@link Processor#init(
  *     com.hazelcast.jet.core.Outbox, com.hazelcast.jet.core.SnapshotOutbox,
@@ -61,7 +61,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     <li>does snapshot+restore (optional, see below)
  *
  *     <li>calls {@link Processor#process(int, com.hazelcast.jet.core.Inbox)
- *     Processor.process(0, inbox)}, the inbox always contains one item
+ *     Processor.process(0, inbox)}. The inbox always contains one item
  *     from {@code input} parameter
  *
  *     <li>every time the inbox gets empty does snapshot+restore
@@ -92,16 +92,15 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     <li>for boolean-returning methods, returning {@code true} is
  *     considered as making progress
  * </ul>
+ * <h4>Outbox rejection</h4>
+ * A 1-capacity outbox will be provided, which will additionally be full in
+ * every other call to {@code process()}. This will test the edge case: the
+ * {@code process()} method is called even when the outbox is full to give
+ * the processor a chance to process the inbox. The snapshot outbox will
+ * also have capacity of 1.
  * <h4>Cooperative processors</h4>
- * For cooperative processors a 1-capacity outbox will be provided, which
- * will additionally be full in every other call to {@code process()}. This
- * will test the edge case: the {@code process()} method is called even
- * when the outbox is full to give the processor a chance to process inbox.
- * The snapshot outbox will also have capacity of 1 for a cooperative
- * processor.
- * <p>
- * Additionally, time spent in each call to processing method must not
- * exceed {@link #cooperativeTimeout(long)}.
+ * For cooperative processors, time spent in each call to processing method
+ * must not exceed {@link #cooperativeTimeout(long)}.
  * <h4>Not-covered cases</h4>
  * This class does not cover these cases:<ul>
  *     <li>Testing of processors which distinguish input or output edges
@@ -116,8 +115,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * This will test one of the jet-provided processors:
  * <pre>{@code
  * TestSupport.verifyProcessor(Processors.map((String s) -> s.toUpperCase()))
- *         .input(asList("foo", "bar"))
- *         .expectOutput(asList("FOO", "BAR"));
+ *            .disableCompleteCall()             // enabled by default
+ *            .disableLogging()                  // enabled by default
+ *            .disableProgressAssertion()        // enabled by default
+ *            .disableSnapshots()                // enabled by default
+ *            .cooperativeTimeout(<timeoutInMs>) // default is 1000
+ *            .outputChecker(<function>)         // default is `Objects::equal`
+ *            .input(asList("foo", "bar"))       // default is `emptyList()`
+ *            .expectOutput(asList("FOO", "BAR"));
  * }</pre>
  */
 public final class TestSupport {
@@ -291,9 +296,8 @@ public final class TestSupport {
         TestInbox inbox = new TestInbox();
         Processor[] processor = {supplier.get()};
 
-        // we'll use 1-capacity outbox to test cooperative emission, if the processor is cooperative
-        int outboxCapacity = processor[0].isCooperative() ? 1 : Integer.MAX_VALUE;
-        TestOutbox outbox = new TestOutbox(new int[] {outboxCapacity}, outboxCapacity);
+        // we'll use 1-capacity outbox to test outbox rejection
+        TestOutbox outbox = new TestOutbox(new int[] {1}, 1);
         List<Object> actualOutput = new ArrayList<>();
 
         // create instance of your processor and call the init() method

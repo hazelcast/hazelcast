@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,17 +39,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.core.processor.Processors.accumulateByFrame;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindow;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarks;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -152,18 +154,18 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
      * A processor that will emit contents of a list and optionally complete.
      */
     private static class EmitListP extends AbstractProcessor {
-        private final List<?> list;
+        private final Traverser<Object> traverser;
         private final boolean complete;
 
         EmitListP(List<?> list, boolean complete) {
-            this.list = list;
+            this.traverser = traverseIterable(list);
             this.complete = complete;
         }
 
         @Override
         public boolean complete() {
-            for (Object o : list) {
-                emit(o);
+            if (!emitFromTraverser(traverser)) {
+                return false;
             }
             if (!complete) {
                 try {

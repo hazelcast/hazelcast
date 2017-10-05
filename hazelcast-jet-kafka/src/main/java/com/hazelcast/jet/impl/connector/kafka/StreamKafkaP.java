@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
@@ -32,6 +31,7 @@ import org.apache.kafka.common.TopicPartition;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -40,12 +40,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
@@ -62,15 +66,22 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
     private final List<String> topics;
     private final int globalParallelism;
     private boolean snapshottingEnabled;
-    private KafkaConsumer<?, ?> consumer;
+    private KafkaConsumer<Object, Object> consumer;
 
     private long nextPartitionCheck = Long.MIN_VALUE;
 
-    private final Map<TopicPartition, Long> offsets = new HashMap<>();
+    /**
+     * Key: topicName<br>
+     * Value: partition offsets, at index I is offset for partition I.<br>
+     * Offsets are -1 initially and for unassigned partitions.
+     */
+    private final Map<String, long[]> offsets = new HashMap<>();
     private Traverser<Entry<BroadcastKey<TopicPartition>, Long>> snapshotTraverser;
     private Set<TopicPartition> currentAssignment = new HashSet<>();
     private long metadataRefreshInterval;
     private int processorIndex;
+    private Traverser<Entry<Object, Object>> traverser;
+    private ConsumerRecord<Object, Object> lastEmittedItem;
 
     StreamKafkaP(Properties properties, List<String> topics, int globalParallelism, long metadataRefreshInterval) {
         this.properties = properties;
@@ -94,7 +105,6 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
         logFinest(getLogger(), "Currently assigned partitions: %s", newAssignments);
 
         newAssignments.removeAll(currentAssignment);
-
         if (!newAssignments.isEmpty()) {
             getLogger().info("Partition assignments changed, new partitions: " + newAssignments);
             currentAssignment.addAll(newAssignments);
@@ -104,7 +114,26 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
                 consumer.seekToBeginning(newAssignments);
             }
         }
+
+        createOrExtendOffsetsArrays(partitionCounts);
         nextPartitionCheck = System.nanoTime() + MILLISECONDS.toNanos(metadataRefreshInterval);
+    }
+
+    private void createOrExtendOffsetsArrays(List<Integer> partitionCounts) {
+        for (int topicIdx = 0; topicIdx < partitionCounts.size(); topicIdx++) {
+            int newPartitionCount = partitionCounts.get(topicIdx);
+            String topicName = topics.get(topicIdx);
+            long[] oldOffsets = offsets.get(topicName);
+            if (oldOffsets != null && oldOffsets.length == newPartitionCount) {
+                continue;
+            }
+            long[] newOffsets = new long[newPartitionCount];
+            Arrays.fill(newOffsets, -1);
+            if (oldOffsets != null) {
+                arraycopy(oldOffsets, 0, newOffsets, 0, oldOffsets.length);
+            }
+            offsets.put(topicName, newOffsets);
+        }
     }
 
     @Override
@@ -112,25 +141,27 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
         if (System.nanoTime() >= nextPartitionCheck) {
             assignPartitions(true);
         }
-
         if (currentAssignment.isEmpty()) {
-            // this happens when there are less kafka partitions than globalParallelism of
-            // this vertex. Processor will just idle rather then finish
-            // as there might be more partitions that can be assigned in the future.
-            LockSupport.parkNanos(MILLISECONDS.toNanos(POLL_TIMEOUT_MS));
             return false;
         }
-
-        ConsumerRecords<?, ?> records = consumer.poll(POLL_TIMEOUT_MS);
-        for (ConsumerRecord<?, ?> r : records) {
-            if (snapshottingEnabled) {
-                offsets.put(new TopicPartition(r.topic(), r.partition()), r.offset());
+        if (traverser == null) {
+            ConsumerRecords<Object, Object> records = consumer.poll(POLL_TIMEOUT_MS);
+            if (records.isEmpty()) {
+                return false;
             }
-            emit(entry(r.key(), r.value()));
+            traverser = traverseIterable(records)
+                    .peek(r -> lastEmittedItem = r)
+                    .map(r -> entry(r.key(), r.value()))
+                    .onFirstNull(() -> traverser = null);
         }
+
+        emitFromTraverser(traverser,
+                e -> offsets.get(lastEmittedItem.topic())[lastEmittedItem.partition()] = lastEmittedItem.offset());
+
         if (!snapshottingEnabled) {
             consumer.commitSync();
         }
+
         return false;
     }
 
@@ -147,22 +178,38 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
     @Override
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
-            snapshotTraverser = Traversers.traverseIterable(offsets.entrySet())
-                                          .map(e -> entry(broadcastKey(e.getKey()), e.getValue()))
-                                          .onFirstNull(() -> snapshotTraverser = null);
+            Stream<Entry<BroadcastKey<TopicPartition>, Long>> snapshotStream =
+                    offsets.entrySet().stream()
+                           .flatMap(entry -> IntStream.range(0, entry.getValue().length)
+                                  .filter(partition -> entry.getValue()[partition] >= 0)
+                                  .mapToObj(partition -> entry(
+                                          broadcastKey(new TopicPartition(entry.getKey(), partition)),
+                                          entry.getValue()[partition])));
+            snapshotTraverser = traverseStream(snapshotStream)
+                    .onFirstNull(() -> snapshotTraverser = null);
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
     @Override
     public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        TopicPartition partition = ((BroadcastKey<TopicPartition>) key).key();
+        TopicPartition topicPartition = ((BroadcastKey<TopicPartition>) key).key();
         long offset = (long) value;
-        if (currentAssignment.contains(partition)) {
-            Long oldValue = offsets.put(partition, offset);
-            assert oldValue == null : "duplicate offset for partition '" + partition + "' restored, offset1="
-                    + oldValue + ", offset2=" + offset;
-            consumer.seek(partition, offset + 1);
+        long[] topicOffsets = offsets.get(topicPartition.topic());
+        if (topicOffsets == null) {
+            getLogger().severe("Offset for topic '" + topicPartition.topic()
+                    + "' is present in snapshot, but the topic is not supposed to be read");
+            return;
+        }
+        if (topicPartition.partition() >= topicOffsets.length) {
+            getLogger().severe("Offset for partition '" + topicPartition + "' is present in snapshot," +
+                    " but that topic currently has only " + topicOffsets.length + " partitions");
+        }
+        if (currentAssignment.contains(topicPartition)) {
+            assert topicOffsets[topicPartition.partition()] < 0 : "duplicate offset for topicPartition '" + topicPartition
+                    + "' restored, offset1=" + topicOffsets[topicPartition.partition()] + ", offset2=" + offset;
+            topicOffsets[topicPartition.partition()] = offset;
+            consumer.seek(topicPartition, offset + 1);
         }
     }
 

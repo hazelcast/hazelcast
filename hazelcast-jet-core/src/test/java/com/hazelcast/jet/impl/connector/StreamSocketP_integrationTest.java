@@ -58,6 +58,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
     public void setupEngine() {
         instance = createJetMember();
     }
+
     @Test
     public void when_dataWrittenToSocket_then_dataImmediatelyEmitted() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
@@ -132,9 +133,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
             acceptationLatch.await();
             job.cancel();
 
-            assertTrueEventually(() -> {
-                assertTrue("Socket not closed", accept.get().isClosed());
-            });
+            assertTrueEventually(() -> assertTrue("Socket not closed", accept.get().isClosed()));
         }
     }
 }

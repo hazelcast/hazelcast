@@ -145,7 +145,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
         Vertex faulty = dag.newVertex("faulty", () -> new ProcessorThatFailsInComplete(e));
-        Vertex consumer = dag.newVertex("consumer", TestProcessors.BlockingIdentity::new);
+        Vertex consumer = dag.newVertex("consumer", noop());
         dag.edge(between(faulty, consumer));
 
         // Then

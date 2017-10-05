@@ -32,7 +32,6 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -52,7 +51,6 @@ public class StreamSocketPTest extends JetTestSupport {
     public void before() {
         outbox = new TestOutbox(10);
         context = new TestProcessorContext();
-        context.setJobFuture(new CompletableFuture<>());
         bucket = outbox.queueWithOrdinal(0);
     }
 
@@ -69,10 +67,11 @@ public class StreamSocketPTest extends JetTestSupport {
             }));
             thread.start();
 
-            Processor processor = SourceProcessors.streamSocket("localhost", serverSocket.getLocalPort(), UTF_8).get();
+            Processor processor = SourceProcessors.streamSocket("localhost", serverSocket.getLocalPort(), UTF_8)
+                                                  .get(1).iterator().next();
             processor.init(outbox, outbox, context);
 
-            assertTrue(processor.complete());
+            assertTrueEventually(() -> assertTrue(processor.complete()), 3);
             assertEquals("hello", bucket.poll());
             assertEquals("world", bucket.poll());
             assertEquals(null, bucket.poll());

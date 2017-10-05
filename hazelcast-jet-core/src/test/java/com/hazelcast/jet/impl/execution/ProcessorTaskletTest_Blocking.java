@@ -44,14 +44,14 @@ import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class BlockingProcessorTaskletTest {
+public class ProcessorTaskletTest_Blocking {
 
     private static final int MOCK_INPUT_SIZE = 10;
     private static final int CALL_COUNT_LIMIT = 10;
@@ -161,7 +161,7 @@ public class BlockingProcessorTaskletTest {
         MockOutboundStream outstream1 = outstream(0);
         instreams.add(instream1);
         outstreams.add(outstream1);
-        BlockingProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
 
         // When
         callUntil(tasklet, NO_PROGRESS);
@@ -177,7 +177,7 @@ public class BlockingProcessorTaskletTest {
         MockOutboundStream outstream1 = new MockOutboundStream(0, 1024);
         instreams.add(instream1);
         outstreams.add(outstream1);
-        BlockingProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
         processor.itemCountToProcess = 1;
 
         // When
@@ -197,7 +197,7 @@ public class BlockingProcessorTaskletTest {
         MockOutboundStream outstream1 = outstream(0);
         instreams.add(instream1);
         outstreams.add(outstream1);
-        BlockingProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
         processor.itemsToEmitInComplete = 2;
 
         // When
@@ -215,20 +215,6 @@ public class BlockingProcessorTaskletTest {
 
         // Then
         assertTrue(processor.itemsToEmitInComplete == 0);
-    }
-
-    @Test
-    public void when_jobFutureCompleted_then_exceptionThrownAndCaughtInTasklet() {
-        // Given
-        instreams.add(new MockInboundStream(0, mockInput, 1));
-        outstreams.add(new MockOutboundStream(0, 0));
-        BlockingProcessorTasklet tasklet = createTasklet();
-
-        // When
-        jobFuture.cancel(true);
-
-        // Then
-        assertEquals(tasklet.call(), DONE);
     }
 
     // BlockingOutbox tests
@@ -258,7 +244,7 @@ public class BlockingProcessorTaskletTest {
                 return true;
             }
         };
-        BlockingProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
 
         // When
         // complete()
@@ -288,7 +274,7 @@ public class BlockingProcessorTaskletTest {
                 return true;
             }
         };
-        BlockingProcessorTasklet tasklet = createTasklet();
+        ProcessorTasklet tasklet = createTasklet();
 
         // When
         // complete()
@@ -306,11 +292,11 @@ public class BlockingProcessorTaskletTest {
 
     // END BlockingOutbox tests
 
-    private BlockingProcessorTasklet createTasklet() {
+    private ProcessorTasklet createTasklet() {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
-        final BlockingProcessorTasklet t = new BlockingProcessorTasklet(context, processor, instreams, outstreams,
+        final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
                 mock(SnapshotContext.class), new MockOutboundCollector(10));
         t.init(jobFuture);
         return t;

@@ -49,11 +49,11 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *     {@link #tryProcess(int, Object)} to process the rest of the edges, which
  *     are treated uniformly.
  * </li><li>
- *     The {@code emit(...)} methods avoid the need to deal with {@code Outbox}
+ *     The {@code tryEmit(...)} methods avoid the need to deal with {@code Outbox}
  *     directly.
  * </li><li>
  *     The {@code emitFromTraverser(...)} methods handle the boilerplate of
- *     cooperative item emission. They are especially useful in the
+ *     emission from a traverser. They are especially useful in the
  *     {@link #complete()} step when there is a collection of items to emit.
  *     The {@link Traversers} class contains traversers tailored to simplify
  *     the implementation of {@code complete()}.
@@ -79,7 +79,7 @@ public abstract class AbstractProcessor implements Processor {
      * Specifies what this processor's {@link #isCooperative()} method will return.
      * The method will have no effect if called after the processor has been
      * submitted to the execution service; therefore it should be called from the
-     * {@link ProcessorSupplier} that creates it.
+     * {@link ProcessorSupplier} that creates it or in processor's constructor.
      */
     public final void setCooperative(boolean isCooperative) {
         this.isCooperative = isCooperative;
@@ -311,7 +311,8 @@ public abstract class AbstractProcessor implements Processor {
 
 
     /**
-     * Implements the boilerplate of polling the inbox and casting the items to Map.Entry
+     * Implements the boilerplate of polling the inbox and casting the items
+     * to {@code Map.Entry}.
      */
     @Override
     public final void restoreFromSnapshot(@Nonnull Inbox inbox) {
@@ -366,57 +367,13 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Javadoc pending
+     * Offers one key-value pair to the snapshot bucket.
+     *
+     * @return whether the outbox accepted the item
      */
     @CheckReturnValue
     protected boolean tryEmitToSnapshot(Object key, Object value) {
         return snapshotOutbox.offer(key, value);
-    }
-
-    /**
-     * Adds the item to the outbox bucket with the supplied ordinal, throwing
-     * an exception if the outbox refuses it. Only useful for non-cooperative
-     * processors that work with an auto-flushing outbox.
-     *
-     * @throws IndexOutOfBoundsException if the outbox refused the item
-     */
-    protected void emit(int ordinal, @Nonnull Object item) {
-        ensureAccepted(tryEmit(ordinal, item));
-    }
-
-    /**
-     * Adds the item to all the outbox buckets, throwing an exception if the
-     * outbox refuses it. Only useful for non-cooperative processors that work
-     * with an auto-flushing outbox.
-     *
-     * @throws IndexOutOfBoundsException if the outbox refused the item
-     */
-    protected void emit(@Nonnull Object item) {
-        ensureAccepted(tryEmit(item));
-    }
-
-    /**
-     * Adds the item to the outbox buckets identified in the supplied array,
-     * throwing an exception if the outbox refuses it. Only useful for
-     * non-cooperative processors that work with an auto-flushing outbox.
-     *
-     * @throws IndexOutOfBoundsException if the outbox refused the item
-     */
-    protected void emit(int[] ordinals, @Nonnull Object item) {
-        ensureAccepted(tryEmit(ordinals, item));
-    }
-
-    /**
-     * Javadoc pending
-     */
-    protected void emitToSnapshot(Object key, Object value) {
-        ensureAccepted(tryEmitToSnapshot(key, value));
-    }
-
-    private static void ensureAccepted(boolean accepted) {
-        if (!accepted) {
-            throw new IllegalStateException("Attempt to emit an item to a full outbox");
-        }
     }
 
     /**
@@ -428,7 +385,7 @@ public abstract class AbstractProcessor implements Processor {
      * retained by the caller and passed again in the subsequent invocation of
      * this method, so as to resume emitting where it left off.
      * <p>
-     * For simplified usage from {@link #tryProcess(int, Object)
+     * For simplified usage in {@link #tryProcess(int, Object)
      * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
      *
      * @param ordinal ordinal of the target bucket
@@ -546,7 +503,11 @@ public abstract class AbstractProcessor implements Processor {
             item = traverser.next();
         }
         for (; item != null; item = traverser.next()) {
-            if (!tryEmit(ordinals, item)) {
+            if (tryEmit(ordinals, item)) {
+                if (onEmit != null) {
+                    onEmit.accept(item);
+                }
+            } else {
                 pendingItem = item;
                 return false;
             }

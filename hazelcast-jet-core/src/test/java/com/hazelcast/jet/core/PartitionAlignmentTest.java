@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -44,6 +43,7 @@ import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -115,7 +115,7 @@ public class PartitionAlignmentTest {
 
         @Override
         public boolean complete() {
-            counts.forEach((key, value) -> emit(describe(key, value)));
+            counts.forEach((key, value) -> assertTrue(tryEmit(describe(key, value))));
             return true;
         }
     }
