@@ -42,10 +42,10 @@ import java.util.List;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.Processors.accumulate;
-import static com.hazelcast.jet.core.processor.Processors.aggregate;
-import static com.hazelcast.jet.core.processor.Processors.combine;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.Processors.accumulateP;
+import static com.hazelcast.jet.core.processor.Processors.aggregateP;
+import static com.hazelcast.jet.core.processor.Processors.combineP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -81,18 +81,18 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new EmitListP(sourceItems)).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex("sink", writeListP("sink"));
 
         if (singleStageProcessor) {
-            Vertex aggregate = dag.newVertex("aggregate", aggregate(summingOp))
+            Vertex aggregate = dag.newVertex("aggregate", aggregateP(summingOp))
                     .localParallelism(1);
             dag
                     .edge(between(source, aggregate).distributed().allToOne())
                     .edge(between(aggregate, sink).isolated());
 
         } else {
-            Vertex accumulate = dag.newVertex("accumulate", accumulate(summingOp));
-            Vertex combine = dag.newVertex("combine", combine(summingOp)).localParallelism(1);
+            Vertex accumulate = dag.newVertex("accumulate", accumulateP(summingOp));
+            Vertex combine = dag.newVertex("combine", combineP(summingOp)).localParallelism(1);
             dag
                     .edge(between(source, accumulate))
                     .edge(between(accumulate, combine).distributed().allToOne())

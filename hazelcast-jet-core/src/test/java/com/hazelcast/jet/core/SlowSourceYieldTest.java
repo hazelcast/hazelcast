@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.Processors.noop;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertTrue;
 
@@ -50,7 +50,7 @@ public class SlowSourceYieldTest {
     public void when_slowSource_then_completeYields() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", SlowSourceP::new).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", noop()).localParallelism(1);
+        Vertex sink = dag.newVertex("sink", noopP()).localParallelism(1);
         dag.edge(between(source, sink));
 
         instance.newJob(dag).join();

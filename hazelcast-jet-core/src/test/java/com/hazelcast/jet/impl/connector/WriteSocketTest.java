@@ -39,8 +39,8 @@ import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocket;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.IntStream.range;
@@ -71,7 +71,7 @@ public class WriteSocketTest extends JetTestSupport {
         TestInbox inbox = new TestInbox();
         range(0, ITEM_COUNT).forEach(inbox::add);
 
-        Processor p = writeSocket("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8)
+        Processor p = writeSocketP("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8)
                 .get(1).iterator().next();
         p.init(mock(Outbox.class), mock(SnapshotOutbox.class), new TestProcessorContext());
         p.process(0, inbox);
@@ -105,8 +105,8 @@ public class WriteSocketTest extends JetTestSupport {
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readMap("map"));
-        Vertex sink = dag.newVertex("sink", writeSocket(
+        Vertex source = dag.newVertex("source", readMapP("map"));
+        Vertex sink = dag.newVertex("sink", writeSocketP(
                 "localhost", serverSocket.getLocalPort(), Object::toString, UTF_8));
 
         dag.edge(between(source, sink));

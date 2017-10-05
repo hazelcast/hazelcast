@@ -33,7 +33,7 @@ public class ListSourcePipe<E> extends AbstractSourcePipe<E> {
 
     @Override
     protected ProcessorMetaSupplier getSourceMetaSupplier() {
-        return SourceProcessors.readList(list.getName());
+        return SourceProcessors.readListP(list.getName());
     }
 
     @Override

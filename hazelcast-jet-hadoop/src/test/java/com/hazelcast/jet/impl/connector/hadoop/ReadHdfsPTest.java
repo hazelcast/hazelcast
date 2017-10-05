@@ -63,8 +63,8 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfs;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfsP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -122,9 +122,9 @@ public class ReadHdfsPTest extends JetTestSupport {
     public void testReadHdfs() throws IOException {
         DAG dag = new DAG();
 
-        Vertex source = dag.newVertex("source", readHdfs(jobConf, mapper))
+        Vertex source = dag.newVertex("source", readHdfsP(jobConf, mapper))
                            .localParallelism(4);
-        Vertex sink = dag.newVertex("sink", writeList("sink"))
+        Vertex sink = dag.newVertex("sink", writeListP("sink"))
                          .localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -140,7 +140,7 @@ public class ReadHdfsPTest extends JetTestSupport {
     @Test
     public void testJus() {
         IStreamList sink = (IStreamList) DistributedStream
-                .fromSource(instance, readHdfs(jobConf, mapper))
+                .fromSource(instance, readHdfsP(jobConf, mapper))
                 .collect(DistributedCollectors.toIList("sink"));
 
         assertEquals(16, sink.size());
@@ -160,7 +160,7 @@ public class ReadHdfsPTest extends JetTestSupport {
         }));
     }
 
-    private void writeToTextFile(LocalFileSystem local, Path path) throws IOException {
+    private static void writeToTextFile(LocalFileSystem local, Path path) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(local.create(path)))) {
             for (String value : ENTRIES) {
                 writer.write(value);
@@ -169,7 +169,7 @@ public class ReadHdfsPTest extends JetTestSupport {
         }
     }
 
-    private void writeToSequenceFile(Configuration conf, Path path) throws IOException {
+    private static void writeToSequenceFile(Configuration conf, Path path) throws IOException {
         IntWritable key = new IntWritable();
         Text value = new Text();
         Option fileOption = Writer.file(path);

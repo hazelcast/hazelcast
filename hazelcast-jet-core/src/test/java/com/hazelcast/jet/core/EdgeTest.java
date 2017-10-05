@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.core.processor.Processors.noop;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -43,8 +43,8 @@ public class EdgeTest {
 
     @Before
     public void before() {
-        a = new Vertex(A, noop());
-        b = new Vertex(B, noop());
+        a = new Vertex(A, noopP());
+        b = new Vertex(B, noopP());
     }
 
     @Test

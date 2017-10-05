@@ -293,7 +293,7 @@ public final class AggregateOperations {
      * <p>
      * This operation is useful if we cannot precede the aggregating vertex
      * with a {@link
-     * com.hazelcast.jet.core.processor.Processors#map(DistributedFunction) map()}
+     * com.hazelcast.jet.core.processor.Processors#mapP(DistributedFunction) map()}
      * processors, which is useful
      *
      * @param <T> the type of the input elements

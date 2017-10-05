@@ -67,7 +67,7 @@ public class StreamSocketPTest extends JetTestSupport {
             }));
             thread.start();
 
-            Processor processor = SourceProcessors.streamSocket("localhost", serverSocket.getLocalPort(), UTF_8)
+            Processor processor = SourceProcessors.streamSocketP("localhost", serverSocket.getLocalPort(), UTF_8)
                                                   .get(1).iterator().next();
             processor.init(outbox, outbox, context);
 

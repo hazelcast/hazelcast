@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matchers;
@@ -123,8 +123,8 @@ public class DAGTest {
     @Test
     public void when_differentSourceWithSameName_then_illegalArgument() {
         // Given
-        Vertex a1 = new Vertex("a", Processors.map(Object::hashCode));
-        Vertex a2 = new Vertex("a", Processors.map(Object::toString));
+        Vertex a1 = new Vertex("a", Processors.mapP(Object::hashCode));
+        Vertex a2 = new Vertex("a", Processors.mapP(Object::toString));
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         DAG dag = new DAG()
                 .vertex(a1)
@@ -141,8 +141,8 @@ public class DAGTest {
     public void when_differentDestinationWithSameName_then_illegalArgument() {
         // Given
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b1 = new Vertex("b", Processors.map(Object::toString));
-        Vertex b2 = new Vertex("b", Processors.map(Object::hashCode));
+        Vertex b1 = new Vertex("b", Processors.mapP(Object::toString));
+        Vertex b2 = new Vertex("b", Processors.mapP(Object::hashCode));
         DAG dag = new DAG()
                 .vertex(a)
                 .vertex(b1);

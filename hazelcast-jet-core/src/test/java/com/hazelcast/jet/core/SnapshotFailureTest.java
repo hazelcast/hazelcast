@@ -26,6 +26,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsMetaSupplier;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.stream.IStreamMap;
@@ -47,7 +48,6 @@ import java.util.concurrent.locks.LockSupport;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutput;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -102,7 +102,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(numPartitions, numElements);
         Vertex generator = dag.newVertex("generator", peekOutput(throttle(sup, 2)))
                               .localParallelism(1);
-        Vertex writeMap = dag.newVertex("writeMap", writeMap(results.getName())).localParallelism(1);
+        Vertex writeMap = dag.newVertex("writeMap", SinkProcessors.writeMapP(results.getName())).localParallelism(1);
         dag.edge(between(generator, writeMap));
 
         JobConfig config = new JobConfig();

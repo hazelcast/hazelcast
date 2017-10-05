@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.reducers;
 
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -30,8 +30,8 @@ import com.hazelcast.jet.stream.impl.processor.GroupAndAccumulateP;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public class GroupingSinkReducer<T, A, K, D, R> implements DistributedCollector.Reducer<T, R> {

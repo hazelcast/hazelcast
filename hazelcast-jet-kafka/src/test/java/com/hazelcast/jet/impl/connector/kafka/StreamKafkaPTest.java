@@ -56,9 +56,8 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekSnapshot;
-import static com.hazelcast.jet.core.processor.KafkaProcessors.streamKafka;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.KafkaProcessors.streamKafkaP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -105,9 +104,9 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         DAG dag = new DAG();
 
         Vertex source = dag.newVertex("source",
-                peekSnapshot(streamKafka(properties, topic1Name, topic2Name))).localParallelism(4);
+                streamKafkaP(properties, topic1Name, topic2Name)).localParallelism(4);
 
-        Vertex sink = dag.newVertex("sink", writeList("sink"))
+        Vertex sink = dag.newVertex("sink", writeListP("sink"))
                          .localParallelism(1);
 
         dag.edge(between(source, sink));

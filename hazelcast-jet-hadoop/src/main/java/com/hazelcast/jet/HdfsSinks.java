@@ -59,7 +59,7 @@ public final class HdfsSinks {
             @Nonnull DistributedFunction<? super E, K> extractKeyF,
             @Nonnull DistributedFunction<? super E, V> extractValueF
     ) {
-        return Sinks.fromProcessor("writeHdfs", HdfsProcessors.writeHdfs(jobConf, extractKeyF, extractValueF));
+        return Sinks.fromProcessor("writeHdfs", HdfsProcessors.writeHdfsP(jobConf, extractKeyF, extractValueF));
     }
 
     /**

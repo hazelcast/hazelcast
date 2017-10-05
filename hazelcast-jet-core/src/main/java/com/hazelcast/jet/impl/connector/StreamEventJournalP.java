@@ -64,7 +64,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
 
 /**
- * @see SourceProcessors#streamMap(String, DistributedPredicate, DistributedFunction, boolean)
+ * @see SourceProcessors#streamMapP(String, DistributedPredicate, DistributedFunction, boolean)
  */
 public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
@@ -195,7 +195,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 .map(partitions -> !partitions.isEmpty()
                         ? new StreamEventJournalP<>(eventJournalReader, partitions, predicate,
                         projection, startFromLatestSequence)
-                        : Processors.noop().get()
+                        : Processors.noopP().get()
                 )
                 .collect(toList());
     }

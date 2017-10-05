@@ -54,7 +54,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
 /**
- * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#streamKafka(
+ * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#streamKafkaP(
  *Properties, String...)}.
  */
 public final class StreamKafkaP extends AbstractProcessor implements Closeable {

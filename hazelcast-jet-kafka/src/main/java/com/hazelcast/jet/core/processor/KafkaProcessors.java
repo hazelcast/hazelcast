@@ -63,7 +63,7 @@ public final class KafkaProcessors {
      *                   group name, broker address and key/value deserializers
      * @param topics     the list of topics
      */
-    public static ProcessorMetaSupplier streamKafka(Properties properties, String... topics) {
+    public static ProcessorMetaSupplier streamKafkaP(Properties properties, String... topics) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         properties.put("enable.auto.commit", false);
 
@@ -94,7 +94,7 @@ public final class KafkaProcessors {
      * @param <V> type of the value published to Kafka
      *
      */
-    public static <T, K, V> ProcessorMetaSupplier writeKafka(
+    public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
             String topic, Properties properties,
             DistributedFunction<? super T, K> extractKeyFn,
             DistributedFunction<? super T, V> extractValueFn

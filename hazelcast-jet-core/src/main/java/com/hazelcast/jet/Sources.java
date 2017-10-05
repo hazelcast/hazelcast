@@ -97,7 +97,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     public static <K, V> Source<Map.Entry<K, V>> readMap(String mapName) {
-        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMap(mapName));
+        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMapP(mapName));
     }
 
     /**
@@ -115,7 +115,7 @@ public final class Sources {
                                               DistributedPredicate<Map.Entry<K, V>> predicate,
                                               DistributedFunction<Map.Entry<K, V>, T> projectionFn) {
         return fromProcessor("readMap(" + mapName + ')',
-                SourceProcessors.readMap(mapName, predicate, projectionFn));
+                SourceProcessors.readMapP(mapName, predicate, projectionFn));
     }
 
     /**
@@ -131,7 +131,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMap(mapName, clientConfig));
+        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMapP(mapName, clientConfig));
     }
 
     /**
@@ -151,7 +151,7 @@ public final class Sources {
                                               DistributedFunction<Map.Entry<K, V>, T> projectionFn,
                                               ClientConfig clientConfig) {
         return fromProcessor("readMap(" + mapName + ')',
-                SourceProcessors.readMap(mapName, predicate, projectionFn, clientConfig));
+                SourceProcessors.readMapP(mapName, predicate, projectionFn, clientConfig));
     }
 
     /**
@@ -166,7 +166,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> readCache(@Nonnull String cacheName) {
-        return fromProcessor("readCache(" + cacheName + ')', SourceProcessors.readCache(cacheName));
+        return fromProcessor("readCache(" + cacheName + ')', SourceProcessors.readCacheP(cacheName));
     }
 
     /**

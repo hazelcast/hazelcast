@@ -55,7 +55,7 @@ public final class HdfsProcessors {
      * @param mapper  mapper which can be used to map the key and value to another value
      */
     @Nonnull
-    public static <K, V, R> MetaSupplier<K, V, R> readHdfs(
+    public static <K, V, R> MetaSupplier<K, V, R> readHdfsP(
             @Nonnull JobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper
     ) {
         return new MetaSupplier<>(asSerializable(jobConf), mapper);
@@ -84,7 +84,7 @@ public final class HdfsProcessors {
      * @param <V> type of value to write to HDFS
      */
     @Nonnull
-    public static <E, K, V> ProcessorMetaSupplier writeHdfs(
+    public static <E, K, V> ProcessorMetaSupplier writeHdfsP(
             @Nonnull JobConf jobConf,
             @Nonnull DistributedFunction<? super E, K> extractKeyFn,
             @Nonnull DistributedFunction<? super E, V> extractValueFn

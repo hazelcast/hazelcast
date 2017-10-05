@@ -25,6 +25,7 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.stream.IStreamMap;
@@ -55,10 +56,9 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
-import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindow;
-import static com.hazelcast.jet.core.processor.Processors.insertWatermarks;
-import static com.hazelcast.jet.core.processor.Processors.map;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeMap;
+import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
+import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static java.util.Comparator.comparing;
@@ -138,16 +138,16 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(3, 120);
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);
-        Vertex insWm = dag.newVertex("insWm", insertWatermarks(entry -> ((Entry<Integer, Integer>) entry).getValue(),
+        Vertex insWm = dag.newVertex("insWm", insertWatermarksP(entry -> ((Entry<Integer, Integer>) entry).getValue(),
                 withFixedLag(0), emitByFrame(wDef)))
                           .localParallelism(1);
-        Vertex aggregate = dag.newVertex("aggregate", aggregateToSlidingWindow(
+        Vertex aggregate = dag.newVertex("aggregate", aggregateToSlidingWindowP(
                 t -> ((Entry<Integer, Integer>) t).getKey(),
                 t -> ((Entry<Integer, Integer>) t).getValue(),
                 TimestampKind.EVENT, wDef, aggrOp));
         Vertex map = dag.newVertex("map",
-                map((TimestampedEntry e) -> entry(new long[] {e.getTimestamp(), (int) e.getKey()}, e.getValue())));
-        Vertex writeMap = dag.newVertex("writeMap", writeMap("result"));
+                mapP((TimestampedEntry e) -> entry(new long[] {e.getTimestamp(), (int) e.getKey()}, e.getValue())));
+        Vertex writeMap = dag.newVertex("writeMap", SinkProcessors.writeMapP("result"));
 
         dag.edge(between(generator, insWm))
            .edge(between(insWm, aggregate)

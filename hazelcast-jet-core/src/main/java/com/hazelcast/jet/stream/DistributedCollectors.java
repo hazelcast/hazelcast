@@ -18,26 +18,26 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.function.DistributedOptional;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedComparator;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedOptional;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToIntFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
+import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
+import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
+import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
 import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.reducers.DistributedStringJoiner;
 import com.hazelcast.jet.stream.impl.reducers.GroupingSinkReducer;
 import com.hazelcast.jet.stream.impl.reducers.IListReducer;
-import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
-import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
-import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
 import com.hazelcast.jet.stream.impl.reducers.MergingSinkReducer;
 import com.hazelcast.jet.stream.impl.reducers.SinkReducer;
 
@@ -63,9 +63,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collector;
 
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeCache;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeMap;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 
 /**
  * Implementations of {@link DistributedCollector} that implement various
@@ -1076,7 +1076,7 @@ public abstract class DistributedCollectors {
            DistributedFunction<? super T, ? extends K> keyMapper,
            DistributedFunction<? super T, ? extends U> valueMapper) {
         return new SinkReducer<>("write-map-" + mapName, jetInstance -> jetInstance.getMap(mapName),
-                keyMapper, valueMapper, writeMap(mapName));
+                keyMapper, valueMapper, writeMapP(mapName));
     }
 
     /**
@@ -1140,7 +1140,7 @@ public abstract class DistributedCollectors {
            DistributedFunction<? super T, ? extends U> valueMapper,
            DistributedBinaryOperator<U> mergeFunction) {
         return new MergingSinkReducer<>("write-map-" + mapName, jetInstance -> jetInstance.getMap(mapName),
-                keyMapper, valueMapper, mergeFunction, writeMap(mapName));
+                keyMapper, valueMapper, mergeFunction, writeMapP(mapName));
     }
 
     /**
@@ -1172,7 +1172,7 @@ public abstract class DistributedCollectors {
              DistributedFunction<? super T, ? extends K> keyMapper,
              DistributedFunction<? super T, ? extends U> valueMapper) {
         return new SinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
-                keyMapper, valueMapper, writeCache(cacheName));
+                keyMapper, valueMapper, writeCacheP(cacheName));
     }
 
     /**
@@ -1236,7 +1236,7 @@ public abstract class DistributedCollectors {
              DistributedFunction<? super T, ? extends U> valueMapper,
              DistributedBinaryOperator<U> mergeFunction) {
         return new MergingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
-                keyMapper, valueMapper, mergeFunction, writeCache(cacheName));
+                keyMapper, valueMapper, mergeFunction, writeCacheP(cacheName));
     }
 
     /**
@@ -1315,7 +1315,7 @@ public abstract class DistributedCollectors {
                                             DistributedFunction<? super T, ? extends K> classifier,
                                             DistributedCollector<? super T, A, D> downstream) {
         return new GroupingSinkReducer<>("write-map-" + mapName, jetInstance -> jetInstance.getMap(mapName),
-                classifier, downstream, writeMap(mapName));
+                classifier, downstream, writeMapP(mapName));
     }
 
     /**
@@ -1379,7 +1379,7 @@ public abstract class DistributedCollectors {
                                                 DistributedFunction<? super T, ? extends K> classifier,
                                                 DistributedCollector<? super T, A, D> downstream) {
         return new GroupingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
-                classifier, downstream, writeCache(cacheName));
+                classifier, downstream, writeCacheP(cacheName));
     }
 
     /**

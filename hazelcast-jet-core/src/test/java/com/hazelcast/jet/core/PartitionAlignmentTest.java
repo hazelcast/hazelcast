@@ -18,8 +18,9 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -37,9 +38,8 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
+import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -82,7 +82,7 @@ public class PartitionAlignmentTest {
         final Vertex localProducer = dag.newVertex("localProducer", supplierOfListProducer)
                                         .localParallelism(1);
         final Vertex processor = dag.newVertex("processor", Counter::new).localParallelism(localProcessorCount);
-        final Vertex consumer = dag.newVertex("consumer", writeList("numbers"))
+        final Vertex consumer = dag.newVertex("consumer", SinkProcessors.writeListP("numbers"))
                                    .localParallelism(1);
 
         dag.edge(between(distributedProducer, processor).partitioned(wholeItem(), partitioner).distributed())

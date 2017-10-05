@@ -17,12 +17,12 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.core.TopologyChangeTest.MockSupplier;
 import com.hazelcast.jet.core.TopologyChangeTest.StuckProcessor;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.test.ExpectedRuntimeException;

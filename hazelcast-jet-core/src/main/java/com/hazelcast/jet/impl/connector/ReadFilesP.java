@@ -40,7 +40,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 
 /**
- * @see SourceProcessors#readFiles(String, Charset, String)
+ * @see SourceProcessors#readFilesP(String, Charset, String)
  */
 public final class ReadFilesP extends AbstractProcessor implements Closeable {
 
@@ -127,7 +127,7 @@ public final class ReadFilesP extends AbstractProcessor implements Closeable {
     }
 
     /**
-     * Private API. Use {@link SourceProcessors#readFiles(String, Charset, String)}
+     * Private API. Use {@link SourceProcessors#readFilesP(String, Charset, String)}
      * instead.
      */
     public static ProcessorSupplier supplier(@Nonnull String directory, @Nonnull String charset, @Nonnull String glob) {

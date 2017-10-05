@@ -53,9 +53,9 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
-import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfs;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfsP;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
@@ -90,7 +90,7 @@ public class WriteHdfsPTest extends JetTestSupport {
         instance.getMap(mapName).putAll(map);
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", readMap(mapName))
+        Vertex producer = dag.newVertex("producer", readMapP(mapName))
                              .localParallelism(1);
 
         Path path = getPath();
@@ -104,7 +104,7 @@ public class WriteHdfsPTest extends JetTestSupport {
         FileOutputFormat.setOutputPath(conf, path);
 
         Vertex consumer = dag.newVertex("consumer",
-                HdfsProcessors.<Entry<IntWritable, IntWritable>, IntWritable, IntWritable>writeHdfs(
+                HdfsProcessors.<Entry<IntWritable, IntWritable>, IntWritable, IntWritable>writeHdfsP(
                         conf, Entry::getKey, Entry::getValue))
                              .localParallelism(4);
 
@@ -118,10 +118,10 @@ public class WriteHdfsPTest extends JetTestSupport {
         JobConf readJobConf = new JobConf();
         readJobConf.setInputFormat(inputFormatClass);
         FileInputFormat.addInputPath(readJobConf, path);
-        producer = dag.newVertex("producer", readHdfs(readJobConf, Util::entry))
+        producer = dag.newVertex("producer", readHdfsP(readJobConf, Util::entry))
                       .localParallelism(8);
 
-        consumer = dag.newVertex("consumer", writeList("results"))
+        consumer = dag.newVertex("consumer", writeListP("results"))
                       .localParallelism(1);
 
         dag.edge(between(producer, consumer));

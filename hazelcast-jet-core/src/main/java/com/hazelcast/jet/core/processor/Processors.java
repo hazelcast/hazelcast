@@ -155,31 +155,31 @@ import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
  * </tr><tr>
  *     <th>batch,<br>no grouping</th>
  *
- *     <td>{@link #aggregate(AggregateOperation1) aggregate()}</td>
- *     <td>{@link #accumulate(AggregateOperation1) accumulate()}</td>
- *     <td>{@link #combine(AggregateOperation1) combine()}</td>
+ *     <td>{@link #aggregateP(AggregateOperation1) aggregate()}</td>
+ *     <td>{@link #accumulateP(AggregateOperation1) accumulate()}</td>
+ *     <td>{@link #combineP(AggregateOperation1) combine()}</td>
  * </tr><tr>
  *     <th>batch, group by key</th>
  *
- *     <td>{@link #aggregateByKey(DistributedFunction, AggregateOperation1)
+ *     <td>{@link #aggregateByKeyP(DistributedFunction, AggregateOperation1)
  *          aggregateByKey()}</td>
- *     <td>{@link #accumulateByKey(DistributedFunction, AggregateOperation1)
+ *     <td>{@link #accumulateByKeyP(DistributedFunction, AggregateOperation1)
  *          accumulateByKey()}</td>
- *     <td>{@link #combineByKey(AggregateOperation) combineByKey()}</td>
+ *     <td>{@link #combineByKeyP(AggregateOperation) combineByKey()}</td>
  * </tr><tr>
  *     <th>stream, group by key<br>and aligned window</th>
  *
- *     <td>{@link #aggregateToSlidingWindow(DistributedFunction, DistributedToLongFunction,
+ *     <td>{@link #aggregateToSlidingWindowP(DistributedFunction, DistributedToLongFunction,
  *          TimestampKind, WindowDefinition, AggregateOperation1)
  *          aggregateToSlidingWindow()}</td>
- *     <td>{@link #accumulateByFrame(DistributedFunction, DistributedToLongFunction,
+ *     <td>{@link #accumulateByFrameP(DistributedFunction, DistributedToLongFunction,
  *          TimestampKind, WindowDefinition, AggregateOperation1)
  *          accumulateByFrame()}</td>
- *     <td>{@link #combineToSlidingWindow(WindowDefinition, AggregateOperation1)
+ *     <td>{@link #combineToSlidingWindowP(WindowDefinition, AggregateOperation1)
  *          combineToSlidingWindow()}</td>
  * </tr><tr>
  *     <th>stream, group by key<br>and session window</th>
- *     <td>{@link #aggregateToSessionWindow(long, DistributedToLongFunction,
+ *     <td>{@link #aggregateToSessionWindowP(long, DistributedToLongFunction,
  *          DistributedFunction, AggregateOperation1)
  *          aggregateToSessionWindow()}</td>
  *     <td>N/A</td>
@@ -212,7 +212,7 @@ public final class Processors {
      *            finishAccumulationFn()}
      */
     @Nonnull
-    public static <T, K, A, R> DistributedSupplier<Processor> aggregateByKey(
+    public static <T, K, A, R> DistributedSupplier<Processor> aggregateByKeyP(
             @Nonnull DistributedFunction<? super T, K> getKeyFn,
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp
     ) {
@@ -234,7 +234,7 @@ public final class Processors {
      * @param <A> type of accumulator returned from {@code aggrOp.createAccumulatorFn()}
      */
     @Nonnull
-    public static <T, K, A> DistributedSupplier<Processor> accumulateByKey(
+    public static <T, K, A> DistributedSupplier<Processor> accumulateByKeyP(
             @Nonnull DistributedFunction<? super T, K> getKeyFn,
             @Nonnull AggregateOperation1<? super T, A, ?> aggrOp
     ) {
@@ -259,7 +259,7 @@ public final class Processors {
      * @param <R> type of the finished result returned from {@code aggrOp.finishAccumulationFn()}
      */
     @Nonnull
-    public static <K, A, R> DistributedSupplier<Processor> coAggregateByKey(
+    public static <K, A, R> DistributedSupplier<Processor> coAggregateByKeyP(
             @Nonnull List<DistributedFunction<?, ? extends K>> getKeyFs,
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
@@ -285,7 +285,7 @@ public final class Processors {
      * @param <A> type of accumulator returned from {@code aggrOp.createAccumulatorFn()}
      */
     @Nonnull
-    public static <K, A> DistributedSupplier<Processor> coAccumulateByKey(
+    public static <K, A> DistributedSupplier<Processor> coAccumulateByKeyP(
             @Nonnull List<DistributedFunction<?, ? extends K>> getKeyFs,
             @Nonnull AggregateOperation<A, ?> aggrOp
     ) {
@@ -297,7 +297,7 @@ public final class Processors {
      * two-stage group-and-aggregate setup. Each processor applies the {@link
      * AggregateOperation1#combineFn() combine} aggregation primitive to the
      * entries received from several upstream instances of {@link
-     * #accumulateByKey(DistributedFunction, AggregateOperation1)
+     * #accumulateByKeyP(DistributedFunction, AggregateOperation1)
      * accumulateByKey()}. After exhausting all its input it emits one
      * {@code Map.Entry<K, R>} per distinct key.
      * <p>
@@ -310,7 +310,7 @@ public final class Processors {
      *            {@code aggrOp.finishAccumulationFn()}
      */
     @Nonnull
-    public static <A, R> DistributedSupplier<Processor> combineByKey(
+    public static <A, R> DistributedSupplier<Processor> combineByKeyP(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
         return () -> new CoGroupP<>(Entry::getKey, aggrOp.withCombiningAccumulateFn(Entry<Object, A>::getValue));
@@ -333,7 +333,7 @@ public final class Processors {
      *            finishAccumulationFn()}
      */
     @Nonnull
-    public static <T, A, R> DistributedSupplier<Processor> aggregate(
+    public static <T, A, R> DistributedSupplier<Processor> aggregateP(
             @Nonnull AggregateOperation1<T, A, R> aggrOp
     ) {
         return () -> new AggregateP<>(aggrOp);
@@ -356,7 +356,7 @@ public final class Processors {
      *            finishAccumulationFn()}
      */
     @Nonnull
-    public static <T, A, R> DistributedSupplier<Processor> accumulate(
+    public static <T, A, R> DistributedSupplier<Processor> accumulateP(
             @Nonnull AggregateOperation1<T, A, R> aggrOp
     ) {
         return () -> new AggregateP<>(aggrOp.withFinishFn(identity()));
@@ -379,7 +379,7 @@ public final class Processors {
      *            finishAccumulationFn()}
      */
     @Nonnull
-    public static <T, A, R> DistributedSupplier<Processor> combine(
+    public static <T, A, R> DistributedSupplier<Processor> combineP(
             @Nonnull AggregateOperation1<T, A, R> aggrOp
     ) {
         return () -> new AggregateP<>(aggrOp.withCombiningAccumulateFn(identity()));
@@ -405,14 +405,14 @@ public final class Processors {
      * TimestampedEntry&lt;K, A>} so there is one item per key per window position.
      */
     @Nonnull
-    public static <T, K, A, R> DistributedSupplier<Processor> aggregateToSlidingWindow(
+    public static <T, K, A, R> DistributedSupplier<Processor> aggregateToSlidingWindowP(
             @Nonnull DistributedFunction<? super T, K> getKeyFn,
             @Nonnull DistributedToLongFunction<? super T> getTimestampFn,
             @Nonnull TimestampKind timestampKind,
             @Nonnull WindowDefinition windowDef,
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp
     ) {
-        return Processors.<T, K, A, R>aggregateByKeyAndWindow(getKeyFn, getTimestampFn, timestampKind,
+        return Processors.<T, K, A, R>aggregateByKeyAndWindowP(getKeyFn, getTimestampFn, timestampKind,
                 windowDef, aggrOp, true);
     }
 
@@ -443,7 +443,7 @@ public final class Processors {
      *            createAccumulatorFn()}
      */
     @Nonnull
-    public static <T, K, A> DistributedSupplier<Processor> accumulateByFrame(
+    public static <T, K, A> DistributedSupplier<Processor> accumulateByFrameP(
             @Nonnull DistributedFunction<? super T, K> getKeyFn,
             @Nonnull DistributedToLongFunction<? super T> getTimestampFn,
             @Nonnull TimestampKind timestampKind,
@@ -451,7 +451,7 @@ public final class Processors {
             @Nonnull AggregateOperation1<? super T, A, ?> aggrOp
     ) {
         WindowDefinition tumblingByFrame = windowDef.toTumblingByFrame();
-        return Processors.<T, K, A, A>aggregateByKeyAndWindow(getKeyFn, getTimestampFn, timestampKind, tumblingByFrame,
+        return Processors.<T, K, A, A>aggregateByKeyAndWindowP(getKeyFn, getTimestampFn, timestampKind, tumblingByFrame,
                 aggrOp.withFinishFn(identity()), false
         );
     }
@@ -462,7 +462,7 @@ public final class Processors {
      * class Javadoc} for an explanation of aggregation stages). Each
      * processor applies the {@link AggregateOperation1#combineFn() combine}
      * aggregation primitive to frames received from several upstream instances
-     * of {@link #accumulateByFrame(
+     * of {@link #accumulateByFrameP(
      *      DistributedFunction, DistributedToLongFunction,
      *      TimestampKind, WindowDefinition, AggregateOperation1)
      * accumulateByFrame()}. It emits sliding window results labeled with
@@ -483,11 +483,11 @@ public final class Processors {
      *            finishAccumulationFn()}
      */
     @Nonnull
-    public static <K, A, R> DistributedSupplier<Processor> combineToSlidingWindow(
+    public static <K, A, R> DistributedSupplier<Processor> combineToSlidingWindowP(
             @Nonnull WindowDefinition windowDef,
             @Nonnull AggregateOperation1<?, A, R> aggrOp
     ) {
-        return aggregateByKeyAndWindow(
+        return aggregateByKeyAndWindowP(
                 TimestampedEntry::getKey, TimestampedEntry::getTimestamp, TimestampKind.FRAME,
                 windowDef, aggrOp.withCombiningAccumulateFn(TimestampedEntry<K, A>::getValue), true
         );
@@ -512,7 +512,7 @@ public final class Processors {
      * @param <R> type of the aggregated result
      */
     @Nonnull
-    private static <T, K, A, R> DistributedSupplier<Processor> aggregateByKeyAndWindow(
+    private static <T, K, A, R> DistributedSupplier<Processor> aggregateByKeyAndWindowP(
             @Nonnull DistributedFunction<? super T, K> getKeyFn,
             @Nonnull DistributedToLongFunction<? super T> getTimestampFn,
             @Nonnull TimestampKind timestampKind,
@@ -555,7 +555,7 @@ public final class Processors {
      * @param <R> type of the session window's result value
      */
     @Nonnull
-    public static <T, K, A, R> DistributedSupplier<Processor> aggregateToSessionWindow(
+    public static <T, K, A, R> DistributedSupplier<Processor> aggregateToSessionWindowP(
             long sessionTimeout,
             @Nonnull DistributedToLongFunction<? super T> getTimestampFn,
             @Nonnull DistributedFunction<? super T, K> getKeyFn,
@@ -573,7 +573,7 @@ public final class Processors {
      * @param <T> the type of the stream item
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> insertWatermarks(
+    public static <T> DistributedSupplier<Processor> insertWatermarksP(
             @Nonnull DistributedToLongFunction<T> getTimestampF,
             @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyF,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy
@@ -592,7 +592,7 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, R> DistributedSupplier<Processor> map(
+    public static <T, R> DistributedSupplier<Processor> mapP(
             @Nonnull DistributedFunction<T, R> mapper
     ) {
         return () -> {
@@ -612,7 +612,7 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> filter(@Nonnull DistributedPredicate<T> predicate) {
+    public static <T> DistributedSupplier<Processor> filterP(@Nonnull DistributedPredicate<T> predicate) {
         return () -> {
             final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, T>(item -> {
@@ -632,7 +632,7 @@ public final class Processors {
      * @param <R> emitted item type
      */
     @Nonnull
-    public static <T, R> DistributedSupplier<Processor> flatMap(
+    public static <T, R> DistributedSupplier<Processor> flatMapP(
             @Nonnull DistributedFunction<T, ? extends Traverser<? extends R>> mapper
     ) {
         return () -> new TransformP<T, R>(mapper);
@@ -643,7 +643,7 @@ public final class Processors {
      * does nothing with it.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> noop() {
+    public static DistributedSupplier<Processor> noopP() {
         return NoopP::new;
     }
 
@@ -653,7 +653,7 @@ public final class Processors {
      * that are {@code instanceof} {@link AbstractProcessor}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier nonCooperative(@Nonnull ProcessorMetaSupplier wrapped) {
+    public static ProcessorMetaSupplier nonCooperativeP(@Nonnull ProcessorMetaSupplier wrapped) {
         return new WrappingProcessorMetaSupplier(wrapped, p -> {
             ((AbstractProcessor) p).setCooperative(false);
             return p;
@@ -666,7 +666,7 @@ public final class Processors {
      * that are {@code instanceof} {@link AbstractProcessor}.
      */
     @Nonnull
-    public static ProcessorSupplier nonCooperative(@Nonnull ProcessorSupplier wrapped) {
+    public static ProcessorSupplier nonCooperativeP(@Nonnull ProcessorSupplier wrapped) {
         return new WrappingProcessorSupplier(wrapped, p -> {
             ((AbstractProcessor) p).setCooperative(false);
             return p;
@@ -679,7 +679,7 @@ public final class Processors {
      * processors that are {@code instanceof} {@link AbstractProcessor}.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> nonCooperative(@Nonnull DistributedSupplier<Processor> wrapped) {
+    public static DistributedSupplier<Processor> nonCooperativeP(@Nonnull DistributedSupplier<Processor> wrapped) {
         return () -> {
             final Processor p = wrapped.get();
             ((AbstractProcessor) p).setCooperative(false);
@@ -687,7 +687,7 @@ public final class Processors {
         };
     }
 
-    /** A no-operation processor. See {@link #noop()} */
+    /** A no-operation processor. See {@link #noopP()} */
     private static class NoopP implements Processor {
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {

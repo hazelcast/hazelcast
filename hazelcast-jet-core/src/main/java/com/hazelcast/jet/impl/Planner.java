@@ -124,27 +124,27 @@ class Planner {
     }
 
     private void handleMap(AbstractStage stage, MapTransform map) {
-        PlannerVertex pv = addVertex(stage, "map." + randomSuffix(), Processors.map(map.mapFn));
+        PlannerVertex pv = addVertex(stage, "map." + randomSuffix(), Processors.mapP(map.mapFn));
         addEdges(stage, pv.v);
     }
 
     private void handleFilter(AbstractStage stage, FilterTransform filter) {
-        PlannerVertex pv = addVertex(stage, "filter." + randomSuffix(), Processors.filter(filter.filterFn));
+        PlannerVertex pv = addVertex(stage, "filter." + randomSuffix(), Processors.filterP(filter.filterFn));
         addEdges(stage, pv.v);
     }
 
     private void handleFlatMap(AbstractStage stage, FlatMapTransform flatMap) {
         PlannerVertex pv = addVertex(stage, "flatMap." + randomSuffix(),
-                Processors.flatMap(flatMap.flatMapFn()));
+                Processors.flatMapP(flatMap.flatMapFn()));
         addEdges(stage, pv.v);
     }
 
     private void handleGroupBy(AbstractStage stage, GroupByTransform<Object, Object, Object, Object> groupBy) {
         String name = "groupByKey." + randomSuffix() + ".stage";
         Vertex v1 = dag.newVertex(name + '1',
-                Processors.accumulateByKey(groupBy.keyFn(), groupBy.aggregateOperation()));
+                Processors.accumulateByKeyP(groupBy.keyFn(), groupBy.aggregateOperation()));
         PlannerVertex pv2 = addVertex(stage, name + '2',
-                Processors.combineByKey(groupBy.aggregateOperation()));
+                Processors.combineByKeyP(groupBy.aggregateOperation()));
         addEdges(stage, v1, e -> e.partitioned(groupBy.keyFn(), HASH_CODE));
         dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));
     }
@@ -153,9 +153,9 @@ class Planner {
         List<DistributedFunction<?, ?>> groupKeyFs = coGroup.groupKeyFs();
         String name = "coGroup." + randomSuffix() + ".stage";
         Vertex v1 = dag.newVertex(name + '1',
-                Processors.coAccumulateByKey(groupKeyFs, coGroup.aggregateOperation()));
+                Processors.coAccumulateByKeyP(groupKeyFs, coGroup.aggregateOperation()));
         PlannerVertex pv2 = addVertex(stage, name + '2',
-                Processors.combineByKey(coGroup.aggregateOperation()));
+                Processors.combineByKeyP(coGroup.aggregateOperation()));
         addEdges(stage, v1, (e, ord) -> e.partitioned(groupKeyFs.get(ord), HASH_CODE));
         dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));
     }

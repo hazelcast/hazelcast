@@ -42,7 +42,7 @@ class PeekPipe<T> extends AbstractIntermediatePipe<T, T> {
         String listName = uniqueListName();
         IList<T> list = context.getJetInstance().getList(listName);
         Vertex previous = upstream.buildDAG(dag);
-        Vertex writer = dag.newVertex("write-list-" + listName, SinkProcessors.writeList(listName));
+        Vertex writer = dag.newVertex("write-list-" + listName, SinkProcessors.writeListP(listName));
         if (upstream.isOrdered()) {
             writer.localParallelism(1);
         }

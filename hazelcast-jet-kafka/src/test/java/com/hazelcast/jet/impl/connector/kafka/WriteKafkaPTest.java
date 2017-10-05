@@ -38,7 +38,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static java.util.stream.IntStream.range;
 
 @Category(QuickTest.class)
@@ -60,14 +60,14 @@ public class WriteKafkaPTest extends KafkaTestSupport {
 
         instance.getMap("source").putAll(map);
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readMap("source"))
+        Vertex source = dag.newVertex("source", readMapP("source"))
                            .localParallelism(1);
 
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", brokerConnectionString);
         properties.setProperty("key.serializer", StringSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
-        Vertex sink = dag.newVertex("sink", KafkaProcessors.<Entry<String, String>, String, String>writeKafka(
+        Vertex sink = dag.newVertex("sink", KafkaProcessors.<Entry<String, String>, String, String>writeKafkaP(
                 topic, properties, Entry::getKey, Entry::getValue)).localParallelism(4);
 
         dag.edge(between(source, sink));

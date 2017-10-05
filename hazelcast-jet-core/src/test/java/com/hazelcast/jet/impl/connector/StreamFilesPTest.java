@@ -39,7 +39,7 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 
-import static com.hazelcast.jet.core.processor.SourceProcessors.streamFiles;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
 import static java.lang.Thread.interrupted;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -82,7 +82,7 @@ public class StreamFilesPTest extends JetTestSupport {
 
     @Test
     public void supplier() {
-        ProcessorSupplier supplier = streamFiles(workDir.getAbsolutePath(), UTF_8, "*");
+        ProcessorSupplier supplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*");
         assertEquals(1, supplier.get(1).size());
         supplier.complete(null);
     }

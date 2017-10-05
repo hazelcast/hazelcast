@@ -48,8 +48,8 @@ import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindow;
-import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow;
+import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
+import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
@@ -98,13 +98,13 @@ public class SlidingWindowPTest {
                 .andFinish(LongAccumulator::get);
 
         DistributedSupplier<Processor> procSupplier = singleStageProcessor
-                ? aggregateToSlidingWindow(
+                ? aggregateToSlidingWindowP(
                             t -> KEY,
                             Entry<Long, Long>::getKey,
                             TimestampKind.EVENT,
                             windowDef,
                             operation)
-                : combineToSlidingWindow(windowDef, operation);
+                : combineToSlidingWindowP(windowDef, operation);
 
         // new supplier to save the last supplied instance
         supplier = () -> lastSuppliedProcessor = (SlidingWindowP<?, ?, Long>) procSupplier.get();

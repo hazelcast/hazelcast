@@ -21,8 +21,6 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.stream.AbstractStreamTest;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedStream;
@@ -41,6 +39,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.of;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +50,7 @@ public class SourcesTest extends AbstractStreamTest {
     @Test
     public void testFile() throws IOException {
         File dir = createTempFile();
-        ProcessorSupplier processorSupplier = SourceProcessors.readFiles(dir.getAbsolutePath(), UTF_8, "*");
+        ProcessorSupplier processorSupplier = readFilesP(dir.getAbsolutePath(), UTF_8, "*");
         IStreamList<String> sink = DistributedStream
                 .<String>fromSource(getInstance(), ProcessorMetaSupplier.of(processorSupplier))
                 .flatMap(line -> Arrays.stream(line.split(" ")))
@@ -99,7 +99,7 @@ public class SourcesTest extends AbstractStreamTest {
                 if (i == 0) {
                     return new DummySource();
                 }
-                return Processors.noop().get();
+                return noopP().get();
             }).collect(Collectors.toList());
         }
     }

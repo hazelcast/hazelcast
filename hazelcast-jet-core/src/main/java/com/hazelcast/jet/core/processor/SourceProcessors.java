@@ -63,7 +63,7 @@ public final class SourceProcessors {
      * may miss and/or duplicate some entries.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readMap(@Nonnull String mapName) {
+    public static ProcessorMetaSupplier readMapP(@Nonnull String mapName) {
         return ReadWithPartitionIteratorP.readMap(mapName);
     }
 
@@ -87,7 +87,7 @@ public final class SourceProcessors {
      * may miss and/or duplicate some entries.
      */
     @Nonnull
-    public static <K, V, T> ProcessorMetaSupplier readMap(
+    public static <K, V, T> ProcessorMetaSupplier readMapP(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
@@ -96,12 +96,12 @@ public final class SourceProcessors {
     }
 
     /**
-     * Convenience for {@link #streamMap(String, DistributedPredicate,
+     * Convenience for {@link #streamMapP(String, DistributedPredicate,
      * DistributedFunction, boolean)} with no projection or filtering. It
      * emits {@link EventJournalMapEvent}s.
      */
     @Nonnull
-    public static ProcessorMetaSupplier streamMap(@Nonnull String mapName, boolean startFromLatestSequence) {
+    public static ProcessorMetaSupplier streamMapP(@Nonnull String mapName, boolean startFromLatestSequence) {
         return StreamEventJournalP.streamMap(mapName, null, null, startFromLatestSequence);
     }
 
@@ -131,10 +131,10 @@ public final class SourceProcessors {
      * @param <T>                     type of emitted item
      */
     @Nonnull
-    public static <T> ProcessorMetaSupplier streamMap(@Nonnull String mapName,
-                                                      DistributedPredicate<EventJournalMapEvent> predicate,
-                                                      DistributedFunction<EventJournalMapEvent, T> projection,
-                                                      boolean startFromLatestSequence) {
+    public static <T> ProcessorMetaSupplier streamMapP(@Nonnull String mapName,
+                                                       DistributedPredicate<EventJournalMapEvent> predicate,
+                                                       DistributedFunction<EventJournalMapEvent, T> projection,
+                                                       boolean startFromLatestSequence) {
         return StreamEventJournalP.streamMap(mapName, predicate, projection, startFromLatestSequence);
     }
 
@@ -149,7 +149,7 @@ public final class SourceProcessors {
      * may miss and/or duplicate some entries.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier readMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return ReadWithPartitionIteratorP.readMap(mapName, clientConfig);
     }
 
@@ -165,7 +165,7 @@ public final class SourceProcessors {
      * may miss and/or duplicate some entries.
      */
     @Nonnull
-    public static <K, V, T> ProcessorMetaSupplier readMap(
+    public static <K, V, T> ProcessorMetaSupplier readMapP(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
@@ -175,12 +175,12 @@ public final class SourceProcessors {
     }
 
     /**
-     * Convenience for {@link #streamMap(String, ClientConfig,
+     * Convenience for {@link #streamMapP(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, boolean)} with no projection
      * or filtering. It emits {@link EventJournalMapEvent}s.
      */
     @Nonnull
-    public static ProcessorMetaSupplier streamMap(
+    public static ProcessorMetaSupplier streamMapP(
             @Nonnull String mapName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence) {
         return StreamEventJournalP.streamMap(mapName, clientConfig, null, null, startFromLatestSequence);
     }
@@ -203,11 +203,11 @@ public final class SourceProcessors {
      * @param <T>                     type of emitted item
      */
     @Nonnull
-    public static <T> ProcessorMetaSupplier streamMap(@Nonnull String mapName,
-                                                      @Nonnull ClientConfig clientConfig,
-                                                      DistributedPredicate<EventJournalMapEvent> predicate,
-                                                      DistributedFunction<EventJournalMapEvent, T> projection,
-                                                      boolean startFromLatestSequence) {
+    public static <T> ProcessorMetaSupplier streamMapP(@Nonnull String mapName,
+                                                       @Nonnull ClientConfig clientConfig,
+                                                       DistributedPredicate<EventJournalMapEvent> predicate,
+                                                       DistributedFunction<EventJournalMapEvent, T> projection,
+                                                       boolean startFromLatestSequence) {
         return StreamEventJournalP.streamMap(mapName, clientConfig, predicate, projection, startFromLatestSequence);
     }
 
@@ -230,17 +230,17 @@ public final class SourceProcessors {
      * may miss and/or duplicate some entries.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
+    public static ProcessorMetaSupplier readCacheP(@Nonnull String cacheName) {
         return ReadWithPartitionIteratorP.readCache(cacheName);
     }
 
     /**
-     * Convenience for {@link #streamCache(String, DistributedPredicate,
+     * Convenience for {@link #streamCacheP(String, DistributedPredicate,
      * DistributedFunction, boolean)} with no projection or filtering. It emits
      * {@link EventJournalMapEvent}s.
      */
     @Nonnull
-    public static ProcessorMetaSupplier streamCache(@Nonnull String cacheName, boolean startFromLatestSequence) {
+    public static ProcessorMetaSupplier streamCacheP(@Nonnull String cacheName, boolean startFromLatestSequence) {
         return StreamEventJournalP.streamCache(cacheName, null, null, startFromLatestSequence);
     }
 
@@ -270,7 +270,7 @@ public final class SourceProcessors {
      * @param <T>                     type of emitted item
      */
     @Nonnull
-    public static <T> ProcessorMetaSupplier streamCache(
+    public static <T> ProcessorMetaSupplier streamCacheP(
             @Nonnull String cacheName,
             DistributedPredicate<EventJournalCacheEvent> predicate,
             DistributedFunction<EventJournalCacheEvent, T> projection,
@@ -290,17 +290,17 @@ public final class SourceProcessors {
      * may miss and/or duplicate some entries.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier readCacheP(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
         return ReadWithPartitionIteratorP.readCache(cacheName, clientConfig);
     }
 
     /**
-     * Convenience for {@link #streamCache(String, ClientConfig,
+     * Convenience for {@link #streamCacheP(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, boolean)} with no projection
      * or filtering. It emits {@link EventJournalMapEvent}s.
      */
     @Nonnull
-    public static ProcessorMetaSupplier streamCache(
+    public static ProcessorMetaSupplier streamCacheP(
             @Nonnull String cacheName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence
     ) {
         return StreamEventJournalP.streamCache(cacheName, clientConfig, null, null, startFromLatestSequence);
@@ -324,11 +324,11 @@ public final class SourceProcessors {
      * @param <T>                     type of emitted item
      */
     @Nonnull
-    public static <T> ProcessorMetaSupplier streamCache(@Nonnull String cacheName,
-                                                        @Nonnull ClientConfig clientConfig,
-                                                        DistributedPredicate<EventJournalCacheEvent> predicate,
-                                                        DistributedFunction<EventJournalCacheEvent, T> projection,
-                                                        boolean startFromLatestSequence) {
+    public static <T> ProcessorMetaSupplier streamCacheP(@Nonnull String cacheName,
+                                                         @Nonnull ClientConfig clientConfig,
+                                                         DistributedPredicate<EventJournalCacheEvent> predicate,
+                                                         DistributedFunction<EventJournalCacheEvent, T> projection,
+                                                         boolean startFromLatestSequence) {
         return StreamEventJournalP.streamCache(cacheName, clientConfig, predicate, projection, startFromLatestSequence);
     }
 
@@ -339,7 +339,7 @@ public final class SourceProcessors {
      * IMDG.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readList(@Nonnull String listName) {
+    public static ProcessorMetaSupplier readListP(@Nonnull String listName) {
         return ReadIListP.supplier(listName);
     }
 
@@ -351,7 +351,7 @@ public final class SourceProcessors {
      * IMDG.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier readListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return ReadIListP.supplier(listName, clientConfig);
     }
 
@@ -375,7 +375,7 @@ public final class SourceProcessors {
      * parallel instance sees some data until all other do.
      */
     @Nonnull
-    public static ProcessorSupplier streamSocket(
+    public static ProcessorSupplier streamSocketP(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
         return StreamSocketP.supplier(host, port, charset.name());
@@ -406,7 +406,7 @@ public final class SourceProcessors {
      *                  Use {@code "*"} for all files.
      */
     @Nonnull
-    public static ProcessorSupplier readFiles(
+    public static ProcessorSupplier readFilesP(
             @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
     ) {
         return ReadFilesP.supplier(directory, charset.name(), glob);
@@ -465,7 +465,7 @@ public final class SourceProcessors {
      *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
      *             Use {@code "*"} for all (non-special) files.
      */
-    public static ProcessorSupplier streamFiles(
+    public static ProcessorSupplier streamFilesP(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
         return StreamFilesP.supplier(watchedDirectory, charset.name(), glob);

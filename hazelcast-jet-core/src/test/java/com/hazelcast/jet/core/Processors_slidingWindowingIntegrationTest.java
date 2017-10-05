@@ -21,6 +21,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,11 +46,10 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.core.processor.Processors.accumulateByFrame;
-import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindow;
-import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow;
-import static com.hazelcast.jet.core.processor.Processors.insertWatermarks;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
+import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
+import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
+import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -102,15 +102,15 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         DAG dag = new DAG();
         boolean isBatchLocal = isBatch; // to prevent serialization of whole class
         Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatchLocal)).localParallelism(1);
-        Vertex insertPP = dag.newVertex("insertWmP", insertWatermarks(MyEvent::getTimestamp,
+        Vertex insertPP = dag.newVertex("insertWmP", insertWatermarksP(MyEvent::getTimestamp,
                 limitingLagAndLull(500, 1000), emitByFrame(wDef))).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeList("sink"));
+        Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
 
         dag.edge(between(source, insertPP).isolated());
 
         if (singleStageProcessor) {
             Vertex slidingWin = dag.newVertex("slidingWin",
-                    aggregateToSlidingWindow(MyEvent::getKey,
+                    aggregateToSlidingWindowP(MyEvent::getKey,
                             MyEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
             dag
                     .edge(between(insertPP, slidingWin).partitioned(MyEvent::getKey).distributed())
@@ -118,9 +118,9 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
         } else {
             Vertex accumulateByFrame = dag.newVertex("accumulateByFrame",
-                    accumulateByFrame(MyEvent::getKey,
+                    accumulateByFrameP(MyEvent::getKey,
                             MyEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
-            Vertex slidingWin = dag.newVertex("slidingWin", combineToSlidingWindow(wDef, counting));
+            Vertex slidingWin = dag.newVertex("slidingWin", combineToSlidingWindowP(wDef, counting));
             dag
                     .edge(between(insertPP, accumulateByFrame).partitioned(MyEvent::getKey))
                     .edge(between(accumulateByFrame, slidingWin).partitioned(entryKey()).distributed())

@@ -47,8 +47,8 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
-import static com.hazelcast.jet.core.processor.SourceProcessors.streamFiles;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
@@ -273,9 +273,9 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     private DAG buildDag() {
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", streamFiles(directory.getPath(), UTF_8, "*"))
+        Vertex reader = dag.newVertex("reader", streamFilesP(directory.getPath(), UTF_8, "*"))
                            .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeList(list.getName())).localParallelism(1);
+        Vertex writer = dag.newVertex("writer", writeListP(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;
     }

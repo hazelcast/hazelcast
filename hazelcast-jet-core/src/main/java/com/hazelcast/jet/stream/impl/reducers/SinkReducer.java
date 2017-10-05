@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.stream.impl.reducers;
 
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
-import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public class SinkReducer<T, K, V, R> implements DistributedCollector.Reducer<T, R> {
@@ -55,7 +55,7 @@ public class SinkReducer<T, K, V, R> implements DistributedCollector.Reducer<T, 
     public R reduce(StreamContext context, Pipe<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
-        Vertex mapper = dag.newVertex("map", Processors.map((T t) -> entry(keyMapper.apply(t), valueMapper.apply(t))));
+        Vertex mapper = dag.newVertex("map", Processors.mapP((T t) -> entry(keyMapper.apply(t), valueMapper.apply(t))));
         Vertex writer = dag.newVertex(sinkName, processorSupplier);
 
         dag.edge(between(previous, mapper));

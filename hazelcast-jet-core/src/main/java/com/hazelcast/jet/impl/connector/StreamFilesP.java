@@ -58,7 +58,7 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Private API. Access via {@link
- * com.hazelcast.jet.core.processor.SourceProcessors#streamFiles(String, Charset, String).
+ * com.hazelcast.jet.core.processor.SourceProcessors#streamFilesP(String, Charset, String).
  */
 public class StreamFilesP extends AbstractProcessor implements Closeable {
 
@@ -314,7 +314,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
 
     /**
      * Private API. Use {@link
-     * com.hazelcast.jet.core.processor.SourceProcessors#streamFiles(String, Charset, String)}
+     * com.hazelcast.jet.core.processor.SourceProcessors#streamFilesP(String, Charset, String)}
      * instead.
      */
     @Nonnull

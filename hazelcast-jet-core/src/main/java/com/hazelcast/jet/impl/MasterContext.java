@@ -66,7 +66,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.core.JobStatus.RESTARTING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMap;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
@@ -205,7 +205,7 @@ public class MasterContext {
                 DistributedFunction<Entry<Object, Object>, ?> projection = (Entry<Object, Object> e) ->
                         (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry<>(e) : e;
                 Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(),
-                        readMap(mapName, predicate, projection));
+                        readMapP(mapName, predicate, projection));
 
                 readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
 

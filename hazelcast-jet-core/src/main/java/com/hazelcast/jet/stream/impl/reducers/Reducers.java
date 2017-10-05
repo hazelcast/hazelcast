@@ -18,9 +18,10 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -31,9 +32,8 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
-import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
@@ -114,7 +114,7 @@ public final class Reducers {
 
     private static <T> Optional<T> execute(StreamContext context, DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writeList = dag.newVertex("write-" + listName, writeList(listName));
+        Vertex writeList = dag.newVertex("write-" + listName, SinkProcessors.writeListP(listName));
         dag.edge(between(combiner, writeList));
         IList<T> list = context.getJetInstance().getList(listName);
         executeJob(context, dag);

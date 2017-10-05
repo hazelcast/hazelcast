@@ -54,7 +54,7 @@ public final class SinkProcessors {
      * specified name.
      */
     @Nonnull
-    public static ProcessorSupplier writeMap(@Nonnull String mapName) {
+    public static ProcessorSupplier writeMapP(@Nonnull String mapName) {
         return HazelcastWriters.writeMap(mapName);
     }
 
@@ -65,7 +65,7 @@ public final class SinkProcessors {
      * {@code ClientConfig}.
      */
     @Nonnull
-    public static ProcessorSupplier writeMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorSupplier writeMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return HazelcastWriters.writeMap(mapName, clientConfig);
     }
 
@@ -75,7 +75,7 @@ public final class SinkProcessors {
      * specified name.
      */
     @Nonnull
-    public static ProcessorSupplier writeCache(@Nonnull String cacheName) {
+    public static ProcessorSupplier writeCacheP(@Nonnull String cacheName) {
         return HazelcastWriters.writeCache(cacheName);
     }
 
@@ -86,7 +86,7 @@ public final class SinkProcessors {
      * {@code ClientConfig}.
      */
     @Nonnull
-    public static ProcessorSupplier writeCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorSupplier writeCacheP(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
         return HazelcastWriters.writeCache(cacheName, clientConfig);
     }
 
@@ -95,7 +95,7 @@ public final class SinkProcessors {
      * receives to a Hazelcast {@code IList} with the specified name.
      */
     @Nonnull
-    public static ProcessorSupplier writeList(@Nonnull String listName) {
+    public static ProcessorSupplier writeListP(@Nonnull String listName) {
         return HazelcastWriters.writeList(listName);
     }
 
@@ -105,7 +105,7 @@ public final class SinkProcessors {
      * remote cluster identified by the supplied {@code ClientConfig}.
      */
     @Nonnull
-    public static ProcessorSupplier writeList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorSupplier writeListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return HazelcastWriters.writeList(listName, clientConfig);
     }
 
@@ -123,12 +123,12 @@ public final class SinkProcessors {
      * @param flushBufferFn flushes the buffer
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(
+    public static <B, T> ProcessorSupplier writeBufferedP(
             @Nonnull DistributedIntFunction<B> newBufferFn,
             @Nonnull DistributedBiConsumer<B, T> addToBufferFn,
             @Nonnull DistributedConsumer<B> flushBufferFn
     ) {
-        return writeBuffered(newBufferFn, addToBufferFn, flushBufferFn, noopConsumer());
+        return writeBufferedP(newBufferFn, addToBufferFn, flushBufferFn, noopConsumer());
     }
 
     /**
@@ -149,7 +149,7 @@ public final class SinkProcessors {
      * @param disposeBufferFn disposes of the buffer
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(
+    public static <B, T> ProcessorSupplier writeBufferedP(
             @Nonnull DistributedIntFunction<B> newBufferFn,
             @Nonnull DistributedBiConsumer<B, T> addToBufferFn,
             @Nonnull DistributedConsumer<B> flushBufferFn,
@@ -171,14 +171,14 @@ public final class SinkProcessors {
      * @param toStringFn a function that returns the string representation of an item
      * @param charset charset used to encode the string representation
      */
-    public static <T> ProcessorSupplier writeSocket(
+    public static <T> ProcessorSupplier writeSocketP(
             @Nonnull String host,
             int port,
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull Charset charset
     ) {
         String charsetName = charset.name();
-        return writeBuffered(
+        return writeBufferedP(
                 index -> uncheckCall(
                         () -> new BufferedWriter(new OutputStreamWriter(
                                 new Socket(host, port).getOutputStream(), charsetName))),
@@ -220,7 +220,7 @@ public final class SinkProcessors {
      *               an existing file
      */
     @Nonnull
-    public static <T> ProcessorSupplier writeFile(
+    public static <T> ProcessorSupplier writeFileP(
             @Nonnull String directoryName,
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull Charset charset,
@@ -230,7 +230,7 @@ public final class SinkProcessors {
     }
 
     /**
-     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
+     * Convenience for {@link #writeFileP(String, DistributedFunction, Charset,
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
@@ -238,14 +238,14 @@ public final class SinkProcessors {
      * @param toStringFn a function that returns the string representation of an item
      */
     @Nonnull
-    public static <T> ProcessorSupplier writeFile(
+    public static <T> ProcessorSupplier writeFileP(
             @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringFn
     ) {
-        return writeFile(directoryName, toStringFn, UTF_8, false);
+        return writeFileP(directoryName, toStringFn, UTF_8, false);
     }
 
     /**
-     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
+     * Convenience for {@link #writeFileP(String, DistributedFunction, Charset,
      * boolean)} with {@code Object.toString()} as the conversion function,
      * UTF-8 as the charset and with overwriting of existing files.
      *
@@ -253,7 +253,7 @@ public final class SinkProcessors {
      *                      if it doesn't exist. Must be the same on all members.
      */
     @Nonnull
-    public static ProcessorSupplier writeFile(@Nonnull String directoryName) {
-        return writeFile(directoryName, Object::toString, UTF_8, false);
+    public static ProcessorSupplier writeFileP(@Nonnull String directoryName) {
+        return writeFileP(directoryName, Object::toString, UTF_8, false);
     }
 }

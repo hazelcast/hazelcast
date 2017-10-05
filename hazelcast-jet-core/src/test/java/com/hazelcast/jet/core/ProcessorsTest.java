@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -66,7 +66,7 @@ public class ProcessorsTest {
     @Test
     public void map() {
         // Given
-        final Processor p = processorFrom(Processors.map(Object::toString));
+        final Processor p = processorFrom(Processors.mapP(Object::toString));
         inbox.add(1);
 
         // When
@@ -79,7 +79,7 @@ public class ProcessorsTest {
     @Test
     public void filter() {
         // Given
-        final Processor p = processorFrom(Processors.filter(o -> o.equals(1)));
+        final Processor p = processorFrom(Processors.filterP(o -> o.equals(1)));
         inbox.add(1);
         inbox.add(2);
         inbox.add(1);
@@ -100,7 +100,7 @@ public class ProcessorsTest {
     @Test
     public void flatMap() {
         // Given
-        final Processor p = processorFrom(Processors.flatMap(o -> traverseIterable(asList(o + "a", o + "b"))));
+        final Processor p = processorFrom(Processors.flatMapP(o -> traverseIterable(asList(o + "a", o + "b"))));
         inbox.add(1);
 
         // When
@@ -117,7 +117,7 @@ public class ProcessorsTest {
 
     @Test
     public void aggregateByKey() {
-        final Processor p = processorFrom(Processors.aggregateByKey(Object::toString, aggregateToListAndString()));
+        final Processor p = processorFrom(Processors.aggregateByKeyP(Object::toString, aggregateToListAndString()));
         // Given
         inbox.add(1);
         inbox.add(1);
@@ -148,7 +148,7 @@ public class ProcessorsTest {
 
     @Test
     public void accumulateByKey() {
-        final Processor p = processorFrom(Processors.accumulateByKey(Object::toString, aggregateToListAndString()));
+        final Processor p = processorFrom(Processors.accumulateByKeyP(Object::toString, aggregateToListAndString()));
         // Given
         inbox.add(1);
         inbox.add(1);
@@ -179,7 +179,7 @@ public class ProcessorsTest {
 
     @Test
     public void combineByKey() {
-        final Processor p = processorFrom(Processors.combineByKey(aggregateToListAndString()));
+        final Processor p = processorFrom(Processors.combineByKeyP(aggregateToListAndString()));
         // Given
         inbox.add(entry("1", asList(1, 2)));
         inbox.add(entry("1", asList(3, 4)));
@@ -210,7 +210,7 @@ public class ProcessorsTest {
 
     @Test
     public void aggregate() {
-        final Processor p = processorFrom(Processors.aggregate(aggregateToListAndString()));
+        final Processor p = processorFrom(Processors.aggregateP(aggregateToListAndString()));
         // Given
         inbox.add(1);
         inbox.add(2);
@@ -228,7 +228,7 @@ public class ProcessorsTest {
 
     @Test
     public void accumulate() {
-        final Processor p = processorFrom(Processors.accumulate(aggregateToListAndString()));
+        final Processor p = processorFrom(Processors.accumulateP(aggregateToListAndString()));
         // Given
         inbox.add(1);
         inbox.add(2);
@@ -246,7 +246,7 @@ public class ProcessorsTest {
 
     @Test
     public void combine() {
-        final Processor p = processorFrom(Processors.combine(aggregateToListAndString()));
+        final Processor p = processorFrom(Processors.combineP(aggregateToListAndString()));
         // Given
         inbox.add(singletonList(1));
         inbox.add(singletonList(2));
@@ -264,23 +264,23 @@ public class ProcessorsTest {
 
     @Test
     public void nonCooperative_ProcessorSupplier() {
-        ProcessorSupplier cooperativeSupplier = ProcessorSupplier.of(Processors.filter(alwaysTrue()));
-        ProcessorSupplier nonCooperativeSupplier = Processors.nonCooperative(cooperativeSupplier);
+        ProcessorSupplier cooperativeSupplier = ProcessorSupplier.of(Processors.filterP(alwaysTrue()));
+        ProcessorSupplier nonCooperativeSupplier = Processors.nonCooperativeP(cooperativeSupplier);
         assertTrue(cooperativeSupplier.get(1).iterator().next().isCooperative());
         assertFalse(nonCooperativeSupplier.get(1).iterator().next().isCooperative());
     }
 
     @Test
     public void nonCooperative_SupplierProcessor() {
-        DistributedSupplier<Processor> cooperativeSupplier = Processors.filter(alwaysTrue());
-        DistributedSupplier<Processor> nonCooperativeSupplier = Processors.nonCooperative(cooperativeSupplier);
+        DistributedSupplier<Processor> cooperativeSupplier = Processors.filterP(alwaysTrue());
+        DistributedSupplier<Processor> nonCooperativeSupplier = Processors.nonCooperativeP(cooperativeSupplier);
         assertTrue(cooperativeSupplier.get().isCooperative());
         assertFalse(nonCooperativeSupplier.get().isCooperative());
     }
 
     @Test
     public void noop() {
-        Processor p = processorFrom(Processors.noop());
+        Processor p = processorFrom(Processors.noopP());
         for (int i = 0; i < 100; i++) {
             inbox.add("a");
         }

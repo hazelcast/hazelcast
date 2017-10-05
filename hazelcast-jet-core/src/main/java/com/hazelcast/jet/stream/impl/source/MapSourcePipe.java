@@ -46,9 +46,9 @@ public class MapSourcePipe<K, V, E> extends AbstractSourcePipe<E> {
     @Override
     protected ProcessorMetaSupplier getSourceMetaSupplier() {
         if (projectionFn != null) {
-            return SourceProcessors.readMap(map.getName(), predicate, projectionFn);
+            return SourceProcessors.readMapP(map.getName(), predicate, projectionFn);
         }
-        return SourceProcessors.readMap(map.getName());
+        return SourceProcessors.readMapP(map.getName());
     }
 
     @Override

@@ -37,7 +37,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
-import static com.hazelcast.jet.core.processor.Processors.accumulateByFrame;
+import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -57,7 +57,7 @@ public class SlidingWindowP_stage1Test {
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) accumulateByFrame(
+        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) accumulateByFrameP(
                 x -> KEY,
                 Entry::getKey,
                 TimestampKind.EVENT,

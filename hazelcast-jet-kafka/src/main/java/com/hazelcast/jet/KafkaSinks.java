@@ -58,7 +58,7 @@ public final class KafkaSinks {
             DistributedFunction<? super E, V> extractValueFn
     ) {
         return Sinks.fromProcessor("writeKafka",
-                KafkaProcessors.writeKafka(topic, properties, extractKeyFn, extractValueFn));
+                KafkaProcessors.writeKafkaP(topic, properties, extractKeyFn, extractValueFn));
     }
 
     /**

@@ -18,10 +18,10 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.TopologyChangeTest.MockSupplier;
-import com.hazelcast.jet.core.TopologyChangeTest.StuckProcessor;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.TopologyChangeTest.MockSupplier;
+import com.hazelcast.jet.core.TopologyChangeTest.StuckProcessor;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

@@ -33,14 +33,14 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
- * @see SinkProcessors#writeFile(String, DistributedFunction, Charset, boolean)
+ * @see SinkProcessors#writeFileP(String, DistributedFunction, Charset, boolean)
  */
 public final class WriteFileP {
 
     private WriteFileP() { }
 
     /**
-     * Use {@link SinkProcessors#writeFile(String, DistributedFunction, Charset, boolean)}
+     * Use {@link SinkProcessors#writeFileP(String, DistributedFunction, Charset, boolean)}
      */
     public static <T> ProcessorSupplier supplier(
             @Nonnull String directoryName,
@@ -48,7 +48,7 @@ public final class WriteFileP {
             @Nonnull String charset,
             boolean append) {
 
-        return SinkProcessors.writeBuffered(
+        return SinkProcessors.writeBufferedP(
                 globalIndex -> createBufferedWriter(Paths.get(directoryName), globalIndex,
                         charset, append),
                 (fileWriter, item) -> uncheckRun(() -> {

@@ -33,8 +33,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.Processors.noop;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -105,7 +105,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("faulty",
                 ProcessorMetaSupplier.of(
                         (Address address) -> ProcessorSupplier.of(
-                                address.getPort() == localPort ? noop() : () -> {
+                                address.getPort() == localPort ? noopP() : () -> {
                                     throw e;
                                 })
                 )));
@@ -145,7 +145,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
         Vertex faulty = dag.newVertex("faulty", () -> new ProcessorThatFailsInComplete(e));
-        Vertex consumer = dag.newVertex("consumer", noop());
+        Vertex consumer = dag.newVertex("consumer", noopP());
         dag.edge(between(faulty, consumer));
 
         // Then

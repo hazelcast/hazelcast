@@ -39,8 +39,8 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readFiles;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -124,9 +124,9 @@ public class ReadFilesPTest extends JetTestSupport {
         }
 
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", readFiles(directory.getPath(), StandardCharsets.UTF_8, glob))
+        Vertex reader = dag.newVertex("reader", readFilesP(directory.getPath(), StandardCharsets.UTF_8, glob))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeList(list.getName())).localParallelism(1);
+        Vertex writer = dag.newVertex("writer", writeListP(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;
     }

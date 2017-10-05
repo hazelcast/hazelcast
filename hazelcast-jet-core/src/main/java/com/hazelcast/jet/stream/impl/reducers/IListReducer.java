@@ -18,13 +18,13 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public class IListReducer<T> implements Reducer<T, IStreamList<T>> {
@@ -40,7 +40,7 @@ public class IListReducer<T> implements Reducer<T, IStreamList<T>> {
         IStreamList<T> target = context.getJetInstance().getList(listName);
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag);
-        Vertex writer = dag.newVertex("write-list-" + listName, writeList(listName)).localParallelism(1);
+        Vertex writer = dag.newVertex("write-list-" + listName, SinkProcessors.writeListP(listName)).localParallelism(1);
 
         dag.edge(between(vertex, writer));
         executeJob(context, dag);

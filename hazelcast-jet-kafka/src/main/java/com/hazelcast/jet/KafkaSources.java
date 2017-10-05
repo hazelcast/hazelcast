@@ -55,6 +55,6 @@ public final class KafkaSources {
      * @param topics     the list of topics
      */
     public static <K, V> Source<Entry<K, V>> streamKafka(Properties properties, String... topics) {
-        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafka(properties, topics));
+        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, topics));
     }
 }

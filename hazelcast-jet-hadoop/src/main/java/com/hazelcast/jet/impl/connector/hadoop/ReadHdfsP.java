@@ -68,7 +68,7 @@ import static java.util.stream.Stream.concat;
 import static org.apache.hadoop.mapred.Reporter.NULL;
 
 /**
- * See {@link com.hazelcast.jet.core.processor.HdfsProcessors#readHdfs(
+ * See {@link com.hazelcast.jet.core.processor.HdfsProcessors#readHdfsP(
  * org.apache.hadoop.mapred.JobConf, DistributedBiFunction)}.
  */
 public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
@@ -309,7 +309,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
             return processorToSplits
                     .values().stream()
                     .map(splits -> splits.isEmpty()
-                            ? Processors.noop().get()
+                            ? Processors.noopP().get()
                             : new ReadHdfsP<>(splits.stream()
                             .map(IndexedInputSplit::getSplit)
                             .map(split -> uncheckCall(() ->

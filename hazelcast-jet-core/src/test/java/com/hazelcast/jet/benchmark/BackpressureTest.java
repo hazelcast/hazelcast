@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -47,8 +48,7 @@ import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.Processors.noop;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeMap;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -97,10 +97,10 @@ public class BackpressureTest extends JetTestSupport {
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
         Vertex source = dag.newVertex("source", ProcessorMetaSupplier.of((Address address) ->
-                ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : noop())
+                ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : noopP())
         ));
         Vertex hiccup = dag.newVertex("hiccup", HiccupP::new);
-        Vertex sink = dag.newVertex("sink", writeMap("counts"));
+        Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP("counts"));
 
         dag.edge(between(source, hiccup)
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))

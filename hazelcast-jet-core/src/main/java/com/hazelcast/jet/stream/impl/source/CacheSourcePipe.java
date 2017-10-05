@@ -36,7 +36,7 @@ public class CacheSourcePipe<K, V> extends AbstractSourcePipe<Entry<K, V>> {
 
     @Override
     protected ProcessorMetaSupplier getSourceMetaSupplier() {
-        return SourceProcessors.readCache(cache.getName());
+        return SourceProcessors.readCacheP(cache.getName());
     }
 
     @Override

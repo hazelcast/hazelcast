@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
- * @see SourceProcessors#streamSocket(String, int, Charset)
+ * @see SourceProcessors#streamSocketP(String, int, Charset)
  */
 public final class StreamSocketP extends AbstractProcessor implements Closeable {
 

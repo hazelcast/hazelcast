@@ -19,6 +19,7 @@ package com.hazelcast.jet.stream.impl.reducers;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -27,7 +28,6 @@ import com.hazelcast.jet.stream.impl.processor.AnyMatchP;
 import java.util.function.Predicate;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
@@ -47,7 +47,7 @@ public class AnyMatchReducer<T> implements Reducer<T, Boolean> {
         Vertex previous = upstream.buildDAG(dag);
 
         Vertex anyMatch = dag.newVertex("any-match", () -> new AnyMatchP<>(predicate));
-        Vertex writer = dag.newVertex("write-" + listName, writeList(listName));
+        Vertex writer = dag.newVertex("write-" + listName, SinkProcessors.writeListP(listName));
 
         dag.edge(between(previous, anyMatch))
            .edge(between(anyMatch, writer));

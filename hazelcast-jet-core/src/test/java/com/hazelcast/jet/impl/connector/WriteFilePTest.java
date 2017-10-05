@@ -46,8 +46,8 @@ import java.util.concurrent.Semaphore;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeFile;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readList;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -182,7 +182,7 @@ public class WriteFilePTest extends JetTestSupport {
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
                            .localParallelism(1);
         Vertex sink = dag.newVertex("sink",
-                writeFile(directory.toString(), Object::toString, StandardCharsets.UTF_8, false))
+                writeFileP(directory.toString(), Object::toString, StandardCharsets.UTF_8, false))
                          .localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -222,10 +222,10 @@ public class WriteFilePTest extends JetTestSupport {
         Path myFile = directory.resolve("subdir1/subdir2/" + file.getFileName());
 
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", readList(list.getName()))
+        Vertex reader = dag.newVertex("reader", readListP(list.getName()))
                            .localParallelism(1);
         Vertex writer = dag.newVertex("writer",
-                writeFile(myFile.toString(), Object::toString, StandardCharsets.UTF_8, false))
+                writeFileP(myFile.toString(), Object::toString, StandardCharsets.UTF_8, false))
                            .localParallelism(1);
         dag.edge(between(reader, writer));
         addItemsToList(0, 10);
@@ -304,9 +304,9 @@ public class WriteFilePTest extends JetTestSupport {
             charset = StandardCharsets.UTF_8;
         }
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", readList(list.getName()))
+        Vertex reader = dag.newVertex("reader", readListP(list.getName()))
                            .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(directory.toString(), toStringFn, charset, append))
+        Vertex writer = dag.newVertex("writer", writeFileP(directory.toString(), toStringFn, charset, append))
                            .localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;

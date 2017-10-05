@@ -104,7 +104,7 @@ public final class ReadIListP extends AbstractProcessor {
                 // return empty producer on all other nodes
                 return c -> {
                     assertCountIsOne(c);
-                    return singletonList(Processors.noop().get());
+                    return singletonList(Processors.noopP().get());
                 };
             };
         }

@@ -20,6 +20,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
@@ -34,7 +35,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
@@ -59,7 +59,7 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex("write-" + listName, writeList(listName));
+        Vertex writer = dag.newVertex("write-" + listName, SinkProcessors.writeListP(listName));
         dag.edge(between(combiner, writer));
         executeJob(context, dag);
         IList<R> list = context.getJetInstance().getList(listName);

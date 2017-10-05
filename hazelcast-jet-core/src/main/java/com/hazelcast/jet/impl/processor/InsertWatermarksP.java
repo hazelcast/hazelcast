@@ -33,7 +33,7 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * A processor that inserts watermark into a data stream. See
- * {@link com.hazelcast.jet.core.processor.Processors#insertWatermarks(DistributedToLongFunction,
+ * {@link com.hazelcast.jet.core.processor.Processors#insertWatermarksP(DistributedToLongFunction,
  * com.hazelcast.jet.function.DistributedSupplier,
  * WatermarkEmissionPolicy) Processors.insertWatermarks()}.
  *

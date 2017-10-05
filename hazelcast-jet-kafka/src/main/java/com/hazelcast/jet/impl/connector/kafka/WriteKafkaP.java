@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#writeKafka(
+ * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#writeKafkaP(
  *      String, Properties, com.hazelcast.jet.function.DistributedFunction,
  *      com.hazelcast.jet.function.DistributedFunction)
  * KafkaProcessors.writeKafka()}.
