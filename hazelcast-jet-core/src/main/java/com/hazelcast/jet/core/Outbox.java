@@ -22,9 +22,12 @@ import javax.annotation.Nonnull;
 /**
  * Data sink for a {@link Processor}. The outbox consists of individual
  * output buckets, one per outbound edge of the vertex represented by the
- * associated processor. The processor must deliver its output items, separated by destination edge,
- * into the outbox by calling {@link #offer(int, Object)} or {@link
- * #offer(Object)}.
+ * associated processor and one for the snapshot state.
+ * The processor must deliver its output items separated by destination
+ * edge, into the outbox by calling {@link #offer(int, Object)} or
+ * {@link #offer(Object)}. The items for the snapshot state can be delivered
+ * via {@link #offerToSnapshot(Object, Object)} during
+ * calls to {@link Processor#saveToSnapshot() saveToSnapshot()}.
  * <p>
  * Outbox might not be able to accept the item if it is already full. The
  * processor must check the return value of {@code offer()} and refrain from
@@ -61,6 +64,23 @@ public interface Outbox {
      */
     @CheckReturnValue
     boolean offer(int[] ordinals, @Nonnull Object item);
+
+    /**
+     * Offers the specified key and value pair to the processor's snapshot storage.
+     * <p>
+     * During a snapshot restore the type of key offered determines which processors
+     * receive the key and value pair. If the key is of type {@link BroadcastKey},
+     * the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning and
+     * only a single processor instance will receive the key.
+     *
+     * The methods in this class may only be called from inside the
+     * {@link Processor#saveToSnapshot()} method.
+     *
+     * @return whether the outbox fully accepted the item
+     */
+    @CheckReturnValue
+    boolean offerToSnapshot(@Nonnull Object key, @Nonnull Object value);
 
     /**
      * Offers the item to all edges. See {@link #offer(int, Object)} for more

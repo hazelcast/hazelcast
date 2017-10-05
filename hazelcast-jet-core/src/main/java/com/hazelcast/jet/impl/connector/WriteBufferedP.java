@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
@@ -51,7 +50,7 @@ public final class WriteBufferedP<B, T> implements Processor, Closeable {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         this.buffer = newBufferFn.apply(context.globalProcessorIndex());
     }
 

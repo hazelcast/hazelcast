@@ -166,7 +166,7 @@ public class SessionWindowPTest {
         System.out.format("keyCount %,d eventsPerKey %,d wmInterval %,d%n", keyCount, eventsPerKey, wmInterval);
         TestOutbox outbox = new TestOutbox(1024);
         supplier.get(); // called for side-effect of assigning to lastSuppliedProcessor
-        lastSuppliedProcessor.init(outbox, outbox, new TestProcessorContext());
+        lastSuppliedProcessor.init(outbox, new TestProcessorContext());
 
         for (long idx = 0; idx < eventsPerKey; idx++) {
             long timestampBase = idx * timestampStep;

@@ -269,7 +269,7 @@ public class InsertWatermarksPTest {
 
     private void doTest(List<Object> input, List<Object> expectedOutput) {
         p = new InsertWatermarksP<>(Item::getTimestamp, wmPolicy, wmEmissionPolicy);
-        p.init(outbox, outbox, context);
+        p.init(outbox, context);
 
         for (Object inputItem : input) {
             if (inputItem instanceof Tick) {

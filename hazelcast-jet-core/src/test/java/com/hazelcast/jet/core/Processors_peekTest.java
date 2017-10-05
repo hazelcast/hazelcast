@@ -228,7 +228,7 @@ public class Processors_peekTest {
     }
 
     private void assertPeekInput() {
-        wrappedP.init(mock(Outbox.class), mock(SnapshotOutbox.class), context);
+        wrappedP.init(mock(Outbox.class), context);
 
         TestInbox inbox = new TestInbox();
         inbox.add(0);
@@ -249,7 +249,7 @@ public class Processors_peekTest {
 
     private void assertPeekOutput() {
         TestOutbox outbox = new TestOutbox(1, 1);
-        wrappedP.init(outbox, mock(SnapshotOutbox.class), context);
+        wrappedP.init(outbox, context);
 
         wrappedP.complete();
         verify(logger).info("Output to 0: " + format(0));
@@ -271,7 +271,7 @@ public class Processors_peekTest {
 
     private void assertPeekSnapshot() {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
-        wrappedP.init(outbox, outbox, context);
+        wrappedP.init(outbox, context);
 
         wrappedP.saveToSnapshot();
         verify(logger).info("Output to snapshot: " + formatEntry(0));
@@ -295,12 +295,10 @@ public class Processors_peekTest {
 
     abstract static class TestProcessor implements Processor {
         Outbox outbox;
-        SnapshotOutbox ssOutbox;
 
         @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
+        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
             this.outbox = outbox;
-            this.ssOutbox = snapshotOutbox;
         }
 
         @Override
@@ -361,7 +359,7 @@ public class Processors_peekTest {
 
         @Override
         public boolean saveToSnapshot() {
-            return ssOutbox.offer(counter, counter);
+            return outbox.offerToSnapshot(counter, counter);
         }
     }
 }

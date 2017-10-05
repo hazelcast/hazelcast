@@ -291,7 +291,7 @@ public class ProcessorsTest {
 
     private Processor processorFrom(Supplier<Processor> supplier) {
         Processor p = supplier.get();
-        p.init(outbox, outbox, context);
+        p.init(outbox, context);
         return p;
     }
 

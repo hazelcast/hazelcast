@@ -54,9 +54,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <p>
  * The test process does the following:
  * <ul>
- *     <li>initializes the processor by calling {@link Processor#init(
- *     com.hazelcast.jet.core.Outbox, com.hazelcast.jet.core.SnapshotOutbox,
- *     Processor.Context) Processor.init()}
+ *     <li>initializes the processor by calling
+ *     {@link Processor#init(com.hazelcast.jet.core.Outbox, Processor.Context) Processor.init()}
  *
  *     <li>does snapshot+restore (optional, see below)
  *
@@ -96,7 +95,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * A 1-capacity outbox will be provided, which will additionally be full in
  * every other call to {@code process()}. This will test the edge case: the
  * {@code process()} method is called even when the outbox is full to give
- * the processor a chance to process the inbox. The snapshot outbox will
+ * the processor a chance to process the inbox. The snapshot bucket will
  * also have capacity of 1.
  * <h4>Cooperative processors</h4>
  * For cooperative processors, time spent in each call to processing method
@@ -301,7 +300,7 @@ public final class TestSupport {
         List<Object> actualOutput = new ArrayList<>();
 
         // create instance of your processor and call the init() method
-        processor[0].init(outbox, outbox, new TestProcessorContext());
+        processor[0].init(outbox, new TestProcessorContext());
 
         // do snapshot+restore before processing any item. This will test saveToSnapshot() in this edge case
         snapshotAndRestore(processor, outbox, actualOutput, doSnapshots);
@@ -378,7 +377,7 @@ public final class TestSupport {
 
         // restore state to new processor
         processor[0] = supplier.get();
-        processor[0].init(outbox, outbox, new TestProcessorContext());
+        processor[0].init(outbox, new TestProcessorContext());
 
         if (snapshotInbox.isEmpty()) {
             // don't call finishSnapshotRestore, if snapshot was empty

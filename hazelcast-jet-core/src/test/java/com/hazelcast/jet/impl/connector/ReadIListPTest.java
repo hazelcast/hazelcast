@@ -51,7 +51,7 @@ public class ReadIListPTest {
         final TestOutbox outbox = new TestOutbox(2);
         final Queue<Object> bucket = outbox.queueWithOrdinal(0);
         final ReadIListP r = new ReadIListP(asList(1, 2, 3, 4));
-        r.init(outbox, outbox, Mockito.mock(Processor.Context.class));
+        r.init(outbox, Mockito.mock(Processor.Context.class));
 
         // When
         assertFalse(r.complete());

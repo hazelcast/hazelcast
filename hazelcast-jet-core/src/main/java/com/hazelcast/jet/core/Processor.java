@@ -48,14 +48,14 @@ import javax.annotation.Nonnull;
 public interface Processor {
 
     /**
-     * Initializes this processor with the outboxes that the processing methods
+     * Initializes this processor with the outbox that the processing methods
      * must use to deposit their output items. This method will be called
      * exactly once and strictly before any calls to processing methods ({@link
      * #process(int, Inbox)} and {@link #complete()}).
      * <p>
      * The default implementation does nothing.
      */
-    default void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
+    default void init(@Nonnull Outbox outbox, @Nonnull Context context) {
     }
 
     /**
@@ -198,7 +198,7 @@ public interface Processor {
 
     /**
      * Context passed to the processor in the
-     * {@link #init(Outbox, SnapshotOutbox, Processor.Context) init()} call.
+     * {@link #init(Outbox, Context) init()} call.
      */
     interface Context {
 

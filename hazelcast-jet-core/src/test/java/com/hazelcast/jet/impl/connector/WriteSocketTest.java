@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
@@ -73,7 +72,7 @@ public class WriteSocketTest extends JetTestSupport {
 
         Processor p = writeSocketP("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8)
                 .get(1).iterator().next();
-        p.init(mock(Outbox.class), mock(SnapshotOutbox.class), new TestProcessorContext());
+        p.init(mock(Outbox.class), new TestProcessorContext());
         p.process(0, inbox);
         p.complete();
         assertTrueEventually(() -> assertTrue(counter.get() >= ITEM_COUNT));

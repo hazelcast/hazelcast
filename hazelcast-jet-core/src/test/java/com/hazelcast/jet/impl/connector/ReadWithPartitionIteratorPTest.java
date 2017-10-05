@@ -55,7 +55,7 @@ public class ReadWithPartitionIteratorPTest {
                 new ReadWithPartitionIteratorP<>(p -> content[p], partitions);
         TestOutbox outbox = new TestOutbox(3);
         Queue<Object> bucket = outbox.queueWithOrdinal(0);
-        r.init(outbox, outbox, mock(Processor.Context.class));
+        r.init(outbox, mock(Processor.Context.class));
 
         // When
         assertFalse(r.complete());

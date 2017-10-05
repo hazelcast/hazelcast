@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.core.Outbox;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.nio.serialization.Data;
@@ -32,7 +31,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
-public class OutboxImpl implements Outbox, SnapshotOutbox {
+public class OutboxImpl implements Outbox {
 
     private final OutboundCollector[] outstreams;
     private final ProgressTracker progTracker;
@@ -123,7 +122,7 @@ public class OutboxImpl implements Outbox, SnapshotOutbox {
     }
 
     @Override
-    public final boolean offer(Object key, Object value) {
+    public final boolean offerToSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (snapshotEdge == null) {
             throw new IllegalStateException("Outbox does not have snapshot queue");
         }

@@ -19,7 +19,6 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.core.Outbox;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.impl.execution.OutboundCollector;
 import com.hazelcast.jet.impl.execution.OutboxImpl;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -38,7 +37,7 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
 /**
  * Implements {@code Outbox} with an array of {@link ArrayDeque}s.
  */
-public final class TestOutbox implements Outbox, SnapshotOutbox {
+public final class TestOutbox implements Outbox {
 
     private static final SerializationService IDENTITY_SERIALIZER = new MockSerializationService();
 
@@ -113,8 +112,8 @@ public final class TestOutbox implements Outbox, SnapshotOutbox {
     }
 
     @Override
-    public boolean offer(Object key, Object value) {
-        return outbox.offer(key, value);
+    public boolean offerToSnapshot(Object key, Object value) {
+        return outbox.offerToSnapshot(key, value);
     }
 
     /**

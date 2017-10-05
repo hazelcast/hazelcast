@@ -50,7 +50,7 @@ public class OutboxImplTest {
 
     @Test
     public void when_offer3_then_rateLimited() {
-        do_when_offer_then_rateLimited(e -> outbox.offer("key", "value"));
+        do_when_offer_then_rateLimited(e -> outbox.offerToSnapshot("key", "value"));
     }
 
     @Test

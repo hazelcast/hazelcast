@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -52,7 +51,7 @@ public final class PeekWrappedP<T> implements Processor {
     private final boolean peekSnapshot;
 
     public PeekWrappedP(@Nonnull Processor wrappedProcessor, @Nonnull DistributedFunction<T, String> toStringFn,
-            @Nonnull Predicate<T> shouldLogFn, boolean peekInput, boolean peekOutput, boolean peekSnapshot) {
+                        @Nonnull Predicate<T> shouldLogFn, boolean peekInput, boolean peekOutput, boolean peekSnapshot) {
         checkNotNull(wrappedProcessor, "wrappedProcessor");
         checkNotNull(toStringFn, "toStringFn");
         checkNotNull(shouldLogFn, "shouldLogFn");
@@ -67,22 +66,10 @@ public final class PeekWrappedP<T> implements Processor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         logger = context.logger();
-        if (peekSnapshot) {
-            SnapshotOutbox wrappedOutbox = snapshotOutbox;
-            snapshotOutbox = (key, value) -> {
-                if (!wrappedOutbox.offer(key, value)) {
-                    return false;
-                }
-                log("Output to snapshot", (T) entry(key, value));
-                return true;
-            };
-        }
-        if (peekOutput) {
-            outbox = new LoggingOutbox(outbox);
-        }
-        wrappedProcessor.init(outbox, snapshotOutbox, context);
+        outbox = new LoggingOutbox(outbox, peekOutput, peekSnapshot);
+        wrappedProcessor.init(outbox, context);
     }
 
     @Override
@@ -142,8 +129,7 @@ public final class PeekWrappedP<T> implements Processor {
 
         private Inbox wrappedInbox;
 
-        /** A flag, whether the last peeked item was already logged */
-        private boolean wasLogged;
+        private boolean peekedItemLogged;
         private int ordinal;
 
         @Override
@@ -154,9 +140,9 @@ public final class PeekWrappedP<T> implements Processor {
         @Override
         public Object peek() {
             T res = (T) wrappedInbox.peek();
-            if (!wasLogged && res != null) {
+            if (!peekedItemLogged && res != null) {
                 log(res);
-                wasLogged = true;
+                peekedItemLogged = true;
             }
             return res;
         }
@@ -164,10 +150,10 @@ public final class PeekWrappedP<T> implements Processor {
         @Override
         public Object poll() {
             T res = (T) wrappedInbox.poll();
-            if (!wasLogged && res != null) {
+            if (!peekedItemLogged && res != null) {
                 log(res);
             }
-            wasLogged = false;
+            peekedItemLogged = false;
             return res;
         }
 
@@ -177,7 +163,7 @@ public final class PeekWrappedP<T> implements Processor {
 
         @Override
         public Object remove() {
-            wasLogged = false;
+            peekedItemLogged = false;
             return wrappedInbox.remove();
         }
     }
@@ -185,13 +171,17 @@ public final class PeekWrappedP<T> implements Processor {
     private final class LoggingOutbox implements Outbox {
         private final Outbox wrappedOutbox;
         private final int[] all;
+        private final boolean logOutput;
+        private final boolean logSnapshot;
         private final BitSet broadcastTracker;
 
 
-        private LoggingOutbox(Outbox wrappedOutbox) {
+        private LoggingOutbox(Outbox wrappedOutbox, boolean logOutput, boolean logSnapshot) {
             this.wrappedOutbox = wrappedOutbox;
             this.broadcastTracker = new BitSet(wrappedOutbox.bucketCount());
             this.all = IntStream.range(0, wrappedOutbox.bucketCount()).toArray();
+            this.logOutput = logOutput;
+            this.logSnapshot = logSnapshot;
         }
 
         @Override
@@ -208,7 +198,9 @@ public final class PeekWrappedP<T> implements Processor {
             if (!wrappedOutbox.offer(ordinal, item)) {
                 return false;
             }
-            log("Output to " + ordinal, (T) item);
+            if (logOutput) {
+                log("Output to " + ordinal, (T) item);
+            }
             return true;
         }
 
@@ -231,6 +223,17 @@ public final class PeekWrappedP<T> implements Processor {
                 broadcastTracker.clear();
             }
             return done;
+        }
+
+        @Override
+        public boolean offerToSnapshot(@Nonnull Object key, @Nonnull Object value) {
+            if (!wrappedOutbox.offerToSnapshot(key, value)) {
+                return false;
+            }
+            if (logSnapshot) {
+                log("Output to snapshot", (T) entry(key, value));
+            }
+            return true;
         }
     }
 }

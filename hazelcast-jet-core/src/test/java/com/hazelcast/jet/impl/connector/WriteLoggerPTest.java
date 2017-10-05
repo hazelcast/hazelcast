@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
@@ -43,9 +42,8 @@ public class WriteLoggerPTest {
         Processor p = DiagnosticProcessors.writeLogger().get();
         TestInbox inbox = new TestInbox();
         Outbox outbox = mock(Outbox.class);
-        SnapshotOutbox ssOutbox = mock(SnapshotOutbox.class);
         ILogger logger = mock(ILogger.class);
-        p.init(outbox, ssOutbox, new TestProcessorContext().setLogger(logger));
+        p.init(outbox, new TestProcessorContext().setLogger(logger));
 
         // When
         inbox.add(1);

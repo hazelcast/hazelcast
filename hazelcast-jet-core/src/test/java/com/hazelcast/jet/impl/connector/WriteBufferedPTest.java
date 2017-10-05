@@ -26,7 +26,6 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -63,7 +62,7 @@ public class WriteBufferedPTest extends JetTestSupport {
     public void writeBuffered_smokeTest() throws Exception {
         Processor p = getLoggingBufferedWriter().get(1).iterator().next();
         Outbox outbox = mock(Outbox.class);
-        p.init(outbox, mock(SnapshotOutbox.class), mock(Context.class));
+        p.init(outbox, mock(Context.class));
         TestInbox inbox = new TestInbox();
         inbox.add(1);
         inbox.add(2);

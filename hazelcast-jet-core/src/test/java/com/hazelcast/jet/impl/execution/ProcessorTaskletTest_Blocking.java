@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.SnapshotOutbox;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -315,7 +314,7 @@ public class ProcessorTaskletTest_Blocking {
         }
 
         @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
+        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
             this.outbox = outbox;
         }
 

@@ -34,7 +34,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  * Base class to implement custom processors. Simplifies the contract of
  * {@code Processor} with several levels of convenience:
  * <ol><li>
- *     {@link #init(Outbox, SnapshotOutbox, Context)} retains the supplied outboxes
+ *     {@link Processor#init(Outbox, Context)} retains the supplied outbox
  *     and the logger retrieved from the context.
  * </li><li>
  *     {@link #process(int, Inbox) process(n, inbox)} delegates to the matching
@@ -73,7 +73,6 @@ public abstract class AbstractProcessor implements Processor {
 
     private Object pendingItem;
     private Entry<?, ?> pendingSnapshotItem;
-    private SnapshotOutbox snapshotOutbox;
 
     /**
      * Specifies what this processor's {@link #isCooperative()} method will return.
@@ -91,9 +90,8 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     @Override
-    public final void init(@Nonnull Outbox outbox, @Nonnull SnapshotOutbox snapshotOutbox, @Nonnull Context context) {
+    public final void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         this.outbox = outbox;
-        this.snapshotOutbox = snapshotOutbox;
         this.logger = context.logger();
         try {
             init(context);
@@ -368,12 +366,20 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * Offers one key-value pair to the snapshot bucket.
+     * <p>
+     * During a snapshot restore the type of key offered determines which processors
+     * receive the key and value pair. If the key is of type {@link BroadcastKey},
+     * the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning and
+     * only a single processor instance will receive the key.
+     * <p>
+     * This method may only be called from inside the {@link Processor#saveToSnapshot()} method.
      *
      * @return whether the outbox accepted the item
      */
     @CheckReturnValue
-    protected boolean tryEmitToSnapshot(Object key, Object value) {
-        return snapshotOutbox.offer(key, value);
+    protected boolean tryEmitToSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        return outbox.offerToSnapshot(key, value);
     }
 
     /**
@@ -417,11 +423,10 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Obtains items from the traverser and offers them to the snapshot outbox.
-     * Each item is a {@code Map.Entry} and its key and
-     * value are passed as the two arguments of {@link
-     * SnapshotOutbox#offer(Object, Object)}. If the
-     * outbox refuses an item, it backs off and returns {@code false}.
+     * Obtains items from the traverser and offers them to the snapshot bucket
+     * of the outbox. Each item is a {@code Map.Entry} and its key and value
+     * are passed as the two arguments of {@link #tryEmitToSnapshot(Object, Object)}.
+     * If the outbox refuses an item, it backs off and returns {@code false}.
      * <p>
      * If this method returns {@code false}, then the same traverser must be
      * retained by the caller and passed again in the subsequent invocation of
@@ -439,7 +444,7 @@ public abstract class AbstractProcessor implements Processor {
             item = traverser.next();
         }
         for (; item != null; item = traverser.next()) {
-            if (!snapshotOutbox.offer(item.getKey(), item.getValue())) {
+            if (!tryEmitToSnapshot(item.getKey(), item.getValue())) {
                 pendingSnapshotItem = item;
                 return false;
             }

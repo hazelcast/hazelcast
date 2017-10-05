@@ -184,7 +184,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     public void when_snapshotSaved_then_offsetsRestored() throws Exception {
         StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), 1, 60000);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
-        processor.init(outbox, outbox, new TestProcessorContext().setSnapshottingEnabled(true));
+        processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
 
         produce(topic1Name, 0, "0");
         assertEquals(entry(0, "0"), consumeEventually(processor, outbox));
@@ -200,7 +200,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         // create new processor and restore snapshot
         processor = new StreamKafkaP(properties, asList(topic1Name, topic2Name), 1, 60000);
         outbox = new TestOutbox(new int[] {10}, 10);
-        processor.init(outbox, outbox, new TestProcessorContext().setSnapshottingEnabled(true));
+        processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
 
         // restore snapshot
         processor.restoreFromSnapshot(snapshot);
@@ -220,7 +220,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         properties.setProperty("metadata.max.age.ms", "100");
         StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), 1, 100);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
-        processor.init(outbox, outbox, new TestProcessorContext().setSnapshottingEnabled(true));
+        processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
 
         produce(topic1Name, 0, "0");
         assertEquals(entry(0, "0"), consumeEventually(processor, outbox));
@@ -255,7 +255,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), 2, 500);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
         TestProcessorContext context = new TestProcessorContext().setGlobalProcessorIndex(1).setSnapshottingEnabled(true);
-        processor.init(outbox, outbox, context);
+        processor.init(outbox, context);
 
         long endTime = System.nanoTime() + MILLISECONDS.toNanos(1000);
         while (endTime > System.nanoTime()) {
