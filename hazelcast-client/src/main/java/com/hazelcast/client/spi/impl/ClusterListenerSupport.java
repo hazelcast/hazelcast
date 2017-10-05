@@ -33,6 +33,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -115,13 +116,20 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             addresses.add(member.getAddress());
         }
 
-        for (AddressProvider addressProvider : addressProviders) {
-            addresses.addAll(addressProvider.loadAddresses());
-        }
-
         if (shuffleMemberList) {
             Collections.shuffle(addresses);
         }
+
+        List<Address> providerAddresses = new ArrayList<Address>();
+        for (AddressProvider addressProvider : addressProviders) {
+            providerAddresses.addAll(addressProvider.loadAddresses());
+        }
+
+        if (shuffleMemberList) {
+            Collections.shuffle(providerAddresses);
+        }
+
+        addresses.addAll(providerAddresses);
 
         return addresses;
     }

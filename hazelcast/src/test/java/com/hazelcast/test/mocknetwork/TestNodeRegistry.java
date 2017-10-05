@@ -23,7 +23,9 @@ import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.util.AddressUtil;
 
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -68,6 +70,22 @@ public final class TestNodeRegistry {
 
     public HazelcastInstance getInstance(Address address) {
         Node node = nodes.get(address);
+        if (node == null) {
+            String host = address.getHost();
+            if (host != null) {
+                try {
+                    if (AddressUtil.isIpAddress(host)) {
+                        // try using hostname
+                        node = nodes.get(new Address(address.getInetAddress().getHostName(), address.getPort()));
+                    } else {
+                        // try using ip address
+                        node = nodes.get(new Address(address.getInetAddress().getHostAddress(), address.getPort()));
+                    }
+                } catch (UnknownHostException e) {
+                    // suppress
+                }
+            }
+        }
         return node != null && node.isRunning() ? node.hazelcastInstance : null;
     }
 
