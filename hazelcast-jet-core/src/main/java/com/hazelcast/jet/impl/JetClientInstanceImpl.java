@@ -94,7 +94,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     @Override
     public Collection<Job> getJobs() {
         ClientMessage request = JetGetJobIdsCodec.encodeRequest();
-        ClientInvocation invocation = new ClientInvocation(client, request, masterAddress());
+        ClientInvocation invocation = new ClientInvocation(client, request, null, masterAddress());
         Set<Long> jobIds;
         try {
             ClientMessage clientMessage = invocation.invoke().get();
@@ -115,7 +115,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
     private JobStatus sendJobStatusRequest(long jobId) {
         ClientMessage request = JetGetJobStatusCodec.encodeRequest(jobId);
-        ClientInvocation invocation = new ClientInvocation(client, request, masterAddress());
+        ClientInvocation invocation = new ClientInvocation(client, request, jobObjectName(jobId), masterAddress());
         try {
             ClientMessage clientMessage = invocation.invoke().get();
             JetGetJobStatusCodec.ResponseParameters response = JetGetJobStatusCodec.decodeResponse(clientMessage);
@@ -134,6 +134,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         return first.orElseThrow(() -> new IllegalStateException("No members found in cluster")).getAddress();
     }
 
+    private static String jobObjectName(long jobId) {
+        return "jobId=" + idToString(jobId);
+    }
+
     private class SubmittedJobImpl extends AbstractSubmittedJobImpl {
 
         SubmittedJobImpl(JetInstance jetInstance, ILogger logger, DAG dag, JobConfig config) {
@@ -147,7 +151,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
         @Override
         protected ICompletableFuture<Void> sendJoinRequest(Address masterAddress) {
-            ClientInvocation invocation = new ClientInvocation(client, createJoinJobRequest(), masterAddress);
+            ClientInvocation invocation = new ClientInvocation(client, createJoinJobRequest(), jobObjectName(getJobId()),
+                    masterAddress);
             return new ExecutionFuture(invocation.invoke(), getJobId(), masterAddress);
         }
 
@@ -178,7 +183,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         @Override
         protected ICompletableFuture<Void> sendJoinRequest(Address masterAddress) {
             ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getJobId());
-            ClientInvocation invocation = new ClientInvocation(client, request, masterAddress);
+            ClientInvocation invocation = new ClientInvocation(client, request, jobObjectName(getJobId()), masterAddress);
             return new ExecutionFuture(invocation.invoke(), getJobId(), masterAddress);
         }
 
@@ -192,12 +197,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     private final class ExecutionFuture implements ICompletableFuture<Void> {
 
         private final ClientInvocationFuture future;
-        private final long executionId;
+        private final long jobId;
         private final Address executionAddress;
 
-        ExecutionFuture(ClientInvocationFuture future, long executionId, Address executionAddress) {
+        ExecutionFuture(ClientInvocationFuture future, long jobId, Address executionAddress) {
             this.future = future;
-            this.executionId = executionId;
+            this.jobId = jobId;
             this.executionAddress = executionAddress;
         }
 
@@ -207,7 +212,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             if (!cancelled) {
                 return false;
             }
-            new ClientInvocation(client, JetCancelJobCodec.encodeRequest(executionId), executionAddress)
+            new ClientInvocation(client, JetCancelJobCodec.encodeRequest(jobId), jobObjectName(jobId), executionAddress)
                     .invoke().andThen(new ExecutionCallback<ClientMessage>() {
                 @Override
                 public void onResponse(ClientMessage clientMessage) {
@@ -216,7 +221,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
                 @Override
                 public void onFailure(Throwable throwable) {
-                    logger.warning("Error cancelling job with executionId " + idToString(executionId), throwable);
+                    logger.warning("Error cancelling job with jobId " + idToString(jobId), throwable);
                 }
             });
             return true;
