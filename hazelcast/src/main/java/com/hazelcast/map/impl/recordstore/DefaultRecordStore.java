@@ -127,20 +127,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void loadAll(boolean replaceExistingValues) {
+    public void loadAll(boolean replaceExistingValues, String callerUuid) {
         if (logger.isFinestEnabled()) {
             logger.finest("loadAll invoked " + getStateMessage());
         }
 
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
-        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
+        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues, callerUuid);
         loadingFutures.add(loadingKeysFuture);
     }
 
     @Override
-    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
+    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues, String callerUuid) {
         if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues, callerUuid);
             loadingFutures.add(f);
         }
 
@@ -161,7 +161,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void maybeDoInitialLoad() {
         if (keyLoader.shouldDoInitialLoad()) {
-            loadAll(false);
+            loadAll(false, "NA");
         }
     }
 

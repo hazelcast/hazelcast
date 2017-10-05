@@ -324,8 +324,9 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * Loads all given keys from defined map store.
      *
      * @param keys keys to be loaded.
+     * @param callerUuid
      */
-    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
+    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues, String callerUuid);
 
     void updateLoadStatus(boolean lastBatch, Throwable exception);
 
@@ -360,8 +361,9 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * Loads all keys and values
      *
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
-     **/
-    void loadAll(boolean replaceExistingValues);
+     * @param callerUuid caller uuid
+     * */
+    void loadAll(boolean replaceExistingValues, String callerUuid);
 
     /**
      * Performs initial loading from a MapLoader if it has not been done before

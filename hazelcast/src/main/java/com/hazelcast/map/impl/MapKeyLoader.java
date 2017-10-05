@@ -152,7 +152,7 @@ public class MapKeyLoader {
 
         switch (newRole) {
             case SENDER:
-                return sendKeys(mapStoreContext, false);
+                return sendKeys(mapStoreContext, false, "NA");
             case SENDER_BACKUP:
             case RECEIVER:
                 return triggerLoading();
@@ -179,7 +179,8 @@ public class MapKeyLoader {
     /**
      * Sends keys to all partitions in batches.
      */
-    public Future<?> sendKeys(final MapStoreContext mapStoreContext, final boolean replaceExistingValues) {
+    public Future<?> sendKeys(final MapStoreContext mapStoreContext,
+                              final boolean replaceExistingValues, final String callerUuid) {
 
         if (keyLoadFinished.isDone()) {
 
@@ -188,7 +189,7 @@ public class MapKeyLoader {
             Future<Boolean> sent = execService.submit(MAP_LOAD_ALL_KEYS_EXECUTOR, new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    sendKeysInBatches(mapStoreContext, replaceExistingValues);
+                    sendKeysInBatches(mapStoreContext, replaceExistingValues, callerUuid);
                     return false;
                 }
             });
@@ -253,7 +254,7 @@ public class MapKeyLoader {
         }
     }
 
-    public Future<?> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
+    public Future<?> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues, String callerUuid) {
 
         role.nextOrStay(Role.SENDER);
 
@@ -262,7 +263,7 @@ public class MapKeyLoader {
         }
         state.next(State.LOADING);
 
-        return sendKeys(mapStoreContext, replaceExistingValues);
+        return sendKeys(mapStoreContext, replaceExistingValues, callerUuid);
     }
 
     public void trackLoading(boolean lastBatch, Throwable exception) {
@@ -313,7 +314,8 @@ public class MapKeyLoader {
         return state.is(State.NOT_LOADED);
     }
 
-    private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) throws Exception {
+    private void sendKeysInBatches(MapStoreContext mapStoreContext,
+                                   boolean replaceExistingValues, String callerUuid) throws Exception {
 
         if (logger.isFinestEnabled()) {
             logger.finest("sendKeysInBatches invoked " + getStateMessage());
@@ -339,7 +341,7 @@ public class MapKeyLoader {
             List<Future> futures = new ArrayList<Future>();
             while (batches.hasNext()) {
                 Map<Integer, List<Data>> batch = batches.next();
-                futures.addAll(sendBatch(batch, replaceExistingValues));
+                futures.addAll(sendBatch(batch, replaceExistingValues, callerUuid));
             }
 
             // This acts as a barrier to prevent re-ordering of key distribution operations (LoadAllOperation)
@@ -360,7 +362,7 @@ public class MapKeyLoader {
         }
     }
 
-    private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues) {
+    private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues, String callerUuid) {
         Set<Entry<Integer, List<Data>>> entries = batch.entrySet();
         List<Future> futures = new ArrayList<Future>(entries.size());
         for (Entry<Integer, List<Data>> e : entries) {
@@ -368,6 +370,7 @@ public class MapKeyLoader {
             List<Data> keys = e.getValue();
 
             MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues);
+            op.setCallerUuid(callerUuid);
 
             InternalCompletableFuture<Object> future = opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
             futures.add(future);

@@ -39,7 +39,7 @@ public class LoadMapOperation extends MapOperation {
 
     @Override
     public void run() throws Exception {
-        recordStore.loadAll(replaceExistingValues);
+        recordStore.loadAll(replaceExistingValues, getCallerUuid());
     }
 
     @Override
