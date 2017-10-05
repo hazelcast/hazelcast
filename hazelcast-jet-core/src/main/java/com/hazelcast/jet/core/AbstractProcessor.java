@@ -337,7 +337,8 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Offers the item to the outbox bucket at the supplied ordinal.
      *
-     * @return whether the outbox accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
     protected boolean tryEmit(int ordinal, @Nonnull Object item) {
@@ -347,7 +348,8 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Offers the item to all the outbox buckets (except the snapshot outbox).
      *
-     * @return whether the outbox accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
     protected boolean tryEmit(@Nonnull Object item) {
@@ -357,7 +359,8 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Offers the item to the outbox buckets identified in the supplied array.
      *
-     * @return whether the outbox accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
     protected boolean tryEmit(int[] ordinals, @Nonnull Object item) {
@@ -367,9 +370,15 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Offers one key-value pair to the snapshot bucket.
      * <p>
-     * Also see note in {@link Outbox#offerToSnapshot(Object, Object)}.
+     * The type of the offered key determines which processors receive the key
+     * and value pair when it is restored. If the key is of type {@link
+     * BroadcastKey}, the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning
+     * and only a single processor instance will receive the key.
      *
-     * @return whether the outbox accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) key
+     * and value.
      */
     @CheckReturnValue
     protected boolean tryEmitToSnapshot(@Nonnull Object key, @Nonnull Object value) {
@@ -425,6 +434,12 @@ public abstract class AbstractProcessor implements Processor {
      * If this method returns {@code false}, then the same traverser must be
      * retained by the caller and passed again in the subsequent invocation of
      * this method, so as to resume emitting where it left off.
+     * <p>
+     * The type of the offered key determines which processors receive the key
+     * and value pair when it is restored. If the key is of type {@link
+     * BroadcastKey}, the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning
+     * and only a single processor instance will receive the key.
      *
      * @param traverser traverser over the items to emit to the snapshot
      * @return whether the traverser has been exhausted

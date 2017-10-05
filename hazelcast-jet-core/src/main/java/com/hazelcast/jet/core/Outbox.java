@@ -29,9 +29,10 @@ import javax.annotation.Nonnull;
  * via {@link #offerToSnapshot(Object, Object)} during
  * calls to {@link Processor#saveToSnapshot() saveToSnapshot()}.
  * <p>
- * Outbox might not be able to accept the item if it is already full. The
- * processor must check the return value of {@code offer()} and refrain from
- * outputting more data if it returns {@code false}.
+ * Outbox might not be able to accept the item if some of the underlying queues
+ * are full. If one of the {@code offer()} methods returns {@code false},
+ * caller must try the same call later again with with the same parameters,
+ * until it returns {@code true}.
  */
 public interface Outbox {
 
@@ -46,13 +47,9 @@ public interface Outbox {
      * Offers the supplied item to the downstream edge with the supplied
      * ordinal. If {@code ordinal == -1}, offers the supplied item to
      * all edges (behaves the same as {@link #offer(Object)}).
-     * <p>
-     * If any downstream queue is full, it is skipped and this method returns
-     * {@code false}. In that case the call must be retried later with the same
-     * (or equal) item. The outbox internally keeps track which queues already
-     * accepted the item.
      *
-     * @return whether the outbox fully accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
     boolean offer(int ordinal, @Nonnull Object item);
@@ -61,7 +58,8 @@ public interface Outbox {
      * Offers the item to all supplied edge ordinals. See {@link #offer(int,
      * Object)} for more details.
      *
-     * @return whether the outbox fully accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
     boolean offer(int[] ordinals, @Nonnull Object item);
@@ -69,17 +67,18 @@ public interface Outbox {
     /**
      * Offers the specified key and value pair to the processor's snapshot storage.
      * <p>
-     * <b>Note:</b> During a snapshot restore the type of the offered key
-     * determines which processors receive the key and value pair. If the key
-     * is of type {@link BroadcastKey}, the entry will be restored to all
-     * processor instances. Otherwise, the key will be distributed according to
-     * default partitioning and only a single processor instance will receive
-     * the key.
+     * The type of the offered key determines which processors receive the key
+     * and value pair when it is restored. If the key is of type {@link
+     * BroadcastKey}, the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning
+     * and only a single processor instance will receive the key.
      * <p>
      * This method may only be called from the {@link
      * Processor#saveToSnapshot()} method.
      *
-     * @return whether the outbox fully accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) key
+     * and value.
      */
     @CheckReturnValue
     boolean offerToSnapshot(@Nonnull Object key, @Nonnull Object value);
@@ -88,11 +87,11 @@ public interface Outbox {
      * Offers the item to all edges. See {@link #offer(int, Object)} for more
      * details.
      *
-     * @return whether the outbox fully accepted the item
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
     default boolean offer(@Nonnull Object item) {
         return offer(-1, item);
     }
-
 }

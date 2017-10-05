@@ -138,7 +138,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
             assertTrueEventually(() -> {
                 Long newMax = maxSuccessfulSnapshot(snapshotsMap);
                 assertTrue("no snapshot produced", newMax != null && !newMax.equals(currentMax));
-                System.out.println("xxx: snapshot " + newMax + " found, previous was " + currentMax);
+                System.out.println("snapshot " + newMax + " found, previous was " + currentMax);
             });
 
             // Bring down one member. Job should restart and drain additional items (and maybe
