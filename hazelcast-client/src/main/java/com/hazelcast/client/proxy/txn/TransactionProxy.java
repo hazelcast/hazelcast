@@ -81,7 +81,7 @@ final class TransactionProxy {
             startTime = Clock.currentTimeMillis();
             ClientMessage request = TransactionCreateCodec.encodeRequest(options.getTimeoutMillis(),
                     options.getDurability(), options.getTransactionType().id(), threadId);
-            ClientMessage response = ClientTransactionUtil.invoke(request, client, connection);
+            ClientMessage response = ClientTransactionUtil.invoke(request, getTxnId(), client, connection);
             TransactionCreateCodec.ResponseParameters result = TransactionCreateCodec.decodeResponse(response);
             txnId = result.response;
             state = ACTIVE;
@@ -100,7 +100,7 @@ final class TransactionProxy {
             checkThread();
             checkTimeout();
             ClientMessage request = TransactionCommitCodec.encodeRequest(txnId, threadId);
-            ClientTransactionUtil.invoke(request, client, connection);
+            ClientTransactionUtil.invoke(request, getTxnId(), client, connection);
             state = COMMITTED;
         } catch (Exception e) {
             state = COMMIT_FAILED;
@@ -119,7 +119,7 @@ final class TransactionProxy {
             checkThread();
             try {
                 ClientMessage request = TransactionRollbackCodec.encodeRequest(txnId, threadId);
-                ClientTransactionUtil.invoke(request, client, connection);
+                ClientTransactionUtil.invoke(request, getTxnId(), client, connection);
             } catch (Exception exception) {
                 logger.warning("Exception while rolling back the transaction", exception);
             }

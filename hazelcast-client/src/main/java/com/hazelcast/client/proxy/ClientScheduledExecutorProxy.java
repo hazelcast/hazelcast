@@ -245,7 +245,7 @@ public class ClientScheduledExecutorProxy
     @Override
     public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures() {
         ClientMessage request = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(getName());
-        final ClientInvocationFuture future = new ClientInvocation(getClient(), request).invoke();
+        ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
         ClientMessage response;
         try {
             response = future.get();
@@ -344,7 +344,7 @@ public class ClientScheduledExecutorProxy
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()));
         try {
-            new ClientInvocation(getClient(), request, partitionId).invoke().get();
+            new ClientInvocation(getClient(), request, getName(), partitionId).invoke().get();
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -360,7 +360,7 @@ public class ClientScheduledExecutorProxy
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()));
         try {
-            new ClientInvocation(getClient(), request, member.getAddress()).invoke().get();
+            new ClientInvocation(getClient(), request, getName(), member.getAddress()).invoke().get();
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -370,7 +370,7 @@ public class ClientScheduledExecutorProxy
     private <T> ClientDelegatingFuture<T> doSubmitOnAddress(ClientMessage clientMessage,
                                                             ClientMessageDecoder clientMessageDecoder, Address address) {
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, address).invoke();
+            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), address).invoke();
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);

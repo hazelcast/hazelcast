@@ -206,7 +206,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             registerCompletionLatch(completionId, 1);
         }
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), req, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), req, name, partitionId);
             ClientInvocationFuture future = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId, future);

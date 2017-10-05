@@ -82,7 +82,7 @@ public final class ClientPartitionServiceImpl
         if (((ClientConnection) ownerConnection).getConnectedServerVersion() >= BuildInfo.calculateVersion("3.9")) {
             //Servers after 3.9 supports listeners
             ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
-            ClientInvocation invocation = new ClientInvocation(client, clientMessage, ownerConnection);
+            ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
             invocation.setEventHandler(this);
             invocation.invokeUrgent().get();
         }
@@ -119,7 +119,7 @@ public final class ClientPartitionServiceImpl
                         "Partitions can't be assigned since all nodes in the cluster are lite members");
             }
             ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
-            ClientInvocationFuture future = new ClientInvocation(client, requestMessage).invokeUrgent();
+            ClientInvocationFuture future = new ClientInvocation(client, requestMessage, null).invokeUrgent();
             try {
                 ClientMessage responseMessage = future.get();
                 ClientGetPartitionsCodec.ResponseParameters response =
@@ -242,7 +242,7 @@ public final class ClientPartitionServiceImpl
                     return;
                 }
                 ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
-                ClientInvocationFuture future = new ClientInvocation(client, requestMessage).invokeUrgent();
+                ClientInvocationFuture future = new ClientInvocation(client, requestMessage, null).invokeUrgent();
                 future.andThen(refreshTaskCallback);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {

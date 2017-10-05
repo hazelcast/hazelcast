@@ -395,7 +395,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
 
     private ClientInvocationFuture invokeOnKeyOwner(ClientMessage request, Data keyData) {
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
         return clientInvocation.invoke();
     }
 
@@ -1078,7 +1078,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
             List<Data> keyList = entry.getValue();
             if (!keyList.isEmpty()) {
                 ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-                futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
             }
         }
 
@@ -1555,7 +1555,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
-            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+            futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
         }
         try {
             for (Future<?> future : futures) {
@@ -1646,7 +1646,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<EventJournalInitialSubscriberState>(fut, getSerializationService(),
                 eventJournalSubscribeResponseDecoder);
     }
@@ -1662,7 +1662,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         final SerializationService ss = getSerializationService();
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }
 

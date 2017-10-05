@@ -203,7 +203,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     @Override
     protected <T> T invoke(ClientMessage clientMessage) {
         try {
-            Future<ClientMessage> future = new ClientInvocation(getClient(), clientMessage).invoke();
+            Future<ClientMessage> future = new ClientInvocation(getClient(), clientMessage, getName()).invoke();
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -213,7 +213,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
             int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-            Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+            Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
             return (ClientMessage) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -227,7 +227,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
             injectDependencies(completionListener);
 
             final long startNanos = nowInNanosOrDefault();
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request).invoke();
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
             delegatingFuture = newDelegatingFuture(future, LOAD_ALL_DECODER);
             final Future delFuture = delegatingFuture;
             loadAllCalls.put(delegatingFuture, listener);

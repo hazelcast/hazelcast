@@ -622,7 +622,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public Collection<DistributedObject> getDistributedObjects() {
         try {
             ClientMessage request = ClientGetDistributedObjectsCodec.encodeRequest();
-            final Future<ClientMessage> future = new ClientInvocation(this, request).invoke();
+            final Future<ClientMessage> future = new ClientInvocation(this, request, getName()).invoke();
             ClientMessage response = future.get();
             ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
                     ClientGetDistributedObjectsCodec.decodeResponse(response);

@@ -138,7 +138,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     void listenMembershipEvents(Connection ownerConnection) throws Exception {
         initialListFetchedLatch = new CountDownLatch(1);
         ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, ownerConnection);
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
         invocation.setEventHandler(this);
         invocation.invokeUrgent().get();
         waitInitialMemberListFetched();

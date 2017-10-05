@@ -118,7 +118,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
         EventHandler handler = registrationKey.getHandler();
         handler.beforeListenerRegister();
 
-        ClientInvocation invocation = new ClientInvocation(client, request, connection);
+        ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
         invocation.setEventHandler(handler);
         ClientInvocationFuture future = invocation.invokeUrgent();
 
@@ -174,7 +174,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
                 ListenerMessageCodec listenerMessageCodec = registration.getCodec();
                 String serverRegistrationId = registration.getServerRegistrationId();
                 ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                new ClientInvocation(client, request, subscriber).invoke().get();
+                new ClientInvocation(client, request, null, subscriber).invoke().get();
                 removeEventHandler(registration.getCallId());
                 registrationMap.remove(subscriber);
             } catch (Exception e) {

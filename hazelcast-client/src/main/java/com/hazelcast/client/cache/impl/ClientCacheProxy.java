@@ -455,7 +455,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
                 Data configData = toData(cacheEntryListenerConfiguration);
                 ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
                         address);
-                ClientInvocation invocation = new ClientInvocation(getClient(), request, address);
+                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), address);
                 invocation.invoke();
             } catch (Exception e) {
                 sneakyThrow(e);
@@ -521,7 +521,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
     @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = CacheEventJournalSubscribeCodec.encodeRequest(nameWithPrefix);
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<EventJournalInitialSubscriberState>(fut, getSerializationService(),
                 eventJournalSubscribeResponseDecoder);
     }
@@ -537,7 +537,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
         final SerializationService ss = getSerializationService();
         final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
                 nameWithPrefix, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }
 

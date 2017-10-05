@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromParti
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -80,24 +81,20 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        try {
-            if (address != null) {
-                ClientMessage request = ScheduledExecutorGetStatsFromAddressCodec.encodeRequest(schedulerName, taskName, address);
-                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
-                ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
-                        ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
-                return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
-                        responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
-            } else {
-                ClientMessage request = ScheduledExecutorGetStatsFromPartitionCodec.encodeRequest(schedulerName, taskName);
-                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
-                ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
-                        ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
-                return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
-                        responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
-            }
-        } catch (Exception e) {
-            throw rethrow(e);
+        if (address != null) {
+            ClientMessage request = ScheduledExecutorGetStatsFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+            ClientMessage response = invokeOnAddress(request, address);
+            ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
+                    ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
+            return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
+                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
+        } else {
+            ClientMessage request = ScheduledExecutorGetStatsFromPartitionCodec.encodeRequest(schedulerName, taskName);
+            ClientMessage response = invokeOnPartition(request, partitionId);
+            ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
+                    ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
+            return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
+                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
         }
 
     }
@@ -110,20 +107,16 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        try {
-            if (address != null) {
-                ClientMessage request = ScheduledExecutorGetDelayFromAddressCodec.encodeRequest(schedulerName, taskName, address);
-                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
-                long nanos = ScheduledExecutorGetDelayFromAddressCodec.decodeResponse(response).response;
-                return unit.convert(nanos, TimeUnit.NANOSECONDS);
-            } else {
-                ClientMessage request = ScheduledExecutorGetDelayFromPartitionCodec.encodeRequest(schedulerName, taskName);
-                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
-                long nanos = ScheduledExecutorGetDelayFromPartitionCodec.decodeResponse(response).response;
-                return unit.convert(nanos, TimeUnit.NANOSECONDS);
-            }
-        } catch (Exception e) {
-            throw rethrow(e);
+        if (address != null) {
+            ClientMessage request = ScheduledExecutorGetDelayFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+            ClientMessage response = invokeOnAddress(request, address);
+            long nanos = ScheduledExecutorGetDelayFromAddressCodec.decodeResponse(response).response;
+            return unit.convert(nanos, TimeUnit.NANOSECONDS);
+        } else {
+            ClientMessage request = ScheduledExecutorGetDelayFromPartitionCodec.encodeRequest(schedulerName, taskName);
+            ClientMessage response = invokeOnPartition(request, partitionId);
+            long nanos = ScheduledExecutorGetDelayFromPartitionCodec.decodeResponse(response).response;
+            return unit.convert(nanos, TimeUnit.NANOSECONDS);
         }
     }
 
@@ -147,20 +140,16 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        try {
-            if (address != null) {
-                ClientMessage request = ScheduledExecutorCancelFromAddressCodec.encodeRequest(schedulerName, taskName,
-                        address, false);
-                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
-                return ScheduledExecutorCancelFromAddressCodec.decodeResponse(response).response;
-            } else {
-                ClientMessage request = ScheduledExecutorCancelFromPartitionCodec.encodeRequest(schedulerName,
-                        taskName, false);
-                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
-                return ScheduledExecutorCancelFromPartitionCodec.decodeResponse(response).response;
-            }
-        } catch (Exception e) {
-            throw rethrow(e);
+        if (address != null) {
+            ClientMessage request = ScheduledExecutorCancelFromAddressCodec.encodeRequest(schedulerName, taskName,
+                    address, false);
+            ClientMessage response = invokeOnAddress(request, address);
+            return ScheduledExecutorCancelFromAddressCodec.decodeResponse(response).response;
+        } else {
+            ClientMessage request = ScheduledExecutorCancelFromPartitionCodec.encodeRequest(schedulerName,
+                    taskName, false);
+            ClientMessage response = invokeOnPartition(request, partitionId);
+            return ScheduledExecutorCancelFromPartitionCodec.decodeResponse(response).response;
         }
     }
 
@@ -171,19 +160,15 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        try {
-            if (address != null) {
-                ClientMessage request = ScheduledExecutorIsCancelledFromAddressCodec.encodeRequest(schedulerName,
-                        taskName, address);
-                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
-                return ScheduledExecutorIsCancelledFromAddressCodec.decodeResponse(response).response;
-            } else {
-                ClientMessage request = ScheduledExecutorIsCancelledFromPartitionCodec.encodeRequest(schedulerName, taskName);
-                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
-                return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response).response;
-            }
-        } catch (Exception e) {
-            throw rethrow(e);
+        if (address != null) {
+            ClientMessage request = ScheduledExecutorIsCancelledFromAddressCodec.encodeRequest(schedulerName,
+                    taskName, address);
+            ClientMessage response = invokeOnAddress(request, address);
+            return ScheduledExecutorIsCancelledFromAddressCodec.decodeResponse(response).response;
+        } else {
+            ClientMessage request = ScheduledExecutorIsCancelledFromPartitionCodec.encodeRequest(schedulerName, taskName);
+            ClientMessage response = invokeOnPartition(request, partitionId);
+            return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response).response;
         }
     }
 
@@ -194,18 +179,14 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        try {
-            if (address != null) {
-                ClientMessage request = ScheduledExecutorIsDoneFromAddressCodec.encodeRequest(schedulerName, taskName, address);
-                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
-                return ScheduledExecutorIsDoneFromAddressCodec.decodeResponse(response).response;
-            } else {
-                ClientMessage request = ScheduledExecutorIsDoneFromPartitionCodec.encodeRequest(schedulerName, taskName);
-                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
-                return ScheduledExecutorIsDoneFromPartitionCodec.decodeResponse(response).response;
-            }
-        } catch (Exception e) {
-            throw rethrow(e);
+        if (address != null) {
+            ClientMessage request = ScheduledExecutorIsDoneFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+            ClientMessage response = invokeOnAddress(request, address);
+            return ScheduledExecutorIsDoneFromAddressCodec.decodeResponse(response).response;
+        } else {
+            ClientMessage request = ScheduledExecutorIsDoneFromPartitionCodec.encodeRequest(schedulerName, taskName);
+            ClientMessage response = invokeOnPartition(request, partitionId);
+            return ScheduledExecutorIsDoneFromPartitionCodec.decodeResponse(response).response;
         }
     }
 
@@ -217,12 +198,14 @@ public class ClientScheduledFutureProxy<V>
         int partitionId = handler.getPartitionId();
         if (address != null) {
             ClientMessage request = ScheduledExecutorGetResultFromAddressCodec.encodeRequest(schedulerName, taskName, address);
-            ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get(timeout, unit);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, address).invoke();
+            ClientMessage response = future.get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromAddressCodec.decodeResponse(response).response;
             return toObject(data);
         } else {
             ClientMessage request = ScheduledExecutorGetResultFromPartitionCodec.encodeRequest(schedulerName, taskName);
-            ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get(timeout, unit);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, partitionId).invoke();
+            ClientMessage response = future.get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response).response;
             return toObject(data);
         }
@@ -251,18 +234,14 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        try {
-            if (address != null) {
-                ClientMessage request = ScheduledExecutorDisposeFromAddressCodec.encodeRequest(schedulerName, taskName, address);
-                new ClientInvocation(getClient(), request, address).invoke().get();
-            } else {
-                ClientMessage request = ScheduledExecutorDisposeFromPartitionCodec.encodeRequest(schedulerName, taskName);
-                new ClientInvocation(getClient(), request, partitionId).invoke().get();
-            }
-            handler = null;
-        } catch (Exception e) {
-            throw rethrow(e);
+        if (address != null) {
+            ClientMessage request = ScheduledExecutorDisposeFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+            invokeOnAddress(request, address);
+        } else {
+            ClientMessage request = ScheduledExecutorDisposeFromPartitionCodec.encodeRequest(schedulerName, taskName);
+            invokeOnPartition(request, partitionId);
         }
+        handler = null;
 
     }
 
