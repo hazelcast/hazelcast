@@ -144,7 +144,7 @@ public class XATransactionProxy {
 
     private ClientMessage invoke(ClientMessage request) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, txnId, connection);
             final Future<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         } catch (Exception e) {

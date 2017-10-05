@@ -146,7 +146,7 @@ final class TransactionProxy {
 
     private ClientMessage invoke(ClientMessage request) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, getTxnId(), connection);
             final Future<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         } catch (Exception e) {

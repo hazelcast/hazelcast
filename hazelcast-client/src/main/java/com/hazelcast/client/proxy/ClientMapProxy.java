@@ -368,7 +368,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private ClientInvocationFuture invokeOnKeyOwner(ClientMessage request, Data keyData) {
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-        final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
         return clientInvocation.invoke();
     }
 
@@ -1068,7 +1068,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             List<Data> keyList = entry.getValue();
             if (!keyList.isEmpty()) {
                 ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-                futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
             }
         }
 
@@ -1530,7 +1530,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
-            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+            futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
         }
 
         try {

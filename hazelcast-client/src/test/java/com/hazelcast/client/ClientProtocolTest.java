@@ -52,7 +52,7 @@ public class ClientProtocolTest extends ClientTestSupport {
         ClientMessage s = MapSizeCodec.encodeRequest("mapName");
         int undefinedMessageType = Short.MAX_VALUE - 1;
         s.setMessageType(undefinedMessageType);
-        ClientInvocation invocation = new ClientInvocation(clientImpl, s);
+        ClientInvocation invocation = new ClientInvocation(clientImpl, s, "mapName");
         try {
             invocation.invoke().get();
         } catch (Exception e) {

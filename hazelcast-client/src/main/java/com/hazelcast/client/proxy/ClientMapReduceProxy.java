@@ -105,7 +105,7 @@ public class ClientMapReduceProxy
         if (trackableJob != null) {
             ClientConnection sendConnection = trackableJob.clientInvocation.getSendConnectionOrWait();
             Address runningMember = sendConnection.getEndPoint();
-            final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
+            final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), runningMember);
             ClientInvocationFuture future = clientInvocation.invoke();
             return future.get();
         }
@@ -129,7 +129,7 @@ public class ClientMapReduceProxy
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
 
-                final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request);
+                final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName());
                 final ClientInvocationFuture future = clientInvocation.invoke();
 
                 future.andThen(new ExecutionCallback<ClientMessage>() {

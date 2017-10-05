@@ -507,7 +507,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
         } else {
             return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
-                    SUBMIT_TO_ADDRESS_DECODER, address);
+                    SUBMIT_TO_ADDRESS_DECODER, name, address);
         }
     }
 
@@ -520,7 +520,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
         } else {
             return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
-                    SUBMIT_TO_PARTITION_DECODER, partitionId);
+                    SUBMIT_TO_PARTITION_DECODER, name, partitionId);
         }
     }
 
@@ -631,7 +631,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private ClientInvocationFuture invokeOnPartitionOwner(ClientMessage request, int partitionId) {
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
             return clientInvocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -640,7 +640,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private ClientInvocationFuture invokeOnTarget(ClientMessage request, Address target) {
         try {
-            ClientInvocation invocation = new ClientInvocation(getClient(), request, target);
+            ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), target);
             return invocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

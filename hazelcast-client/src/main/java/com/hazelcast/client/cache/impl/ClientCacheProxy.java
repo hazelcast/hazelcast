@@ -407,9 +407,9 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             try {
                 final Address address = member.getAddress();
                 Data configData = toData(cacheEntryListenerConfiguration);
-                final ClientMessage request =
-                        CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister, address);
-                final ClientInvocation invocation = new ClientInvocation(client, request, address);
+                ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
+                        address);
+                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), address);
                 invocation.invoke();
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);

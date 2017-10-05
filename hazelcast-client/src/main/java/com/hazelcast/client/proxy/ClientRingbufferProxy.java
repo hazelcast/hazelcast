@@ -169,7 +169,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
             return new ClientDelegatingFuture<Long>(
                     invocationFuture,
                     getContext().getSerializationService(),
@@ -200,7 +200,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, dataCollection, overflowPolicy.getId());
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
             return new ClientDelegatingFuture<Long>(
                     invocationFuture,
                     getContext().getSerializationService(),
@@ -228,7 +228,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
                 toData(filter));
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
             return new ClientDelegatingFuture<ReadResultSet<E>>(
                     invocationFuture,
                     getContext().getSerializationService(),
@@ -246,7 +246,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     protected <T> T invoke(ClientMessage clientMessage, int partitionId) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
             return (T) future.get();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof StaleSequenceException) {

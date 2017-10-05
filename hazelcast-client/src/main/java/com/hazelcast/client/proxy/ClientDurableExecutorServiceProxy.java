@@ -83,7 +83,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int partitionId = Bits.extractInt(taskId, false);
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<T>(future, getSerializationService(), RETRIEVE_RESPONSE_DECODER);
     }
 
@@ -100,7 +100,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int partitionId = Bits.extractInt(taskId, false);
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveAndDisposeResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<T>(future, getSerializationService(), RETRIEVE_RESPONSE_DECODER);
     }
 
@@ -217,7 +217,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
             return new ClientDurableExecutorServiceCompletedFuture<T>(t, getUserExecutor());
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+        ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         long taskId = Bits.combineToLong(partitionId, sequence);
         return new ClientDurableExecutorServiceDelegatingFuture<T>(future, serService, RETRIEVE_RESPONSE_DECODER, result, taskId);
     }
