@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -66,20 +65,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
-        Object nearCacheKey = toNearCacheKeyWithStrategy(key);
-        if (nearCacheEnabled) {
-            Object cachedValue = getCachedValue(nearCacheKey, false);
-            if (cachedValue != NOT_CACHED) {
-                return cachedValue != null;
-            }
-        }
-
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         TxnValueWrapper valueWrapper = txMap.get(keyData);
         if (valueWrapper != null) {
             return (valueWrapper.type != Type.REMOVED);
         }
-        return containsKeyInternal(keyData);
+        return containsKeyInternal(keyData, key);
     }
 
     @Override
