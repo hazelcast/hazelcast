@@ -39,6 +39,30 @@ import java.util.concurrent.locks.Lock;
  * map.unlock("1"); }
  * </code></pre>
  *
+ * <p>
+ * Behaviour of {@link ILock} under split-brain scenarios should be taken into account when using this
+ * data structure.  During a split, each partitioned cluster will either create a brand new and un-acquired
+ * {@link ILock} or it will continue to use the primary or back-up version. As the acquirer of the {@link ILock} might
+ * reside in a different partitioned network this can lead to situations where the lock is never obtainable.
+ * <p>
+ * When the split heals, Hazelcast performs a default largest cluster wins resolution. Where the clusters are
+ * the same size a winner of the merge will be randomly chosen. In any case, this can lead to situations where
+ * (post-merge) multiple acquirers think they hold the same lock, when in fact the {@link ILock} itself records only one
+ * owner.  When the false owners come to release the {@link ILock} an {@link IllegalMonitorStateException} is
+ * thrown.
+ * <p>
+ * Acquiring an {@link ILock} with a lease time {@link #lock(long, TimeUnit)} can help to mitigate such scenarios.
+ * <p>
+ * As a defensive mechanism against such inconsistency, consider using the in-built
+ * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#split-brain-protection-for-lock">
+ *     split-brain protection for lock</a>.  Using this functionality it is possible to restrict operations in smaller
+ *     partitioned clusters.  It should be noted that there is still an inconsistency window between the time of
+ *     the split and the actual detection.  Therefore using this reduces the window of inconsistency but can never
+ *     completely elimitate it.
+ *
+ * <p>
+ *
+ *
  * @see Lock
  */
 public interface ILock extends Lock, DistributedObject {
