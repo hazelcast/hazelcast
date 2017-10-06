@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector.kafka;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.DAG;
@@ -182,7 +183,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
     @Test
     public void when_snapshotSaved_then_offsetsRestored() throws Exception {
-        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), 1, 60000);
+        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 1, 60000);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
         processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
 
@@ -198,7 +199,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
 
         // create new processor and restore snapshot
-        processor = new StreamKafkaP(properties, asList(topic1Name, topic2Name), 1, 60000);
+        processor = new StreamKafkaP(properties, asList(topic1Name, topic2Name), Util::entry, 1, 60000);
         outbox = new TestOutbox(new int[] {10}, 10);
         processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
 
@@ -218,7 +219,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     @Test
     public void when_partitionAdded_then_consumedFromBeginning() throws Exception {
         properties.setProperty("metadata.max.age.ms", "100");
-        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), 1, 100);
+        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 1, 100);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
         processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
 
@@ -252,7 +253,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     public void when_emptyAssignment_then_noOutputAndPicksNewPartition() throws Exception {
         // The processor will be the second of two processors and there's just
         // one partition -> nothing will be assigned to it.
-        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), 2, 500);
+        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 2, 500);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
         TestProcessorContext context = new TestProcessorContext().setGlobalProcessorIndex(1).setSnapshottingEnabled(true);
         processor.init(outbox, context);
@@ -283,6 +284,22 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertEquals(eventInPtion1, receivedEvent);
 
         assertNoMoreItems(processor, outbox);
+    }
+
+    @Test
+    public void when_customProjection_then_used() {
+        // When
+        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), (k, v) -> k + "=" + v, 1, 500);
+        TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
+        processor.init(outbox, new TestProcessorContext());
+        produce(topic1Name, 0, "0");
+
+        // Then
+        assertTrueEventually(() -> {
+            assertFalse(processor.complete());
+            assertFalse("no item in outbox", outbox.queueWithOrdinal(0).isEmpty());
+        }, 3);
+        assertEquals("0=0", outbox.queueWithOrdinal(0).poll());
     }
 
     private Entry<Integer, String> consumeEventually(Processor processor, TestOutbox outbox) {

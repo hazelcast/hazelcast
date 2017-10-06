@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.core.processor;
 
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.connector.kafka.StreamKafkaP;
 import com.hazelcast.jet.impl.connector.kafka.WriteKafkaP;
@@ -41,10 +43,19 @@ public final class KafkaProcessors {
      * {@link com.hazelcast.jet.KafkaSources#streamKafka(Properties, String...)}.
      */
     public static ProcessorMetaSupplier streamKafkaP(@Nonnull Properties properties, @Nonnull String... topics) {
+        return streamKafkaP(properties, Util::entry, topics);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.KafkaSources#streamKafka(Properties, DistributedBiFunction, String...)}.
+     */
+    public static <K, V, T> ProcessorMetaSupplier streamKafkaP(@Nonnull Properties properties,
+                @Nonnull DistributedBiFunction<K, V, T> projectionFn, @Nonnull String ... topics) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         properties.put("enable.auto.commit", false);
 
-        return new StreamKafkaP.MetaSupplier(properties, Arrays.asList(topics));
+        return new StreamKafkaP.MetaSupplier(properties, Arrays.asList(topics), projectionFn);
     }
 
     /**

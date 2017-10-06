@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -57,13 +58,14 @@ import static java.util.stream.Collectors.toList;
  * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#streamKafkaP(
  *Properties, String...)}.
  */
-public final class StreamKafkaP extends AbstractProcessor implements Closeable {
+public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Closeable {
 
     private static final long KAFKA_DEFAULT_REFRESH_INTERVAL = 300_000;
     private static final int POLL_TIMEOUT_MS = 50;
 
     private final Properties properties;
     private final List<String> topics;
+    private final DistributedBiFunction<K, V, T> projectionFn;
     private final int globalParallelism;
     private boolean snapshottingEnabled;
     private KafkaConsumer<Object, Object> consumer;
@@ -80,12 +82,14 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
     private Set<TopicPartition> currentAssignment = new HashSet<>();
     private long metadataRefreshInterval;
     private int processorIndex;
-    private Traverser<Entry<Object, Object>> traverser;
+    private Traverser<T> traverser;
     private ConsumerRecord<Object, Object> lastEmittedItem;
 
-    StreamKafkaP(Properties properties, List<String> topics, int globalParallelism, long metadataRefreshInterval) {
+    StreamKafkaP(Properties properties, List<String> topics, DistributedBiFunction<K, V, T> projectionFn,
+                 int globalParallelism, long metadataRefreshInterval) {
         this.properties = properties;
         this.topics = topics;
+        this.projectionFn = projectionFn;
         this.globalParallelism = globalParallelism;
         this.metadataRefreshInterval = metadataRefreshInterval;
     }
@@ -151,7 +155,7 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
             }
             traverser = traverseIterable(records)
                     .peek(r -> lastEmittedItem = r)
-                    .map(r -> entry(r.key(), r.value()))
+                    .map(r -> projectionFn.apply((K) r.key(), (V) r.value()))
                     .onFirstNull(() -> traverser = null);
         }
 
@@ -213,18 +217,19 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
         }
     }
 
-    public static class MetaSupplier implements ProcessorMetaSupplier {
+    public static class MetaSupplier<K, V, T> implements ProcessorMetaSupplier {
 
         private final Properties properties;
         private final List<String> topics;
+        private final DistributedBiFunction<K, V, T> projectionFn;
         private final long metadataRefreshInterval;
         private int totalParallelism;
 
-        public MetaSupplier(Properties properties, List<String> topics) {
+        public MetaSupplier(Properties properties, List<String> topics, DistributedBiFunction<K, V, T> projectionFn) {
             this.properties = new Properties();
-            this.topics = topics;
-
             this.properties.putAll(properties);
+            this.topics = topics;
+            this.projectionFn = projectionFn;
 
             // Save the value of metadata.max.age.ms to a variable and zero it in the properties.
             // We'll do metadata refresh on our own.
@@ -247,7 +252,7 @@ public final class StreamKafkaP extends AbstractProcessor implements Closeable {
         @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new CloseableProcessorSupplier<>(
-                    () -> new StreamKafkaP(properties, topics, totalParallelism, metadataRefreshInterval));
+                    () -> new StreamKafkaP(properties, topics, projectionFn, totalParallelism, metadataRefreshInterval));
         }
     }
 

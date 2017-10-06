@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.processor.KafkaProcessors;
+import com.hazelcast.jet.function.DistributedBiFunction;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -28,6 +29,14 @@ import java.util.Properties;
 public final class KafkaSources {
 
     private KafkaSources() {
+    }
+
+    /**
+     * Convenience for {@link #streamKafka(Properties, DistributedBiFunction,
+     * String...)} wrapping the output in {@code Map.Entry}.
+     */
+    public static <K, V> Source<Entry<K, V>> streamKafka(@Nonnull Properties properties, @Nonnull String... topics) {
+        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, topics));
     }
 
     /**
@@ -54,9 +63,11 @@ public final class KafkaSources {
      * documentation for details.
      *
      * @param properties consumer properties broker address and key/value deserializers
+     * @param projectionFn function to create output objects from key and value
      * @param topics     the list of topics
      */
-    public static <K, V> Source<Entry<K, V>> streamKafka(@Nonnull Properties properties, @Nonnull String... topics) {
-        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, topics));
+    public static <K, V, T> Source<T> streamKafka(@Nonnull Properties properties,
+                @Nonnull DistributedBiFunction<K, V, T> projectionFn, @Nonnull String... topics) {
+        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, projectionFn, topics));
     }
 }
