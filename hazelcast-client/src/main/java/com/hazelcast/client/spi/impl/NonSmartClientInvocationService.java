@@ -22,9 +22,9 @@ import com.hazelcast.nio.Address;
 
 import java.io.IOException;
 
-public class ClientNonSmartInvocationServiceImpl extends ClientInvocationServiceImpl {
+public class NonSmartClientInvocationService extends AbstractClientInvocationService {
 
-    public ClientNonSmartInvocationServiceImpl(HazelcastClientInstanceImpl client) {
+    public NonSmartClientInvocationService(HazelcastClientInstanceImpl client) {
         super(client);
     }
 
@@ -54,7 +54,7 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
         Address ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
         ClientConnection ownerConnection = (ClientConnection) connectionManager.getActiveConnection(ownerConnectionAddress);
         if (ownerConnection == null) {
-            throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
+            throw new IOException("NonSmartClientInvocationService: Owner connection is not available.");
         }
         return ownerConnection;
     }

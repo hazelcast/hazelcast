@@ -48,17 +48,17 @@ import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
-import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
+import com.hazelcast.client.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
-import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
-import com.hazelcast.client.spi.impl.listener.ClientNonSmartListenerService;
-import com.hazelcast.client.spi.impl.listener.ClientSmartListenerService;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.client.spi.impl.listener.NonSmartClientListenerService;
+import com.hazelcast.client.spi.impl.listener.SmartClientListenerService;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
@@ -182,9 +182,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientConnectionManagerImpl connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
-    private final ClientInvocationServiceImpl invocationService;
+    private final AbstractClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
-    private final ClientListenerServiceImpl listenerService;
+    private final AbstractClientListenerService listenerService;
     private final ClientTransactionManagerServiceImpl transactionManager;
     private final NearCacheManager nearCacheManager;
     private final ProxyManager proxyManager;
@@ -360,12 +360,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return c;
     }
 
-    private ClientInvocationServiceImpl initInvocationService() {
+    @SuppressWarnings("checkstyle:illegaltype")
+    private AbstractClientInvocationService initInvocationService() {
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
-            return new ClientSmartInvocationServiceImpl(this, loadBalancer);
+            return new SmartClientInvocationService(this, loadBalancer);
         } else {
-            return new ClientNonSmartInvocationServiceImpl(this);
+            return new NonSmartClientInvocationService(this);
         }
     }
 
@@ -389,14 +390,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return new DefaultClientExtension();
     }
 
-    private ClientListenerServiceImpl initListenerService() {
+    @SuppressWarnings("checkstyle:illegaltype")
+    private AbstractClientListenerService initListenerService() {
         int eventQueueCapacity = properties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
         int eventThreadCount = properties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
-            return new ClientSmartListenerService(this, eventThreadCount, eventQueueCapacity);
+            return new SmartClientListenerService(this, eventThreadCount, eventQueueCapacity);
         } else {
-            return new ClientNonSmartListenerService(this, eventThreadCount, eventQueueCapacity);
+            return new NonSmartClientListenerService(this, eventThreadCount, eventQueueCapacity);
         }
     }
 

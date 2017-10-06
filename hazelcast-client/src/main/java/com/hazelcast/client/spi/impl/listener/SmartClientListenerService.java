@@ -24,7 +24,7 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.StringUtil.timeToString;
 
-public class ClientSmartListenerService extends ClientListenerServiceImpl
+public class SmartClientListenerService extends AbstractClientListenerService
         implements ConnectionListener, ConnectionHeartbeatListener {
 
     private final long invocationTimeoutMillis;
@@ -59,11 +59,11 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
     private final Map<Connection, Collection<ClientRegistrationKey>> failedRegistrations
             = new ConcurrentHashMap<Connection, Collection<ClientRegistrationKey>>();
 
-    public ClientSmartListenerService(HazelcastClientInstanceImpl client,
+    public SmartClientListenerService(HazelcastClientInstanceImpl client,
                                       int eventThreadCount, int eventQueueCapacity) {
         super(client, eventThreadCount, eventQueueCapacity);
         clientConnectionManager = client.getConnectionManager();
-        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
         invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
         invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
     }

@@ -23,7 +23,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -87,7 +87,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     private final ClientListenerService listenerService;
 
     public ClientQueryCacheEventService(ClientContext clientContext) {
-        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientContext.getListenerService();
+        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientContext.getListenerService();
         this.listenerService = listenerService;
         this.serializationService = clientContext.getSerializationService();
         this.executor = listenerService.getEventExecutor();

@@ -26,7 +26,7 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -48,7 +48,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIME
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
 
-public abstract class ClientInvocationServiceImpl implements ClientInvocationService {
+public abstract class AbstractClientInvocationService implements ClientInvocationService {
 
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
@@ -62,7 +62,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
 
     protected ClientConnectionManager connectionManager;
     protected ClientPartitionService partitionService;
-    private ClientListenerServiceImpl clientListenerService;
+    private AbstractClientListenerService clientListenerService;
 
     @Probe(name = "pendingCalls", level = ProbeLevel.MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
@@ -73,7 +73,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
     private final long invocationTimeoutMillis;
     private final long invocationRetryPauseMillis;
 
-    public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
+    public AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
@@ -93,7 +93,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
 
     public void start() {
         connectionManager = client.getConnectionManager();
-        clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
+        clientListenerService = (AbstractClientListenerService) client.getListenerService();
         partitionService = client.getClientPartitionService();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         responseThread = new ResponseThread(client.getName() + ".response-", classLoader);

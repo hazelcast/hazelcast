@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -554,7 +554,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, String id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
+        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
         return listenerService.getActiveRegistrations(id);
     }
 
