@@ -94,7 +94,8 @@ import java.util.concurrent.TimeUnit;
  * or it will continue to use the primary or back-up version.
  * <p>
  * When the split heals, Hazelcast by default, performs a {@link com.hazelcast.map.merge.PutIfAbsentMapMergePolicy}.
- * Users can also decide to <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#specifying-merge-policies">
+ * Users can also decide to
+ * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#specifying-merge-policies">
  * specify their own map merge policies</a>, these policies when used in concert with
  * <a href="http://hal.upmc.fr/inria-00555588/document">CRDTs (Convergent and Commutative
  Replicated Data Types)</a> can ensure against data loss during a split-brain.
