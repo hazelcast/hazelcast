@@ -101,6 +101,7 @@ import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFl
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
@@ -284,6 +285,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public PartitionContainer getPartitionContainer(int partitionId) {
+        assert partitionId != GENERIC_PARTITION_ID : "Cannot be called with GENERIC_PARTITION_ID";
+
         return partitionContainers[partitionId];
     }
 
@@ -729,6 +732,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader) {
+        assert partitionId != GENERIC_PARTITION_ID : "Cannot be called with GENERIC_PARTITION_ID";
+
         ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
         return new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
     }
