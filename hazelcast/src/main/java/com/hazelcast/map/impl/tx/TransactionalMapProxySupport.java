@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -55,6 +57,7 @@ public abstract class TransactionalMapProxySupport
 
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
 
+    protected final boolean nearCacheEnabled;
     protected final String name;
     protected final MapServiceContext mapServiceContext;
     protected final MapNearCacheManager mapNearCacheManager;
@@ -63,7 +66,8 @@ public abstract class TransactionalMapProxySupport
     protected final PartitioningStrategy partitionStrategy;
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
-    protected final boolean nearCacheEnabled;
+
+    private final NearCache<Object, Object> nearCache;
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
@@ -76,7 +80,9 @@ public abstract class TransactionalMapProxySupport
         this.partitionStrategy = mapContainer.getPartitioningStrategy();
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
+        NearCacheConfig nearCacheConfig = mapContainer.getMapConfig().getNearCacheConfig();
         this.nearCacheEnabled = mapContainer.getMapConfig().isNearCacheEnabled();
+        this.nearCache = nearCacheEnabled ? mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig) : null;
     }
 
     protected boolean isEquals(Object value1, Object value2) {
@@ -90,6 +96,13 @@ public abstract class TransactionalMapProxySupport
     }
 
     public boolean containsKeyInternal(Data key) {
+        if (nearCacheEnabled) {
+            Object cachedValue = getCachedValue(key, false);
+            if (cachedValue != NOT_CACHED) {
+                return cachedValue != null;
+            }
+        }
+
         MapOperation operation = operationProvider.createContainsKeyOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         int partitionId = partitionService.getPartitionId(key);
@@ -133,6 +146,19 @@ public abstract class TransactionalMapProxySupport
 
         return deserializeValue ? getNodeEngine().getSerializationService().toObject(value) : value;
     }
+
+    final void invalidateNearCache(Data key) {
+        if (!nearCacheEnabled) {
+            return;
+        }
+
+        if (key == null) {
+            return;
+        }
+
+        nearCache.remove(key);
+    }
+
 
     public Object getForUpdateInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis(), true);
