@@ -119,10 +119,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     public CacheConfig(CacheSimpleConfig simpleConfig) throws Exception {
         this.name = simpleConfig.getName();
         if (simpleConfig.getKeyType() != null) {
-            this.keyType = (Class<K>) ClassLoaderUtil.loadClass(null, simpleConfig.getKeyType());
+            setKeyClassName(simpleConfig.getKeyType());
         }
         if (simpleConfig.getValueType() != null) {
-            this.valueType = (Class<V>) ClassLoaderUtil.loadClass(null, simpleConfig.getValueType());
+            setValueClassName(simpleConfig.getValueType());
         }
         this.isStatisticsEnabled = simpleConfig.isStatisticsEnabled();
         this.isManagementEnabled = simpleConfig.isManagementEnabled();
@@ -526,8 +526,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         out.writeObject(wanReplicationRef);
         // SUPER
-        out.writeObject(keyType);
-        out.writeObject(valueType);
+        writeKeyValueTypes(out);
         out.writeObject(cacheLoaderFactory);
         out.writeObject(cacheWriterFactory);
         out.writeObject(expiryPolicyFactory);
@@ -570,8 +569,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         wanReplicationRef = in.readObject();
 
         // SUPER
-        keyType = in.readObject();
-        valueType = in.readObject();
+        readKeyValueTypes(in);
         cacheLoaderFactory = in.readObject();
         cacheWriterFactory = in.readObject();
         expiryPolicyFactory = in.readObject();
@@ -597,6 +595,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         mergePolicy = in.readUTF();
         disablePerEntryInvalidationEvents = in.readBoolean();
+
+        setClassLoader(in.getClassLoader());
     }
 
     @Override
@@ -641,5 +641,61 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 + ", hotRestart=" + hotRestartConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + '}';
+    }
+
+    protected void writeKeyValueTypes(ObjectDataOutput out) throws IOException {
+        out.writeObject(getKeyType());
+        out.writeObject(getValueType());
+    }
+
+    protected void readKeyValueTypes(ObjectDataInput in) throws IOException {
+        setKeyType((Class<K>) in.readObject());
+        setValueType((Class<V>) in.readObject());
+    }
+
+    /**
+     * Copy this CacheConfig to given {@code target} object whose type extends CacheConfig.
+     *
+     * @param target    the target object to which this configuration will be copied
+     * @param resolved  when {@code true}, it is assumed that this {@code cacheConfig}'s key-value types have already been
+     *                  or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
+     *                  Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
+     *                  target config, to be resolved at a later time.
+     * @return          the target config
+     */
+    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
+        target.setAsyncBackupCount(getAsyncBackupCount());
+        target.setBackupCount(getBackupCount());
+        target.setCacheLoaderFactory(getCacheLoaderFactory());
+        target.setCacheWriterFactory(getCacheWriterFactory());
+        target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());
+        target.setEvictionConfig(getEvictionConfig());
+        target.setExpiryPolicyFactory(getExpiryPolicyFactory());
+        target.setHotRestartConfig(getHotRestartConfig());
+        target.setInMemoryFormat(getInMemoryFormat());
+        if (resolved) {
+            target.setKeyType(getKeyType());
+            target.setValueType(getValueType());
+        } else {
+            target.setKeyClassName(getKeyClassName());
+            target.setValueClassName(getValueClassName());
+        }
+        target.setManagementEnabled(isManagementEnabled());
+        target.setManagerPrefix(getManagerPrefix());
+        target.setMergePolicy(getMergePolicy());
+        target.setName(getName());
+        target.setPartitionLostListenerConfigs(getPartitionLostListenerConfigs());
+        target.setQuorumName(getQuorumName());
+        target.setReadThrough(isReadThrough());
+        target.setStatisticsEnabled(isStatisticsEnabled());
+        target.setStoreByValue(isStoreByValue());
+        target.setUriString(getUriString());
+        target.setWanReplicationRef(getWanReplicationRef());
+        target.setWriteThrough(isWriteThrough());
+        Iterable<CacheEntryListenerConfiguration<K, V>> entryListenerConfigs = getCacheEntryListenerConfigurations();
+        for (CacheEntryListenerConfiguration<K, V> entryListenerConfig : entryListenerConfigs) {
+            target.addCacheEntryListenerConfiguration(entryListenerConfig);
+        }
+        return target;
     }
 }

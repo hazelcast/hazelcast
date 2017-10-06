@@ -587,18 +587,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         OnJoinCacheOperation preJoinCacheOperation = null;
         assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
         if (clusterVersion.isGreaterOrEqual(V3_9)) {
-            preJoinCacheOperation = prepareOnJoinCacheOperation();
+            preJoinCacheOperation = prepareOnJoinCacheOperation(true);
         }
         return preJoinCacheOperation;
     }
 
+    // RU_COMPAT_38 since 3.9, configs are transferred in pre-join operation
     @Override
     public Operation getPostJoinOperation() {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
         OnJoinCacheOperation postJoinCacheOperation = null;
         assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
         if (clusterVersion.isLessThan(V3_9)) {
-            postJoinCacheOperation = prepareOnJoinCacheOperation();
+            postJoinCacheOperation = prepareOnJoinCacheOperation(false);
         }
         return postJoinCacheOperation;
     }
@@ -722,11 +723,17 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         return eventJournal;
     }
 
-    private OnJoinCacheOperation prepareOnJoinCacheOperation() {
+    private OnJoinCacheOperation prepareOnJoinCacheOperation(boolean clusterVersionGreaterOrEqualV39) {
         OnJoinCacheOperation preJoinCacheOperation;
         preJoinCacheOperation = new OnJoinCacheOperation();
         for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
-            preJoinCacheOperation.addCacheConfig(cacheConfigEntry.getValue());
+            CacheConfig cacheConfig;
+            if (clusterVersionGreaterOrEqualV39) {
+                cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue());
+            } else {
+                cacheConfig = cacheConfigEntry.getValue();
+            }
+            preJoinCacheOperation.addCacheConfig(cacheConfig);
         }
         return preJoinCacheOperation;
     }
