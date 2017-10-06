@@ -33,6 +33,22 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
+import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.EventQueuePlugin;
+import com.hazelcast.internal.diagnostics.InvocationPlugin;
+import com.hazelcast.internal.diagnostics.MemberHazelcastInstanceInfoPlugin;
+import com.hazelcast.internal.diagnostics.MemberHeartbeatPlugin;
+import com.hazelcast.internal.diagnostics.MetricsPlugin;
+import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
+import com.hazelcast.internal.diagnostics.OperationHeartbeatPlugin;
+import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
+import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
+import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
+import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.internal.diagnostics.SystemLogPlugin;
+import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
@@ -62,6 +78,7 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ByteArrayProcessor;
@@ -372,6 +389,31 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public DynamicConfigListener createDynamicConfigListener() {
         return new EmptyDynamicConfigListener();
+    }
+
+    @Override
+    public void registerPlugins(Diagnostics diagnostics) {
+        final NodeEngineImpl nodeEngine = node.nodeEngine;
+
+        // static loggers at beginning of file
+        diagnostics.register(new BuildInfoPlugin(nodeEngine));
+        diagnostics.register(new SystemPropertiesPlugin(nodeEngine));
+        diagnostics.register(new ConfigPropertiesPlugin(nodeEngine));
+
+        // periodic loggers
+        diagnostics.register(new OverloadedConnectionsPlugin(nodeEngine));
+        diagnostics.register(new EventQueuePlugin(nodeEngine,
+                ((EventServiceImpl) nodeEngine.getEventService()).getEventExecutor()));
+        diagnostics.register(new PendingInvocationsPlugin(nodeEngine));
+        diagnostics.register(new MetricsPlugin(nodeEngine));
+        diagnostics.register(new SlowOperationPlugin(nodeEngine));
+        diagnostics.register(new InvocationPlugin(nodeEngine));
+        diagnostics.register(new MemberHazelcastInstanceInfoPlugin(nodeEngine));
+        diagnostics.register(new SystemLogPlugin(nodeEngine));
+        diagnostics.register(new StoreLatencyPlugin(nodeEngine));
+        diagnostics.register(new MemberHeartbeatPlugin(nodeEngine));
+        diagnostics.register(new NetworkingImbalancePlugin(nodeEngine));
+        diagnostics.register(new OperationHeartbeatPlugin(nodeEngine));
     }
 
     @Override

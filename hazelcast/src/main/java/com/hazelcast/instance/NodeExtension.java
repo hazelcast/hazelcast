@@ -21,9 +21,10 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
-import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
+import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
@@ -258,4 +259,12 @@ public interface NodeExtension {
      * @return Listener to be notfied about changes in data structure configurations
      */
     DynamicConfigListener createDynamicConfigListener();
+
+    /**
+     * Register the node extension specific diagnostics plugins on the provided
+     * {@code diagnostics}.
+     *
+     * @param diagnostics the diagnostics on which plugins should be registered
+     */
+    void registerPlugins(Diagnostics diagnostics);
 }
