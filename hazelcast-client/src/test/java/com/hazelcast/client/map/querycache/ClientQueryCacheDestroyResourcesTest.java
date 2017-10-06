@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
 import com.hazelcast.client.spi.impl.listener.ClientRegistrationKey;
-import com.hazelcast.client.spi.impl.listener.ClientSmartListenerService;
+import com.hazelcast.client.spi.impl.listener.SmartClientListenerService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PredicateConfig;
@@ -100,13 +100,13 @@ public class ClientQueryCacheDestroyResourcesTest extends HazelcastTestSupport {
         queryCache2.destroy();
         queryCache3.destroy();
 
-        ClientSmartListenerService smartListenerService = getSmartListenerService();
+        SmartClientListenerService smartListenerService = getSmartListenerService();
         Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> registrations = smartListenerService.getRegistrations();
 
         assertEquals(registrations.toString(), 0, registrations.size());
     }
 
-    protected ClientSmartListenerService getSmartListenerService() {
-        return (ClientSmartListenerService) ((HazelcastClientProxy) clientInstance).client.getListenerService();
+    protected SmartClientListenerService getSmartListenerService() {
+        return (SmartClientListenerService) ((HazelcastClientProxy) clientInstance).client.getListenerService();
     }
 }

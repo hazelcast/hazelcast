@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
-public abstract class ClientListenerServiceImpl implements ClientListenerService, MetricsProvider {
+public abstract class AbstractClientListenerService implements ClientListenerService, MetricsProvider {
 
     protected final HazelcastClientInstanceImpl client;
     protected final SerializationService serializationService;
@@ -55,7 +55,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     private final StripedExecutor eventExecutor;
 
-    public ClientListenerServiceImpl(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
+    public AbstractClientListenerService(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
         this.client = client;
         serializationService = client.getSerializationService();
         logger = client.getLoggingService().getLogger(ClientListenerService.class);

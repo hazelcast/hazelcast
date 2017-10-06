@@ -62,7 +62,7 @@ public class ClientInvocation implements Runnable {
     private final ILogger logger;
     private final LifecycleService lifecycleService;
     private final ClientClusterService clientClusterService;
-    private final ClientInvocationServiceImpl invocationService;
+    private final AbstractClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
     private final CallIdSequence callIdSequence;
@@ -85,7 +85,7 @@ public class ClientInvocation implements Runnable {
                                Connection connection) {
         this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
-        this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        this.invocationService = (AbstractClientInvocationService) client.getInvocationService();
         this.executionService = client.getClientExecutionService();
         this.objectName = objectName;
         this.clientMessage = clientMessage;

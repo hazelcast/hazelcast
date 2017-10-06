@@ -20,7 +20,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientInvocationService;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.Probe;
@@ -252,7 +252,7 @@ public class ClientConnection implements Connection {
         ClientInvocationService invocationService = client.getInvocationService();
         incrementPendingPacketCount();
         if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
-            ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+            AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
             listenerService.handleClientMessage(message, this);
         } else {
             invocationService.handleClientMessage(message, this);

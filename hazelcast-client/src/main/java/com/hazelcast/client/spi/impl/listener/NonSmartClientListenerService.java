@@ -38,13 +38,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
-public class ClientNonSmartListenerService extends ClientListenerServiceImpl implements ConnectionListener {
+public class NonSmartClientListenerService extends AbstractClientListenerService implements ConnectionListener {
 
     private final Map<ClientRegistrationKey, ClientEventRegistration> activeRegistrations
             = new ConcurrentHashMap<ClientRegistrationKey, ClientEventRegistration>();
     private final Set<ClientRegistrationKey> userRegistrations = new HashSet<ClientRegistrationKey>();
 
-    public ClientNonSmartListenerService(HazelcastClientInstanceImpl client,
+    public NonSmartClientListenerService(HazelcastClientInstanceImpl client,
                                          int eventThreadCount, int eventQueueCapacity) {
         super(client, eventThreadCount, eventQueueCapacity);
     }

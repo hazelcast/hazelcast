@@ -20,7 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
@@ -71,7 +71,7 @@ public class ListenerLeakTestSupport extends HazelcastTestSupport {
 
     protected Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, String id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
+        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
         return listenerService.getActiveRegistrations(id);
     }
 }

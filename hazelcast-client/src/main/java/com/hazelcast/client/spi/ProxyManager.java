@@ -51,7 +51,7 @@ import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -215,7 +215,7 @@ public final class ProxyManager {
         }
 
         readProxyDescriptors();
-        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
         invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
         invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
     }

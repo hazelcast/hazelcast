@@ -180,7 +180,7 @@ final class ClientCacheHelper {
         } else {
             address = client.getConnectionManager().getOwnerConnectionAddress();
             if (address == null) {
-                throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
+                throw new IOException("NonSmartClientInvocationService: Owner connection is not available.");
             }
         }
         return address;

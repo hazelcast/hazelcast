@@ -26,11 +26,11 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
-public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceImpl {
+public final class SmartClientInvocationService extends AbstractClientInvocationService {
 
     private final LoadBalancer loadBalancer;
 
-    public ClientSmartInvocationServiceImpl(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
+    public SmartClientInvocationService(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         super(client);
         this.loadBalancer = loadBalancer;
     }

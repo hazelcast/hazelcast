@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.test.bounce.MultiSocketClientDriverFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
@@ -179,8 +179,8 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
             try {
                 HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
                 ClientInvocationService invocationService = clientImpl.getInvocationService();
-                ClientSmartInvocationServiceImpl smartInvocationService = (ClientSmartInvocationServiceImpl) invocationService;
-                Field callIdMapField = ClientSmartInvocationServiceImpl.class.getSuperclass().getDeclaredField("callIdMap");
+                SmartClientInvocationService smartInvocationService = (SmartClientInvocationService) invocationService;
+                Field callIdMapField = SmartClientInvocationService.class.getSuperclass().getDeclaredField("callIdMap");
                 callIdMapField.setAccessible(true);
                 return (ConcurrentMap<Long, ClientInvocation>) callIdMapField.get(smartInvocationService);
             } catch (Exception e) {
