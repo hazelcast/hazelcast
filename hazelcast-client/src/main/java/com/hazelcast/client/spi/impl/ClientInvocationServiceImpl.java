@@ -65,7 +65,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
     private ClientListenerServiceImpl clientListenerService;
 
     @Probe(name = "pendingCalls", level = ProbeLevel.MANDATORY)
-    private ConcurrentMap<Long, ClientInvocation> callIdMap = new ConcurrentHashMap<Long, ClientInvocation>();
+    private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
 
     private ResponseThread responseThread;
 
@@ -163,7 +163,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
         ClientMessage clientMessage = clientInvocation.getClientMessage();
         clientMessage.setVersion(protocolVersion);
         long correlationId = clientMessage.getCorrelationId();
-        callIdMap.put(correlationId, clientInvocation);
+        invocations.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
         if (handler != null) {
             clientListenerService.addEventHandler(correlationId, handler);
@@ -171,7 +171,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
     }
 
     private ClientInvocation deRegisterCallId(long callId) {
-        return callIdMap.remove(callId);
+        return invocations.remove(callId);
     }
 
     public boolean isShutdown() {
@@ -181,7 +181,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
     public void shutdown() {
         isShutdown = true;
         responseThread.interrupt();
-        Iterator<ClientInvocation> iterator = callIdMap.values().iterator();
+        Iterator<ClientInvocation> iterator = invocations.values().iterator();
         while (iterator.hasNext()) {
             ClientInvocation invocation = iterator.next();
             iterator.remove();
@@ -193,7 +193,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
 
         @Override
         public void run() {
-            Iterator<Map.Entry<Long, ClientInvocation>> iter = callIdMap.entrySet().iterator();
+            Iterator<Map.Entry<Long, ClientInvocation>> iter = invocations.entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry<Long, ClientInvocation> entry = iter.next();
                 ClientInvocation invocation = entry.getValue();
