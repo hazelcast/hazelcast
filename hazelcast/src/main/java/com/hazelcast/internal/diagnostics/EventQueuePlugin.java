@@ -46,16 +46,17 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The EventQueuePlugin checks the event queue and samples the event types if the size is above a certain threshold.
+ * <p>
  * This is very useful to figure out why the event queue is running full.
  */
 public class EventQueuePlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds this plugin runs.
-     *
+     * <p>
      * With the EventQueuePlugin one can see what is going on inside the event queue.
      * It makes use of sampling to give some impression of the content.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS

@@ -33,12 +33,12 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds the {@link MetricsPlugin} runs.
-     *
+     * <p>
      * The MetricsPlugin periodically writing the content of the MetricsRegistry to the logfile. For debugging purposes
      * make sure the {@link Diagnostics#METRICS_LEVEL} is set to debug.
-     *
+     * <p>
      * This plugin is very cheap to use.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
@@ -72,7 +72,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         probeRenderer.writer = writer;
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
-        // the same timestamp.
+        // the same timestamp
         probeRenderer.timeMillis = System.currentTimeMillis();
         metricsRegistry.render(probeRenderer);
         probeRenderer.writer = null;

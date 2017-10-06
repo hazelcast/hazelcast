@@ -28,22 +28,23 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A Diagnostics plugin that checks the quality of member/member heartbeats. Normally heartbeats are send at a fixed
- * frequency, but if there is a deviation in this frequency, it could indicate problems.
+ * A Diagnostics plugin that checks the quality of member/member heartbeats.
+ * <p>
+ * Normally heartbeats are sent at a fixed frequency, but if there is a deviation in this frequency, it could indicate problems.
  */
 public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds the MemberHeartbeatPlugin runs.
-     *
+     * <p>
      * This plugin is very cheap to use.
-     *
+     * <p>
      * This plugin will only output if there is the max deviation is exceeded.
-     *
+     * <p>
      * Setting the value high will lead to not seeing smaller deviations. E.g if this plugin runs every minute, then
      * it will not see a lot of small deviations. The default of 10 seconds is ok since it will not generate too much
      * overhead and noise and in most cases it is the big outliers we are interested in.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(
@@ -87,7 +88,7 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
         ClusterService cs = nodeEngine.getClusterService();
         if (!(cs instanceof ClusterServiceImpl)) {
             // lets be lenient for testing etc if some kind of mocked cluster service is encountered;
-            // we don't want to cause problems.
+            // we don't want to cause problems
             return;
         }
         render(writer, (ClusterServiceImpl) cs);
@@ -101,7 +102,7 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
         for (MemberImpl member : clusterService.getMemberImpls()) {
             long lastHeartbeatMillis = clusterHeartbeatManager.getLastHeartbeatTime(member);
             if (lastHeartbeatMillis == 0L) {
-                // member without a heartbeat; lets skip it.
+                // member without a heartbeat; lets skip it
                 continue;
             }
 

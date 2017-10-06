@@ -298,7 +298,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         try {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     plugin.run(logWriter);
 
                     //System.out.println(getContent());

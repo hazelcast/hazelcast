@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
-import static com.hazelcast.spi.properties.GroupProperty.SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +47,6 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
         Config config = new Config()
                 .setProperty(SLOW_OPERATION_DETECTOR_ENABLED.getName(), "true")
                 .setProperty(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000")
-                .setProperty(SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000")
                 .setProperty(SlowOperationPlugin.PERIOD_SECONDS.getName(), "1");
 
         hz = createHazelcastInstance(config);
@@ -73,7 +71,7 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
                 assertContains(EntryOperation.class.getName());
                 assertContains("stackTrace");

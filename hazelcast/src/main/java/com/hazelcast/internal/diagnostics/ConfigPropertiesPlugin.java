@@ -27,7 +27,7 @@ import java.util.List;
 import static java.util.Collections.sort;
 
 /**
- * A {@link DiagnosticsPlugin} that displays the {@link Config#getProperties()}
+ * A {@link DiagnosticsPlugin} that displays the {@link Config#getProperties()}.
  */
 public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
 

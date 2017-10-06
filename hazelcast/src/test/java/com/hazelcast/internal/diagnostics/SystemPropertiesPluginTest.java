@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -34,8 +33,8 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
-    public static final String FAKE_PROPERTY = "hazelcast.fake.property";
-    public static final String FAKE_PROPERTY_VALUE = "foobar";
+    private static final String FAKE_PROPERTY = "hazelcast.fake.property";
+    private static final String FAKE_PROPERTY_VALUE = "foobar";
 
     private SystemPropertiesPlugin plugin;
 
@@ -58,12 +57,12 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
     }
 
     @Test
-    public void testRun() throws IOException {
+    public void testRun() {
         plugin.run(logWriter);
 
         Properties systemProperties = System.getProperties();
 
-        // we check a few of the regular ones.
+        // we check a few of the regular ones
         assertContains("java.class.version=" + systemProperties.get("java.class.version"));
         assertContains("java.class.path=" + systemProperties.get("java.class.path"));
 

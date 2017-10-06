@@ -40,6 +40,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * The {@link Diagnostics} is a debugging tool that provides insight in all kinds of potential performance and stability issues.
  * The actual logic to provide such insights, is placed in the {@link DiagnosticsPlugin}.
  */
+@SuppressWarnings("WeakerAccess")
 public class Diagnostics {
 
     public static final String PREFIX = "hazelcast.diagnostics";
@@ -47,41 +48,41 @@ public class Diagnostics {
     /**
      * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
      * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
-     * <p/>
+     * <p>
      * By default only mandatory probes are being tracked
      */
-    public static final HazelcastProperty METRICS_LEVEL =
-            new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
-                    .setDeprecatedName("hazelcast.performance.metric.level");
+    public static final HazelcastProperty METRICS_LEVEL
+            = new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
+            .setDeprecatedName("hazelcast.performance.metric.level");
 
     /**
      * If metrics should be tracked on distributed data-structures like IMap, IQueue etc.
-     *
-     * By default these data-structures are not tracked, but in a future release this will probably be changed to true.
+     * <p>
+     * By default these data-structures are not tracked, but in a future release this will probably be changed to {@code true}.
      */
-    public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES =
-            new HazelcastProperty(PREFIX + ".metric.distributed.datastructures", false);
+    public static final HazelcastProperty METRICS_DISTRIBUTED_DATASTRUCTURES
+            = new HazelcastProperty(PREFIX + ".metric.distributed.datastructures", false);
 
 
     /**
      * Use the {@link Diagnostics} to see internal performance metrics and cluster related information.
-     * <p/>
+     * <p>
      * The performance monitor logs all metrics into the log file.
-     * <p/>
+     * <p>
      * For more detailed information, please check the METRICS_LEVEL.
-     * <p/>
-     * The default is false.
+     * <p>
+     * The default is {@code false}.
      */
     public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", false)
             .setDeprecatedName("hazelcast.performance.monitoring.enabled");
 
     /**
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
-     * <p/>
+     * <p>
      * This property sets the maximum size in MB for a single file.
-     * <p/>
+     * <p>
      * Every HazelcastInstance will get its own history of log files.
-     * <p/>
+     * <p>
      * The default is 50.
      */
     @SuppressWarnings("checkstyle:magicnumber")
@@ -90,9 +91,9 @@ public class Diagnostics {
 
     /**
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
-     * <p/>
+     * <p>
      * This property sets the maximum number of rolling files to keep on disk.
-     * <p/>
+     * <p>
      * The default is 10.
      */
     @SuppressWarnings("checkstyle:magicnumber")
@@ -100,14 +101,14 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.count");
 
     /**
-     * True if the epoch time should be included in the 'top' section. This makes it easy to determine the time in epoch format
-     * and prevents needing to parse the date-format section. The default is false since it will cause more noise.
+     * Configures if the epoch time should be included in the 'top' section. This makes it easy to determine the time in epoch
+     * format and prevents needing to parse the date-format section. The default is {@code false} since it will cause more noise.
      */
     public static final HazelcastProperty INCLUDE_EPOCH_TIME = new HazelcastProperty(PREFIX + ".include.epoch", true);
 
     /**
      * Configures the output directory of the performance log files.
-     *
+     * <p>
      * Defaults to the 'user.dir'.
      */
     public static final HazelcastProperty DIRECTORY
@@ -115,42 +116,42 @@ public class Diagnostics {
 
     /**
      * Configures the prefix for the diagnostics file.
-     *
+     * <p>
      * So instead of having e.g. 'diagnostics-...log' you get 'foobar-diagnostics-...log'.
      */
     public static final HazelcastProperty FILENAME_PREFIX
             = new HazelcastProperty(PREFIX + ".filename.prefix");
 
-
-    final HazelcastProperties properties;
-    final String directory;
-    DiagnosticsLogFile diagnosticsLogFile;
     final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<DiagnosticsPlugin[]>(
             new DiagnosticsPlugin[0]
     );
-
-    final ILogger logger;
     final String baseFileName;
+    final ILogger logger;
+    final String hzName;
+    final HazelcastProperties properties;
     final boolean includeEpochTime;
-    private final String hzName;
-    private final boolean enabled;
-    private ScheduledExecutorService scheduler;
+    final String directory;
+
+    DiagnosticsLogFile diagnosticsLogFile;
+
     private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap
             = new ConcurrentHashMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin>();
+    private final boolean enabled;
 
-    public Diagnostics(String baseFileName, ILogger logger, String hzName,
-                       HazelcastProperties properties) {
+    private ScheduledExecutorService scheduler;
+
+    public Diagnostics(String baseFileName, ILogger logger, String hzName, HazelcastProperties properties) {
         String optionalPrefix = properties.getString(FILENAME_PREFIX);
         this.baseFileName = optionalPrefix == null ? baseFileName : optionalPrefix + "-" + baseFileName;
         this.logger = logger;
         this.hzName = hzName;
         this.properties = properties;
-        this.enabled = properties.getBoolean(ENABLED);
-        this.directory = properties.getString(DIRECTORY);
         this.includeEpochTime = properties.getBoolean(INCLUDE_EPOCH_TIME);
+        this.directory = properties.getString(DIRECTORY);
+        this.enabled = properties.getBoolean(ENABLED);
     }
 
-    // just for testing. Returns the current file the system is writing to.
+    // just for testing (returns the current file the system is writing to)
     public File currentFile() {
         return diagnosticsLogFile.file;
     }
@@ -160,28 +161,28 @@ public class Diagnostics {
      * some data-structure outside of the Diagnostics.
      *
      * @param pluginClass the class of the DiagnosticsPlugin
-     * @param <P>
-     * @return the DiagnosticsPlugin found, or null if not active.
+     * @param <P>         type of the plugin
+     * @return the DiagnosticsPlugin found, or {@code null} if not active
      */
+    @SuppressWarnings("unchecked")
     public <P extends DiagnosticsPlugin> P getPlugin(Class<P> pluginClass) {
         return (P) pluginsMap.get(pluginClass);
     }
 
     /**
      * Registers a {@link DiagnosticsPlugin}.
-     *
-     * This method is threadsafe.
-     *
+     * <p>
+     * This method is thread-safe.
+     * <p>
      * There is no checking for duplicate registration.
-     *
+     * <p>
      * If the {@link Diagnostics} is disabled, the call is ignored.
      *
      * @param plugin the plugin to register
-     * @throws NullPointerException if plugin is null.
+     * @throws NullPointerException if plugin is {@code null}
      */
     public void register(DiagnosticsPlugin plugin) {
         checkNotNull(plugin, "plugin can't be null");
-
         if (!enabled) {
             return;
         }
@@ -190,15 +191,12 @@ public class Diagnostics {
         if (periodMillis < -1) {
             throw new IllegalArgumentException(plugin + " can't return a periodMillis smaller than -1");
         }
-
         logger.finest(plugin.getClass().toString() + " is " + (periodMillis == DISABLED ? "disabled" : "enabled"));
-
         if (periodMillis == DISABLED) {
             return;
         }
 
         pluginsMap.put(plugin.getClass(), plugin);
-
         plugin.onStart();
 
         if (periodMillis > 0) {
@@ -256,7 +254,7 @@ public class Diagnostics {
             try {
                 diagnosticsLogFile.write(plugin);
             } catch (Throwable t) {
-                // we need to catch any exception; otherwise the task is going to be removed by the scheduler.
+                // we need to catch any exception; otherwise the task is going to be removed by the scheduler
                 logger.severe(t);
             }
         }

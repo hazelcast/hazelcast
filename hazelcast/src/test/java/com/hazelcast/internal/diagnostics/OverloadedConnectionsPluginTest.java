@@ -51,7 +51,7 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
     private volatile boolean stop;
 
     @Before
-    public void setup() throws InterruptedException {
+    public void setup() {
         Hazelcast.shutdownAll();
 
         Config config = new Config()
@@ -90,7 +90,7 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
 
                 assertContains(GetOperation.class.getSimpleName() + " sampleCount=");

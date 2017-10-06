@@ -34,7 +34,7 @@ import static java.util.Calendar.YEAR;
 /**
  * A writer like structure dedicated for the {@link DiagnosticsPlugin} rendering.
  */
-public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
+class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 
     private static final String STR_LONG_MIN_VALUE = String.format(LOCALE_INTERNAL, "%,d", Long.MIN_VALUE);
 
@@ -67,11 +67,11 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     // used to write primitives without causing litter
     private StringBuilder stringBuilder = new StringBuilder();
 
-    public DiagnosticsLogWriterImpl() {
+    DiagnosticsLogWriterImpl() {
         this(false);
     }
 
-    public DiagnosticsLogWriterImpl(boolean includeEpochTime) {
+    DiagnosticsLogWriterImpl(boolean includeEpochTime) {
         this.includeEpochTime = includeEpochTime;
     }
 
@@ -257,7 +257,7 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     }
 
     // we can't rely on DateFormat since it generates a ton of garbage
-    protected void appendDateTime(long epochMillis) {
+    private void appendDateTime(long epochMillis) {
         date.setTime(epochMillis);
         calendar.setTime(date);
         appendDate();

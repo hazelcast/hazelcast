@@ -24,8 +24,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -48,7 +46,7 @@ public class MemberHazelcastInstanceInfoPluginTest extends AbstractDiagnosticsPl
     }
 
     @Test
-    public void testRun() throws IOException {
+    public void testRun() {
         plugin.run(logWriter);
 
         assertContains("HazelcastInstance[");

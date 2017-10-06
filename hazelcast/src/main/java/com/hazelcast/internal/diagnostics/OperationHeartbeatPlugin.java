@@ -34,7 +34,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * A diagnostics plugin that checks how the network is behaving by checking deviations in Operation-heartbeats to assist with
  * network related problems like split-brain.
- *
+ * <p>
  * It does this by checking the deviation in the interval between operation-heartbeat packets. Operation-heartbeat packets
  * are send at a fixed interval (operation-call-timeout/4) and are not processed by operation-threads; but by their own system.
  * If there is a big deviation, then it could indicate networking problems. But it could also indicate other problems like JVM
@@ -44,12 +44,12 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds this plugin runs.
-     *
+     * <p>
      * This plugin is very cheap to run and is enabled by default.
-     *
+     * <p>
      * It will also not print output every time it is executed, only when one or more members have a too high operation-heartbeat
      * deviation, the plugin will render output.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
@@ -65,7 +65,6 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     private static final float HUNDRED = 100f;
 
-    private final InvocationMonitor invocationMonitor;
     private final long periodMillis;
     private final long expectedIntervalMillis;
     private final int maxDeviationPercentage;
@@ -74,7 +73,7 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     public OperationHeartbeatPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(OperationHeartbeatPlugin.class));
-        this.invocationMonitor = ((OperationServiceImpl) nodeEngine.getOperationService()).getInvocationMonitor();
+        InvocationMonitor invocationMonitor = ((OperationServiceImpl) nodeEngine.getOperationService()).getInvocationMonitor();
         HazelcastProperties properties = nodeEngine.getProperties();
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
         this.maxDeviationPercentage = properties.getInteger(MAX_DEVIATION_PERCENTAGE);

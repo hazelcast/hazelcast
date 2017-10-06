@@ -32,18 +32,16 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link DiagnosticsPlugin} that displays all invocations that have been executing for some time.
- *
- * It will display the current invocations.
- *
- * But it will also display the history. E.g. if a entry processor has been running for 5 minutes and
- * the {@link #SAMPLE_PERIOD_SECONDS is set to 1 minute, then there will be 5 samples for that given invocation.
- * This is useful to track which operations have been slow over a longer period of time.
+ * <p>
+ * It will display the current invocations and the invocation history. For example, if an entry processor has been
+ * running for 5 minutes and the {@link #SAMPLE_PERIOD_SECONDS} is set to 1 minute, then there will be 5 samples
+ * for that given invocation. This is useful to track which operations have been slow over a longer period of time.
  */
 public class InvocationPlugin extends DiagnosticsPlugin {
 
     /**
      * The sample period in seconds.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty SAMPLE_PERIOD_SECONDS
@@ -56,7 +54,7 @@ public class InvocationPlugin extends DiagnosticsPlugin {
             = new HazelcastProperty(PREFIX + ".invocation.slow.threshold.seconds", 5, SECONDS);
 
     /**
-     * The maximum number of slow invocations to print
+     * The maximum number of slow invocations to print.
      */
     public static final HazelcastProperty SLOW_MAX_COUNT
             = new HazelcastProperty(PREFIX + ".invocation.slow.max.count", 100);
@@ -113,11 +111,11 @@ public class InvocationPlugin extends DiagnosticsPlugin {
             occurrences.add(operationDesc, 1);
 
             if (durationMs < thresholdMillis) {
-                // short invocation, lets move on to the next.
+                // short invocation, lets move on to the next
                 continue;
             }
 
-            // it is a slow invocation.
+            // it is a slow invocation
             count++;
             if (count < maxCount) {
                 writer.writeEntry(invocation.toString() + " duration=" + durationMs + " ms");
