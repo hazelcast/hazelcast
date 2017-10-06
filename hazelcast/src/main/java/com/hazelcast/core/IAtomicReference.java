@@ -41,6 +41,11 @@ package com.hazelcast.core;
  * </pre>
  * </p>
  *
+ * <p>In split-brain scenarios, the atomicity of the reference is lost.  It is possible for different references to
+ * exist in different cluster partitions. When the split-brain heals, Hazelcast employs a largest cluster wins
+ * policy to decide which of the {@link IAtomicReference} to use.  When the cluster size are equal, a random winner
+ * is chosen.
+ *
  * @see IAtomicLong
  * @since 3.2
  */
