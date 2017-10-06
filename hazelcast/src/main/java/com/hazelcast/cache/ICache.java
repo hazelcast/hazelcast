@@ -91,6 +91,21 @@ import java.util.Set;
  *   unwrappedCache.put( "key", "value", new AccessedExpiryPolicy( Duration.ONE_DAY ) );
  * </pre>
  *
+ * <p>
+ * <b>Split-brain</b>
+ * <p>
+ * Behaviour of {@link ICache} under split-brain scenarios should be taken into account when using this
+ * data structure.  During a split, each partitioned cluster will either create a brand new {@link ICache}
+ * or it will continue to use the primary or back-up version.
+ * <p>
+ * As a defensive mechanism against such inconsistency, consider using the in-built
+ * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#split-brain-protection">
+ * split-brain protection for {@link ICache}</a>.  Using this functionality it is possible to restrict operations in smaller
+ * partitioned clusters. It should be noted that there is still an inconsistency window between the time of
+ * the split and the actual detection. Therefore using this reduces the window of inconsistency but can never
+ * completely eliminate it.
+ * <p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see javax.cache.Cache
