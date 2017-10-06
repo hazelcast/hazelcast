@@ -38,21 +38,8 @@ public final class HdfsProcessors {
     }
 
     /**
-     * Returns a meta-supplier of processors for a vertex that reads records
-     * from Apache Hadoop HDFS and emits the results of transforming each
-     * record with the supplied mapping function.
-     * <p>
-     * The vertex splits and balances the input data among processors, doing
-     * its best to achieve data locality. To this end the Jet cluster topology
-     * should be aligned with Hadoop's &mdash; on each Hadoop member there
-     * should be a Jet member.
-     *
-     * @param <K> key type of the records
-     * @param <V> value type of the records
-     * @param <R> the type of the emitted value
-
-     * @param jobConf JobConf for reading files with the appropriate input format and path
-     * @param mapper  mapper which can be used to map the key and value to another value
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.HdfsSources#readHdfs(JobConf, DistributedBiFunction)}.
      */
     @Nonnull
     public static <K, V, R> MetaSupplier<K, V, R> readHdfsP(
@@ -62,26 +49,8 @@ public final class HdfsProcessors {
     }
 
     /**
-     * Returns a meta-supplier of processors for a vertex that writes to Apache
-     * Hadoop HDFS. It transforms each received item to a key-value pair using
-     * the two supplied mapping functions. The type of key and value must
-     * conform to the expectations of the output format specified in {@code
-     * JobConf}.
-     * <p>
-     * Each processor instance creates a single file in the output path
-     * identified by the member ID and the processor ID. Unlike MapReduce, the
-     * data in the files is not sorted by key.
-     * <p>
-     * The supplied {@code JobConf} must specify an {@code OutputFormat} with
-     * a path.
-     *
-     * @param jobConf        {@code JobConf} used for output format configuration
-     * @param extractKeyFn   mapper to map a key to another key
-     * @param extractValueFn mapper to map a value to another value
-     *
-     * @param <E> stream item type
-     * @param <K> type of key to write to HDFS
-     * @param <V> type of value to write to HDFS
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.HdfsSinks#writeHdfs(JobConf, DistributedFunction, DistributedFunction)}.
      */
     @Nonnull
     public static <E, K, V> ProcessorMetaSupplier writeHdfsP(

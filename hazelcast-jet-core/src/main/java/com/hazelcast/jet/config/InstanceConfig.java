@@ -98,7 +98,7 @@ public class InstanceConfig {
 
     /**
      * Sets the number of synchronous backups for storing job metadata and
-     * snapshots. Maximum allowed value is 6.
+     * snapshots. Maximum allowed value is 6, default value is 1.
      * <p>
      * For example, if backup count is set to 2, all job metadata and snapshot data
      * will be replicated to two other members. If snapshots are enabled

@@ -324,41 +324,41 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     }
 
-    public static <T> ProcessorMetaSupplier streamMap(String mapName,
-                                                      DistributedPredicate<EventJournalMapEvent> predicate,
-                                                      DistributedFunction<EventJournalMapEvent, T> projection,
+    public static <K, V, T> ProcessorMetaSupplier streamMap(String mapName,
+                                                      DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
+                                                      DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
                                                       boolean startFromLatestSequence) {
         return new ClusterMetaSupplier<>(null,
-                instance -> (EventJournalReader<EventJournalMapEvent>) instance.getMap(mapName),
+                instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
                 predicate, projection, startFromLatestSequence);
     }
 
-    public static <T> ProcessorMetaSupplier streamMap(String mapName,
+    public static <K, V, T> ProcessorMetaSupplier streamMap(String mapName,
                                                       ClientConfig clientConfig,
-                                                      DistributedPredicate<EventJournalMapEvent> predicate,
-                                                      DistributedFunction<EventJournalMapEvent, T> projection,
+                                                      DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
+                                                      DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
                                                       boolean startFromLatestSequence) {
         return new ClusterMetaSupplier<>(clientConfig,
-                instance -> (EventJournalReader<EventJournalMapEvent>) instance.getMap(mapName),
+                instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
                 predicate, projection, startFromLatestSequence);
     }
 
-    public static <T> ProcessorMetaSupplier streamCache(String cacheName,
-                                                        DistributedPredicate<EventJournalCacheEvent> predicate,
-                                                        DistributedFunction<EventJournalCacheEvent, T> projection,
+    public static <K, V, T> ProcessorMetaSupplier streamCache(String cacheName,
+                                                        DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
+                                                        DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
                                                         boolean startFromLatestSequence) {
         return new ClusterMetaSupplier<>(null,
-                instance -> (EventJournalReader<EventJournalCacheEvent>) instance.getCacheManager().getCache(cacheName),
+                inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
                 predicate, projection, startFromLatestSequence);
     }
 
-    public static <T> ProcessorMetaSupplier streamCache(String cacheName,
+    public static <K, V, T> ProcessorMetaSupplier streamCache(String cacheName,
                                                         ClientConfig clientConfig,
-                                                        DistributedPredicate<EventJournalCacheEvent> predicate,
-                                                        DistributedFunction<EventJournalCacheEvent, T> projection,
+                                                        DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
+                                                        DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
                                                         boolean startFromLatestSequence) {
         return new ClusterMetaSupplier<>(clientConfig,
-                instance -> (EventJournalReader<EventJournalCacheEvent>) instance.getCacheManager().getCache(cacheName),
+                inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
                 predicate, projection, startFromLatestSequence);
     }
 }

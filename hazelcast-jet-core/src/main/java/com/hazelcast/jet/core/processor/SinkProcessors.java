@@ -49,9 +49,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that puts {@code
-     * Map.Entry}s it receives into a Hazelcast {@code IMap} with the
-     * specified name.
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeMap(String)}.
      */
     @Nonnull
     public static ProcessorSupplier writeMapP(@Nonnull String mapName) {
@@ -59,10 +58,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that puts {@code
-     * Map.Entry}s it receives into a Hazelcast {@code IMap} with the
-     * specified name in a remote cluster identified by the supplied
-     * {@code ClientConfig}.
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeMap(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorSupplier writeMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
@@ -70,9 +67,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that puts {@code
-     * Map.Entry}s it receives into a Hazelcast {@code ICache} with the
-     * specified name.
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeCache(String)}.
      */
     @Nonnull
     public static ProcessorSupplier writeCacheP(@Nonnull String cacheName) {
@@ -80,10 +76,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that puts {@code
-     * Map.Entry}s it receives into a Hazelcast {@code ICache} with the
-     * specified name in a remote cluster identified by the supplied
-     * {@code ClientConfig}.
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeCache(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorSupplier writeCacheP(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
@@ -91,8 +85,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that adds the items it
-     * receives to a Hazelcast {@code IList} with the specified name.
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeList(String)}.
      */
     @Nonnull
     public static ProcessorSupplier writeListP(@Nonnull String listName) {
@@ -100,9 +94,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that adds the items it
-     * receives to a Hazelcast {@code IList} with the specified name in a
-     * remote cluster identified by the supplied {@code ClientConfig}.
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeList(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorSupplier writeListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -159,17 +152,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that connects to the
-     * specified TCP socket and writes to it a string representation of the
-     * items it receives. It converts an item to its string representation
-     * using the supplied {@code toStringFn} function and encodes the string
-     * using the supplied {@code Charset}. It follows each item with a newline
-     * character.
-     *
-     * @param host the name of the host to connect to
-     * @param port the port number to connect to
-     * @param toStringFn a function that returns the string representation of an item
-     * @param charset charset used to encode the string representation
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeSocket(String, int)}.
      */
     public static <T> ProcessorSupplier writeSocketP(
             @Nonnull String host,
@@ -196,28 +180,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for a vertex that writes the items it
-     * receives to files. Each processor will write to its own file whose name
-     * is equal to the processor's global index (an integer unique to each
-     * processor of the vertex), but a single pathname is used to resolve the
-     * containing directory of all files, on all cluster members.
-     * <p>
-     * The vertex converts an item to its string representation using the
-     * supplied {@code toStringFn} function and encodes the string using the
-     * supplied {@code Charset}. It follows each item with a platform-specific
-     * line separator.
-     * <p>
-     * Since the work of this vertex is file IO-intensive, {@link
-     * com.hazelcast.jet.core.Vertex#localParallelism(int) local parallelism} of
-     * the vertex should be set according to the performance characteristics of
-     * the underlying storage system. Most typically, local parallelism of 1 will
-     * already reach the maximum available performance.
-     *
-     * @param directoryName directory to create the files in. Will be created if it doesn't exist.
-     * @param toStringFn a function that returns the string representation of an item
-     * @param charset charset used to encode the string representation
-     * @param append whether to append ({@code true}) or overwrite ({@code false})
-     *               an existing file
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction, Charset, boolean)}.
      */
     @Nonnull
     public static <T> ProcessorSupplier writeFileP(
@@ -230,12 +194,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Convenience for {@link #writeFileP(String, DistributedFunction, Charset,
-     * boolean)} with the UTF-8 charset and with overwriting of existing files.
-     *
-     * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all members.
-     * @param toStringFn a function that returns the string representation of an item
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction)}.
      */
     @Nonnull
     public static <T> ProcessorSupplier writeFileP(
@@ -245,12 +205,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Convenience for {@link #writeFileP(String, DistributedFunction, Charset,
-     * boolean)} with {@code Object.toString()} as the conversion function,
-     * UTF-8 as the charset and with overwriting of existing files.
-     *
-     * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all members.
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeFile(String)}.
      */
     @Nonnull
     public static ProcessorSupplier writeFileP(@Nonnull String directoryName) {

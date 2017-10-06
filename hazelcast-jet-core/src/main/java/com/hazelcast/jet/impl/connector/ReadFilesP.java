@@ -40,7 +40,16 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 
 /**
- * @see SourceProcessors#readFilesP(String, Charset, String)
+ * Private API, use {@link SourceProcessors#readFilesP(String, Charset, String)}.
+ * <p>
+ * Since the work of this vertex is file IO-intensive, its {@link
+ * com.hazelcast.jet.core.Vertex#localParallelism(int) local parallelism}
+ * should be set according to the performance characteristics of the
+ * underlying storage system. Modern high-end devices peak with 4-8 reading
+ * threads, so if running a single Jet job with a single file-reading
+ * vertex, the optimal value would be in the range of 4-8. Note that any
+ * one file is only read by one thread, so extra parallelism won't improve
+ * performance if there aren't enough files to read.
  */
 public final class ReadFilesP extends AbstractProcessor implements Closeable {
 

@@ -43,6 +43,9 @@ public final class HdfsSources {
      * data locality. To this end the Jet cluster topology should be aligned
      * with Hadoop's &mdash; on each Hadoop member there should be a Jet
      * member.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      *
      * @param <K> key type of the records
      * @param <V> value type of the records

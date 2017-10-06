@@ -149,7 +149,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         logger,
                         srcVertex.name(),
                         processorIdx + srcVertex.getProcIdxOffset(),
-                        jobConfig.getSnapshotInterval() >= 0
+                        jobConfig.getSnapshotIntervalMillis() > 0
                 );
 
                  String probePrefix = String.format("jet.job.%s.%s#%d", idToString(executionId), srcVertex.name(),
@@ -248,7 +248,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     + vertex.name() + "#ProcessorSupplier");
             supplier.init(
                     new ProcSupplierCtx(service.getJetInstance(), logger, vertex.parallelism(),
-                            jobConfig.getSnapshotInterval() >= 0));
+                            jobConfig.getSnapshotIntervalMillis() > 0));
         }
     }
 

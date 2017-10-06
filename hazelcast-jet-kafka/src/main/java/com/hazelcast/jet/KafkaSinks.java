@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.core.processor.KafkaProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 
+import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.Properties;
 
@@ -41,6 +42,9 @@ public final class KafkaSinks {
      * Behavior on job restart: the processor is stateless. If the job is
      * restarted, duplicate events can occur. If you need exactly once
      * behavior, you must ensure idempotence on the application level.
+     * <p>
+     * IO failures are generally handled by Kafka producer and generally do not
+     * cause the processor to fail. Refer to Kafka documentation for details.
      *
      * @param topic          name of the Kafka topic to publish to
      * @param properties     producer properties which should contain broker
@@ -53,9 +57,10 @@ public final class KafkaSinks {
      * @param <V> type of the value published to Kafka
      */
     public static <E, K, V> Sink<E> writeKafka(
-            String topic, Properties properties,
-            DistributedFunction<? super E, K> extractKeyFn,
-            DistributedFunction<? super E, V> extractValueFn
+            @Nonnull String topic,
+            @Nonnull Properties properties,
+            @Nonnull DistributedFunction<? super E, K> extractKeyFn,
+            @Nonnull DistributedFunction<? super E, V> extractValueFn
     ) {
         return Sinks.fromProcessor("writeKafka",
                 KafkaProcessors.writeKafkaP(topic, properties, extractKeyFn, extractValueFn));
@@ -74,7 +79,7 @@ public final class KafkaSinks {
      * @param <K> type of the key published to Kafka
      * @param <V> type of the value published to Kafka
      */
-    public static <K, V> Sink<Entry<K, V>> writeKafka(String topic, Properties properties) {
+    public static <K, V> Sink<Entry<K, V>> writeKafka(@Nonnull String topic, @Nonnull Properties properties) {
         return writeKafka(topic, properties, Entry::getKey, Entry::getValue);
     }
 }

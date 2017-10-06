@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.processor.KafkaProcessors;
 
+import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.Properties;
 
@@ -48,13 +49,14 @@ public final class KafkaSources {
      * event is fully processed.
      * <p>
      * The processor completes only in the case of an error or if the job is
-     * cancelled.
+     * cancelled. IO failures are generally handled by Kafka producer and
+     * generally do not cause the processor to fail. Refer to Kafka
+     * documentation for details.
      *
-     * @param properties consumer properties which should contain consumer
-     *                   group name, broker address and key/value deserializers
+     * @param properties consumer properties broker address and key/value deserializers
      * @param topics     the list of topics
      */
-    public static <K, V> Source<Entry<K, V>> streamKafka(Properties properties, String... topics) {
+    public static <K, V> Source<Entry<K, V>> streamKafka(@Nonnull Properties properties, @Nonnull String... topics) {
         return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, topics));
     }
 }

@@ -33,7 +33,13 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
- * @see SinkProcessors#writeFileP(String, DistributedFunction, Charset, boolean)
+ * See {@link SinkProcessors#writeFileP(String, DistributedFunction, Charset, boolean)}.
+ * <p>
+ * Since the work of this sink is file IO-intensive, {@link
+ * com.hazelcast.jet.core.Vertex#localParallelism(int) local parallelism} of
+ * the vertex should be set according to the performance characteristics of
+ * the underlying storage system. Most typically, local parallelism of 1 will
+ * already reach the maximum available performance.
  */
 public final class WriteFileP {
 

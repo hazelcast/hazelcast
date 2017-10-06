@@ -44,6 +44,10 @@ public final class HdfsSinks {
      * <p>
      * The supplied {@code JobConf} must specify an {@code OutputFormat} with
      * a path.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at least once</i>
+     * guarantee.
      *
      * @param jobConf     {@code JobConf} used for output format configuration
      * @param extractKeyF   mapper to map a key to another key

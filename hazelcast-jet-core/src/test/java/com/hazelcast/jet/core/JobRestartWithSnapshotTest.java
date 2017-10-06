@@ -161,7 +161,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Job job = instance1.newJob(dag, config);
 
         SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
-        int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotInterval()) + 2);
+        int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 2);
 
         // wait until we have at least one snapshot
         IStreamMap<Long, Object> snapshotsMap = snapshotRepository.getSnapshotMap(job.getJobId());

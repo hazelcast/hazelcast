@@ -50,6 +50,13 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Private API, see methods in {@link com.hazelcast.jet.core.processor.SourceProcessors}.
+ * <p>
+ * The number of Hazelcast partitions should be configured to at least
+ * {@code localParallelism * clusterSize}, otherwise some processors will
+ * have no partitions assigned to them.
+ */
 @SuppressWarnings("unchecked")
 public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 

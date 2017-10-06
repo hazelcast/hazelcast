@@ -16,22 +16,25 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.impl.SourceImpl;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
-import com.hazelcast.jet.impl.SourceImpl;
-import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.util.Map;
 
@@ -61,7 +64,7 @@ public final class Sources {
      * @param sourceName user-friendly source name
      * @param metaSupplier the processor meta-supplier
      */
-    public static <T> Source<T> fromProcessor(String sourceName, ProcessorMetaSupplier metaSupplier) {
+    public static <T> Source<T> fromProcessor(@Nonnull String sourceName, @Nonnull ProcessorMetaSupplier metaSupplier) {
         return new SourceImpl<>(sourceName, metaSupplier);
     }
 
@@ -72,7 +75,7 @@ public final class Sources {
      * @param sourceName user-friendly source name
      * @param supplier the processor supplier
      */
-    public static <T> Source<T> fromProcessor(String sourceName, ProcessorSupplier supplier) {
+    public static <T> Source<T> fromProcessor(@Nonnull String sourceName, @Nonnull ProcessorSupplier supplier) {
         return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
     }
 
@@ -82,7 +85,8 @@ public final class Sources {
      * @param sourceName user-friendly source name
      * @param supplier the supplier of processors
      */
-    public static <T> Source<T> fromProcessor(String sourceName, DistributedSupplier<Processor> supplier) {
+    public static <T> Source<T> fromProcessor(
+            @Nonnull String sourceName, @Nonnull DistributedSupplier<Processor> supplier) {
         return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
     }
 
@@ -92,11 +96,14 @@ public final class Sources {
      * processors will leverage data locality by fetching only those entries
      * that are stored on the member where they are running.
      * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
+     * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V> Source<Map.Entry<K, V>> readMap(String mapName) {
+    public static <K, V> Source<Map.Entry<K, V>> readMap(@Nonnull String mapName) {
         return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMapP(mapName));
     }
 
@@ -104,26 +111,74 @@ public final class Sources {
      * Returns a source that fetches entries from the Hazelcast {@code IMap}
      * with the specified name, filters them using the supplied predicate,
      * transforms them using the supplied projection function, and emits
-     * the results. Its processors will leverage data locality by fetching
-     * only those entries that are stored on the member where they are running.
+     * them as {@code Map.Entry}. Its processors will leverage data locality
+     * by fetching only those entries that are stored on the member where they
+     * are running.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V, T> Source<T> readMap(String mapName,
-                                              DistributedPredicate<Map.Entry<K, V>> predicate,
-                                              DistributedFunction<Map.Entry<K, V>, T> projectionFn) {
+    public static <K, V, T> Source<T> readMap(@Nonnull String mapName,
+                                              @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                              @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn) {
         return fromProcessor("readMap(" + mapName + ')',
                 SourceProcessors.readMapP(mapName, predicate, projectionFn));
     }
 
     /**
+     * Convenience for {@link #streamMap(String, DistributedPredicate,
+     * DistributedFunction, boolean)} with no projection or filtering. It
+     * emits {@link EventJournalMapEvent}s.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalMapEvent<K, V>> streamMap(
+            @Nonnull String mapName, boolean startFromLatestSequence) {
+        return fromProcessor("streamMap(" + mapName + ')',
+                SourceProcessors.streamMapP(mapName, startFromLatestSequence));
+    }
+
+    /**
+     * Returns a source that will stream the {@link EventJournalMapEvent}
+     * events of the Hazelcast {@code IMap} with the specified name. The given
+     * predicate and projection will be applied to the events at the source.
+     * <p>
+     * The processors will only access data local to the member and processors
+     * will divide the labor within the member so that each of them will get a
+     * subset of all local partitions to stream.
+     * <p>
+     * In order to stream from a map, event-journal should be configured.
+     * See {@link com.hazelcast.config.EventJournalConfig}.
+     * <p>
+     * Journal offset is saved to the state snapshot. If the job restarts,
+     * emission starts at the saved offset, giving exactly-once guarantee.
+     *
+     * @param mapName the name of the map
+     * @param predicate the predicate to filter the events, can be {@code null}
+     * @param projection the projection to map the events, can be {@code null}
+     * @param startFromLatestSequence starting point of the events in event journal.
+     *          {@code true} to start from latest, {@code false} to start from oldest
+     * @param <T> type of emitted item
+     */
+    @Nonnull
+    public static <K, V, T> Source<T> streamMap(@Nonnull String mapName,
+                                          @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
+                                          @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
+                                          boolean startFromLatestSequence) {
+        return fromProcessor("streamMap(" + mapName + ')',
+                SourceProcessors.streamMapP(mapName, predicate, projection, startFromLatestSequence));
+    }
+
+    /**
      * Returns a source that fetches entries from the Hazelcast {@code IMap}
      * with the specified name in a remote cluster identified by the supplied
-     * {@code ClientConfig} and emits them as {@code Map.Entry}. Its processors
-     * will leverage data locality by fetching only those entries that are
-     * stored on the member where they are running.
+     * {@code ClientConfig} and emits them as {@code Map.Entry}.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -139,19 +194,67 @@ public final class Sources {
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig}, filters them using the supplied predicate,
      * transforms them using the supplied projection function, and emits
-     * the results. Its processors will leverage data locality by fetching
-     * only those entries that are stored on the member where they are running.
+     * them as {@code Map.Entry}.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V, T> Source<T> readMap(String mapName,
-                                              DistributedPredicate<Map.Entry<K, V>> predicate,
-                                              DistributedFunction<Map.Entry<K, V>, T> projectionFn,
-                                              ClientConfig clientConfig) {
+    public static <K, V, T> Source<T> readMap(@Nonnull String mapName,
+                                              @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+                                              @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
+                                              @Nonnull ClientConfig clientConfig) {
         return fromProcessor("readMap(" + mapName + ')',
                 SourceProcessors.readMapP(mapName, predicate, projectionFn, clientConfig));
+    }
+
+    /**
+     * Convenience for {@link #streamMap(String, ClientConfig,
+     * DistributedPredicate, DistributedFunction, boolean)} with no projection
+     * or filtering. It emits {@link EventJournalMapEvent}s.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalMapEvent<K, V>> streamMap(
+            @Nonnull String mapName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence) {
+        return fromProcessor("streamMap(" + mapName + ')',
+                SourceProcessors.streamMapP(mapName, clientConfig, startFromLatestSequence));
+    }
+
+    /**
+     * Returns a source that will stream the {@link EventJournalMapEvent}
+     * events of the Hazelcast {@code IMap} with the specified name from a
+     * remote cluster. The given predicate and projection will be applied to the
+     * events at the source.
+     * <p>
+     * In order to stream from a map, event-journal should be configured.
+     * Please see {@link com.hazelcast.config.EventJournalConfig}
+     * <p>
+     * Journal offset is saved to the state snapshot. If the job restarts,
+     * emission starts at the saved offset, giving exactly-once guarantee.
+     *
+     * @param mapName the name of the map
+     * @param clientConfig configuration for the client to connect to the remote cluster
+     * @param predicate the predicate to filter the events, can be {@code null}
+     * @param projection the projection to map the events, can be {@code null}
+     * @param startFromLatestSequence starting point of the events in event journal.
+     *          {@code true} to start from latest, {@code false} to start from oldest.
+     * @param <K> type of key
+     * @param <V> type of value
+     * @param <T> type of emitted item
+     */
+    @Nonnull
+    public static <K, V, T> Source<T> streamMap(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
+            @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamMap(" + mapName + ')',
+                SourceProcessors.streamMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence));
     }
 
     /**
@@ -159,6 +262,9 @@ public final class Sources {
      * with the specified name and emits them as {@code Map.Entry}. Its
      * processors will leverage data locality by fetching only those entries
      * that are stored on the member where they are running.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -170,11 +276,56 @@ public final class Sources {
     }
 
     /**
+     * Convenience for {@link #streamCache(String, DistributedPredicate,
+     * DistributedFunction, boolean)} with no projection or filtering.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamCache(
+            @Nonnull String cacheName, boolean startFromLatestSequence) {
+        return fromProcessor("streamCache(" + cacheName + ')',
+                SourceProcessors.streamCacheP(cacheName, startFromLatestSequence));
+    }
+
+    /**
+     * Returns a source that will stream the {@link EventJournalCacheEvent}
+     * events of the Hazelcast {@code ICache} with the specified name. The given
+     * predicate and projection will be applied to the events at the source.
+     * <p>
+     * The processors will only access data local to the member and processors
+     * will divide the labor within the member so that each of them will get a
+     * subset of all local partitions to stream.
+     * <p>
+     * In order to stream from a cache, event-journal should be configured.
+     * Please see {@link com.hazelcast.config.EventJournalConfig}.
+     * <p>
+     * Journal offset is saved to the state snapshot. If the job restarts,
+     * emission starts at the saved offset, giving exactly-once guarantee.
+     *
+     * @param cacheName               The name of the cache
+     * @param predicate               The predicate to filter the events, can be null
+     * @param projection              The projection to map the events, can be null
+     * @param startFromLatestSequence starting point of the events in event journal
+     *                                {@code true} to start from latest, {@code false} to start from oldest
+     * @param <T>                     type of emitted item
+     */
+    @Nonnull
+    public static <K, V, T> Source<T> streamCache(
+            @Nonnull String cacheName,
+            @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
+            @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamCache(" + cacheName + ')',
+                SourceProcessors.streamCacheP(cacheName, predicate, projection, startFromLatestSequence));
+    }
+
+    /**
      * Returns a source that fetches entries from the Hazelcast {@code ICache}
      * with the specified name in a remote cluster identified by the supplied
-     * {@code ClientConfig} and emits them as {@code Map.Entry}. Its processors
-     * will leverage data locality by fetching only those entries that are
-     * stored on the member where they are running.
+     * {@code ClientConfig} and emits them as {@code Map.Entry}.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -190,9 +341,57 @@ public final class Sources {
     }
 
     /**
+     * Convenience for {@link #streamCache(String, ClientConfig,
+     * DistributedPredicate, DistributedFunction, boolean)} with no projection
+     * or filtering. It emits {@link EventJournalCacheEvent}s.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamCache(
+            @Nonnull String cacheName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamCache(" + cacheName + ')',
+                SourceProcessors.streamCacheP(cacheName, clientConfig, startFromLatestSequence));
+    }
+
+    /**
+     * Returns a source that will stream the {@link EventJournalCacheEvent}
+     * events of the Hazelcast {@code ICache} with the specified name from a
+     * remote cluster. The given predicate and projection will be applied to the
+     * events at the source.
+     * <p>
+     * In order to stream from a cache, event-journal should be configured.
+     * Please see {@link com.hazelcast.config.EventJournalConfig}.
+     * <p>
+     * Journal offset is saved to the state snapshot. If the job restarts,
+     * emission starts at the saved offset, giving exactly-once guarantee.
+     *
+     * @param cacheName               The name of the cache
+     * @param clientConfig            configuration for the client to connect to the remote cluster
+     * @param predicate               The predicate to filter the events, can be null
+     * @param projection              The projection to map the events, can be null
+     * @param startFromLatestSequence starting point of the events in event journal
+     *                                {@code true} to start from latest, {@code false} to start from oldest
+     * @param <T>                     type of emitted item
+     */
+    @Nonnull
+    public static <K, V, T> Source<T> streamCache(
+            @Nonnull String cacheName,
+            @Nonnull ClientConfig clientConfig,
+            @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
+            @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamCache(" + cacheName + ')',
+                SourceProcessors.streamCacheP(cacheName, clientConfig, predicate, projection, startFromLatestSequence));
+    }
+
+    /**
      * Returns a source that emits items retrieved from a Hazelcast {@code
      * IList}. All elements are emitted on a single member &mdash; the one
      * where the entire list is stored by the IMDG.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      */
     @Nonnull
     public static <E> Source<E> readList(@Nonnull String listName) {
@@ -202,8 +401,10 @@ public final class Sources {
     /**
      * Returns a source that emits items retrieved from a Hazelcast {@code
      * IList} in a remote cluster identified by the supplied {@code
-     * ClientConfig}. All elements are emitted on a single member &mdash; the
-     * one where the entire list is stored by the IMDG.
+     * ClientConfig}. All elements are emitted on a single member.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
      */
     @Nonnull
     public static <E> Source<E> readList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -213,13 +414,20 @@ public final class Sources {
     /**
      * Returns a source which connects to the specified socket and emits lines
      * of text received from it. It decodes the text using the supplied {@code
-     * Charset}.
+     * charset}.
      * <p>
      * Each underlying processor opens its own TCP connection, so there will be
      * {@code clusterSize * localParallelism} open connections to the server.
      * <p>
-     * The source completes when the server closes the socket. It never
-     * attempts to reconnect.
+     * The source completes when the server closes the socket. It never attempts
+     * to reconnect. Any {@code IOException} will cause the job to fail.
+     * <p>
+     * This source does not save any state to snapshot. On job restart, it will
+     * emit whichever items the server sends. Current implementation also uses
+     * blocking socket API which blocks until there are some data on the socket.
+     * Source processors are required to return control to be able to do the
+     * snapshot. So if there are no data on socket, the snapshot will be
+     * delayed and block the job.
      */
     @Nonnull
     public static Source<String> streamSocket(
@@ -234,15 +442,20 @@ public final class Sources {
      * subdirectories. The files must not change while being read; if they do,
      * the behavior is unspecified.
      * <p>
-     * To be useful, the source should be configured to read data local to
-     * each member. For example, if the pathname resolves to a shared network
-     * filesystem, it will emit duplicate data.
+     * To be useful, the source should be configured to read data local to each
+     * member. For example, if the pathname resolves to a shared network
+     * filesystem visible by multiple members, they will emit duplicate data.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * all entries will be emitted again.
+     * <p>
+     * Any {@code IOException} will cause the job to fail.
      *
      * @param directory parent directory of the files
      * @param charset charset to use to decode the files
      * @param glob the globbing mask, see {@link
      *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     *             Use {@code "*"} for all (non-special) files.
+     *             Use {@code "*"} for all files.
      */
     @Nonnull
     public static Source<String> readFiles(
@@ -256,7 +469,7 @@ public final class Sources {
     /**
      * Convenience for {@link #readFiles(String, Charset, String) readFiles(directory, UTF_8, "*")}.
      */
-    public static Source<String> readFiles(String directory) {
+    public static Source<String> readFiles(@Nonnull String directory) {
         return readFiles(directory, UTF_8, GLOB_WILDCARD);
     }
 
@@ -266,9 +479,9 @@ public final class Sources {
      * new contents added after startup: both new files and new content
      * appended to existing ones.
      * <p>
-     * To be useful, the source should be configured to read data local to
-     * each member. For example, if the pathname resolves to a shared network
-     * filesystem, it will emit duplicate data.
+     * To be useful, the source should be configured to read data local to each
+     * member. For example, if the pathname resolves to a shared network
+     * filesystem visible by multiple members, they will emit duplicate data.
      * <p>
      * If, during the scanning phase, the source observes a file that doesn't
      * end with a newline, it will assume that there is a line just being
@@ -280,6 +493,10 @@ public final class Sources {
      * an {@code IOException}. The directory must be deleted on all nodes.
      * <p>
      * Any {@code IOException} will cause the job to fail.
+     * <p>
+     * This source does not save any state to snapshot. If the job is restarted,
+     * lines added after the restart will be emitted, which gives at-most-once
+     * behavior.
      *
      * <h3>Limitation on Windows</h3>
      * On Windows the {@code WatchService} is not notified of appended lines
@@ -300,7 +517,7 @@ public final class Sources {
      * @param charset charset to use to decode the files
      * @param glob the globbing mask, see {@link
      *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
-     *             Use {@code "*"} for all (non-special) files.
+     *             Use {@code "*"} for all files.
      */
     public static Source<String> streamFiles(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
@@ -312,7 +529,7 @@ public final class Sources {
 
     /**
      * Convenience for {@link #streamFiles(String, Charset, String)
-     * streamFiles(watchedDirectory, UTF_8, ".")}.
+     * streamFiles(watchedDirectory, UTF_8, "*")}.
      */
     public static Source<String> streamFiles(@Nonnull String watchedDirectory) {
         return streamFiles(watchedDirectory, UTF_8, GLOB_WILDCARD);

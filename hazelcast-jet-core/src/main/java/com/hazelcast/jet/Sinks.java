@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.SinkImpl;
@@ -51,8 +52,24 @@ public final class Sinks {
     }
 
     /**
+     * Returns a sink constructed directly from the given Core API processor
+     * supplier.
+     *
+     * @param sinkName user-friendly sink name
+     * @param supplier the processor meta-supplier
+     */
+    public static <E> Sink<E> fromProcessor(String sinkName, ProcessorSupplier supplier) {
+        return new SinkImpl<>(sinkName, supplier);
+    }
+
+    /**
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code IMap} with the specified name.
+     * <p>
+     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> writeMap(String mapName) {
         return new SinkImpl<>("writeMap(" + mapName + ')', SinkProcessors.writeMapP(mapName));
@@ -62,6 +79,11 @@ public final class Sinks {
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code IMap} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
+     * <p>
+     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> writeMap(String mapName, ClientConfig clientConfig) {
         return new SinkImpl<>("writeMap(" + mapName + ')', SinkProcessors.writeMapP(mapName, clientConfig));
@@ -70,6 +92,11 @@ public final class Sinks {
     /**
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code ICache} with the specified name.
+     * <p>
+     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> writeCache(String cacheName) {
         return new SinkImpl<>("writeCache(" + cacheName + ')', SinkProcessors.writeCacheP(cacheName));
@@ -79,6 +106,11 @@ public final class Sinks {
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code ICache} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
+     * <p>
+     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> writeCache(String cacheName, ClientConfig clientConfig) {
         return new SinkImpl<>("writeCache(" + cacheName + ')', SinkProcessors.writeCacheP(cacheName, clientConfig));
@@ -87,6 +119,10 @@ public final class Sinks {
     /**
      * Returns a sink that adds the items it receives to a Hazelcast {@code
      * IList} with the specified name.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at least once</i>
+     * guarantee.
      */
     public static <E> Sink<E> writeList(String listName) {
         return new SinkImpl<>("writeList(" + listName + ')', SinkProcessors.writeListP(listName));
@@ -96,6 +132,10 @@ public final class Sinks {
      * Returns a sink that adds the items it receives to a Hazelcast {@code
      * IList} with the specified name in a remote cluster identified by the
      * supplied {@code ClientConfig}.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at least once</i>
+     * guarantee.
      */
     public static <E> Sink<E> writeList(String listName, ClientConfig clientConfig) {
         return new SinkImpl<>("writeList(" + listName + ')', SinkProcessors.writeListP(listName, clientConfig));
@@ -107,6 +147,10 @@ public final class Sinks {
      * item to its string representation using the supplied {@code toStringFn}
      * function and encodes the string using the supplied {@code Charset}. It
      * follows each item with a newline character.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at least once</i>
+     * guarantee.
      */
     public static <E> Sink<E> writeSocket(
             @Nonnull String host,
@@ -152,6 +196,10 @@ public final class Sinks {
      * supplied {@code toStringFn} function and encodes the string using the
      * supplied {@code Charset}. It follows each item with a platform-specific
      * line separator.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at least once</i>
+     * guarantee.
      *
      * @param directoryName directory to create the files in. Will be created
      *                      if it doesn't exist. Must be the same on all members.

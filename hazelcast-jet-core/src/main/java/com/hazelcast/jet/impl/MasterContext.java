@@ -158,7 +158,7 @@ public class MasterContext {
 
         // last started snapshot complete or not complete. The next started snapshot must be greater than this number
         long lastSnapshotId = NO_SNAPSHOT;
-        if (jobRecord.getConfig().getSnapshotInterval() > 0) {
+        if (jobRecord.getConfig().getSnapshotIntervalMillis() > 0) {
             Long snapshotIdToRestore = snapshotRepository.latestCompleteSnapshot(jobId);
             snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotIdToRestore);
             Long lastStartedSnapshot = snapshotRepository.latestStartedSnapshot(jobId);
@@ -363,7 +363,7 @@ public class MasterContext {
         Function<ExecutionPlan, Operation> operationCtor = plan -> new ExecuteOperation(jobId, executionId);
         invoke(operationCtor, this::onExecuteStepCompleted, completionFuture);
 
-        if (getJobConfig().getSnapshotInterval() > 0) {
+        if (getJobConfig().getSnapshotIntervalMillis() > 0) {
             coordinationService.scheduleSnapshot(jobId, executionId);
         }
     }
