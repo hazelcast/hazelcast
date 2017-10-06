@@ -37,6 +37,7 @@ import static com.hazelcast.jet.impl.execution.StoreSnapshotTasklet.State.REACHE
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
 public class StoreSnapshotTasklet implements Tasklet {
+    long pendingSnapshotId;
 
     private final ProgressTracker progTracker = new ProgressTracker();
     private final long jobId;
@@ -47,10 +48,7 @@ public class StoreSnapshotTasklet implements Tasklet {
     private final String vertexName;
     private final ILogger logger;
 
-    private long pendingSnapshotId;
-
     private final AtomicInteger numActiveFlushes = new AtomicInteger();
-
     private State state = DRAIN;
     private boolean hasReachedBarrier;
     private boolean inputIsDone;
@@ -64,8 +62,8 @@ public class StoreSnapshotTasklet implements Tasklet {
         this.isHigherPrioritySource = isHigherPrioritySource;
 
         this.mapWriter = new AsyncMapWriter(nodeEngine);
-        this.mapWriter.setMapName(currMapName());
         this.pendingSnapshotId = snapshotContext.lastSnapshotId() + 1;
+        this.mapWriter.setMapName(currMapName());
         this.logger = nodeEngine.getLogger(StoreSnapshotTasklet.class + "." + vertexName + "#snapshot");
     }
 
@@ -88,7 +86,7 @@ public class StoreSnapshotTasklet implements Tasklet {
                                 pendingSnapshotId + ", but barrier was " + barrier.snapshotId() + ", this=" + this;
                         hasReachedBarrier = true;
                     } else {
-                        mapWriter.put(((Entry<Data, Data>) o));
+                        mapWriter.put((Entry<Data, Data>) o);
                     }
                 });
                 if (result.isDone()) {
@@ -143,7 +141,7 @@ public class StoreSnapshotTasklet implements Tasklet {
         }
     }
 
-    private String currMapName() {
+    String currMapName() {
         return SnapshotRepository.snapshotDataMapName(jobId, pendingSnapshotId, vertexName);
     }
 

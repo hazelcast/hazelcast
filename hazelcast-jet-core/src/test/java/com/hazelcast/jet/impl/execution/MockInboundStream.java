@@ -38,7 +38,7 @@ public class MockInboundStream implements InboundEdgeStream {
     private int dataIndex;
     private boolean done;
 
-    MockInboundStream(int priority, List<Object> mockData, int chunkSize) {
+    MockInboundStream(int priority, List<?> mockData, int chunkSize) {
         this.priority = priority;
         this.chunkSize = chunkSize;
         this.mockData = new ArrayList<>(mockData);
