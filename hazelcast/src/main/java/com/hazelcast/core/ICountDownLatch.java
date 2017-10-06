@@ -40,6 +40,23 @@ import java.util.concurrent.TimeUnit;
  *    </li>
  * </ol>
  *
+ * <p>
+ * Behaviour of {@link ICountDownLatch} under split-brain scenarios should be taken into account when using this
+ * data structure.  During a split, each partitioned cluster will either create a brand new and uninitialised (zero'd)
+ * {@link ICountDownLatch} or it will continue to use the primary or back-up version.  For example
+ * it may be possible for both the back-up and primary to be resident in one cluster partition and for another to
+ * be created as new in another side.  In any of these cases the counter in the respective {@link ICountDownLatch}
+ * may diverge.
+ * <p>
+ * When the split heals, Hazelcast performs a default largest cluster wins resolution or where clusters sizes are equal
+ * a random winner is chosen. This can lead to situations where the {@ICountDown} is left in an unpredictable state,
+ * and a countdown to zero may never be achieved.
+ * <p>
+ * If required, when using {@link ICountDownLatch} as an orchestration mechanism you should assess the state of the
+ * orchestration outcome and the associated countdown actors after a split-brain heal has taken place, and take steps to
+ * re-orchestrate if appropriate.
+ * <p>
+ *
  */
 public interface ICountDownLatch extends DistributedObject {
 

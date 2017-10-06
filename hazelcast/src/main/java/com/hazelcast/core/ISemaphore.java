@@ -44,6 +44,12 @@ import java.util.concurrent.TimeUnit;
  * <ul>
  * <li>Correct usage of a semaphore is established by programming convention in the application.
  * </ul>
+ * <p>
+ * During a split-brain scenario, atomicity is lost.  The same ISemaphore can exist within each cluster partition
+ * and therefore the permit counters within will diverge.  When the cluster heals, Hazelcast will choose
+ * one of the ISemaphores, by default this is selected from the largest partitioned cluster (by number of members).  If
+ * the cluster sizes are all equal then a random ISemaphore will be chosen.
+ * </p>
  *
  */
 
