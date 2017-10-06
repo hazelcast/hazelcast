@@ -58,7 +58,7 @@ import java.util.concurrent.locks.Lock;
  *     split-brain protection for lock</a>.  Using this functionality it is possible to restrict operations in smaller
  *     partitioned clusters.  It should be noted that there is still an inconsistency window between the time of
  *     the split and the actual detection.  Therefore using this reduces the window of inconsistency but can never
- *     completely elimitate it.
+ *     completely eliminate it.
  *
  * <p>
  *
