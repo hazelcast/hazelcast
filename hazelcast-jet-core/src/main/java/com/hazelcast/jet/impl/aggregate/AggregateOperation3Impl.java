@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.impl.aggregate;
 
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.datamodel.Tag;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -49,7 +48,6 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
                                     @Nonnull DistributedFunction<? super A, R> finishAccumulationFn
     ) {
         super(createAccumulatorFn, accumulateFs, combineAccumulatorsFn, deductAccumulatorFn, finishAccumulationFn);
-        validateCountOfAccumulateFs(accumulateFs);
     }
 
     @Nonnull @Override
@@ -80,29 +78,10 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
         return (DistributedBiConsumer<? super A, T>) accumulateFs[tag.index()];
     }
 
-    @Nonnull @Override
-    @SuppressWarnings("unchecked")
-    public AggregateOperation<A, R> withAccumulateFns(
-            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns
-    ) {
-        validateCountOfAccumulateFs(accumulateFns);
-        return new AggregateOperation3Impl<>(createFn(), accumulateFns, combineFn(),
-                deductFn(), finishFn());
-    }
-
     @Override
     public <R1> AggregateOperation3<T0, T1, T2, A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn
     ) {
-        return new AggregateOperation3Impl<>(createFn(), accumulateFs, combineFn(),
-                deductFn(), finishFn);
-    }
-
-    private static void validateCountOfAccumulateFs(@Nonnull DistributedBiConsumer[] accumulateFs) {
-        if (accumulateFs.length != 3) {
-            throw new IllegalArgumentException(
-                    "AggregateOperationImpl3 needs exactly three accumulating functions, but got "
-                            + accumulateFs.length);
-        }
+        return new AggregateOperation3Impl<>(createFn(), accumulateFs, combineFn(), deductFn(), finishFn);
     }
 }

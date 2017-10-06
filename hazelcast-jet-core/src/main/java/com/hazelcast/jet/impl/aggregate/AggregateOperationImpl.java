@@ -80,14 +80,6 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
         return finishAccumulationFn;
     }
 
-    @Nonnull @Override
-    public AggregateOperation<A, R> withAccumulateFns(
-            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns
-    ) {
-        return new AggregateOperationImpl<>(createFn(), accumulateFns, combineFn(),
-                deductFn(), finishFn());
-    }
-
     @Override
     public <R1> AggregateOperation<A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn

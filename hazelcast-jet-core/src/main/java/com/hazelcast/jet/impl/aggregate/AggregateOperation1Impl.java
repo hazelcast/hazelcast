@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.impl.aggregate;
 
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.datamodel.Tag;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,20 +53,6 @@ public class AggregateOperation1Impl<T0, A, R>
                     + tag.index());
         }
         return (DistributedBiConsumer<? super A, ? super T>) accumulateFs[0];
-    }
-
-    @Nonnull @Override
-    @SuppressWarnings("unchecked")
-    public AggregateOperation<A, R> withAccumulateFns(
-            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns
-    ) {
-        if (accumulateFns.length != 1) {
-            throw new IllegalArgumentException(
-                    "AggregateOperationImpl1 needs exactly one accumulating function, but got " + accumulateFns.length);
-        }
-        return new AggregateOperation1Impl<>(
-                createFn(), (DistributedBiConsumer<? super A, ? super T0>) accumulateFns[0],
-                combineFn(), deductFn(), finishFn());
     }
 
     @Override

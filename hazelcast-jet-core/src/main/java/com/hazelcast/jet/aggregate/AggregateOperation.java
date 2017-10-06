@@ -16,15 +16,16 @@
 
 package com.hazelcast.jet.aggregate;
 
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
-import com.hazelcast.jet.datamodel.Tag;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
+import java.util.Objects;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -91,7 +92,8 @@ public interface AggregateOperation<A, R> extends Serializable {
     /**
      * A primitive that updates the accumulator state to account for a new
      * item. The tag argument identifies which of the contributing streams
-     * the returned function will handle.
+     * the returned function will handle. If asked for a tag that isn't
+     * registered with it, it will throw an exception.
      */
     @Nonnull
     default <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(Tag<T> tag) {
@@ -101,7 +103,8 @@ public interface AggregateOperation<A, R> extends Serializable {
     /**
      * A primitive that updates the accumulator state to account for a new
      * item. The argument identifies the index of the contributing stream
-     * the returned function will handle.
+     * the returned function will handle. If asked for an index that isn't
+     * registered with it, it will throw an exception.
      */
     @Nonnull
     <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(int index);
@@ -149,16 +152,6 @@ public interface AggregateOperation<A, R> extends Serializable {
     DistributedFunction<? super A, R> finishFn();
 
     /**
-     * Returns a copy of this aggregate operation, but with all the {@code
-     * accumulate} primitives replaced from the supplied array. The index
-     * in the array corresponds to the index of the contributing stream in
-     * the aggregate operation.
-     */
-    @Nonnull
-    AggregateOperation<A, R> withAccumulateFns(
-            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns);
-
-    /**
      * Returns a copy of this aggregate operation, but with the {@code finish}
      * primitive replaced with the supplied one.
      *
@@ -183,10 +176,12 @@ public interface AggregateOperation<A, R> extends Serializable {
     default <T> AggregateOperation1<T, A, R> withCombiningAccumulateFn(
             @Nonnull DistributedFunction<T, A> getAccFn
     ) {
+        DistributedBiConsumer<? super A, ? super A> combineFn = combineFn();
+        Objects.requireNonNull(combineFn);
         return new AggregateOperation1Impl<>(
                 createFn(),
-                (A acc, T item) -> combineFn().accept(acc, getAccFn.apply(item)),
-                combineFn(),
+                (A acc, T item) -> combineFn.accept(acc, getAccFn.apply(item)),
+                combineFn,
                 deductFn(),
                 finishFn());
     }
