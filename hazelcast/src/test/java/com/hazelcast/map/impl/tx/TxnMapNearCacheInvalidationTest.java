@@ -36,7 +36,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.impl.tx.TxnMapNearCacheInvalidationTest.InvalidatorTxnOp.CONTAINS_KEY;
 import static com.hazelcast.map.impl.tx.TxnMapNearCacheInvalidationTest.InvalidatorTxnOp.DELETE;
@@ -71,6 +73,61 @@ public class TxnMapNearCacheInvalidationTest extends HazelcastTestSupport {
                 {InMemoryFormat.OBJECT, true},
                 {InMemoryFormat.OBJECT, false},
         });
+    }
+
+    @Test
+    public void txn_map_contains_newly_put_key_even_it_is_null_cached_after_addition() throws Exception {
+        final String mapName = "test";
+        final int key = 1;
+
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(mapName);
+        nearCacheConfig.setInvalidateOnChange(true);
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
+
+        final HazelcastInstance instance = createHazelcastInstance(config);
+
+        final CountDownLatch waitTxnPut = new CountDownLatch(1);
+        final CountDownLatch waitNullCaching = new CountDownLatch(1);
+
+        final AtomicBoolean keyExistInTxnMap = new AtomicBoolean(false);
+
+        Thread txnPutThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                Boolean result = instance.executeTransaction(new TransactionalTask<Boolean>() {
+                    @Override
+                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                        TransactionalMap<Integer, Integer> map = context.getMap(mapName);
+                        // 1. First put key into txn map inside txn
+                        map.put(key, 1);
+
+                        waitTxnPut.countDown();
+
+                        assertOpenEventually(waitNullCaching);
+
+                        // 3. After caching key as null inside Near Cache, check to see if key exist for txn
+                        return map.containsKey(key);
+                    }
+                });
+
+                keyExistInTxnMap.set(result);
+            }
+        });
+        txnPutThread.start();
+
+        assertOpenEventually(waitTxnPut);
+        // 2. Cache key as null into Near Cache,
+        //    we know we didn't commit above txn and key is null inside map
+        instance.getMap(mapName).get(key);
+
+        waitNullCaching.countDown();
+
+        assertJoinable(txnPutThread);
+
+        assertTrue("Key should be exist in txn map but we didn't find it", keyExistInTxnMap.get());
     }
 
     @Test

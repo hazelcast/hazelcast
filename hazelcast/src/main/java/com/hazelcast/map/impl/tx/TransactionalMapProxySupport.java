@@ -56,8 +56,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
 
-    protected final String name;
     protected final boolean nearCacheEnabled;
+    protected final String name;
     protected final MapServiceContext mapServiceContext;
     protected final MapNearCacheManager mapNearCacheManager;
     protected final MapOperationProvider operationProvider;
@@ -109,10 +109,18 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
     }
 
-    boolean containsKeyInternal(Data key) {
-        MapOperation operation = operationProvider.createContainsKeyOperation(name, key);
+    boolean containsKeyInternal(Data dataKey, Object objectKey) {
+        if (nearCacheEnabled) {
+            Object nearCacheKey = serializeKeys ? dataKey : objectKey;
+            Object cachedValue = getCachedValue(nearCacheKey, false);
+            if (cachedValue != NOT_CACHED) {
+                return cachedValue != null;
+            }
+        }
+
+        MapOperation operation = operationProvider.createContainsKeyOperation(name, dataKey);
         operation.setThreadId(ThreadUtil.getThreadId());
-        int partitionId = partitionService.getPartitionId(key);
+        int partitionId = partitionService.getPartitionId(dataKey);
         try {
             Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return (Boolean) future.get();
@@ -160,7 +168,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         nearCache.remove(nearCacheKey);
     }
 
-    final Object getCachedValue(Object nearCacheKey, boolean deserializeValue) {
+    private Object getCachedValue(Object nearCacheKey, boolean deserializeValue) {
         Object value = mapNearCacheManager.getFromNearCache(name, nearCacheKey);
         if (value == null) {
             return NOT_CACHED;
