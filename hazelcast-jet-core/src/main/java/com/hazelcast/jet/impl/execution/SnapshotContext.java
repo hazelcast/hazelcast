@@ -32,14 +32,6 @@ public class SnapshotContext {
 
     public static final int NO_SNAPSHOT = -1;
 
-    /**
-     * Remaining number of {@link StoreSnapshotTasklet}s in currently produced
-     * snapshot. When it is decremented to 0, the snapshot is complete and new
-     * one can start.
-     */
-    // package-visible for test
-    final AtomicInteger numRemainingTasklets = new AtomicInteger();
-
     private final ILogger logger;
 
     private final long jobId;
@@ -66,6 +58,15 @@ public class SnapshotContext {
      * tasklet completes. Snapshot is postponed until this counter is 0.
      */
     private int numHigherPriorityTasklets = Integer.MIN_VALUE;
+
+    /**
+     * Remaining number of {@link StoreSnapshotTasklet}s in currently produced
+     * snapshot. When it is decremented to 0, the snapshot is complete and new
+     * one can start.
+     * <p>
+     * It can have negative value in case described in {@link #startNewSnapshot(long)}.
+     */
+    private final AtomicInteger numRemainingTasklets = new AtomicInteger();
 
     /**
      * Holder for the snapshot error, if any
@@ -103,31 +104,36 @@ public class SnapshotContext {
         return guarantee;
     }
 
-    synchronized void initTaskletCount(int totalCount, int highPriorityCount) {
+    synchronized void initTaskletCount(int taskletCount, int highPriorityTaskletCount) {
         assert this.numTasklets == Integer.MIN_VALUE : "Tasklet count already set once.";
-        assert totalCount >= highPriorityCount : "totalCount=" + totalCount + ", highPriorityCount=" + highPriorityCount;
-        assert totalCount > 0 : "totalCount=" + totalCount;
-        assert highPriorityCount >= 0 : "highPriorityCount=" + highPriorityCount;
+        assert taskletCount >= highPriorityTaskletCount :
+                "taskletCount=" + taskletCount + ", highPriorityTaskletCount=" + highPriorityTaskletCount;
+        assert taskletCount > 0 : "taskletCount=" + taskletCount;
+        assert highPriorityTaskletCount >= 0 : "highPriorityTaskletCount=" + highPriorityTaskletCount;
 
-        this.numTasklets = totalCount;
-        this.numHigherPriorityTasklets = highPriorityCount;
+        this.numTasklets = taskletCount;
+        this.numHigherPriorityTasklets = highPriorityTaskletCount;
     }
 
     /**
      * This method is called when the member received {@link
      * com.hazelcast.jet.impl.operation.SnapshotOperation}.
+     * <p>
+     * <b>Note:</b> this method can be called <i>after</i> {@link
+     * #taskletDone(long, boolean)} or {@link #snapshotDoneForTasklet()} is
+     * called. This can happen in a situation when a processor only has input
+     * queues from remote members and the remote members happen to process
+     * {@code SnapshotOperation} and send barriers to such processor before
+     * the {@code SnapshotOperation} is called on this member.
      */
     synchronized CompletableFuture<Void> startNewSnapshot(long snapshotId) {
         assert snapshotId == lastSnapshotId.get() + 1
                 : "new snapshotId not incremented by 1. Previous=" + lastSnapshotId + ", new=" + snapshotId;
         assert numTasklets >= 0 : "numTasklets=" + numTasklets;
 
-        if (numTasklets == 0) {
-            // member is already done with the job and master didn't know it yet - we are immediately done.
-            return completedVoidFuture();
-        }
-        boolean success = numRemainingTasklets.compareAndSet(0, numTasklets);
-        assert success : "previous snapshot was not finished, numRemainingTasklets=" + numRemainingTasklets.get();
+        int newNumRemainingTasklets = numRemainingTasklets.addAndGet(numTasklets);
+        assert newNumRemainingTasklets - numTasklets <= 0 :
+                "previous snapshot was not finished, numRemainingTasklets=" + (newNumRemainingTasklets - numTasklets);
         // if there are no higher priority tasklets, start the snapshot now
         if (numHigherPriorityTasklets == 0) {
             lastSnapshotId.set(snapshotId);
@@ -137,7 +143,15 @@ public class SnapshotContext {
                     + numHigherPriorityTasklets + ')');
             snapshotPostponed = true;
         }
-        return (future = new CompletableFuture<>());
+        if (numTasklets == 0) {
+            // member is already done with the job and master didn't know it yet - we are immediately done.
+            return completedVoidFuture();
+        }
+        CompletableFuture res = future = new CompletableFuture<>();
+        if (newNumRemainingTasklets == 0) {
+            handleSnapshotDone();
+        }
+        return res;
     }
 
     /**
@@ -147,12 +161,13 @@ public class SnapshotContext {
      * @param lastSnapshotId id fo the last snapshot completed by the tasklet
      */
     synchronized void taskletDone(long lastSnapshotId, boolean isHigherPrioritySource) {
-        assert numTasklets > 0;
-        assert lastSnapshotId <= this.lastSnapshotId.get();
+        assert numTasklets > 0 : "numTasklets=" + numTasklets;
+        assert lastSnapshotId <= this.lastSnapshotId.get() + 1 : "this.lastSnapshotId=" + this.lastSnapshotId.get()
+                + "tasklet.lastSnapshotId=" + lastSnapshotId;
 
         numTasklets--;
         if (isHigherPrioritySource) {
-            assert numHigherPriorityTasklets > 0;
+            assert numHigherPriorityTasklets > 0 : "numHigherPriorityTasklets=" + numHigherPriorityTasklets;
             numHigherPriorityTasklets--;
             // after all higher priority vertices are done we can start the snapshot
             if (numHigherPriorityTasklets == 0 && snapshotPostponed) {
@@ -163,6 +178,9 @@ public class SnapshotContext {
         }
         if (this.lastSnapshotId.get() > lastSnapshotId) {
             snapshotDoneForTasklet();
+        } else if (this.lastSnapshotId.get() < lastSnapshotId) {
+            // tasklet is done with snapshot before startNewSnapshot was called
+            numRemainingTasklets.incrementAndGet();
         }
     }
 
@@ -170,24 +188,37 @@ public class SnapshotContext {
      * Called when current snapshot is done in {@link StoreSnapshotTasklet}
      * (it received barriers from all its processors and all async flush
      * operations are done).
+     * <p>
+     * This method can be called before the snapshot was started with {@link
+     * #startNewSnapshot(long)}. This can happen, if the processor only has
+     * input queues from remote members, from which it can possibly receive
+     * barriers before {@link com.hazelcast.jet.impl.operation.SnapshotOperation}
+     * is handled on this member.
      */
     void snapshotDoneForTasklet() {
-        int oldValue = numRemainingTasklets.get();
-        assert oldValue > 0 : "oldValue=" + oldValue;
-
+        // note that numRemainingTasklets can get negative values here.
         if (numRemainingTasklets.decrementAndGet() == 0) {
-            Throwable t = snapshotError.get();
-            if (t == null) {
-                completeVoidFuture(future);
-            } else {
-                future.completeExceptionally(t);
-            }
-            future = null;
-            snapshotError.set(null);
+            handleSnapshotDone();
         }
+    }
+
+    private void handleSnapshotDone() {
+        Throwable t = snapshotError.get();
+        if (t == null) {
+            completeVoidFuture(future);
+        } else {
+            future.completeExceptionally(t);
+        }
+        future = null;
+        snapshotError.set(null);
     }
 
     void reportError(Throwable ex) {
         snapshotError.compareAndSet(null, ex);
+    }
+
+    // public-visible for tests
+    public AtomicInteger getNumRemainingTasklets() {
+        return numRemainingTasklets;
     }
 }

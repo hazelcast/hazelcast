@@ -109,14 +109,14 @@ public class JobExecutionService {
      */
     void onMemberLeave(Address address) {
         executionContexts.values()
-                .stream()
-                .filter(exeCtx -> exeCtx.isCoordinatorOrParticipating(address))
-                .forEach(exeCtx -> {
-                    String message = String.format("Completing %s locally. Reason: %s left the cluster",
-                            jobAndExecutionId(exeCtx.getJobId(), exeCtx.getExecutionId()),
-                            address);
-                    cancelAndComplete(exeCtx, message, new TopologyChangedException("Topology has been changed"));
-                });
+                         .stream()
+                         .filter(exeCtx -> exeCtx.isCoordinatorOrParticipating(address))
+                         .forEach(exeCtx -> {
+                             String message = String.format("Completing %s locally. Reason: %s left the cluster",
+                                     jobAndExecutionId(exeCtx.getJobId(), exeCtx.getExecutionId()),
+                                     address);
+                             cancelAndComplete(exeCtx, message, new TopologyChangedException("Topology has been changed"));
+                         });
     }
 
     private void cancelAndComplete(ExecutionContext exeCtx, String message, Throwable t) {

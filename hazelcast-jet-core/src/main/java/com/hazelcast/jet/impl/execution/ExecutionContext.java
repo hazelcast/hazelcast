@@ -189,4 +189,7 @@ public class ExecutionContext {
         return coordinator.equals(member) || isParticipating(member);
     }
 
+    public SnapshotContext getSnapshotContext() {
+        return snapshotContext;
+    }
 }

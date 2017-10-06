@@ -18,37 +18,98 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.logging.ILogger;
-import org.junit.After;
-import org.junit.Before;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+@RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class SnapshotContextTest {
 
-    private SnapshotContext ssContext =
-            new SnapshotContext(mock(ILogger.class), 1, 1, 9, ProcessingGuarantee.EXACTLY_ONCE);
+    @Parameter
+    public SnapshotStarted snapshotStarted;
 
-    @Before
-    public void before() {
-        ssContext.initTaskletCount(1, 0);
-        ssContext.startNewSnapshot(10);
-    }
+    @Parameter(1)
+    public int taskletCount;
 
-    @After
-    public void after() {
-        assertEquals(0, ssContext.numRemainingTasklets.get());
+    @Parameter(2)
+    public TaskletDone taskletDone;
+
+    @Parameter(3)
+    public int numHigherPriority;
+
+    @Parameters(name = "snapshotStarted={0}, taskletCount={1}, taskletDone={2}, numHigherPriority={3}")
+    public static Collection<Object[]> parameters() {
+        List<Object[]> res = new ArrayList<>();
+        for (SnapshotStarted snapshotStarted : SnapshotStarted.values()) {
+            for (int taskletCount = 1; taskletCount <= 2; taskletCount++) {
+                for (TaskletDone taskletDone : TaskletDone.values()) {
+                    for (int numHigherPriority = 0; numHigherPriority <= 1; numHigherPriority++) {
+                        res.add(new Object[]{snapshotStarted, taskletCount, taskletDone, numHigherPriority});
+                    }
+                }
+            }
+        }
+        return res;
     }
 
     @Test
-    public void when_taskletDoneBeforeItDidCurrentSnapshot_then_countedAsSnapshotWasDone() {
-        ssContext.taskletDone(9, false);
+    public void test_snapShortStartAndDone() {
+        SnapshotContext ssContext =
+                new SnapshotContext(mock(ILogger.class), 1, 1, 9, ProcessingGuarantee.EXACTLY_ONCE);
+
+        ssContext.initTaskletCount(taskletCount, numHigherPriority);
+        CompletableFuture<Void> future = null;
+        if (snapshotStarted == SnapshotStarted.BEFORE) {
+            future = ssContext.startNewSnapshot(10);
+            assertEquals("lastSnapshotId initially", numHigherPriority > 0 ? 9 : 10, ssContext.lastSnapshotId());
+        }
+
+        if (taskletDone == TaskletDone.NOT_DONE) {
+            ssContext.snapshotDoneForTasklet();
+        } else if (taskletDone == TaskletDone.DONE_BEFORE_CURRENT_SNAPSHOT) {
+            ssContext.taskletDone(9, numHigherPriority > 0);
+        } else if (taskletDone == TaskletDone.DONE_AFTER_CURRENT_SNAPSHOT) {
+            ssContext.snapshotDoneForTasklet();
+            ssContext.taskletDone(10, numHigherPriority > 0);
+        }
+
+        if (snapshotStarted == SnapshotStarted.AFTER) {
+            future = ssContext.startNewSnapshot(10);
+        }
+
+        assertNotNull("future == null", future);
+        assertTrue("future.isDone() == " + future.isDone(),
+                future.isDone() == (taskletCount == 1));
+        assertEquals("numRemainingTasklets", taskletCount - 1, ssContext.getNumRemainingTasklets().get());
+        assertEquals("lastSnapshotId at the end",
+                taskletDone == TaskletDone.NOT_DONE && numHigherPriority > 0 ? 9 : 10, ssContext.lastSnapshotId());
     }
 
-    @Test
-    public void when_taskletDoneAfterItDidCurrentSnapshot_then_countedAsSnapshotWasDone() {
-        ssContext.snapshotDoneForTasklet();
-        ssContext.taskletDone(10, false);
+    private enum SnapshotStarted {
+        BEFORE,
+        AFTER
+    }
+    private enum TaskletDone {
+        NOT_DONE,
+        DONE_BEFORE_CURRENT_SNAPSHOT,
+        DONE_AFTER_CURRENT_SNAPSHOT
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -25,12 +26,18 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotRepository;
+import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -46,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CancellationException;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -61,6 +69,7 @@ import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.joining;
@@ -223,6 +232,51 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         }
 
         assertTrue("Snapshots map not empty after job finished", snapshotsMap.isEmpty());
+    }
+
+    @Test
+    public void when_snapshotDoneBeforeStarted_then_snapshotSuccessful() throws Exception {
+        /*
+        Design of this test
+
+        The DAG is "source -> sink". Source completes immediately on member2 and is infinite on member1.
+        Edge between source and sink is distributed. This situation will cause that after the source completes on
+        member2, the sink on member2 will only have remote source. This will allow that we can receive the
+        barrier from remote member1 before member2 even starts the snapshot. This is the very purpose of this
+        test. To ensure that this happens, we postpone handling of SnapshotOperation on member2.
+         */
+        JetService jetService = ((HazelcastInstanceImpl) instance2.getHazelcastInstance())
+                .node.nodeEngine.getService(JetService.SERVICE_NAME);
+        PacketFiltersUtil.delayOperationsFrom(instance1.getHazelcastInstance(),
+                JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.SNAPSHOT_OP));
+
+        DAG dag = new DAG();
+        Vertex source = dag.newVertex("source", new NonBalancedSource(
+                instance2.getHazelcastInstance().getCluster().getLocalMember().getAddress().toString()));
+        Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLogger());
+        dag.edge(between(source, sink).distributed());
+
+        JobConfig config = new JobConfig();
+        config.setSnapshotIntervalMillis(500);
+        Job job = instance1.newJob(dag, config);
+
+        IStreamMap<Long, Long> randomIdsMap = instance1.getMap(JobRepository.RANDOM_IDS_MAP_NAME);
+        long executionId = randomIdsMap.entrySet().stream()
+                    .filter(e -> e.getValue().equals(job.getJobId()) && !e.getValue().equals(e.getKey()))
+                    .mapToLong(Entry::getKey)
+                    .findAny()
+                    .orElseThrow(() -> new AssertionError("ExecutionId not found"));
+        SnapshotContext ssContext = jetService.getJobExecutionService().getExecutionContext(executionId)
+                                              .getSnapshotContext();
+        assertTrueEventually(() -> assertTrue("numRemainingTasklets was not negative, the tested scenario did not happen",
+                ssContext.getNumRemainingTasklets().get() < 0), 3);
+
+        Thread.sleep(3000);
+        job.cancel();
+        try {
+            job.getFuture().get();
+        } catch (CancellationException expected) {
+        }
     }
 
     private void waitForNextSnapshot(IStreamMap<Long, Object> snapshotsMap, int timeout) {
@@ -401,6 +455,44 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             return IntStream.range(0, numPartitions)
                             .filter(i -> i % totalProcessors == processorIndex)
                             .toArray();
+        }
+    }
+
+    /**
+     * Supplier of processors that emit nothing and complete immediately
+     * on designated member and never on others.
+     */
+    private static final class NonBalancedSource implements ProcessorMetaSupplier {
+        private final String noOutputAddress;
+
+        private NonBalancedSource(String noOutputAddress) {
+            this.noOutputAddress = noOutputAddress;
+        }
+
+        @Nonnull
+        @Override
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> {
+                String sAddress = address.toString();
+                return ProcessorSupplier.of(() -> sAddress.equals(noOutputAddress)
+                        ? new BatchNoopSourceP() : new StreamingNoopSourceP());
+            };
+        }
+    }
+
+    /** A source processor that emits nothing and never completes */
+    private static final class StreamingNoopSourceP implements Processor {
+        @Override
+        public boolean complete() {
+            return false;
+        }
+    }
+
+    /** A source processor that emits nothing and completes immediately */
+    private static final class BatchNoopSourceP implements Processor {
+        @Override
+        public boolean complete() {
+            return true;
         }
     }
 }

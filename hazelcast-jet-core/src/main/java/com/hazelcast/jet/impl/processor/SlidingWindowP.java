@@ -73,7 +73,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     private Traverser<Entry> snapshotTraverser;
 
     // This field tracks the upper bounds for the keyset of
-    // tsToKeyToAcc. It serves as an optimization that avoids a linear search
+    // tsToKeyToAcc. It serves as an optimization that avoids a full scan
     // over the entire keyset.
     private long topTs = Long.MIN_VALUE;
 
