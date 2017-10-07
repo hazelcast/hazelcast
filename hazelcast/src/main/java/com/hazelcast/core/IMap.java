@@ -86,6 +86,28 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  * This applies to both EntryProcessor and backup EntryProcessor.
  *
+ * <p>
+ * <b>Split-brain</b>
+ * <p>
+ * Behaviour of {@link IMap} under split-brain scenarios should be taken into account when using this
+ * data structure.  During a split, each partitioned cluster will either create a brand new {@link IMap}
+ * or it will continue to use the primary or back-up version.
+ * <p>
+ * When the split heals, Hazelcast by default, performs a {@link com.hazelcast.map.merge.PutIfAbsentMapMergePolicy}.
+ * Users can also decide to
+ * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#specifying-merge-policies">
+ * specify their own map merge policies</a>, these policies when used in concert with
+ * <a href="http://hal.upmc.fr/inria-00555588/document">CRDTs (Convergent and Commutative
+ Replicated Data Types)</a> can ensure against data loss during a split-brain.
+ * <p>
+ * As a defensive mechanism against such inconsistency, consider using the in-built
+ * <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#split-brain-protection">
+ * split-brain protection for {@link IMap}</a>.  Using this functionality it is possible to restrict operations in smaller
+ * partitioned clusters. It should be noted that there is still an inconsistency window between the time of
+ * the split and the actual detection. Therefore using this reduces the window of inconsistency but can never
+ * completely eliminate it.
+ * <p>
+ *
  * @param <K> key
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
