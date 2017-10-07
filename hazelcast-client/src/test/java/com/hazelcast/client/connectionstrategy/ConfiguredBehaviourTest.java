@@ -215,13 +215,26 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
     @Test
     public void testReconnectModeASYNCSingleMemberStartLate() {
+        final CountDownLatch initialConnectionLatch = new CountDownLatch(1);
         final CountDownLatch reconnectedLatch = new CountDownLatch(1);
 
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState().equals(CLIENT_CONNECTED)) {
+                    initialConnectionLatch.countDown();
+                }
+            }
+        }));
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        assertOpenEventually(initialConnectionLatch);
+
+        hazelcastInstance.shutdown();
 
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
@@ -231,8 +244,6 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
                 }
             }
         });
-
-        hazelcastInstance.shutdown();
 
         hazelcastFactory.newHazelcastInstance();
 
