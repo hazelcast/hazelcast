@@ -29,14 +29,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class PostJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable {
+public class OnJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable {
 
     private Collection<Registration> registrations;
 
-    public PostJoinRegistrationOperation() {
+    public OnJoinRegistrationOperation() {
     }
 
-    public PostJoinRegistrationOperation(Collection<Registration> registrations) {
+    public OnJoinRegistrationOperation(Collection<Registration> registrations) {
         this.registrations = registrations;
     }
 
@@ -91,6 +91,6 @@ public class PostJoinRegistrationOperation extends Operation implements Identifi
 
     @Override
     public int getId() {
-        return SpiDataSerializerHook.POST_JOIN_REGISTRATION;
+        return SpiDataSerializerHook.ON_JOIN_REGISTRATION;
     }
 }

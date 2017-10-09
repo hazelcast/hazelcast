@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.util.Preconditions;
 
 import java.io.IOException;
 
@@ -45,8 +46,8 @@ public class Registration implements EventRegistration {
 
     public Registration(String id, String serviceName, String topic,
                         EventFilter filter, Address subscriber, Object listener, boolean localOnly) {
+        this.id = Preconditions.checkNotNull(id, "Registration id cannot be null!");
         this.filter = filter;
-        this.id = id;
         this.listener = listener;
         this.serviceName = serviceName;
         this.topic = topic;
@@ -86,46 +87,23 @@ public class Registration implements EventRegistration {
         return listener;
     }
 
-    //CHECKSTYLE:OFF
+    // Registration equals() and hashCode() relies on only id field.
+    // Because registration id is unique in cluster.
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof Registration)) {
             return false;
         }
-
         Registration that = (Registration) o;
-
-        if (id != null ? !id.equals(that.id) : that.id != null) {
-            return false;
-        }
-        if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) {
-            return false;
-        }
-        if (topic != null ? !topic.equals(that.topic) : that.topic != null) {
-            return false;
-        }
-        if (filter != null ? !filter.equals(that.filter) : that.filter != null) {
-            return false;
-        }
-        if (subscriber != null ? !subscriber.equals(that.subscriber) : that.subscriber != null) {
-            return false;
-        }
-
-        return true;
+        return id.equals(that.id);
     }
-    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {
-        int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (serviceName != null ? serviceName.hashCode() : 0);
-        result = 31 * result + (topic != null ? topic.hashCode() : 0);
-        result = 31 * result + (filter != null ? filter.hashCode() : 0);
-        result = 31 * result + (subscriber != null ? subscriber.hashCode() : 0);
-        return result;
+        return id.hashCode();
     }
 
     @Override

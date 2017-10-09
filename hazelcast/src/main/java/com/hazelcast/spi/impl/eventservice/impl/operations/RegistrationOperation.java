@@ -18,16 +18,13 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.io.IOException;
 
-public class RegistrationOperation extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
+public class RegistrationOperation extends AbstractRegistrationOperation {
 
     private Registration registration;
     private boolean response;
@@ -35,12 +32,13 @@ public class RegistrationOperation extends Operation implements AllowedDuringPas
     public RegistrationOperation() {
     }
 
-    public RegistrationOperation(Registration registration) {
+    public RegistrationOperation(Registration registration, int memberListVersion) {
+        super(memberListVersion);
         this.registration = registration;
     }
 
     @Override
-    public void run() throws Exception {
+    protected void runInternal() throws Exception {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
         response = eventService.handleRegistration(registration);
     }
@@ -51,19 +49,14 @@ public class RegistrationOperation extends Operation implements AllowedDuringPas
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         registration.writeData(out);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternalImpl(ObjectDataInput in) throws IOException {
         registration = new Registration();
         registration.readData(in);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
     }
 
     @Override

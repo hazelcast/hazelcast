@@ -25,7 +25,7 @@ import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
-import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
@@ -57,7 +57,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int CALL_TIMEOUT_RESPONSE = 8;
     public static final int ERROR_RESPONSE = 9;
     public static final int DEREGISTRATION = 10;
-    public static final int POST_JOIN_REGISTRATION = 11;
+    public static final int ON_JOIN_REGISTRATION = 11;
     public static final int REGISTRATION = 12;
     public static final int SEND_EVENT = 13;
     public static final int DIST_OBJECT_INIT = 14;
@@ -102,8 +102,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new ErrorResponse();
                     case DEREGISTRATION:
                         return new DeregistrationOperation();
-                    case POST_JOIN_REGISTRATION:
-                        return new PostJoinRegistrationOperation();
+                    case ON_JOIN_REGISTRATION:
+                        return new OnJoinRegistrationOperation();
                     case REGISTRATION:
                         return new RegistrationOperation();
                     case SEND_EVENT:
