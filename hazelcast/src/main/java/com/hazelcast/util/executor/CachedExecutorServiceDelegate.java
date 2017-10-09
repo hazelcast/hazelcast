@@ -139,15 +139,14 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private void addNewWorkerIfRequired() {
         if (size < maxPoolSize) {
             try {
-                if (lock.tryLock(TIME, TimeUnit.MILLISECONDS)) {
-                    try {
-                        if (size < maxPoolSize && getQueueSize() > 0) {
-                            size++;
-                            cachedExecutor.execute(new Worker());
-                        }
-                    } finally {
-                        lock.unlock();
+                lock.lockInterruptibly();
+                try {
+                    if (size < maxPoolSize && getQueueSize() > 0) {
+                        size++;
+                        cachedExecutor.execute(new Worker());
                     }
+                } finally {
+                    lock.unlock();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
