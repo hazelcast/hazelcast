@@ -402,7 +402,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
         final Collection<Member> members = clientContext.getClusterService().getMemberList();
-        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         for (Member member : members) {
             try {
                 final Address address = member.getAddress();

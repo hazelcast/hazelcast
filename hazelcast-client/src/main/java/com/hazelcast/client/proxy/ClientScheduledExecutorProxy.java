@@ -370,8 +370,6 @@ public class ClientScheduledExecutorProxy
     private <T> ClientDelegatingFuture<T> doSubmitOnAddress(ClientMessage clientMessage,
                                                             ClientMessageDecoder clientMessageDecoder,
                                                             Address address) {
-        SerializationService serializationService = getContext().getSerializationService();
-
         try {
             ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), address).invoke();
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
