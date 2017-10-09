@@ -29,12 +29,16 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.IndexAwarePredicate;
@@ -47,6 +51,11 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.BinaryOperationFactory;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -1812,6 +1821,41 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
         assertEquals(11, testMap.get(1L).getLastValue());
         assertEquals(20, testMap.get(2L).getLastValue());
+    }
+
+    @Test
+    public void multiple_entry_with_predicate_operation_returns_empty_response_when_map_is_empty() throws Exception {
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
+        mapConfig.setInMemoryFormat(inMemoryFormat);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+        InternalOperationService operationService = nodeEngineImpl.getOperationService();
+
+        int keyCount = 1000;
+        Set<Data> dataKeys = new HashSet<Data>();
+        for (int i = 0; i < keyCount; i++) {
+            dataKeys.add(nodeEngineImpl.toData(i));
+        }
+
+        Operation operation = new MultipleEntryWithPredicateOperation(MAP_NAME, dataKeys,
+                new NOOPEntryProcessor(), new SqlPredicate("this < " + keyCount));
+
+        OperationFactory operationFactory = new BinaryOperationFactory(operation, nodeEngineImpl);
+
+        Map<Integer, Object> partitionResponses = operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
+
+        for (Object response : partitionResponses.values()) {
+            assertEquals(0, ((MapEntries) response).size());
+        }
+    }
+
+    public static class NOOPEntryProcessor extends AbstractEntryProcessor {
+        @Override
+        public Object process(Map.Entry entry) {
+            return null;
+        }
     }
 
     static class MyData implements Serializable {
