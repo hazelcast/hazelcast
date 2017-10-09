@@ -58,10 +58,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.spi.properties.GroupProperty.BIND_SPOOFING_CHECKS;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Boolean.parseBoolean;
-import static java.lang.System.getProperty;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
@@ -69,10 +69,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private static final int DELAY_FACTOR = 100;
     private static final int SCHEDULER_POOL_SIZE = 4;
 
-    // TODO Introducing this to allow disabling the spoofing checks on-demand
-    // if there is a use-case that gets affected by the change. If there are no reports of misbehaviour we can remove than in
-    // next release.
-    private static final boolean SPOOFING_CHECKS = parseBoolean(getProperty("hazelcast.nio.tcp.spoofing.checks", "false"));
+    private static final boolean SPOOFING_CHECKS = parseBoolean(BIND_SPOOFING_CHECKS.getSystemProperty());
 
     final LoggingService loggingService;
 
