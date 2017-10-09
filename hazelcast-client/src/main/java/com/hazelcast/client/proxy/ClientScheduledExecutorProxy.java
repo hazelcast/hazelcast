@@ -36,7 +36,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
