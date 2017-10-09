@@ -54,7 +54,7 @@ final class DnsEndpointResolver
             Record[] records = lookup.run();
 
             if (lookup.getResult() != Lookup.SUCCESSFUL) {
-                logger.warning("DNS lookup for serviceDns '" + serviceDns + "' failed");
+                logger.warning("DNS lookup for serviceDns '" + serviceDns + "' failed: " + lookup.getErrorString());
                 return Collections.emptyList();
             }
 

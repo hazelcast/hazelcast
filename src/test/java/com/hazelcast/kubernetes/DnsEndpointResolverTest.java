@@ -29,6 +29,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
@@ -72,7 +73,23 @@ public class DnsEndpointResolverTest {
         assertEquals("127.0.0.1", nodes.get(0).getPrivateAddress().getHost());
     }
 
+    @Test
+    public void testDnsFailFlow() throws Exception {
+        DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", SERVICE_DNS_TIMEOUT));
+        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup", null)).withNoArguments().thenReturn(lookup);
+
+        when(lookup.getResult()).thenReturn(Lookup.HOST_NOT_FOUND);
+        when(lookup.run()).thenReturn(getRecords());
+
+        List<DiscoveryNode> nodes = endpointResolver.resolve();
+        assertTrue(nodes.isEmpty());
+
+        verify(lookup).run();
+        verify(lookup).getResult();
+        verify(lookup).getErrorString();
+    }
+
     private Record[] getRecords() {
-        return new Record[] {srvRecord};
+        return new Record[]{srvRecord};
     }
 }
