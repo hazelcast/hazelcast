@@ -36,7 +36,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
@@ -370,8 +369,6 @@ public class ClientScheduledExecutorProxy
     private <T> ClientDelegatingFuture<T> doSubmitOnAddress(ClientMessage clientMessage,
                                                             ClientMessageDecoder clientMessageDecoder,
                                                             Address address) {
-        SerializationService serializationService = getContext().getSerializationService();
-
         try {
             ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), address).invoke();
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
