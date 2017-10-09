@@ -129,7 +129,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
         private final long warmUpDeadline;
         private final long deadLine;
-        private final ConcurrentMap<Long, ClientInvocation> callIdMap;
+        private final ConcurrentMap<Long, ClientInvocation> invocations;
 
         private int maxInvocationCountObserved;
         private int maxInvocationCountObservedDuringWarmup;
@@ -142,13 +142,13 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
             this.warmUpDeadline = now + (durationMillis / 5);
             this.deadLine = now + durationMillis;
-            this.callIdMap = extraCallIdMap(client);
+            this.invocations = extractInvocations(client);
         }
 
         @Override
         public void run() {
             while (System.currentTimeMillis() < deadLine && running) {
-                int currentSize = callIdMap.size();
+                int currentSize = invocations.size();
                 maxInvocationCountObserved = max(currentSize, maxInvocationCountObserved);
                 if (System.currentTimeMillis() < warmUpDeadline) {
                     maxInvocationCountObservedDuringWarmup = max(currentSize, maxInvocationCountObservedDuringWarmup);
@@ -175,14 +175,14 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         }
 
         @SuppressWarnings("unchecked")
-        private ConcurrentMap<Long, ClientInvocation> extraCallIdMap(HazelcastInstance client) {
+        private ConcurrentMap<Long, ClientInvocation> extractInvocations(HazelcastInstance client) {
             try {
                 HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
                 ClientInvocationService invocationService = clientImpl.getInvocationService();
                 SmartClientInvocationService smartInvocationService = (SmartClientInvocationService) invocationService;
-                Field callIdMapField = SmartClientInvocationService.class.getSuperclass().getDeclaredField("callIdMap");
-                callIdMapField.setAccessible(true);
-                return (ConcurrentMap<Long, ClientInvocation>) callIdMapField.get(smartInvocationService);
+                Field invocationsField = SmartClientInvocationService.class.getSuperclass().getDeclaredField("invocations");
+                invocationsField.setAccessible(true);
+                return (ConcurrentMap<Long, ClientInvocation>) invocationsField.get(smartInvocationService);
             } catch (Exception e) {
                 throw rethrow(e);
             }
