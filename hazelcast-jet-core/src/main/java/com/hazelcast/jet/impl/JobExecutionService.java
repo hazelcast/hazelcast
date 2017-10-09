@@ -153,9 +153,7 @@ public class JobExecutionService {
     ) {
         verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
-        if (!nodeEngine.isRunning()) {
-            throw new HazelcastInstanceNotActiveException();
-        }
+        failIfNotRunning();
 
         if (!executionContextJobIds.add(jobId)) {
             ExecutionContext current = executionContexts.get(executionId);
@@ -192,6 +190,8 @@ public class JobExecutionService {
                                           int coordinatorMemberListVersion, Set<MemberInfo> participants) {
         Address masterAddress = nodeEngine.getMasterAddress();
         if (!coordinator.equals(masterAddress)) {
+            failIfNotRunning();
+
             throw new IllegalStateException(String.format(
                     "Coordinator %s cannot initialize %s. Reason: it is not the master, the master is %s",
                     coordinator, jobAndExecutionId(jobId, executionId), masterAddress));
@@ -222,6 +222,12 @@ public class JobExecutionService {
         }
     }
 
+    private void failIfNotRunning() {
+        if (!nodeEngine.isRunning()) {
+            throw new HazelcastInstanceNotActiveException();
+        }
+    }
+
     /**
      * Starts execution of the job if the coordinator is verified
      * as the accepted master and the correct initiator.
@@ -240,14 +246,14 @@ public class JobExecutionService {
                                                           String operationName) {
         Address masterAddress = nodeEngine.getMasterAddress();
         if (!coordinator.equals(masterAddress)) {
+            failIfNotRunning();
+
             throw new IllegalStateException(String.format(
                     "Coordinator %s cannot do '%s' for %s: it is not the master, the master is %s",
                     coordinator, operationName, jobAndExecutionId(jobId, executionId), masterAddress));
         }
 
-        if (!nodeEngine.isRunning()) {
-            throw new HazelcastInstanceNotActiveException();
-        }
+        failIfNotRunning();
 
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
