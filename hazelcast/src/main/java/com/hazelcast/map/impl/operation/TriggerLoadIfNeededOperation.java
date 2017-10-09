@@ -20,6 +20,9 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
+/**
+ * Triggers key loading on member with SENDER or SENDER_BACKUP key loader role, if keys have not finished loading yet.
+ */
 public class TriggerLoadIfNeededOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private Boolean isLoaded;
@@ -33,7 +36,7 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
 
     @Override
     public void run() {
-        isLoaded = recordStore.isLoaded();
+        isLoaded = recordStore.isKeyLoadFinished();
         recordStore.maybeDoInitialLoad();
     }
 
