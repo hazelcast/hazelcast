@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
@@ -31,12 +32,14 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.Iterator;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.IterableUtil.map;
 
@@ -70,12 +73,12 @@ public final class InvocationUtil {
 
         warmUpPartitions(nodeEngine);
 
-        OperationService operationService = nodeEngine.getOperationService();
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
 
         // we are going to iterate over all members and invoke an operation on each of them
-        Iterator<ICompletableFuture<Object>> invocationIterator = map(
-                memberIterator, new InvokeOnMemberFunction(operationFactory, operationService));
+        InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationFactory, nodeEngine,
+                memberIterator);
+        Iterator<ICompletableFuture<Object>> invocationIterator = map(memberIterator, invokeOnMemberFunction);
 
         ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
         ExecutionService executionService = nodeEngine.getExecutionService();
@@ -117,20 +120,85 @@ public final class InvocationUtil {
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
 
         private final OperationFactory operationFactory;
-        private final OperationService operationService;
+        private final NodeEngine nodeEngine;
+        private final RestartingMemberIterator memberIterator;
+        private final long retryDelayMillis;
+        private volatile int lastRetryCount;
 
-        InvokeOnMemberFunction(OperationFactory operationFactory, OperationService operationService) {
+        InvokeOnMemberFunction(OperationFactory operationFactory, NodeEngine nodeEngine,
+                RestartingMemberIterator memberIterator) {
             this.operationFactory = operationFactory;
-            this.operationService = operationService;
+            this.nodeEngine = nodeEngine;
+            this.memberIterator = memberIterator;
+            this.retryDelayMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
         }
 
         @Override
-        public ICompletableFuture<Object> apply(Member member) {
+        public ICompletableFuture<Object> apply(final Member member) {
+            if (isRetry()) {
+                return invokeOnMemberWithDelay(member);
+            }
+            return invokeOnMember(member);
+        }
+
+        private boolean isRetry() {
+            int currentRetryCount = memberIterator.getRetryCount();
+            if (lastRetryCount == currentRetryCount) {
+                return false;
+            }
+            lastRetryCount = currentRetryCount;
+            return true;
+        }
+
+        private ICompletableFuture<Object> invokeOnMemberWithDelay(Member member) {
+            SimpleCompletableFuture<Object> future = new SimpleCompletableFuture<Object>(nodeEngine);
+            InvokeOnMemberTask task = new InvokeOnMemberTask(member, future);
+            nodeEngine.getExecutionService().schedule(task, retryDelayMillis, TimeUnit.MILLISECONDS);
+            return future;
+        }
+
+        private ICompletableFuture<Object> invokeOnMember(Member member) {
             Address address = member.getAddress();
             Operation operation = operationFactory.createOperation();
             String serviceName = operation.getServiceName();
+            return nodeEngine.getOperationService().invokeOnTarget(serviceName, operation, address);
+        }
 
-            return operationService.invokeOnTarget(serviceName, operation, address);
+        private class InvokeOnMemberTask implements Runnable {
+            private final Member member;
+            private final SimpleCompletableFuture<Object> future;
+
+            InvokeOnMemberTask(Member member, SimpleCompletableFuture<Object> future) {
+                this.member = member;
+                this.future = future;
+            }
+
+            @Override
+            public void run() {
+                invokeOnMember(member).andThen(new ExecutionCallback<Object>() {
+                    @Override
+                    public void onResponse(Object response) {
+                        future.setResult(response);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        future.setResult(t);
+                    }
+                });
+            }
+        }
+    }
+
+    private static class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T> {
+
+        SimpleCompletableFuture(NodeEngine nodeEngine) {
+            super(nodeEngine, nodeEngine.getLogger(InvocationUtil.class));
+        }
+
+        @Override
+        public void setResult(Object result) {
+            super.setResult(result);
         }
     }
 
