@@ -37,10 +37,10 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
-    protected Config config;
-    protected TestHazelcastInstanceFactory hzFactory;
-    protected HazelcastInstance hz;
-    protected SystemLogPlugin plugin;
+    private Config config;
+    private TestHazelcastInstanceFactory hzFactory;
+    private HazelcastInstance hz;
+    private SystemLogPlugin plugin;
 
     @Before
     public void setup() {
@@ -75,7 +75,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
 
                 assertContains("Lifecycle[" + LINE_SEPARATOR + "                          SHUTTING_DOWN]");
@@ -88,7 +88,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         HazelcastInstance instance = hzFactory.newHazelcastInstance(config);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
                 assertContains("MemberAdded[");
             }
@@ -97,7 +97,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         instance.shutdown();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
                 assertContains("MemberRemoved[");
             }
@@ -115,7 +115,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
                 assertContains("MigrationStarted");
                 assertContains("MigrationCompleted");

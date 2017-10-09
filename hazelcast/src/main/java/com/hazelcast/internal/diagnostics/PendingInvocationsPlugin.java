@@ -37,12 +37,12 @@ public final class PendingInvocationsPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds this plugin runs.
-     *
+     * <p>
      * With the pending invocation plugins an aggregation is made per type of operation how many pending
      * invocations there are.
-     *
+     * <p>
      * This plugin is very cheap to use.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS

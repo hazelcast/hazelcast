@@ -50,10 +50,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <li>Showing membership changes.</li>
  * <li>Optionally showing partition migration</li>
  * </ol>
- *
- * This plugin is very useful to get an idea what is happening inside a cluster; especially when there are connection related
- * problems.
- *
+ * This plugin is very useful to get an idea what is happening inside a cluster;
+ * especially when there are connection related problems.
+ * <p>
  * This plugin has a low overhead and is meant to run in production.
  */
 public class SystemLogPlugin extends DiagnosticsPlugin {

@@ -68,6 +68,7 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run(DiagnosticsLogWriter writer) {
         writer.startSection("SystemProperties");
 

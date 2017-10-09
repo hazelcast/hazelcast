@@ -32,19 +32,20 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A {@link DiagnosticsPlugin} that displays the slow executing operations. For more information see
- * {@link com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector}.
+ * A {@link DiagnosticsPlugin} that displays the slow executing operations.
+ * <p>
+ * For more information see {@link com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector}.
  */
 public class SlowOperationPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds the SlowOperationPlugin runs.
-     *
+     * <p>
      * With the slow operation plugin, slow executing operation can be found. This is done by checking
      * on the caller side which operations take a lot of time executing.
-     *
+     * <p>
      * This plugin is very cheap to use.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(

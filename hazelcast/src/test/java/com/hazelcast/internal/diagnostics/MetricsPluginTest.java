@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -60,10 +58,10 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
     }
 
     @Test
-    public void testRunWithProblematicProbe() throws Throwable {
+    public void testRunWithProblematicProbe() {
         metricsRegistry.register(this, "broken", MANDATORY, new LongProbeFunction() {
             @Override
-            public long get(Object source) throws Exception {
+            public long get(Object source) {
                 throw new RuntimeException("error");
             }
         });
@@ -73,10 +71,10 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
     }
 
     @Test
-    public void testRun() throws IOException {
+    public void testRun() {
         plugin.run(logWriter);
 
-        // we just test a few to make sure the metrics are written.
+        // we just test a few to make sure the metrics are written
         assertContains("client.endpoint.count=0");
         assertContains("operation.responseQueueSize=0");
     }

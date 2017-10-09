@@ -100,7 +100,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
         LongProbeFunction f = new LongProbeFunction() {
             @Override
-            public long get(Object source) throws Exception {
+            public long get(Object source) {
                 return 0;
             }
         };
@@ -109,7 +109,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
             metricsRegistry.register(this, id + k, ProbeLevel.MANDATORY, f);
         }
 
-        // we run for some time to make sure we get enough rollovers.
+        // we run for some time to make sure we get enough rollovers
         while (files.size() < 3) {
             final File file = diagnosticsLogFile.file;
             if (file != null) {
@@ -119,7 +119,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
                 assertTrueEventually(new AssertTask() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         assertExist(file);
                     }
                 });
@@ -128,10 +128,10 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
             sleepMillis(100);
         }
 
-        // eventually all these files should be gone.
+        // eventually all these files should be gone
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (File file : files) {
                     assertNotExist(file);
                 }
@@ -148,10 +148,10 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test() throws InterruptedException {
+    public void test() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 String content = loadLogfile();
                 assertNotNull(content);
 

@@ -29,7 +29,9 @@ import com.hazelcast.util.EmptyStatement;
 
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.valueOf;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
+import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -37,23 +39,23 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry}
  * to provide some clues about the internal Hazelcast state.
- * <p/>
+ * <p>
  * Health monitor can be configured with system properties.
- * <p/>
- * {@link GroupProperty#HEALTH_MONITORING_LEVEL}
- * This property can be one of the following:
- * {@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints.
- * {@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default).
- * {@link HealthMonitorLevel#OFF}    => does not print anything.
- * <p/>
- * {@link GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
- * Time between printing two logs of health monitor. Default values is 30 seconds.
- * <p/>
- * {@link GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
- * Threshold: Percentage of max memory currently in use
- * <p/>
- * {@link GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
- * Threshold: CPU system/process load
+ * <ul>
+ * <li>{@link GroupProperty#HEALTH_MONITORING_LEVEL} This property can be one of the following:
+ * <ul>
+ * <li>{@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints</li>
+ * <li>{@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default)</li>
+ * <li>{@link HealthMonitorLevel#OFF}    => does not print anything</li>
+ * </ul>
+ * </li>
+ * <li>{@link GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
+ * Time between printing two logs of health monitor. Default values is 30 seconds.</li>
+ * <li>{@link GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
+ * Threshold: Percentage of max memory currently in use</li>
+ * <li>{@link GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
+ * Threshold: CPU system/process load</li>
+ * </ul>
  */
 public class HealthMonitor {
 
@@ -77,10 +79,8 @@ public class HealthMonitor {
         this.logger = node.getLogger(HealthMonitor.class);
         this.metricRegistry = node.nodeEngine.getMetricsRegistry();
         this.monitorLevel = getHealthMonitorLevel();
-        this.thresholdMemoryPercentage
-                = node.getProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
-        this.thresholdCPUPercentage
-                = node.getProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
+        this.thresholdMemoryPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
+        this.thresholdCPUPercentage = node.getProperties().getInteger(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
         this.healthMetrics = new HealthMetrics();
     }
@@ -90,7 +90,7 @@ public class HealthMonitor {
             return null;
         }
 
-        int delaySeconds = node.getProperties().getSeconds(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS);
+        int delaySeconds = node.getProperties().getSeconds(HEALTH_MONITORING_DELAY_SECONDS);
         return new HealthMonitorThread(delaySeconds);
     }
 
@@ -117,7 +117,6 @@ public class HealthMonitor {
             EmptyStatement.ignore(e);
         }
         logger.finest("HealthMonitor stopped");
-        return;
     }
 
     private HealthMonitorLevel getHealthMonitorLevel() {
@@ -126,6 +125,7 @@ public class HealthMonitor {
     }
 
     private final class HealthMonitorThread extends Thread {
+
         private final int delaySeconds;
         private boolean performanceLogHint;
 
@@ -180,9 +180,8 @@ public class HealthMonitor {
             // we only log the hint once
             performanceLogHint = false;
 
-            logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
-                            + "enable the Diagnostics by adding the property -D%s=true",
-                    LINE_SEPARATOR, Diagnostics.ENABLED));
+            logger.info(format("The HealthMonitor has detected a high load on the system. For more detailed information,%n"
+                    + "enable the Diagnostics by adding the property -D%s=true", Diagnostics.ENABLED));
         }
     }
 
@@ -296,23 +295,18 @@ public class HealthMonitor {
             if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
                 return true;
             }
-
             if (osProcessCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
-
             if (osSystemCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
-
             if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE_INVOCATIONS) {
                 return true;
             }
-
             if (operationServicePendingInvocationsCount.read() > THRESHOLD_INVOCATIONS) {
                 return true;
             }
-
             return false;
         }
 
@@ -395,7 +389,7 @@ public class HealthMonitor {
                     .append(numberToUnit(runtimeUsedMemory.read())).append(", ");
             sb.append("heap.memory.free=")
                     .append(numberToUnit(runtimeFreeMemory.read())).append(", ");
-             sb.append("heap.memory.total=")
+            sb.append("heap.memory.total=")
                     .append(numberToUnit(runtimeTotalMemory.read())).append(", ");
             sb.append("heap.memory.max=")
                     .append(numberToUnit(runtimeMaxMemory.read())).append(", ");
@@ -448,22 +442,22 @@ public class HealthMonitor {
 
             final long usedNative = memoryStats.getUsedNative();
             sb.append("native.memory.used=")
-              .append(numberToUnit(usedNative)).append(", ");
+                    .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
-              .append(numberToUnit(memoryStats.getFreeNative())).append(", ");
+                    .append(numberToUnit(memoryStats.getFreeNative())).append(", ");
             sb.append("native.memory.total=")
-              .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
+                    .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
             sb.append("native.memory.max=")
-              .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
+                    .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
             final long maxMeta = memoryStats.getMaxMetadata();
             if (maxMeta > 0) {
                 final long usedMeta = memoryStats.getUsedMetadata();
                 sb.append("native.meta.memory.used=")
-                  .append(numberToUnit(usedMeta)).append(", ");
+                        .append(numberToUnit(usedMeta)).append(", ");
                 sb.append("native.meta.memory.free=")
-                  .append(numberToUnit(maxMeta - usedMeta)).append(", ");
+                        .append(numberToUnit(maxMeta - usedMeta)).append(", ");
                 sb.append("native.meta.memory.percentage=")
-                  .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
+                        .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
             }
         }
 

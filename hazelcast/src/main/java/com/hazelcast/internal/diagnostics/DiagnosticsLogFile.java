@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.logging.ILogger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -32,12 +31,13 @@ import java.nio.charset.CharsetEncoder;
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_COUNT;
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_SIZE_MB;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static java.lang.Math.round;
 import static java.lang.String.format;
 
 /**
  * Represents the PerformanceLogFile.
- *
+ * <p>
  * Should only be called from the {@link Diagnostics}.
  */
 final class DiagnosticsLogFile {
@@ -50,12 +50,12 @@ final class DiagnosticsLogFile {
     private final Diagnostics diagnostics;
     private final ILogger logger;
     private final String fileName;
+    private final DiagnosticsLogWriterImpl logWriter;
 
     private int index;
     private PrintWriter printWriter;
     private int maxRollingFileCount;
     private int maxRollingFileSizeBytes;
-    private final DiagnosticsLogWriterImpl logWriter;
 
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
@@ -101,7 +101,7 @@ final class DiagnosticsLogFile {
         }
     }
 
-    private void renderPlugin(DiagnosticsPlugin plugin) throws IOException {
+    private void renderPlugin(DiagnosticsPlugin plugin) {
         logWriter.init(printWriter);
 
         plugin.run(logWriter);
@@ -113,7 +113,6 @@ final class DiagnosticsLogFile {
         return new PrintWriter(new BufferedWriter(new OutputStreamWriter(fos, encoder), Short.MAX_VALUE));
     }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void rollover() {
         closeResource(printWriter);
         printWriter = null;
@@ -121,7 +120,6 @@ final class DiagnosticsLogFile {
         index++;
 
         File file = new File(format(fileName, index - maxRollingFileCount));
-        // we don't care if the file was deleted or not
-        file.delete();
+        deleteQuietly(file);
     }
 }

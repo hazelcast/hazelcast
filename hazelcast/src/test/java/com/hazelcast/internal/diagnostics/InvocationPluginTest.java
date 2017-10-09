@@ -68,7 +68,7 @@ public class InvocationPluginTest extends AbstractDiagnosticsPluginTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
 
                 assertContains(EntryOperation.class.getName());

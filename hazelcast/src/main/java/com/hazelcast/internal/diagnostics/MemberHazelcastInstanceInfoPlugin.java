@@ -26,16 +26,17 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Prints all kinds of Hazelcast member specific info. Lots of other information is already captured
- * through the metrics.
+ * Prints all kinds of Hazelcast member specific info.
+ * <p>
+ * Lots of other information is already captured through the metrics.
  */
 public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds the HazelcastMemberInstanceInfoPlugin runs.
-     *
+     * <p>
      * This plugin is very cheap to use.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(

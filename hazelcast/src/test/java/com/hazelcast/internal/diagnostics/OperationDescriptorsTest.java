@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.LinkedList;
 
 import static com.hazelcast.internal.diagnostics.OperationDescriptors.toOperationDesc;
 import static java.lang.String.format;
@@ -67,7 +66,7 @@ public class OperationDescriptorsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPartitionIteratingOperation() throws UnknownHostException {
+    public void testPartitionIteratingOperation() {
         PartitionIteratingOperation op = new PartitionIteratingOperation(new DummyOperationFactory(), new int[0]);
         String result = toOperationDesc(op);
         assertEquals(format("PartitionIteratingOperation(%s)", DummyOperationFactory.class.getName()), result);

@@ -54,7 +54,7 @@ public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 plugin.run(logWriter);
 
                 assertContains("Networking");

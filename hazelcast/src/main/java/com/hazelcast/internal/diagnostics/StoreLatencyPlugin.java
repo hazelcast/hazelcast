@@ -38,20 +38,22 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * A {@link DiagnosticsPlugin} that helps to detect if there are any performance issues with Stores/Loaders like e.g.
- * {@link com.hazelcast.core.MapStore}. This is done by instrumenting these Stores/Loaders with latency tracking probes,
- * so that per Store/Loader all kinds of statistics like count, avg, mag, latency distribution etc is available.
- *
+ * {@link com.hazelcast.core.MapStore}.
+ * <p>
+ * This is done by instrumenting these Stores/Loaders with latency tracking probes, so that per Store/Loader all kinds
+ * of statistics like count, avg, mag, latency distribution etc is available.
+ * <p>
  * One of the main purposes of this plugin is to make sure that e.g. a Database is the cause of slow performance. This
  * plugin is useful to be combined with {@link SlowOperationPlugin} to get idea about where the threads are spending
  * their time.
- *
+ * <p>
  * If this plugin is not enabled, there is no performance hit since the Stores/Loaders don't get decorated.
  */
 public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds this plugin runs.
-     *
+     * <p>
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
@@ -60,13 +62,12 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     /**
      * The period in second the statistics should be reset. Normally the statistics are not reset and if the system
      * is running for an extended time, it isn't possible to see that happened in e.g. the last hour.
-     *
+     * <p>
      * Currently there is no sliding window functionality to deal with this correctly. But for the time being this
      * setting will periodically reset the statistics.
      */
     public static final HazelcastProperty RESET_PERIOD_SECONDS
             = new HazelcastProperty(PREFIX + ".storeLatency.reset.period.seconds", 0, SECONDS);
-
 
     private static final int LOW_WATERMARK_MICROS = 100;
 
@@ -84,11 +85,6 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             maxDurationForBucket *= 2;
         }
     }
-
-    private final long periodMillis;
-    private final long resetPeriodMillis;
-    private final long resetFrequency;
-    private long iteration;
 
     private final ConcurrentMap<String, ServiceProbes> metricsPerServiceMap
             = new ConcurrentHashMap<String, ServiceProbes>();
@@ -108,6 +104,12 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             return new InstanceProbes(dataStructureName);
         }
     };
+
+    private final long periodMillis;
+    private final long resetPeriodMillis;
+    private final long resetFrequency;
+
+    private long iteration;
 
     public StoreLatencyPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getLogger(StoreLatencyPlugin.class), nodeEngine.getProperties());
@@ -138,7 +140,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         iteration++;
         render(writer);
-        resetStatisticsIfNeeded(writer);
+        resetStatisticsIfNeeded();
     }
 
     private void render(DiagnosticsLogWriter writer) {
@@ -147,7 +149,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private void resetStatisticsIfNeeded(DiagnosticsLogWriter writer) {
+    private void resetStatisticsIfNeeded() {
         if (resetFrequency > 0 && iteration % resetFrequency == 0) {
             for (ServiceProbes serviceProbes : metricsPerServiceMap.values()) {
                 serviceProbes.resetStatistics();
@@ -170,8 +172,8 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
 
         private final String serviceName;
 
-        // the InstanceProbes are stored in a weak reference. So that if the store/loader is gc'ed, the probes are gc'ed
-        // and therefor there is no strong reference to the InstanceProbes and they get gc'ed.
+        // the InstanceProbes are stored in a weak reference, so that if the store/loader is gc'ed, the probes are gc'ed
+        // and therefor there is no strong reference to the InstanceProbes and they get gc'ed
         private final ConcurrentReferenceHashMap<String, InstanceProbes> instanceProbesMap
                 = new ConcurrentReferenceHashMap<String, InstanceProbes>(ReferenceType.STRONG, ReferenceType.WEAK);
 
@@ -239,11 +241,10 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
     }
 
-
     // package private for testing
     static final class LatencyProbeImpl implements LatencyProbe {
 
-        // instead of storing it in a final field, it is stored in a volatile field because stats can be reset.
+        // instead of storing it in a final field, it is stored in a volatile field because stats can be reset
         volatile Statistics stats = new Statistics();
 
         // a strong reference to prevent garbage collection
@@ -297,6 +298,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     }
 
     static final class Statistics {
+
         private static final AtomicLongFieldUpdater<Statistics> COUNT
                 = newUpdater(Statistics.class, "count");
         private static final AtomicLongFieldUpdater<Statistics> TOTAL_MICROS
