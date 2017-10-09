@@ -22,6 +22,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.PartitionService;
+import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -36,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -128,6 +131,41 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         assertNotSame(rv1, rv2);
 
         assertTrue(objectMap2.containsValue(v1));
+    }
+
+    @Test
+    public void countDeserializationsOnContainsValue() {
+        final Config config = new Config()
+                .addMapConfig(new MapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT));
+        final HazelcastInstance hz = createHazelcastInstance(config);
+        final PartitionService partitionService = hz.getPartitionService();
+        final IMap<Integer, Object> m = hz.getMap("mappy");
+        final HashSet<Integer> nonEmptyPartitions = new HashSet<Integer>();
+
+        for (int i = 0; i < MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT * 5; i++) {
+            m.put(i, i);
+            nonEmptyPartitions.add(partitionService.getPartition(i).getPartitionId());
+        }
+
+        final SerializationCounting value = new SerializationCounting();
+        m.containsValue(value);
+
+        assertEquals(nonEmptyPartitions.size(), SerializationCounting.deserializationCount.get());
+    }
+
+    public static class SerializationCounting implements DataSerializable {
+        public static AtomicInteger serializationCount = new AtomicInteger();
+        public static AtomicInteger deserializationCount = new AtomicInteger();
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            serializationCount.incrementAndGet();
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            deserializationCount.incrementAndGet();
+        }
     }
 
     public static final class Pair implements Serializable {
