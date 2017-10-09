@@ -85,8 +85,10 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      */
-    public static <E extends Map.Entry> Sink<E> writeMap(String mapName, ClientConfig clientConfig) {
-        return new SinkImpl<>("writeMap(" + mapName + ')', SinkProcessors.writeMapP(mapName, clientConfig));
+    public static <E extends Map.Entry> Sink<E> writeRemoteMap(String mapName, ClientConfig clientConfig) {
+        return new SinkImpl<>("writeRemoteMap(" + mapName + ')', SinkProcessors.writeRemoteMapP(
+                mapName, clientConfig
+        ));
     }
 
     /**
@@ -112,8 +114,9 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      */
-    public static <E extends Map.Entry> Sink<E> writeCache(String cacheName, ClientConfig clientConfig) {
-        return new SinkImpl<>("writeCache(" + cacheName + ')', SinkProcessors.writeCacheP(cacheName, clientConfig));
+    public static <E extends Map.Entry> Sink<E> writeRemoteCache(String cacheName, ClientConfig clientConfig) {
+        return new SinkImpl<>("writeRemoteCache(" + cacheName + ')', SinkProcessors.writeRemoteCacheP(cacheName,
+                clientConfig));
     }
 
     /**
@@ -137,8 +140,9 @@ public final class Sinks {
      * the items will likely be duplicated, providing an <i>at least once</i>
      * guarantee.
      */
-    public static <E> Sink<E> writeList(String listName, ClientConfig clientConfig) {
-        return new SinkImpl<>("writeList(" + listName + ')', SinkProcessors.writeListP(listName, clientConfig));
+    public static <E> Sink<E> writeRemoteList(String listName, ClientConfig clientConfig) {
+        return new SinkImpl<>("writeRemoteList(" + listName + ')', SinkProcessors.writeRemoteListP(listName,
+                clientConfig));
     }
 
     /**

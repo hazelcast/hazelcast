@@ -122,9 +122,11 @@ public final class Sources {
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V, T> Source<T> readMap(@Nonnull String mapName,
-                                              @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-                                              @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn) {
+    public static <K, V, T> Source<T> readMap(
+            @Nonnull String mapName,
+            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
+    ) {
         return fromProcessor("readMap(" + mapName + ')',
                 SourceProcessors.readMapP(mapName, predicate, projectionFn));
     }
@@ -136,7 +138,9 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<EventJournalMapEvent<K, V>> streamMap(
-            @Nonnull String mapName, boolean startFromLatestSequence) {
+            @Nonnull String mapName,
+            boolean startFromLatestSequence
+    ) {
         return fromProcessor("streamMap(" + mapName + ')',
                 SourceProcessors.streamMapP(mapName, startFromLatestSequence));
     }
@@ -164,10 +168,12 @@ public final class Sources {
      * @param <T> type of emitted item
      */
     @Nonnull
-    public static <K, V, T> Source<T> streamMap(@Nonnull String mapName,
-                                          @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
-                                          @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
-                                          boolean startFromLatestSequence) {
+    public static <K, V, T> Source<T> streamMap(
+            @Nonnull String mapName,
+            @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
+            @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
+            boolean startFromLatestSequence
+    ) {
         return fromProcessor("streamMap(" + mapName + ')',
                 SourceProcessors.streamMapP(mapName, predicate, projection, startFromLatestSequence));
     }
@@ -185,8 +191,12 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     @Nonnull
-    public static <K, V> Source<Map.Entry<K, V>> readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMapP(mapName, clientConfig));
+    public static <K, V> Source<Map.Entry<K, V>> readRemoteMap(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig
+    ) {
+        return fromProcessor("readRemoteMap(" + mapName + ')',
+                SourceProcessors.readRemoteMapP(mapName, clientConfig));
     }
 
     /**
@@ -203,24 +213,29 @@ public final class Sources {
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V, T> Source<T> readMap(@Nonnull String mapName,
-                                              @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-                                              @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
-                                              @Nonnull ClientConfig clientConfig) {
-        return fromProcessor("readMap(" + mapName + ')',
-                SourceProcessors.readMapP(mapName, predicate, projectionFn, clientConfig));
+    public static <K, V, T> Source<T> readRemoteMap(
+            @Nonnull String mapName,
+            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
+            @Nonnull ClientConfig clientConfig
+    ) {
+        return fromProcessor("readRemoteMap(" + mapName + ')',
+                SourceProcessors.readRemoteMapP(mapName, predicate, projectionFn, clientConfig));
     }
 
     /**
-     * Convenience for {@link #streamMap(String, ClientConfig,
+     * Convenience for {@link #streamRemoteMap(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, boolean)} with no projection
      * or filtering. It emits {@link EventJournalMapEvent}s.
      */
     @Nonnull
-    public static <K, V> Source<EventJournalMapEvent<K, V>> streamMap(
-            @Nonnull String mapName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence) {
-        return fromProcessor("streamMap(" + mapName + ')',
-                SourceProcessors.streamMapP(mapName, clientConfig, startFromLatestSequence));
+    public static <K, V> Source<EventJournalMapEvent<K, V>> streamRemoteMap(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamRemoteMap(" + mapName + ')',
+                SourceProcessors.streamRemoteMapP(mapName, clientConfig, startFromLatestSequence));
     }
 
     /**
@@ -246,15 +261,15 @@ public final class Sources {
      * @param <T> type of emitted item
      */
     @Nonnull
-    public static <K, V, T> Source<T> streamMap(
+    public static <K, V, T> Source<T> streamRemoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamMap(" + mapName + ')',
-                SourceProcessors.streamMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence));
+        return fromProcessor("streamRemoteMap(" + mapName + ')',
+                SourceProcessors.streamRemoteMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence));
     }
 
     /**
@@ -281,7 +296,9 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<EventJournalCacheEvent<K, V>> streamCache(
-            @Nonnull String cacheName, boolean startFromLatestSequence) {
+            @Nonnull String cacheName,
+            boolean startFromLatestSequence
+    ) {
         return fromProcessor("streamCache(" + cacheName + ')',
                 SourceProcessors.streamCacheP(cacheName, startFromLatestSequence));
     }
@@ -332,25 +349,28 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     @Nonnull
-    public static <K, V> Source<Map.Entry<K, V>> readCache(
-            @Nonnull String cacheName, @Nonnull ClientConfig clientConfig
+    public static <K, V> Source<Map.Entry<K, V>> readRemoteCache(
+            @Nonnull String cacheName,
+            @Nonnull ClientConfig clientConfig
     ) {
-        return fromProcessor("readCache(" + cacheName + ')',
-                ReadWithPartitionIteratorP.readCache(cacheName, clientConfig)
+        return fromProcessor("readRemoteCache(" + cacheName + ')',
+                ReadWithPartitionIteratorP.readRemoteCache(cacheName, clientConfig)
         );
     }
 
     /**
-     * Convenience for {@link #streamCache(String, ClientConfig,
+     * Convenience for {@link #streamRemoteCache(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, boolean)} with no projection
      * or filtering. It emits {@link EventJournalCacheEvent}s.
      */
     @Nonnull
-    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamCache(
-            @Nonnull String cacheName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence
+    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamRemoteCache(
+            @Nonnull String cacheName,
+            @Nonnull ClientConfig clientConfig,
+            boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamCache(" + cacheName + ')',
-                SourceProcessors.streamCacheP(cacheName, clientConfig, startFromLatestSequence));
+        return fromProcessor("streamRemoteCache(" + cacheName + ')',
+                SourceProcessors.streamRemoteCacheP(cacheName, clientConfig, startFromLatestSequence));
     }
 
     /**
@@ -374,15 +394,18 @@ public final class Sources {
      * @param <T>                     type of emitted item
      */
     @Nonnull
-    public static <K, V, T> Source<T> streamCache(
+    public static <K, V, T> Source<T> streamRemoteCache(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
             @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
             @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamCache(" + cacheName + ')',
-                SourceProcessors.streamCacheP(cacheName, clientConfig, predicate, projection, startFromLatestSequence));
+        return fromProcessor("streamRemoteCache(" + cacheName + ')',
+                SourceProcessors.streamRemoteCacheP(
+                        cacheName, clientConfig, predicate, projection, startFromLatestSequence
+                )
+        );
     }
 
     /**
@@ -407,8 +430,8 @@ public final class Sources {
      * all entries will be emitted again.
      */
     @Nonnull
-    public static <E> Source<E> readList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return fromProcessor("readList(" + listName + ')', ReadIListP.supplier(listName, clientConfig));
+    public static <E> Source<E> readRemoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+        return fromProcessor("readRemoteList(" + listName + ')', ReadIListP.supplier(listName, clientConfig));
     }
 
     /**

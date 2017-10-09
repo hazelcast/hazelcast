@@ -59,10 +59,10 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeMap(String, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sinks#writeRemoteMap(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorSupplier writeRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return HazelcastWriters.writeMap(mapName, clientConfig);
     }
 
@@ -77,10 +77,10 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeCache(String, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sinks#writeRemoteCache(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeCacheP(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorSupplier writeRemoteCacheP(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
         return HazelcastWriters.writeCache(cacheName, clientConfig);
     }
 
@@ -95,10 +95,10 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeList(String, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sinks#writeRemoteList(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorSupplier writeRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return HazelcastWriters.writeList(listName, clientConfig);
     }
 

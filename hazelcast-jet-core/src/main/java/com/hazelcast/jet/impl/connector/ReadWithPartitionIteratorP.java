@@ -90,7 +90,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                         .iterator(FETCH_SIZE, partition, PREFETCH_VALUES));
     }
 
-    public static <T> ProcessorMetaSupplier readMap(
+    public static <T> ProcessorMetaSupplier readRemoteMap(
             @Nonnull String mapName, @Nonnull ClientConfig clientConfig
     ) {
         return new RemoteClusterMetaSupplier<T>(clientConfig,
@@ -108,7 +108,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                         .iterator(FETCH_SIZE, partition, toProjection(projectionFn), predicate::test));
     }
 
-    public static <K, V, T> ProcessorMetaSupplier readMap(
+    public static <K, V, T> ProcessorMetaSupplier readRemoteMap(
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
@@ -125,7 +125,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                         .iterator(FETCH_SIZE, partition, PREFETCH_VALUES));
     }
 
-    public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier readRemoteCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
         return new RemoteClusterMetaSupplier<>(clientConfig,
                 instance -> partition -> ((ClientCacheProxy) instance.getCacheManager().getCache(cacheName))
                         .iterator(FETCH_SIZE, partition, PREFETCH_VALUES));
