@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -24,6 +25,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -57,6 +59,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -1187,6 +1190,30 @@ public class BasicMapTest extends HazelcastTestSupport {
         for (int i = 0; i < mapSize; i++) {
             EntryView<Integer, Integer> entryView = map3.getEntryView(i);
             assertEquals(expectedRecordVersion, entryView.getVersion());
+        }
+    }
+
+    @Test
+    public void github_11489_verifyNoFailingCastOnValue() throws Exception {
+        IMap<Integer, Integer> test = getInstance().getMap("github_11489");
+        for (int i = 0; i < 1000; i++) {
+            test.put(i, i);
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String result = objectMapper.writeValueAsString(test.values(new TestPagingPredicate(1000)));
+        assertNotNull(result);
+    }
+
+    private static class TestPagingPredicate extends PagingPredicate {
+
+        public TestPagingPredicate(int pageSize) {
+            super(pageSize);
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            return true;
         }
     }
 

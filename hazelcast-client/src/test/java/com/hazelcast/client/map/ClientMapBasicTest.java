@@ -16,14 +16,17 @@
 
 package com.hazelcast.client.map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.BasicMapTest;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -1124,6 +1127,30 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
             String expectedValue = expected.get(key);
 
             assertEquals(expectedValue, value);
+        }
+    }
+
+    @Test
+    public void github_11489_verifyNoFailingCastOnValue() throws Exception {
+        IMap<Integer, Integer> test = client.getMap("github_11489");
+        for (int i = 0; i < 1000; i++) {
+            test.put(i, i);
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String result = objectMapper.writeValueAsString(test.values(new TestPagingPredicate(1000)));
+        assertNotNull(result);
+    }
+
+    private static class TestPagingPredicate extends PagingPredicate {
+
+        public TestPagingPredicate(int pageSize) {
+            super(pageSize);
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            return true;
         }
     }
 
