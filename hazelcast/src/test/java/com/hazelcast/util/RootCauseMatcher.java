@@ -22,6 +22,28 @@ import org.hamcrest.TypeSafeMatcher;
 
 /**
  * Matcher for {@link org.junit.rules.ExpectedException#expectCause(Matcher)} to assert the root cause of an exception.
+ * <p>
+ * Optionally the exception message can be tested as well.
+ * <p>
+ * Example usage:
+ * <pre><code>
+ *  {@literal @}Rule
+ *   public ExpectedException expect = ExpectedException.none();
+ *
+ *  {@literal @}Test
+ *   public void testRootCause() {
+ *     expected.expect(ExecutionException.class);
+ *     expected.expectCause(new RootCauseMatcher(StaleTaskException.class));
+ *     throwException();
+ *   }
+ *
+ *  {@literal @}Test
+ *   public void testRootCause_withMessage() {
+ *     expected.expect(ExecutionException.class);
+ *     expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Expected message"));
+ *     throwException();
+ *   }
+ * </code></pre>
  */
 public class RootCauseMatcher extends TypeSafeMatcher<Throwable> {
 
