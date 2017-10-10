@@ -16,19 +16,20 @@
 
 package com.hazelcast.spi.impl.sequence;
 
-public final class CallIdFactory {
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-    private CallIdFactory() {
-    }
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class CallIdFactoryTest extends HazelcastTestSupport {
 
-    public static CallIdSequence newCallIdSequence(boolean isBackPressureEnabled, int maxAllowedConcurrentInvocations,
-                                                   long backoffTimeoutMs) {
-        if (!isBackPressureEnabled) {
-            return new CallIdSequenceWithoutBackpressure();
-        } else if (backoffTimeoutMs <= 0) {
-            return new FailFastCallIdSequence(maxAllowedConcurrentInvocations);
-        } else {
-            return new CallIdSequenceWithBackpressure(maxAllowedConcurrentInvocations, backoffTimeoutMs);
-        }
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(CallIdFactory.class);
     }
 }
