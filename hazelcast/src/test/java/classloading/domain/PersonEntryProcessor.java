@@ -26,8 +26,7 @@ public class PersonEntryProcessor implements EntryProcessor<String, Person, Pers
     private static final long serialVersionUID = 1L;
 
     @Override
-    public Person process(MutableEntry<String, Person> entry, Object... arguments)
-            throws EntryProcessorException {
+    public Person process(MutableEntry<String, Person> entry, Object... arguments) throws EntryProcessorException {
         return new Person();
     }
 }

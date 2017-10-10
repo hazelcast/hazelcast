@@ -20,7 +20,7 @@ import java.util.Random;
 
 /**
  * This is a demo application which can cause a classloader leakage via {@link ThreadLocal}.
- *
+ * <p>
  * It is adapted from original Hazelcast code which created a {@link ThreadLocal} leakage.
  */
 public final class LeakingApplication {
@@ -39,9 +39,9 @@ public final class LeakingApplication {
     private static class ThreadLocalRandom extends Random {
 
         /**
-         * This causes a classloader leakage which may produce errors in web containers
-         * or even cause a PermGen Space OOME in Java 6 (since references are not cleaned up).
-         *
+         * This causes a classloader leakage which may produce errors in web containers or
+         * even cause a PermGen Space OOME in Java 6 (since references are not cleaned up).
+         * <p>
          * Never override {@link ThreadLocal#initialValue()} in production code!
          */
         private static final ThreadLocal<ThreadLocalRandom> localRandom =

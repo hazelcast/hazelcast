@@ -30,11 +30,11 @@ import static java.util.Collections.singletonList;
 
 /**
  * Creates a member or client {@link com.hazelcast.core.Hazelcast} instance with an explicit exclusion of {@code javax.cache}.
- *
+ * <p>
  * If the method {@link #createHazelcastInstance()} or {@link #createHazelcastInstance_getCacheManager()} fails with a
  * {@link ClassNotFoundException} with the cause "javax.cache.* - Package excluded explicitly!" we accidentally introduced
  * a runtime dependency on {@link javax.cache} with a default configuration.
- *
+ * <p>
  * The method {@link #createHazelcastInstance_getCache()} is expected to fail, since it actually tries to invoke
  * {@link com.hazelcast.core.ICacheManager#getCache(String)}.
  */

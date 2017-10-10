@@ -19,8 +19,7 @@ package classloading.domain;
 import java.io.Serializable;
 
 /**
- * Sample domain class defined outside com.hazelcast package for classloader-related tests
+ * Sample domain class defined outside com.hazelcast package for classloader-related tests.
  */
 public class Person implements Serializable {
-
 }

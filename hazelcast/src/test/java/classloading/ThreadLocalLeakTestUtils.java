@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Contains detection logic for {@link ThreadLocal} leaks.
- *
+ * <p>
  * Adapted from the WebappClassLoader of the Apache Tomcat project.
  *
  * @see <a href="https://github.com/apache/tomcat/blob/811450a84ca29e38d42e041be85b2deed4058ebb/java/org/apache/catalina/loader/WebappClassLoaderBase.java#L1823">WebappClassLoaderBase.java</a>
