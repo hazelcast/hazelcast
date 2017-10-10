@@ -27,8 +27,6 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
 /**
  * Contains primitives needed to compute an aggregated result of stream
  * processing. The result is computed by updating a mutable result
@@ -96,7 +94,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * registered with it, it will throw an exception.
      */
     @Nonnull
-    default <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(Tag<T> tag) {
+    default <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(@Nonnull Tag<T> tag) {
         return accumulateFn(tag.index());
     }
 
@@ -177,7 +175,7 @@ public interface AggregateOperation<A, R> extends Serializable {
             @Nonnull DistributedFunction<T, A> getAccFn
     ) {
         DistributedBiConsumer<? super A, ? super A> combineFn = combineFn();
-        Objects.requireNonNull(combineFn);
+        Objects.requireNonNull(combineFn, "The 'combine' primitive is missing");
         return new AggregateOperation1Impl<>(
                 createFn(),
                 (A acc, T item) -> combineFn.accept(acc, getAccFn.apply(item)),
@@ -217,8 +215,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      *         has just the {@code create} primitive defined
      */
     @Nonnull
-    static <A> AggregateOperationBuilder<A> withCreate(DistributedSupplier<A> createFn) {
-        checkNotNull(createFn, "createFn");
+    static <A> AggregateOperationBuilder<A> withCreate(@Nonnull DistributedSupplier<A> createFn) {
         return new AggregateOperationBuilder<>(createFn);
     }
 }

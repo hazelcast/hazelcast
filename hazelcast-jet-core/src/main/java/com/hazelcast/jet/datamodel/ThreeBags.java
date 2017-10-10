@@ -20,6 +20,8 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static java.util.Collections.emptyList;
+
 /**
  * A container of three bags (collections), each with its own element
  * type. Bags are identified by their index: 0, 1, and 2. Useful as
@@ -29,22 +31,35 @@ import java.util.Collection;
  * @param <E1> type of items in bag-1
  * @param <E2> type of items in bag-2
  */
-public class ThreeBags<E0, E1, E2> {
+public final class ThreeBags<E0, E1, E2> {
     private final Collection<E0> bag0;
     private final Collection<E1> bag1;
     private final Collection<E2> bag2;
 
-    /**
-     * Constructs an empty {@code ThreeBags} container.
-     */
-    public ThreeBags() {
-        this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+    private ThreeBags(@Nonnull Collection<E0> bag0, @Nonnull Collection<E1> bag1, @Nonnull Collection<E2> bag2) {
+        this.bag0 = new ArrayList<>(bag0);
+        this.bag1 = new ArrayList<>(bag1);
+        this.bag2 = new ArrayList<>(bag2);
     }
 
-    ThreeBags(@Nonnull Collection<E0> bag0, @Nonnull Collection<E1> bag1, @Nonnull Collection<E2> bag2) {
-        this.bag0 = bag0;
-        this.bag1 = bag1;
-        this.bag2 = bag2;
+    /**
+     * Returns a new, empty {@code ThreeBags} container.
+     */
+    @Nonnull
+    public static <E0, E1, E2> ThreeBags<E0, E1, E2> threeBags() {
+        return new ThreeBags<>(emptyList(), emptyList(), emptyList());
+    }
+
+    /**
+     * Returns a new {@code ThreeBags} container populated with the supplied
+     * collections. Doesn't retain the supplied collections, but
+     * copies them into newly created ones.
+     */
+    @Nonnull
+    public static <E0, E1, E2> ThreeBags<E0, E1, E2> threeBags(
+            @Nonnull Collection<E0> bag0, @Nonnull Collection<E1> bag1, @Nonnull Collection<E2> bag2
+    ) {
+        return new ThreeBags<>(bag0, bag1, bag2);
     }
 
     /**
@@ -75,7 +90,7 @@ public class ThreeBags<E0, E1, E2> {
      * Combines this and the supplied container by merging all the supplied
      * container's data into this one. Leaves the supplied container unchanged.
      */
-    public void combineWith(ThreeBags<E0, E1, E2> that) {
+    public void combineWith(@Nonnull ThreeBags<E0, E1, E2> that) {
         bag0.addAll(that.bag0());
         bag1.addAll(that.bag1());
         bag2.addAll(that.bag2());

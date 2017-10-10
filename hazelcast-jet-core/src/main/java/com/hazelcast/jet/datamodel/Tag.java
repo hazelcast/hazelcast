@@ -42,6 +42,18 @@ public final class Tag<T> implements Comparable<Tag<?>>, Serializable {
     }
 
     /**
+     * Returns a tag object associated with the specified index. The
+     * tag's type parameter is inferred from the call site. The method
+     * will not necessarily create a new tag object.
+     */
+    public static <T> Tag<T> tag(int index) {
+        return index == 0 ? TAG_0
+                : index == 1 ? TAG_1
+                : index == 2 ? TAG_2
+                : new Tag<>(index);
+    }
+
+    /**
      * Returns the index associated with this tag. It can refer to the
      * index of a contributing stream in a hash-join or co-group operation,
      * or to the index used internally to store the data associated with
@@ -49,18 +61,6 @@ public final class Tag<T> implements Comparable<Tag<?>>, Serializable {
      */
     public int index() {
         return index;
-    }
-
-    /**
-     * Returns a tag object associated with the specified index. The
-     * tag's type parameter is inferred from the call site. The method
-     * will not necessarily create a new tag object.
-     */
-    public static <T> Tag<T> tag(int index) {
-        return index == 0 ? TAG_0
-             : index == 1 ? TAG_1
-             : index == 2 ? TAG_2
-             : new Tag<>(index);
     }
 
     /**

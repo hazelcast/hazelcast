@@ -43,8 +43,9 @@ public class ItemsByTag {
      * them as a list of tag-value pairs, and returns an {@code ItemsByTag}
      * populated with these pairs.
      */
+    @Nonnull
     @SuppressWarnings("unchecked")
-    public static ItemsByTag itemsByTag(Object... tagsAndVals) {
+    public static ItemsByTag itemsByTag(@Nonnull Object... tagsAndVals) {
         ItemsByTag ibt = new ItemsByTag();
         for (int i = 0; i < tagsAndVals.length;) {
             ibt.put((Tag) tagsAndVals[i++], tagsAndVals[i++]);
@@ -96,6 +97,7 @@ public class ItemsByTag {
     }
 
     // For the Hazelcast serializer hook
+    @Nonnull
     Set<Entry<Tag<?>, Object>> entrySet() {
         return map.entrySet();
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,16 +40,37 @@ public class BagsByTag {
     private final Map<Tag<?>, Collection> components = new HashMap<>();
 
     /**
-     * Retrieves the bag, if any, associated with the supplied tag.
+     * Accepts an argument list of alternating tags and collections, interprets
+     * them as a list of tag-bag pairs, and returns a {@code BagsByTag}
+     * populated with these pairs. Doesn't retain the supplied collections, but
+     * copies them into newly created ones.
+     */
+    @Nonnull
+    public static BagsByTag bagsByTag(@Nonnull Object... tagsAndBags) {
+        BagsByTag bbt = new BagsByTag();
+        for (int i = 0; i < tagsAndBags.length;) {
+            bbt.components.put((Tag<?>) tagsAndBags[i++], new ArrayList<>((Collection<?>) tagsAndBags[i++]));
+        }
+        return bbt;
+    }
+
+    /**
+     * Retrieves the bag associated with the supplied tag. Throws
+     * {@code IllegalArgumentException} if there is none.
      *
      * @param tag the lookup tag
      * @param <E> the type of items in the returned bag
-     * @return the associated bag or {@code null} if there is none
+     * @return the associated bag
+     * @throws IllegalArgumentException if there is no bag associated with the tag
      */
-    @Nullable
+    @Nonnull
     @SuppressWarnings("unchecked")
     public <E> Collection<E> bag(@Nonnull Tag<E> tag) {
-        return (Collection<E>) components.get(tag);
+        Collection<E> bag = components.get(tag);
+        if (bag == null) {
+            throw new IllegalArgumentException("No bag associated with tag " + tag);
+        }
+        return bag;
     }
 
     /**
@@ -101,6 +121,7 @@ public class BagsByTag {
 
     // These two methods are used by the Hazelcast serializer hook
 
+    @Nonnull
     Set<Entry<Tag<?>, Collection>> entrySet() {
         return components.entrySet();
     }

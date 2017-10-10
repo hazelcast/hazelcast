@@ -20,6 +20,8 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static java.util.Collections.emptyList;
+
 /**
  * A container of two bags (collections), each with its own element
  * type. Bags are identified by their index: 0 and 1. Useful as
@@ -28,20 +30,31 @@ import java.util.Collection;
  * @param <E0> type of items in bag-0
  * @param <E1> type of items in bag-1
  */
-public class TwoBags<E0, E1> {
+public final class TwoBags<E0, E1> {
     private final Collection<E0> bag0;
     private final Collection<E1> bag1;
 
-    /**
-     * Constructs an empty {@code TwoBags} container.
-     */
-    public TwoBags() {
-        this(new ArrayList<>(), new ArrayList<>());
+    private TwoBags(@Nonnull Collection<E0> bag0, @Nonnull Collection<E1> bag1) {
+        this.bag0 = new ArrayList<>(bag0);
+        this.bag1 = new ArrayList<>(bag1);
     }
 
-    TwoBags(Collection<E0> bag0, Collection<E1> bag1) {
-        this.bag0 = bag0;
-        this.bag1 = bag1;
+    /**
+     * Returns a new, empty {@code TwoBags} container.
+     */
+    @Nonnull
+    public static <E0, E1> TwoBags<E0, E1> twoBags() {
+        return new TwoBags<>(emptyList(), emptyList());
+    }
+
+    /**
+     * Returns a new {@code TwoBags} container populated with the supplied
+     * collections. Doesn't retain the supplied collections, but
+     * copies them into newly created ones.
+     */
+    @Nonnull
+    public static <E0, E1> TwoBags<E0, E1> twoBags(@Nonnull Collection<E0> bag0, @Nonnull Collection<E1> bag1) {
+        return new TwoBags<>(bag0, bag1);
     }
 
     /**
@@ -58,6 +71,15 @@ public class TwoBags<E0, E1> {
     @Nonnull
     public Collection<E1> bag1() {
         return bag1;
+    }
+
+    /**
+     * Combines this and the supplied container by merging all the supplied
+     * container's data into this one. Leaves the supplied container unchanged.
+     */
+    public void combineWith(@Nonnull TwoBags<E0, E1> that) {
+        bag0.addAll(that.bag0());
+        bag1.addAll(that.bag1());
     }
 
     @Override

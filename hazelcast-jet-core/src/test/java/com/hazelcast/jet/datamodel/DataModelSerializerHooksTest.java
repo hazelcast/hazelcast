@@ -34,11 +34,16 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.jet.datamodel.BagsByTag.bagsByTag;
+import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
+import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.datamodel.Tag.tag2;
+import static com.hazelcast.jet.datamodel.ThreeBags.threeBags;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.datamodel.TwoBags.twoBags;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,35 +63,21 @@ public class DataModelSerializerHooksTest {
                 new TimestampedEntry<>(1, "key", "value"),
                 tuple2("value-0", "value-1"),
                 tuple3("value-0", "value-1", "value-2"),
-                new TwoBags<>(asList("v1", "v2"), asList("v3", "v4")),
-                new ThreeBags<>(asList("v1", "v2"), asList("v3", "v4"), asList("v5", "v6")),
+                twoBags(asList("v1", "v2"), asList("v3", "v4")),
+                threeBags(asList("v1", "v2"), asList("v3", "v4"), asList("v5", "v6")),
                 tag0(),
                 tag1(),
                 tag2(),
-                Tag.tag(0),
-                Tag.tag(1),
-                Tag.tag(2),
-                Tag.tag(3),
-                newItemsByTag(),
-                newBagsByTag()
+                tag(0),
+                tag(1),
+                tag(2),
+                tag(3),
+                itemsByTag(tag0(), "val0",
+                        tag1(), "val1",
+                        tag2(), null),
+                bagsByTag(tag0(), asList("bagv0", "bagv1"),
+                        tag1(), asList("bagv2", "bagv3"))
         );
-    }
-
-    private static ItemsByTag newItemsByTag() {
-        ItemsByTag ibt = new ItemsByTag();
-        ibt.put(tag0(), "val0");
-        ibt.put(tag1(), "val1");
-        ibt.put(tag2(), null);
-        return ibt;
-    }
-
-    private static BagsByTag newBagsByTag() {
-        BagsByTag bbt = new BagsByTag();
-        bbt.ensureBag(tag0()).add("bagv0");
-        bbt.ensureBag(tag0()).add("bagv1");
-        bbt.ensureBag(tag1()).add("bagv2");
-        bbt.ensureBag(tag1()).add("bagv3");
-        return bbt;
     }
 
     @Test
