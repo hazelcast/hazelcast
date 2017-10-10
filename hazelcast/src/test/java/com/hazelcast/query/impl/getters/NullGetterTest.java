@@ -38,14 +38,14 @@ public class NullGetterTest {
     }
 
     @Test
-    public void test_getReturnType() throws Exception {
+    public void test_getReturnType() {
         Class returnType = NullGetter.NULL_GETTER.getReturnType();
 
         assertNull(returnType);
     }
 
     @Test
-    public void test_isCacheable() throws Exception {
+    public void test_isCacheable() {
         boolean cacheable = NullGetter.NULL_GETTER.isCacheable();
 
         assertFalse(cacheable);

@@ -60,5 +60,4 @@ public class ExtractorGetterTest {
         // WHEN
         getter.getReturnType();
     }
-
 }

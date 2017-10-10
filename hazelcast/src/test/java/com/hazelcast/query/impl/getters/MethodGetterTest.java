@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.getters;
 
-
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,7 +25,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -274,8 +272,8 @@ public class MethodGetterTest {
     @SuppressWarnings("unused")
     static class Body {
         String name;
-        Limb[] limbArray = new Limb[0];
-        Collection<Limb> limbCollection = new ArrayList<Limb>();
+        Limb[] limbArray;
+        Collection<Limb> limbCollection;
 
         Body(String name, Limb... limbs) {
             this.name = name;
@@ -299,8 +297,8 @@ public class MethodGetterTest {
     @SuppressWarnings("unused")
     static class Limb {
         String name;
-        Nail[] nailArray = new Nail[0];
-        Collection<Nail> nailCollection = new ArrayList<Nail>();
+        Nail[] nailArray;
+        Collection<Nail> nailCollection;
 
         Limb(String name, Nail... nails) {
             this.name = name;

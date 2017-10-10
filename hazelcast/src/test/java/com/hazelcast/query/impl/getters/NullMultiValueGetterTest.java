@@ -33,14 +33,14 @@ import static org.junit.Assert.assertTrue;
 public class NullMultiValueGetterTest {
 
     @Test
-    public void test_getReturnType() throws Exception {
+    public void test_getReturnType() {
         Class returnType = NullMultiValueGetter.NULL_MULTIVALUE_GETTER.getReturnType();
 
         assertNull(returnType);
     }
 
     @Test
-    public void test_isCacheable() throws Exception {
+    public void test_isCacheable() {
         boolean cacheable = NullMultiValueGetter.NULL_MULTIVALUE_GETTER.isCacheable();
 
         assertFalse(cacheable);
@@ -53,5 +53,4 @@ public class NullMultiValueGetterTest {
         assertInstanceOf(MultiResult.class, value);
         assertTrue(((MultiResult) value).isNullEmptyTarget());
     }
-
 }

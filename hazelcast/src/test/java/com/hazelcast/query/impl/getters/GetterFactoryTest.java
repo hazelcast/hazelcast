@@ -529,7 +529,7 @@ public class GetterFactoryTest {
     }
 
     @Test
-    public void newThisGetter() throws Exception {
+    public void newThisGetter() {
         OuterObject object = new OuterObject("name", new InnerObject("inner", 0, 1, 2, 3));
         Getter innerObjectThisGetter = GetterFactory.newThisGetter(null, object);
 
@@ -538,6 +538,7 @@ public class GetterFactoryTest {
     }
 
     public static class OuterObject {
+
         final String name;
         final Collection<InnerObject> innersCollection;
         final InnerObject[] innersArray;
@@ -576,6 +577,7 @@ public class GetterFactoryTest {
     }
 
     public static class InnerObject {
+
         final String name;
         final Collection<Integer> attributesCollection;
         final Integer[] attributesArray;

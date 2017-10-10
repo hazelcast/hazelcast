@@ -35,12 +35,12 @@ public class PortableGetterTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void getReturnType() throws Exception {
+    public void getReturnType() {
         new PortableGetter(null).getReturnType();
     }
 
     @Test
-    public void isCacheable() throws Exception {
+    public void isCacheable() {
         PortableGetter getter = new PortableGetter(null);
         assertFalse("Portable getter shouldn't be cacheable!", getter.isCacheable());
     }

@@ -138,5 +138,4 @@ public class EvictableGetterCacheTest {
         int expectedSizeAfterEviction = (int) (classCacheSize * (1 - evictPercentage));
         assertThat(cache.getClassCacheSize(), equalTo(expectedSizeAfterEviction));
     }
-
 }
