@@ -35,6 +35,8 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -58,10 +60,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.spi.properties.GroupProperty.BIND_SPOOFING_CHECKS;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
-import static java.lang.Boolean.parseBoolean;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
@@ -69,12 +69,12 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private static final int DELAY_FACTOR = 100;
     private static final int SCHEDULER_POOL_SIZE = 4;
 
-    private static final boolean SPOOFING_CHECKS = parseBoolean(BIND_SPOOFING_CHECKS.getSystemProperty());
-
     final LoggingService loggingService;
 
     @Probe(name = "connectionListenerCount")
     final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+
+    private final boolean spoofingChecks;
 
     private final IOService ioService;
 
@@ -136,6 +136,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
                                   EventLoopGroup eventLoopGroup) {
+        this(ioService, serverSocketChannel, loggingService, metricsRegistry, eventLoopGroup, null);
+    }
+
+    public TcpIpConnectionManager(IOService ioService,
+                                  ServerSocketChannel serverSocketChannel,
+                                  LoggingService loggingService,
+                                  MetricsRegistry metricsRegistry,
+                                  EventLoopGroup eventLoopGroup,
+                                  HazelcastProperties properties) {
         this.ioService = ioService;
         this.eventLoopGroup = eventLoopGroup;
         this.serverSocketChannel = serverSocketChannel;
@@ -146,6 +155,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.connector = new TcpIpConnector(this);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
+        this.spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
         metricsRegistry.scanAndRegister(this, "tcp.connection");
         checkSslAllowed();
     }
@@ -217,7 +227,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         // Some simple spoofing attack prevention
         // Prevent BINDs from src that doesn't match the BIND local address
         // Prevent BINDs from src that match us (same host & port)
-        if (SPOOFING_CHECKS
+        if (spoofingChecks
                 && (!ensureValidBindSource(connection, remoteEndPoint)
                  || !ensureBindNotFromSelf(connection, remoteEndPoint, thisAddress))) {
             return false;

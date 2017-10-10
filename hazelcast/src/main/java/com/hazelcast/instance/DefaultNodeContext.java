@@ -59,7 +59,8 @@ public class DefaultNodeContext implements NodeContext {
                 serverSocketChannel,
                 node.loggingService,
                 node.nodeEngine.getMetricsRegistry(),
-                eventLoopGroup);
+                eventLoopGroup,
+                node.getProperties());
     }
 
     private EventLoopGroup createEventLoopGroup(Node node, NodeIOService ioService) {
