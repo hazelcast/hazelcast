@@ -18,11 +18,13 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 import java.util.HashSet;
@@ -48,9 +50,11 @@ public class StatisticsAwareMetricsSet {
     private static final int SCAN_PERIOD_SECONDS = 10;
 
     private final ServiceManager serviceManager;
+    private final ILogger logger;
 
-    public StatisticsAwareMetricsSet(ServiceManager serviceManager) {
+    public StatisticsAwareMetricsSet(ServiceManager serviceManager, NodeEngineImpl nodeEngine) {
         this.serviceManager = serviceManager;
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     public void register(MetricsRegistry metricsRegistry) {
@@ -70,13 +74,17 @@ public class StatisticsAwareMetricsSet {
 
         @Override
         public void run() {
-            registerAliveStats();
-            purgeDeadStats();
+            try {
+                registerAliveStats();
+                purgeDeadStats();
 
-            Set<LocalInstanceStats> tmp = previousStats;
-            previousStats = currentStats;
-            currentStats = tmp;
-            currentStats.clear();
+                Set<LocalInstanceStats> tmp = previousStats;
+                previousStats = currentStats;
+                currentStats = tmp;
+                currentStats.clear();
+            } catch (Exception e) {
+                logger.finest("Error occurred while scanning for statistics aware metrics", e);
+            }
         }
 
         private void registerAliveStats() {

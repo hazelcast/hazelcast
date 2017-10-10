@@ -220,7 +220,7 @@ public class NodeEngineImpl implements NodeEngine {
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
         if (node.getProperties().getBoolean(METRICS_DISTRIBUTED_DATASTRUCTURES)) {
-            new StatisticsAwareMetricsSet(serviceManager).register(metricsRegistry);
+            new StatisticsAwareMetricsSet(serviceManager, this).register(metricsRegistry);
         }
 
         metricsRegistry.collectMetrics(operationService, proxyService, eventService, operationParker);
