@@ -19,7 +19,7 @@ package com.hazelcast.query.impl.getters;
 import java.util.List;
 
 /**
- * Immutable version of the MultiResult
+ * Immutable version of the MultiResult.
  *
  * @param <T> type of the underlying result store in the MultiResult
  */
@@ -64,5 +64,4 @@ public final class ImmutableMultiResult<T> extends MultiResult<T> {
     public void setNullOrEmptyTarget(boolean nullOrEmptyTarget) {
         throw new UnsupportedOperationException("Can't modify an immutable MultiResult");
     }
-
 }
