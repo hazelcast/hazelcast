@@ -26,11 +26,11 @@ import java.security.Permission;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class UserCodeDeploymentPermissionTest extends AbstractGenericPermissionTest {
+public class UserCodeDeploymentPermissionTest extends PermissionTestSupport {
 
     @Override
     protected Permission createPermission(String name, String... actions) {
-        return new CardinalityEstimatorPermission(name, actions);
+        return new UserCodeDeploymentPermission(actions);
     }
 
     @Test
@@ -45,7 +45,7 @@ public class UserCodeDeploymentPermissionTest extends AbstractGenericPermissionT
 
     @Test
     public void checkAllPermission_whenDeploy() {
-        new CheckPermission().of("all").against("deploy").expect(false).run();
+        new CheckPermission().of("all").against("deploy").expect(true).run();
     }
 
 }
