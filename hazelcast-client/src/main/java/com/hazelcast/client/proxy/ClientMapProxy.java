@@ -1213,7 +1213,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
             V value = toObject(entry.getValue());
             resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
-        return (Set<Entry<K, V>>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.ENTRY);
+        Set result = getSortedQueryResultSet(resultList, pagingPredicate, IterationType.ENTRY);
+        return (Set<Entry<K, V>>) result;
     }
 
     @Override

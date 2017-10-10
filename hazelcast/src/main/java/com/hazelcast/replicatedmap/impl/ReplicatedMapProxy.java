@@ -20,6 +20,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -33,7 +34,6 @@ import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.InitializingObject;
@@ -404,13 +404,15 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>();
+        List<Entry> entries = new ArrayList<Entry>();
         for (ReplicatedRecordStore store : stores) {
             entries.addAll(store.entrySet(true));
         }
-        return new ResultSet<K, V>(entries, IterationType.ENTRY);
+        Set result = new ResultSet(entries, IterationType.ENTRY);
+        return result;
     }
 
     @Override

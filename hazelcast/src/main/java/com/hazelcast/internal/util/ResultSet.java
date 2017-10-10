@@ -28,15 +28,13 @@ import java.util.Map;
  *
  * A result set of {@link Map.Entry} objects that can be iterated according to {@link IterationType}
  *
- * @param <K> the type of {@link Map.Entry} keys
- * @param <V> the type of {@link Map.Entry} values
  */
-public class ResultSet<K, V> extends AbstractSet<Map.Entry<K, V>> {
+public class ResultSet extends AbstractSet<Map.Entry> {
 
-    private final List<Map.Entry<K, V>> entries;
+    private final List<Map.Entry> entries;
     private final IterationType iterationType;
 
-    public ResultSet(List<Map.Entry<K, V>> entries, IterationType iterationType) {
+    public ResultSet(List<Map.Entry> entries, IterationType iterationType) {
         this.entries = entries;
         this.iterationType = iterationType;
     }
@@ -63,7 +61,7 @@ public class ResultSet<K, V> extends AbstractSet<Map.Entry<K, V>> {
 
     private class ResultIterator implements Iterator {
 
-        private final Iterator<Map.Entry<K, V>> iterator = entries.iterator();
+        private final Iterator<Map.Entry> iterator = entries.iterator();
 
         @Override
         public boolean hasNext() {

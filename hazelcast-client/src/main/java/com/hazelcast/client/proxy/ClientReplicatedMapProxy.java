@@ -47,13 +47,13 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.IterationType;
 
@@ -391,15 +391,17 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<K> keySet() {
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        List<Entry<K, V>> keys = new ArrayList<Entry<K, V>>(result.response.size());
+        List<Entry> keys = new ArrayList<Entry>(result.response.size());
         for (Data dataKey : result.response) {
             keys.add(new AbstractMap.SimpleImmutableEntry<K, V>((K) toObject(dataKey), null));
         }
-        return new ResultSet(keys, IterationType.KEY);
+        Set resultSet = new ResultSet(keys, IterationType.KEY);
+        return resultSet;
     }
 
     @Override
@@ -423,17 +425,19 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(result.response.size());
+        List<Entry> entries = new ArrayList<Entry>(result.response.size());
         for (Entry<Data, Data> dataEntry : result.response) {
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
             entries.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
         }
-        return new ResultSet<K, V>(entries, IterationType.ENTRY);
+        Set resultSet = new ResultSet(entries, IterationType.ENTRY);
+        return resultSet;
     }
 
     private EventHandler<ClientMessage> createHandler(EntryListener<K, V> listener) {
