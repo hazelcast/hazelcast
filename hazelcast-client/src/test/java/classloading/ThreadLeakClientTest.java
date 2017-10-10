@@ -42,10 +42,13 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
     @Test
     public void testThreadLeak_withoutCluster() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        clientConfig.getConnectionStrategyConfig()
+                .setAsyncStart(true);
         clientConfig.getNetworkConfig()
                 .setConnectionAttemptLimit(Integer.MAX_VALUE);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
         client.shutdown();
     }
 }
