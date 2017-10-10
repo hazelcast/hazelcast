@@ -32,6 +32,7 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -115,14 +116,15 @@ final class QueryDispatcher {
     }
 
     protected List<Future<Result>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-            Query query, Collection<Integer> partitionIds) {
+            Query query, BitSet partitionIds) {
         if (shouldSkipPartitionsQuery(partitionIds)) {
             return Collections.emptyList();
         }
-
         List<Future<Result>> futures = new ArrayList<Future<Result>>(partitionIds.size());
-        for (Integer partitionId : partitionIds) {
-            futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId));
+        for (int partitionId = 0; partitionId < partitionIds.length(); partitionId++) {
+            if (partitionIds.get(partitionId)) {
+                futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId));
+            }
         }
         return futures;
     }
@@ -147,7 +149,7 @@ final class QueryDispatcher {
         }
     }
 
-    private static boolean shouldSkipPartitionsQuery(Collection<Integer> partitionIds) {
+    private static boolean shouldSkipPartitionsQuery(BitSet partitionIds) {
         return partitionIds == null || partitionIds.isEmpty();
     }
 }

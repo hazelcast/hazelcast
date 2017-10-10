@@ -33,6 +33,7 @@ import com.hazelcast.spi.OperationService;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -141,6 +142,31 @@ public class QueryRunner {
         }
 
         updateStatistics(mapContainer);
+        return populateResult(query, partitions, entries);
+    }
+
+    // MIGRATION UNSAFE QUERYING - MIGRATION STAMPTS ARE NOT VALIDATED, so assumes a run on partition-thread
+    // for a single partition. If the index is global it won't be asked
+    public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, Collection<Integer> partitions) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
+
+        Predicate predicate = null;
+        Collection<QueryableEntry> entries = new LinkedList<QueryableEntry>();
+        for (int partitionId : partitions) {
+            if (predicate == null) {
+                predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
+            }
+            Indexes indexes = mapContainer.getIndexes(partitionId);
+            if (indexes != null && !indexes.isGlobal()) {
+                Collection<QueryableEntry> partitionEntries = indexes.query(predicate);
+                if (partitionEntries == null) {
+                    partitionEntries = partitionScanExecutor.execute(query.getMapName(), predicate, partitions);
+                }
+                entries.addAll(partitionEntries);
+            }
+        }
+
+        // updateStatistics(mapContainer);
         return populateResult(query, partitions, entries);
     }
 
