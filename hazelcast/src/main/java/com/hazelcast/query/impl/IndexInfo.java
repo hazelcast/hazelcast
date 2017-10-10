@@ -76,7 +76,6 @@ public class IndexInfo implements IdentifiedDataSerializable, Comparable<IndexIn
         }
 
         IndexInfo indexInfo = (IndexInfo) o;
-
         if (ordered != indexInfo.ordered) {
             return false;
         }
