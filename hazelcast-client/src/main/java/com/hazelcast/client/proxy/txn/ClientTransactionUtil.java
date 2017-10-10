@@ -30,6 +30,14 @@ import java.util.concurrent.Future;
  */
 public final class ClientTransactionUtil {
 
+    private static final ExceptionUtil.RuntimeExceptionFactory TRANSACTION_EXCEPTION_FACTORY =
+            new ExceptionUtil.RuntimeExceptionFactory() {
+                @Override
+                public RuntimeException create(Throwable throwable, String message) {
+                    return new TransactionException(message, throwable);
+                }
+            };
+
     private ClientTransactionUtil() {
 
     }
@@ -46,12 +54,7 @@ public final class ClientTransactionUtil {
             final Future<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         } catch (Exception e) {
-            RuntimeException runtimeException = ExceptionUtil.peel(e);
-            if (runtimeException instanceof TransactionException) {
-                throw runtimeException;
-            } else {
-                throw new TransactionException(runtimeException);
-            }
+            throw ExceptionUtil.rethrow(e, TRANSACTION_EXCEPTION_FACTORY);
         }
     }
 }
