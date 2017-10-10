@@ -21,17 +21,19 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ExceptionUtil.RuntimeExceptionFactory;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 /**
- * Contains static method that is used from client transaction classes
+ * Contains static method that is used from client transaction classes.
  */
 public final class ClientTransactionUtil {
 
-    private static final ExceptionUtil.RuntimeExceptionFactory TRANSACTION_EXCEPTION_FACTORY =
-            new ExceptionUtil.RuntimeExceptionFactory() {
+    private static final RuntimeExceptionFactory TRANSACTION_EXCEPTION_FACTORY =
+            new RuntimeExceptionFactory() {
                 @Override
                 public RuntimeException create(Throwable throwable, String message) {
                     return new TransactionException(message, throwable);
@@ -39,22 +41,22 @@ public final class ClientTransactionUtil {
             };
 
     private ClientTransactionUtil() {
-
     }
 
     /**
      * Handles the invocation exception for transactions so that users will not see internal exceptions.
+     * <p>
      * More specifically IOException, because in case of a IO problem in ClientInvocation that send to a connection
      * sends IOException to user. This wraps that exception into a TransactionException.
      */
-    public static ClientMessage invoke(ClientMessage request, String objectName,
-                                       HazelcastClientInstanceImpl client, Connection connection) {
+    public static ClientMessage invoke(ClientMessage request, String objectName, HazelcastClientInstanceImpl client,
+                                       Connection connection) {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, connection);
             final Future<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e, TRANSACTION_EXCEPTION_FACTORY);
+            throw rethrow(e, TRANSACTION_EXCEPTION_FACTORY);
         }
     }
 }
