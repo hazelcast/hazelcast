@@ -800,6 +800,14 @@ public final class GroupProperty {
     public static final HazelcastProperty USE_LEGACY_MEMBER_LIST_FORMAT
             = new HazelcastProperty("hazelcast.legacy.memberlist.format.enabled", false);
 
+    /**
+     * Controls whether we apply more strict checks upon BIND requests towards a cluster member.
+     * The checks mainly validate the remote BIND request against the remote address as found in the socket.
+     * By default they are disabled, to avoid connectivity issues when deployed under NAT'ed infrastructure.
+     */
+    public static final HazelcastProperty BIND_SPOOFING_CHECKS =
+            new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
+
     private GroupProperty() {
     }
 }
