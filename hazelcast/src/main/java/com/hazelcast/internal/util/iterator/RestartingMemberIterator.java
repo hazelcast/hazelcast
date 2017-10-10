@@ -141,4 +141,8 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
         }
         throw throwable;
     }
+
+    public int getRetryCount() {
+        return retryCounter;
+    }
 }
