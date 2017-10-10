@@ -116,6 +116,18 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testWithMultipleMembersAtStart() {
+        ClientConfig clientConfig = createClientConfig();
+        Config config = createNodeConfig();
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
+    }
+
+    @Test
     public void testWithMultipleNodes_clientReconnectsToNewNode() {
         ClientConfig clientConfig = createClientConfig();
         Config config = createNodeConfig();
