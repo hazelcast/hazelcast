@@ -44,6 +44,23 @@ public final class BitSetUtils {
     }
 
     /**
+     * Returns true if at least one bit on a given position is set.
+     *
+     * @param bitSet  the {@link BitSet} to modify
+     * @param indexes the index positions to check
+     * @return {@code true} is {@link BitSet} contains at least one bit at any position from index which is set,
+     * otherwise return {@code false}
+     */
+    public static boolean hasAllBitsSet(BitSet bitSet, Iterable<Integer> indexes) {
+        for (Integer index : indexes) {
+            if (!bitSet.get(index)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Set all bits on a given positions.
      *
      * @param bitSet  the {@link BitSet} to modify
@@ -52,6 +69,18 @@ public final class BitSetUtils {
     public static void setBits(BitSet bitSet, Iterable<Integer> indexes) {
         for (Integer index : indexes) {
             bitSet.set(index);
+        }
+    }
+
+    /**
+     * Unsets all bits on a given positions.
+     *
+     * @param bitSet  the {@link BitSet} to modify
+     * @param indexes the index positions to set
+     */
+    public static void unsetBits(BitSet bitSet, Iterable<Integer> indexes) {
+        for (Integer index : indexes) {
+            bitSet.set(index, false);
         }
     }
 }

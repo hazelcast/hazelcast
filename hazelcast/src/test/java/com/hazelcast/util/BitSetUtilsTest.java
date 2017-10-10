@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -77,6 +78,47 @@ public class BitSetUtilsTest extends HazelcastTestSupport {
         BitSetUtils.setBits(bitSet, indexes);
         assertBitsAtPositionsAreSet(bitSet, indexes);
     }
+
+
+    @Test
+    public void hasAllBitsSet_true() {
+        bitSet.set(1);
+        bitSet.set(3);
+        bitSet.set(5);
+
+        assertTrue(BitSetUtils.hasAllBitsSet(bitSet, asList(1, 3, 5)));
+        assertTrue(BitSetUtils.hasAllBitsSet(bitSet, asList(3, 5)));
+    }
+
+    @Test
+    public void hasAllBitsSet_false() {
+        bitSet.set(1);
+        bitSet.set(3);
+        bitSet.set(5);
+
+        assertFalse(BitSetUtils.hasAllBitsSet(bitSet, asList(2, 4, 6)));
+        assertFalse(BitSetUtils.hasAllBitsSet(bitSet, asList(3, 5, 6)));
+    }
+
+    @Test
+    public void unsetBits() {
+        bitSet.set(0, 4);
+        BitSetUtils.unsetBits(bitSet, asList(0, 1, 2, 3, 4));
+
+        assertTrue(bitSet.isEmpty());
+    }
+
+    @Test
+    public void unsetBits_individual() {
+        bitSet.set(0, 2);
+        BitSetUtils.unsetBits(bitSet, asList(0));
+
+        assertFalse(bitSet.get(0));
+        assertTrue(bitSet.get(1));
+    }
+
+    // public static void unsetBits(BitSet bitSet, Iterable<Integer> indexes);
+
 
     private static void assertBitsAtPositionsAreSet(BitSet bitSet, List<Integer> indexes) {
         for (int index : indexes) {
