@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.config.EventJournalConfig;
@@ -65,6 +66,21 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
         }
     }
 
+    /**
+     * Returns the ringbuffer config for the provided namespace. The namespace
+     * provides information whether the requested ringbuffer is a ringbuffer
+     * that the user is directly interacting with through a ringbuffer proxy
+     * or if this is a backing ringbuffer for an event journal.
+     * If a ringbuffer configuration for an event journal is requested, this
+     * method will expect the configuration for the relevant map or cache
+     * to be available.
+     *
+     * @param service the ringbuffer service
+     * @param ns      the object namespace for which we are creating a ringbuffer
+     * @return the ringbuffer configuration
+     * @throws CacheNotExistsException if a config for a cache event journal was requested
+     *                                 and the cache configuration was not found
+     */
     private RingbufferConfig getRingbufferConfig(RingbufferService service, ObjectNamespace ns) {
         final String serviceName = ns.getServiceName();
         if (RingbufferService.SERVICE_NAME.equals(serviceName)) {
