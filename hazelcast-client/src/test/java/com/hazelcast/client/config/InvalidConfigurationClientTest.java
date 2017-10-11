@@ -192,6 +192,26 @@ public class InvalidConfigurationClientTest {
         buildConfig("near-cache-eviction-size", "100");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testClassPathConfigWhenNullClassLoader() {
+        new ClientClasspathXmlConfig(null, "my_config.xml", System.getProperties());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testClassPathConfigWhenNullProperties() {
+        new ClientClasspathXmlConfig(Thread.currentThread().getContextClassLoader(), "my_config.xml", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testClassPathConfigWhenNullResource() {
+        new ClientClasspathXmlConfig(Thread.currentThread().getContextClassLoader(), null, System.getProperties());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testClassPathConfigWhenNonExistentConfig() {
+        new ClientClasspathXmlConfig(Thread.currentThread().getContextClassLoader(), "non-existent-client-config.xml", System.getProperties());
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void WhenDuplicateTagsAdded() {
         String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n"
