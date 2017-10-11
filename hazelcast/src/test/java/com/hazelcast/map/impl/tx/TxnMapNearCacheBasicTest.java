@@ -46,7 +46,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
@@ -55,6 +57,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
 import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Basic Near Cache tests for {@link com.hazelcast.core.TransactionalMap} on Hazelcast members.
@@ -70,7 +73,8 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Parameter(value = 1)
     public boolean serializeKeys;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
+    private final int nodeCount = 2;
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(nodeCount);
 
     @Parameters(name = "format:{0} serializeKeys:{1}")
     public static Collection<Object[]> parameters() {
@@ -117,6 +121,13 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
                 .build();
     }
 
+    private void waitForExpectedClusterSize() {
+        Collection<HazelcastInstance> allHazelcastInstances = hazelcastFactory.getAllHazelcastInstances();
+        List<HazelcastInstance> hazelcastInstanceList = new ArrayList<HazelcastInstance>(allHazelcastInstances);
+        HazelcastInstance[] hazelcastInstanceArray = hazelcastInstanceList.toArray(new HazelcastInstance[allHazelcastInstances.size()]);
+        assertClusterSizeEventually(nodeCount, hazelcastInstanceArray);
+    }
+
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
@@ -158,6 +169,9 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         assumeThatMethodIsAvailable(method);
         NearCacheTestContext<Integer, String, Data, String> context = createContext();
 
+        waitForExpectedClusterSize();
+        assertBackingIMapSize(context);
+
         // populate the data structure
         assertNearCacheSize(context, 0);
         assertNearCacheStats(context, 0, 0, 0);
@@ -179,6 +193,10 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         populateNearCache(context, method);
         assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT);
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
+    }
+
+    private void assertBackingIMapSize(NearCacheTestContext<Integer, String, Data, String> context) {
+        assertEquals(DEFAULT_RECORD_COUNT, context.nearCacheAdapter.size());
     }
 
     @Test
