@@ -1325,6 +1325,12 @@
             <version>${bytebuddy.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.7.9</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
