@@ -43,17 +43,15 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     private final ILogger logger;
-    private final ClientEngineImpl clientEngine;
 
     @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
 
     @Probe(name = "totalRegistrations", level = MANDATORY)
-    private MwCounter totalRegistrations = newMwCounter();
+    private final MwCounter totalRegistrations = newMwCounter();
 
-    public ClientEndpointManagerImpl(ClientEngineImpl clientEngine, NodeEngine nodeEngine) {
-        this.clientEngine = clientEngine;
+    public ClientEndpointManagerImpl(NodeEngine nodeEngine) {
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
 
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
