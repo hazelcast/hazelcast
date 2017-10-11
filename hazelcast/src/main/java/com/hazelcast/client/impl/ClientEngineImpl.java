@@ -138,10 +138,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.node = node;
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
-        this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
+        this.endpointManager = new ClientEndpointManagerImpl(nodeEngine);
         this.executor = newClientExecutor();
         this.queryExecutor = newClientQueryExecutor();
-        this.messageTaskFactory = new CompositeMessageTaskFactory(this.nodeEngine);
+        this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
