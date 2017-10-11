@@ -56,19 +56,6 @@ public class ClientClasspathXmlConfig extends ClientConfig {
     }
 
     /**
-     * Creates a config which is loaded from a classpath resource. The System.properties are used to
-     * resolve variables in the XML.
-     *
-     * @param classLoader the ClassLoader used to load the resource
-     * @param resource    the resource, an XML configuration file from the classpath
-     * @throws IllegalArgumentException if classLoader or resource is {@code null}, or if the resource is not found
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
-     */
-    public ClientClasspathXmlConfig(ClassLoader classLoader, String resource) {
-        this(classLoader, resource, System.getProperties());
-    }
-
-    /**
      * Creates a config which is loaded from a classpath resource.
      *
      * @param classLoader the ClassLoader used to load the resource
