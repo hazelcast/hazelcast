@@ -959,14 +959,14 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public String toString() {
-        return "DynamicClusterConfic{instance=" + instance + "}";
+        return "DynamicClusterConfig{instance=" + instance + "}";
     }
 
     private void invoke(ClientMessage request) {
         try {
             ClientInvocation invocation = new ClientInvocation(instance, request, null);
             ClientInvocationFuture future = invocation.invoke();
-            ClientMessage response = future.get();
+            future.get();
         } catch (Exception e) {
             throw rethrow(e);
         }

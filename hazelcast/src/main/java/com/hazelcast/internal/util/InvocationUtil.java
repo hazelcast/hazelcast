@@ -118,10 +118,11 @@ public final class InvocationUtil {
     // IFunction extends Serializable, but this function is only executed locally
     @SerializableByConvention
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
+        private static final long serialVersionUID = 2903680336421872278L;
 
-        private final OperationFactory operationFactory;
-        private final NodeEngine nodeEngine;
-        private final RestartingMemberIterator memberIterator;
+        private final transient OperationFactory operationFactory;
+        private final transient NodeEngine nodeEngine;
+        private final transient RestartingMemberIterator memberIterator;
         private final long retryDelayMillis;
         private volatile int lastRetryCount;
 
