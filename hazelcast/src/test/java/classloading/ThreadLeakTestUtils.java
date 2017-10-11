@@ -31,6 +31,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
+@SuppressWarnings("WeakerAccess")
 public final class ThreadLeakTestUtils {
 
     private static final int ASSERT_TIMEOUT_SECONDS = 300;
@@ -38,7 +39,7 @@ public final class ThreadLeakTestUtils {
     private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
 
     static {
-        LOGGER.info("Initializing Logger (required for thread leak tests).");
+        LOGGER.info("Initializing Logger (required for thread leak tests)");
     }
 
     /**
@@ -54,22 +55,27 @@ public final class ThreadLeakTestUtils {
     }
 
     public static void assertHazelcastThreadShutdown(Set<Thread> oldThreads) {
-        Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-        Thread[] joinableThreads = getJoinableThreads(oldThreads, stackTraces.keySet());
-        if (joinableThreads.length == 0) {
+        Thread[] joinableThreads = getAndLogThreads("There are still Hazelcast threads running after shutdown!", oldThreads);
+        if (joinableThreads == null) {
             return;
         }
 
-        StringBuilder sb = new StringBuilder("There are still Hazelcast threads running after shutdown!\n");
-        for (Thread thread : joinableThreads) {
-            String stackTrace = Arrays.toString(stackTraces.get(thread));
-            sb.append(format("-> %s (id: %s) (group: %s) (daemon: %b) (alive: %b) (interrupted: %b) (state: %s)%n%s%n%n",
-                    thread.getName(), thread.getId(), getThreadGroupName(thread), thread.isDaemon(), thread.isAlive(),
-                    thread.isInterrupted(), thread.getState(), stackTrace));
+        try {
+            assertJoinable(ASSERT_TIMEOUT_SECONDS, joinableThreads);
+        } catch (AssertionError e) {
+            getAndLogThreads("There are threads which survived assertJoinable()!", oldThreads);
+            throw e;
         }
-        System.err.println(sb.toString());
+    }
 
-        assertJoinable(ASSERT_TIMEOUT_SECONDS, joinableThreads);
+    public static Thread[] getAndLogThreads(String message, Set<Thread> oldThreads) {
+        Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+        Thread[] joinableThreads = getJoinableThreads(oldThreads, stackTraces.keySet());
+        if (joinableThreads.length == 0) {
+            return null;
+        }
+        logThreads(stackTraces, joinableThreads, message);
+        return joinableThreads;
     }
 
     private static Thread[] getJoinableThreads(Set<Thread> oldThreads, Set<Thread> newThreads) {
@@ -91,6 +97,17 @@ public final class ThreadLeakTestUtils {
                 iterator.remove();
             }
         }
+    }
+
+    private static void logThreads(Map<Thread, StackTraceElement[]> stackTraces, Thread[] threads, String message) {
+        StringBuilder sb = new StringBuilder(message);
+        for (Thread thread : threads) {
+            String stackTrace = Arrays.toString(stackTraces.get(thread));
+            sb.append(format("%n-> %s (id: %s) (group: %s) (daemon: %b) (alive: %b) (interrupted: %b) (state: %s)%n%s%n",
+                    thread.getName(), thread.getId(), getThreadGroupName(thread), thread.isDaemon(), thread.isAlive(),
+                    thread.isInterrupted(), thread.getState(), stackTrace));
+        }
+        LOGGER.severe(sb.toString());
     }
 
     private static String getThreadGroupName(Thread thread) {
