@@ -39,8 +39,12 @@ public class AwsAddressProvider implements AddressProvider {
     private volatile Map<String, String> privateToPublic;
 
     public AwsAddressProvider(ClientAwsConfig awsConfig, LoggingService loggingService) {
-        awsClient = new AWSClient(awsConfig);
-        logger = loggingService.getLogger(AwsAddressProvider.class);
+        this(new AWSClient(awsConfig), loggingService);
+    }
+
+    AwsAddressProvider(AWSClient awsClient, LoggingService loggingService) {
+        this.awsClient = awsClient;
+        this.logger = loggingService.getLogger(AwsAddressProvider.class);
     }
 
     @Override
