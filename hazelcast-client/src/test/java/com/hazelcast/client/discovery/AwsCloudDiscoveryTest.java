@@ -19,19 +19,25 @@ package com.hazelcast.client.discovery;
 import com.hazelcast.aws.AwsDiscoveryStrategyFactory;
 import com.hazelcast.aws.AwsProperties;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.util.CollectionUtil;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,6 +61,8 @@ public class AwsCloudDiscoveryTest {
 
     private static final String ACCESS_KEY = AwsProperties.ACCESS_KEY.getDefinition().key();
     private static final String SECRET_KEY = AwsProperties.SECRET_KEY.getDefinition().key();
+    private static final String AWS_TEST_TAG = "aws-test-tag";
+    private static final String AWS_TEST_TAG_VALUE = "aws-tag-value-1";
 
     @Test
     public void testAwsClient_MemberNonDefaultPortConfig() {
@@ -62,8 +70,8 @@ public class AwsCloudDiscoveryTest {
         props.put(PORT.getDefinition().key(), "60000");
         props.put(ACCESS_KEY, System.getenv("AWS_ACCESS_KEY_ID"));
         props.put(SECRET_KEY, System.getenv("AWS_SECRET_ACCESS_KEY"));
-        props.put(TAG_KEY.getDefinition().key(), "aws-test-tag");
-        props.put(TAG_VALUE.getDefinition().key(), "aws-tag-value-1");
+        props.put(TAG_KEY.getDefinition().key(), AWS_TEST_TAG);
+        props.put(TAG_VALUE.getDefinition().key(), AWS_TEST_TAG_VALUE);
         props.put(CONNECTION_TIMEOUT_SECONDS.getDefinition().key(), "10");
 
         if (isOnJenkins()) {
@@ -85,5 +93,39 @@ public class AwsCloudDiscoveryTest {
         IMap<Object, Object> map = client.getMap("MyMap");
         map.put(1, 5);
         assertEquals(5, map.get(1));
+    }
+
+    @Test
+    public void testAwsAddressProvider() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
+        String awsAccessKeyId = System.getenv("AWS_ACCESS_KEY_ID");
+        String awsSecretAccessKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+
+        if (isOnJenkins()) {
+            assertNotNull("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId);
+            assertNotNull("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey);
+            clientAwsConfig.setInsideAws(true);
+        } else {
+            assumeThat("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId, Matchers.<Comparable>notNullValue());
+            assumeThat("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey, Matchers.<Comparable>notNullValue());
+            clientAwsConfig.setInsideAws(false);
+        }
+
+        ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
+        clientNetworkConfig.setAwsConfig(clientAwsConfig);
+
+        clientAwsConfig.setEnabled(true).setAccessKey(awsAccessKeyId)
+                       .setSecretKey(awsSecretAccessKey).setTagKey(AWS_TEST_TAG)
+                       .setTagValue(AWS_TEST_TAG_VALUE);
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        IMap<Object, Object> map = client.getMap("MyMap");
+        map.put(1, 5);
+        assertEquals(5, map.get(1));
+
+        AwsAddressProvider awsAddressProvider = new AwsAddressProvider(clientAwsConfig, client.getLoggingService());
+        Collection<Address> addresses = awsAddressProvider.loadAddresses();
+        CollectionUtil.isNotEmpty(addresses);
     }
 }
