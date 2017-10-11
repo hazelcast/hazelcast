@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -85,6 +86,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final NodeEngine nodeEngine;
     protected final AbstractCacheService cacheService;
     protected final CacheConfig cacheConfig;
+    protected final EventJournalConfig eventJournalConfig;
     protected final EvictionConfig evictionConfig;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
     protected final EvictionChecker evictionChecker;
@@ -116,6 +118,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache " + cacheNameWithPrefix + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
+        this.eventJournalConfig = nodeEngine.getConfig().findCacheEventJournalConfig(cacheConfig.getName());
         evictionConfig = cacheConfig.getEvictionConfig();
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null!");
@@ -390,9 +393,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void onEvict(Data key, R record, boolean wasExpired) {
         if (wasExpired) {
-            cacheService.eventJournal.writeExpiredEvent(objectNamespace, partitionId, key, record.getValue());
+            cacheService.eventJournal.writeExpiredEvent(eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
         } else {
-            cacheService.eventJournal.writeEvictEvent(objectNamespace, partitionId, key, record.getValue());
+            cacheService.eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
         }
         invalidateEntry(key);
     }
@@ -556,7 +559,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             // Writing to `CacheWriter` failed, so we should revert entry (remove added record).
             final R removed = records.remove(key);
             if (removed != null) {
-                cacheService.eventJournal.writeRemoveEvent(objectNamespace, partitionId, key, removed.getValue());
+                cacheService.eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace, partitionId,
+                        key, removed.getValue());
             }
             // Disposing key/value/record should be handled inside `onCreateRecordWithExpiryError`.
             onCreateRecordError(key, value, expiryTime, now, disableWriteThrough,
@@ -606,7 +610,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onUpdateRecord(Data key, R record, Object value, Data oldDataValue) {
-        cacheService.eventJournal.writeUpdateEvent(objectNamespace, partitionId, key, oldDataValue, value);
+        cacheService.eventJournal.writeUpdateEvent(eventJournalConfig, objectNamespace, partitionId, key, oldDataValue, value);
     }
 
     protected void onUpdateRecordError(Data key, R record, Object value, Data newDataValue,
@@ -913,9 +917,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         R oldRecord = records.put(key, record);
         if (oldRecord != null) {
             cacheService.eventJournal.writeUpdateEvent(
-                    objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
+                    eventJournalConfig, objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
         } else {
-            cacheService.eventJournal.writeCreatedEvent(objectNamespace, partitionId, key, record.getValue());
+            cacheService.eventJournal.writeCreatedEvent(eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
         }
         invalidateEntry(key, source);
         return oldRecord;
@@ -933,7 +937,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected R doRemoveRecord(Data key, String source) {
         R removedRecord = records.remove(key);
         if (removedRecord != null) {
-            cacheService.eventJournal.writeRemoveEvent(objectNamespace, partitionId, key, removedRecord.getValue());
+            cacheService.eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace, partitionId,
+                    key, removedRecord.getValue());
             invalidateEntry(key, source);
         }
         return removedRecord;

@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.journal.EventJournal;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
@@ -52,13 +53,15 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the cache namespace, containing the full prefixed cache name
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param oldValue    the old value
-     * @param newValue    the new value
+     * @param journalConfig the event journal config for the cache in which the event occurred
+     * @param namespace     the cache namespace, containing the full prefixed cache name
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param oldValue      the old value
+     * @param newValue      the new value
      */
-    void writeUpdateEvent(ObjectNamespace namespace, int partitionId, Data key, Object oldValue, Object newValue);
+    void writeUpdateEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                          Data key, Object oldValue, Object newValue);
 
     /**
      * Writes an {@link CacheEventType#CREATED} to the event journal.
@@ -66,12 +69,13 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the cache namespace, containing the full prefixed cache name
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param value       the entry value
+     * @param journalConfig the event journal config for the cache in which the event occurred
+     * @param namespace     the cache namespace, containing the full prefixed cache name
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
      */
-    void writeCreatedEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+    void writeCreatedEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
      * Writes an {@link CacheEventType#REMOVED} to the event journal.
@@ -79,12 +83,13 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the cache namespace, containing the full prefixed cache name
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param value       the entry value
+     * @param journalConfig the event journal config for the cache in which the event occurred
+     * @param namespace     the cache namespace, containing the full prefixed cache name
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
      */
-    void writeRemoveEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+    void writeRemoveEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
      * Writes an {@link CacheEventType#EVICTED} to the event journal.
@@ -92,12 +97,13 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the cache namespace, containing the full prefixed cache name
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param value       the entry value
+     * @param journalConfig the event journal config for the cache in which the event occurred
+     * @param namespace     the cache namespace, containing the full prefixed cache name
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
      */
-    void writeEvictEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+    void writeEvictEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
      * Writes an {@link CacheEventType#EXPIRED} to the event journal.
@@ -105,10 +111,11 @@ public interface CacheEventJournal extends EventJournal<InternalEventJournalCach
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the cache namespace, containing the full prefixed cache name
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param value       the entry value
+     * @param journalConfig the event journal config for the cache in which the event occurred
+     * @param namespace     the cache namespace, containing the full prefixed cache name
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
      */
-    void writeExpiredEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+    void writeExpiredEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 }

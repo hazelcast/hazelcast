@@ -56,23 +56,27 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     }
 
     @Override
-    public void writeUpdateEvent(ObjectNamespace namespace, int partitionId, Data key, Object oldValue, Object newValue) {
-        addToEventRingbuffer(namespace, partitionId, UPDATED, key, oldValue, newValue);
+    public void writeUpdateEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                                 Data key, Object oldValue, Object newValue) {
+        addToEventRingbuffer(journalConfig, namespace, partitionId, UPDATED, key, oldValue, newValue);
     }
 
     @Override
-    public void writeAddEvent(ObjectNamespace namespace, int partitionId, Data key, Object value) {
-        addToEventRingbuffer(namespace, partitionId, ADDED, key, null, value);
+    public void writeAddEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                              Data key, Object value) {
+        addToEventRingbuffer(journalConfig, namespace, partitionId, ADDED, key, null, value);
     }
 
     @Override
-    public void writeRemoveEvent(ObjectNamespace namespace, int partitionId, Data key, Object value) {
-        addToEventRingbuffer(namespace, partitionId, REMOVED, key, value, null);
+    public void writeRemoveEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                                 Data key, Object value) {
+        addToEventRingbuffer(journalConfig, namespace, partitionId, REMOVED, key, value, null);
     }
 
     @Override
-    public void writeEvictEvent(ObjectNamespace namespace, int partitionId, Data key, Object value) {
-        addToEventRingbuffer(namespace, partitionId, EVICTED, key, value, null);
+    public void writeEvictEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                                Data key, Object value) {
+        addToEventRingbuffer(journalConfig, namespace, partitionId, EVICTED, key, value, null);
     }
 
     @Override
@@ -149,8 +153,11 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
                 .setTimeToLiveSeconds(config.getTimeToLiveSeconds());
     }
 
-    private void addToEventRingbuffer(ObjectNamespace namespace, int partitionId, EntryEventType eventType,
-                                      Data key, Object oldValue, Object newValue) {
+    private void addToEventRingbuffer(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                                      EntryEventType eventType, Data key, Object oldValue, Object newValue) {
+        if (journalConfig == null || !journalConfig.isEnabled()) {
+            return;
+        }
         final RingbufferContainer<InternalEventJournalMapEvent> eventContainer = getRingbufferOrNull(namespace, partitionId);
         if (eventContainer == null) {
             return;

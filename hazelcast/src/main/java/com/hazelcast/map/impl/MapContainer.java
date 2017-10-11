@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
@@ -110,6 +111,8 @@ public class MapContainer {
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
+    protected final EventJournalConfig eventJournalConfig;
+
 
     /**
      * Operations which are done in this constructor should obey the rules defined
@@ -119,6 +122,7 @@ public class MapContainer {
     public MapContainer(final String name, final Config config, final MapServiceContext mapServiceContext) {
         this.name = name;
         this.mapConfig = config.findMapConfig(name);
+        this.eventJournalConfig = config.findMapEventJournalConfig(name);
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
@@ -282,6 +286,10 @@ public class MapContainer {
 
     public void setMapConfig(MapConfig mapConfig) {
         this.mapConfig = mapConfig;
+    }
+
+    public EventJournalConfig getEventJournalConfig() {
+        return eventJournalConfig;
     }
 
     public String getName() {

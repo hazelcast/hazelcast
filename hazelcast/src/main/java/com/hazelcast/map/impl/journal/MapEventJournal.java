@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.journal;
 
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.journal.EventJournal;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
@@ -51,13 +52,15 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the map namespace
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param oldValue    the old value
-     * @param newValue    the new value
+     * @param journalConfig the event journal config for the map in which the event occurred
+     * @param namespace     the map namespace
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param oldValue      the old value
+     * @param newValue      the new value
      */
-    void writeUpdateEvent(ObjectNamespace namespace, int partitionId, Data key, Object oldValue, Object newValue);
+    void writeUpdateEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                          Data key, Object oldValue, Object newValue);
 
     /**
      * Writes an {@link com.hazelcast.core.EntryEventType#ADDED} to the event journal.
@@ -65,12 +68,14 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the map namespace
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param value       the entry value
+     * @param journalConfig the event journal config for the map in which the event occurred
+     * @param namespace     the map namespace
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
      */
-    void writeAddEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+    void writeAddEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                       Data key, Object value);
 
     /**
      * Writes an {@link com.hazelcast.core.EntryEventType#REMOVED} to the event journal.
@@ -78,12 +83,13 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the map namespace
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param value       the entry value
+     * @param journalConfig the event journal config for the map in which the event occurred
+     * @param namespace     the map namespace
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
      */
-    void writeRemoveEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+    void writeRemoveEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
      * Writes an {@link com.hazelcast.core.EntryEventType#EVICTED} to the event journal.
@@ -91,12 +97,13 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
      * If an event is added to the event journal, all parked operations waiting for
      * new events on that journal will be unparked.
      *
-     * @param namespace   the map namespace
-     * @param partitionId the entry key partition
-     * @param key         the entry key
-     * @param value       the entry value
+     * @param journalConfig the event journal config for the map in which the event occurred
+     * @param namespace     the map namespace
+     * @param partitionId   the entry key partition
+     * @param key           the entry key
+     * @param value         the entry value
      */
-    void writeEvictEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+    void writeEvictEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId, Data key, Object value);
 
     /**
      * Returns {@code true} if the object has a configured and enabled event journal.

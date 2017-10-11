@@ -133,7 +133,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected void updateRecord(Data key, Record record, Object value, long now) {
         updateStatsOnPut(false, now);
         record.onUpdate(now);
-        eventJournal.writeUpdateEvent(mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue(), value);
+        eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                record.getKey(), record.getValue(), value);
         storage.updateRecordValue(key, record, value);
     }
 
