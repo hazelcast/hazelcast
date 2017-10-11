@@ -117,11 +117,12 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q1, wm(3));
         add(q2, wm(3));
+        drainAndAssert(MADE_PROGRESS, wm(2));
         drainAndAssert(MADE_PROGRESS, wm(3));
     }
 
     @Test
-    public void when_receivingSnapshots_then_coalesce() {
+    public void when_receivingBarriers_then_coalesce() {
         add(q1, barrier(0));
         add(q2, 1);
         drainAndAssert(MADE_PROGRESS, 1);
@@ -132,7 +133,7 @@ public class ConcurrentInboundEdgeStreamTest {
     }
 
     @Test
-    public void when_receivingSnapshots_then_waitForSnapshot() {
+    public void when_receivingBarriers_then_waitForBarrier() {
         stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true);
 
         add(q1, barrier(0));
@@ -148,7 +149,7 @@ public class ConcurrentInboundEdgeStreamTest {
     }
 
     @Test
-    public void when_receivingSnapshotsWhileDone_then_coalesce() {
+    public void when_receivingBarriersWhileDone_then_coalesce() {
         stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true);
 
         add(q1, 1, barrier(0));
@@ -167,6 +168,53 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q2, barrier(0));
         drainAndAssert(MADE_PROGRESS, barrier(0));
+    }
+
+    @Test
+    public void when_barrierAndWmInQueues_then_notReordered() {
+        // When
+        add(q1, wm(1));
+        add(q2, barrier(0));
+        drainAndAssert(MADE_PROGRESS);
+
+        add(q1, barrier(0));
+        add(q2, wm(1));
+
+        // Then
+        drainAndAssert(MADE_PROGRESS, barrier(0));
+        drainAndAssert(MADE_PROGRESS, wm(1));
+    }
+
+    @Test
+    public void when_barrierAndDone_then_barrierEmitted() {
+        add(q1, barrier(0), DONE_ITEM);
+        add(q2, barrier(0), DONE_ITEM);
+
+        drainAndAssert(MADE_PROGRESS, barrier(0));
+        drainAndAssert(DONE);
+    }
+
+    @Test
+    public void when_oneQueueDone_then_theOtherWorks() {
+        add(q1, DONE_ITEM);
+        drainAndAssert(MADE_PROGRESS);
+
+        add(q2, barrier(0));
+        drainAndAssert(MADE_PROGRESS, barrier(0));
+
+        add(q2, wm(0));
+        drainAndAssert(MADE_PROGRESS, wm(0));
+    }
+
+    @Test
+    public void when_nonSpecificBroadcastItems_then_drainedInOneBatch() {
+        // When
+        BroadcastEntry<String, String> entry = new BroadcastEntry<>("k", "v");
+        add(q1, entry);
+        add(q1, entry);
+
+        // Then
+        drainAndAssert(MADE_PROGRESS, entry, entry);
     }
 
     private void drainAndAssert(ProgressState expectedState, Object... expectedItems) {

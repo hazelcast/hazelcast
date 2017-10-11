@@ -169,9 +169,8 @@ public interface Processor {
      * snapshot" operation. The type of items in the inbox is {@code
      * Map.Entry}. May emit items to the outbox.
      * <p>
-     * If there is no snapshot to restore, this method won't be called at all,
-     * even if the processor is stateful and would otherwise be guaranteed to
-     * get at least one item in the inbox.
+     * If there is no data in the snapshot to restore, this method won't be
+     * called at all.
      * <p>
      * If the method returns with items still present in the inbox, it will be
      * called again before proceeding to call any other methods. There is at
@@ -186,11 +185,14 @@ public interface Processor {
 
     /**
      * Called after all keys have been restored using {@link
-     * #restoreFromSnapshot(Inbox)}. If it returns {@code false}, it will be called
-     * again before proceeding to call any other method.
+     * #restoreFromSnapshot(Inbox)}, and also in case when there were no keys
+     * to restore, but the job was started using a state snapshot. It's not
+     * called, if the job was not started using a state snapshot.
+     * <p>
+     * If it returns {@code false}, it will be
+     * called again before proceeding to call any other method.
      * <p>
      * The default implementation takes no action and returns {@code true}.
-     *
      */
     default boolean finishSnapshotRestore() {
         return true;

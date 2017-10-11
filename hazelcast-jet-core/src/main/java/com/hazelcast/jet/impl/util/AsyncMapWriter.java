@@ -58,7 +58,6 @@ import static com.hazelcast.util.CollectionUtil.toIntArray;
  */
 public class AsyncMapWriter {
 
-    //TODO: What number to put here?
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     // These magic values are copied from com.hazelcast.spi.impl.operationservice.impl.InvokeOnPartitions

@@ -94,6 +94,7 @@ public class ProcessorTasklet implements Tasklet {
         this.ssContext = ssContext;
 
         instreamCursor = popInstreamGroup();
+        currInstream = instreamCursor != null ? instreamCursor.value() : null;
         outbox = createOutbox(ssCollector);
         receivedBarriers = new BitSet(instreams.size());
         state = initialProcessingState();
@@ -268,11 +269,6 @@ public class ProcessorTasklet implements Tasklet {
                        .map(CircularListCursor::new)
                        .orElse(null);
     }
-
-    protected OutboxImpl getOutbox() {
-        return outbox;
-    }
-
 
     @Override
     public String toString() {

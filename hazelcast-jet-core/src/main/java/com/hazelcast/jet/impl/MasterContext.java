@@ -198,20 +198,21 @@ public class MasterContext {
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId) {
         logger.info(jobAndExecutionId(jobId, executionId) + ": restoring state from snapshotId=" + snapshotId);
         for (Vertex vertex : dag) {
+            // items with keys of type BroadcastKey need to be broadcast to all processors
+            DistributedPredicate<Entry<Object, Object>> predicate = (Entry<Object, Object> e) -> true;
+            DistributedFunction<Entry<Object, Object>, ?> projection = (Entry<Object, Object> e) ->
+                    (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry<>(e) : e;
+            // We add the vertex even in case when the map is empty: this ensures, that
+            // Processor.finishSnapshotRestore() method is always called on all vertices in
+            // a job which is restored from a snapshot.
             String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
-            if (!nodeEngine.getHazelcastInstance().getMap(mapName).isEmpty()) {
-                // items with keys of type BroadcastKey need to be broadcast to all processors
-                DistributedPredicate<Entry<Object, Object>> predicate = (Entry<Object, Object> e) -> true;
-                DistributedFunction<Entry<Object, Object>, ?> projection = (Entry<Object, Object> e) ->
-                        (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry<>(e) : e;
-                Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(),
-                        readMapP(mapName, predicate, projection));
+            Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(),
+                    readMapP(mapName, predicate, projection));
 
-                readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
+            readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
 
-                int destOrdinal = dag.getInboundEdges(vertex.getName()).size();
-                dag.edge(new SnapshotRestoreEdge(readSnapshotVertex, vertex, destOrdinal));
-            }
+            int destOrdinal = dag.getInboundEdges(vertex.getName()).size();
+            dag.edge(new SnapshotRestoreEdge(readSnapshotVertex, vertex, destOrdinal));
         }
     }
 

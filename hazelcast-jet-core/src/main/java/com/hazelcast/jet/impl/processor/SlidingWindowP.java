@@ -160,7 +160,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
 
     @Override
     public boolean finishSnapshotRestore() {
-        logFine(getLogger(), "Restored snapshot to: %s", nextWinToEmit);
+        logFine(getLogger(), "Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
         return true;
     }
 

@@ -164,28 +164,6 @@ public interface Traverser<T> {
     }
 
     /**
-     * TODO
-     */
-    @Nonnull
-    default Traverser<T> prependTraverser(@Nonnull Traverser<? extends T> prepended) {
-        return new Traverser<T>() {
-            private boolean prependedFinished;
-            @Override
-            public T next() {
-                if (!prependedFinished) {
-                    T res = prepended.next();
-                    if (res == null) {
-                        prependedFinished = true;
-                    } else {
-                        return res;
-                    }
-                }
-                return Traverser.this.next();
-            }
-        };
-    }
-
-    /**
      * Adds a flat-mapping layer to this traverser. The returned traverser
      * will apply the given mapping function to each item retrieved from this
      * traverser, and will emit all the items from the resulting traverser(s).

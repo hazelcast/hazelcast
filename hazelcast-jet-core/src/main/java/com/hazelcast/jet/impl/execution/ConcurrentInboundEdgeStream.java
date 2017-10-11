@@ -99,35 +99,42 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
             drainQueue(q, dest);
 
-            if (itemDetector.isDone) {
+            if (itemDetector.item == DONE_ITEM) {
                 conveyor.removeQueue(queueIndex);
                 receivedBarriers.clear(queueIndex);
+                queueWms[queueIndex] = Long.MAX_VALUE;
                 numActiveQueues--;
-            } else if (itemDetector.wm != null) {
-                observeWm(queueIndex, itemDetector.wm.timestamp());
-            } else if (itemDetector.barrier != null) {
-                observeBarrier(queueIndex, itemDetector.barrier.snapshotId());
+            } else if (itemDetector.item instanceof Watermark) {
+                observeWm(queueIndex, ((Watermark) itemDetector.item).timestamp());
+            } else if (itemDetector.item instanceof SnapshotBarrier) {
+                observeBarrier(queueIndex, ((SnapshotBarrier) itemDetector.item).snapshotId());
+            }
+
+            if (numActiveQueues == 0) {
+                return tracker.toProgressState();
+            }
+
+            if (itemDetector.item != null) {
+                // coalesce WMs received and emit new WM if needed
+                long bottomWm = bottomObservedWm();
+                if (bottomWm > lastEmittedWm) {
+                    lastEmittedWm = bottomWm;
+                    dest.accept(new Watermark(bottomWm));
+                    break;
+                }
+
+                // if we have received the current snapshot from all active queues, forward it
+                if (receivedBarriers.cardinality() == numActiveQueues) {
+                    dest.accept(new SnapshotBarrier(pendingSnapshotId));
+                    pendingSnapshotId++;
+                    receivedBarriers.clear();
+                    break;
+                }
             }
         }
 
-        if (numActiveQueues == 0) {
-            return tracker.toProgressState();
-        }
-
-        tracker.notDone();
-
-        // coalesce WMs received and emit new WM if needed
-        long bottomWm = bottomObservedWm();
-        if (bottomWm > lastEmittedWm) {
-            lastEmittedWm = bottomWm;
-            dest.accept(new Watermark(bottomWm));
-        }
-
-        // if we have received the current snapshot from all active queues, forward it
-        if (receivedBarriers.cardinality() == numActiveQueues) {
-            dest.accept(new SnapshotBarrier(pendingSnapshotId));
-            pendingSnapshotId++;
-            receivedBarriers.clear();
+        if (numActiveQueues > 0) {
+            tracker.notDone();
         }
         return tracker.toProgressState();
     }
@@ -146,20 +153,18 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         itemDetector.reset(dest);
 
         int drainedCount = queue.drain(itemDetector);
-        tracker.mergeWith(ProgressState.valueOf(drainedCount > 0, itemDetector.isDone));
+        tracker.mergeWith(ProgressState.valueOf(drainedCount > 0, itemDetector.item == DONE_ITEM));
 
         itemDetector.dest = null;
     }
 
     private void observeBarrier(int queueIndex, long snapshotId) {
-        // TODO basri is this necessary? can't we just check monotonicity?
         if (snapshotId != pendingSnapshotId) {
             throw new JetException("Unexpected snapshot barrier "
                     + snapshotId + ", expected " + pendingSnapshotId);
         }
         receivedBarriers.set(queueIndex);
     }
-
 
     private void observeWm(int queueIndex, final long wmValue) {
         if (queueWms[queueIndex] >= wmValue) {
@@ -186,31 +191,18 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      */
     private static final class ItemDetector implements Predicate<Object> {
         Consumer<Object> dest;
-        Watermark wm;
-        SnapshotBarrier barrier;
-        boolean isDone;
+        BroadcastItem item;
 
         void reset(Consumer<Object> newDest) {
             dest = newDest;
-            wm = null;
-            isDone = false;
-            barrier = null;
+            item = null;
         }
 
         @Override
         public boolean test(Object o) {
-            if (o instanceof Watermark) {
-                assert wm == null : "Received multiple Watermarks without a call to reset()";
-                wm = (Watermark) o;
-                return false;
-            }
-            if (o instanceof SnapshotBarrier) {
-                assert barrier == null : "Received multiple barriers without a call to reset()";
-                barrier = (SnapshotBarrier) o;
-                return false;
-            }
-            if (o == DONE_ITEM) {
-                isDone = true;
+            if (o instanceof Watermark || o instanceof SnapshotBarrier || o == DONE_ITEM) {
+                assert item == null : "Received multiple special items without a call to reset(): " + item;
+                item = (BroadcastItem) o;
                 return false;
             }
             dest.accept(o);

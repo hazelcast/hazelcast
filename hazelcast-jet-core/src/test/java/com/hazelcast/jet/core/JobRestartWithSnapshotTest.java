@@ -29,6 +29,8 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
+import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotRepository;
@@ -43,6 +45,7 @@ import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,6 +55,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -72,12 +76,14 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -144,7 +150,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         WindowDefinition wDef = WindowDefinition.tumblingWindowDef(3);
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
 
-        Map<long[], Long> result = instance1.getMap("result");
+        Map<List<Long>, Long> result = instance1.getMap("result");
         result.clear();
 
         SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(3, 120);
@@ -158,7 +164,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 t -> ((Entry<Integer, Integer>) t).getValue(),
                 TimestampKind.EVENT, wDef, aggrOp));
         Vertex map = dag.newVertex("map",
-                mapP((TimestampedEntry e) -> entry(new long[] {e.getTimestamp(), (int) e.getKey()}, e.getValue())));
+                mapP((TimestampedEntry e) -> entry(asList(e.getTimestamp(), (long) (int) e.getKey()), e.getValue())));
         Vertex writeMap = dag.newVertex("writeMap", SinkProcessors.writeMapP("result"));
 
         dag.edge(between(generator, insWm))
@@ -197,23 +203,29 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         job.join();
 
         // compute expected result
-        Map<long[], Long> expectedMap = new HashMap<>();
+        Map<List<Long>, Long> expectedMap = new HashMap<>();
         for (long partition = 0; partition < sup.numPartitions; partition++) {
             long cnt = 0;
             for (long value = 1; value <= sup.elementsInPartition; value++) {
                 cnt++;
                 if (value % wDef.frameLength() == 0) {
-                    expectedMap.put(new long[] {value, partition}, cnt);
+                    expectedMap.put(asList(value, partition), cnt);
                     cnt = 0;
                 }
             }
             if (cnt > 0) {
-                expectedMap.put(new long[] {wDef.higherFrameTs(sup.elementsInPartition - 1), partition}, cnt);
+                expectedMap.put(asList(wDef.higherFrameTs(sup.elementsInPartition - 1), partition), cnt);
             }
         }
 
         // check expected result
         if (!expectedMap.equals(result)) {
+            System.out.println("All expected entries: " + expectedMap.entrySet().stream()
+                    .map(Object::toString)
+                    .collect(joining(", ")));
+            System.out.println("All actual entries: " + result.entrySet().stream()
+                    .map(Object::toString)
+                    .collect(joining(", ")));
             System.out.println("Non-received expected items: " + expectedMap.keySet().stream()
                     .filter(key -> !result.containsKey(key))
                     .map(Object::toString)
@@ -223,10 +235,10 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                     .map(Object::toString)
                     .collect(joining(", ")));
             System.out.println("Different keys: ");
-            for (Entry<long[], Long> rEntry : result.entrySet()) {
+            for (Entry<List<Long>, Long> rEntry : result.entrySet()) {
                 Long expectedValue = expectedMap.get(rEntry.getKey());
                 if (expectedValue != null && !expectedValue.equals(rEntry.getValue())) {
-                    System.out.println("key: " + Arrays.toString(rEntry.getKey()) + ", expected value: " + expectedValue
+                    System.out.println("key: " + rEntry.getKey() + ", expected value: " + expectedValue
                             + ", actual value: " + rEntry.getValue());
                 }
             }
@@ -308,8 +320,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     }
 
     // This is a "test of a test" - it checks, that SequencesInPartitionsGeneratorP generates correct output
-    /*
     @Test
+    @Ignore
     public void test_SequencesInPartitionsGeneratorP() throws Exception {
         SequencesInPartitionsMetaSupplier pms = new SequencesInPartitionsMetaSupplier(3, 2);
         pms.init(new TestProcessorMetaSupplierContext().setLocalParallelism(1).setTotalParallelism(2));
@@ -323,19 +335,18 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Processor p2 = processors2.next();
         assertFalse(processors2.hasNext());
 
-        testProcessor(p1, emptyList(), asList(
+        TestSupport.verifyProcessor(p1).expectOutput(asList(
                 entry(0, 0),
                 entry(2, 0),
                 entry(0, 1),
                 entry(2, 1)
         ));
 
-        testProcessor(p2, emptyList(), asList(
+        TestSupport.verifyProcessor(p2).expectOutput(asList(
                 entry(1, 0),
                 entry(1, 1)
         ));
     }
-    */
 
     /**
      * A source, that will generate integer sequences from 0..ELEMENTS_IN_PARTITION,

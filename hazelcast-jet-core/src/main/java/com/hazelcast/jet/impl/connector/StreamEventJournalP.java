@@ -89,7 +89,6 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     private final Map<Integer, Long> readOffsets = new HashMap<>();
 
     private final Map<Integer, ICompletableFuture<ReadResultSet<T>>> readFutures = new HashMap<>();
-    private Map<Integer, EventJournalInitialSubscriberState> initialOffsets = new HashMap<>();
 
     private Traverser<T> eventTraverser;
     private Traverser<Entry<BroadcastKey<Integer>, Long>> snapshotTraverser;
@@ -119,12 +118,13 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         Map<Integer, ICompletableFuture<EventJournalInitialSubscriberState>> futures = assignedPartitions.stream()
             .map(partition -> entry(partition, eventJournalReader.subscribeToEventJournal(partition)))
             .collect(toMap(Entry::getKey, Entry::getValue));
-        futures.forEach((partition, future) -> uncheckRun(() -> initialOffsets.put(partition, future.get())));
+        futures.forEach((partition, future) -> uncheckRun(() -> readOffsets.put(partition, getSequence(future.get()))));
+        emitOffsets.putAll(readOffsets);
     }
 
     @Override
     public boolean complete() {
-        if (initialOffsets != null) {
+        if (readFutures.isEmpty()) {
             initialRead();
         }
         if (eventTraverser == null) {
@@ -158,19 +158,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         int partition = ((BroadcastKey<Integer>) key).key();
         long offset = (Long) value;
-
         if (assignedPartitions.contains(partition)) {
-            // after snapshot restore, we try to continue where we left off. However the
-            // current oldest sequence might be greater than the restored offset. This would cause
-            // stale sequence exception, so we fast forward to the oldest sequence instead.
-            long oldest = initialOffsets.get(partition).getOldestSequence();
-            long newOffset = Math.max(oldest, offset);
-            if (newOffset != offset) {
-                getLogger().warning("Events lost for partition " + partition + " when restoring from " +
-                        "snapshot. Requested was: " + offset + ", current head is: " + oldest);
-            }
-            readOffsets.put(partition, newOffset);
-            emitOffsets.put(partition, newOffset);
+            readOffsets.put(partition, offset);
+            emitOffsets.put(partition, offset);
         }
     }
 
@@ -186,13 +176,6 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     private void initialRead() {
-        // readOffsets and emitOffsets are empty if they were not restored from snapshot
-        if (readOffsets.isEmpty()) {
-            initialOffsets.forEach((partition, state) ->
-                    readOffsets.put(partition, getSequence(state)));
-            emitOffsets.putAll(readOffsets);
-        }
-        initialOffsets = null; // we no longer need them
         readOffsets.forEach((partition, offset) ->
                 readFutures.put(partition, readFromJournal(partition, offset)));
         iterator = readFutures.entrySet().iterator();

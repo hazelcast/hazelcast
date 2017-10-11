@@ -18,7 +18,9 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestOutbox.MockData;
@@ -58,7 +60,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * The test process does the following:
  * <ul>
  *     <li>initializes the processor by calling
- *     {@link Processor#init(com.hazelcast.jet.core.Outbox, Processor.Context) Processor.init()}
+ *     {@link Processor#init(Outbox, Context) Processor.init()}
  *
  *     <li>does snapshot+restore (optional, see below)
  *
