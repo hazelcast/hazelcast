@@ -45,10 +45,13 @@ public abstract class AbstractChannel implements Channel {
     private static final AtomicIntegerFieldUpdater<AbstractChannel> CLOSED = newUpdater(AbstractChannel.class, "closed");
 
     protected final SocketChannel socketChannel;
+
     private final ConcurrentMap<?, ?> attributeMap = new ConcurrentHashMap<Object, Object>();
     private final Set<ChannelCloseListener> closeListeners
             = newSetFromMap(new ConcurrentHashMap<ChannelCloseListener, Boolean>());
     private final boolean clientMode;
+
+    @SuppressWarnings("FieldCanBeLocal")
     private volatile int closed = FALSE;
 
     public AbstractChannel(SocketChannel socketChannel, boolean clientMode) {
@@ -115,8 +118,7 @@ public abstract class AbstractChannel implements Channel {
             return;
         }
 
-        // we execute this in its own try/catch block because we don't want to skip closing the socketChannel in case
-        // of problems.
+        // we execute this in its own try/catch block because we don't want to skip closing the socketChannel in case of problems
         try {
             onClose();
         } catch (Exception e) {
@@ -128,7 +130,7 @@ public abstract class AbstractChannel implements Channel {
         } finally {
             for (ChannelCloseListener closeListener : closeListeners) {
                 // it is important we catch exceptions so that other listeners aren't obstructed when
-                // one of the listeners is throwing an exception.
+                // one of the listeners is throwing an exception
                 try {
                     closeListener.onClose(this);
                 } catch (Exception e) {
@@ -143,9 +145,8 @@ public abstract class AbstractChannel implements Channel {
     }
 
     /**
-     * Template method that is called when the socket channel closed. It is called before the <code>socketChannel</code> is
-     * closed.
-     *
+     * Template method that is called when the socket channel closed. It is called before the {@code socketChannel} is closed.
+     * <p>
      * It will be called only once.
      */
     protected void onClose() throws IOException {
