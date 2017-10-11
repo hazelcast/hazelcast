@@ -29,6 +29,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
@@ -41,26 +42,34 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport {
 
@@ -69,6 +78,17 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
     private static final int INVALIDATION_BATCH_SIZE = 100;
     private static final int KEY_COUNT = 1000;
     private static final int RECONCILIATION_INTERVAL_SECONDS = 30;
+
+    @Parameter
+    public LocalUpdatePolicy localUpdatePolicy;
+
+    @Parameters(name = "localUpdatePolicy:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {INVALIDATE},
+                {CACHE_ON_UPDATE}
+        });
+    }
 
     @Override
     protected Config createConfig() {
@@ -239,6 +259,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = super.createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true)
+                .setLocalUpdatePolicy(localUpdatePolicy)
                 .getEvictionConfig()
                 .setMaximumSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
