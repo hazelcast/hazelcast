@@ -31,7 +31,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.CollectionUtil;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,8 +45,10 @@ import static com.hazelcast.aws.AwsProperties.PORT;
 import static com.hazelcast.aws.AwsProperties.TAG_KEY;
 import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
+import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeThat;
 
 /**
@@ -107,17 +108,19 @@ public class AwsCloudDiscoveryTest {
             assertNotNull("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey);
             clientAwsConfig.setInsideAws(true);
         } else {
-            assumeThat("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId, Matchers.<Comparable>notNullValue());
-            assumeThat("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey, Matchers.<Comparable>notNullValue());
+            assumeThat("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId, Matchers.<String>notNullValue());
+            assumeThat("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey, Matchers.<String>notNullValue());
             clientAwsConfig.setInsideAws(false);
         }
 
         ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
         clientNetworkConfig.setAwsConfig(clientAwsConfig);
 
-        clientAwsConfig.setEnabled(true).setAccessKey(awsAccessKeyId)
-                       .setSecretKey(awsSecretAccessKey).setTagKey(AWS_TEST_TAG)
-                       .setTagValue(AWS_TEST_TAG_VALUE);
+        clientAwsConfig.setEnabled(true)
+                .setAccessKey(awsAccessKeyId)
+                .setSecretKey(awsSecretAccessKey)
+                .setTagKey(AWS_TEST_TAG)
+                .setTagValue(AWS_TEST_TAG_VALUE);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Object, Object> map = client.getMap("MyMap");
@@ -126,6 +129,6 @@ public class AwsCloudDiscoveryTest {
 
         AwsAddressProvider awsAddressProvider = new AwsAddressProvider(clientAwsConfig, client.getLoggingService());
         Collection<Address> addresses = awsAddressProvider.loadAddresses();
-        CollectionUtil.isNotEmpty(addresses);
+        assertTrue(isNotEmpty(addresses));
     }
 }
