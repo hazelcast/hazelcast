@@ -34,8 +34,7 @@ public class AddDynamicConfigOperationFactory implements OperationFactory {
     private final IdentifiedDataSerializable config;
 
     public AddDynamicConfigOperationFactory() {
-        this.clusterService = null;
-        this.config = null;
+        this(null, null);
     }
 
     public AddDynamicConfigOperationFactory(ClusterService clusterService, IdentifiedDataSerializable config) {
