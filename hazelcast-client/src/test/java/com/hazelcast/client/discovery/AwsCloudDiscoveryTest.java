@@ -21,7 +21,6 @@ import com.hazelcast.aws.AwsProperties;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -32,6 +31,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hamcrest.Matchers;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -97,11 +97,11 @@ public class AwsCloudDiscoveryTest {
     }
 
     @Test
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/11571")
     public void testAwsAddressProvider() {
-        ClientConfig clientConfig = new ClientConfig();
-        ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
         String awsAccessKeyId = System.getenv("AWS_ACCESS_KEY_ID");
         String awsSecretAccessKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+        ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
 
         if (isOnJenkins()) {
             assertNotNull("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId);
@@ -113,14 +113,14 @@ public class AwsCloudDiscoveryTest {
             clientAwsConfig.setInsideAws(false);
         }
 
-        ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
-        clientNetworkConfig.setAwsConfig(clientAwsConfig);
-
         clientAwsConfig.setEnabled(true)
                 .setAccessKey(awsAccessKeyId)
                 .setSecretKey(awsSecretAccessKey)
                 .setTagKey(AWS_TEST_TAG)
                 .setTagValue(AWS_TEST_TAG_VALUE);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setAwsConfig(clientAwsConfig);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Object, Object> map = client.getMap("MyMap");
