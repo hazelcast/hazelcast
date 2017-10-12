@@ -1195,7 +1195,9 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void github_11489_verifyNoFailingCastOnValue() throws Exception {
-        IMap<Integer, Integer> test = getInstance().getMap("github_11489");
+        // always run map.values on a map proxy backed by the current-version instance otherwise, when running as compatibility
+        // test, the TestPagingPredicate will be proxied and fail with a NullPointerException during serialization
+        IMap<Integer, Integer> test = instances[instances.length - 1].getMap("github_11489");
         for (int i = 0; i < 1000; i++) {
             test.put(i, i);
         }
