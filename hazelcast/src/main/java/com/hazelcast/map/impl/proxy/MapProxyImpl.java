@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.journal.EventJournalReader;
@@ -971,6 +972,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return operationService.invokeOnPartition(op);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation will skip cloning of the predicate and projection
+     * for performance reasons. Because of this, the results of the projection
+     * and predicate should not depend on any state that will be lost while
+     * cloning. If you wish to get rid of user state, you may clone the predicate
+     * and projection and keep them cached for all calls to this method to avoid
+     * the overhead of cloning.
+     */
     @Override
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
@@ -979,9 +990,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, T> projection) {
-        handleHazelcastInstanceAwareParams(predicate);
-        // HazelcastInstanceAware handled by cloning
-        projection = serializationService.toObject(serializationService.toData(projection));
+        final ManagedContext context = serializationService.getManagedContext();
+        context.initialize(predicate);
+        context.initialize(projection);
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<K, V, T>(
                 name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
