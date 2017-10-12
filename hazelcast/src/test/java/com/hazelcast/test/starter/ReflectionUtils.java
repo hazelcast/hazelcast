@@ -16,10 +16,7 @@
 
 package com.hazelcast.test.starter;
 
-import org.junit.Assert;
-
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,15 +25,14 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Reflection utilities
+ * Reflection utilities.
  */
-public class ReflectionUtils {
+public final class ReflectionUtils {
 
     private ReflectionUtils() {
     }
 
-    public static Object getFieldValueReflectively(Object arg, String fieldName)
-            throws IllegalAccessException {
+    public static Object getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
         checkNotNull(arg, "Argument cannot be null");
         checkHasText(fieldName, "Field name cannot be null");
 
@@ -49,8 +45,7 @@ public class ReflectionUtils {
         return field.get(arg);
     }
 
-    public static void setFieldValueReflectively(Object arg, String fieldName, Object newValue)
-            throws IllegalAccessException {
+    public static void setFieldValueReflectively(Object arg, String fieldName, Object newValue) throws IllegalAccessException {
         checkNotNull(arg, "Argument cannot be null");
         checkHasText(fieldName, "Field name cannot be null");
 
@@ -79,5 +74,4 @@ public class ReflectionUtils {
         }
         return fields;
     }
-
 }
