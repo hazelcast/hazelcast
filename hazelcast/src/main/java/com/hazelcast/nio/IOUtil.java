@@ -34,6 +34,7 @@ import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -319,6 +320,22 @@ public final class IOUtil {
         }
         try {
             closeable.close();
+        } catch (IOException e) {
+            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+        }
+    }
+
+    /**
+     * Quietly attempts to close a {@link ServerSocket}, swallowing any exception.
+     *
+     * @param serverSocket server socket to close. If {@code null}, no action is taken.
+     */
+    public static void close(ServerSocket serverSocket) {
+        if (serverSocket == null) {
+            return;
+        }
+        try {
+            serverSocket.close();
         } catch (IOException e) {
             Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
         }

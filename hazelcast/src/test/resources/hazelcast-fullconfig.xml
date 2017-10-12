@@ -194,6 +194,12 @@
             <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
+        <member-address-provider enabled="false">
+            <class-name>DummyMemberAddressProvider</class-name>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </member-address-provider>
     </network>
     <partition-group enabled="true" group-type="CUSTOM">
         <member-group>

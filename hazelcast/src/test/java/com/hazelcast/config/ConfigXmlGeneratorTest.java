@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -63,6 +64,26 @@ public class ConfigXmlGeneratorTest {
         assertEquals(theSalt, ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+    }
+
+    @Test
+    public void testMemberAddressProvider() {
+        Config cfg = new Config();
+        final MemberAddressProviderConfig expected = cfg.getNetworkConfig().getMemberAddressProviderConfig();
+        expected.setEnabled(true)
+                .setEnabled(true)
+                .setClassName("ClassName");
+        final Properties props = expected.getProperties();
+        props.setProperty("p1", "v1");
+        props.setProperty("p2", "v2");
+        props.setProperty("p3", "v3");
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        final MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
+
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+        assertEquals(expected.getClassName(), actual.getClassName());
+        assertEquals(expected.getProperties(), actual.getProperties());
     }
 
     @Test

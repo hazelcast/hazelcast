@@ -613,6 +613,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleSSLConfig(child);
             } else if ("socket-interceptor".equals(nodeName)) {
                 handleSocketInterceptorConfig(child);
+            } else if ("member-address-provider".equals(nodeName)) {
+               handleMemberAddressProvider(child);
             }
         }
     }
@@ -1784,6 +1786,22 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
 
         config.getManagementCenterConfig().setMutualAuthConfig(mcMutualAuthConfig);
+    }
+
+    private void handleMemberAddressProvider(Node node) {
+        Node enabledNode = node.getAttributes().getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        MemberAddressProviderConfig memberAddressProviderConfig = config.getNetworkConfig().getMemberAddressProviderConfig();
+        memberAddressProviderConfig.setEnabled(enabled);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if (nodeName.equals("class-name")) {
+                String className = getTextContent(n);
+                memberAddressProviderConfig.setClassName(className);
+            } else if (nodeName.equals("properties")) {
+                fillProperties(n, memberAddressProviderConfig.getProperties());
+            }
+        }
     }
 
     private void handleSocketInterceptorConfig(Node node) {
