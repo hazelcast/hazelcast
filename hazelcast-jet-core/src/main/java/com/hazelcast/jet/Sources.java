@@ -32,11 +32,14 @@ import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -91,13 +94,13 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that fetches entries from the Hazelcast {@code IMap}
-     * with the specified name and emits them as {@code Map.Entry}. Its
-     * processors will leverage data locality by fetching only those entries
-     * that are stored on the member where they are running.
+     * Returns a source that fetches entries from a local Hazelcast {@code IMap}
+     * with the specified name and emits them as {@code Map.Entry}. It leverages
+     * data locality by making each of the underlying processors fetch only those
+     * entries that are stored on the member where it is running.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -108,15 +111,27 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that fetches entries from the Hazelcast {@code IMap}
-     * with the specified name, filters them using the supplied predicate,
-     * transforms them using the supplied projection function, and emits
-     * them as {@code Map.Entry}. Its processors will leverage data locality
-     * by fetching only those entries that are stored on the member where they
-     * are running.
+     * Returns a source that fetches entries from a local Hazelcast {@code
+     * IMap} with the specified name. By supplying a {@code predicate} and
+     * {@code projection} here instead of in separate {@code map/filter}
+     * transforms you allow the source to apply these functions early, before
+     * generating any output, with the potential of significantly reducing
+     * data traffic. There are additional optimizations available when using
+     * specific projection subtypes (such as {@link
+     * com.hazelcast.projection.Projections#singleAttribute(String)
+     * singleAttribute()} and {@link
+     * com.hazelcast.projection.Projections#multiAttribute(String...)
+     * multiAttribute()}), depending on how the data is stored in the map.
+     * Similarly, using the {@link com.hazelcast.query.PredicateBuilder
+     * PredicateBuilder} will build a predicate that makes use of any indexes
+     * created on the map.
+     * <p>
+     * The source leverages data locality by making each of the underlying
+     * processors fetch only those entries that are stored on the member where
+     * it is running.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -124,7 +139,20 @@ public final class Sources {
      */
     public static <K, V, T> Source<T> readMap(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<Entry<K, V>, T> projection
+    ) {
+        return fromProcessor("readMap(" + mapName + ')',
+                SourceProcessors.readMapP(mapName, predicate, projection));
+    }
+
+    /**
+     * Convenience for {@link #readMap(String, Predicate, Projection)}
+     * which uses a {@link DistributedFunction} as the projection function.
+     */
+    public static <K, V, T> Source<T> readMap(
+            @Nonnull String mapName,
+            @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
     ) {
         return fromProcessor("readMap(" + mapName + ')',
@@ -132,35 +160,25 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamMap(String, DistributedPredicate,
-     * DistributedFunction, boolean)} with no projection or filtering. It
-     * emits {@link EventJournalMapEvent}s.
-     */
-    @Nonnull
-    public static <K, V> Source<EventJournalMapEvent<K, V>> streamMap(
-            @Nonnull String mapName,
-            boolean startFromLatestSequence
-    ) {
-        return fromProcessor("streamMap(" + mapName + ')',
-                SourceProcessors.streamMapP(mapName, startFromLatestSequence));
-    }
-
-    /**
      * Returns a source that will stream the {@link EventJournalMapEvent}
-     * events of the Hazelcast {@code IMap} with the specified name. The given
-     * predicate and projection will be applied to the events at the source.
+     * events of the Hazelcast {@code IMap} with the specified name. By
+     * supplying a {@code predicate} and {@code projection} here instead of
+     * in separate {@code map/filter} transforms you allow the source to apply
+     * these functions early, before generating any output, with the potential
+     * of significantly reducing data traffic.
      * <p>
-     * The processors will only access data local to the member and processors
-     * will divide the labor within the member so that each of them will get a
-     * subset of all local partitions to stream.
+     * The source leverages data locality by making each of the underlying
+     * processors fetch only those entries that are stored on the member where
+     * it is running.
      * <p>
-     * In order to stream from a map, event-journal should be configured.
-     * See {@link com.hazelcast.config.EventJournalConfig}. The event journal
-     * is backed by a fixed capacity ring buffer. If the capacity overflows,
-     * some events can be missed - make sure to configure that too.
+     * To use an {@code IMap} as a streaming source, you must {@link
+     * com.hazelcast.config.EventJournalConfig configure the event journal}
+     * for it. The journal has fixed capacity and will drop events if it
+     * overflows.
      * <p>
-     * Journal offset is saved to the state snapshot. If the job restarts,
-     * emission starts at the saved offset, giving exactly-once guarantee.
+     * The source saves the journal offset to the snapshot. If the job
+     * restarts, it starts emitting from the saved offset with an
+     * exactly-once guarantee (unless the journal has overflowed).
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events, can be {@code null}
@@ -181,12 +199,26 @@ public final class Sources {
     }
 
     /**
+     * Convenience for {@link #streamMap(String, DistributedPredicate,
+     * DistributedFunction, boolean)} with no projection or filtering. It
+     * emits {@link EventJournalMapEvent}s.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalMapEvent<K, V>> streamMap(
+            @Nonnull String mapName,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamMap(" + mapName + ')',
+                SourceProcessors.streamMapP(mapName, startFromLatestSequence));
+    }
+
+    /**
      * Returns a source that fetches entries from the Hazelcast {@code IMap}
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -202,14 +234,24 @@ public final class Sources {
     }
 
     /**
-     * Returns a source that fetches entries from the Hazelcast {@code IMap}
-     * with the specified name in a remote cluster identified by the supplied
-     * {@code ClientConfig}, filters them using the supplied predicate,
-     * transforms them using the supplied projection function, and emits
-     * them as {@code Map.Entry}.
+     * Returns a source that fetches entries from a remote Hazelcast {@code
+     * IMap} with the specified name in a remote cluster identified by the
+     * supplied {@code ClientConfig}. By supplying a {@code predicate} and
+     * {@code projection} here instead of in separate {@code map/filter}
+     * transforms you allow the source to apply these functions early, before
+     * generating any output, with the potential of significantly reducing
+     * data traffic. There are additional optimizations available when using
+     * specific projection subtypes (such as {@link
+     * com.hazelcast.projection.Projections#singleAttribute(String)
+     * singleAttribute()} and {@link
+     * com.hazelcast.projection.Projections#multiAttribute(String...)
+     * multiAttribute()}), depending on how the data is stored in the map.
+     * Similarly, using the {@link com.hazelcast.query.PredicateBuilder
+     * PredicateBuilder} will build a predicate that makes use of any indexes
+     * created on the map.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -217,42 +259,44 @@ public final class Sources {
      */
     public static <K, V, T> Source<T> readRemoteMap(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
-            @Nonnull ClientConfig clientConfig
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<Entry<K, V>, T> projectionFn
     ) {
         return fromProcessor("readRemoteMap(" + mapName + ')',
-                SourceProcessors.readRemoteMapP(mapName, predicate, projectionFn, clientConfig));
+                SourceProcessors.readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
     }
 
     /**
-     * Convenience for {@link #streamRemoteMap(String, ClientConfig,
-     * DistributedPredicate, DistributedFunction, boolean)} with no projection
-     * or filtering. It emits {@link EventJournalMapEvent}s.
+     * Convenience for {@link #readRemoteMap(String, ClientConfig, Predicate, Projection)}
+     * which use a {@link DistributedFunction} as the projection function.
      */
-    @Nonnull
-    public static <K, V> Source<EventJournalMapEvent<K, V>> streamRemoteMap(
+    public static <K, V, T> Source<T> readRemoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            boolean startFromLatestSequence
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
-        return fromProcessor("streamRemoteMap(" + mapName + ')',
-                SourceProcessors.streamRemoteMapP(mapName, clientConfig, startFromLatestSequence));
+        return fromProcessor("readRemoteMap(" + mapName + ')',
+                SourceProcessors.readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
     }
 
     /**
      * Returns a source that will stream the {@link EventJournalMapEvent}
      * events of the Hazelcast {@code IMap} with the specified name from a
-     * remote cluster. The given predicate and projection will be applied to the
-     * events at the source.
+     * remote cluster. By supplying a {@code predicate} and {@code projection}
+     * here instead of in separate {@code map/filter} transforms you allow the
+     * source to apply these functions early, before generating any output,
+     * with the potential of significantly reducing data traffic.
      * <p>
-     * In order to stream from a map, event-journal should be configured.
-     * See {@link com.hazelcast.config.EventJournalConfig}. The event journal
-     * is backed by a fixed capacity ring buffer. If the capacity overflows,
-     * some events can be missed - make sure to configure that too.
+     * To use an {@code IMap} as a streaming source, you must {@link
+     * com.hazelcast.config.EventJournalConfig configure the event journal}
+     * for it. The journal has fixed capacity and will drop events if it
+     * overflows.
      * <p>
-     * Journal offset is saved to the state snapshot. If the job restarts,
-     * emission starts at the saved offset, giving exactly-once guarantee.
+     * The source saves the journal offset to the snapshot. If the job
+     * restarts, it starts emitting from the saved offset with an
+     * exactly-once guarantee (unless the journal has overflowed).
      *
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
@@ -277,13 +321,29 @@ public final class Sources {
     }
 
     /**
+     * Convenience for {@link #streamRemoteMap(String, ClientConfig,
+     * DistributedPredicate, DistributedFunction, boolean)} with no projection
+     * or filtering. It emits {@link EventJournalMapEvent}s.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalMapEvent<K, V>> streamRemoteMap(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamRemoteMap(" + mapName + ')',
+                SourceProcessors.streamRemoteMapP(mapName, clientConfig, startFromLatestSequence));
+    }
+
+    /**
      * Returns a source that fetches entries from the Hazelcast {@code ICache}
-     * with the specified name and emits them as {@code Map.Entry}. Its
-     * processors will leverage data locality by fetching only those entries
-     * that are stored on the member where they are running.
+     * with the specified name and emits them as {@code Map.Entry}. It
+     * leverages data locality by making each of the underlying processors
+     * fetch only those entries that are stored on the member where it is
+     * running.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -295,34 +355,25 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamCache(String, DistributedPredicate,
-     * DistributedFunction, boolean)} with no projection or filtering.
-     */
-    @Nonnull
-    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamCache(
-            @Nonnull String cacheName,
-            boolean startFromLatestSequence
-    ) {
-        return fromProcessor("streamCache(" + cacheName + ')',
-                SourceProcessors.streamCacheP(cacheName, startFromLatestSequence));
-    }
-
-    /**
      * Returns a source that will stream the {@link EventJournalCacheEvent}
-     * events of the Hazelcast {@code ICache} with the specified name. The given
-     * predicate and projection will be applied to the events at the source.
+     * events of the Hazelcast {@code ICache} with the specified name. By
+     * supplying a {@code predicate} and {@code projection} here instead of
+     * in separate {@code map/filter} transforms you allow the source to apply
+     * these functions early, before generating any output, with the potential
+     * of significantly reducing data traffic.
      * <p>
-     * The processors will only access data local to the member and processors
-     * will divide the labor within the member so that each of them will get a
-     * subset of all local partitions to stream.
+     * The source leverages data locality by making each of the underlying
+     * processors fetch only those entries that are stored on the member where
+     * it is running.
      * <p>
-     * In order to stream from a cache, event-journal should be configured.
-     * See {@link com.hazelcast.config.EventJournalConfig}. The event journal
-     * is backed by a fixed capacity ring buffer. If the capacity overflows,
-     * some events can be missed - make sure to configure that too.
+     * To use an {@code ICache} as a streaming source, you must {@link
+     * com.hazelcast.config.EventJournalConfig configure the event journal}
+     * for it. The journal has fixed capacity and will drop events if it
+     * overflows.
      * <p>
-     * Journal offset is saved to the state snapshot. If the job restarts,
-     * emission starts at the saved offset, giving exactly-once guarantee.
+     * The source saves the journal offset to the snapshot. If the job
+     * restarts, it starts emitting from the saved offset with an
+     * exactly-once guarantee (unless the journal has overflowed).
      *
      * @param cacheName               The name of the cache
      * @param predicate               The predicate to filter the events, can be null
@@ -343,12 +394,25 @@ public final class Sources {
     }
 
     /**
+     * Convenience for {@link #streamCache(String, DistributedPredicate,
+     * DistributedFunction, boolean)} with no projection or filtering.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamCache(
+            @Nonnull String cacheName,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamCache(" + cacheName + ')',
+                SourceProcessors.streamCacheP(cacheName, startFromLatestSequence));
+    }
+
+    /**
      * Returns a source that fetches entries from the Hazelcast {@code ICache}
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
@@ -365,33 +429,21 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamRemoteCache(String, ClientConfig,
-     * DistributedPredicate, DistributedFunction, boolean)} with no projection
-     * or filtering. It emits {@link EventJournalCacheEvent}s.
-     */
-    @Nonnull
-    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamRemoteCache(
-            @Nonnull String cacheName,
-            @Nonnull ClientConfig clientConfig,
-            boolean startFromLatestSequence
-    ) {
-        return fromProcessor("streamRemoteCache(" + cacheName + ')',
-                SourceProcessors.streamRemoteCacheP(cacheName, clientConfig, startFromLatestSequence));
-    }
-
-    /**
      * Returns a source that will stream the {@link EventJournalCacheEvent}
      * events of the Hazelcast {@code ICache} with the specified name from a
-     * remote cluster. The given predicate and projection will be applied to the
-     * events at the source.
+     * remote cluster. By supplying a {@code predicate} and {@code projection}
+     * here instead of in separate {@code map/filter} transforms you allow the
+     * source to apply these functions early, before generating any output,
+     * with the potential of significantly reducing data traffic.
      * <p>
-     * In order to stream from a cache, event-journal should be configured.
-     * See {@link com.hazelcast.config.EventJournalConfig}. The event journal
-     * is backed by a fixed capacity ring buffer. If the capacity overflows,
-     * some events can be missed - make sure to configure that too.
+     * To use an {@code ICache} as a streaming source, you must {@link
+     * com.hazelcast.config.EventJournalConfig configure the event journal}
+     * for it. The journal has fixed capacity and will drop events if it
+     * overflows.
      * <p>
-     * Journal offset is saved to the state snapshot. If the job restarts,
-     * emission starts at the saved offset, giving exactly-once guarantee.
+     * The source saves the journal offset to the snapshot. If the job
+     * restarts, it starts emitting from the saved offset with an
+     * exactly-once guarantee (unless the journal has overflowed).
      *
      * @param cacheName               The name of the cache
      * @param clientConfig            configuration for the client to connect to the remote cluster
@@ -417,12 +469,27 @@ public final class Sources {
     }
 
     /**
+     * Convenience for {@link #streamRemoteCache(String, ClientConfig,
+     * DistributedPredicate, DistributedFunction, boolean)} with no projection
+     * or filtering. It emits {@link EventJournalCacheEvent}s.
+     */
+    @Nonnull
+    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamRemoteCache(
+            @Nonnull String cacheName,
+            @Nonnull ClientConfig clientConfig,
+            boolean startFromLatestSequence
+    ) {
+        return fromProcessor("streamRemoteCache(" + cacheName + ')',
+                SourceProcessors.streamRemoteCacheP(cacheName, clientConfig, startFromLatestSequence));
+    }
+
+    /**
      * Returns a source that emits items retrieved from a Hazelcast {@code
      * IList}. All elements are emitted on a single member &mdash; the one
      * where the entire list is stored by the IMDG.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      */
     @Nonnull
     public static <E> Source<E> readList(@Nonnull String listName) {
@@ -435,7 +502,7 @@ public final class Sources {
      * ClientConfig}. All elements are emitted on a single member.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      */
     @Nonnull
     public static <E> Source<E> readRemoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -478,7 +545,7 @@ public final class Sources {
      * filesystem visible by multiple members, they will emit duplicate data.
      * <p>
      * This source does not save any state to snapshot. If the job is restarted,
-     * all entries will be emitted again.
+     * it will re-emit all entries.
      * <p>
      * Any {@code IOException} will cause the job to fail.
      *

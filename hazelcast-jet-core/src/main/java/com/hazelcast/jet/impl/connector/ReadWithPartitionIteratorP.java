@@ -23,24 +23,25 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -100,23 +101,25 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     public static <K, V, T> ProcessorMetaSupplier readMap(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<Map.Entry<K, V>, T> projection
     ) {
         return new LocalClusterMetaSupplier<T>(
-                instance -> partition -> ((MapProxyImpl) instance.getMap(mapName))
-                        .iterator(FETCH_SIZE, partition, toProjection(projectionFn), predicate::test));
+                instance -> partition -> {
+                    MapProxyImpl map = (MapProxyImpl) instance.<K, V>getMap(mapName);
+                    return map.<T>iterator(FETCH_SIZE, partition, projection, predicate);
+                });
     }
 
     public static <K, V, T> ProcessorMetaSupplier readRemoteMap(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
-            @Nonnull ClientConfig clientConfig
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull Projection<Entry<K, V>, T> projection,
+            @Nonnull Predicate<K, V> predicate
     ) {
         return new RemoteClusterMetaSupplier<T>(clientConfig,
                 instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
-                        .iterator(FETCH_SIZE, partition, toProjection(projectionFn), predicate::test));
+                        .iterator(FETCH_SIZE, partition, projection, predicate));
     }
 
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
@@ -151,14 +154,6 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                         : Processors.noopP().get()
                 )
                 .collect(toList());
-    }
-
-    private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {
-        return new Projection<I, O>() {
-            @Override public O transform(I input) {
-                return projectionFn.apply(input);
-            }
-        };
     }
 
     private static class RemoteClusterMetaSupplier<T> implements ProcessorMetaSupplier {

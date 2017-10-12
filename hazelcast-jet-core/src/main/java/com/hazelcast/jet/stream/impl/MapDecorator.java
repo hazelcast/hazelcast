@@ -24,7 +24,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -527,7 +526,7 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
 
     @Override
     public <E> DistributedStream<E> stream(
-            @Nonnull DistributedPredicate<Entry<K, V>> predicate,
+            @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Entry<K, V>, E> projectionFn
     ) {
         return new MapSourcePipe<>(new StreamContext(instance), map, predicate, projectionFn);

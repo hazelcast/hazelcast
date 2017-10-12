@@ -18,11 +18,11 @@ package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.query.Predicate;
 
 import java.util.Map;
 
@@ -30,11 +30,11 @@ public class MapSourcePipe<K, V, E> extends AbstractSourcePipe<E> {
 
     private final IMap<K, V> map;
     private final DistributedFunction<Map.Entry<K, V>, E> projectionFn;
-    private final DistributedPredicate<Map.Entry<K, V>> predicate;
+    private final Predicate<K, V> predicate;
 
     public MapSourcePipe(
             StreamContext context, IMap<K, V> map,
-            DistributedPredicate<Map.Entry<K, V>> predicate,
+            Predicate<K, V> predicate,
             DistributedFunction<Map.Entry<K, V>, E> projectionFn
     ) {
         super(context);

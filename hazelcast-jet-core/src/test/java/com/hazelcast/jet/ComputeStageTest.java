@@ -45,8 +45,8 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -389,7 +389,7 @@ public class ComputeStageTest extends TestInClusterSupport {
     }
 
     private static Source<Integer> readMapValues(String srcName) {
-        return Sources.readMap(srcName, alwaysTrue(),
+        return Sources.readMap(srcName, truePredicate(),
                 (DistributedFunction<Entry<Integer, Integer>, Integer>) Entry::getValue);
     }
 

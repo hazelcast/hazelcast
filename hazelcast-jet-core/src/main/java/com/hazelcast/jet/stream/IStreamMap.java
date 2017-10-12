@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 
@@ -52,7 +52,7 @@ public interface IStreamMap<K, V> extends IMap<K, V> {
      * @return a parallel {@code Stream} over the elements in this collection
      * @since 1.8
      */
-    <T> DistributedStream<T> stream(@Nonnull DistributedPredicate<Entry<K, V>> predicate,
+    <T> DistributedStream<T> stream(@Nonnull Predicate<K, V> predicate,
                                     @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn);
 
 }

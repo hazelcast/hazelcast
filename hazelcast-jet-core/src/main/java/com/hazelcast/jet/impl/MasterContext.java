@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.execution.BroadcastEntry;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
@@ -76,6 +75,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
@@ -199,7 +199,6 @@ public class MasterContext {
         logger.info(jobAndExecutionId(jobId, executionId) + ": restoring state from snapshotId=" + snapshotId);
         for (Vertex vertex : dag) {
             // items with keys of type BroadcastKey need to be broadcast to all processors
-            DistributedPredicate<Entry<Object, Object>> predicate = (Entry<Object, Object> e) -> true;
             DistributedFunction<Entry<Object, Object>, ?> projection = (Entry<Object, Object> e) ->
                     (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry<>(e) : e;
             // We add the vertex even in case when the map is empty: this ensures, that
@@ -207,7 +206,7 @@ public class MasterContext {
             // a job which is restored from a snapshot.
             String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
             Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(),
-                    readMapP(mapName, predicate, projection));
+                    readMapP(mapName, truePredicate(), projection));
 
             readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
 

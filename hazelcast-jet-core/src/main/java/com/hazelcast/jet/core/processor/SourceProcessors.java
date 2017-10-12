@@ -29,11 +29,13 @@ import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.charset.Charset;
-import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -56,16 +58,30 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sources#readRemoteMap(String, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sources#readMap(String, Predicate, Projection)}}.
      */
     @Nonnull
     public static <K, V, T> ProcessorMetaSupplier readMapP(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<Entry<K, V>, T> projectionFn
     ) {
         return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionFn);
     }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sources#readMap(String, Predicate, DistributedFunction)}}.
+     */
+    @Nonnull
+    public static <K, V, T> ProcessorMetaSupplier readMapP(
+            @Nonnull String mapName,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
+    ) {
+        return ReadWithPartitionIteratorP.readMap(mapName, predicate, toProjection(projectionFn));
+    }
+
 
     /**
      * Returns a supplier of processors for
@@ -101,17 +117,34 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sources#readRemoteMap(String, DistributedPredicate, DistributedFunction, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sources#readRemoteMap(String, ClientConfig, Predicate, Projection)}.
      */
     @Nonnull
     public static <K, V, T> ProcessorMetaSupplier readRemoteMapP(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<Map.Entry<K, V>> predicate,
-            @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn,
-            @Nonnull ClientConfig clientConfig
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return ReadWithPartitionIteratorP.readRemoteMap(mapName, predicate, projectionFn, clientConfig);
+        return ReadWithPartitionIteratorP.readRemoteMap(mapName, clientConfig, projection, predicate);
     }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sources#readRemoteMap(String, ClientConfig, Predicate, DistributedFunction)}.
+     */
+    @Nonnull
+    public static <K, V, T> ProcessorMetaSupplier readRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull Predicate<K, V> predicate,
+            @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
+    ) {
+        return ReadWithPartitionIteratorP.readRemoteMap(
+                mapName, clientConfig, toProjection(projectionFn), predicate
+        );
+    }
+
 
     /**
      * Returns a supplier of processors for
@@ -256,5 +289,13 @@ public final class SourceProcessors {
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
         return StreamFilesP.supplier(watchedDirectory, charset.name(), glob);
+    }
+
+    private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {
+        return new Projection<I, O>() {
+            @Override public O transform(I input) {
+                return projectionFn.apply(input);
+            }
+        };
     }
 }
