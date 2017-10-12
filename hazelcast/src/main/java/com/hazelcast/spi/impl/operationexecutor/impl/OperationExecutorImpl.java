@@ -238,9 +238,9 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void scan(LiveOperations result) {
-        scan(partitionOperationRunners, result);
-        scan(genericOperationRunners, result);
+    public void populate(LiveOperations liveOperations) {
+        scan(partitionOperationRunners, liveOperations);
+        scan(genericOperationRunners, liveOperations);
     }
 
     private void scan(OperationRunner[] runners, LiveOperations result) {
