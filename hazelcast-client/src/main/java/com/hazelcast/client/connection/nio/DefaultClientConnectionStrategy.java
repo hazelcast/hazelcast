@@ -22,6 +22,8 @@ import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
+import java.util.concurrent.RejectedExecutionException;
+
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
@@ -80,7 +82,11 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
             return;
         }
         if (clientContext.getLifecycleService().isRunning()) {
-            clientContext.getConnectionManager().connectToClusterAsync();
+            try {
+                clientContext.getConnectionManager().connectToClusterAsync();
+            } catch (RejectedExecutionException r) {
+                shutdownWithExternalThread();
+            }
         }
     }
 

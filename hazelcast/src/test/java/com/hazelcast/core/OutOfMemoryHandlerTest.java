@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class OutOfMemoryHandlerTest extends AbstractOutOfMemoryHandlerTest {
 
-    TestOutOfMemoryHandler outOfMemoryHandler;
+    private TestOutOfMemoryHandler outOfMemoryHandler;
 
     @Before
     public void setUp() throws Exception {
@@ -41,7 +41,7 @@ public class OutOfMemoryHandlerTest extends AbstractOutOfMemoryHandlerTest {
     }
 
     @Test
-    public void testShouldHandle() throws Exception {
+    public void testShouldHandle() {
         assertTrue(outOfMemoryHandler.shouldHandle(new OutOfMemoryError()));
     }
 
