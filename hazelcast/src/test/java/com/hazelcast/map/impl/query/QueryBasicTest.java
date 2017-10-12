@@ -96,6 +96,80 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(values.size(), 0);
     }
 
+    @Test
+    public void testQueryIndexNullValues() {
+        final HazelcastInstance instance = createHazelcastInstance(getConfig());
+        final IMap<String, Value> map = instance.getMap("default");
+        map.addIndex("name", true);
+        map.put("first", new Value("first", 1));
+        map.put("second", new Value(null, 2));
+        map.put("third", new Value(null, 3));
+        final Predicate predicate = new SqlPredicate("name=null");
+        final Collection<Value> values = map.values(predicate);
+
+        final int[] expectedIndexValues = {2, 3};
+        assertEquals(expectedIndexValues.length, values.size());
+
+        final int[] actualIndexValues = new int[values.size()];
+        int i = 0;
+        for (Value value : values) {
+            actualIndexValues[i++] = value.getIndex();
+        }
+        Arrays.sort(actualIndexValues);
+        assertArrayEquals(expectedIndexValues, actualIndexValues);
+    }
+
+    @Test
+    public void testLesserEqual() {
+        final HazelcastInstance instance = createHazelcastInstance(getConfig());
+        final IMap<String, Value> map = instance.getMap("default");
+        map.addIndex("index", true);
+        for (int i = 0; i < 10; i++) {
+            map.put("" + i, new Value("" + i, i));
+        }
+        final Predicate predicate = new SqlPredicate("index<=5");
+        final Collection<Value> values = map.values(predicate);
+
+
+        final int[] expectedIndexValues = new int[6];
+        for (int i = 0; i < expectedIndexValues.length; i++) {
+            expectedIndexValues[i] = i;
+        }
+        assertEquals(expectedIndexValues.length, values.size());
+
+        final int[] actualIndexValues = new int[values.size()];
+        int i = 0;
+        for (Value value : values) {
+            actualIndexValues[i++] = value.getIndex();
+        }
+        Arrays.sort(actualIndexValues);
+        assertArrayEquals(expectedIndexValues, actualIndexValues);
+    }
+
+    @Test
+    public void testNotEqual() {
+        final HazelcastInstance instance = createHazelcastInstance(getConfig());
+        final IMap<String, Value> map = instance.getMap("default");
+        map.addIndex("name", true);
+        map.put("first", new Value("first", 1));
+        map.put("second", new Value(null, 2));
+        map.put("third", new Value(null, 3));
+        final Predicate predicate = new SqlPredicate("name != null");
+
+
+        final Collection<Value> values = map.values(predicate);
+        final int[] expectedIndexValues = {1};
+        assertEquals(expectedIndexValues.length, values.size());
+
+        final int[] actualIndexValues = new int[values.size()];
+        int i = 0;
+        for (Value value : values) {
+            actualIndexValues[i++] = value.getIndex();
+        }
+        Arrays.sort(actualIndexValues);
+        assertArrayEquals(expectedIndexValues, actualIndexValues);
+    }
+
     @Test(timeout = 1000 * 90)
     public void issue393SqlIn() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
@@ -438,11 +512,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(2, map.values(new SqlPredicate("this in (MEMBER, LITE_MEMBER)")).size());
         assertEquals(NodeType.JAVA_CLIENT,
                 map.values(new PredicateBuilder().getEntryObject()
-                        .get("this").equal(NodeType.JAVA_CLIENT)).iterator().next());
+                                                 .get("this").equal(NodeType.JAVA_CLIENT)).iterator().next());
         assertEquals(0, map.values(new PredicateBuilder().getEntryObject()
-                .get("this").equal(NodeType.CSHARP_CLIENT)).size());
+                                                         .get("this").equal(NodeType.CSHARP_CLIENT)).size());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject()
-                .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
+                                                         .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
     }
 
     private enum NodeType {
@@ -465,11 +539,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put(2, object2);
 
         assertEquals(customObject, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(customObject.getUuid()))
-                .iterator().next());
+                                      .iterator().next());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").equal(attribute)).size());
 
         assertEquals(object2, map.values(new PredicateBuilder().getEntryObject().get("uuid").in(object2.getUuid()))
-                .iterator().next());
+                                 .iterator().next());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").in(attribute)).size());
     }
 
@@ -811,12 +885,12 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     private void addPortableFactories(Config config) {
         config.getSerializationConfig()
-                .addPortableFactory(1, new PortableFactory() {
-                    @Override
-                    public Portable create(int classId) {
-                        return new GrandParentPortableObject(1L);
-                    }
-                }).addPortableFactory(2, new PortableFactory() {
+              .addPortableFactory(1, new PortableFactory() {
+                  @Override
+                  public Portable create(int classId) {
+                      return new GrandParentPortableObject(1L);
+                  }
+              }).addPortableFactory(2, new PortableFactory() {
             @Override
             public Portable create(int classId) {
                 return new ParentPortableObject(1L);
