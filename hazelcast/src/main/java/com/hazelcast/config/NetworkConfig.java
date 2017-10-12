@@ -59,6 +59,8 @@ public class NetworkConfig {
 
     private SSLConfig sslConfig;
 
+    private MemberAddressProviderConfig memberAddressProviderConfig = new MemberAddressProviderConfig();
+
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
         reuseAddress = (!os.contains("win"));
@@ -320,6 +322,15 @@ public class NetworkConfig {
      */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
+        return this;
+    }
+
+    public MemberAddressProviderConfig getMemberAddressProviderConfig() {
+        return memberAddressProviderConfig;
+    }
+
+    public NetworkConfig setMemberAddressProviderConfig(MemberAddressProviderConfig memberAddressProviderConfig) {
+        this.memberAddressProviderConfig = memberAddressProviderConfig;
         return this;
     }
 

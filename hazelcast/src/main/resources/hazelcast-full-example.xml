@@ -403,6 +403,33 @@ https://hazelcast.org/documentation/.
             <password>thepass</password>
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
+        * <member-address-provider>:
+        IMPORTANT
+        This configuration is not intended to provide addresses of other cluster members with
+        which the hazelcast instance will form a cluster. This is an SPI for advanced use in
+        cases where the DefaultAddressPicker does not pick suitable addresses to bind to
+        and publish to other cluster members. For instance, this could allow easier
+        deployment in some cases when running on Docker, AWS or other cloud environments.
+        That said, if you are just starting with Hazelcast, you will probably want to
+        set the member addresses by using the tcp-ip or multicast configuration
+        or adding a discovery strategy.
+        Member address provider allows to plug in own strategy to customize:
+           1. What address Hazelcast will bind to
+           2. What address Hazelcast will advertise to other members on which they can bind to
+        In most environments you don't need to customize this and the default strategy will work just
+        fine. However in some cloud environments the default strategy does not make the right choice and the
+        member address provider delegates the process of address picking to external code. It has two optional attributes:
+        * enabled:
+        Specifies whether the member address provider SPI is enabled or not. Its default value is false.
+        It has the following sub-elements:
+            - <class-name>:
+                The name of the class implementing the com.hazelcast.spi.MemberAddressProvider interface.
+            - <properties>:
+                The properties that will be provided when constructing the provided MemberAddressProvider. Hazelcast will
+                first try instatiating the provided class by invoking a constructor accepting a single
+                java.util.Properties instance. In the case where there is no such constructor and there are also
+                no properties defined by this configuration, Hazelcast will exceptionally try to use the no-arg
+                constructor.
     -->
     <network>
         <public-address>11.22.33.44:5555</public-address>
@@ -450,6 +477,13 @@ https://hazelcast.org/documentation/.
             <salt>...</salt>
             <iteration-count>7</iteration-count>
         </symmetric-encryption>
+        <member-address-provider enabled="false">
+            <class-name>com.hazelcast.MemberAddressProviderImpl</class-name>
+            <properties>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
+            </properties>
+        </member-address-provider>
     </network>
     <!--
         ===== PARTITION GROUPING CONFIGURATION =====

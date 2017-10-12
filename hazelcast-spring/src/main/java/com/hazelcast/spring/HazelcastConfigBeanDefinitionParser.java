@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -433,6 +434,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleOutboundPorts(child, networkConfigBuilder);
                 } else if ("reuse-address".equals(nodeName)) {
                     handleReuseAddress(child, networkConfigBuilder);
+                } else if ("member-address-provider".equals(nodeName)) {
+                    handleMemberAddressProvider(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
@@ -504,6 +507,35 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleReuseAddress(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
             String value = node.getTextContent();
             networkConfigBuilder.addPropertyValue("reuseAddress", value);
+        }
+
+        private void handleMemberAddressProvider(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
+            final BeanDefinitionBuilder memberAddressProviderConfigBuilder = createBeanBuilder(MemberAddressProviderConfig.class);
+            for (Node child : childElements(node)) {
+                if ("properties".equals(cleanNodeName(child))) {
+                    handleProperties(child, memberAddressProviderConfigBuilder);
+                    break;
+                }
+            }
+            final String implementationAttr = "implementation";
+            final String classNameAttr = "class-name";
+            final String implementationValue = getAttribute(node, implementationAttr);
+            final String classNameValue = getAttribute(node, classNameAttr);
+
+            memberAddressProviderConfigBuilder.addPropertyValue("enabled", getBooleanValue(getAttribute(node, "enabled")));
+
+            if (!StringUtil.isNullOrEmpty(implementationValue)) {
+                memberAddressProviderConfigBuilder.addPropertyReference(implementationAttr, implementationValue);
+            } else {
+                if (StringUtil.isNullOrEmpty(classNameValue)) {
+                    throw new InvalidConfigurationException(
+                            "One of the \"class-name\" or \"implementation\" configuration "
+                                    + "is needed for member address provider configuration");
+                }
+                memberAddressProviderConfigBuilder.addPropertyValue("className", classNameValue);
+            }
+            networkConfigBuilder.addPropertyValue("memberAddressProviderConfig",
+                    memberAddressProviderConfigBuilder.getBeanDefinition());
         }
 
         private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {

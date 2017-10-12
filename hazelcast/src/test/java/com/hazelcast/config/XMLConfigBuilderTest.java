@@ -1793,6 +1793,56 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         buildConfig(xml);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testMemberAddressProvider_classnameIsMandatory() {
+        String xml = HAZELCAST_START_TAG
+                + "<network> "
+                + "  <member-address-provider enabled=\"true\">"
+                + "  </member-address-provider>"
+                + "</network> "
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Test
+    public void testMemberAddressProviderEnabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<network> "
+                + "  <member-address-provider enabled=\"true\">"
+                + "    <class-name>foo.bar.Clazz</class-name>"
+                + "  </member-address-provider>"
+                + "</network> "
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MemberAddressProviderConfig memberAddressProviderConfig = config.getNetworkConfig().getMemberAddressProviderConfig();
+
+        assertTrue(memberAddressProviderConfig.isEnabled());
+        assertEquals("foo.bar.Clazz", memberAddressProviderConfig.getClassName());
+    }
+
+    @Test
+    public void testMemberAddressProviderEnabled_withProperties() {
+        String xml = HAZELCAST_START_TAG
+                + "<network> "
+                + "  <member-address-provider enabled=\"true\">"
+                + "    <class-name>foo.bar.Clazz</class-name>"
+                + "    <properties>"
+                + "       <property name=\"propName1\">propValue1</property>"
+                + "    </properties>"
+                + "  </member-address-provider>"
+                + "</network> "
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MemberAddressProviderConfig memberAddressProviderConfig = config.getNetworkConfig().getMemberAddressProviderConfig();
+
+        Properties properties = memberAddressProviderConfig.getProperties();
+        assertEquals(1, properties.size());
+        assertEquals("propValue1", properties.get("propName1"));
+    }
+
     private static void assertPermissionConfig(PermissionConfig expected, Config config) {
         Iterator<PermissionConfig> permConfigs = config.getSecurityConfig().getClientPermissionConfigs().iterator();
         PermissionConfig configured = permConfigs.next();

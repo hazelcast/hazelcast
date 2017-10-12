@@ -177,6 +177,12 @@
                                          password="thepass"
                                          iteration-count="19"/>
                 <hz:reuse-address>true</hz:reuse-address>
+                <hz:member-address-provider enabled="false" class-name="com.hazelcast.spring.DummyMemberAddressProvider">
+                    <hz:properties>
+                        <hz:property name="dummy.property">value</hz:property>
+                        <hz:property name="dummy.property.2">value2</hz:property>
+                    </hz:properties>
+                </hz:member-address-provider>
             </hz:network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>

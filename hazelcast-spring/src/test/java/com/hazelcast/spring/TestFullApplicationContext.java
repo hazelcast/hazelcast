@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -660,6 +661,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue("reuse-address", networkConfig.isReuseAddress());
 
         assertDiscoveryConfig(networkConfig.getJoin().getDiscoveryConfig());
+
+        final MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
+        assertFalse(memberAddressProviderConfig.isEnabled());
+        assertEquals("com.hazelcast.spring.DummyMemberAddressProvider", memberAddressProviderConfig.getClassName());
+        assertFalse(memberAddressProviderConfig.getProperties().isEmpty());
+        assertEquals("value", memberAddressProviderConfig.getProperties().getProperty("dummy.property"));
+        assertEquals("value2", memberAddressProviderConfig.getProperties().getProperty("dummy.property.2"));
     }
 
     private void assertAwsConfig(AwsConfig aws) {
