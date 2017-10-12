@@ -30,17 +30,6 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
     protected HazelcastInstanceImpl hazelcastInstance;
     protected HazelcastInstanceImpl hazelcastInstanceThrowsException;
 
-    public void initHazelcastInstances() throws Exception {
-        Config config = new Config();
-
-        NodeContext nodeContext = new TestNodeContext();
-        NodeContext nodeContextWithThrowable = new TestNodeContext(new FailingConnectionManager());
-
-        hazelcastInstance = new HazelcastInstanceImpl("OutOfMemoryHandlerHelper", config, nodeContext);
-        hazelcastInstanceThrowsException = new HazelcastInstanceImpl("OutOfMemoryHandlerHelperThrowsException", config,
-                nodeContextWithThrowable);
-    }
-
     @After
     public void tearDown() {
         if (hazelcastInstance != null) {
@@ -52,6 +41,17 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             ((FailingConnectionManager) connectionManager).switchToDummyMode();
             hazelcastInstanceThrowsException.shutdown();
         }
+    }
+
+    protected void initHazelcastInstances() throws Exception {
+        Config config = new Config();
+
+        NodeContext nodeContext = new TestNodeContext();
+        NodeContext nodeContextWithThrowable = new TestNodeContext(new FailingConnectionManager());
+
+        hazelcastInstance = new HazelcastInstanceImpl("OutOfMemoryHandlerHelper", config, nodeContext);
+        hazelcastInstanceThrowsException = new HazelcastInstanceImpl("OutOfMemoryHandlerHelperThrowsException", config,
+                nodeContextWithThrowable);
     }
 
     private static class FailingConnectionManager implements ConnectionManager {
@@ -134,7 +134,5 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
                 throw new OutOfMemoryError();
             }
         }
-
     }
-
 }

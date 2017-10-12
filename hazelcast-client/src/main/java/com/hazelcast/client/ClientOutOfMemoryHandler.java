@@ -20,7 +20,8 @@ import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.DefaultOutOfMemoryHandler;
-import com.hazelcast.util.EmptyStatement;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * To clear resources of the client upon OutOfMemory
@@ -37,7 +38,7 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
         try {
             oome.printStackTrace(System.err);
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
     }
 
@@ -57,19 +58,16 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
                 try {
                     connectionManager.shutdown();
                 } catch (Throwable ignored) {
-                    EmptyStatement.ignore(ignored);
+                    ignore(ignored);
                 }
             }
         }
 
         private static void tryShutdown(HazelcastClientInstanceImpl client) {
-            if (client == null) {
-                return;
-            }
             try {
                 client.doShutdown();
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
     }
