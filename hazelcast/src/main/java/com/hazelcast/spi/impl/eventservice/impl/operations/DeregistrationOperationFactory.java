@@ -29,16 +29,16 @@ import java.io.IOException;
  * Factory that creates {@link DeregistrationOperation}s for a listener registration.
  */
 public class DeregistrationOperationFactory implements OperationFactory {
+
     private final Registration registration;
     private final ClusterService clusterService;
 
     public DeregistrationOperationFactory() {
-        registration = null;
-        clusterService = null;
+        this(null, null);
     }
 
     public DeregistrationOperationFactory(Registration reg, ClusterService clusterService) {
-        registration = reg;
+        this.registration = reg;
         this.clusterService = clusterService;
     }
 

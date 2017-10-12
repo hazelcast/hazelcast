@@ -29,12 +29,12 @@ import java.io.IOException;
  * Factory that creates {@link RegistrationOperation}s for a listener registration.
  */
 public class RegistrationOperationFactory implements OperationFactory {
+
     private final Registration reg;
     private final ClusterService clusterService;
 
     public RegistrationOperationFactory() {
-        reg = null;
-        clusterService = null;
+        this(null, null);
     }
 
     public RegistrationOperationFactory(Registration reg, ClusterService clusterService) {
