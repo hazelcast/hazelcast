@@ -24,8 +24,4 @@ public class HazelcastClientOfflineException extends IllegalStateException {
     public HazelcastClientOfflineException(String message) {
         super(message);
     }
-
-    public HazelcastClientOfflineException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
