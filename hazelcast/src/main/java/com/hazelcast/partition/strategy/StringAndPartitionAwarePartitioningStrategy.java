@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 public final class StringAndPartitionAwarePartitioningStrategy implements PartitioningStrategy {
 
     //since the StringAndPartitionAwarePartitioningStrategy is stateless, we can just create an instance up front
-    //and keep reusing that. No need to create an instance of this class of it isn't needed.
+    //and keep reusing that. No need to create an instance of this class if it isn't needed.
     public static final StringAndPartitionAwarePartitioningStrategy INSTANCE
             = new StringAndPartitionAwarePartitioningStrategy();
 

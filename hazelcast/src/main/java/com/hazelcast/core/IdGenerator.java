@@ -52,9 +52,9 @@ package com.hazelcast.core;
 public interface IdGenerator extends DistributedObject {
 
     /**
-     * Tries to initialize this IdGenerator instance with the given ID.
+     * Tries to initialize this {@code IdGenerator} instance with the given ID.
      * <p>
-     * The first generated ID will be 1 greater than ID.
+     * The first generated ID will be 1 greater than the supplied ID.
      *
      * @return {@code true} if initialization succeeded, {@code false} if ID is less than 0.
      */

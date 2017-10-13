@@ -294,8 +294,8 @@ public class TextCommandServiceImpl implements TextCommandService {
     @Override
     public void lock(String mapName, String key) throws InterruptedException {
         if (!hazelcast.getMap(mapName).tryLock(key, 1, TimeUnit.MINUTES)) {
-            throw new RuntimeException("Memcache client could not get the lock for map:"
-                    + mapName + " key:" + key + " in 1 minute");
+            throw new RuntimeException("Memcache client could not get the lock for map: "
+                    + mapName + ", key: " + key + " in 1 minute");
         }
     }
 

@@ -572,7 +572,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
     private void doInvokeRemote() {
         if (!context.outboundOperationHandler.send(op, invTarget)) {
-            notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
+            notifyError(new RetryableIOException("Packet not sent to -> " + invTarget));
         }
     }
 

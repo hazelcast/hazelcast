@@ -27,11 +27,11 @@ import com.hazelcast.spi.WaitNotifyKey;
 /**
  * The event journal is a container for events related to a data structure.
  * This interface provides methods for distributed object event journals.
- * Each distributed object and partition has it's own event journal.
+ * Each distributed object and partition has its own event journal.
  * <p>
- * If a object is destroyed or the migrated, the related event journal will be destroyed or
- * migrated as well. In this sense, the event journal is co-located with the object partition
- * and it's replicas.
+ * If an object is destroyed or migrated, the related event journal will be destroyed or
+ * migrated as well. In this regard, the event journal is co-located with the object partition
+ * and its replicas.
  *
  * @param <E> journal event type
  * @since 3.9
@@ -114,9 +114,9 @@ public interface EventJournal<E> {
      * filtering and projections on journal items so that the caller
      * can control which data is returned.
      * <p>
-     * If the set has reached it's max size, the returned sequence
+     * If the set has reached its max size, the returned sequence is
      * one greater than the sequence of the last item in the set.
-     * In other cases it means that the set hasn't reached it's full
+     * In other cases it means that the set hasn't reached its full
      * size because we have reached the end of the event journal. In
      * this case the returned sequence is one greater than the sequence
      * of the last stored event.
@@ -156,7 +156,7 @@ public interface EventJournal<E> {
      * Returns the event journal configuration or {@code null} if there is none or the journal is disabled
      * for the given {@code namespace}.
      * <p>
-     * <b>NOTE</b>
+     * <b>NOTE</b><br>
      * If the {@link ClusterService#getClusterVersion()} is less
      * than {@link com.hazelcast.internal.cluster.Versions#V3_9},
      * this method will return {@code null}, regardless of whether

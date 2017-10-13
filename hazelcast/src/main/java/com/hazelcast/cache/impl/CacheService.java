@@ -154,7 +154,7 @@ public class CacheService extends AbstractCacheService {
 
     @Override
     public CacheWanEventPublisher getCacheWanEventPublisher() {
-        throw new UnsupportedOperationException("Wan replication is not supported");
+        throw new UnsupportedOperationException("WAN replication is not supported");
     }
 
     public static ObjectNamespace getObjectNamespace(String cacheName) {

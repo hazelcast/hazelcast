@@ -149,7 +149,7 @@ public class ListenerConfigHolder {
 
     void validate() {
         if (className == null && listenerImplementation == null) {
-            throw new IllegalArgumentException("One of class name or listener implementation must be not null");
+            throw new IllegalArgumentException("Either class name or listener implementation must be not null");
         }
     }
 

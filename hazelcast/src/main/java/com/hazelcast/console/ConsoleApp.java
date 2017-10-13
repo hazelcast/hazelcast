@@ -425,7 +425,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         String first = args[0];
         int threadCount = Integer.parseInt(first.substring(1, first.indexOf(".")));
         if (threadCount < 1 || threadCount > 16) {
-            throw new RuntimeException("threadcount can't be smaller than 1 or larger than 16");
+            throw new RuntimeException("threadCount can't be smaller than 1 or larger than 16");
         }
 
         int taskCount = Integer.parseInt(args[1]);

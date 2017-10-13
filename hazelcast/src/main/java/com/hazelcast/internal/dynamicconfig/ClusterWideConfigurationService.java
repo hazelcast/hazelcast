@@ -206,8 +206,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     public ICompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
         if (version.isLessOrEqual(V3_8)) {
-            throw new UnsupportedOperationException("Adding dynamic configuration is only supported when running "
-                    + " in cluster version 3.9+. The current cluster version:" + version);
+            throw new UnsupportedOperationException("Adding dynamic configuration is only supported when running"
+                    + " in cluster version 3.9+. The current cluster version: " + version);
         }
 
         // we create an defensive copy as local operation execution might use a fast-path

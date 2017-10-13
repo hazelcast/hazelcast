@@ -25,7 +25,7 @@ public class MutableLong {
 
     //CHECKSTYLE:OFF
     public long value;
-    //CHECKSTYLE:OFF
+    //CHECKSTYLE:ON
 
     public static MutableLong valueOf(long value) {
         MutableLong instance = new MutableLong();
