@@ -23,6 +23,8 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangeTest.MockSupplier;
 import com.hazelcast.jet.core.TopologyChangeTest.StuckProcessor;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobRecord;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -251,6 +253,60 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, null, onSplit, afterMerge);
+    }
+
+    @Test
+    public void when_newMemberJoinsToCluster_then_jobQuorumSizeIsUpdated() {
+        int clusterSize = 3;
+        JetConfig jetConfig = new JetConfig();
+        JetInstance[] instances = new JetInstance[clusterSize];
+        for (int i = 0; i < clusterSize; i++) {
+            instances[i] = createJetMember(jetConfig);
+        }
+
+        StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
+        MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+        DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
+        Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
+        assertOpenEventually(StuckProcessor.executionStarted);
+
+        createJetMember(jetConfig);
+
+        assertTrueEventually(() -> {
+            JobRepository jobRepository = getJetService(instances[0]).getJobRepository();
+            JobRecord jobRecord = jobRepository.getJob(job.getJobId());
+            assertEquals(3, jobRecord.getQuorumSize());
+        });
+
+        StuckProcessor.proceedLatch.countDown();
+    }
+
+    @Test
+    public void when_newMemberIsAddedAfterClusterSizeFallsBelowQuorumSize_then_jobRestartDoesNotSucceed() {
+        int clusterSize = 5;
+        JetConfig jetConfig = new JetConfig();
+        JetInstance[] instances = new JetInstance[clusterSize];
+        for (int i = 0; i < clusterSize; i++) {
+            instances[i] = createJetMember(jetConfig);
+        }
+
+        StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
+        MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+        DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
+        Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
+        assertOpenEventually(StuckProcessor.executionStarted);
+
+        for (int i = 1; i < clusterSize; i++) {
+            instances[i].getHazelcastInstance().getLifecycleService().terminate();
+        }
+
+        StuckProcessor.proceedLatch.countDown();
+
+        assertTrueEventually(() -> assertEquals(RESTARTING, job.getJobStatus()));
+
+        createJetMember(jetConfig);
+
+        assertTrueAllTheTime(() -> assertEquals(RESTARTING, job.getJobStatus()), 5);
     }
 
 }

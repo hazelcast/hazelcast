@@ -125,8 +125,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     private JetInstance[] startInitialCluster(JetConfig config, int clusterSize) {
         JetInstance[] instances = new JetInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
-            JetInstance hz = createJetMember(config);
-            instances[i] = hz;
+            instances[i] = createJetMember(config);
         }
         return instances;
     }

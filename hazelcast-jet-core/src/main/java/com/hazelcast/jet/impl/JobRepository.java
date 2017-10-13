@@ -25,6 +25,8 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -200,6 +202,13 @@ public class JobRepository {
     }
 
     /**
+     * Updates the job quorum size if it is only larger than the current quorum size of the given job
+     */
+    boolean updateJobQuorumSizeIfLargerThanCurrent(long jobId, int newQuorumSize) {
+        return (boolean) jobs.executeOnKey(jobId, new UpdateJobRecordQuorumEntryProcessor(newQuorumSize));
+    }
+
+    /**
      * Generates a new execution id for the given job id, guaranteed to be unique across the cluster
      */
     long newExecutionId(long jobId) {
@@ -345,4 +354,106 @@ public class JobRepository {
         public void readData(ObjectDataInput in) throws IOException {
         }
     }
+
+    public static class UpdateJobRecordQuorumEntryProcessor
+            implements EntryProcessor<Long, JobRecord>, IdentifiedDataSerializable {
+
+        private int newQuorumSize;
+        private boolean updated;
+
+        public UpdateJobRecordQuorumEntryProcessor() {
+        }
+
+        UpdateJobRecordQuorumEntryProcessor(int newQuorumSize) {
+            this.newQuorumSize = newQuorumSize;
+        }
+
+        @Override
+        public Object process(Entry<Long, JobRecord> entry) {
+            JobRecord jobRecord = entry.getValue();
+            if (jobRecord == null) {
+                return false;
+            }
+
+            updated = (newQuorumSize > jobRecord.getQuorumSize());
+            if (updated) {
+                JobRecord newJobRecord = new JobRecord(jobRecord.getJobId(), jobRecord.getCreationTime(),
+                        jobRecord.getDag(), jobRecord.getConfig(), newQuorumSize);
+                entry.setValue(newJobRecord);
+            }
+
+            return updated;
+        }
+
+        @Override
+        public EntryBackupProcessor<Long, JobRecord> getBackupProcessor() {
+            return updated ? new UpdateJobRecordQuorumEntryBackupProcessor(newQuorumSize) : null;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return JetInitDataSerializerHook.UPDATE_JOB_QUORUM;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(newQuorumSize);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            newQuorumSize = in.readInt();
+        }
+    }
+
+    public static class UpdateJobRecordQuorumEntryBackupProcessor
+            implements EntryBackupProcessor<Long, JobRecord>, IdentifiedDataSerializable {
+
+        private int newQuorumSize;
+
+        public UpdateJobRecordQuorumEntryBackupProcessor() {
+        }
+
+        UpdateJobRecordQuorumEntryBackupProcessor(int newQuorumSize) {
+            this.newQuorumSize = newQuorumSize;
+        }
+
+        @Override
+        public void processBackup(Entry<Long, JobRecord> entry) {
+            JobRecord jobRecord = entry.getValue();
+            if (jobRecord == null) {
+                return;
+            }
+
+            JobRecord newJobRecord = new JobRecord(jobRecord.getJobId(), jobRecord.getCreationTime(),
+                    jobRecord.getDag(), jobRecord.getConfig(), newQuorumSize);
+            entry.setValue(newJobRecord);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return JetInitDataSerializerHook.UPDATE_JOB_QUORUM_BACKUP;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(newQuorumSize);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            newQuorumSize = in.readInt();
+        }
+    }
+
 }

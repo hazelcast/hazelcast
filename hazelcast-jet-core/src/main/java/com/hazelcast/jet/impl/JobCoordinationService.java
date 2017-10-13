@@ -126,7 +126,11 @@ public class JobCoordinationService {
         return masterContext.completionFuture();
     }
 
-    void checkQuorumValues() {
+    /**
+     * Scans all job records and updates quorum size of a split-brain protection enabled job with current cluster
+     * quorum size if the current cluster quorum size is larger
+     */
+    void updateQuorumValues() {
         if (!shouldCheckQuorumValues()) {
             return;
         }
@@ -136,9 +140,12 @@ public class JobCoordinationService {
             for (JobRecord jobRecord : jobRepository.getJobRecords()) {
                 if (jobRecord.getConfig().isSplitBrainProtectionEnabled()) {
                     if (currentQuorumSize > jobRecord.getQuorumSize()) {
-                        logger.warning("Current quorum size: " + currentQuorumSize
-                                + " of cluster is larger than quorum size: " + jobRecord.getQuorumSize() + " of job "
-                                + idToString(jobRecord.getJobId()));
+                        boolean updated = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobRecord.getJobId(),
+                                currentQuorumSize);
+                        if (updated) {
+                            logger.info("Current quorum size: " + jobRecord.getQuorumSize() + " of job "
+                                    + idToString(jobRecord.getJobId()) + " is updated to: " + currentQuorumSize);
+                        }
                     }
                 }
             }

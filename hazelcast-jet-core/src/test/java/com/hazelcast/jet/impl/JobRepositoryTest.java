@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,12 +36,12 @@ import org.junit.runner.RunWith;
 import java.util.Properties;
 
 import static com.hazelcast.jet.impl.JobRepository.RANDOM_IDS_MAP_NAME;
-import static com.hazelcast.jet.impl.JobRepository.JOB_RECORDS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -54,13 +54,13 @@ public class JobRepositoryTest extends JetTestSupport {
 
     private static final long JOB_EXPIRATION_TIME_IN_MILLIS = SECONDS.toMillis(1);
     private static final long JOB_SCAN_PERIOD_IN_MILLIS = HOURS.toMillis(1);
+    private static final int QUORUM_SIZE = 2;
 
     private JetTestInstanceFactory factory = new JetTestInstanceFactory();
     private JobConfig jobConfig = new JobConfig();
     private JetInstance instance;
     private JobRepository jobRepository;
     private IMap<Long, Long> jobIds;
-    private IMap<Long, JobRecord> jobs;
 
     @Before
     public void setup() {
@@ -73,7 +73,6 @@ public class JobRepositoryTest extends JetTestSupport {
         jobRepository.setJobExpirationDurationInMillis(JOB_EXPIRATION_TIME_IN_MILLIS);
 
         jobIds = instance.getMap(RANDOM_IDS_MAP_NAME);
-        jobs = instance.getMap(JOB_RECORDS_MAP_NAME);
     }
 
     @After
@@ -120,7 +119,6 @@ public class JobRepositoryTest extends JetTestSupport {
     @Test
     public void when_jobRecordIsPresentForExpiredJob_then_jobIsNotCleanedUp() {
         long jobIb = uploadResourcesForNewJob();
-
         Data dag = createDAGData();
         JobRecord jobRecord = createJobRecord(jobIb, dag);
         jobRepository.putNewJobRecord(jobRecord);
@@ -159,6 +157,47 @@ public class JobRepositoryTest extends JetTestSupport {
         }
     }
 
+    @Test
+    public void when_newQuorumSizeIsLargerThanCurrent_then_jobQuorumSizeIsUpdated() {
+        long jobIb = uploadResourcesForNewJob();
+        Data dag = createDAGData();
+        JobRecord jobRecord = createJobRecord(jobIb, dag);
+        jobRepository.putNewJobRecord(jobRecord);
+
+        int newQuorumSize = jobRecord.getQuorumSize() + 1;
+        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobIb, newQuorumSize);
+
+        assertTrue(success);
+        jobRecord = jobRepository.getJob(jobIb);
+        assertEquals(newQuorumSize, jobRecord.getQuorumSize());
+    }
+
+    @Test
+    public void when_newQuorumSizeIsNotLargerThanCurrent_then_jobQuorumSizeIsNotUpdated() {
+        long jobIb = uploadResourcesForNewJob();
+        Data dag = createDAGData();
+        JobRecord jobRecord = createJobRecord(jobIb, dag);
+        jobRepository.putNewJobRecord(jobRecord);
+
+        int currentQuorumSize = jobRecord.getQuorumSize();
+        int newQuorumSize = currentQuorumSize - 1;
+        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobIb, newQuorumSize);
+
+        assertFalse(success);
+        jobRecord = jobRepository.getJob(jobIb);
+        assertEquals(currentQuorumSize, jobRecord.getQuorumSize());
+    }
+
+    @Test
+    public void when_jobIsMissing_then_jobQuorumSizeIsNotUpdated() {
+        long jobIb = uploadResourcesForNewJob();
+
+        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobIb, 1);
+
+        assertFalse(success);
+        assertNull(jobRepository.getJob(jobIb));
+    }
+
     private long uploadResourcesForNewJob() {
         jobConfig.addClass(DummyClass.class);
         return jobRepository.uploadJobResources(jobConfig);
@@ -169,7 +208,7 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private JobRecord createJobRecord(long jobIb, Data dag) {
-        return new JobRecord(jobIb, System.currentTimeMillis(), dag, jobConfig, 1);
+        return new JobRecord(jobIb, System.currentTimeMillis(), dag, jobConfig, QUORUM_SIZE);
     }
 
     private void sleepUntilJobExpires() {

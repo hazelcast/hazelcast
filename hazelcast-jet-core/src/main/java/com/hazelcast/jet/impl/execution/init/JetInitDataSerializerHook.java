@@ -21,6 +21,8 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
+import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryBackupProcessor;
+import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.operation.CompleteOperation;
@@ -59,6 +61,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SLIDING_WINDOW_P_SNAPSHOT_KEY = 15;
     public static final int GET_JOB_IDS = 16;
     public static final int JOIN_SUBMITTED_JOB = 17;
+    public static final int UPDATE_JOB_QUORUM = 18;
+    public static final int UPDATE_JOB_QUORUM_BACKUP = 19;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -114,6 +118,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetJobIdsOperation();
                 case JOIN_SUBMITTED_JOB:
                     return new JoinSubmittedJobOperation();
+                case UPDATE_JOB_QUORUM:
+                    return new UpdateJobRecordQuorumEntryProcessor();
+                case UPDATE_JOB_QUORUM_BACKUP:
+                    return new UpdateJobRecordQuorumEntryBackupProcessor();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
