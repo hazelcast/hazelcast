@@ -23,6 +23,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -416,5 +418,32 @@ public class MapConfigTest {
 
         Data data = serializationService.toData(mapConfig);
         MapConfig clone = serializationService.toObject(data);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(MapConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(MaxSizeConfig.class,
+                              new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
+                              new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
+                      .withPrefabValues(MapStoreConfig.class,
+                              new MapStoreConfig().setEnabled(true).setClassName("red"),
+                              new MapStoreConfig().setEnabled(true).setClassName("black"))
+                      .withPrefabValues(NearCacheConfig.class,
+                              new NearCacheConfig(10, 20, false, InMemoryFormat.BINARY),
+                              new NearCacheConfig(15, 25, true, InMemoryFormat.OBJECT))
+                      .withPrefabValues(WanReplicationRef.class,
+                              new WanReplicationRef().setName("red"),
+                              new WanReplicationRef().setName("black"))
+                      .withPrefabValues(PartitioningStrategyConfig.class,
+                              new PartitioningStrategyConfig("red"),
+                              new PartitioningStrategyConfig("black"))
+                      .withPrefabValues(MapConfigReadOnly.class,
+                              new MapConfigReadOnly(new MapConfig("red")),
+                              new MapConfigReadOnly(new MapConfig("black")))
+                      .verify();
+
     }
 }

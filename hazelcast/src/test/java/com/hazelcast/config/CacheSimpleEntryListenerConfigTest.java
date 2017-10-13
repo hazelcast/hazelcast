@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -24,38 +25,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertTrue;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SemaphoreConfigTest {
-
-    @Test
-    public void testSetInitialPermits() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(1234);
-        assertTrue(semaphoreConfig.getInitialPermits() == 1234);
-    }
-
-    @Test
-    public void shouldAcceptZeroInitialPermits() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(0);
-        assertTrue(semaphoreConfig.getInitialPermits() == 0);
-    }
-
-    @Test
-    public void shouldAcceptNegativeInitialPermits() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(-1234);
-        assertTrue(semaphoreConfig.getInitialPermits() == -1234);
-    }
+public class CacheSimpleEntryListenerConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
-        EqualsVerifier.forClass(SemaphoreConfig.class)
+        CacheSimpleEntryListenerConfig redEntryListenerConfig = new CacheSimpleEntryListenerConfig();
+        redEntryListenerConfig.setCacheEntryListenerFactory("red");
+        CacheSimpleEntryListenerConfig blackEntryListenerConfig = new CacheSimpleEntryListenerConfig();
+        blackEntryListenerConfig.setCacheEntryListenerFactory("black");
+        EqualsVerifier.forClass(CacheSimpleEntryListenerConfig.class)
                       .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(SemaphoreConfigReadOnly.class,
-                              new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),
-                              new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("black")))
+                      .withPrefabValues(CacheSimpleEntryListenerConfigReadOnly.class,
+                              new CacheSimpleEntryListenerConfigReadOnly(redEntryListenerConfig),
+                              new CacheSimpleEntryListenerConfigReadOnly(blackEntryListenerConfig))
                       .verify();
     }
 }

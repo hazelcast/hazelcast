@@ -224,7 +224,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -247,7 +247,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + initialPermits;
         result = 31 * result + backupCount;

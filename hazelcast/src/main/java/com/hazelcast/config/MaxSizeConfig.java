@@ -185,11 +185,11 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MaxSizeConfig)) {
             return false;
         }
 
@@ -201,7 +201,7 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = maxSizePolicy != null ? maxSizePolicy.hashCode() : 0;
         result = 31 * result + size;
         return result;

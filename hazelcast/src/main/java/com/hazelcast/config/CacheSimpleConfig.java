@@ -748,11 +748,11 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof CacheSimpleConfig)) {
             return false;
         }
 
@@ -837,7 +837,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public int hashCode() {
+    public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + (keyType != null ? keyType.hashCode() : 0);
         result = 31 * result + (valueType != null ? valueType.hashCode() : 0);

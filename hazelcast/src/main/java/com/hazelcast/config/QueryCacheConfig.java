@@ -498,11 +498,11 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof QueryCacheConfig)) {
             return false;
         }
 
@@ -547,7 +547,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public int hashCode() {
+    public final int hashCode() {
         int result = batchSize;
         result = 31 * result + bufferSize;
         result = 31 * result + delaySeconds;

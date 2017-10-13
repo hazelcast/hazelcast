@@ -19,6 +19,8 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,5 +51,16 @@ public class ExecutorConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void shouldNotAcceptZeroCorePoolSize() {
         new ExecutorConfig().setPoolSize(0);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(ExecutorConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(ExecutorConfigReadOnly.class,
+                              new ExecutorConfigReadOnly(new ExecutorConfig("red")),
+                              new ExecutorConfigReadOnly(new ExecutorConfig("black")))
+                      .verify();
     }
 }

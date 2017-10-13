@@ -20,6 +20,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -275,5 +277,16 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
     @Test
     public void testToString() {
         assertContains(defaultCfg.toString(), "MapStoreConfig");
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(MapStoreConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                      .withPrefabValues(MapStoreConfigReadOnly.class,
+                              new MapStoreConfigReadOnly(cfgNotEnabled),
+                              new MapStoreConfigReadOnly(cfgNonNullClassName))
+                      .verify();
     }
 }

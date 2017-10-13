@@ -17,10 +17,13 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizeConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -76,5 +79,16 @@ public class MapMaxSizeConfigTest extends HazelcastTestSupport {
         maxSizeConfig.setSize(expectedMaxSize);
 
         assertEquals(expectedMaxSize, maxSizeConfig.getSize());
+    }
+
+    @Test
+    public void testEquals() {
+        EqualsVerifier.forClass(MaxSizeConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(MaxSizeConfigReadOnly.class,
+                              new MaxSizeConfigReadOnly(new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_PARTITION)),
+                              new MaxSizeConfigReadOnly(new MaxSizeConfig(50, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE)))
+                      .verify();
     }
 }

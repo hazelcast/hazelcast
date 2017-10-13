@@ -16,9 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.DurableExecutorConfig.DurableExecutorConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,6 +56,17 @@ public class DurableExecutorConfigTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(DurableExecutorConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(DurableExecutorConfigReadOnly.class,
+                              new DurableExecutorConfigReadOnly(new DurableExecutorConfig("red")),
+                              new DurableExecutorConfigReadOnly(new DurableExecutorConfig("black")))
+                      .verify();
     }
 
     private static Object newParameter(Method method) throws Exception {

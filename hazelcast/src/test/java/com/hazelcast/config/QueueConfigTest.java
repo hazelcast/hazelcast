@@ -19,6 +19,8 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -92,5 +94,19 @@ public class QueueConfigTest {
     public void setBackupCount_tooLarge() {
         QueueConfig config = new QueueConfig();
         config.setBackupCount(200); //max allowed is 6..
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(QueueConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                      .withPrefabValues(QueueConfigReadOnly.class,
+                              new QueueConfigReadOnly(new QueueConfig("red")),
+                              new QueueConfigReadOnly(new QueueConfig("black")))
+                      .withPrefabValues(QueueStoreConfigReadOnly.class,
+                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
+                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
+                      .verify();
     }
 }

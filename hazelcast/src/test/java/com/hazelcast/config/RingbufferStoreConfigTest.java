@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.RingbufferStoreConfig.RingbufferStoreConfigReadOnly;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -26,6 +27,8 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -103,5 +106,16 @@ public class RingbufferStoreConfigTest {
         config.setFactoryImplementation(factory);
 
         assertEquals(factory, config.getFactoryImplementation());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(RingbufferStoreConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(RingbufferStoreConfigReadOnly.class,
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                      .verify();
     }
 }

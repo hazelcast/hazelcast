@@ -116,11 +116,11 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof CacheSimpleEntryListenerConfig)) {
             return false;
         }
 
@@ -142,7 +142,7 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = cacheEntryListenerFactory != null ? cacheEntryListenerFactory.hashCode() : 0;
         result = 31 * result + (cacheEntryEventFilterFactory != null ? cacheEntryEventFilterFactory.hashCode() : 0);
         result = 31 * result + (oldValueRequired ? 1 : 0);

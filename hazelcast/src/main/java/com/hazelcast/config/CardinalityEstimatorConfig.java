@@ -184,11 +184,11 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof CardinalityEstimatorConfig)) {
             return false;
         }
 
@@ -203,14 +203,15 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
         return result;
     }
 
-    private static class CardinalityEstimatorConfigReadOnly extends CardinalityEstimatorConfig {
+    // not private for testing
+    static class CardinalityEstimatorConfigReadOnly extends CardinalityEstimatorConfig {
 
         CardinalityEstimatorConfigReadOnly(CardinalityEstimatorConfig config) {
             super(config);

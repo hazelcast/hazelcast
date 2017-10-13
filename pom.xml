@@ -1331,6 +1331,12 @@
             <version>2.7.9</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>nl.jqno.equalsverifier</groupId>
+            <artifactId>equalsverifier</artifactId>
+            <version>1.7.8</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,5 +66,16 @@ public class ScheduledExecutorConfigTest extends HazelcastTestSupport {
     @Test
     public void testToString() {
         assertContains(config.toString(), "ScheduledExecutorConfig");
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(ScheduledExecutorConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(ScheduledExecutorConfigReadOnly.class,
+                              new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("red")),
+                              new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("black")))
+                      .verify();
     }
 }

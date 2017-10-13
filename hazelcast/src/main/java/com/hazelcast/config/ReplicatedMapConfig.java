@@ -368,21 +368,15 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ReplicatedMapConfig)) {
             return false;
         }
 
         ReplicatedMapConfig that = (ReplicatedMapConfig) o;
-        if (concurrencyLevel != that.concurrencyLevel) {
-            return false;
-        }
-        if (replicationDelayMillis != that.replicationDelayMillis) {
-            return false;
-        }
         if (asyncFillup != that.asyncFillup) {
             return false;
         }
@@ -395,11 +389,6 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (replicatorExecutorService != null
-                ? !replicatorExecutorService.equals(that.replicatorExecutorService)
-                : that.replicatorExecutorService != null) {
-            return false;
-        }
         if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
             return false;
         }
@@ -408,12 +397,9 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public int hashCode() {
+    public final int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + concurrencyLevel;
-        result = 31 * result + (int) (replicationDelayMillis ^ (replicationDelayMillis >>> 32));
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
-        result = 31 * result + (replicatorExecutorService != null ? replicatorExecutorService.hashCode() : 0);
         result = 31 * result + (asyncFillup ? 1 : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);

@@ -866,11 +866,11 @@ public class MapConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings("checkstyle:methodlength")
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MapConfig)) {
             return false;
         }
 
@@ -956,7 +956,7 @@ public class MapConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
@@ -977,6 +977,7 @@ public class MapConfig implements IdentifiedDataSerializable {
         result = 31 * result + getMapIndexConfigs().hashCode();
         result = 31 * result + getMapAttributeConfigs().hashCode();
         result = 31 * result + getQueryCacheConfigs().hashCode();
+        result = 31 * result + getPartitionLostListenerConfigs().hashCode();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);

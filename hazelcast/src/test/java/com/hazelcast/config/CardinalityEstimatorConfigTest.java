@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -121,5 +124,16 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
     @Test
     public void testToString() {
         assertContains(config.toString(), "CardinalityEstimatorConfig");
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(CardinalityEstimatorConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(CardinalityEstimatorConfigReadOnly.class,
+                              new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("red")),
+                              new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("black")))
+                      .verify();
     }
 }

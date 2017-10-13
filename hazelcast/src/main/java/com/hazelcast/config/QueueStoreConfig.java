@@ -168,11 +168,11 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof QueueStoreConfig)) {
             return false;
         }
 
@@ -200,7 +200,7 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public int hashCode() {
+    public final int hashCode() {
         int result = (isEnabled() ? 1 : 0);
         result = 31 * result + (getClassName() != null ? getClassName().hashCode() : 0);
         result = 31 * result + (getFactoryClassName() != null ? getFactoryClassName().hashCode() : 0);

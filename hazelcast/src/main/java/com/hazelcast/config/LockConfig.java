@@ -152,11 +152,11 @@ public class LockConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof LockConfig)) {
             return false;
         }
 
@@ -168,7 +168,7 @@ public class LockConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
