@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * If run on partition thread, it will discover what thread it is run on, and it will run an instance of
  * PartitionAwareCallable on all partitions this thread is responsible for.
- *
+ * <p>
  * PartitionAwareCallable will be created using the PartitionAwareCallableFactory class.
  * There will be one PartitionAwareCallable created per each run() method execution.
- *
+ * <p>
  * IMPORTANT:
  * <ul>
  * <li>Runnable assumes to be run on a partition-thread. If not run on a partition-thread a RuntimeException will be thrown.</li>
@@ -124,8 +124,9 @@ public class PartitionAwareCallableBatchingRunnable implements Runnable {
         return future;
     }
 
-    private class ResultFuture extends AbstractCompletableFuture {
-        protected ResultFuture(NodeEngine nodeEngine, ILogger logger) {
+    private static class ResultFuture extends AbstractCompletableFuture {
+
+        ResultFuture(NodeEngine nodeEngine, ILogger logger) {
             super(nodeEngine, logger);
         }
 
@@ -133,5 +134,4 @@ public class PartitionAwareCallableBatchingRunnable implements Runnable {
             super.setResult(result);
         }
     }
-
 }
