@@ -31,11 +31,11 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.Iterator;
 import java.util.concurrent.Executor;
@@ -63,7 +63,7 @@ public final class InvocationUtil {
      * is interrupted and the exception is propagated to the caller.
      */
     public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
-                                                                         OperationFactory operationFactory,
+                                                                         Supplier<Operation> operationSupplier,
                                                                          int maxRetries) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
@@ -76,7 +76,7 @@ public final class InvocationUtil {
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
 
         // we are going to iterate over all members and invoke an operation on each of them
-        InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationFactory, nodeEngine,
+        InvokeOnMemberFunction invokeOnMemberFunction = new InvokeOnMemberFunction(operationSupplier, nodeEngine,
                 memberIterator);
         Iterator<ICompletableFuture<Object>> invocationIterator = map(memberIterator, invokeOnMemberFunction);
 
@@ -120,15 +120,15 @@ public final class InvocationUtil {
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
         private static final long serialVersionUID = 2903680336421872278L;
 
-        private final transient OperationFactory operationFactory;
+        private final transient Supplier<Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
         private final transient RestartingMemberIterator memberIterator;
         private final long retryDelayMillis;
         private volatile int lastRetryCount;
 
-        InvokeOnMemberFunction(OperationFactory operationFactory, NodeEngine nodeEngine,
+        InvokeOnMemberFunction(Supplier<Operation> operationSupplier, NodeEngine nodeEngine,
                 RestartingMemberIterator memberIterator) {
-            this.operationFactory = operationFactory;
+            this.operationSupplier = operationSupplier;
             this.nodeEngine = nodeEngine;
             this.memberIterator = memberIterator;
             this.retryDelayMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
@@ -160,7 +160,7 @@ public final class InvocationUtil {
 
         private ICompletableFuture<Object> invokeOnMember(Member member) {
             Address address = member.getAddress();
-            Operation operation = operationFactory.createOperation();
+            Operation operation = operationSupplier.get();
             String serviceName = operation.getServiceName();
             return nodeEngine.getOperationService().invokeOnTarget(serviceName, operation, address);
         }

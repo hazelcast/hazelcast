@@ -33,18 +33,18 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
-import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperationFactory;
+import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
-import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationFactory;
+import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.Version;
 
 import java.io.Closeable;
@@ -291,8 +291,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
 
         if (!localOnly) {
-            OperationFactory operationFactory = new RegistrationOperationFactory(reg, nodeEngine.getClusterService());
-            invokeOnAllMembers(operationFactory);
+            Supplier<Operation> supplier = new RegistrationOperationSupplier(reg, nodeEngine.getClusterService());
+            invokeOnAllMembers(supplier);
         }
         return reg;
     }
@@ -311,16 +311,16 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         if (segment != null) {
             final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
             if (reg != null && !reg.isLocalOnly()) {
-                OperationFactory operationFactory = new DeregistrationOperationFactory(reg, nodeEngine.getClusterService());
-                invokeOnAllMembers(operationFactory);
+                Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
+                invokeOnAllMembers(supplier);
             }
             return reg != null;
         }
         return false;
     }
 
-    private void invokeOnAllMembers(OperationFactory operationFactory) {
-        ICompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine, operationFactory, MAX_RETRIES);
+    private void invokeOnAllMembers(Supplier<Operation> operationSupplier) {
+        ICompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES);
         try {
             future.get();
         } catch (InterruptedException e) {
