@@ -35,7 +35,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * This is used to separate Server and Client inside the same JVM on new standalone client unit tests.
- *
+ * <p>
  * NEVER EVER use this anywhere in production! :D
  */
 @PrivateApi
@@ -45,7 +45,6 @@ public class FilteringClassLoader extends ClassLoader {
 
     private final ClassloadingMutexProvider mutexProvider = new ClassloadingMutexProvider();
     private final Pattern pattern = Pattern.compile("\\.");
-    private final byte[] buffer = new byte[BUFFER_SIZE];
 
     private final List<String> excludePackages;
     private final String enforcedSelfLoadingPackage;
@@ -111,23 +110,32 @@ public class FilteringClassLoader extends ClassLoader {
 
     private Class<?> loadAndDefineClass(String name) throws ClassNotFoundException {
         InputStream is = null;
-        ByteArrayOutputStream os = null;
+        ByteArrayOutputStream2 os = null;
         try {
             is = getResourceAsStream(pattern.matcher(name).replaceAll("/").concat(".class"));
-            os = new ByteArrayOutputStream();
+            os = new ByteArrayOutputStream2();
 
             int length;
+            byte[] buffer = new byte[BUFFER_SIZE];
             while ((length = is.read(buffer)) != -1) {
                 os.write(buffer, 0, length);
             }
 
-            byte[] data = os.toByteArray();
-            return defineClass(name, data, 0, data.length);
+            return defineClass(name, os.getInternalBuffer(), 0, os.size());
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
         } finally {
             closeResource(os);
             closeResource(is);
+        }
+    }
+
+    /**
+     * {@link ByteArrayOutputStream} happy to share its internal buffer.
+     */
+    private static class ByteArrayOutputStream2 extends ByteArrayOutputStream {
+        byte[] getInternalBuffer() {
+            return buf;
         }
     }
 }
