@@ -215,7 +215,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         // we certainly do not want the dynamic config service to reference object a user can mutate
         IdentifiedDataSerializable clonedConfig = cloneConfig(config);
         ClusterService clusterService = nodeEngine.getClusterService();
-        return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationFactory(clusterService, clonedConfig),
+        return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationSupplier(clusterService, clonedConfig),
                 CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
     }
 
