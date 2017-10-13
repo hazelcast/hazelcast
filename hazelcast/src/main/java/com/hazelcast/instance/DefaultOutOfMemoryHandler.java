@@ -20,9 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Default OutOfMemoryHandler implementation that tries to release local resources (threads, connections, memory)
@@ -69,8 +70,7 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
     }
 
     public DefaultOutOfMemoryHandler(double freeVersusMaxRatio) {
-        this.freeVersusMaxRatio = freeVersusMaxRatio;
-        this.memoryInfoAccessor = new RuntimeMemoryInfoAccessor();
+        this(freeVersusMaxRatio, new RuntimeMemoryInfoAccessor());
     }
 
     public DefaultOutOfMemoryHandler(double freeVersusMaxRatio, MemoryInfoAccessor memoryInfoAccessor) {
@@ -89,7 +89,7 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
         try {
             oome.printStackTrace(System.err);
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
     }
 
@@ -118,7 +118,7 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
             }
 
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
 
         return true;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance;
 
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.memory.MemoryUnit;
@@ -79,7 +78,6 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
         OutOfMemoryErrorDispatcher.registerServer(hz2);
         assertArrayEquals(new HazelcastInstance[]{hz1, hz2}, OutOfMemoryErrorDispatcher.current());
     }
-
 
     @Test(expected = IllegalArgumentException.class)
     public void register_whenNull() {
@@ -217,7 +215,6 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
 
     private void test_DefaultOutOfMemoryHandler_using_accessor(MemoryInfoAccessor memoryInfoAccessor,
                                                                VerificationMode verificationMode) {
-
         OutOfMemoryError oome = new OutOfMemoryError();
 
         HazelcastInstance hz = mock(HazelcastInstance.class);

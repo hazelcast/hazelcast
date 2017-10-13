@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,50 +25,36 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryCloseConnections;
-import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryShutdown;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class OutOfMemoryHandlerHelperTest extends AbstractOutOfMemoryHandlerTest {
+public class DefaultOutOfMemoryHandlerTest extends AbstractOutOfMemoryHandlerTest {
+
+    private HazelcastInstance[] instances;
+    private DefaultOutOfMemoryHandler outOfMemoryHandler;
 
     @Before
     public void setUp() throws Exception {
         initHazelcastInstances();
+
+        instances = new HazelcastInstance[2];
+        instances[0] = hazelcastInstance;
+        instances[1] = null;
+
+        outOfMemoryHandler = new DefaultOutOfMemoryHandler();
     }
 
     @Test
-    public void testConstructor() {
-        assertUtilityConstructor(OutOfMemoryHandlerHelper.class);
+    public void testShouldHandle() {
+        assertTrue(outOfMemoryHandler.shouldHandle(new OutOfMemoryError(DefaultOutOfMemoryHandler.GC_OVERHEAD_LIMIT_EXCEEDED)));
     }
 
     @Test
-    public void testTryCloseConnections() {
-        tryCloseConnections(hazelcastInstance);
-    }
+    public void testOnOutOfMemory() {
+        outOfMemoryHandler.onOutOfMemory(new OutOfMemoryError(), instances);
 
-    @Test
-    public void testTryCloseConnections_shouldDoNothingWithNullInstance() {
-        tryCloseConnections(null);
-    }
-
-    @Test
-    public void testTryCloseConnections_shouldDoNothingWhenThrowableIsThrown() {
-        tryCloseConnections(hazelcastInstanceThrowsException);
-    }
-
-    @Test
-    public void testTryShutdown() {
-        tryShutdown(hazelcastInstance);
-    }
-
-    @Test
-    public void testTryShutdown_shouldDoNothingWithNullInstance() {
-        tryShutdown(null);
-    }
-
-    @Test
-    public void testTryShutdown_shouldDoNothingWhenThrowableIsThrown() {
-        tryShutdown(hazelcastInstanceThrowsException);
+        assertFalse("The member should be shutdown", hazelcastInstance.getLifecycleService().isRunning());
     }
 }
