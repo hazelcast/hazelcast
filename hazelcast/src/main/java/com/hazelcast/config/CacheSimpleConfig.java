@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cache.BuiltInCacheMergePolicies;
-import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -69,7 +68,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
     /**
      * Default policy for merging
      */
-    public static final String DEFAULT_CACHE_MERGE_POLICY = PassThroughCacheMergePolicy.class.getName();
+    public static final String DEFAULT_CACHE_MERGE_POLICY = BuiltInCacheMergePolicies.getDefault().getImplementationClassName();
 
     private String name;
 
@@ -106,7 +105,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
 
-    private String mergePolicy = BuiltInCacheMergePolicies.getDefault().getImplementationClassName();
+    private String mergePolicy = DEFAULT_CACHE_MERGE_POLICY;
 
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 

@@ -114,7 +114,7 @@ public enum BuiltInCacheMergePolicies {
      * @return the definition of the default {@link CacheMergePolicy}
      */
     public static BuiltInCacheMergePolicies getDefault() {
-        return PASS_THROUGH;
+        return PUT_IF_ABSENT;
     }
 
     private interface CacheMergePolicyInstanceFactory {
