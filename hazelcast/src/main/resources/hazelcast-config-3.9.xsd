@@ -577,7 +577,7 @@
                             The entry with the higher number of hits wins.
                             <br/>`com.hazelcast.cache.merge.LatestAccessCacheMergePolicy` or `LATEST_ACCESS`:
                             The entry which has been accessed more recently wins.
-                            <br/>Default policy is 'com.hazelcast.cache.merge.PassThroughCacheMergePolicy'
+                            <br/>Default policy is 'com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy'
                         </p>
                     </xs:documentation>
                 </xs:annotation>
