@@ -1377,6 +1377,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator, Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkNotPagingPredicate(predicate, "aggregate");
 
         ClientMessage request = MapAggregateWithPredicateCodec.encodeRequest(name, toData(aggregator), toData(predicate));
         ClientMessage response = invoke(request);
@@ -1399,6 +1400,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
 
     @Override
     public <R> Collection<R> project(Projection<Entry<K, V>, R> projection, Predicate<K, V> predicate) {
+        checkNotPagingPredicate(predicate, "project");
+
         ClientMessage request = MapProjectWithPredicateCodec.encodeRequest(name, toData(projection), toData(predicate));
         ClientMessage response = invoke(request);
 
@@ -1687,6 +1690,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
                 throw new IllegalArgumentException(
                         "EntryProcessor.getBackupProcessor() should be null for a read-only EntryProcessor");
             }
+        }
+    }
+
+    private static void checkNotPagingPredicate(Predicate predicate, String method) {
+        if (predicate instanceof PagingPredicate) {
+            throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
         }
     }
 
