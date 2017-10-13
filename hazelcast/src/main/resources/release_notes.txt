@@ -156,6 +156,8 @@ The following are the other improvements performed to solve the enhancement issu
 
 - Maximum timeout of heartbeat for a member to assume it is dead was 300 seconds. Starting with Hazelcast 3.9, it is reduced to 60 seconds. Related property is hazelcast.max.no.heartbeat.seconds. Also, starting with Hazelcast 3.9, maximum timeout of master confirmation from other members is reduced to 150 seconds from 450 seconds. Related property is hazelcast.max.no.master.confirmation.seconds.
 
+- Starting with Hazelcast 3.9, the default `Cache` merge policy is "Put if Absent". It was "Pass Through" before Hazelcast 3.9.
+
 - Starting with Hazelcast 3.9, the format of member list shown in the logs is changed. Before Hazelcast 3.9, it was like the following:
 
 Members [3] {
