@@ -787,14 +787,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator, Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkNotPagingPredicate(predicate, "aggregate");
         handleHazelcastInstanceAwareParams(predicate);
 
         // HazelcastInstanceAware handled by cloning
         aggregator = serializationService.toObject(serializationService.toData(aggregator));
         MapQueryEngine queryEngine = getMapQueryEngine();
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("PagingPredicate now allowed with EntryAggregator.");
-        }
 
         Query query = Query.of()
                 .mapName(getName())
@@ -828,6 +826,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkNotPagingPredicate(predicate, "project");
         handleHazelcastInstanceAwareParams(predicate);
 
         // HazelcastInstanceAware handled by cloning
@@ -1060,6 +1059,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             if (object instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
             }
+        }
+    }
+
+    private static void checkNotPagingPredicate(Predicate predicate, String method) {
+        if (predicate instanceof PagingPredicate) {
+            throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
         }
     }
 }
