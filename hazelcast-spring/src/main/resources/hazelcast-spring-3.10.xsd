@@ -133,10 +133,12 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                                    <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1"
+                                                default="0">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                                                Number of asynchronous backups. For example, if 1 is set as the
+                                                async-backup-count,
                                                 then cardinality estimation will be copied to one other JVM (asynchronously) for
                                                 fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
                                             </xs:documentation>
@@ -361,7 +363,8 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional" default="true">
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional"
+                                              default="true">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Enable/disable statistics.
@@ -378,7 +381,8 @@
                                 <xs:attribute name="topic-overload-policy" use="optional" type="topic-overload-policy">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Policy to handle an overloaded topic. Available values are `DISCARD_OLDEST`, `DISCARD_NEWEST`,
+                                            Policy to handle an overloaded topic. Available values are `DISCARD_OLDEST`,
+                                            `DISCARD_NEWEST`,
                                             `BLOCK` and `ERROR`. The default value is `BLOCK.
                                         </xs:documentation>
                                     </xs:annotation>
@@ -396,11 +400,11 @@
                                             </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
                                             <xs:attributeGroup ref="class-or-bean-name">
-                                                  <xs:annotation>
-                                                      <xs:documentation>
+                                                <xs:annotation>
+                                                    <xs:documentation>
                                                         Name of the class or bean implementing MapLoader and/or MapStore.
-                                                      </xs:documentation>
-                                                  </xs:annotation>
+                                                    </xs:documentation>
+                                                </xs:annotation>
                                             </xs:attributeGroup>
                                             <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="factory-implementation" use="optional"
@@ -526,7 +530,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
+                                    <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="map-eviction-policy" type="map-eviction-policy" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -545,7 +549,8 @@
                                             Possible values:
                                             BINARY (default): keys and values are stored as binary data.
                                             OBJECT: values are stored in their object forms.
-                                            NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
+                                            NATIVE: keys and values are stored in native memory. Only available on Hazelcast
+                                            Enterprise.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -575,10 +580,12 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="cache-deserialized-values" use="optional" type="parameterized-cache-deserialized">
+                                <xs:attribute name="cache-deserialized-values" use="optional"
+                                              type="parameterized-cache-deserialized">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+                                            Control caching of de-serialized values. Caching makes query evaluation faster, but it
+                                            cost memory.
                                             Possible Values:
                                             NEVER: Never cache de-serialized object
                                             INDEX-ONLY: Cache values only when they are inserted into an index.
@@ -638,8 +645,10 @@
                                             be hosting more partitions, and therefore map entries, than that of a larger
                                             cluster. Thus, for a small cluster, eviction of the entries will decrease
                                             performance (the number of entries is large).
-                                            USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast instance.
-                                            USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast instance.
+                                            USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast
+                                            instance.
+                                            USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast
+                                            instance.
                                             If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
                                             entries will be evicted when used heap size exceeds 100 MB.
                                             FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
@@ -672,7 +681,8 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see
+                                            documentation for further details.)
 
                                             When max. size is reached, specified percentage of the map will be evicted.
                                             Any integer between 0 and 100. If 25 is set for example, 25% of the
@@ -684,7 +694,8 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
-                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see
+                                            documentation for further details.)
 
                                             Minimum time in milliseconds which should pass before checking if a
                                             partition of this map is evictable or not. Default value is 100 millis.
@@ -759,10 +770,13 @@
                                                 ENTRY_COUNT (Maximum number of cache entries in the cache),
                                                 USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes per cache
                                                 for each Hazelcast instance),
-                                                USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage per cache
+                                                USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage per
+                                                cache
                                                 for each Hazelcast instance),
-                                                FREE_NATIVE_MEMORY_SIZE (Minimum free native memory size in megabytes for each Hazelcast instance),
-                                                FREE_NATIVE_MEMORY_PERCENTAGE (Minimum free native memory size percentage for each Hazelcast instance).
+                                                FREE_NATIVE_MEMORY_SIZE (Minimum free native memory size in megabytes for each
+                                                Hazelcast instance),
+                                                FREE_NATIVE_MEMORY_PERCENTAGE (Minimum free native memory size percentage for each
+                                                Hazelcast instance).
 
                                                 Default value is "ENTRY_COUNT".
 
@@ -827,31 +841,38 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1" />
+                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="merge-policy" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                While recovering from split-brain (network partitioning), cache entries in the small cluster
+                                                While recovering from split-brain (network partitioning), cache entries in the
+                                                small cluster
                                                 merge into the bigger cluster based on the policy set here.
-                                                When an entry merges into the cluster, an entry with the same key might already exist in the cluster.
-                                                The values of these entries might be different for that same key. Which value should be set for the
+                                                When an entry merges into the cluster, an entry with the same key might already
+                                                exist in the cluster.
+                                                The values of these entries might be different for that same key. Which value
+                                                should be set for the
                                                 key? The conflict is resolved by the policy set here.
                                                 <p>
                                                     <br/>There are built-in merge policies, such as:
-                                                    <br/>`com.hazelcast.cache.merge.PassThroughCacheMergePolicy` or `PASS_THROUGH`:
-                                                    The entry will be added directly even though there is an existing entry for the key.
-                                                    <br/>`com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy` or `PUT_IF_ABSENT`:
+                                                    <br/>`com.hazelcast.cache.merge.PassThroughCacheMergePolicy` or
+                                                    `PASS_THROUGH`:
+                                                    The entry will be added directly even though there is an existing entry for
+                                                    the key.
+                                                    <br/>`com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy` or
+                                                    `PUT_IF_ABSENT`:
                                                     The entry will be added if there is no existing entry for the key.
                                                     <br/>`com.hazelcast.cache.merge.HigherHitsCacheMergePolicy` or `HIGHER_HITS`:
                                                     The entry with the higher number of hits wins.
-                                                    <br/>`com.hazelcast.cache.merge.LatestAccessCacheMergePolicy` or `LATEST_ACCESS`:
+                                                    <br/>`com.hazelcast.cache.merge.LatestAccessCacheMergePolicy` or
+                                                    `LATEST_ACCESS`:
                                                     The entry which has been accessed more recently wins.
                                                     <br/>Default policy is 'com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy'
                                                 </p>
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
+                                    <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
                                     <xs:annotation>
@@ -891,10 +912,12 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="disable-per-entry-invalidation-events" type="parameterized-boolean" use="optional">
+                                <xs:attribute name="disable-per-entry-invalidation-events" type="parameterized-boolean"
+                                              use="optional">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Disables invalidation events for per entry but full-flush invalidation events are still enabled.
+                                            Disables invalidation events for per entry but full-flush invalidation events are
+                                            still enabled.
                                             Full-flush invalidation event means that invalidation events for all entries on clear.
                                         </xs:documentation>
                                     </xs:annotation>
@@ -955,8 +978,10 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             Number of synchronous backups. For example, if `1` is set as the `backup-count`,
-                                            then all entries of the cache are copied to one other instance as synchronous for fail-safety.
-                                            `backup-count` + `async-backup-count` cannot be bigger than maximum backup count which is `6`.
+                                            then all entries of the cache are copied to one other instance as synchronous for
+                                            fail-safety.
+                                            `backup-count` + `async-backup-count` cannot be bigger than maximum backup count which
+                                            is `6`.
                                             Valid numbers are 0 (no backup), 1, 2 ... 6.
                                         </xs:documentation>
                                     </xs:annotation>
@@ -964,9 +989,12 @@
                                 <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Number of asynchronous backups. For example, if `1` is set as the `async-backup-count`,
-                                            then all entries of the cache are copied to one other instance as asynchronous for fail-safety.
-                                            `backup-count` + `async-backup-count` cannot be bigger than maximum backup count which is `6`.
+                                            Number of asynchronous backups. For example, if `1` is set as the
+                                            `async-backup-count`,
+                                            then all entries of the cache are copied to one other instance as asynchronous for
+                                            fail-safety.
+                                            `backup-count` + `async-backup-count` cannot be bigger than maximum backup count which
+                                            is `6`.
                                             Valid numbers are 0 (no backup), 1, 2 ... 6.
                                         </xs:documentation>
                                     </xs:annotation>
@@ -1223,14 +1251,16 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="multi-threading-enabled" type="parameterized-boolean" minOccurs="0" maxOccurs="1"
+                                    <xs:element name="multi-threading-enabled" type="parameterized-boolean" minOccurs="0"
+                                                maxOccurs="1"
                                                 default="false">
                                         <xs:annotation>
-		                                    <xs:documentation>
+                                            <xs:documentation>
                                                 Default is `false`, meaning only one dedicated thread will handle topic messages.
-                                                When multi-threading enabled (true) all threads from event thread pool can be used for message handling.
-		                                    </xs:documentation>
-		                                </xs:annotation>
+                                                When multi-threading enabled (true) all threads from event thread pool can be used
+                                                for message handling.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
@@ -1418,7 +1448,7 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1" />
+                        <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -1854,8 +1884,8 @@
                         set the member addresses by using the tcp-ip or multicast configuration
                         or adding a discovery strategy.
                         Member address provider allows to plug in own strategy to customize:
-                          1. What address Hazelcast will bind to
-                          2. What address Hazelcast will advertise to other members on which they can bind to
+                        1. What address Hazelcast will bind to
+                        2. What address Hazelcast will advertise to other members on which they can bind to
 
                         In most environments you don't need to customize this and the default strategy will work just
                         fine. However in some cloud environments the default strategy does not make the right choice and
@@ -2199,7 +2229,8 @@
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="queue-capacity" type="parameterized-positive-integer" default="10000" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="queue-capacity" type="parameterized-positive-integer" default="10000" minOccurs="0"
+                                    maxOccurs="1"/>
                         <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -2212,7 +2243,7 @@
                     </xs:attribute>
                 </xs:complexType>
             </xs:element>
-            <xs:element name = "wan-consumer" minOccurs="0" maxOccurs="1">
+            <xs:element name="wan-consumer" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -2933,7 +2964,7 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="merge-policy" use="required" type="xs:string"/>
@@ -2976,7 +3007,6 @@
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
     </xs:simpleType>
-
 
     <xs:complexType name="quorum">
         <xs:all>
@@ -3021,7 +3051,7 @@
     </xs:complexType>
     <xs:complexType name="wan-replication-ref-filters">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="filter-impl" type="xs:string"></xs:element>
+            <xs:element name="filter-impl" type="xs:string"/>
         </xs:sequence>
     </xs:complexType>
 

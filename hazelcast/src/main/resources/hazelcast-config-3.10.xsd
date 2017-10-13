@@ -1377,8 +1377,8 @@
                         set the member addresses by using the tcp-ip or multicast configuration
                         or adding a discovery strategy.
                         Member address provider allows to plug in own strategy to customize:
-                          1. What address Hazelcast will bind to
-                          2. What address Hazelcast will advertise to other members on which they can bind to
+                        1. What address Hazelcast will bind to
+                        2. What address Hazelcast will advertise to other members on which they can bind to
 
                         In most environments you don't need to customize this and the default strategy will work just
                         fine. However in some cloud environments the default strategy does not make the right choice and
@@ -2936,7 +2936,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"/>
             <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>
