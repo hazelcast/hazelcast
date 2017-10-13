@@ -322,11 +322,11 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ReliableTopicConfig)) {
             return false;
         }
 
@@ -351,7 +351,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = executor != null ? executor.hashCode() : 0;
         result = 31 * result + readBatchSize;
         result = 31 * result + name.hashCode();

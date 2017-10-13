@@ -248,11 +248,11 @@ public abstract class CollectionConfig<T extends CollectionConfig>
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof CollectionConfig)) {
             return false;
         }
 
@@ -276,7 +276,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + getItemListenerConfigs().hashCode();
         result = 31 * result + backupCount;

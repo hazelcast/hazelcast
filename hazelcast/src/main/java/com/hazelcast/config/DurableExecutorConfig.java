@@ -200,11 +200,11 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof DurableExecutorConfig)) {
             return false;
         }
 
@@ -222,7 +222,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + poolSize;
         result = 31 * result + durability;
@@ -230,7 +230,8 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
         return result;
     }
 
-    private static class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
+    // not private for testing
+    static class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
 
         DurableExecutorConfigReadOnly(DurableExecutorConfig config) {
             super(config);

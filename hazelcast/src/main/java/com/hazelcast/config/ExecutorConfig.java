@@ -198,11 +198,11 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ExecutorConfig)) {
             return false;
         }
 
@@ -221,7 +221,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + poolSize;
         result = 31 * result + queueCapacity;

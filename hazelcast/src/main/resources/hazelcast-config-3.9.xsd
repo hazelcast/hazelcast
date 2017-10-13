@@ -928,6 +928,7 @@
             <xs:element name="concurrency-level" type="concurrency-level" minOccurs="0" maxOccurs="1" default="32">
                 <xs:annotation>
                     <xs:documentation>
+                        Deprecated since version 3.6, concurrency-level is ignored.
                         Number of parallel mutexes to minimize contention on keys. The default value is 32 which
                         is a good number for lots of applications. If higher contention is seen on writes to values
                         inside of the replicated map this value can be adjusted to the needs.
@@ -937,6 +938,7 @@
             <xs:element name="replication-delay-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="100">
                 <xs:annotation>
                     <xs:documentation>
+                        Deprecated since version 3.6, replication-delay-millis is ignored.
                         Defines the number of milliseconds after a put is executed before the value is replicated
                         to other nodes. During this time, multiple puts can be operated and cached up to be sent
                         out all at once after the delay.

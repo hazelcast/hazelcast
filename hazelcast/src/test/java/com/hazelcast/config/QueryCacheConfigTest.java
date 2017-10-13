@@ -20,10 +20,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -106,5 +110,22 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
 
         assertNotNull(config.toString());
         assertContains(config.toString(), "QueryCacheConfig");
+    }
+
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(QueryCacheConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(PredicateConfig.class,
+                              new PredicateConfig("red"), new PredicateConfig("black"))
+                      .withPrefabValues(EvictionConfig.class,
+                              new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
+                              new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                      .withPrefabValues(QueryCacheConfigReadOnly.class,
+                              new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
+                              new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
+                      .verify();
     }
 }

@@ -168,11 +168,11 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof RingbufferStoreConfig)) {
             return false;
         }
 
@@ -201,7 +201,7 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public int hashCode() {
+    public final int hashCode() {
         int result = (enabled ? 1 : 0);
         result = 31 * result + (className != null ? className.hashCode() : 0);
         result = 31 * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
@@ -212,9 +212,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * A readonly version of the {@link RingbufferStoreConfig}.
+     * A readonly version of the {@link RingbufferStoreConfig}. Non-private for testing.
      */
-    private static class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
+    static class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
 
         RingbufferStoreConfigReadOnly(RingbufferStoreConfig config) {
             super(config);

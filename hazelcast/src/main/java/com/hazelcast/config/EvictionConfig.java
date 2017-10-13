@@ -338,11 +338,11 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof EvictionConfig)) {
             return false;
         }
 
@@ -365,7 +365,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = size;
         result = 31 * result + (maxSizePolicy != null ? maxSizePolicy.hashCode() : 0);
         result = 31 * result + (evictionPolicy != null ? evictionPolicy.hashCode() : 0);

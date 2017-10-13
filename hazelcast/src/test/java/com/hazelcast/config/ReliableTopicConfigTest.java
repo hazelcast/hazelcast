@@ -20,6 +20,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -222,6 +224,14 @@ public class ReliableTopicConfigTest {
 
         assertEquals("ReliableTopicConfig{name='foo', topicOverloadPolicy=BLOCK, executor=null, " +
                 "readBatchSize=10, statisticsEnabled=true, listenerConfigs=[]}", s);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(ReliableTopicConfig.class)
+                      .allFieldsShouldBeUsed()
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .verify();
     }
 
 }

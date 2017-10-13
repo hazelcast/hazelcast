@@ -341,7 +341,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -384,7 +384,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:npathcomplexity"})
-    public int hashCode() {
+    public final int hashCode() {
         final int prime = 31;
         int result = (enabled ? 1 : 0);
         result = prime * result + (writeCoalescing ? 1 : 0);

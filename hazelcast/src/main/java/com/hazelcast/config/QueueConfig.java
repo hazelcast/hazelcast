@@ -363,11 +363,11 @@ public class QueueConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof QueueConfig)) {
             return false;
         }
 
@@ -378,7 +378,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
         if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
-        if (getMaxSize() != getMaxSize()) {
+        if (getMaxSize() != that.getMaxSize()) {
             return false;
         }
         if (emptyQueueTtl != that.emptyQueueTtl) {
@@ -401,7 +401,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + getItemListenerConfigs().hashCode();
         result = 31 * result + backupCount;

@@ -19,6 +19,8 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -68,5 +70,13 @@ public class LockConfigTest {
     public void testToString() {
         assertNotNull(config.toString());
         assertContains(config.toString(), "LockConfig");
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(LockConfig.class)
+                      .allFieldsShouldBeUsed()
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .verify();
     }
 }

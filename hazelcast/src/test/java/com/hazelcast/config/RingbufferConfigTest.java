@@ -16,9 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.RingbufferStoreConfig.RingbufferStoreConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -261,7 +264,9 @@ public class RingbufferConfigTest {
         assertEquals(original.getCapacity(), readonly.getCapacity());
         assertEquals(original.getTimeToLiveSeconds(), readonly.getTimeToLiveSeconds());
         assertEquals(original.getInMemoryFormat(), readonly.getInMemoryFormat());
-        assertNotEquals(original.getRingbufferStoreConfig(), readonly.getRingbufferStoreConfig());
+        assertEquals(original.getRingbufferStoreConfig(), readonly.getRingbufferStoreConfig());
+        assertFalse("The read-only RingbufferStoreConfig should not be identity-equal to the original RingbufferStoreConfig",
+                original.getRingbufferStoreConfig() == readonly.getRingbufferStoreConfig());
 
         try {
             readonly.setCapacity(10);
@@ -310,5 +315,16 @@ public class RingbufferConfigTest {
 
         assertNotNull(readonly.getRingbufferStoreConfig());
         assertFalse(readonly.getRingbufferStoreConfig().isEnabled());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(RingbufferConfig.class)
+                      .allFieldsShouldBeUsed()
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(RingbufferStoreConfigReadOnly.class,
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
+                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                      .verify();
     }
 }

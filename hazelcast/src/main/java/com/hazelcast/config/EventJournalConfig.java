@@ -255,11 +255,11 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof EventJournalConfig)) {
             return false;
         }
 
@@ -280,7 +280,7 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = mapName != null ? mapName.hashCode() : 0;
         result = 31 * result + (cacheName != null ? cacheName.hashCode() : 0);
         result = 31 * result + (enabled ? 1 : 0);
@@ -289,8 +289,9 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
         return result;
     }
 
+    // not private for testing
     @Beta
-    private static class EventJournalConfigReadOnly extends EventJournalConfig {
+    static class EventJournalConfigReadOnly extends EventJournalConfig {
         EventJournalConfigReadOnly(EventJournalConfig config) {
             super(config);
         }

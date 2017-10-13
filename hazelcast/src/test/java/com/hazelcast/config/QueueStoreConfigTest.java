@@ -16,32 +16,20 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class ReplicatedMapConfigTest {
-
-    /**
-     * Test method for {@link ReplicatedMapConfigReadOnly#setStatisticsEnabled(boolean)}
-     */
-    @Test(expected = java.lang.UnsupportedOperationException.class)
-    public void testReadOnlyReplicatedMapConfigSetStatisticsEnabled() {
-        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig()).setStatisticsEnabled(true);
-    }
+public class QueueStoreConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
-        EqualsVerifier.forClass(ReplicatedMapConfig.class)
-                      .allFieldsShouldBeUsed()
+        EqualsVerifier.forClass(QueueStoreConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly")
                       .suppress(Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(QueueStoreConfigReadOnly.class,
+                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
+                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
                       .verify();
     }
 }

@@ -168,11 +168,11 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MapIndexConfig)) {
             return false;
         }
 
@@ -184,7 +184,7 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = attribute != null ? attribute.hashCode() : 0;
         result = 31 * result + (ordered ? 1 : 0);
         return result;

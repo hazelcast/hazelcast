@@ -202,11 +202,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ScheduledExecutorConfig)) {
             return false;
         }
 
@@ -224,7 +224,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = name.hashCode();
         result = 31 * result + durability;
         result = 31 * result + capacity;
@@ -232,7 +232,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         return result;
     }
 
-    private static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
+    // non-private for testing
+    static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
 
         ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
             super(config);

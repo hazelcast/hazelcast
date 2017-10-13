@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.config;
 
+import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator;
+import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,38 +28,24 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertTrue;
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SemaphoreConfigTest {
-
-    @Test
-    public void testSetInitialPermits() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(1234);
-        assertTrue(semaphoreConfig.getInitialPermits() == 1234);
-    }
-
-    @Test
-    public void shouldAcceptZeroInitialPermits() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(0);
-        assertTrue(semaphoreConfig.getInitialPermits() == 0);
-    }
-
-    @Test
-    public void shouldAcceptNegativeInitialPermits() {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig().setInitialPermits(-1234);
-        assertTrue(semaphoreConfig.getInitialPermits() == -1234);
-    }
+public class EvictionConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
-        EqualsVerifier.forClass(SemaphoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
+        EqualsVerifier.forClass(EvictionConfig.class)
+                      .allFieldsShouldBeUsedExcept("readOnly", "sizeConfigured")
                       .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(SemaphoreConfigReadOnly.class,
-                              new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),
-                              new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("black")))
+                      .withPrefabValues(EvictionConfig.class,
+                              new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
+                              new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                      .withPrefabValues(EvictionPolicyComparator.class,
+                              new LFUEvictionPolicyComparator(), new LRUEvictionPolicyComparator())
                       .verify();
     }
+
 }
