@@ -26,9 +26,9 @@ import static com.hazelcast.internal.util.JavaVersion.JAVA_1_7;
 /**
  * Java 7+ onwards allows parallel classloading. Therefore we can define use a lock with per-class granularity.
  * However in Java 6 we have to use a fat global lock.
- *
+ * <p>
  * This abstraction provides a suitable mutex depending on the version of underlying platform.
- *
+ * <p>
  * The provided mutexes are closeable as we want to know when the granular mutexes from Java are no longer needed.
  */
 public class ClassloadingMutexProvider {

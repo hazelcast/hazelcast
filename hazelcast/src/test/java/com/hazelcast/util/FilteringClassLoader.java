@@ -16,35 +16,27 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.internal.usercodedeployment.impl.ClassloadingMutexProvider;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * This is used to separate Server and Client inside the same JVM on new standalone client unit tests.
- *
- * NEVER EVER use this anywhere in production! :D
  */
 @PrivateApi
 public class FilteringClassLoader extends ClassLoader {
 
     private static final int BUFFER_SIZE = 1024;
 
-    private final ClassloadingMutexProvider mutexProvider = new ClassloadingMutexProvider();
-    private final Pattern pattern = Pattern.compile("\\.");
     private final byte[] buffer = new byte[BUFFER_SIZE];
 
     private final List<String> excludePackages;
@@ -52,7 +44,7 @@ public class FilteringClassLoader extends ClassLoader {
     private ClassLoader delegatingClassLoader;
 
     public FilteringClassLoader(List<String> excludePackages, String enforcedSelfLoadingPackage) {
-        this.excludePackages = Collections.unmodifiableList(excludePackages);
+        this.excludePackages = excludePackages;
         this.enforcedSelfLoadingPackage = enforcedSelfLoadingPackage;
 
         try {
@@ -85,25 +77,20 @@ public class FilteringClassLoader extends ClassLoader {
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         isNotNull(name, "name");
 
-        for (String excludePackage : excludePackages) {
-            if (name.startsWith(excludePackage)) {
+        for (String excludedPackage : excludePackages) {
+            if (name.startsWith(excludedPackage)) {
                 throw new ClassNotFoundException(name + " - Package excluded explicitly!");
             }
         }
 
         if (enforcedSelfLoadingPackage != null && name.startsWith(enforcedSelfLoadingPackage)) {
-            Closeable classLoadingMutex = mutexProvider.getMutexForClass(name);
-            try {
-                //noinspection SynchronizationOnLocalVariableOrMethodParameter
-                synchronized (classLoadingMutex) {
-                    Class<?> clazz = findLoadedClass(name);
-                    if (clazz == null) {
-                        clazz = loadAndDefineClass(name);
-                    }
-                    return clazz;
+            // we don't call registerAsParallelCapable() on JDK7+, so we need to synchronize on this.
+            synchronized (this) {
+                Class<?> clazz = findLoadedClass(name);
+                if (clazz == null) {
+                    clazz = loadAndDefineClass(name);
                 }
-            } finally {
-                closeResource(classLoadingMutex);
+                return clazz;
             }
         }
         return delegatingClassLoader.loadClass(name);
@@ -113,7 +100,7 @@ public class FilteringClassLoader extends ClassLoader {
         InputStream is = null;
         ByteArrayOutputStream os = null;
         try {
-            is = getResourceAsStream(pattern.matcher(name).replaceAll("/").concat(".class"));
+            is = getResourceAsStream(name.replace('.', '/') + ".class");
             os = new ByteArrayOutputStream();
 
             int length;
@@ -121,8 +108,7 @@ public class FilteringClassLoader extends ClassLoader {
                 os.write(buffer, 0, length);
             }
 
-            byte[] data = os.toByteArray();
-            return defineClass(name, data, 0, data.length);
+            return defineClass(name, os.toByteArray(), 0, os.size());
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
         } finally {

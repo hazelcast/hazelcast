@@ -51,7 +51,6 @@ public final class ServiceLoader {
     private static final boolean USE_CLASSLOADING_FALLBACK = getBoolean("hazelcast.compat.classloading.hooks.fallback");
 
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
-    private static final String FILTERING_CLASS_LOADER = FilteringClassLoader.class.getCanonicalName();
 
     // see https://github.com/hazelcast/hazelcast/issues/3922
     private static final String IGNORED_GLASSFISH_MAGIC_CLASSLOADER =
