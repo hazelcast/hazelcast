@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -38,15 +39,17 @@ public final class Contexts {
         private final int index;
         private final SerializationService serService;
         private final boolean snapshottingEnabled;
+        private final ProcessingGuarantee processingGuarantee;
 
-        public ProcCtx(JetInstance instance, SerializationService serService,
-                       ILogger logger, String vertexName, int index, boolean snapshottingEnabled) {
+        public ProcCtx(JetInstance instance, SerializationService serService, ILogger logger, String vertexName,
+                       int index, boolean snapshottingEnabled, ProcessingGuarantee processingGuarantee) {
             this.instance = instance;
             this.serService = serService;
             this.logger = logger;
             this.vertexName = vertexName;
             this.index = index;
             this.snapshottingEnabled = snapshottingEnabled;
+            this.processingGuarantee = processingGuarantee;
         }
 
         @Nonnull
@@ -75,6 +78,11 @@ public final class Contexts {
         @Override
         public boolean snapshottingEnabled() {
             return snapshottingEnabled;
+        }
+
+        @Override
+        public ProcessingGuarantee processingGuarantee() {
+            return processingGuarantee;
         }
 
         public SerializationService getSerializationService() {

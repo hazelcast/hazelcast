@@ -35,7 +35,7 @@ package com.hazelcast.jet.config;
  * process any more items from inputs from which the barrier was already
  * received. If the stream is skewed (due to partition imbalance, long GC pause
  * on some member or a network hiccup), processing has to be halted until the
- * situation recovers. At least once mode allows processing of further items
+ * situation recovers. At-least-once mode allows processing of further items
  * during this alignment period.
  */
 public enum ProcessingGuarantee {

@@ -201,6 +201,9 @@ public final class Processors {
      * and performs the provided aggregate operation on each group. After
      * exhausting all its input it emits one {@code Map.Entry<K, R>} per
      * distinct key.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param getKeyFn computes the key from the entry
      * @param aggrOp the aggregate operation to perform
@@ -226,6 +229,9 @@ public final class Processors {
      * applies the {@link AggregateOperation1#accumulateFn()} accumulate}
      * primitive to each group. After exhausting all its input it emits one
      * {@code Map.Entry<K, A>} per observed key.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param getKeyFn computes the key from the entry
      * @param aggrOp the aggregate operation to perform
@@ -251,6 +257,9 @@ public final class Processors {
      * items may be different on each edge. For each edge a separate key
      * extracting function must be supplied and the aggregate operation must
      * contain a separate accumulation function for each edge.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param getKeyFs functions that compute the grouping key
      * @param aggrOp the aggregate operation
@@ -278,6 +287,9 @@ public final class Processors {
      * items may be different on each edge. For each edge a separate key
      * extracting function must be supplied and the aggregate operation must
      * contain a separate accumulation function for each edge.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param getKeyFs functions that compute the grouping key
      * @param aggrOp the aggregate operation to perform
@@ -303,6 +315,9 @@ public final class Processors {
      * <p>
      * Since the input to this vertex must be bounded, its primary use case
      * are batch jobs.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <A> type of accumulator returned from {@code aggrOp.createAccumulatorFn()}
@@ -324,6 +339,9 @@ public final class Processors {
      * <p>
      * Since the input to this vertex must be bounded, its primary use case are
      * batch jobs.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T> type of received item
@@ -347,6 +365,9 @@ public final class Processors {
      * <p>
      * Since the input to this vertex must be bounded, its primary use case are
      * batch jobs.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T> type of received item
@@ -370,6 +391,9 @@ public final class Processors {
      * <p>
      * Since the input to this vertex must be bounded, its primary use case are
      * batch jobs.
+     * <p>
+     * This processor has state, but does not save it to snapshot. On job
+     * restart, the state will be lost.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T> type of received item
@@ -403,6 +427,16 @@ public final class Processors {
      * it deletes from storage all the frames that trail behind the emitted
      * windows. The type of emitted items is {@link TimestampedEntry
      * TimestampedEntry&lt;K, A>} so there is one item per key per window position.
+     * <p>
+     * <i>Behavior on job restart</i><br>
+     * This processor saves its state to snapshot. After restart, it can
+     * continue accumulating where it left off.
+     * <p>
+     * After a restart in at-least-once mode, watermarks are allowed to go back
+     * in time. If such a watermark is received, some windows that were emitted
+     * in previous execution will be re-emitted. These windows might miss
+     * events as some of them had already been evicted before the snapshot was
+     * done in previous execution.
      */
     @Nonnull
     public static <T, K, A, R> DistributedSupplier<Processor> aggregateToSlidingWindowP(
@@ -436,6 +470,9 @@ public final class Processors {
      * timestamp <= wmVal} and deletes these frames from its storage.
      * The type of emitted items is {@link TimestampedEntry
      * TimestampedEntry&lt;K, A>} so there is one item per key per frame.
+     * <p>
+     * When a state snapshot is requested, the state is flushed to second-stage
+     * processor and nothing is saved to snapshot.
      *
      * @param <T> input item type
      * @param <K> type of key returned from {@code getKeyFn}
@@ -477,6 +514,16 @@ public final class Processors {
      * it deletes from storage all the frames that trail behind the emitted
      * windows. The type of emitted items is {@link TimestampedEntry
      * TimestampedEntry&lt;K, A>} so there is one item per key per window position.
+     * <p>
+     * <i>Behavior on job restart</i><br>
+     * This processor saves its state to snapshot. After restart, it can
+     * continue accumulating where it left off.
+     * <p>
+     * After a restart in at-least-once mode, watermarks are allowed to go back
+     * in time. If such a watermark is received, some windows that were emitted
+     * in previous execution will be re-emitted. These windows might miss
+     * events as some of them had already been evicted before the snapshot was
+     * done in previous execution.
      *
      * @param <A> type of the accumulator
      * @param <R> type of the finished result returned from {@code aggrOp.
@@ -494,7 +541,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors for a vertexs that performs a general
+     * Returns a supplier of processors for a vertex that performs a general
      * group-by-key-and-window operation and applies the provided aggregate
      * operation on groups.
      *
@@ -531,9 +578,10 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors for a vetex that aggregates events into
+     * Returns a supplier of processors for a vertex that aggregates events into
      * session windows. Events and windows under different grouping keys are
-     * treated independently.
+     * treated independently. Outputs objects of type {@link
+     * com.hazelcast.jet.core.Session}.
      * <p>
      * The functioning of this vertex is easiest to explain in terms of the
      * <em>event interval</em>: the range {@code [timestamp, timestamp +
@@ -543,6 +591,16 @@ public final class Processors {
      * window is extended to cover the entire interval of the new event. The
      * event may happen to belong to two existing windows if its interval
      * bridges the gap between them; in that case they are combined into one.
+     * <p>
+     * <i>Behavior on job restart</i><br>
+     * This processor saves its state to snapshot. After restart, it can
+     * continue accumulating where it left off.
+     * <p>
+     * After a restart in at-least-once mode, watermarks are allowed to go back
+     * in time. The processor evicts state based on watermarks it received. If
+     * it receives duplicate watermark, it might emit sessions with missing
+     * events, because they were already evicted. The sessions before and after
+     * snapshot might overlap, which they normally don't.
      *
      * @param sessionTimeout maximum gap between consecutive events in the same session window
      * @param getTimestampFn function to extract the timestamp from the item
@@ -566,9 +624,23 @@ public final class Processors {
 
     /**
      * Returns a supplier of processors for a vertex that inserts {@link
-     * com.hazelcast.jet.core.Watermark watermark items} into a stream. The
+     * com.hazelcast.jet.core.Watermark watermark items} into the stream. The
      * value of the watermark is determined by the supplied {@link
      * WatermarkPolicy} instance.
+     * <p>
+     * This processor also drops late items. It never allows an event, which is
+     * late with regard to already emitted watermark to pass.
+     * <p>
+     * The processor saves value of the last emitted watermark to snapshot.
+     * Different instances of this processor can be at different watermark at
+     * snapshot time. After restart all instances will start at watermark of
+     * the most-behind instance before the restart.
+     * <p>
+     * This might sound as it could break the monotonicity requirement, but
+     * thanks to watermark coalescing, watermarks are only delivered for
+     * downstream processing after they have been received from <i>all</i>
+     * upstream processors. Another side effect of this is, that a late event,
+     * which was dropped before restart, is not considered late after restart.
      *
      * @param <T> the type of the stream item
      */
@@ -586,6 +658,8 @@ public final class Processors {
      * item, emits the result of applying the given mapping function to it. If
      * the result is {@code null}, it emits nothing. Therefore this vertex can
      * be used to implement filtering semantics as well.
+     * <p>
+     * This processor is stateless.
      *
      * @param mapper the mapping function
      * @param <T> type of received item
@@ -607,6 +681,8 @@ public final class Processors {
     /**
      * Returns a supplier of processors for a vertex that emits the same items
      * it receives, but only those that pass the given predicate.
+     * <p>
+     * This processor is stateless.
      *
      * @param predicate the predicate to test each received item against
      * @param <T> type of received item
@@ -626,6 +702,8 @@ public final class Processors {
      * Returns a supplier of processors for a vertex that applies the provided
      * item-to-traverser mapping function to each received item and emits all
      * the items from the resulting traverser.
+     * <p>
+     * This processor is stateless.
      *
      * @param mapper function that maps the received item to a traverser over output items
      * @param <T> received item type

@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
@@ -65,7 +66,7 @@ public class ProcessorTaskletTest_Blocking {
     @Before
     public void setUp() {
         this.processor = new PassThroughProcessor();
-        this.context = new ProcCtx(null, null, null, null, 0, false);
+        this.context = new ProcCtx(null, null, null, null, 0, false, EXACTLY_ONCE);
         this.jobFuture = new CompletableFuture<>();
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.instreams = new ArrayList<>();

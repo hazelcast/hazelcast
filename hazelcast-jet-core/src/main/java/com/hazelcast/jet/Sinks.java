@@ -66,7 +66,7 @@ public final class Sinks {
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code IMap} with the specified name.
      * <p>
-     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
@@ -80,7 +80,7 @@ public final class Sinks {
      * {@code IMap} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      * <p>
-     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
@@ -95,7 +95,7 @@ public final class Sinks {
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code ICache} with the specified name.
      * <p>
-     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
@@ -109,7 +109,7 @@ public final class Sinks {
      * {@code ICache} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      * <p>
-     * This sink provides the exactly once guarantee thanks to <i>idempotent
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
@@ -124,7 +124,7 @@ public final class Sinks {
      * IList} with the specified name.
      * <p>
      * No state is saved to snapshot for this sink. After the job is restarted,
-     * the items will likely be duplicated, providing an <i>at least once</i>
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      */
     public static <E> Sink<E> writeList(String listName) {
@@ -137,7 +137,7 @@ public final class Sinks {
      * supplied {@code ClientConfig}.
      * <p>
      * No state is saved to snapshot for this sink. After the job is restarted,
-     * the items will likely be duplicated, providing an <i>at least once</i>
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      */
     public static <E> Sink<E> writeRemoteList(String listName, ClientConfig clientConfig) {
@@ -153,7 +153,7 @@ public final class Sinks {
      * follows each item with a newline character.
      * <p>
      * No state is saved to snapshot for this sink. After the job is restarted,
-     * the items will likely be duplicated, providing an <i>at least once</i>
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      */
     public static <E> Sink<E> writeSocket(
@@ -202,7 +202,7 @@ public final class Sinks {
      * line separator.
      * <p>
      * No state is saved to snapshot for this sink. After the job is restarted,
-     * the items will likely be duplicated, providing an <i>at least once</i>
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      *
      * @param directoryName directory to create the files in. Will be created

@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.TimestampedEntry;
@@ -59,6 +60,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     // package-visible for testing
     final Map<Long, Map<Object, A>> tsToKeyToAcc = new HashMap<>();
     Map<Object, A> slidingWindow;
+    long nextWinToEmit = Long.MIN_VALUE;
 
     private final WindowDefinition wDef;
     private final DistributedToLongFunction<? super T> getFrameTsFn;
@@ -77,7 +79,9 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     // over the entire keyset.
     private long topTs = Long.MIN_VALUE;
 
-    private long nextWinToEmit = Long.MIN_VALUE;
+    // value to be used temporarily during snapshot restore
+    private long minRestoredNextWinToEmit = Long.MAX_VALUE;
+    private ProcessingGuarantee processingGuarantee;
 
     public SlidingWindowP(
             Function<? super T, ?> getKeyFn,
@@ -96,6 +100,11 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         this.isLastStage = isLastStage;
         this.wmFlatMapper = flatMapper(wm -> windowTraverserAndEvictor(wm.timestamp()).append(wm));
         this.emptyAcc = aggrOp.createFn().get();
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        processingGuarantee = context.processingGuarantee();
     }
 
     @Override
@@ -143,11 +152,12 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
-            assert Keys.NEXT_WIN_TO_EMIT.equals(((BroadcastKey) key).key());
+            assert Keys.NEXT_WIN_TO_EMIT.equals(((BroadcastKey) key).key()) : "key=" + ((BroadcastKey) key).key();
             long newNextWinToEmit = (long) value;
-            assert nextWinToEmit == Long.MIN_VALUE || nextWinToEmit == newNextWinToEmit
+            assert processingGuarantee != ProcessingGuarantee.EXACTLY_ONCE
+                        || minRestoredNextWinToEmit == Long.MAX_VALUE || minRestoredNextWinToEmit == newNextWinToEmit
                     : "different values for nextWinToEmit restored, before=" + nextWinToEmit + ", new=" + newNextWinToEmit;
-            nextWinToEmit = newNextWinToEmit;
+            minRestoredNextWinToEmit = Math.min(newNextWinToEmit, minRestoredNextWinToEmit);
             return;
         }
         SnapshotKey k = (SnapshotKey) key;
@@ -160,6 +170,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
 
     @Override
     public boolean finishSnapshotRestore() {
+        nextWinToEmit = minRestoredNextWinToEmit;
         logFine(getLogger(), "Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
         return true;
     }
@@ -262,7 +273,8 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
                 : LongStream.iterate(start, n -> n + step).limit(1 + (end - start) / step);
     }
 
-    private enum Keys {
+    // package-visible for test
+    enum Keys {
         NEXT_WIN_TO_EMIT
     }
 }

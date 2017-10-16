@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.test;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
 
@@ -33,6 +34,7 @@ public class TestProcessorContext implements Processor.Context {
     private String vertexName = "testVertex";
     private int globalProcessorIndex;
     private boolean snapshottingEnabled;
+    private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.EXACTLY_ONCE;
 
     /**
      * Constructor with default values.
@@ -104,6 +106,19 @@ public class TestProcessorContext implements Processor.Context {
      */
     public TestProcessorContext setSnapshottingEnabled(boolean snapshottingEnabled) {
         this.snapshottingEnabled = snapshottingEnabled;
+        return this;
+    }
+
+    @Override
+    public ProcessingGuarantee processingGuarantee() {
+        return processingGuarantee;
+    }
+
+    /**
+     * Sets the processing guarantee.
+     */
+    public TestProcessorContext setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
+        this.processingGuarantee = processingGuarantee;
         return this;
     }
 }

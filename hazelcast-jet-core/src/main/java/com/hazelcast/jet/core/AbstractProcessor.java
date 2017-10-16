@@ -272,9 +272,17 @@ public abstract class AbstractProcessor implements Processor {
      * The default implementation just emits the watermark downstream
      * to all ordinals.
      * <p>
+     * <i>Caution for jobs with at-least-once guarantee</i><br>
+     * In snapshotted jobs with <i>at-least-once</i> processing guarantee it
+     * can happen that the watermarks break the monotonicity requirement when
+     * the job is restarted. This is caused by the fact that watermark, like any
+     * other stream item, can be delivered duplicately after restart. This
+     * means that after a restart, a processor can be asked to process a
+     * watermark older than it already processed.
+     * <p>
      * <strong>NOTE:</strong> unless the processor doesn't differentiate between
      * its inbound edges, the first choice should be leaving this method alone
-     * and instead overriding the specific {@code tryProcessN()} methods for
+     * and instead overriding the specific {@code tryProcessWmN()} methods for
      * each ordinal the processor expects.
      *
      * @param ordinal ordinal of the edge that delivered the watermark

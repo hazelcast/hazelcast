@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -232,5 +233,10 @@ public interface Processor {
          * Returns true, if snapshots will be saved for this job.
          */
         boolean snapshottingEnabled();
+
+        /**
+         * Returns the guarantee for current job.
+         */
+        ProcessingGuarantee processingGuarantee();
     }
 }

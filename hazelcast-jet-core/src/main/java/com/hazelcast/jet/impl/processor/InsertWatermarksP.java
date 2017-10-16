@@ -50,7 +50,7 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
     private long currWm = Long.MIN_VALUE;
     private long lastEmittedWm = Long.MIN_VALUE;
 
-    // value to be used during temporarily snapshot restore
+    // value to be used temporarily during snapshot restore
     private long minRestoredWm = Long.MAX_VALUE;
 
     /**

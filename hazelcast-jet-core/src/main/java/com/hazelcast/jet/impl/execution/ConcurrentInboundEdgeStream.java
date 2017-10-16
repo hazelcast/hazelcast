@@ -55,8 +55,8 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     /**
      * @param waitForSnapshot If true, queues won't be drained until the same
-     *                        barrier is received from all of them. This will enforce exactly once
-     *                        vs. at least once, if it is false.
+     *                        barrier is received from all of them. This will enforce exactly-once
+     *                        vs. at-least-once, if it is false.
      */
     public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority,
                                        long lastSnapshotId, boolean waitForSnapshot) {

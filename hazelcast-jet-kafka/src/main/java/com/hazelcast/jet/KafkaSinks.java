@@ -40,7 +40,7 @@ public final class KafkaSinks {
      * member using the supplied properties.
      * <p>
      * Behavior on job restart: the processor is stateless. If the job is
-     * restarted, duplicate events can occur. If you need exactly once
+     * restarted, duplicate events can occur. If you need exactly-once
      * behavior, you must ensure idempotence on the application level.
      * <p>
      * IO failures are generally handled by Kafka producer and generally do not
