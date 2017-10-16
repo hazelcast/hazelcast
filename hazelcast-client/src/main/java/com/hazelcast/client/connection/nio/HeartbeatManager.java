@@ -78,7 +78,7 @@ public class HeartbeatManager implements Runnable {
 
             if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
                 if (connection.isHeartBeating()) {
-                    logger.warning("HeartbeatManager failed to connection: " + connection);
+                    logger.warning("Heartbeat is failed to connection: " + connection);
                     connection.onHeartbeatFailed();
                     fireHeartbeatStopped(connection);
                 }
@@ -99,13 +99,13 @@ public class HeartbeatManager implements Runnable {
                     @Override
                     public void onFailure(Throwable t) {
                         if (connection.isAlive()) {
-                            logger.warning("Error receiving heartbeat for connection: " + connection, t);
+                            logger.warning("Error receiving ping answer from connection: " + connection, t);
                         }
                     }
                 });
             } else {
                 if (!connection.isHeartBeating()) {
-                    logger.warning("HeartbeatManager is back to healthy for connection: " + connection);
+                    logger.warning("Heartbeat is back to healthy for connection: " + connection);
                     connection.onHeartbeatResumed();
                     fireHeartbeatResumed(connection);
                 }
