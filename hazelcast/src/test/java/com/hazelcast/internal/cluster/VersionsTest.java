@@ -45,4 +45,9 @@ public class VersionsTest extends HazelcastTestSupport {
     public void version_3_9() {
         assertEquals(Version.of(3, 9), Versions.V3_9);
     }
+
+    @Test
+    public void version_3_10() {
+        assertEquals(Version.of(3, 10), Versions.V3_10);
+    }
 }
