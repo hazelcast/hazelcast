@@ -1,0 +1,191 @@
+/*
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.impl.processor;
+
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.TimestampKind;
+import com.hazelcast.jet.core.TimestampedEntry;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.WindowDefinition;
+import com.hazelcast.jet.core.test.TestInbox;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import java.util.Collection;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
+import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * This test checks the flushing of internal buffer downstream instead of saving
+ * anything to snapshot in stage 1 out of 2.
+ */
+@Category(QuickTest.class)
+public class SlidingWindowP_twoStageSnapshotTest {
+
+    private static final Long KEY = 77L;
+
+    private SlidingWindowP<?, ?, ?> lastSuppliedStage1Processor;
+    private SlidingWindowP<?, ?, ?> lastSuppliedStage2Processor;
+    private DistributedSupplier<SlidingWindowP> stage1Supplier;
+    private DistributedSupplier<SlidingWindowP> stage2Supplier;
+
+    @Before
+    public void before() {
+        WindowDefinition windowDef = slidingWindowDef(4, 1);
+
+        AggregateOperation1<Entry<?, Long>, LongAccumulator, Long> operation = AggregateOperation
+                .withCreate(LongAccumulator::new)
+                .andAccumulate((LongAccumulator acc, Entry<?, Long> item) -> acc.addExact(item.getValue()))
+                .andCombine(LongAccumulator::addExact)
+                .andDeduct(LongAccumulator::subtractExact)
+                .andFinish(LongAccumulator::get);
+
+        DistributedSupplier<Processor> procSupplier1 = accumulateByFrameP(
+                t -> KEY,
+                Entry<Long, Long>::getKey,
+                TimestampKind.EVENT,
+                windowDef,
+                operation);
+
+        DistributedSupplier<Processor> procSupplier2 = combineToSlidingWindowP(windowDef, operation);
+
+        // new supplier to save the last supplied instance
+        stage1Supplier = () -> lastSuppliedStage1Processor = (SlidingWindowP<?, ?, ?>) procSupplier1.get();
+        stage2Supplier = () -> lastSuppliedStage2Processor = (SlidingWindowP<?, ?, ?>) procSupplier2.get();
+    }
+
+    @After
+    public void after() {
+        assertEmptyState(lastSuppliedStage1Processor);
+        assertEmptyState(lastSuppliedStage2Processor);
+    }
+
+    @Test
+    public void test() {
+        SlidingWindowP stage1p1 = stage1Supplier.get();
+        SlidingWindowP stage1p2 = stage1Supplier.get();
+        SlidingWindowP stage2p = stage2Supplier.get();
+
+        TestOutbox stage1p1Outbox = newOutbox();
+        TestOutbox stage1p2Outbox = newOutbox();
+        TestOutbox stage2Outbox = newOutbox();
+        TestInbox inbox = new TestInbox();
+        TestProcessorContext context = new TestProcessorContext().setSnapshottingEnabled(true);
+
+        stage1p1.init(stage1p1Outbox, context);
+        stage1p2.init(stage1p2Outbox, context);
+        stage2p.init(stage2Outbox, context);
+
+        // process some events in the 1st stage
+        assertTrue(stage1p1.tryProcess0(entry(1L, 1L))); // entry key is time
+        assertTrue(stage1p2.tryProcess0(entry(2L, 2L)));
+        assertTrue(stage1p1Outbox.queueWithOrdinal(0).isEmpty() && stage2Outbox.queueWithOrdinal(0).isEmpty());
+
+        // save state in stage1
+        assertTrue(stage1p1.saveToSnapshot());
+        assertTrue(stage1p2.saveToSnapshot());
+        assertTrue("something put to snapshot outbox in stage1",
+                stage1p1Outbox.snapshotQueue().isEmpty() && stage1p2Outbox.snapshotQueue().isEmpty());
+        assertEmptyState(stage1p1);
+        assertEmptyState(stage1p2);
+        // process normal outbox in stage2
+        processStage2(stage2p, stage1p1Outbox, stage1p2Outbox, inbox);
+        // create new instances for stage1
+        stage1p1 = stage1Supplier.get();
+        stage1p2 = stage1Supplier.get();
+        stage1p1Outbox = newOutbox();
+        stage1p2Outbox = newOutbox();
+        stage1p1.init(stage1p1Outbox, context);
+        stage1p2.init(stage1p2Outbox, context);
+
+        // process some more events in 1st stage
+        assertTrue(stage1p1.tryProcess0(entry(3L, 3L)));
+        assertTrue(stage1p1.tryProcess0(entry(4L, 4L)));
+
+        // process flushing WM
+        assertTrue(stage1p1.tryProcessWm0(wm(10)));
+        assertTrue(stage1p2.tryProcessWm0(wm(10)));
+        // remove the WM from outbox1, so that it is not duplicated. We don't emulate CIES coalescing.
+        assertTrue(stage1p1Outbox.queueWithOrdinal(0).remove(wm(10)));
+        processStage2(stage2p, stage1p1Outbox, stage1p2Outbox, inbox);
+
+        // Then
+        assertEquals(
+                collectionToString(asList(
+                        outboxFrame(2, 1),
+                        outboxFrame(3, 3),
+                        outboxFrame(4, 6),
+                        outboxFrame(5, 10),
+                        outboxFrame(6, 9),
+                        outboxFrame(7, 7),
+                        outboxFrame(8, 4),
+                        wm(10)
+                )),
+                collectionToString(stage2Outbox.queueWithOrdinal(0)));
+    }
+
+    private void processStage2(SlidingWindowP p, TestOutbox stage1p1Outbox, TestOutbox stage1p2Outbox, TestInbox inbox) {
+        inbox.addAll(stage1p1Outbox.queueWithOrdinal(0));
+        inbox.addAll(stage1p2Outbox.queueWithOrdinal(0));
+        stage1p1Outbox.queueWithOrdinal(0).clear();
+        stage1p2Outbox.queueWithOrdinal(0).clear();
+        p.process(0, inbox);
+        assertTrue(inbox.isEmpty());
+    }
+
+    private TestOutbox newOutbox() {
+        return new TestOutbox(new int[] {128}, 128);
+    }
+
+    private void assertEmptyState(SlidingWindowP p) {
+        assertTrue("tsToKeyToFrame is not empty: " + p.tsToKeyToAcc,
+                p.tsToKeyToAcc.isEmpty());
+        assertTrue("slidingWindow is not empty: " + p.slidingWindow,
+                p.slidingWindow == null || p.slidingWindow.isEmpty());
+    }
+
+    private static Watermark wm(long timestamp) {
+        return new Watermark(timestamp);
+    }
+
+    private static TimestampedEntry<Long, ?> outboxFrame(long ts, long value) {
+        return new TimestampedEntry<>(ts, KEY, value);
+    }
+
+    private static String collectionToString(Collection<?> list) {
+        return list.stream()
+                   .map(String::valueOf)
+                   .collect(Collectors.joining("\n"));
+    }
+}
