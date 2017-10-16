@@ -21,7 +21,8 @@ import com.hazelcast.jet.core.Edge;
 import java.io.Serializable;
 
 /**
- * The configuration object for a DAG {@link Edge}.
+ * A configuration object for a DAG {@link Edge} that holds fine-tuning
+ * parameters that influence its performance characteristics.
  */
 public class EdgeConfig implements Serializable {
 

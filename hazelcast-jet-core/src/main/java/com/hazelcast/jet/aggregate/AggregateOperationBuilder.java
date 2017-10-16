@@ -119,8 +119,8 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied {@code accumulate} primitive for stream-1.
-         * Also selects the fixed-arity variant of the aggregate operation.
+         * Registers the supplied {@code accumulate} primitive for stream-1,
+         * returning the arity-2 variant of the builder.
          *
          * @param accumulateFn1 the {@code accumulate} primitive for stream-1
          * @param <T1> the expected type of item in stream-1
@@ -196,8 +196,8 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the supplied {@code accumulate} primitive for stream-2.
-         * Also selects the fixed-arity variant of the aggregate operation.
+         * Registers the supplied {@code accumulate} primitive for stream-2,
+         * returning the arity-3 variant of the builder.
          *
          * @param accumulateFn2 the {@code accumulate} primitive for stream-2
          * @param <T2> the expected type of item in stream-2

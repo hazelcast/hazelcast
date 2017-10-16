@@ -26,10 +26,10 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import java.io.IOException;
 
 /**
- * Hazelcast serializer hooks for the classes in the
- * {@code com.hazelcast.jet.core} package.
+ * Hazelcast serializer hooks for the classes in the {@code
+ * com.hazelcast.jet.core} package. This is not a public-facing API.
  */
-public class CoreSerializerHooks {
+class CoreSerializerHooks {
     public static final class WatermarkHook implements SerializerHook<Watermark> {
 
         @Override

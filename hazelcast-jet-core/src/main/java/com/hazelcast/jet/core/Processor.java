@@ -49,74 +49,6 @@ import javax.annotation.Nonnull;
 public interface Processor {
 
     /**
-     * Initializes this processor with the outbox that the processing methods
-     * must use to deposit their output items. This method will be called
-     * exactly once and strictly before any calls to processing methods ({@link
-     * #process(int, Inbox)} and {@link #complete()}).
-     * <p>
-     * The default implementation does nothing.
-     */
-    default void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-    }
-
-    /**
-     * Called with a batch of items retrieved from an inbound edge's stream. The
-     * items are in the inbox and this method may process zero or more of them,
-     * removing each item after it is processed. Does not remove an item until it
-     * is done with it.
-     * <p>
-     * If the method returns with items still present in the inbox, it will be
-     * called again before proceeding to call any other methods. There is at
-     * least one item in the inbox when this method is called.
-     * <p>
-     * The default implementation does nothing.
-     *
-     * @param ordinal ordinal of the inbound edge
-     * @param inbox   the inbox containing the pending items
-     */
-    default void process(int ordinal, @Nonnull Inbox inbox) {
-    }
-
-    /**
-     * Called after the edge input with the supplied {@code ordinal} is
-     * exhausted. If it returns {@code false}, it will be called again before
-     * proceeding to call any other method.
-     *
-     * @return {@code true} if the processor is now done completing the edge,
-     *         {@code false} otherwise.
-     */
-    default boolean completeEdge(int ordinal) {
-        return true;
-    }
-
-    /**
-     * Called when there is no pending data in the inbox. Allows the processor
-     * to produce output in the absence of input. If it returns {@code false},
-     * it will be called again before proceeding to call any other method.
-     */
-    default boolean tryProcess() {
-        return true;
-    }
-
-    /**
-     * Called after all the inbound edges' streams are exhausted. If it returns
-     * {@code false}, it will be invoked again until it returns {@code true}.
-     * After this method is called, no other processing methods will be called on
-     * this processor, except for {@link #saveToSnapshot()}.
-     * <p>
-     * Non-cooperative processors are required to return from this method from
-     * time to time to give the system a chance to check for snapshot requests
-     * and job cancellation. The time the processor spends in this method affects
-     * the latency of snapshots and job cancellations.
-     *
-     * @return {@code true} if the completing step is now done, {@code false}
-     *         otherwise.
-     */
-    default boolean complete() {
-        return true;
-    }
-
-    /**
      * Tells whether this processor is able to participate in cooperative
      * multithreading. This means that each invocation of a processing method
      * will take a reasonably small amount of time (up to a millisecond).
@@ -149,9 +81,78 @@ public interface Processor {
     }
 
     /**
-     * Stores its snapshotted state by adding items to the outbox's snapshot
-     * bucket. If it returns {@code false}, it will be called again before
+     * Initializes this processor with the outbox that the processing methods
+     * must use to deposit their output items. This method will be called
+     * exactly once and strictly before any calls to processing methods ({@link
+     * #process(int, Inbox)} and {@link #complete()}).
+     * <p>
+     * The default implementation does nothing.
+     */
+    default void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    }
+
+    /**
+     * Called with a batch of items retrieved from an inbound edge's stream. The
+     * items are in the inbox and this method may process zero or more of them,
+     * removing each item after it is processed. Does not remove an item until it
+     * is done with it.
+     * <p>
+     * If the method returns with items still present in the inbox, it will be
+     * called again before proceeding to call any other methods. There is at
+     * least one item in the inbox when this method is called.
+     * <p>
+     * The default implementation does nothing.
+     *
+     * @param ordinal ordinal of the inbound edge
+     * @param inbox   the inbox containing the pending items
+     */
+    default void process(int ordinal, @Nonnull Inbox inbox) {
+    }
+
+    /**
+     * Called when there is no pending data in the inbox. Allows the processor
+     * to produce output in the absence of input. If it returns {@code false},
+     * it will be called again before proceeding to call any other method.
+     */
+    default boolean tryProcess() {
+        return true;
+    }
+
+    /**
+     * Called after the edge input with the supplied {@code ordinal} is
+     * exhausted. If it returns {@code false}, it will be called again before
      * proceeding to call any other method.
+     *
+     * @return {@code true} if the processor is now done completing the edge,
+     *         {@code false} otherwise.
+     */
+    default boolean completeEdge(int ordinal) {
+        return true;
+    }
+
+    /**
+     * Called after all the inbound edges' streams are exhausted. If it returns
+     * {@code false}, it will be invoked again until it returns {@code true}.
+     * After this method is called, no other processing methods will be called on
+     * this processor, except for {@link #saveToSnapshot()}.
+     * <p>
+     * Non-cooperative processors are required to return from this method from
+     * time to time to give the system a chance to check for snapshot requests
+     * and job cancellation. The time the processor spends in this method affects
+     * the latency of snapshots and job cancellations.
+     *
+     * @return {@code true} if the completing step is now done, {@code false}
+     *         otherwise.
+     */
+    default boolean complete() {
+        return true;
+    }
+
+    /**
+     * Stores its snapshotted state by adding items to the outbox's {@link
+     * Outbox#offerToSnapshot(Object, Object) snapshot bucket}. If it returns
+     * {@code false}, it will be called again before proceeding to call any
+     * other method.
      * <p>
      * This method will only be called after a call to {@link #process(int,
      * Inbox) process()} returns and the inbox is empty. After all the input is
@@ -170,12 +171,9 @@ public interface Processor {
      * snapshot" operation. The type of items in the inbox is {@code
      * Map.Entry}. May emit items to the outbox.
      * <p>
-     * If there is no data in the snapshot to restore, this method won't be
-     * called at all.
-     * <p>
-     * If the method returns with items still present in the inbox, it will be
-     * called again before proceeding to call any other methods. There is at
-     * least one item in the inbox when this method is called.
+     * If it returns with items still present in the inbox, it will be
+     * called again before proceeding to call any other methods. It is
+     * never called with an empty inbox.
      * <p>
      * The default implementation throws an exception.
      */
@@ -185,13 +183,11 @@ public interface Processor {
     }
 
     /**
-     * Called after all keys have been restored using {@link
-     * #restoreFromSnapshot(Inbox)}, and also in case when there were no keys
-     * to restore, but the job was started using a state snapshot. It's not
-     * called, if the job was not started using a state snapshot.
+     * Called after a job was restarted from a snapshot and the processor
+     * has consumed all the snapshot data.
      * <p>
-     * If it returns {@code false}, it will be
-     * called again before proceeding to call any other method.
+     * If it returns {@code false}, it will be called again before proceeding
+     * to call any other methods.
      * <p>
      * The default implementation takes no action and returns {@code true}.
      */

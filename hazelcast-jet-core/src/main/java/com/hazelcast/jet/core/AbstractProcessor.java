@@ -74,6 +74,8 @@ public abstract class AbstractProcessor implements Processor {
     private Object pendingItem;
     private Entry<?, ?> pendingSnapshotItem;
 
+    // final implementations of Processor API
+
     /**
      * Specifies what this processor's {@link #isCooperative()} method will return.
      * The method will have no effect if called after the processor has been
@@ -101,25 +103,15 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Method that can be overridden to perform any necessary initialization
-     * for the processor. It is called exactly once and strictly before any of
-     * the processing methods ({@link #process(int, Inbox) process()} and
-     * {@link #complete()}), but after the outbox and {@link #getLogger()
-     * logger} have been initialized.
-     * <p>
-     * Subclasses are not required to call this superclass method, it does
-     * nothing.
-     *
-     * @param context the {@link Context context} associated with this processor
+     * Implements the boilerplate of polling the inbox, casting the items to
+     * {@code Map.Entry}, and extracting the key and value. Forwards each
+     * key-value pair to {@link #restoreFromSnapshot(Object, Object)}.
      */
-    protected void init(@Nonnull Context context) throws Exception {
-    }
-
-    /**
-     * Returns the logger associated with this processor instance.
-     */
-    protected final ILogger getLogger() {
-        return logger;
+    @Override
+    public final void restoreFromSnapshot(@Nonnull Inbox inbox) {
+        for (Map.Entry entry; (entry = (Map.Entry) inbox.poll()) != null; ) {
+            restoreFromSnapshot(entry.getKey(), entry.getValue());
+        }
     }
 
     /**
@@ -153,6 +145,26 @@ public abstract class AbstractProcessor implements Processor {
         } catch (Exception e) {
             throw sneakyThrow(e);
         }
+    }
+
+
+
+    //                Callback methods designed to be overridden by subclasses
+
+
+    /**
+     * Method that can be overridden to perform any necessary initialization
+     * for the processor. It is called exactly once and strictly before any of
+     * the processing methods ({@link #process(int, Inbox) process()} and
+     * {@link #complete()}), but after the outbox and {@link #getLogger()
+     * logger} have been initialized.
+     * <p>
+     * Subclasses are not required to call this superclass method, it does
+     * nothing.
+     *
+     * @param context the {@link Context context} associated with this processor
+     */
+    protected void init(@Nonnull Context context) throws Exception {
     }
 
     /**
@@ -315,31 +327,30 @@ public abstract class AbstractProcessor implements Processor {
         return tryProcessWm(4, wm);
     }
 
-
-    /**
-     * Implements the boilerplate of polling the inbox and casting the items
-     * to {@code Map.Entry}.
-     */
-    @Override
-    public final void restoreFromSnapshot(@Nonnull Inbox inbox) {
-        for (Map.Entry entry; (entry = (Map.Entry) inbox.poll()) != null; ) {
-            restoreFromSnapshot(entry.getKey(), entry.getValue());
-        }
-    }
-
     /**
      * Called to restore one key-value pair from the snapshot to processor's
      * internal state.
      * <p>
-     * The default implementation throws an {@code UnsupportedOperationException}.
-     * However, if you don't override {@link #saveToSnapshot()}, this method will
-     * never be called.
+     * The default implementation throws an {@code
+     * UnsupportedOperationException}, but it will not be called unless you
+     * override {@link #saveToSnapshot()}.
      *
      * @param key      key of the entry from the snapshot
      * @param value    value of the entry from the snapshot
      */
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         throw new UnsupportedOperationException("Missing implementation");
+    }
+
+
+    //                  Convenience methods for subclasses, non-overridable
+
+
+    /**
+     * Returns the logger associated with this processor instance.
+     */
+    protected final ILogger getLogger() {
+        return logger;
     }
 
     /**
@@ -349,7 +360,7 @@ public abstract class AbstractProcessor implements Processor {
      * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
-    protected boolean tryEmit(int ordinal, @Nonnull Object item) {
+    protected final boolean tryEmit(int ordinal, @Nonnull Object item) {
         return outbox.offer(ordinal, item);
     }
 
@@ -360,7 +371,7 @@ public abstract class AbstractProcessor implements Processor {
      * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
-    protected boolean tryEmit(@Nonnull Object item) {
+    protected final boolean tryEmit(@Nonnull Object item) {
         return outbox.offer(item);
     }
 
@@ -371,150 +382,29 @@ public abstract class AbstractProcessor implements Processor {
      * returned, the call must be retried later with the same (or equal) item.
      */
     @CheckReturnValue
-    protected boolean tryEmit(int[] ordinals, @Nonnull Object item) {
+    protected final boolean tryEmit(int[] ordinals, @Nonnull Object item) {
         return outbox.offer(ordinals, item);
     }
 
     /**
-     * Offers one key-value pair to the snapshot bucket.
-     * <p>
-     * The type of the offered key determines which processors receive the key
-     * and value pair when it is restored. If the key is of type {@link
-     * BroadcastKey}, the entry will be restored to all processor instances.
-     * Otherwise, the key will be distributed according to default partitioning
-     * and only a single processor instance will receive the key.
-     *
-     * @return {@code true}, if the item was accepted. If {@code false} is
-     * returned, the call must be retried later with the same (or equal) key
-     * and value.
-     */
-    @CheckReturnValue
-    protected boolean tryEmitToSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        return outbox.offerToSnapshot(key, value);
-    }
-
-    /**
-     * Obtains items from the traverser and offers them to the outbox's bucket
-     * with the supplied ordinal. If the outbox refuses an item, it backs off
-     * and returns {@code false}.
-     * <p>
-     * If this method returns {@code false}, then the same traverser must be
-     * retained by the caller and passed again in the subsequent invocation of
-     * this method, so as to resume emitting where it left off.
-     * <p>
-     * For simplified usage in {@link #tryProcess(int, Object)
-     * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
-     *
-     * @param ordinal ordinal of the target bucket
-     * @param traverser traverser over items to emit
-     * @param onEmit an optional consumer which will be called each time an item is added to the outbox
-     * @return whether the traverser has been exhausted
-     */
-    protected <E> boolean emitFromTraverser(
-            int ordinal, @Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit
-    ) {
-        E item;
-        if (pendingItem != null) {
-            item = (E) pendingItem;
-            pendingItem = null;
-        } else {
-            item = traverser.next();
-        }
-        for (; item != null; item = traverser.next()) {
-            if (tryEmit(ordinal, item)) {
-                if (onEmit != null) {
-                    onEmit.accept(item);
-                }
-            } else {
-                pendingItem = item;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Obtains items from the traverser and offers them to the snapshot bucket
-     * of the outbox. Each item is a {@code Map.Entry} and its key and value
-     * are passed as the two arguments of {@link #tryEmitToSnapshot(Object, Object)}.
-     * If the outbox refuses an item, it backs off and returns {@code false}.
-     * <p>
-     * If this method returns {@code false}, then the same traverser must be
-     * retained by the caller and passed again in the subsequent invocation of
-     * this method, so as to resume emitting where it left off.
-     * <p>
-     * The type of the offered key determines which processors receive the key
-     * and value pair when it is restored. If the key is of type {@link
-     * BroadcastKey}, the entry will be restored to all processor instances.
-     * Otherwise, the key will be distributed according to default partitioning
-     * and only a single processor instance will receive the key.
-     *
-     * @param traverser traverser over the items to emit to the snapshot
-     * @return whether the traverser has been exhausted
-     */
-    protected <T extends Entry<?, ?>> boolean emitFromTraverserToSnapshot(@Nonnull Traverser<T> traverser) {
-        Entry<?, ?> item;
-        if (pendingSnapshotItem != null) {
-            item = pendingSnapshotItem;
-            pendingSnapshotItem = null;
-        } else {
-            item = traverser.next();
-        }
-        for (; item != null; item = traverser.next()) {
-            if (!tryEmitToSnapshot(item.getKey(), item.getValue())) {
-                pendingSnapshotItem = item;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)} which emits to all ordinals.
-     */
-    protected boolean emitFromTraverser(@Nonnull Traverser<?> traverser) {
-        return emitFromTraverser(-1, traverser, null);
-    }
-
-    /**
-     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)} which emits to the specified ordinal.
-     */
-    protected boolean emitFromTraverser(int ordinal, @Nonnull Traverser<?> traverser) {
-        return emitFromTraverser(ordinal, traverser, null);
-    }
-
-    /**
-     * Convenience for {@link #emitFromTraverser(int[], Traverser, Consumer)} which emits to the specified ordinals.
-     */
-    protected boolean emitFromTraverser(int[] ordinals, @Nonnull Traverser<?> traverser) {
-        return emitFromTraverser(ordinals, traverser, null);
-    }
-
-    /**
-     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)} which emits to all ordinals.
-     */
-    protected <E> boolean emitFromTraverser(@Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit) {
-        return emitFromTraverser(-1, traverser, onEmit);
-    }
-
-    /**
      * Obtains items from the traverser and offers them to the outbox's buckets
-     * identified in the supplied array. If the outbox refuses an item, it
-     * backs off and returns {@code false}.
+     * identified in the supplied array. Calls the {@code onEmit} callback (if
+     * supplied) for each emitted item. If the outbox refuses an item, it backs
+     * off and returns {@code false}.
      * <p>
-     * If this method returns {@code false}, then the same traverser must be
-     * retained by the caller and passed again in the subsequent invocation of
-     * this method, so as to resume emitting where it left off.
+     * If this method returns {@code false}, then the caller must retain the
+     * traverser and pass it again in the subsequent invocation of this method,
+     * so as to resume emitting where it left off.
      * <p>
      * For simplified usage from {@link #tryProcess(int, Object)
      * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
      *
      * @param ordinals ordinals of the target bucket
      * @param traverser traverser over items to emit
-     * @param onEmit an optional consumer which will be called each time an item is added to the outbox
+     * @param onEmit optional callback that gets notified of each emitted item
      * @return whether the traverser has been exhausted
      */
-    protected <E> boolean emitFromTraverser(
+    protected final <E> boolean emitFromTraverser(
             @Nonnull int[] ordinals, @Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit
     ) {
         E item;
@@ -538,11 +428,138 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
+     * Obtains items from the traverser and offers them to the outbox's buckets
+     * identified in the supplied array. Calls the {@code onEmit} callback (if
+     * supplied) for each emitted item. If the outbox refuses an item, it backs
+     * off and returns {@code false}.
+     * <p>
+     * If this method returns {@code false}, then the caller must retain the
+     * traverser and pass it again in the subsequent invocation of this method,
+     * so as to resume emitting where it left off.
+     * <p>
+     * For simplified usage in {@link #tryProcess(int, Object)
+     * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
+     *
+     * @param ordinal ordinal of the target bucket
+     * @param traverser traverser over items to emit
+     * @param onEmit optional callback that gets notified of each emitted item
+     * @return whether the traverser has been exhausted
+     */
+    protected final <E> boolean emitFromTraverser(
+            int ordinal, @Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit
+    ) {
+        E item;
+        if (pendingItem != null) {
+            item = (E) pendingItem;
+            pendingItem = null;
+        } else {
+            item = traverser.next();
+        }
+        for (; item != null; item = traverser.next()) {
+            if (tryEmit(ordinal, item)) {
+                if (onEmit != null) {
+                    onEmit.accept(item);
+                }
+            } else {
+                pendingItem = item;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)}
+     * which emits to all ordinals.
+     */
+    protected final <E> boolean emitFromTraverser(@Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit) {
+        return emitFromTraverser(-1, traverser, onEmit);
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)}
+     * which emits to all ordinals.
+     */
+    protected final boolean emitFromTraverser(@Nonnull Traverser<?> traverser) {
+        return emitFromTraverser(-1, traverser, null);
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)}
+     * which emits to the specified ordinal.
+     */
+    protected final boolean emitFromTraverser(int ordinal, @Nonnull Traverser<?> traverser) {
+        return emitFromTraverser(ordinal, traverser, null);
+    }
+
+    /**
+     * Convenience for {@link #emitFromTraverser(int[], Traverser, Consumer)}
+     * which emits to the specified ordinals.
+     */
+    protected final boolean emitFromTraverser(int[] ordinals, @Nonnull Traverser<?> traverser) {
+        return emitFromTraverser(ordinals, traverser, null);
+    }
+
+    /**
+     * Offers one key-value pair to the snapshot bucket.
+     * <p>
+     * The type of the offered key determines which processors receive the key
+     * and value pair when it is restored. If the key is of type {@link
+     * BroadcastKey}, the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning
+     * and only a single processor instance will receive the key.
+     *
+     * @return {@code true}, if the item was accepted. If {@code false} is
+     * returned, the call must be retried later with the same (or equal) key
+     * and value.
+     */
+    @CheckReturnValue
+    protected final boolean tryEmitToSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        return outbox.offerToSnapshot(key, value);
+    }
+
+    /**
+     * Obtains items from the traverser and offers them to the snapshot bucket
+     * of the outbox. Each item is a {@code Map.Entry} and its key and value
+     * are passed as the two arguments of {@link #tryEmitToSnapshot(Object, Object)}.
+     * If the outbox refuses an item, it backs off and returns {@code false}.
+     * <p>
+     * If this method returns {@code false}, then the caller must retain the
+     * traverser and pass it again in the subsequent invocation of this method,
+     * so as to resume emitting where it left off.
+     * <p>
+     * The type of the offered key determines which processors receive the key
+     * and value pair when it is restored. If the key is of type {@link
+     * BroadcastKey}, the entry will be restored to all processor instances.
+     * Otherwise, the key will be distributed according to default partitioning
+     * and only a single processor instance will receive the key.
+     *
+     * @param traverser traverser over the items to emit to the snapshot
+     * @return whether the traverser has been exhausted
+     */
+    protected final <T extends Entry<?, ?>> boolean emitFromTraverserToSnapshot(@Nonnull Traverser<T> traverser) {
+        Entry<?, ?> item;
+        if (pendingSnapshotItem != null) {
+            item = pendingSnapshotItem;
+            pendingSnapshotItem = null;
+        } else {
+            item = traverser.next();
+        }
+        for (; item != null; item = traverser.next()) {
+            if (!tryEmitToSnapshot(item.getKey(), item.getValue())) {
+                pendingSnapshotItem = item;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Factory of {@link FlatMapper}. The {@code FlatMapper} will emit items to
      * the given output ordinal.
      */
     @Nonnull
-    protected <T, R> FlatMapper<T, R> flatMapper(
+    protected final <T, R> FlatMapper<T, R> flatMapper(
             int ordinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
         return ordinal != -1 ? flatMapper(new int[] {ordinal}, mapper) : flatMapper(mapper);
@@ -553,7 +570,7 @@ public abstract class AbstractProcessor implements Processor {
      * all defined output ordinals.
      */
     @Nonnull
-    protected <T, R> FlatMapper<T, R> flatMapper(
+    protected final <T, R> FlatMapper<T, R> flatMapper(
             @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
         return flatMapper(null, mapper);
@@ -564,11 +581,15 @@ public abstract class AbstractProcessor implements Processor {
      * the ordinals identified in the array.
      */
     @Nonnull
-    protected <T, R> FlatMapper<T, R> flatMapper(
+    protected final <T, R> FlatMapper<T, R> flatMapper(
             int[] ordinals, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
         return new FlatMapper<>(ordinals, mapper);
     }
+
+
+    //               End of convenience methods for subclass, non-overridable
+
 
     /**
      * A helper that simplifies the implementation of {@link #tryProcess(int,
@@ -635,13 +656,13 @@ public abstract class AbstractProcessor implements Processor {
     // easier job to the JIT compiler to optimize each case independently, and
     // to ensure that ordinal is dispatched on just once per process(ordinal,
     // inbox) call.
-    // An implementation with a very low-cost tryProcessN() method can choose
+    // An implementation with a very low-cost tryProcessN() method may want
     // to override processN() with an identical method, but which the JIT
     // compiler will be able to independently optimize and avoid the cost
     // of the megamorphic call site of tryProcessN here.
 
 
-    protected void process0(@Nonnull Inbox inbox) throws Exception {
+    void process0(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             final boolean doneWithItem = item instanceof Watermark
                     ? tryProcessWm0((Watermark) item)
@@ -653,7 +674,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    protected void process1(@Nonnull Inbox inbox) throws Exception {
+    void process1(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             final boolean doneWithItem = item instanceof Watermark
                     ? tryProcessWm1((Watermark) item)
@@ -665,7 +686,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    protected void process2(@Nonnull Inbox inbox) throws Exception {
+    void process2(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             final boolean doneWithItem = item instanceof Watermark
                     ? tryProcessWm2((Watermark) item)
@@ -677,7 +698,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    protected void process3(@Nonnull Inbox inbox) throws Exception {
+    void process3(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             final boolean doneWithItem = item instanceof Watermark
                     ? tryProcessWm3((Watermark) item)
@@ -689,7 +710,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    protected void process4(@Nonnull Inbox inbox) throws Exception {
+    void process4(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             final boolean doneWithItem = item instanceof Watermark
                     ? tryProcessWm4((Watermark) item)
@@ -701,7 +722,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    protected void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
+    void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             final boolean doneWithItem = item instanceof Watermark
                     ? tryProcessWm(ordinal, (Watermark) item)

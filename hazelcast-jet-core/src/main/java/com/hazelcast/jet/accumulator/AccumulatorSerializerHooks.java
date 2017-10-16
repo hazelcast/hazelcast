@@ -27,10 +27,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 /**
- * Hazelcast serializer hooks for the classes in the
- * {@code com.hazelcast.jet.accumulator} package.
+ * Hazelcast serializer hooks for the classes in the {@code
+ * com.hazelcast.jet.accumulator} package. This is not a public-facing API.
  */
-public class AccumulatorSerializerHooks {
+class AccumulatorSerializerHooks {
     public static final class LongAccHook implements SerializerHook<LongAccumulator> {
 
         @Override

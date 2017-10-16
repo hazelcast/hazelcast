@@ -27,7 +27,8 @@ import java.io.Serializable;
  * transformation it represents. {@link com.hazelcast.jet.impl.Planner
  * Planner} is the implementation class that creates a Core API DAG for a
  * pipeline. It contains code that recognizes a closed set of {@code
- * Transform} types.
+ * Transform} types, which means you cannot add your own transformation to
+ * Jet by implementing this type.
  */
 public interface Transform extends Serializable {
 }

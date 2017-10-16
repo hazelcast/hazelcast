@@ -22,17 +22,18 @@ import javax.annotation.Nonnull;
 /**
  * Data sink for a {@link Processor}. The outbox consists of individual
  * output buckets, one per outbound edge of the vertex represented by the
- * associated processor and one for the snapshot state.
- * The processor must deliver its output items separated by destination
- * edge, into the outbox by calling {@link #offer(int, Object)} or
- * {@link #offer(Object)}. The items for the snapshot state can be delivered
- * via {@link #offerToSnapshot(Object, Object)} during
- * calls to {@link Processor#saveToSnapshot() saveToSnapshot()}.
+ * associated processor and one for the snapshot state. The processor must
+ * deliver its output items separated by destination edge, into the outbox
+ * by calling {@link #offer(int, Object)} or {@link #offer(Object)}.
  * <p>
- * Outbox might not be able to accept the item if some of the underlying queues
- * are full. If one of the {@code offer()} methods returns {@code false},
- * caller must try the same call later again with with the same parameters,
- * until it returns {@code true}.
+ * To save its current state to the snapshot, it must call {@link
+ * #offerToSnapshot(Object, Object)} from its implementation of {@link
+ * Processor#saveToSnapshot() saveToSnapshot()}.
+ * <p>
+ * The outbox has finite capacity and will eventually refuse an item. If
+ * one of the {@code offer()} methods returns {@code false}, the calling
+ * processor must return from its callback method and retry delivering the
+ * same item when Jet calls its method again.
  */
 public interface Outbox {
 
@@ -44,12 +45,11 @@ public interface Outbox {
     int bucketCount();
 
     /**
-     * Offers the supplied item to the downstream edge with the supplied
-     * ordinal. If {@code ordinal == -1}, offers the supplied item to
-     * all edges (behaves the same as {@link #offer(Object)}).
+     * Offers the supplied item to the bucket with the supplied ordinal. If
+     * {@code ordinal == -1}, offers the supplied item to all buckets (behaves
+     * the same as {@link #offer(Object)}).
      *
-     * @return {@code true}, if the item was accepted. If {@code false} is
-     * returned, the call must be retried later with the same (or equal) item.
+     * @return {@code true} if the outbox accepted the item
      */
     @CheckReturnValue
     boolean offer(int ordinal, @Nonnull Object item);
@@ -58,27 +58,25 @@ public interface Outbox {
      * Offers the item to all supplied edge ordinals. See {@link #offer(int,
      * Object)} for more details.
      *
-     * @return {@code true}, if the item was accepted. If {@code false} is
-     * returned, the call must be retried later with the same (or equal) item.
+     * @return {@code true} if the outbox accepted the item
      */
     @CheckReturnValue
     boolean offer(int[] ordinals, @Nonnull Object item);
 
     /**
-     * Offers the specified key and value pair to the processor's snapshot storage.
+     * Offers the given key and value pair to the processor's snapshot
+     * storage.
      * <p>
      * The type of the offered key determines which processors receive the key
      * and value pair when it is restored. If the key is of type {@link
      * BroadcastKey}, the entry will be restored to all processor instances.
-     * Otherwise, the key will be distributed according to default partitioning
+     * Otherwise the key will be distributed according to default partitioning
      * and only a single processor instance will receive the key.
      * <p>
      * This method may only be called from the {@link
      * Processor#saveToSnapshot()} method.
      *
-     * @return {@code true}, if the item was accepted. If {@code false} is
-     * returned, the call must be retried later with the same (or equal) key
-     * and value.
+     * @return {@code true} if the outbox accepted the item
      */
     @CheckReturnValue
     boolean offerToSnapshot(@Nonnull Object key, @Nonnull Object value);
@@ -87,8 +85,7 @@ public interface Outbox {
      * Offers the item to all edges. See {@link #offer(int, Object)} for more
      * details.
      *
-     * @return {@code true}, if the item was accepted. If {@code false} is
-     * returned, the call must be retried later with the same (or equal) item.
+     * @return {@code true} if the outbox accepted the item
      */
     @CheckReturnValue
     default boolean offer(@Nonnull Object item) {

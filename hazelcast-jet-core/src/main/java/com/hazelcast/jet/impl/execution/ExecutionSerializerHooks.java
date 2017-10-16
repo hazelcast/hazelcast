@@ -26,10 +26,11 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import java.io.IOException;
 
 /**
- * Hazelcast serializer hooks for the classes in the
- * {@code com.hazelcast.jet.impl.execution} package.
+ * Hazelcast serializer hooks for the classes in the {@code
+ * com.hazelcast.jet.impl.execution} package. This is not a public-facing
+ * API.
  */
-public class ExecutionSerializerHooks {
+class ExecutionSerializerHooks {
     public static final class SnapshotBarrierHook implements SerializerHook<SnapshotBarrier> {
 
         @Override

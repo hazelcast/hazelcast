@@ -27,7 +27,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Job-specific configuration options.
+ * Contains the configuration specific to one Hazelcast Jet job.
  */
 public class JobConfig implements Serializable {
 
@@ -39,7 +39,7 @@ public class JobConfig implements Serializable {
     private boolean autoRestartEnabled = true;
 
     /**
-     * Returns true if {@link #setSplitBrainProtection(boolean) split brain protection}
+     * Tells whether {@link #setSplitBrainProtection(boolean) split brain protection}
      * is enabled.
      */
     public boolean isSplitBrainProtectionEnabled() {
@@ -47,30 +47,29 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Configures the split brain protection feature. When enabled, the job will
-     * only be restarted after a topology change if the quorum size can be met.
-     * The quorum size is calculated as
-     * {@code cluster size at job submission time / 2 + 1}. As a result,
-     * the job can only be restarted if the actual cluster size is at least
-     * the quorum value.
+     * Configures the split brain protection feature. When enabled, Jet will
+     * restart the job after a topology change only if the cluster quorum is
+     * satisfied. The quorum value is
      * <p>
-     * For example, if at the time of job submission the cluster size is 5 and
-     * a network partition splits the cluster into two sub-clusters with one
-     * having size 3 and the other 2, the job will only be restarted on the
-     * sub-cluster with size 3.
+     * {@code cluster size at job submission time / 2 + 1}.
      * <p>
-     * Note that if you add new nodes to the cluster after a job has already
-     * started the quorum size might be invalidated by the new cluster size.
-     * For instance, if there are 5 instances at submission time
-     * (i.e. the quorum value is 3) and later a new node joins, a split
-     * of two equal sub-clusters of size 3 causes the job to be restarted
-     * on both sub-clusters.
+     * The job can be restarted only if the size of the cluster after restart
+     * is at least the quorum value. Only one of the clusters formed due to a
+     * split-brain condition can satisfy the quorum. For example, if at the
+     * time of job submission the cluster size was 5 and a network partition
+     * causes two clusters with sizes 3 and 2 to form, the job will restart
+     * only on the cluster with size 3.
      * <p>
-     * The default is set to {@code false}.
+     * Adding new nodes to the cluster after starting the job may defeat this
+     * mechanism. For instance, if there are 5 members at submission time
+     * (i.e., the quorum value is 3) and later a new node joins, a split into
+     * two clusters of size 3 will allow the job to be restarted on both sides.
+     * <p>
+     * Split-brain protection is disabled by default.
      * <p>
      * This setting has no effect if
-     * {@link #setAutoRestartOnMemberFailure(boolean) auto restart on member failure}
-     * is disabled.
+     * {@link #setAutoRestartOnMemberFailure(boolean) auto restart on member
+     * failure} is disabled.
      */
     public JobConfig setSplitBrainProtection(boolean isEnabled) {
         this.splitBrainProtectionEnabled = isEnabled;
@@ -78,23 +77,22 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Returns if {@link #setAutoRestartOnMemberFailure(boolean) auto restart on member failure}
-     * is enabled.
+     * Tells whether {@link #setAutoRestartOnMemberFailure(boolean) auto
+     * restart after member failure} is enabled.
      */
     public boolean isAutoRestartOnMemberFailureEnabled() {
         return this.autoRestartEnabled;
     }
 
     /**
-     * Configure if the job should automatically restarted when one of the
-     * participating nodes leave the cluster. When set to true, upon a
-     * member failure the job will be automatically restarted on the
-     * remaining members.
+     * Sets whether the job should automatically restart after a
+     * participating member leaves the cluster. When enabled and a member
+     * fails, the job will automatically restart on the remaining members.
      * <p>
-     * If snapshotting is enabled, the job will be restored from the latest
-     * snapshot.
+     * If snapshotting is enabled, the job state will be restored from the
+     * latest snapshot.
      * <p>
-     * The default is set to {@code true}.
+     * By default, auto-restart is enabled.
      */
     public JobConfig setAutoRestartOnMemberFailure(boolean isEnabled) {
         this.autoRestartEnabled = isEnabled;
@@ -102,17 +100,16 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Return current {@link #setProcessingGuarantee(ProcessingGuarantee)
-     * processing guarantee}.
+     * Returns the configured {@link
+     * #setProcessingGuarantee(ProcessingGuarantee) processing guarantee}.
      */
     public ProcessingGuarantee getProcessingGuarantee() {
         return processingGuarantee;
     }
 
     /**
-     * Set the processing guarantee, see {@link ProcessingGuarantee}.
-     * If this method is not called, {@link ProcessingGuarantee#EXACTLY_ONCE}
-     * is used.
+     * Sets the {@link ProcessingGuarantee processing guarantee}. The
+     * default is {@link ProcessingGuarantee#EXACTLY_ONCE EXACTLY_ONCE}.
      */
     public JobConfig setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
         this.processingGuarantee = processingGuarantee;
@@ -120,19 +117,19 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Return current {@link #setSnapshotIntervalMillis(long) snapshot interval}.
+     * Returns the configured {@link #setSnapshotIntervalMillis(long)
+     * snapshot interval}.
      */
     public long getSnapshotIntervalMillis() {
         return snapshotIntervalMillis;
     }
 
     /**
-     * Set the snapshot interval in milliseconds. Negative value or zero means
-     * snapshots are disabled. This is the interval between completion of
-     * previous snapshot and the start of the new one. Snapshots are disabled
-     * by default.
+     * Sets the snapshot interval in milliseconds &mdash; the interval between
+     * the completion of the previous snapshot and the start of a new one.
+     * A zero or negative value disables snapshotting.
      * <p>
-     * By default, snapshots are turned off.
+     * By default, snapshots are disabled.
      */
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
         this.snapshotIntervalMillis = snapshotInterval;

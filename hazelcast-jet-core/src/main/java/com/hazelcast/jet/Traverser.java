@@ -38,33 +38,35 @@ import java.util.function.Predicate;
 @FunctionalInterface
 public interface Traverser<T> {
     /**
-     * Returns the next item in the sequence, or {@code null} if the sequence is
-     * already exhausted
+     * Returns the next item in the sequence, or {@code null} if there is no next
+     * item to return. If this traverser represents a finite sequence, it will
+     * keep returning {@code null} once exhausted. If it represents an infinite
+     * sequence, {@code null} only means "there is currently no next item", but
+     * trying again later may produce one.
      */
     T next();
 
     /**
-     * Adds a mapping layer to this traverser. The returned traverser will emit
-     * the results of applying the mapper function to this traverser's items.
+     * Returns a traverser traverser that will emit the results of applying the
+     * mapping function to this traverser's items.
      */
     @Nonnull
-    default <R> Traverser<R> map(@Nonnull Function<? super T, ? extends R> mapper) {
+    default <R> Traverser<R> map(@Nonnull Function<? super T, ? extends R> mapFn) {
         return () -> {
             final T t = next();
-            return t != null ? mapper.apply(t) : null;
+            return t != null ? mapFn.apply(t) : null;
         };
     }
 
     /**
-     * Adds a filtering layer to this traverser. The returned traverser will
-     * emit the same items as this traverser, but only those that pass the
-     * given predicate.
+     * Returns a traverser that will emit the same items as this traverser, but
+     * only those that pass the given predicate.
      */
     @Nonnull
-    default Traverser<T> filter(@Nonnull Predicate<? super T> pred) {
+    default Traverser<T> filter(@Nonnull Predicate<? super T> filterFn) {
         return () -> {
             for (T t; (t = next()) != null;) {
-                if (pred.test(t)) {
+                if (filterFn.test(t)) {
                     return t;
                 }
             }
@@ -73,7 +75,7 @@ public interface Traverser<T> {
     }
 
     /**
-     * Returns a new traverser that will emit a prefix of the original traverser,
+     * Returns a traverser that will emit a prefix of the original traverser,
      * up to the item for which the predicate fails (exclusive).
      */
     @Nonnull
@@ -97,7 +99,7 @@ public interface Traverser<T> {
     }
 
     /**
-     * Returns a new traverser that will emit a suffix of the original traverser,
+     * Returns a traverser that will emit a suffix of the original traverser,
      * starting from the item for which the predicate fails (inclusive).
      */
     @Nonnull
@@ -122,8 +124,10 @@ public interface Traverser<T> {
     }
 
     /**
-     * Returns a traverser which appends an additional item to this traverser
-     * after it returns the first {@code null} value.
+     * Returns a traverser that will return all the items of this traverser,
+     * plus an additional item once this one returns {@code null}. After that
+     * it continues forwarding the return values of this traverser. It is
+     * meant to be used on finite traversers.
      */
     @Nonnull
     default Traverser<T> append(@Nonnull T item) {
@@ -164,19 +168,18 @@ public interface Traverser<T> {
     }
 
     /**
-     * Adds a flat-mapping layer to this traverser. The returned traverser
-     * will apply the given mapping function to each item retrieved from this
-     * traverser, and will emit all the items from the resulting traverser(s).
+     * Returns a traverser traverser that will apply the given mapping function
+     * to each item retrieved from this traverser and emit all the items from
+     * the resulting traverser(s).
      */
     @Nonnull
-    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
-        return new FlatMappingTraverser<>(this, mapper);
+    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapFn) {
+        return new FlatMappingTraverser<>(this, mapFn);
     }
 
     /**
      * Returns a traverser that will emit the same items as this traverser,
-     * additionally passing each item to the supplied consumer. A {@code null}
-     * return value is not passed to the action.
+     * additionally passing each (non-null) item to the supplied consumer.
      */
     @Nonnull
     default Traverser<T> peek(@Nonnull Consumer<? super T> action) {
@@ -191,7 +194,7 @@ public interface Traverser<T> {
 
     /**
      * Returns a traverser that will emit the same items as this traverser and
-     * will additionally run the supplied action first time this traverser
+     * additionally run the supplied action the first time this traverser
      * returns {@code null}.
      */
     @Nonnull

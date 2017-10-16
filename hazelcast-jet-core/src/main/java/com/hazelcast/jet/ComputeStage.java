@@ -103,8 +103,8 @@ public interface ComputeStage<E> extends Stage {
     /**
      * Attaches to this and the two supplied stages a hash-joining stage and
      * returns it. This stage plays the role of the <em>primary stage</em> in
-     * the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
-     * package Javadoc} for a detailed description of the hash-join transform.
+     * the hash-join. Please refer to the {@link com.hazelcast.jet package
+     * Javadoc} for a detailed description of the hash-join transform.
      *
      * @param stage1      the first stage to join
      * @param joinClause1 specifies how to join with {@code stage1}

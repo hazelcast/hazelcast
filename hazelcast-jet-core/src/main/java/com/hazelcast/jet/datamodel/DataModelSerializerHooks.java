@@ -36,10 +36,10 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.datamodel.TwoBags.twoBags;
 
 /**
- * Hazelcast serializer hooks for the classes in the
- * {@code com.hazelcast.jet.datamodel} package.
+ * Hazelcast serializer hooks for the classes in the {@code
+ * com.hazelcast.jet.datamodel} package. This is not a public-facing API.
  */
-public class DataModelSerializerHooks {
+class DataModelSerializerHooks {
     public static final class TimestampedEntryHook implements SerializerHook<TimestampedEntry> {
 
         @Override

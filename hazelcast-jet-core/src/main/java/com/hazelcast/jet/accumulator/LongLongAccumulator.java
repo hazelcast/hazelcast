@@ -17,7 +17,7 @@
 package com.hazelcast.jet.accumulator;
 
 /**
- * Accumulator of a two primitive {@code long} values.
+ * Mutable container of two {@code long} values.
  */
 public class LongLongAccumulator {
 
