@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,7 +26,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -114,7 +114,7 @@ public class ConfigCheckTest {
         ObjectDataOutput odo = mock(ObjectDataOutput.class);
 
         try {
-            ConfigCheck configCheck = new ConfigCheck(config, "multicast", Version.of(3, 9));
+            ConfigCheck configCheck = new ConfigCheck(config, "multicast", Versions.CURRENT_CLUSTER_VERSION);
             configCheck.writeData(odo);
         } catch (IOException e) {
             fail(e.getMessage());
