@@ -25,7 +25,6 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 
@@ -47,7 +46,7 @@ public class ClientCacheMetaDataFetcher extends MetaDataFetcher {
     private final HazelcastClientInstanceImpl clientImpl;
 
     public ClientCacheMetaDataFetcher(ClientContext clientContext) {
-        super(Logger.getLogger(ClientCacheMetaDataFetcher.class));
+        super(clientContext.getLoggingService().getLogger(ClientCacheMetaDataFetcher.class));
         this.clusterService = clientContext.getClusterService();
         this.clientImpl = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
     }
