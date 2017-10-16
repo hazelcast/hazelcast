@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationparker.impl;
 
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsProvider;
@@ -29,8 +28,6 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -38,10 +35,7 @@ import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
-import java.util.Iterator;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
@@ -55,21 +49,20 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, MetricsProvider {
 
     private static final long FIRST_WAIT_TIME = 1000;
-    private static final long TIMEOUT_UPPER_BOUND = 1500;
 
-    private final ConcurrentMap<WaitNotifyKey, Queue<ParkedOperation>> parkQueueMap =
-            new ConcurrentHashMap<WaitNotifyKey, Queue<ParkedOperation>>(100);
+    private final ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap =
+            new ConcurrentHashMap<WaitNotifyKey, WaitSet>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationExecutor;
     private final Future expirationTaskFuture;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
-    private final ConstructorFunction<WaitNotifyKey, Queue<ParkedOperation>> parkQueueConstructor
-            = new ConstructorFunction<WaitNotifyKey, Queue<ParkedOperation>>() {
+    private final ConstructorFunction<WaitNotifyKey, WaitSet> waitSetConstructor
+            = new ConstructorFunction<WaitNotifyKey, WaitSet>() {
         @Override
-        public Queue<ParkedOperation> createNew(WaitNotifyKey key) {
-            return new ConcurrentLinkedQueue<ParkedOperation>();
+        public WaitSet createNew(WaitNotifyKey key) {
+            return new WaitSet(logger, nodeEngine, waitSetMap, delayQueue);
         }
     };
 
@@ -92,17 +85,13 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     @Override
     public void populate(LiveOperations liveOperations) {
-        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            for (ParkedOperation parkedOperation : parkQueue) {
-                // we need to read out the data from the BlockedOperation; not from the ParkerOperation-container.
-                Operation operation = parkedOperation.getOperation();
-                liveOperations.add(operation.getCallerAddress(), operation.getCallId());
-            }
+        for (WaitSet waitSet : waitSetMap.values()) {
+            waitSet.populate(liveOperations);
         }
     }
 
-    private void invalidate(ParkedOperation parkedOperation) throws Exception {
-        nodeEngine.getOperationService().execute(parkedOperation);
+    private void invalidate(WaitSetEntry entry) throws Exception {
+        nodeEngine.getOperationService().execute(entry);
     }
 
     // Runs in operation thread, we can assume that
@@ -110,15 +99,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     // see javadoc
     @Override
     public void park(BlockingOperation op) {
-        final WaitNotifyKey key = op.getWaitKey();
-        final Queue<ParkedOperation> parkQueue = getOrPutIfAbsent(parkQueueMap, key, parkQueueConstructor);
-        long timeout = op.getWaitTimeout();
-        ParkedOperation parkedOperation = new ParkedOperation(parkQueue, op);
-        parkedOperation.setNodeEngine(nodeEngine);
-        parkQueue.offer(parkedOperation);
-        if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {
-            delayQueue.offer(parkedOperation);
-        }
+        WaitSet waitSet = getOrPutIfAbsent(waitSetMap, op.getWaitKey(), waitSetConstructor);
+        waitSet.park(op);
     }
 
     // Runs in operation thread, we can assume that
@@ -126,54 +108,23 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     // see javadoc
     @Override
     public void unpark(Notifier notifier) {
-        WaitNotifyKey key = notifier.getNotifiedKey();
-        Queue<ParkedOperation> parkQueue = parkQueueMap.get(key);
-        if (parkQueue == null) {
-            return;
-        }
-        ParkedOperation parkedOp = parkQueue.peek();
-        while (parkedOp != null) {
-            Operation op = parkedOp.getOperation();
-            if (notifier == op) {
-                throw new IllegalStateException("Found cyclic wait-notify! -> " + notifier);
-            }
-            if (parkedOp.isValid()) {
-                if (parkedOp.isExpired()) {
-                    // expired
-                    parkedOp.onExpire();
-                } else {
-                    if (parkedOp.shouldWait()) {
-                        return;
-                    }
-                    nodeEngine.getOperationService().run(op);
-                }
-                parkedOp.setValid(false);
-            }
-            // consume
-            parkQueue.poll();
-
-            parkedOp = parkQueue.peek();
-
-            // If parkQueue.peek() returns null, we should deregister this specific
-            // key to avoid memory leak. By contract we know that park() and unpark()
-            // cannot be called in parallel.
-            // We can safely remove this queue from registration map here.
-            if (parkedOp == null) {
-                parkQueueMap.remove(key);
-            }
+        WaitNotifyKey waitNotifyKey = notifier.getNotifiedKey();
+        WaitSet waitSet = waitSetMap.get(waitNotifyKey);
+        if (waitSet != null) {
+            waitSet.unpark(notifier, waitNotifyKey);
         }
     }
 
     @Probe
     public int getParkQueueCount() {
-        return parkQueueMap.size();
+        return waitSetMap.size();
     }
 
     @Probe
     public int getTotalParkedOperationCount() {
         int count = 0;
-        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            count += parkQueue.size();
+        for (WaitSet waitSet : waitSetMap.values()) {
+            count += waitSet.size();
         }
         return count;
     }
@@ -181,12 +132,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     // for testing purposes only
     public int getTotalValidWaitingOperationCount() {
         int count = 0;
-        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            for (ParkedOperation parkedOperation : parkQueue) {
-                if (parkedOperation.valid) {
-                    count++;
-                }
-            }
+        for (WaitSet waitSet : waitSetMap.values()) {
+            count += waitSet.totalValidWaitingOperationCount();
         }
         return count;
     }
@@ -201,16 +148,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     }
 
     private void invalidateWaitingOps(String callerUuid) {
-        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            for (ParkedOperation parkedOperation : parkQueue) {
-                if (!parkedOperation.isValid()) {
-                    continue;
-                }
-                Operation op = parkedOperation.getOperation();
-                if (callerUuid.equals(op.getCallerUuid())) {
-                    parkedOperation.setValid(false);
-                }
-            }
+        for (WaitSet waitSet : waitSetMap.values()) {
+            waitSet.invalidateAll(callerUuid);
         }
     }
 
@@ -224,78 +163,31 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
             return;
         }
 
-        int partitionId = migrationInfo.getPartitionId();
-        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            Iterator<ParkedOperation> it = parkQueue.iterator();
-            while (it.hasNext()) {
-                if (Thread.interrupted()) {
-                    return;
-                }
-                ParkedOperation parkedOperation = it.next();
-                if (!parkedOperation.isValid()) {
-                    continue;
-                }
-
-                Operation op = parkedOperation.getOperation();
-                if (partitionId == op.getPartitionId()) {
-                    parkedOperation.setValid(false);
-                    PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
-                            partitionId, op.getClass().getName(), op.getServiceName());
-                    OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-                    responseHandler.sendResponse(op, pme);
-                    it.remove();
-                }
-            }
+        for (WaitSet waitSet : waitSetMap.values()) {
+            waitSet.onPartitionMigrate(thisAddress, migrationInfo);
         }
     }
 
     @Override
     public void cancelParkedOperations(String serviceName, Object objectId, Throwable cause) {
-        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            for (ParkedOperation parkedOperation : parkQueue) {
-                if (!parkedOperation.isValid()) {
-                    continue;
-                }
-                WaitNotifyKey wnk = parkedOperation.blockingOperation.getWaitKey();
-                if (serviceName.equals(wnk.getServiceName())
-                        && objectId.equals(wnk.getObjectName())) {
-                    parkedOperation.cancel(cause);
-                }
-            }
+        for (WaitSet waitSet : waitSetMap.values()) {
+            waitSet.cancelAll(serviceName, objectId, cause);
         }
     }
 
     public void reset() {
         delayQueue.clear();
-        parkQueueMap.clear();
+        waitSetMap.clear();
     }
 
     public void shutdown() {
         logger.finest("Stopping tasks...");
         expirationTaskFuture.cancel(true);
         expirationExecutor.shutdown();
-        final Object response = new HazelcastInstanceNotActiveException();
-        final Address thisAddress = nodeEngine.getThisAddress();
-        for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-            for (ParkedOperation parkedOperation : parkQueue) {
-                if (!parkedOperation.isValid()) {
-                    continue;
-                }
-
-                Operation op = parkedOperation.getOperation();
-                // only for local invocations, remote ones will be expired via #onMemberLeft()
-                if (thisAddress.equals(op.getCallerAddress())) {
-                    try {
-                        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-                        responseHandler.sendResponse(op, response);
-                    } catch (Exception e) {
-                        logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
-                    }
-                }
-            }
-            parkQueue.clear();
+        for (WaitSet waitSet : waitSetMap.values()) {
+            waitSet.onShutdown();
         }
-        parkQueueMap.clear();
+        waitSetMap.clear();
     }
 
     @Override
@@ -304,9 +196,9 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         sb.append("delayQueue=");
         sb.append(delayQueue.size());
         sb.append(" \n[");
-        for (Queue<ParkedOperation> scheduledOps : parkQueueMap.values()) {
+        for (WaitSet waitSet : waitSetMap.values()) {
             sb.append("\t");
-            sb.append(scheduledOps.size());
+            sb.append(waitSet.size());
             sb.append(", ");
         }
         sb.append("]\n}");
@@ -337,10 +229,10 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
             long waitTime = FIRST_WAIT_TIME;
             while (waitTime > 0) {
                 long begin = System.currentTimeMillis();
-                ParkedOperation parkedOperation = (ParkedOperation) delayQueue.poll(waitTime, MILLISECONDS);
-                if (parkedOperation != null) {
-                    if (parkedOperation.isValid()) {
-                        invalidate(parkedOperation);
+                WaitSetEntry entry = (WaitSetEntry) delayQueue.poll(waitTime, MILLISECONDS);
+                if (entry != null) {
+                    if (entry.isValid()) {
+                        invalidate(entry);
                     }
                 }
                 long end = System.currentTimeMillis();
@@ -350,13 +242,14 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                 }
             }
 
-            for (Queue<ParkedOperation> parkQueue : parkQueueMap.values()) {
-                for (ParkedOperation parkedOperation : parkQueue) {
-                    if (Thread.interrupted()) {
-                        return true;
-                    }
-                    if (parkedOperation.isValid() && parkedOperation.needsInvalidation()) {
-                        invalidate(parkedOperation);
+            for (WaitSet waitSet : waitSetMap.values()) {
+                if (Thread.interrupted()) {
+                    return true;
+                }
+
+                for (WaitSetEntry entry : waitSet) {
+                    if (entry.isValid() && entry.needsInvalidation()) {
+                        invalidate(entry);
                     }
                 }
             }

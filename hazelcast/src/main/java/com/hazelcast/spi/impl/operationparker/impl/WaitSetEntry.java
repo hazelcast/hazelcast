@@ -35,16 +35,16 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-class ParkedOperation extends AbstractLocalOperation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
+class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
 
-    final Queue<ParkedOperation> queue;
+    final Queue<WaitSetEntry> queue;
     final Operation op;
     final BlockingOperation blockingOperation;
     final long expirationTime;
     volatile boolean valid = true;
     volatile Object cancelResponse;
 
-    ParkedOperation(Queue<ParkedOperation> queue, BlockingOperation blockingOperation) {
+    WaitSetEntry(Queue<WaitSetEntry> queue, BlockingOperation blockingOperation) {
         this.op = (Operation) blockingOperation;
         this.blockingOperation = blockingOperation;
         this.queue = queue;
@@ -161,7 +161,7 @@ class ParkedOperation extends AbstractLocalOperation implements Delayed, Partiti
 
     @Override
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
+        ILogger logger = getLogger();
         if (e instanceof RetryableException) {
             logger.warning("Op: " + op + ", " + e.getClass().getName() + ": " + e.getMessage());
         } else if (e instanceof OutOfMemoryError) {
