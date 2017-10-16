@@ -51,6 +51,7 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1841,6 +1842,33 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         Properties properties = memberAddressProviderConfig.getProperties();
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
+    }
+
+    @Test
+    public void testXsdVersion() {
+        String origVersionOverride = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
+        assertXsdVersion("0.0", "0.0");
+        assertXsdVersion("3.9", "3.9");
+        assertXsdVersion("3.9-SNAPSHOT", "3.9");
+        assertXsdVersion("3.9.1-SNAPSHOT", "3.9");
+        assertXsdVersion("3.10", "3.10");
+        assertXsdVersion("3.10-SNAPSHOT", "3.10");
+        assertXsdVersion("3.10.1-SNAPSHOT", "3.10");
+        assertXsdVersion("99.99.99", "99.99");
+        assertXsdVersion("99.99.99-SNAPSHOT", "99.99");
+        assertXsdVersion("99.99.99-Beta", "99.99");
+        assertXsdVersion("99.99.99-Beta-SNAPSHOT", "99.99");
+        if (origVersionOverride!=null) {
+            System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, origVersionOverride);
+        } else {
+            System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
+        }
+    }
+
+    private void assertXsdVersion(String buildVersion, String expectedXsdVersion) {
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, buildVersion);
+        assertEquals("Unexpected release version retrieved for build version " + buildVersion, expectedXsdVersion,
+                new XmlConfigBuilder().getReleaseVersion());
     }
 
     private static void assertPermissionConfig(PermissionConfig expected, Config config) {

@@ -25,6 +25,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.util.StringUtil;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -211,7 +212,8 @@ public abstract class AbstractXmlConfigHelper {
 
     protected String getReleaseVersion() {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-        return buildInfo.getVersion().substring(0, 3);
+        String[] versionTokens = StringUtil.tokenizeVersionString(buildInfo.getVersion());
+        return versionTokens[0] + "." + versionTokens[1];
     }
 
     protected String xmlToJavaName(final String name) {
