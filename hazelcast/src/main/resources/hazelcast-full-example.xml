@@ -23,7 +23,7 @@ https://hazelcast.com/schema/config/hazelcast-config-3.9.xsd or the Reference Ma
 https://hazelcast.org/documentation/.
 -->
 <!--suppress XmlDefaultAttributeValue -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.10.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <!--
