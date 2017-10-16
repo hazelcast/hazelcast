@@ -30,30 +30,32 @@ import java.util.Map;
  * <p>
  * The returned {@link Mutex}es implement {@link Closeable}, so can be conveniently used in a try-with-resources statement.
  * <p>
- * Typical usage would allow, for example, synchronizing access to a non-thread-safe {@link Map} on a per-key basis,
- * to avoid blocking other threads who would perform updates on other entries of the {@link Map}.
+ * Typical usage would allow, for example, synchronizing access to a {@link java.util.concurrent.ConcurrentMap} on a
+ * per-key basis, to avoid blocking other threads which could perform updates on other entries of the {@link Map}.
  *
  * <pre>
- *     class Test {
+ *    class Test {
  *
- *         private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
- *         private final Map&lt;String, String&gt; mapToSync = new HashMap&lt;String, String&gt;();
+ *        private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
+ *        private final ConcurrentMap<String, String> mapToSync = new ConcurrentHashMap<String, String>();
  *
- *         public void test(String key, String value) {
- *             // critical section
- *             ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(key);
- *             try {
- *                 synchronized (mutex) {
- *                      if (mapToSync.get(key) == null) {
- *                          mapToSync.put(key, value);
- *                      }
- *                 }
- *             } finally {
- *                 mutex.close();
- *             }
- *         }
- *     }
- * </pre>
+ *        public String getValueForKey(String key) {
+ *            ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(key);
+ *            try {
+ *                synchronized (mutex) {
+ *                    // critical section - this thread is the only one trying to add value under this key
+ *                    String value = mapToSync.get(key);
+ *                    if (value == null) {
+ *                        value = ...; // compute the value
+ *                        mapToSync.put(key, value);
+ *                    }
+ *                    return value;
+ *                }
+ *            } finally {
+ *                mutex.close();
+ *            }
+ *        }
+ * }</pre>
  */
 public final class ContextMutexFactory {
 
