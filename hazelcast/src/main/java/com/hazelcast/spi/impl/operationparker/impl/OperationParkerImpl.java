@@ -153,15 +153,11 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
             parkQueue.poll();
 
             parkedOp = parkQueue.peek();
-
-            // If parkQueue.peek() returns null, we should deregister this specific
-            // key to avoid memory leak. By contract we know that park() and unpark()
-            // cannot be called in parallel.
-            // We can safely remove this queue from registration map here.
-            if (parkedOp == null) {
-                parkQueueMap.remove(key);
-            }
         }
+
+        // We should deregister this specific key to avoid memory leak. By contract we know that park() and unpark()
+        // cannot be called in parallel. We can safely remove this queue from registration map here.
+        parkQueueMap.remove(key);
     }
 
     @Probe
