@@ -209,51 +209,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public void handleMasterConfirmation(MembersViewMetadata membersViewMetadata, long timestamp) {
-        lock.lock();
-        try {
-            if (!isJoined()) {
-                logger.warning("Ignoring master confirmation of sender: " + membersViewMetadata + " because not joined!");
-                return;
-            }
-
-            Address endpoint = membersViewMetadata.getMemberAddress();
-            MemberImpl member = membershipManager.getMember(endpoint, membersViewMetadata.getMemberUuid());
-            if (member == null) {
-                if (!isMaster()) {
-                    logger.warning(endpoint + " has sent MasterConfirmation with " + membersViewMetadata
-                            + ", but this node is not master!");
-                    return;
-                }
-
-                if (clusterJoinManager.isMastershipClaimInProgress()) {
-                    // this can be a new member I have discovered...
-                    return;
-                }
-
-                logger.warning(endpoint + " has sent MasterConfirmation with " + membersViewMetadata
-                        + ", but it is not a member of this cluster!");
-                // This guy knows me as its master but I am not. I should explicitly tell it to remove me from its cluster.
-                // It should suspect me so that it can move on.
-                // IMPORTANT: I should not tell it to remove me from cluster while I am trying to claim my mastership.
-
-                sendExplicitSuspicion(membersViewMetadata);
-
-                for (Member m : getMembers(NON_LOCAL_MEMBER_SELECTOR)) {
-                    sendExplicitSuspicionTrigger(m.getAddress(), membersViewMetadata);
-                }
-            } else if (isMaster()) {
-                clusterHeartbeatManager.acceptMasterConfirmation(member, timestamp);
-            } else {
-                logger.warning(endpoint + " has sent MasterConfirmation with "
-                        + membersViewMetadata + ", but this node is not master!");
-                // it will be kicked from the cluster by the correct master because of master confirmation timeout
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
     void sendExplicitSuspicion(MembersViewMetadata endpointMembersViewMetadata) {
         Address endpoint = endpointMembersViewMetadata.getMemberAddress();
         if (endpoint.equals(node.getThisAddress())) {

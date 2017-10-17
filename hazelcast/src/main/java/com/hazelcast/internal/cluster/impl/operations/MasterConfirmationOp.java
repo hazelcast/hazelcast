@@ -17,18 +17,19 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
+/**
+ * @deprecated in 3.10
+ */
+@Deprecated
+// Master confirmation logic is not needed in 3.10. This operation is still here to remain compatible with 3.9.
 public class MasterConfirmationOp extends AbstractClusterOperation implements Versioned {
-
-    private static final String NON_AVAILABLE_UUID = "n/a";
 
     private MembersViewMetadata membersViewMetadata;
 
@@ -44,22 +45,6 @@ public class MasterConfirmationOp extends AbstractClusterOperation implements Ve
 
     @Override
     public void run() {
-        final Address endpoint = getCallerAddress();
-        if (endpoint == null) {
-            return;
-        }
-
-        if (membersViewMetadata == null) {
-            // 3.8
-            String callerUuid = getCallerUuid();
-            if (callerUuid == null) {
-                callerUuid = NON_AVAILABLE_UUID;
-            }
-            membersViewMetadata = new MembersViewMetadata(endpoint, callerUuid, getNodeEngine().getThisAddress(), 0);
-        }
-
-        final ClusterServiceImpl clusterService = getService();
-        clusterService.handleMasterConfirmation(membersViewMetadata, timestamp);
     }
 
     @Override

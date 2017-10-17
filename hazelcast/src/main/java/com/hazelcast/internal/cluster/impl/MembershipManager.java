@@ -271,7 +271,6 @@ public class MembershipManager {
 
             long now = clusterService.getClusterTime();
             clusterHeartbeatManager.onHeartbeat(member, now);
-            clusterHeartbeatManager.acceptMasterConfirmation(member, now);
 
             clusterService.repairPartitionTableIfReturningMember(member);
             members[memberIndex++] = member;
@@ -934,7 +933,6 @@ public class MembershipManager {
                 }
 
                 updateMembers(newMembersView);
-                clusterService.getClusterHeartbeatManager().resetMemberMasterConfirmations();
                 clusterService.getClusterJoinManager().reset();
                 sendMemberListToOthers();
                 logger.info("Mastership is claimed with: " + newMembersView);
