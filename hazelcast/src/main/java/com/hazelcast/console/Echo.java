@@ -36,6 +36,10 @@ public class Echo implements Callable<String>, DataSerializable, HazelcastInstan
 
     private transient HazelcastInstance hz;
 
+    public Echo() {
+        // no-arg constructor needed for DataSerializable classes
+    }
+
     public Echo(String input) {
         this.input = input;
     }
