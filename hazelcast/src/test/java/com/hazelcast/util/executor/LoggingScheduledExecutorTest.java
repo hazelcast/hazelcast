@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.SEVERE;
 import static junit.framework.TestCase.assertTrue;
@@ -62,7 +63,6 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     private TestThreadFactory factory = new TestThreadFactory();
 
     private ScheduledExecutorService executor;
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -79,20 +79,23 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
 
         for (int i = 0; i < 10; i++) {
-            Future<Integer> future = executor.submit(new Callable<Integer>() {
+            Future<Integer> future = executor.schedule(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
                     TimeUnit.HOURS.sleep(1);
                     return null;
                 }
-            });
+            }, 1, HOURS);
 
             future.cancel(true);
         }
 
         BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
 
-        assertEquals(0, workQueue.size());
+        // {@link LoggingScheduledExecutor.DEFAULT_PURGE_PERIOD}
+        sleepSeconds(10 + 2);
+        // Expected 1 - the purge task
+        assertEquals(1, workQueue.size());
     }
 
     @Test
