@@ -29,7 +29,7 @@ package com.hazelcast.cache;
  *
  * <p>
  * At worst case, value is returned from the merge method as selected and this means that at all cases
- * value is accessed. So even the the convertion is done as lazy, it will be processed at this point.
+ * value is accessed. So even the convertion is done as lazy, it will be processed at this point.
  * But by default, they (key and value) converted to their original types
  * unless this {@link com.hazelcast.cache.StorageTypeAwareCacheMergePolicy} is used.
  * </p>
@@ -44,7 +44,7 @@ package com.hazelcast.cache;
  * </p>
  *
  * <p>
- * As a result, both of performance and {@link java.lang.ClassNotFoundException} as mentioned above,
+ * As a result, both for performance and {@link java.lang.ClassNotFoundException} as mentioned above,
  * it is strongly recommended to use this interface if original values of key and values are not needed.
  * </p>
  *
