@@ -36,7 +36,6 @@ import com.hazelcast.version.Version;
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
@@ -67,9 +66,6 @@ public class FinalizeJoinOp extends MembersUpdateOp {
                           long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
                           Version clusterVersion, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
-        if (clusterVersion.isLessThan(V3_9)) {
-            assert preJoinOp == null : "Cannot execute pre join operations when cluster version is " + clusterVersion;
-        }
         this.preJoinOp = preJoinOp;
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
@@ -169,9 +165,7 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         out.writeLong(clusterStartTime);
         out.writeUTF(clusterState.toString());
         out.writeObject(clusterVersion);
-        if (clusterVersion.isGreaterOrEqual(V3_9)) {
-            out.writeObject(preJoinOp);
-        }
+        out.writeObject(preJoinOp);
     }
 
     @Override
@@ -194,13 +188,10 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         String stateName = in.readUTF();
         clusterState = ClusterState.valueOf(stateName);
         clusterVersion = in.readObject();
-
-        if (clusterVersion.isGreaterOrEqual(V3_9)) {
-            try {
-                preJoinOp = in.readObject();
-            } catch (Exception e) {
-                deserializationFailure = e;
-            }
+        try {
+            preJoinOp = in.readObject();
+        } catch (Exception e) {
+            deserializationFailure = e;
         }
     }
 

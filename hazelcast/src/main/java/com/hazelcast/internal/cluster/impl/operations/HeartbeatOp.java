@@ -28,8 +28,6 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.impl.operations.VersionedClusterOperation.isGreaterOrEqualV39;
-
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
 public final class HeartbeatOp extends AbstractClusterOperation implements Versioned {
 
@@ -82,20 +80,16 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (isGreaterOrEqualV39(out.getVersion())) {
-            out.writeObject(senderMembersViewMetadata);
-            out.writeUTF(targetUuid);
-        }
+        out.writeObject(senderMembersViewMetadata);
+        out.writeUTF(targetUuid);
         out.writeLong(timestamp);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (isGreaterOrEqualV39(in.getVersion())) {
-            senderMembersViewMetadata = in.readObject();
-            targetUuid = in.readUTF();
-        }
+        senderMembersViewMetadata = in.readObject();
+        targetUuid = in.readUTF();
         timestamp = in.readLong();
     }
 

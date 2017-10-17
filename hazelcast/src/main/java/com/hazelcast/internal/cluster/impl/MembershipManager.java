@@ -23,7 +23,6 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.logging.ILogger;
@@ -512,7 +511,6 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             assert clusterService.isMaster() : "Master: " + clusterService.getMasterAddress();
-            assert clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_9);
 
             if (!clusterService.isJoined()) {
                 logger.warning("Not removing " + member + " for reason: " + reason + ", because not joined!");

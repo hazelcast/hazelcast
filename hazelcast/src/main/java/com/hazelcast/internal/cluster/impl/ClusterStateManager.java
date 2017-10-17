@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.LockGuard;
@@ -336,11 +335,6 @@ public class ClusterStateManager {
 
     void changeClusterState(ClusterStateChange newState, MemberMap memberMap,
             TransactionOptions options, int partitionStateVersion, boolean isTransient) {
-
-        if (clusterVersion.isLessThan(Versions.V3_9) && newState.getNewState() == ClusterState.NO_MIGRATION) {
-            throw new UnsupportedOperationException("NO_MIGRATION cluster state is not available before 3.9!");
-        }
-
         checkParameters(newState, options);
         if (isCurrentStateEqualToRequestedOne(newState)) {
             return;

@@ -26,8 +26,6 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.impl.operations.VersionedClusterOperation.isGreaterOrEqualV39;
-
 public class MasterConfirmationOp extends AbstractClusterOperation implements Versioned {
 
     private static final String NON_AVAILABLE_UUID = "n/a";
@@ -67,18 +65,14 @@ public class MasterConfirmationOp extends AbstractClusterOperation implements Ve
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (isGreaterOrEqualV39(out.getVersion())) {
-            out.writeObject(membersViewMetadata);
-        }
+        out.writeObject(membersViewMetadata);
         out.writeLong(timestamp);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (isGreaterOrEqualV39(in.getVersion())) {
-            membersViewMetadata = in.readObject();
-        }
+        membersViewMetadata = in.readObject();
         timestamp = in.readLong();
     }
 
