@@ -218,8 +218,12 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             for (int i = 0; i < repeat; i++) {
                 handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
             }
-            long elapsedSeconds = MILLISECONDS.toSeconds(Clock.currentTimeMillis() - started);
-            println("ops/s = " + repeat / elapsedSeconds);
+            long elapsedMilliSeconds = Clock.currentTimeMillis() - started;
+            if (elapsedMilliSeconds > 0) {
+                println(String.format("ops/s = %.2f", (double) repeat * 1000 / elapsedMilliSeconds));
+            } else {
+                println("Bingo, all the operations finished in no time!");
+            }
         } else if (first.startsWith("&") && first.length() > 1) {
             final int fork = Integer.parseInt(first.substring(1));
             final String threadCommand = command.substring(first.length());
