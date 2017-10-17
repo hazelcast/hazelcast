@@ -23,8 +23,8 @@ import com.hazelcast.monitor.NearCacheStats;
  * <p>
  *     Cache statistics are accumulated starting from the time a cache is created. <br/>
  *     An instance of this class represents local node values only! For an accumulated view
- *     on cluster level, the user has to retrieve all nodes statistics and aggregate values
- *     on his own.
+ *     on cluster level, you have to retrieve all nodes' statistics and aggregate values
+ *     on your own.
  * </p>
  * <p>
  *     Sample code:
