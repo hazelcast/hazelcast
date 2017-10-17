@@ -38,8 +38,6 @@ import com.hazelcast.util.executor.NamedThreadPoolExecutor;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -53,7 +51,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
@@ -141,7 +138,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
                 createThreadPoolName(hzName, "scheduled"));
         this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
-        enableRemoveOnCancelIfAvailable();
 
         int coreSize = RuntimeAvailableProcessors.get();
         // default executors
@@ -153,19 +149,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         // register CompletableFuture task
         this.completableFutureTask = new CompletableFutureTask();
         scheduleWithRepetition(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
-    }
-
-    private void enableRemoveOnCancelIfAvailable() {
-        try {
-            Method method = scheduledExecutorService.getClass().getMethod("setRemoveOnCancelPolicy", boolean.class);
-            method.invoke(scheduledExecutorService, true);
-        } catch (NoSuchMethodException ignored) {
-            ignore(ignored);
-        } catch (InvocationTargetException ignored) {
-            ignore(ignored);
-        } catch (IllegalAccessException ignored) {
-            ignore(ignored);
-        }
     }
 
     @Override
