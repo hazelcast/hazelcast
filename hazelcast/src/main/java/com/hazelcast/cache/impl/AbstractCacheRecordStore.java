@@ -236,7 +236,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
      *
      * @param size          the maximum number of entries
      * @param maxSizePolicy the way in which the size is interpreted, only the {@link MaxSizePolicy#ENTRY_COUNT} policy is
-     *                      supported.
+     *                      supported
      * @return the instance which will check if the maximum number of entries has been reached or null if the
      * {@code maxSizePolicy} is not {@link MaxSizePolicy#ENTRY_COUNT}
      * @throws IllegalArgumentException if the {@code maxSizePolicy} is null
