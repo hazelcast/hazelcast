@@ -2933,7 +2933,7 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="merge-policy" use="required" type="xs:string"/>
@@ -2976,7 +2976,6 @@
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
     </xs:simpleType>
-
 
     <xs:complexType name="quorum">
         <xs:all>
@@ -3021,7 +3020,7 @@
     </xs:complexType>
     <xs:complexType name="wan-replication-ref-filters">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="filter-impl" type="xs:string"></xs:element>
+            <xs:element name="filter-impl" type="xs:string"/>
         </xs:sequence>
     </xs:complexType>
 
