@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.RootCauseMatcher;
 import com.hazelcast.util.executor.LoggingScheduledExecutor.LoggingDelegatingFuture;
 import org.junit.After;
@@ -75,6 +76,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void no_remaining_task_after_cancel() throws Exception {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
 
@@ -90,12 +92,16 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             future.cancel(true);
         }
 
-        BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
+        final BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
 
-        // {@link LoggingScheduledExecutor.DEFAULT_PURGE_PERIOD}
-        sleepSeconds(10 + 2);
-        // Expected 1 - the purge task
-        assertEquals(1, workQueue.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                // Expected 1 - the purge task
+                assertEquals(1, workQueue.size());
+            }
+        });
     }
 
     @Test
