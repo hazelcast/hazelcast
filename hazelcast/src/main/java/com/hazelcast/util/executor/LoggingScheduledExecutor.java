@@ -164,11 +164,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            boolean cancelled = delegate.cancel(mayInterruptIfRunning);
-            if (cancelled) {
-                executor.remove(this);
-            }
-            return cancelled;
+            return delegate.cancel(mayInterruptIfRunning);
         }
 
         @Override
