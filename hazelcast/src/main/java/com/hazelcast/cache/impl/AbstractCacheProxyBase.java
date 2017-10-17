@@ -51,8 +51,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * {@link SerializationService} accessor which will be used by implementation of {@link com.hazelcast.cache.ICache}
  * in server or embedded mode.
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  * @see com.hazelcast.cache.impl.CacheProxy
  */
 abstract class AbstractCacheProxyBase<K, V>
@@ -171,7 +171,7 @@ abstract class AbstractCacheProxyBase<K, V>
 
     void ensureOpen() {
         if (isClosed()) {
-            throw new IllegalStateException("Cache operations can not be performed. The cache closed");
+            throw new IllegalStateException("Cache operations cannot be performed. The cache closed");
         }
     }
 
