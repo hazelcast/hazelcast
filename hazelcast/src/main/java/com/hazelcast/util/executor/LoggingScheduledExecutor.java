@@ -17,6 +17,7 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.TaskScheduler;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -52,26 +53,51 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
     private final ILogger logger;
     private volatile boolean shutdownInitiated;
+    private final TaskScheduler cleaner;
 
-    public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory) {
+    private static final int DEFAULT_PURGE_INITIAL_DELAY = 0;
+    private static final int DEFAULT_PURGE_PERIOD = 10;
+    private static final TimeUnit DEFAULT_PURGE_TIME_UNIT = TimeUnit.SECONDS;
+
+    public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
+                                    TaskScheduler cleaner) {
         super(corePoolSize, threadFactory);
         this.logger = checkNotNull(logger, "logger cannot be null");
+        this.cleaner = cleaner;
+        enablePeriodicPurge();
     }
 
     public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
-                                    RejectedExecutionHandler handler) {
+                                    RejectedExecutionHandler handler, TaskScheduler cleaner) {
         super(corePoolSize, threadFactory, handler);
         this.logger = checkNotNull(logger, "logger cannot be null");
+        this.cleaner = cleaner;
+        enablePeriodicPurge();
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Runnable runnable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(runnable, task, this);
+        return new LoggingDelegatingFuture<V>(runnable, task);
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Callable<V> callable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(callable, task, this);
+        return new LoggingDelegatingFuture<V>(callable, task);
+    }
+
+    /**
+     * {@link ScheduledThreadPoolExecutor#removeOnCancel policy is not working when tasks are decorated, causing task leaks in
+     * the workQueue. On the other hand, {@link ScheduledThreadPoolExecutor#remove(Runnable)} is an O(N) operation,
+     * not performaing well, causing severe operation delays. This periodic task will purge cancelled tasks from the queues,
+     * releasing effectively resources.
+     */
+    private void enablePeriodicPurge() {
+        this.cleaner.scheduleWithRepetition(new Runnable() {
+            @Override
+            public void run() {
+                purge();
+            }
+        }, DEFAULT_PURGE_INITIAL_DELAY, DEFAULT_PURGE_PERIOD, DEFAULT_PURGE_TIME_UNIT);
     }
 
     @Override
@@ -117,12 +143,10 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         private final Object task;
         private final RunnableScheduledFuture<V> delegate;
-        private final LoggingScheduledExecutor executor;
 
-        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate, LoggingScheduledExecutor executor) {
+        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate) {
             this.task = task;
             this.delegate = delegate;
-            this.executor = executor;
         }
 
         @Override
@@ -164,11 +188,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            boolean cancelled = delegate.cancel(mayInterruptIfRunning);
-            if (cancelled) {
-                executor.remove(this);
-            }
-            return cancelled;
+            return delegate.cancel(mayInterruptIfRunning);
         }
 
         @Override

@@ -18,6 +18,8 @@ package com.hazelcast.util.executor;
 
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.LogEvent;
+import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,6 +38,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.SEVERE;
 import static junit.framework.TestCase.assertTrue;
@@ -62,6 +66,9 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     private TestThreadFactory factory = new TestThreadFactory();
 
     private ScheduledExecutorService executor;
+    private TaskScheduler purgeScheduler = new DelegatingTaskScheduler(
+            Executors.newSingleThreadScheduledExecutor(),
+            Executors.newSingleThreadExecutor());
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -76,22 +83,24 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     @Test
     public void no_remaining_task_after_cancel() throws Exception {
-        executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor = new LoggingScheduledExecutor(logger, 1, factory, purgeScheduler);
 
         for (int i = 0; i < 10; i++) {
-            Future<Integer> future = executor.submit(new Callable<Integer>() {
+            Future<Integer> future = executor.schedule(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
                     TimeUnit.HOURS.sleep(1);
                     return null;
                 }
-            });
+            }, 1, HOURS);
 
             future.cancel(true);
         }
 
         BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
 
+        // {@link LoggingScheduledExecutor.DEFAULT_PURGE_PERIOD}
+        sleepSeconds(10 + 2);
         assertEquals(0, workQueue.size());
     }
 
@@ -103,12 +112,12 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             }
         };
 
-        executor = new LoggingScheduledExecutor(logger, 1, factory, handler);
+        executor = new LoggingScheduledExecutor(logger, 1, factory, handler, purgeScheduler);
     }
 
     @Test
     public void logsExecutionException_withRunnable() {
-        executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor = new LoggingScheduledExecutor(logger, 1, factory, purgeScheduler);
         executor.submit(new FailedRunnable());
 
         assertTrueEventually(new AssertTask() {
@@ -127,7 +136,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     @Test
     public void throwsExecutionException_withCallable() throws Exception {
-        executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor = new LoggingScheduledExecutor(logger, 1, factory, purgeScheduler);
         Future<Integer> future = executor.submit(new FailedCallable());
 
         expectedException.expect(new RootCauseMatcher(RuntimeException.class));
@@ -138,7 +147,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     @Test
     public void throwsExecutionException_withCallable_withFutureGetTimeout() throws Exception {
-        executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor = new LoggingScheduledExecutor(logger, 1, factory, purgeScheduler);
         Future<Integer> future = executor.submit(new FailedCallable());
 
         expectedException.expect(new RootCauseMatcher(RuntimeException.class));
@@ -151,7 +160,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     public void testFuture_withCancellation() throws Exception {
         final CountDownLatch blocker = new CountDownLatch(1);
 
-        executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor = new LoggingScheduledExecutor(logger, 1, factory, purgeScheduler);
         Future<Integer> future = executor.submit(new BlockingCallable(blocker));
 
         assertFalse(future.isCancelled());
@@ -163,7 +172,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     @Test
     public void testLoggingDelegatingFuture() {
-        executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor = new LoggingScheduledExecutor(logger, 1, factory, purgeScheduler);
         Runnable task = new FailedRunnable();
 
         ScheduledFuture<?> scheduledFuture1 = executor.schedule(task, 0, SECONDS);

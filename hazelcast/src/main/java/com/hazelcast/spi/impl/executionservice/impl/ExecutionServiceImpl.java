@@ -138,11 +138,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         }
         );
 
-        ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
-                createThreadPoolName(hzName, "scheduled"));
-        this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
-        enableRemoveOnCancelIfAvailable();
-
         int coreSize = RuntimeAvailableProcessors.get();
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
@@ -150,22 +145,14 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         register(OFFLOADABLE_EXECUTOR, coreSize, OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CACHED);
         this.globalTaskScheduler = getTaskScheduler(SCHEDULED_EXECUTOR);
 
+        ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
+                createThreadPoolName(hzName, "scheduled"));
+        this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1,
+                singleExecutorThreadFactory, globalTaskScheduler);
+
         // register CompletableFuture task
         this.completableFutureTask = new CompletableFutureTask();
         scheduleWithRepetition(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
-    }
-
-    private void enableRemoveOnCancelIfAvailable() {
-        try {
-            Method method = scheduledExecutorService.getClass().getMethod("setRemoveOnCancelPolicy", boolean.class);
-            method.invoke(scheduledExecutorService, true);
-        } catch (NoSuchMethodException ignored) {
-            ignore(ignored);
-        } catch (InvocationTargetException ignored) {
-            ignore(ignored);
-        } catch (IllegalAccessException ignored) {
-            ignore(ignored);
-        }
     }
 
     @Override
