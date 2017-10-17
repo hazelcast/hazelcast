@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -93,23 +92,19 @@ public class PartitionReplicaSyncRetryResponse
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeInt(namespaces.size());
-            for (ServiceNamespace namespace : namespaces) {
-                out.writeObject(namespace);
-            }
+        out.writeInt(namespaces.size());
+        for (ServiceNamespace namespace : namespaces) {
+            out.writeObject(namespace);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            int len = in.readInt();
-            namespaces = new ArrayList<ServiceNamespace>(len);
-            for (int i = 0; i < len; i++) {
-                ServiceNamespace ns = in.readObject();
-                namespaces.add(ns);
-            }
+        int len = in.readInt();
+        namespaces = new ArrayList<ServiceNamespace>(len);
+        for (int i = 0; i < len; i++) {
+            ServiceNamespace ns = in.readObject();
+            namespaces.add(ns);
         }
     }
 

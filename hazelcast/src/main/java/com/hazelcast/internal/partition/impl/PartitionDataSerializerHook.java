@@ -26,8 +26,6 @@ import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
-import com.hazelcast.internal.partition.operation.LegacyMigrationOperation;
-import com.hazelcast.internal.partition.operation.LegacyMigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
@@ -56,8 +54,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int FETCH_PARTITION_STATE = 4;
     public static final int HAS_ONGOING_MIGRATION = 5;
     public static final int MIGRATION_COMMIT = 6;
-    public static final int LEGACY_MIGRATION = 7;
-    public static final int LEGACY_MIGRATION_REQUEST = 8;
+    // LegacyMigrationOperation and LegacyMigrationRequestOperation were assigned to 7th and 8th indices. Now they are gone.
     public static final int PARTITION_STATE_OP = 9;
     public static final int PROMOTION_COMMIT = 10;
     public static final int REPLICA_SYNC_REQUEST = 11;
@@ -69,9 +66,9 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int REPLICA_FRAGMENT_MIGRATION_STATE = 17;
     public static final int MIGRATION = 18;
     public static final int MIGRATION_REQUEST = 19;
-    public static final int NONFRAGMENTED_SERVICE_NAMESPACE = 20;
+    public static final int NON_FRAGMENTED_SERVICE_NAMESPACE = 20;
 
-    private static final int LEN = NONFRAGMENTED_SERVICE_NAMESPACE + 1;
+    private static final int LEN = NON_FRAGMENTED_SERVICE_NAMESPACE + 1;
 
     @Override
     public int getFactoryId() {
@@ -110,16 +107,6 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[MIGRATION_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MigrationCommitOperation();
-            }
-        };
-        constructors[LEGACY_MIGRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LegacyMigrationOperation();
-            }
-        };
-        constructors[LEGACY_MIGRATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LegacyMigrationRequestOperation();
             }
         };
         constructors[PARTITION_STATE_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -180,7 +167,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
                 return new MigrationRequestOperation();
             }
         };
-        constructors[NONFRAGMENTED_SERVICE_NAMESPACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[NON_FRAGMENTED_SERVICE_NAMESPACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return NonFragmentedServiceNamespace.INSTANCE;
             }

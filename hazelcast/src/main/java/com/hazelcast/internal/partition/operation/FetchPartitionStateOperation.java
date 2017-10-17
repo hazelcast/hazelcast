@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
@@ -27,10 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.CallerNotMemberException;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 /**
  * Operation sent by the master to the cluster members to fetch their partition state.
@@ -51,13 +47,7 @@ public final class FetchPartitionStateOperation extends AbstractPartitionOperati
         if (!caller.equals(master)) {
             String msg = caller + " requested our partition table but it's not our known master. " + "Master: " + master;
             getLogger().warning(msg);
-
-            ClusterService clusterService = nodeEngine.getClusterService();
-            if (clusterService.getClusterVersion().isGreaterOrEqual(V3_9)) {
-                throw new IllegalStateException(msg);
-            } else {
-                throw new RetryableHazelcastException(msg);
-            }
+            throw new IllegalStateException(msg);
         }
         InternalPartitionServiceImpl service = getService();
         partitionState = service.createPartitionStateInternal();
