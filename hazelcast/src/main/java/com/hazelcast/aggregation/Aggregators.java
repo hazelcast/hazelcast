@@ -54,13 +54,13 @@ import java.util.Set;
  * <p>
  * The attributePath given in the factory method allows the aggregator to operate on the value extracted by navigating
  * to the given attributePath on each object that has been returned from a query.
- * The attribute path may be simple, e.g. "name", or nested "address.city".
+ * The attribute path may be simple, e.g., "name", or nested "address.city".
  * <p>
  * If an aggregator does not accept null values pass a predicate to the aggregate call that will filter them out.
  * <p>
  * If the input value or the extracted value is a collection it won't be "unfolded" - so for example
  * count aggregation on "person.postalCodes" will return 1 for each input object and not the size of the collection.
- * In order to calculate the size of the collection use the [any] operator, e.g. "person.postalCodes[any]".
+ * In order to calculate the size of the collection use the [any] operator, e.g., "person.postalCodes[any]".
  *
  * @since 3.8
  */
