@@ -94,7 +94,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         // {@link LoggingScheduledExecutor.DEFAULT_PURGE_PERIOD}
         sleepSeconds(10 + 2);
-        // Expected 1 - the purge task 
+        // Expected 1 - the purge task
         assertEquals(1, workQueue.size());
     }
 
