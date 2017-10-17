@@ -105,15 +105,18 @@ public class AwsCloudDiscoveryTest {
     public void testAwsAddressProvider() {
         String awsAccessKeyId = System.getenv("AWS_ACCESS_KEY_ID");
         String awsSecretAccessKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+        String instancePrivateIp = System.getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP");
         ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
 
         if (isOnJenkins()) {
             assertNotNull("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId);
             assertNotNull("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey);
+            assertNotNull("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp);
             clientAwsConfig.setInsideAws(true);
         } else {
             assumeThat("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId, Matchers.<String>notNullValue());
             assumeThat("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey, Matchers.<String>notNullValue());
+            assumeThat("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp, Matchers.<String>notNullValue());
             clientAwsConfig.setInsideAws(false);
         }
 
@@ -123,9 +126,8 @@ public class AwsCloudDiscoveryTest {
                 .setTagKey(AWS_TEST_TAG)
                 .setTagValue(AWS_TEST_TAG_VALUE);
 
-
         ClientConfig clientConfig = new ClientConfig();
-        String instanceName = null;
+        String instanceName;
         if (clientConfig.getInstanceName() != null) {
             instanceName = clientConfig.getInstanceName();
         } else {
@@ -139,9 +141,7 @@ public class AwsCloudDiscoveryTest {
 
         AwsAddressProvider awsAddressProvider = new AwsAddressProvider(clientAwsConfig, loggingService);
         Collection<Address> addresses = awsAddressProvider.loadAddresses();
-        assertTrue(isNotEmpty(addresses));
-        String instancePrivateIp = System.getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP");
-        assumeThat("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp, Matchers.<String>notNullValue());
+        assertTrue("Expected non-empty addresses from AwsAddressProvider.loadAddresses()", isNotEmpty(addresses));
         assertEquals(instancePrivateIp, addresses.iterator().next().getHost());
     }
 }
