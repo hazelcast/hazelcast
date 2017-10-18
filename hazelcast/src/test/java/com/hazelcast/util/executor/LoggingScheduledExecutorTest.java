@@ -95,7 +95,6 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         }
 
         final BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
-        System.out.println("Size: " + workQueue.size());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
