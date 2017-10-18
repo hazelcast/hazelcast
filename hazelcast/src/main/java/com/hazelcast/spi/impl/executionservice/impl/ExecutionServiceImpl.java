@@ -138,7 +138,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
                 createThreadPoolName(hzName, "scheduled"));
         this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
-        this.scheduledExecutorService.enablePeriodicPurge(getExecutor(SCHEDULED_EXECUTOR));
 
         int coreSize = RuntimeAvailableProcessors.get();
         // default executors
@@ -146,6 +145,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
         register(OFFLOADABLE_EXECUTOR, coreSize, OFFLOADABLE_QUEUE_CAPACITY, ExecutorType.CACHED);
         this.globalTaskScheduler = getTaskScheduler(SCHEDULED_EXECUTOR);
+        this.scheduledExecutorService.enablePeriodicPurge(getExecutor(SCHEDULED_EXECUTOR));
 
         // register CompletableFuture task
         this.completableFutureTask = new CompletableFutureTask();
