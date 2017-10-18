@@ -218,6 +218,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createGetQuietOperation(String name, Data dataKey) {
+        return new GetQuietOperation(name, dataKey);
+    }
+
+    @Override
     public MapOperation createQueryOperation(Query query) {
         return new QueryOperation(query);
     }

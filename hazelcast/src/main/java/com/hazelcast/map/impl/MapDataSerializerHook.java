@@ -31,89 +31,7 @@ import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
 import com.hazelcast.map.impl.journal.MapEventJournalReadResultSetImpl;
 import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
-import com.hazelcast.map.impl.operation.AccumulatorConsumerOperation;
-import com.hazelcast.map.impl.operation.AddIndexOperation;
-import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
-import com.hazelcast.map.impl.operation.AddInterceptorOperation;
-import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
-import com.hazelcast.map.impl.operation.ClearBackupOperation;
-import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
-import com.hazelcast.map.impl.operation.ClearOperation;
-import com.hazelcast.map.impl.operation.ClearOperationFactory;
-import com.hazelcast.map.impl.operation.ContainsKeyOperation;
-import com.hazelcast.map.impl.operation.ContainsValueOperation;
-import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
-import com.hazelcast.map.impl.operation.DeleteOperation;
-import com.hazelcast.map.impl.operation.EntryBackupOperation;
-import com.hazelcast.map.impl.operation.EntryOffloadableSetUnlockOperation;
-import com.hazelcast.map.impl.operation.EntryOperation;
-import com.hazelcast.map.impl.operation.EvictAllBackupOperation;
-import com.hazelcast.map.impl.operation.EvictAllOperation;
-import com.hazelcast.map.impl.operation.EvictAllOperationFactory;
-import com.hazelcast.map.impl.operation.EvictBackupOperation;
-import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
-import com.hazelcast.map.impl.operation.EvictOperation;
-import com.hazelcast.map.impl.operation.GetAllOperation;
-import com.hazelcast.map.impl.operation.GetEntryViewOperation;
-import com.hazelcast.map.impl.operation.GetOperation;
-import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
-import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
-import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
-import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
-import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
-import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
-import com.hazelcast.map.impl.operation.LoadAllOperation;
-import com.hazelcast.map.impl.operation.LoadMapOperation;
-import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
-import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
-import com.hazelcast.map.impl.operation.MapFetchWithQueryOperation;
-import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
-import com.hazelcast.map.impl.operation.MapFlushOperation;
-import com.hazelcast.map.impl.operation.MapFlushOperationFactory;
-import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
-import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
-import com.hazelcast.map.impl.operation.MapIsEmptyOperation;
-import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
-import com.hazelcast.map.impl.operation.MapNearCacheStateHolder;
-import com.hazelcast.map.impl.operation.MapReplicationOperation;
-import com.hazelcast.map.impl.operation.MapReplicationStateHolder;
-import com.hazelcast.map.impl.operation.MapSizeOperation;
-import com.hazelcast.map.impl.operation.MergeOperation;
-import com.hazelcast.map.impl.operation.MultipleEntryBackupOperation;
-import com.hazelcast.map.impl.operation.MultipleEntryOperation;
-import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
-import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateBackupOperation;
-import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
-import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
-import com.hazelcast.map.impl.operation.PartitionWideEntryBackupOperation;
-import com.hazelcast.map.impl.operation.PartitionWideEntryOperation;
-import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
-import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateBackupOperation;
-import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperation;
-import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperationFactory;
-import com.hazelcast.map.impl.operation.PostJoinMapOperation;
-import com.hazelcast.map.impl.operation.PutAllBackupOperation;
-import com.hazelcast.map.impl.operation.PutAllOperation;
-import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
-import com.hazelcast.map.impl.operation.PutBackupOperation;
-import com.hazelcast.map.impl.operation.PutFromLoadAllBackupOperation;
-import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
-import com.hazelcast.map.impl.operation.PutIfAbsentOperation;
-import com.hazelcast.map.impl.operation.PutOperation;
-import com.hazelcast.map.impl.operation.PutTransientOperation;
-import com.hazelcast.map.impl.operation.RemoveBackupOperation;
-import com.hazelcast.map.impl.operation.RemoveFromLoadAllOperation;
-import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
-import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
-import com.hazelcast.map.impl.operation.RemoveOperation;
-import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
-import com.hazelcast.map.impl.operation.ReplaceOperation;
-import com.hazelcast.map.impl.operation.SetOperation;
-import com.hazelcast.map.impl.operation.SizeOperationFactory;
-import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
-import com.hazelcast.map.impl.operation.TryPutOperation;
-import com.hazelcast.map.impl.operation.TryRemoveOperation;
-import com.hazelcast.map.impl.operation.WriteBehindStateHolder;
+import com.hazelcast.map.impl.operation.*;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEventFilter;
@@ -304,8 +222,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_JOURNAL_DESERIALIZING_MAP_EVENT = 143;
     public static final int EVENT_JOURNAL_INTERNAL_MAP_EVENT = 144;
     public static final int EVENT_JOURNAL_READ_RESULT_SET = 145;
+    public static final int GET_QUIET = 146;
 
-    private static final int LEN = EVENT_JOURNAL_READ_RESULT_SET + 1;
+    private static final int LEN = GET_QUIET + 1;
 
     @Override
     public int getFactoryId() {
@@ -324,6 +243,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new GetOperation();
+            }
+        };
+        constructors[GET_QUIET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new GetQuietOperation();
             }
         };
         constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

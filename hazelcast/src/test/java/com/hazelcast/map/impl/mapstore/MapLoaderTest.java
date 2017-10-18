@@ -111,6 +111,30 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertEquals(DummyMapLoader.DEFAULT_SIZE, map.size());
     }
 
+    @Test
+    public void testGetQuietDoesNotInvokeLoader() {
+        String name = randomString();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setImplementation(new EmptyMapLoader());
+
+        Config config = new Config();
+        config.getMapConfig(name)
+                .setMapStoreConfig(mapStoreConfig);
+
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = instanceFactory.newInstances(config);
+
+        IMap<Object, Object> map = instances[0].getMap(name);
+
+        for (int i = 0; i < 100; i++) {
+            map.getQuiet(i);
+        }
+
+        assertEquals(0, EmptyMapLoader.SINGLE_LOAD_COUNT.get());
+    }
+
     private HazelcastInstance[] findOwnerAndReplicas(HazelcastInstance[] instances, String name) {
         Node node = getNode(instances[0]);
         InternalPartitionService partitionService = node.getPartitionService();
@@ -756,6 +780,27 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public void afterRemove(Object value) {
+        }
+    }
+
+    private static class EmptyMapLoader implements MapLoader<Integer, Integer> {
+
+        public static AtomicInteger SINGLE_LOAD_COUNT = new AtomicInteger(0);
+
+        @Override
+        public Integer load(Integer key) {
+            SINGLE_LOAD_COUNT.incrementAndGet();
+            return null;
+        }
+
+        @Override
+        public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+            return null;
+        }
+
+        @Override
+        public Iterable<Integer> loadAllKeys() {
+            return null;
         }
     }
 

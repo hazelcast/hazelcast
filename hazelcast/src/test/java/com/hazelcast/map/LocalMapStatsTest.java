@@ -101,6 +101,18 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetQuietAndHitsNotGenerated() throws Exception {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.getQuiet(i);
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(0, localMapStats.getGetOperationCount());
+        assertEquals(0, localMapStats.getHits());
+    }
+
+    @Test
     public void testPutAllGenerated() throws Exception {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {

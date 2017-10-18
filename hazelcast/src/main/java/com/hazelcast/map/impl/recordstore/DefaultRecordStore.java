@@ -644,6 +644,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public Object getQuiet(Data key) {
+        checkIfLoaded();
+        Record record = getQuietRecordOrNull(key);
+        return record == null ? null : record.getValue();
+    }
+
+
+    @Override
     public Data readBackupData(Data key) {
         Record record = getRecord(key);
 
@@ -653,6 +661,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         Object value = record.getValue();
         mapServiceContext.interceptAfterGet(name, value);
+        // this serialization step is needed not to expose the object, see issue 1292
+        return mapServiceContext.toData(value);
+    }
+
+    @Override
+    public Data readQuietBackupData(Data key) {
+        Record record = getRecord(key);
+
+        if (record == null) {
+            return null;
+        }
+
+        Object value = record.getValue();
         // this serialization step is needed not to expose the object, see issue 1292
         return mapServiceContext.toData(value);
     }
@@ -1060,6 +1081,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return null;
         }
         return getOrNullIfExpired(record, now, backup);
+    }
+
+    protected Record getQuietRecordOrNull(Data key) {
+        return storage.get(key);
     }
 
     protected void onStore(Record record) {

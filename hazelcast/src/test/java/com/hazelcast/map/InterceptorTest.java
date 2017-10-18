@@ -134,6 +134,17 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetQuiet_withGetInterceptor() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap<Integer, String> map = instance.getMap(randomString());
+        map.put(0, "Hello World!");
+        map.addInterceptor(new SimpleInterceptor());
+
+        String valueFromMap = map.getQuiet(0);
+        assertEquals("Hello World!", valueFromMap);
+    }
+
+    @Test
     public void testPutEvent_withInterceptor() {
         HazelcastInstance instance1 = createHazelcastInstance(getConfig());
         IMap<Integer, String> map = instance1.getMap(randomString());

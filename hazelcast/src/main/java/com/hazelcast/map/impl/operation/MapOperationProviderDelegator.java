@@ -129,6 +129,11 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createGetQuietOperation(String name, Data dataKey) {
+        return getDelegate().createGetQuietOperation(name, dataKey);
+    }
+
+    @Override
     public MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues) {
         return getDelegate().createLoadAllOperation(name, keys, replaceExistingValues);
     }
