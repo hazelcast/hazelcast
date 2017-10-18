@@ -21,12 +21,17 @@ import com.hazelcast.aws.AwsProperties;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientLoggingService;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -97,19 +102,21 @@ public class AwsCloudDiscoveryTest {
     }
 
     @Test
-    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/11571")
     public void testAwsAddressProvider() {
         String awsAccessKeyId = System.getenv("AWS_ACCESS_KEY_ID");
         String awsSecretAccessKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+        String instancePrivateIp = System.getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP");
         ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
 
         if (isOnJenkins()) {
             assertNotNull("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId);
             assertNotNull("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey);
+            assertNotNull("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp);
             clientAwsConfig.setInsideAws(true);
         } else {
             assumeThat("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId, Matchers.<String>notNullValue());
             assumeThat("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey, Matchers.<String>notNullValue());
+            assumeThat("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp, Matchers.<String>notNullValue());
             clientAwsConfig.setInsideAws(false);
         }
 
@@ -120,15 +127,21 @@ public class AwsCloudDiscoveryTest {
                 .setTagValue(AWS_TEST_TAG_VALUE);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setAwsConfig(clientAwsConfig);
+        String instanceName;
+        if (clientConfig.getInstanceName() != null) {
+            instanceName = clientConfig.getInstanceName();
+        } else {
+            instanceName = "hz.client_testAwsAddressProvider";
+        }
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        IMap<Object, Object> map = client.getMap("MyMap");
-        map.put(1, 5);
-        assertEquals(5, map.get(1));
+        GroupConfig groupConfig = clientConfig.getGroupConfig();
+        String loggingType = clientConfig.getProperty(GroupProperty.LOGGING_TYPE.getName());
+        LoggingService loggingService = new ClientLoggingService(groupConfig.getName(),
+                loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
 
-        AwsAddressProvider awsAddressProvider = new AwsAddressProvider(clientAwsConfig, client.getLoggingService());
+        AwsAddressProvider awsAddressProvider = new AwsAddressProvider(clientAwsConfig, loggingService);
         Collection<Address> addresses = awsAddressProvider.loadAddresses();
-        assertTrue(isNotEmpty(addresses));
+        assertTrue("Expected non-empty addresses from AwsAddressProvider.loadAddresses()", isNotEmpty(addresses));
+        assertEquals(instancePrivateIp, addresses.iterator().next().getHost());
     }
 }
