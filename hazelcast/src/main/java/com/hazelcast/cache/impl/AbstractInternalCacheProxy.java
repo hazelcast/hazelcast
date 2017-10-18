@@ -65,8 +65,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
  * <p/>
  * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  * @see com.hazelcast.cache.impl.CacheProxy
  * @see com.hazelcast.cache.ICache
  */
