@@ -72,6 +72,8 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
                         throw new RejectedExecutionException(message);
                     }
                 });
+        ((LoggingScheduledExecutor) internalExecutor).enablePeriodicPurge();
+
         userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new PoolExecutorThreadFactory(name + ".user-", classLoader),

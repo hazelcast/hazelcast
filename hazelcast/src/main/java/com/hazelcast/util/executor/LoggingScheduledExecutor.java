@@ -17,11 +17,13 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.Clock;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -60,14 +62,12 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
     public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory) {
         super(corePoolSize, threadFactory);
         this.logger = checkNotNull(logger, "logger cannot be null");
-        enablePeriodicPurge();
     }
 
     public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
                                     RejectedExecutionHandler handler) {
         super(corePoolSize, threadFactory, handler);
         this.logger = checkNotNull(logger, "logger cannot be null");
-        enablePeriodicPurge();
     }
 
     @Override
@@ -86,14 +86,28 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
      * not performaing well, causing severe operation delays. This periodic task will purge cancelled tasks from the queues,
      * releasing effectively resources.
      */
-    private void enablePeriodicPurge() {
+    public void enablePeriodicPurge() {
+        enablePeriodicPurge(null);
+    }
+
+    public void enablePeriodicPurge(final Executor delegate) {
         scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                purge();
+                if (delegate == null) {
+                    purge();
+                } else {
+                    delegate.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            purge();
+                        }
+                    });
+                }
             }
         }, DEFAULT_PURGE_INITIAL_DELAY, DEFAULT_PURGE_PERIOD, DEFAULT_PURGE_TIME_UNIT);
     }
+
 
     @Override
     protected void afterExecute(Runnable runnable, Throwable throwable) {

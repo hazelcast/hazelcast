@@ -37,6 +37,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
@@ -79,8 +80,9 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     @Category(SlowTest.class)
     public void no_remaining_task_after_cancel() throws Exception {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
+        ((LoggingScheduledExecutor) executor).enablePeriodicPurge(Executors.newSingleThreadExecutor());
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100000; i++) {
             Future<Integer> future = executor.schedule(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
@@ -93,7 +95,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         }
 
         final BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
-
+        System.out.println("Size: " + workQueue.size());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()

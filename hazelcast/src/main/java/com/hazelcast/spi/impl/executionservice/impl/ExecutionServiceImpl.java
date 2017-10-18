@@ -138,6 +138,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
                 createThreadPoolName(hzName, "scheduled"));
         this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
+        this.scheduledExecutorService.enablePeriodicPurge(getExecutor(SCHEDULED_EXECUTOR));
 
         int coreSize = RuntimeAvailableProcessors.get();
         // default executors
