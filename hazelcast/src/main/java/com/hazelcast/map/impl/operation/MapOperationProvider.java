@@ -79,6 +79,8 @@ public interface MapOperationProvider {
 
     MapOperation createGetOperation(String name, Data dataKey);
 
+    MapOperation createGetQuietOperation(String name, Data dataKey);
+
     MapOperation createQueryOperation(Query query);
 
     MapOperation createQueryPartitionOperation(Query query);

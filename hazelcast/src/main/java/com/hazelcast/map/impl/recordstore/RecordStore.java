@@ -91,6 +91,7 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     Object get(Data dataKey, boolean backup);
 
+    Object getQuiet(Data dataKey);
     /**
      * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
      * {@link com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
@@ -103,6 +104,8 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * independent of {@link com.hazelcast.config.InMemoryFormat}
      */
     Data readBackupData(Data key);
+
+    Data readQuietBackupData(Data key);
 
     MapEntries getAll(Set<Data> keySet);
 

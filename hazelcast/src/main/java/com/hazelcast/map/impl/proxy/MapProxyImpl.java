@@ -123,6 +123,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
+    public V getQuiet(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        return toObject(getQuietInternal(key));
+    }
+
+    @Override
     public V put(K key, V value) {
         return put(key, value, -1, TimeUnit.MILLISECONDS);
     }

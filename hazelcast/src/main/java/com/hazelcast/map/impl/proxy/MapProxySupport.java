@@ -339,7 +339,37 @@ abstract class MapProxySupport<K, V>
         return invokeOperation(keyData, operation);
     }
 
+    protected Object getQuietInternal(Object key) {
+        // TODO: action for read-backup true is not well tested
+        Data keyData = toDataWithStrategy(key);
+        if (mapConfig.isReadBackupData()) {
+            Object fromBackup = readQuietBackupDataOrNull(keyData);
+            if (fromBackup != null) {
+                return fromBackup;
+            }
+        }
+        MapOperation operation = operationProvider.createGetQuietOperation(name, keyData);
+        operation.setThreadId(getThreadId());
+        return invokeOperation(keyData, operation);
+    }
+
     private Data readBackupDataOrNull(Data key) {
+        RecordStore recordStore = getRecordStore(key);
+        if (recordStore == null) {
+            return null;
+        }
+        return recordStore.readBackupData(key);
+    }
+
+    private Data readQuietBackupDataOrNull(Data key) {
+        RecordStore recordStore = getRecordStore(key);
+        if (recordStore == null) {
+            return null;
+        }
+        return recordStore.readQuietBackupData(key);
+    }
+
+    private RecordStore getRecordStore(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         IPartition partition = partitionService.getPartition(partitionId, false);
         if (!partition.isOwnerOrBackup(thisAddress)) {
@@ -350,8 +380,9 @@ abstract class MapProxySupport<K, V>
         if (recordStore == null) {
             return null;
         }
-        return recordStore.readBackupData(key);
+        return recordStore;
     }
+
 
     protected InternalCompletableFuture<Data> getAsyncInternal(Object key) {
         Data keyData = toDataWithStrategy(key);

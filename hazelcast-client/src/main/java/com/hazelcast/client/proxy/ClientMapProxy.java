@@ -151,6 +151,7 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.collection.InflatableSet;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -296,6 +297,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         return toObject(getInternal(key));
+    }
+
+    @Override
+    public V getQuiet(Object key) {
+        throw new NotImplementedException();
     }
 
     protected Object getInternal(Object key) {

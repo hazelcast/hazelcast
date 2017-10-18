@@ -171,6 +171,22 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapPutAndGetQuiet() {
+        IMap<String, String> map = getInstance().getMap("testMapPutAndGetQuiet");
+        String value = map.put("Hello", "World");
+        assertEquals("World", map.get("Hello"));
+        assertEquals(1, map.size());
+        assertNull(value);
+        value = map.put("Hello", "World");
+        assertEquals("World", map.get("Hello"));
+        assertEquals(1, map.size());
+        assertEquals("World", value);
+        value = map.put("Hello", "New World");
+        assertEquals("World", value);
+        assertEquals("New World", map.get("Hello"));
+    }
+
+    @Test
     public void testMapPutIfAbsent() {
         IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
         assertEquals(map.putIfAbsent("key1", "value1"), null);

@@ -56,6 +56,7 @@ import com.hazelcast.map.impl.operation.EvictOperation;
 import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.GetEntryViewOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
+import com.hazelcast.map.impl.operation.GetQuietOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
 import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
@@ -304,8 +305,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_JOURNAL_DESERIALIZING_MAP_EVENT = 143;
     public static final int EVENT_JOURNAL_INTERNAL_MAP_EVENT = 144;
     public static final int EVENT_JOURNAL_READ_RESULT_SET = 145;
+    public static final int GET_QUIET = 146;
 
-    private static final int LEN = EVENT_JOURNAL_READ_RESULT_SET + 1;
+    private static final int LEN = GET_QUIET + 1;
 
     @Override
     public int getFactoryId() {
@@ -324,6 +326,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new GetOperation();
+            }
+        };
+        constructors[GET_QUIET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new GetQuietOperation();
             }
         };
         constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

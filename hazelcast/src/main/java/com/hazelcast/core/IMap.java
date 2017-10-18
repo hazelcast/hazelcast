@@ -176,6 +176,38 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * <b>Warning 1:</b>
      * <p>
+     * This method returns a clone of the original value, so modifying the returned value does not change
+     * the actual value in the map. You should put the modified value back to make changes visible to all nodes.
+     * <pre>
+     *      V value = map.getQuiet(key);
+     *      value.updateSomeProperty();
+     *      map.put(key, value);
+     * </pre>
+     * <p>
+     * <b>Warning 2:</b>
+     * <p>
+     * This method uses {@code hashCode} and {@code equals} of the binary form of
+     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
+     * defined in the {@code key}'s class.
+     *
+     * <b>Important</b>
+     * <ul>
+     *     <li>This method does not call eviction</li>
+     *     <li>This method does not update stats</li>
+     *     <li>This method does not call interceptors</li>
+     *     <li>This method does not call MapLoader</li>
+     *     <li>This method reads from backup if any</li>
+     * </ul>
+     *
+     * @throws NullPointerException if the specified key is null
+     */
+    V getQuiet(Object key);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <b>Warning 1:</b>
+     * <p>
      * This method returns a clone of the previous value, not the original (identically equal) value
      * previously put into the map.
      * <p>
