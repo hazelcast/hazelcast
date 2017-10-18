@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.RootCauseMatcher;
 import com.hazelcast.util.executor.LoggingScheduledExecutor.LoggingDelegatingFuture;
 import org.junit.After;
@@ -36,6 +37,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.SEVERE;
 import static junit.framework.TestCase.assertTrue;
@@ -62,6 +66,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     private TestThreadFactory factory = new TestThreadFactory();
 
     private ScheduledExecutorService executor;
+    private ExecutorService cleaner;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -72,27 +77,42 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             executor.shutdownNow();
             executor.awaitTermination(5, SECONDS);
         }
+
+        if (cleaner != null) {
+            cleaner.shutdownNow();
+            cleaner.awaitTermination(5, SECONDS);
+        }
     }
 
     @Test
+    @Category(SlowTest.class)
     public void no_remaining_task_after_cancel() throws Exception {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
 
-        for (int i = 0; i < 10; i++) {
-            Future<Integer> future = executor.submit(new Callable<Integer>() {
+        cleaner = Executors.newSingleThreadExecutor();
+        ((LoggingScheduledExecutor) executor).enablePeriodicPurge(cleaner);
+
+        for (int i = 0; i < 100000; i++) {
+            Future<Integer> future = executor.schedule(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
                     TimeUnit.HOURS.sleep(1);
                     return null;
                 }
-            });
+            }, 1, HOURS);
 
             future.cancel(true);
         }
 
-        BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
-
-        assertEquals(0, workQueue.size());
+        final BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                // Expected 1 - the purge task
+                assertEquals(1, workQueue.size());
+            }
+        });
     }
 
     @Test

@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -50,6 +51,10 @@ import static java.util.logging.Level.SEVERE;
  */
 public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
+    private static final int DEFAULT_PURGE_INITIAL_DELAY = 0;
+    private static final int DEFAULT_PURGE_PERIOD = 10;
+    private static final TimeUnit DEFAULT_PURGE_TIME_UNIT = TimeUnit.SECONDS;
+
     private final ILogger logger;
     private volatile boolean shutdownInitiated;
 
@@ -66,13 +71,42 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Runnable runnable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(runnable, task, this);
+        return new LoggingDelegatingFuture<V>(runnable, task);
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Callable<V> callable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(callable, task, this);
+        return new LoggingDelegatingFuture<V>(callable, task);
     }
+
+    /**
+     * {@link ScheduledThreadPoolExecutor#removeOnCancel policy is not working when tasks are decorated, causing task leaks in
+     * the workQueue. On the other hand, {@link ScheduledThreadPoolExecutor#remove(Runnable)} is an O(N) operation,
+     * not performaing well, causing severe operation delays. This periodic task will purge cancelled tasks from the queues,
+     * releasing effectively resources.
+     */
+    public void enablePeriodicPurge() {
+        enablePeriodicPurge(null);
+    }
+
+    public void enablePeriodicPurge(final Executor delegate) {
+        scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                if (delegate == null) {
+                    purge();
+                } else {
+                    delegate.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            purge();
+                        }
+                    });
+                }
+            }
+        }, DEFAULT_PURGE_INITIAL_DELAY, DEFAULT_PURGE_PERIOD, DEFAULT_PURGE_TIME_UNIT);
+    }
+
 
     @Override
     protected void afterExecute(Runnable runnable, Throwable throwable) {
@@ -117,12 +151,10 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         private final Object task;
         private final RunnableScheduledFuture<V> delegate;
-        private final LoggingScheduledExecutor executor;
 
-        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate, LoggingScheduledExecutor executor) {
+        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate) {
             this.task = task;
             this.delegate = delegate;
-            this.executor = executor;
         }
 
         @Override
@@ -164,11 +196,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            boolean cancelled = delegate.cancel(mayInterruptIfRunning);
-            if (cancelled) {
-                executor.remove(this);
-            }
-            return cancelled;
+            return delegate.cancel(mayInterruptIfRunning);
         }
 
         @Override
