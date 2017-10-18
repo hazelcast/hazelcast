@@ -40,6 +40,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.spi.properties.GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL;
 
 public final class ClientExecutionServiceImpl implements ClientExecutionService, MetricsProvider {
 
@@ -65,6 +66,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
         logger = loggingService.getLogger(ClientExecutionService.class);
         internalExecutor = new LoggingScheduledExecutor(logger, internalPoolSize,
                 new PoolExecutorThreadFactory(name + ".internal-", classLoader),
+                properties.getBoolean(TASK_SCHEDULER_REMOVE_ON_CANCEL),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";

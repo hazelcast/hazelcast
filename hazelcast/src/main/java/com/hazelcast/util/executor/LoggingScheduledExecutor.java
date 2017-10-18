@@ -50,28 +50,45 @@ import static java.util.logging.Level.SEVERE;
  */
 public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
+    /**
+     * Default {@link ScheduledThreadPoolExecutor#removeOnCancel} policy is not working when tasks are decorated.
+     */
+    private final boolean removeOnCancel;
     private final ILogger logger;
     private volatile boolean shutdownInitiated;
 
     public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory) {
+        this(logger, corePoolSize, threadFactory, false);
+    }
+
+    public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
+                                    boolean removeOnCancel) {
         super(corePoolSize, threadFactory);
         this.logger = checkNotNull(logger, "logger cannot be null");
+        this.removeOnCancel = removeOnCancel;
     }
 
     public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
                                     RejectedExecutionHandler handler) {
+        this(logger, corePoolSize, threadFactory, false, handler);
+    }
+
+    public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
+                                    boolean removeOnCancel,
+                                    RejectedExecutionHandler handler) {
         super(corePoolSize, threadFactory, handler);
         this.logger = checkNotNull(logger, "logger cannot be null");
+        this.removeOnCancel = removeOnCancel;
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Runnable runnable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(runnable, task, this);
+        return new LoggingDelegatingFuture<V>(runnable, task, this, removeOnCancel);
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Callable<V> callable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(callable, task, this);
+        return new LoggingDelegatingFuture<V>(callable, task, this, removeOnCancel);
     }
 
     @Override
@@ -118,11 +135,14 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
         private final Object task;
         private final RunnableScheduledFuture<V> delegate;
         private final LoggingScheduledExecutor executor;
+        private final boolean removeOnCancel;
 
-        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate, LoggingScheduledExecutor executor) {
+        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate, LoggingScheduledExecutor executor,
+                                boolean removeOnCancel) {
             this.task = task;
             this.delegate = delegate;
             this.executor = executor;
+            this.removeOnCancel = removeOnCancel;
         }
 
         @Override
@@ -164,10 +184,12 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
+            boolean removeOnCancel = !executor.isShutdown() && this.removeOnCancel;
             boolean cancelled = delegate.cancel(mayInterruptIfRunning);
-            if (cancelled) {
+            if (cancelled && removeOnCancel) {
                 executor.remove(this);
             }
+
             return cancelled;
         }
 
