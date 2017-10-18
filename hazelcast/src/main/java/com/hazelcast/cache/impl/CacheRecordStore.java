@@ -78,7 +78,7 @@ public class CacheRecordStore
      *
      * @param size          the maximum number of entries
      * @param maxSizePolicy the way in which the size is interpreted, only the {@link MaxSizePolicy#ENTRY_COUNT}
-     *                      {@code maxSizePolicy} is supported.
+     *                      {@code maxSizePolicy} is supported
      * @return the instance which will check if the maximum number of entries has been reached
      * @throws IllegalArgumentException if the policy is not {@link MaxSizePolicy#ENTRY_COUNT} or if the {@code maxSizePolicy}
      *                                  is null
