@@ -17,7 +17,6 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.Clock;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
