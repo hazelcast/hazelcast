@@ -363,10 +363,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     @Override
     public void reset() {
+        clear("Resetting clientEngine");
     }
 
     @Override
     public void shutdown(boolean terminate) {
+        clear("Shutting down clientEngine");
+    }
+
+    private void clear(String reason) {
         for (ClientEndpoint ce : endpointManager.getEndpoints()) {
             ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
             try {
@@ -377,7 +382,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             try {
                 final Connection conn = endpoint.getConnection();
                 if (conn.isAlive()) {
-                    conn.close("Shutdown of ClientEngine", null);
+                    conn.close(reason, null);
                 }
             } catch (Exception e) {
                 logger.finest(e);
