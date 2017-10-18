@@ -33,8 +33,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * <p>This implementation may handle multiple operations executed on this entry and persist the resultant state into
  * {@link CacheRecordStore} after entry processor get completed.</p>
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  * @see javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)
  */
 public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
