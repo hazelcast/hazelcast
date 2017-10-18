@@ -133,6 +133,9 @@ public class MockConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void stop() {
+        if (!live) {
+            return;
+        }
         logger.fine("Stopping connection manager");
         live = false;
 
@@ -202,9 +205,15 @@ public class MockConnectionManager implements ConnectionManager {
     @Override
     public void onConnectionClose(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
-        if (mapConnections.remove(endPoint, connection)) {
-            logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
+        if (!mapConnections.remove(endPoint, connection)) {
+            return;
+        }
+        logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
+        fireConnectionRemovedEvent(connection, endPoint);
+    }
 
+    private void fireConnectionRemovedEvent(final Connection connection, final Address endPoint) {
+        if (live) {
             ioService.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
