@@ -262,9 +262,10 @@ if [ "$OPERATION" = "change-cluster-version" ]; then
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
     if [ "$STATUS" = "fail" ];then
-       NEWVERSION=$(echo "${response}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
-       if [ "$NEWVERSION" != "null" ]; then
-           echo "Cluster is in ${NEWVERSION}, change failed."
+       MESSAGE=$(echo "${response}" | sed -e 's/^.*"message"[ ]*:[ ]*"//' -e 's/".*//');
+       # when there is no "message" element in response, above sed process returns "{"
+       if [ "$MESSAGE" != "{" ]; then
+           echo "Cluster version change failed: ${MESSAGE}"
        else
             echo "An error occured while changing cluster version!";
        fi
