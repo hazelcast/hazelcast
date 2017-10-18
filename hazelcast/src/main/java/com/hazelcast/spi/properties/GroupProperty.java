@@ -808,6 +808,14 @@ public final class GroupProperty {
     public static final HazelcastProperty BIND_SPOOFING_CHECKS =
             new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
 
+    /**
+     * Controls whether the task scheduler removes tasks immediately upon cancellation.
+     * This is disabled by default, because it can cause severe delays on other operations. By default all cancelled
+     * tasks will eventually get removed by scheduler workers.
+     */
+    public static final HazelcastProperty TASK_SCHEDULER_REMOVE_ON_CANCEL =
+            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", false);
+
     private GroupProperty() {
     }
 }
