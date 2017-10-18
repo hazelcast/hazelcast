@@ -23,9 +23,10 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertThatIsNoParallelTest;
 import static java.lang.String.format;
@@ -108,14 +109,6 @@ public final class JsrTestUtil {
      */
     public static void clearCachingProviderRegistry() {
         try {
-            for (CachingProvider cachingProvider : Caching.getCachingProviders()) {
-                try {
-                    cachingProvider.close();
-                } catch (HazelcastInstanceNotActiveException ignored) {
-                    // this is fine, since the instances can already be stopped
-                }
-            }
-
             // retrieve the CachingProviderRegistry instance
             Field providerRegistryField = Caching.class.getDeclaredField("CACHING_PROVIDERS");
             providerRegistryField.setAccessible(true);
@@ -128,11 +121,21 @@ public final class JsrTestUtil {
             providerMapField.setAccessible(true);
 
             Class<?> providerMapClass = providerMapField.getType();
-            Object providerMap = providerMapField.get(providerRegistryInstance);
+            Map<ClassLoader, LinkedHashMap<String, CachingProvider>> providerMap = (Map<ClassLoader,
+                    LinkedHashMap<String, CachingProvider>>) providerMapField.get(providerRegistryInstance);
+
+            for (LinkedHashMap<String, CachingProvider> providers : providerMap.values()) {
+                for (CachingProvider provider : providers.values()) {
+                    try {
+                        provider.close();
+                    } catch (HazelcastInstanceNotActiveException ignored) {
+                        // this is fine, since the instances can already be stopped
+                    }
+                }
+            }
 
             // clear the map
-            Method clearMethod = providerMapClass.getDeclaredMethod("clear");
-            clearMethod.invoke(providerMap);
+            providerMap.clear();
 
             // retrieve the ClassLoader of the CachingProviderRegistry
             Field classLoaderField = providerRegistryClass.getDeclaredField("classLoader");
@@ -143,6 +146,39 @@ public final class JsrTestUtil {
         } catch (Exception e) {
             e.printStackTrace();
             fail(format("Could not cleanup CachingProvider registry: [%s] %s", e.getClass().getSimpleName(), e.getMessage()));
+        }
+    }
+
+    /**
+     * Returns the number of registered {@link javax.cache.spi.CachingProvider} from the static registry in {@link Caching}.
+     */
+    public static int getCachingProviderRegistrySize() {
+        try {
+            // retrieve the CachingProviderRegistry instance
+            Field providerRegistryField = Caching.class.getDeclaredField("CACHING_PROVIDERS");
+            providerRegistryField.setAccessible(true);
+
+            Class<?> providerRegistryClass = providerRegistryField.getType();
+            Object providerRegistryInstance = providerRegistryField.get(Caching.class);
+
+            // retrieve the map with the CachingProvider instances
+            Field providerMapField = providerRegistryClass.getDeclaredField("cachingProviders");
+            providerMapField.setAccessible(true);
+
+            Map<ClassLoader, LinkedHashMap<String, CachingProvider>> providerMap = (Map<ClassLoader,
+                    LinkedHashMap<String, CachingProvider>>) providerMapField.get(providerRegistryInstance);
+
+            int count = 0;
+            for (LinkedHashMap<String, CachingProvider> providers : providerMap.values()) {
+                for (CachingProvider provider : providers.values()) {
+                    count++;
+                }
+            }
+
+            // return the map size
+            return count;
+        } catch (Exception e) {
+            return -1;
         }
     }
 
