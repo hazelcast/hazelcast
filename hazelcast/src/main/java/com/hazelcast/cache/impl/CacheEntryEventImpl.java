@@ -26,8 +26,8 @@ import javax.cache.event.EventType;
  * {@link javax.cache.event.CacheEntryListener}.
  * <p>This implementation will provide source cache, the event type, key, new value, old value and availability.</p>
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  *
  * @see javax.cache.event.CacheEntryEvent
  * @see javax.cache.event.CacheEntryCreatedListener#onCreated(Iterable)
