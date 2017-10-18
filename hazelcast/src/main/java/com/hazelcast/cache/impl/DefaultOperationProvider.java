@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Provide operations other then {@link InMemoryFormat#NATIVE}
+ * Provide operations other than {@link InMemoryFormat#NATIVE}
  */
 public class DefaultOperationProvider implements CacheOperationProvider {
 
