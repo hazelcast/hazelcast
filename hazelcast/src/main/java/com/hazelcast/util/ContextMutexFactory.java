@@ -30,30 +30,27 @@ import java.util.Map;
  * <p>
  * The returned {@link Mutex}es implement {@link Closeable}, so can be conveniently used in a try-with-resources statement.
  * <p>
- * Typical usage would allow, for example, synchronizing access to a non-thread-safe {@link Map} on a per-key basis,
- * to avoid blocking other threads who would perform updates on other entries of the {@link Map}.
- *
+ * Typical usage is to mimic {@code ConcurrentMap.computeIfAbsent(key, function)} in an environment using pre-8 Java version:
  * <pre>
- *     class Test {
+ *      private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
+ *      private final ConcurrentMap&lt;String, String&gt; map = new ConcurrentHashMap&lt;String, String&gt;();
  *
- *         private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
- *         private final Map&lt;String, String&gt; mapToSync = new HashMap&lt;String, String&gt;();
- *
- *         public void test(String key, String value) {
- *             // critical section
- *             ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(key);
- *             try {
- *                 synchronized (mutex) {
- *                      if (mapToSync.get(key) == null) {
- *                          mapToSync.put(key, value);
- *                      }
+ *      public void computeIfAbsent(String key, Function&lt;String, String&gt; function) {
+ *          // critical section
+ *          ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(key);
+ *          try {
+ *              synchronized (mutex) {
+ *                 if (map.get(key) == null) {
+ *                     map.put(key, function.apply(key));
  *                 }
- *             } finally {
- *                 mutex.close();
- *             }
- *         }
- *     }
+ *              }
+ *          } finally {
+ *             mutex.close();
+ *          }
+ *      }
  * </pre>
+ *
+ * @see ConcurrencyUtil#getOrPutSynchronized(java.util.concurrent.ConcurrentMap, Object, ContextMutexFactory, ConstructorFunction)
  */
 public final class ContextMutexFactory {
 
