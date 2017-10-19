@@ -175,17 +175,21 @@ public class MasterContext {
         }
 
         MembersView membersView = getMembersView();
+        ClassLoader contextClassLoader = swapContextClassLoader(coordinationService.getClassLoader(jobId));
         try {
             logger.info("Start executing " + jobAndExecutionId(jobId, executionId) + ", status " + jobStatus()
                     + "\n" + dag);
             logger.fine("Building execution plan for " + jobAndExecutionId(jobId, executionId));
             JobConfig jobConfig = jobRecord.getConfig();
+
             executionPlanMap = ExecutionPlanBuilder.createExecutionPlans(nodeEngine,
                     membersView, dag, jobConfig, lastSnapshotId);
         } catch (TopologyChangedException e) {
             logger.severe("Execution plans could not be created for " + jobAndExecutionId(jobId, executionId), e);
             scheduleRestart();
             return;
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
 
         logger.fine("Built execution plans for " + jobAndExecutionId(jobId, executionId));
@@ -580,6 +584,13 @@ public class MasterContext {
                  .invoke();
             futures.put(member, future);
         }
+    }
+
+    private static ClassLoader swapContextClassLoader(ClassLoader jobClassLoader) {
+        Thread currentThread = Thread.currentThread();
+        ClassLoader contextClassLoader = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(jobClassLoader);
+        return contextClassLoader;
     }
 
     /**

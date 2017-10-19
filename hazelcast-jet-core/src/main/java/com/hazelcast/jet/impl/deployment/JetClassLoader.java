@@ -20,14 +20,22 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.util.Enumeration;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.zip.InflaterInputStream;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class JetClassLoader extends ClassLoader {
+
+    private static final String JOB_URL_PROTOCOL = "jet-job-resource";
 
     private final Map<String, byte[]> resources;
 
@@ -52,14 +60,16 @@ public class JetClassLoader extends ClassLoader {
 
     @Override
     protected URL findResource(String name) {
-        if (isEmpty(name)) {
+        if (isEmpty(name) || !resources.containsKey(name)) {
             return null;
         }
-        // we distinguish between the case "resource found, but not accessible by URL" and "resource not found"
-        if (resources.containsKey(name)) {
-            throw new IllegalArgumentException("Resource not accessible by URL: " + name);
-        }
-        return null;
+
+        return uncheckCall(() -> createResourceURL(name));
+    }
+
+    @Override
+    protected Enumeration<URL> findResources(String name) throws IOException {
+        return new SingleURLEnumeration(findResource(name));
     }
 
     @Override
@@ -79,7 +89,62 @@ public class JetClassLoader extends ClassLoader {
         return new InflaterInputStream(new ByteArrayInputStream(classData));
     }
 
+    private URL createResourceURL(String name) throws MalformedURLException {
+        return new URL(JOB_URL_PROTOCOL, null, -1, name, new JobResourceURLStreamHandler());
+    }
+
     private static boolean isEmpty(String className) {
         return className == null || className.isEmpty();
     }
+
+    private final class JobResourceURLStreamHandler extends URLStreamHandler {
+
+        @Override
+        protected URLConnection openConnection(URL url) throws IOException {
+            return new JobResourceURLConnection(url);
+        }
+    }
+
+    private final class JobResourceURLConnection extends URLConnection {
+
+        private JobResourceURLConnection(URL url) {
+            super(url);
+        }
+
+        @Override
+        public void connect() throws IOException {
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return resourceStream(url.getFile());
+        }
+    }
+
+    private static final class SingleURLEnumeration implements Enumeration<URL> {
+
+        private URL url;
+
+        private SingleURLEnumeration(URL url) {
+            this.url = url;
+        }
+
+        @Override
+        public boolean hasMoreElements() {
+            return url != null;
+        }
+
+        @Override
+        public URL nextElement() {
+            if (url == null) {
+                throw new NoSuchElementException();
+            }
+            try {
+                return url;
+            } finally {
+                url = null;
+            }
+        }
+    }
+
 }
