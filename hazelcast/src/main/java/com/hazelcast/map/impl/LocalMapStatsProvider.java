@@ -101,7 +101,7 @@ public class LocalMapStatsProvider {
 
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
         for (PartitionContainer partitionContainer : partitionContainers) {
-            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
+            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId(), false);
             Collection<RecordStore> allRecordStores = partitionContainer.getAllRecordStores();
 
             for (RecordStore recordStore : allRecordStores) {
