@@ -333,7 +333,7 @@
                                     <forkCount>1C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
-                                        -Xms128m -Xmx1G -XX:MaxPermSize=128M -ea
+                                        -Xms512m -Xmx2G -XX:MaxPermSize=1024M -ea
                                         -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
@@ -370,7 +370,7 @@
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <argLine>
-                                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                        -Xms512m -Xmx2G -XX:MaxPermSize=1024M
                                         -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
@@ -546,7 +546,7 @@
             <id>test-coverage</id>
             <properties>
                 <argLine>
-                    -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                    -Xms512m -Xmx2G -XX:MaxPermSize=1024M
                     -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
@@ -979,7 +979,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=1024M
+                                -Xms512m -Xmx2G -XX:MaxPermSize=1024M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1129,7 +1129,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms128m -Xmx1G
+                                -Xms512m -Xmx2G
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
