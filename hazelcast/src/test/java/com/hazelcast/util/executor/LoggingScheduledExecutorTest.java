@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.RootCauseMatcher;
 import com.hazelcast.util.executor.LoggingScheduledExecutor.LoggingDelegatingFuture;
 import org.junit.After;
@@ -42,10 +43,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.SEVERE;
 import static junit.framework.TestCase.assertTrue;
@@ -75,24 +76,58 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void no_remaining_task_after_cancel() throws Exception {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
 
-        for (int i = 0; i < 10; i++) {
-            Future<Integer> future = executor.submit(new Callable<Integer>() {
+        for (int i = 0; i < 1000; i++) {
+            Future<Integer> future = executor.schedule(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
-                    TimeUnit.HOURS.sleep(1);
+                    HOURS.sleep(1);
                     return null;
                 }
-            });
+            }, 10, SECONDS);
 
             future.cancel(true);
         }
 
-        BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
+        final BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
 
-        assertEquals(0, workQueue.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(0, workQueue.size());
+            }
+        });
+    }
+
+    @Test
+    public void no_remaining_task_after_cancel_long_delayed_tasks() throws Exception {
+        executor = new LoggingScheduledExecutor(logger, 1, factory, true);
+
+        for (int i = 0; i < 1000; i++) {
+            Future<Integer> future = executor.schedule(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    HOURS.sleep(1);
+                    return null;
+                }
+            }, 10, HOURS);
+
+            future.cancel(true);
+        }
+
+        final BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(0, workQueue.size());
+            }
+        });
     }
 
     @Test
