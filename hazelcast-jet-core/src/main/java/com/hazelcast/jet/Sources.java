@@ -180,6 +180,18 @@ public final class Sources {
      * restarts, it starts emitting from the saved offset with an
      * exactly-once guarantee (unless the journal has overflowed).
      *
+     * <h4>Issue when "catching up"</h4>
+     * The processor reads partitions one by one: it gets events from one
+     * partition and then moves to the next one etc. This adds time disorder to
+     * events: it might emit very recent event from partition1 while not yet
+     * emitting an old event from partition2. If watermarks are added to the
+     * stream later, the allowed event lag should accommodate this disorder.
+     * Most notably, the "catching up" happens after the job is restarted, when
+     * events since the last snapshot are reprocessed in a burst. In order to
+     * not lose any events, the lag should be configured to at least {@code
+     * snapshotInterval + timeToRestart + normalEventLag}.
+     * We plan to address this issue in a future release.
+     *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events, can be {@code null}
      * @param projection the projection to map the events, can be {@code null}
