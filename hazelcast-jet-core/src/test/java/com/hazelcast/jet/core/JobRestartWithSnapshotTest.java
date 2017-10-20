@@ -138,9 +138,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         emission from different WM, which might cause the SlidingWindowP downstream to miss some of the
         first windows.
 
-        The sink is writing to a ConcurrentMap which is an idempotent sink. It checks that on overwrite the value
-        is the same. This can later be replaced with an IMap and kafka sink, after they are implemented. (IMap
-        sink currently fails the job when a member is brought down.)
+        The sink writes to an IMap which is an idempotent sink.
 
         The resulting contents of the sink map are compared to expected value.
          */
