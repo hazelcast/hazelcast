@@ -112,6 +112,10 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
         if (timestamp >= currWm) {
             // only emit non-late events
             singletonTraverser.accept(item);
+        } else {
+            if (getLogger().isInfoEnabled()) {
+                getLogger().info("Dropped late event: " + item);
+            }
         }
         if (wmEmitPolicy.shouldEmit(currWm, lastEmittedWm)) {
             lastEmittedWm = currWm;
