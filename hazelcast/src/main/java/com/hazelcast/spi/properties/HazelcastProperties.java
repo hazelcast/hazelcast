@@ -27,14 +27,16 @@ import static java.util.Collections.unmodifiableSet;
 
 /**
  * Container for configured Hazelcast properties ({@see HazelcastProperty}).
- * <p/>
+ * <p>
  * A {@link HazelcastProperty} can be set as:
- * <p><ul>
+ * <ul>
  * <li>an environmental variable using {@link System#setProperty(String, String)}</li>
  * <li>the programmatic configuration using {@link Config#setProperty(String, String)}</li>
- * <li>the XML configuration
- * {@see http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties}</li>
- * </ul></p>
+ * <li>the XML configuration</li>
+ * </ul>
+ *
+ * @see <a href="http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties">
+ * System properties documentaiton</a>
  */
 public class HazelcastProperties {
 
@@ -43,12 +45,12 @@ public class HazelcastProperties {
 
     /**
      * Creates a container with configured Hazelcast properties.
-     * <p/>
+     * <p>
      * Uses the environmental value if no value is defined in the configuration.
      * Uses the default value if no environmental value is defined.
      *
-     * @param config {@link Config} used to configure the {@link HazelcastProperty} values.
-     *               Properties in config are allowed to be null.
+     * @param config {@link Config} used to configure the {@link HazelcastProperty} values;
+     *               properties in config are allowed to be {@code null}
      */
     public HazelcastProperties(Config config) {
         this(config.getProperties());
@@ -56,12 +58,12 @@ public class HazelcastProperties {
 
     /**
      * Creates a container with configured Hazelcast properties.
-     * <p/>
+     * <p>
      * Uses the environmental value if no value is defined in the configuration.
      * Uses the default value if no environmental value is defined.
      *
-     * @param nullableProperties {@link Properties} used to configure the {@link HazelcastProperty} values.
-     *                           Properties are allowed to be null.
+     * @param nullableProperties {@link Properties} used to configure the {@link HazelcastProperty} values;
+     *                           properties are allowed to be {@code null}
      */
     @SuppressWarnings("unchecked")
     public HazelcastProperties(Properties nullableProperties) {
@@ -75,7 +77,7 @@ public class HazelcastProperties {
     /**
      * Returns an immutable set of all keys in this HazelcastProperties.
      *
-     * @return set of keys.
+     * @return set of keys
      */
     public Set<String> keySet() {
         return keys;
@@ -85,8 +87,8 @@ public class HazelcastProperties {
      * Returns the value for the given key.
      *
      * @param key the key
-     * @return the value for the given key, or null if no value is found.
-     * @throws NullPointerException if key is null.
+     * @return the value for the given key, or {@code null} if no value is found
+     * @throws NullPointerException if key is {@code null}
      */
     public String get(String key) {
         return (String) properties.get(key);
@@ -96,7 +98,7 @@ public class HazelcastProperties {
      * Returns the configured value of a {@link HazelcastProperty} as String.
      *
      * @param property the {@link HazelcastProperty} to get the value from
-     * @return the value or <tt>null</tt> if nothing has been configured
+     * @return the value or {@code null} if nothing has been configured
      */
     public String getString(HazelcastProperty property) {
         String value = properties.getProperty(property.getName());
@@ -215,7 +217,7 @@ public class HazelcastProperties {
 
     /**
      * Returns the configured enum value of a {@link GroupProperty}.
-     * <p/>
+     * <p>
      * The case of the enum is ignored.
      *
      * @param property the {@link GroupProperty} to get the value from

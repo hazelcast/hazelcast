@@ -36,7 +36,9 @@ public interface DataSerializable {
      * Writes object fields to output stream
      *
      * @param out output
-     * @throws IOException
+     * @throws IOException if an I/O error occurs. In particular,
+     *                     an <code>IOException</code> may be thrown if the
+     *                     output stream has been closed.
      */
     void writeData(ObjectDataOutput out) throws IOException;
 
@@ -44,8 +46,9 @@ public interface DataSerializable {
      * Reads fields from the input stream
      *
      * @param in input
-     * @throws IOException
+     * @throws IOException if an I/O error occurs. In particular,
+     *                     an <code>IOException</code> may be thrown if the
+     *                     input stream has been closed.
      */
     void readData(ObjectDataInput in) throws IOException;
-
 }
