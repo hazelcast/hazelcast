@@ -218,15 +218,7 @@ public abstract class AbstractHazelcastCacheManager
         ensureOpen();
         ICacheInternal<?, ?> cache = getCacheUnchecked(cacheName);
         if (cache != null) {
-            Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
-            if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())) {
-                return ensureOpenIfAvailable((ICacheInternal<K, V>) cache);
-            } else {
-                throw new IllegalArgumentException(
-                        "Cache '" + cacheName + "' was defined with specific types Cache<" + configuration.getKeyType() + ", "
-                                + configuration.getValueType() + "> "
-                                + "in which case CacheManager.getCache(String, Class, Class) must be used");
-            }
+            return ensureOpenIfAvailable((ICacheInternal<K, V>) cache);
         }
         return null;
     }
