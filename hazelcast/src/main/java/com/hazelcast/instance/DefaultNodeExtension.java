@@ -118,7 +118,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     private void checkSecurityAllowed() {
-        SecurityConfig securityConfig =  node.getConfig().getSecurityConfig();
+        SecurityConfig securityConfig = node.getConfig().getSecurityConfig();
         if (securityConfig != null && securityConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Security requires Hazelcast Enterprise Edition");
@@ -284,9 +284,20 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void validateJoinRequest(JoinMessage joinMessage) {
         // check joining member's major.minor version is same as current cluster version's major.minor numbers
-        if (!joinMessage.getMemberVersion().asVersion().equals(node.getClusterService().getClusterVersion())) {
-            throw new VersionMismatchException("Joining node's version " + joinMessage.getMemberVersion() + " is not"
-                    + " compatible with " + node.getVersion());
+        MemberVersion memberVersion = joinMessage.getMemberVersion();
+        Version clusterVersion = node.getClusterService().getClusterVersion();
+        if (!memberVersion.asVersion().equals(clusterVersion)) {
+            String msg = "Joining node's version " + memberVersion + " is not compatible with cluster version " + clusterVersion;
+            if (clusterVersion.getMajor() != memberVersion.getMajor()) {
+                msg += " (Rolling Member Upgrades are only supported for the same major version)";
+            }
+            if (clusterVersion.getMinor() > memberVersion.getMinor()) {
+                msg += " (Rolling Member Upgrades are only supported for the next minor version)";
+            }
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                msg += " (Rolling Member Upgrades are only supported in Hazelcast Enterprise)";
+            }
+            throw new VersionMismatchException(msg);
         }
     }
 
