@@ -262,17 +262,14 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public Iterable<String> getCacheNames() {
+        checkIfManagerNotClosed();
         Set<String> names;
-        if (isClosed()) {
-            names = Collections.emptySet();
-        } else {
-            names = createLinkedHashSet(caches.size());
-            for (Map.Entry<String, ICacheInternal<?, ?>> entry : caches.entrySet()) {
-                String nameWithPrefix = entry.getKey();
-                int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();
-                final String name = nameWithPrefix.substring(index);
-                names.add(name);
-            }
+        names = createLinkedHashSet(caches.size());
+        for (Map.Entry<String, ICacheInternal<?, ?>> entry : caches.entrySet()) {
+            String nameWithPrefix = entry.getKey();
+            int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();
+            final String name = nameWithPrefix.substring(index);
+            names.add(name);
         }
         return Collections.unmodifiableCollection(names);
     }
@@ -371,7 +368,7 @@ public abstract class AbstractHazelcastCacheManager
 
     protected void checkIfManagerNotClosed() {
         if (isClosed()) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("CacheManager " + cacheNamePrefix + " is already closed.");
         }
     }
 
