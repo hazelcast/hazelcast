@@ -31,7 +31,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
@@ -47,7 +47,7 @@ import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetwe
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class ClientSplitBrainTest extends ClientTestSupport {
 
