@@ -53,7 +53,7 @@ public final class StreamSocketP extends AbstractProcessor implements Closeable 
         getLogger().info("Connecting to socket " + hostAndPort());
         Socket socket = new Socket(host, port);
         getLogger().info("Connected to socket " + hostAndPort());
-        bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+        bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), charset));
     }
 
     @Override
@@ -93,7 +93,7 @@ public final class StreamSocketP extends AbstractProcessor implements Closeable 
     }
 
     /**
-     * Internal API, use {@link SourceProcessors#streamSocket(String, int, Charset)}.
+     * Internal API, use {@link SourceProcessors#streamSocketP(String, int, Charset)}.
      */
     public static ProcessorSupplier supplier(String host, int port, @Nonnull String charset) {
         return new CloseableProcessorSupplier<>(() -> new StreamSocketP(host, port, Charset.forName(charset)));

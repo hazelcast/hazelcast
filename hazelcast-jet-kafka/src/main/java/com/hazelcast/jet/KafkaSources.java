@@ -59,8 +59,13 @@ public final class KafkaSources {
      * <p>
      * The processor completes only in the case of an error or if the job is
      * cancelled. IO failures are generally handled by Kafka producer and
-     * generally do not cause the processor to fail. Refer to Kafka
-     * documentation for details.
+     * do not cause the processor to fail.
+     * Kafka consumer also does not return from {@code poll(timeout)} if the
+     * cluster is down. If {@link
+     * com.hazelcast.jet.config.JobConfig#setSnapshotIntervalMillis(long)
+     * snapshotting is enabled}, entire job might be blocked. This is a known
+     * issue of Kafka (KAFKA-1894).
+     * Refer to Kafka documentation for details.
      *
      * <h4>Issue when "catching up"</h4>
      * The processor reads partitions one by one: it gets events from one

@@ -28,13 +28,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Queue;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -59,7 +60,7 @@ public class StreamSocketPTest extends JetTestSupport {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             Thread thread = new Thread(() -> uncheckRun(() -> {
                 Socket socket = serverSocket.accept();
-                PrintWriter writer = new PrintWriter(socket.getOutputStream());
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), UTF_16));
                 writer.write("hello\n");
                 writer.write("world\n");
                 writer.close();
@@ -67,7 +68,7 @@ public class StreamSocketPTest extends JetTestSupport {
             }));
             thread.start();
 
-            Processor processor = SourceProcessors.streamSocketP("localhost", serverSocket.getLocalPort(), UTF_8)
+            Processor processor = SourceProcessors.streamSocketP("localhost", serverSocket.getLocalPort(), UTF_16)
                                                   .get(1).iterator().next();
             processor.init(outbox, context);
 
