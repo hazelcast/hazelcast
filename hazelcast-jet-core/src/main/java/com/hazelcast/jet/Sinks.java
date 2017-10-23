@@ -243,4 +243,32 @@ public final class Sinks {
     public static <E> Sink<E> writeFile(@Nonnull String directoryName) {
         return writeFile(directoryName, Object::toString, UTF_8, false);
     }
+
+    /**
+     * Returns a sink that logs all the data items it receives, at the INFO
+     * level to the log category {@link
+     * com.hazelcast.jet.impl.connector.WriteLoggerP}. It does not log {@link
+     * Watermark watermark} items.
+     * <p>
+     * The sink logs each item on whichever cluster member it happens to
+     * receive it. Its primary purpose is for development use, when running Jet
+     * on a local machine.
+     *
+     * @param toStringFn a function that returns a string representation of a stream item
+     * @param <E> stream item type
+     */
+    @Nonnull
+    public static <E> Sink<E> writeLogger(DistributedFunction<E, String> toStringFn) {
+        return fromProcessor("writeLogger", DiagnosticProcessors.writeLoggerP(toStringFn));
+    }
+
+    /**
+     * Convenience for {@link #writeLogger(DistributedFunction)} with {@code
+     * Object.toString()} as the {@code toStringFn}.
+     */
+    @Nonnull
+    public static <E> Sink<E> writeLogger() {
+        return writeLogger(Object::toString);
+
+    }
 }
