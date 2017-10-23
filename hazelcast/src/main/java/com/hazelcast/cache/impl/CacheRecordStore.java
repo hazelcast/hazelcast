@@ -111,7 +111,7 @@ public class CacheRecordStore
 
     protected CacheRecordFactory createCacheRecordFactory() {
         return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                                      nodeEngine.getSerializationService());
+                nodeEngine.getSerializationService());
     }
 
     @Override
@@ -177,18 +177,7 @@ public class CacheRecordStore
         }
     }
 
-    private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime,
-                                                long expirationTime, long lastAccessTime,
-                                                long accessHit, CacheMergePolicy mergePolicy) {
-        SerializationService ss =
-                mergePolicy instanceof StorageTypeAwareCacheMergePolicy
-                        // Null serialization service means that use as storage type without convertion
-                        ? null
-                        //  Non-null serialization service means that convertion is required
-                        : serializationService;
-        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, ss);
-    }
-
+    @Override
     public CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy) {
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
@@ -201,41 +190,38 @@ public class CacheRecordStore
         boolean isExpired = processExpiredEntry(key, record, now);
 
         if (record == null || isExpired) {
-            Object newValue =
-                    mergePolicy.merge(name,
-                                      createCacheEntryView(
-                                            key,
-                                            value,
-                                            cacheEntryView.getCreationTime(),
-                                            cacheEntryView.getExpirationTime(),
-                                            cacheEntryView.getLastAccessTime(),
-                                            cacheEntryView.getAccessHit(),
-                                            mergePolicy),
-                                      null);
+            Object newValue = mergePolicy.merge(name, createCacheEntryView(
+                    key,
+                    value,
+                    cacheEntryView.getCreationTime(),
+                    cacheEntryView.getExpirationTime(),
+                    cacheEntryView.getLastAccessTime(),
+                    cacheEntryView.getAccessHit(),
+                    mergePolicy),
+                    null);
             if (newValue != null) {
                 record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
                 merged = record != null;
             }
         } else {
             Object existingValue = record.getValue();
-            Object newValue =
-                    mergePolicy.merge(name,
-                                      createCacheEntryView(
-                                            key,
-                                            value,
-                                            cacheEntryView.getCreationTime(),
-                                            cacheEntryView.getExpirationTime(),
-                                            cacheEntryView.getLastAccessTime(),
-                                            cacheEntryView.getAccessHit(),
-                                            mergePolicy),
-                                      createCacheEntryView(
-                                            key,
-                                            existingValue,
-                                            cacheEntryView.getCreationTime(),
-                                            record.getExpirationTime(),
-                                            record.getLastAccessTime(),
-                                            record.getAccessHit(),
-                                            mergePolicy));
+            Object newValue = mergePolicy.merge(name,
+                    createCacheEntryView(
+                            key,
+                            value,
+                            cacheEntryView.getCreationTime(),
+                            cacheEntryView.getExpirationTime(),
+                            cacheEntryView.getLastAccessTime(),
+                            cacheEntryView.getAccessHit(),
+                            mergePolicy),
+                    createCacheEntryView(
+                            key,
+                            existingValue,
+                            cacheEntryView.getCreationTime(),
+                            record.getExpirationTime(),
+                            record.getLastAccessTime(),
+                            record.getAccessHit(),
+                            mergePolicy));
             if (existingValue != newValue) {
                 merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
             }
@@ -247,5 +233,13 @@ public class CacheRecordStore
         }
 
         return merged ? record : null;
+    }
+
+    private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime, long expirationTime,
+                                                long lastAccessTime, long accessHit, CacheMergePolicy mergePolicy) {
+        // null serialization service means that use as storage type without convertion,
+        // non-null serialization service means that convertion is required
+        SerializationService ss = mergePolicy instanceof StorageTypeAwareCacheMergePolicy ? null : serializationService;
+        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, ss);
     }
 }

@@ -24,8 +24,7 @@ import com.hazelcast.internal.eviction.EvictableEntryView;
  * @param <K> the type of the key
  * @param <V> the type of the value
  */
-public interface CacheEntryView<K, V>
-        extends EvictableEntryView<K, V> {
+public interface CacheEntryView<K, V> extends EvictableEntryView<K, V> {
 
     /**
      * Gets the key of the cache entry.
@@ -61,5 +60,4 @@ public interface CacheEntryView<K, V>
      * @return the count of how many time this cache entry has been accessed
      */
     long getAccessHit();
-
 }

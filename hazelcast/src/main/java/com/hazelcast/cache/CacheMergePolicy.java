@@ -21,36 +21,37 @@ import com.hazelcast.nio.serialization.BinaryInterface;
 import java.io.Serializable;
 
 /**
+ * Policy for merging cache entries after a split-brain has been healed.
  * <p>
- * Policy for merging cache entries.
- * </p>
+ * Passed {@link CacheEntryView} instances wrap the key and value as their original types
+ * with conversion to object from their storage types. If you don't need the original types
+ * of key and value, you should use {@link StorageTypeAwareCacheMergePolicy} which is
+ * a sub-type of this interface.
  *
- * <p>
- * Passed {@link CacheEntryView} instances wraps the key and value as their original types
- * with convertion to object from their storage types. If user doesn't need to original types of key and value,
- * (s)he should use {@link StorageTypeAwareCacheMergePolicy} which is sub-type of this interface.
- * </p>
+ * @see com.hazelcast.cache.merge.HigherHitsCacheMergePolicy
+ * @see com.hazelcast.cache.merge.LatestAccessCacheMergePolicy
+ * @see com.hazelcast.cache.merge.PassThroughCacheMergePolicy
+ * @see com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy
  */
 @BinaryInterface
 public interface CacheMergePolicy extends Serializable {
 
     /**
-     * <p>
      * Selects one of the merging and existing cache entries to be merged.
-     * </p>
-     *
      * <p>
-     * Note that as mentioned also in arguments, the {@link CacheEntryView} instance that represents existing cache entry
-     * may be null if there is no existing entry for the specified key in the the {@link CacheEntryView} instance
-     * that represents merging cache entry.
-     * </p>
+     * Note that the {@code existingEntry} may be {@code null} if there
+     * is no entry with the same key in the destination cache.
+     * This happens, when the entry for that key was
+     * <ul>
+     * <li>only created in the smaller sub-cluster during the split-brain</li>
+     * <li>removed in the larger sub-cluster during the split-brain</li>
+     * </ul>
      *
      * @param cacheName     name of the cache
-     * @param mergingEntry  {@link CacheEntryView} instance that has cache entry to be merged
-     * @param existingEntry {@link CacheEntryView} instance that has existing cache entry.
-     *                      This entry may be <code>null</code> if there is no existing cache entry.
-     * @return the selected value for merging
+     * @param mergingEntry  {@link CacheEntryView} instance that has the cache entry to be merged
+     * @param existingEntry {@link CacheEntryView} instance that has the existing cache entry
+     *                      or {@code null} if there is no existing cache entry
+     * @return the selected value for merging or {@code null} if the entry should be removed
      */
     Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry);
-
 }

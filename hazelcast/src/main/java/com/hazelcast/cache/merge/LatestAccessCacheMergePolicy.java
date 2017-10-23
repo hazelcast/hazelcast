@@ -21,23 +21,22 @@ import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
- * `LatestAccessCacheMergePolicy` merges cache entry from source to destination cache
- * if source entry has been accessed more recently than the destination entry.
+ * Merges cache entries from source to destination cache if the source entry
+ * has been accessed more recently than the destination entry.
+ * <p>
+ * <b>Note:</b> This policy can only be used if the clocks of the nodes are in sync.
  */
 @BinaryInterface
-public class LatestAccessCacheMergePolicy
-        implements StorageTypeAwareCacheMergePolicy {
+public class LatestAccessCacheMergePolicy implements StorageTypeAwareCacheMergePolicy {
 
     public LatestAccessCacheMergePolicy() {
-
     }
 
     @Override
     public Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry) {
-        if (existingEntry == null ||  mergingEntry.getLastAccessTime() >= existingEntry.getLastAccessTime()) {
+        if (existingEntry == null || mergingEntry.getLastAccessTime() >= existingEntry.getLastAccessTime()) {
             return mergingEntry.getValue();
         }
         return existingEntry.getValue();
     }
-
 }

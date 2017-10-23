@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains out of the box merge policies.<br/>
+ * Contains out-of-the-box merge policies for {@link com.hazelcast.cache.ICache}.
  */
 package com.hazelcast.cache.merge;

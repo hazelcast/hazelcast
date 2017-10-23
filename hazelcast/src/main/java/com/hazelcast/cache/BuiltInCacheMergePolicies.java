@@ -22,20 +22,15 @@ import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
 import com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy;
 
 /**
- * <p>
  * Enum that represents all built-in {@link com.hazelcast.cache.CacheMergePolicy} implementations.
- * </p>
- *
  * <p>
- * <b>Note:</b>
- *      When a new built-in {@link com.hazelcast.cache.CacheMergePolicy} is implemented,
- *      its definition should be added here also.
- * </p>
+ * <b>Note:</b> When a new built-in {@link com.hazelcast.cache.CacheMergePolicy} is implemented,
+ * its definition should be added here.
  */
 public enum BuiltInCacheMergePolicies {
 
     /**
-     * Cache merge policy that merges cache entry from source to destination directly.
+     * Cache merge policy that merges cache entries from source to destination directly.
      */
     PASS_THROUGH(PassThroughCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
         @Override
@@ -45,8 +40,8 @@ public enum BuiltInCacheMergePolicies {
     }),
 
     /**
-     * Cache merge policy that merges cache entry from source to destination
-     * if it does not exist in the destination cache.
+     * Cache merge policy that merges cache entries from source to destination
+     * if they don't exist in the destination cache.
      */
     PUT_IF_ABSENT(PutIfAbsentCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
         @Override
@@ -56,8 +51,8 @@ public enum BuiltInCacheMergePolicies {
     }),
 
     /**
-     * Cache merge policy that merges cache entry from source to destination cache
-     * if source entry has more hits than the destination one.
+     * Cache merge policy that merges cache entries from source to destination cache
+     * if the source entry has more hits than the destination one.
      */
     HIGHER_HITS(HigherHitsCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
         @Override
@@ -67,8 +62,8 @@ public enum BuiltInCacheMergePolicies {
     }),
 
     /**
-     * Cache merge policy that merges cache entry from source to destination cache
-     * if source entry has been accessed more recently than the destination entry.
+     * Cache merge policy that merges cache entries from source to destination cache
+     * if the source entry has been accessed more recently than the destination entry.
      */
     LATEST_ACCESS(LatestAccessCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
         @Override
@@ -80,8 +75,7 @@ public enum BuiltInCacheMergePolicies {
     private Class<? extends CacheMergePolicy> implClass;
     private CacheMergePolicyInstanceFactory instanceFactory;
 
-    BuiltInCacheMergePolicies(Class<? extends CacheMergePolicy> implClass,
-                              CacheMergePolicyInstanceFactory instanceFactory) {
+    BuiltInCacheMergePolicies(Class<? extends CacheMergePolicy> implClass, CacheMergePolicyInstanceFactory instanceFactory) {
         this.implClass = implClass;
         this.instanceFactory = instanceFactory;
     }
@@ -93,7 +87,7 @@ public enum BuiltInCacheMergePolicies {
     /**
      * Gets the name of the implementation class of {@link CacheMergePolicy}.
      *
-     * @return the name of the implementation class of {@link CacheMergePolicy}.
+     * @return the name of the implementation class of {@link CacheMergePolicy}
      */
     public String getImplementationClassName() {
         return implClass.getName();
@@ -120,5 +114,4 @@ public enum BuiltInCacheMergePolicies {
     private interface CacheMergePolicyInstanceFactory {
         CacheMergePolicy create();
     }
-
 }

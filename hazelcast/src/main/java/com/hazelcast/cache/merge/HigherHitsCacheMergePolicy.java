@@ -21,15 +21,13 @@ import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
- * `HigherHitsCacheMergePolicy` merges cache entry from source to destination cache
- * if source entry has more hits than the destination one.
+ * Merges cache entries from source to destination cache if the source entry
+ * has more hits than the destination one.
  */
 @BinaryInterface
-public class HigherHitsCacheMergePolicy
-        implements StorageTypeAwareCacheMergePolicy {
+public class HigherHitsCacheMergePolicy implements StorageTypeAwareCacheMergePolicy {
 
     public HigherHitsCacheMergePolicy() {
-
     }
 
     @Override
@@ -39,5 +37,4 @@ public class HigherHitsCacheMergePolicy
         }
         return existingEntry.getValue();
     }
-
 }

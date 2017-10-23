@@ -31,5 +31,4 @@ public class HigherHitsCacheMergePolicyTest extends AbstractCacheMergePolicyTest
     protected CacheMergePolicy createCacheMergePolicy() {
         return new HigherHitsCacheMergePolicy();
     }
-
 }
