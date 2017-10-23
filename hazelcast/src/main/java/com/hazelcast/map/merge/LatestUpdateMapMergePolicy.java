@@ -25,10 +25,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * LatestUpdateMapMergePolicy causes the merging entry to be merged from source to destination map
- * if source entry has updated more recently than the destination entry.
- *
- * This policy can only be used of the clocks of the machines are in sync.
+ * Merges map entries from source to destination map if the source entry
+ * was updated more recently than the destination entry.
+ * <p>
+ * <b>Note:</b> This policy can only be used if the clocks of the nodes are in sync.
  */
 public class LatestUpdateMapMergePolicy implements MapMergePolicy, IdentifiedDataSerializable {
 

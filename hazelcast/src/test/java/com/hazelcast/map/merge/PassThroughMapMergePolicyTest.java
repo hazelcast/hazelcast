@@ -52,6 +52,7 @@ public class PassThroughMapMergePolicyTest {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
         EntryView existing = entryWithGivenValue(EXISTING);
         EntryView merging = null;
@@ -67,7 +68,5 @@ public class PassThroughMapMergePolicyTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
-
 }

@@ -31,5 +31,4 @@ public class HigherHitsMapMergePolicyTest extends AbstractMapMergePolicyTest {
     public void given() {
         policy = new HigherHitsMapMergePolicy();
     }
-
 }

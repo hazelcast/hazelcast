@@ -28,11 +28,11 @@ import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * A provider for {@link com.hazelcast.map.merge.MergePolicyProvider} instances.
+ * A provider for {@link com.hazelcast.map.merge.MapMergePolicy} instances.
  */
 public final class MergePolicyProvider {
 
-    private final ConcurrentMap<String, MapMergePolicy> mergePolicyMap;
+    private final ConcurrentMap<String, MapMergePolicy> mergePolicyMap = new ConcurrentHashMap<String, MapMergePolicy>();
 
     private final NodeEngine nodeEngine;
 
@@ -51,7 +51,6 @@ public final class MergePolicyProvider {
 
     public MergePolicyProvider(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        mergePolicyMap = new ConcurrentHashMap<String, MapMergePolicy>();
         addOutOfBoxPolicies();
     }
 
