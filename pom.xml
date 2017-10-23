@@ -76,7 +76,7 @@
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <hazelcast.version>3.9-SNAPSHOT</hazelcast.version>
+        <hazelcast.version>3.9</hazelcast.version>
 
         <!-- Not using 3.1 at the moment since it recompiles all classes every time -->
         <!-- https://jira.codehaus.org/browse/MCOMPILER-205 -->
