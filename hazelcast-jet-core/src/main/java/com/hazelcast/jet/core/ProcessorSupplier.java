@@ -89,11 +89,6 @@ public interface ProcessorSupplier extends Serializable {
         int localParallelism();
 
         /**
-         * Returns true, if snapshots will be saved for this job.
-         */
-        boolean snapshottingEnabled();
-
-        /**
          * Returns a logger for the associated {@code ProcessorSupplier}.
          */
         @Nonnull

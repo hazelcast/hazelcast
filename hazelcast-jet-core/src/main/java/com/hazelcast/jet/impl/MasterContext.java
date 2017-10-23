@@ -21,6 +21,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -158,7 +159,7 @@ public class MasterContext {
 
         // last started snapshot complete or not complete. The next started snapshot must be greater than this number
         long lastSnapshotId = NO_SNAPSHOT;
-        if (jobRecord.getConfig().getSnapshotIntervalMillis() > 0) {
+        if (isSnapshottingEnabled()) {
             Long snapshotIdToRestore = snapshotRepository.latestCompleteSnapshot(jobId);
             snapshotRepository.deleteAllSnapshotsExceptOne(jobId, snapshotIdToRestore);
             Long lastStartedSnapshot = snapshotRepository.latestStartedSnapshot(jobId);
@@ -175,21 +176,19 @@ public class MasterContext {
         }
 
         MembersView membersView = getMembersView();
-        ClassLoader contextClassLoader = swapContextClassLoader(coordinationService.getClassLoader(jobId));
+        ClassLoader previousCL = swapContextClassLoader(coordinationService.getClassLoader(jobId));
         try {
             logger.info("Start executing " + jobAndExecutionId(jobId, executionId) + ", status " + jobStatus()
                     + "\n" + dag);
             logger.fine("Building execution plan for " + jobAndExecutionId(jobId, executionId));
-            JobConfig jobConfig = jobRecord.getConfig();
-
             executionPlanMap = ExecutionPlanBuilder.createExecutionPlans(nodeEngine,
-                    membersView, dag, jobConfig, lastSnapshotId);
+                    membersView, dag, getJobConfig(), lastSnapshotId);
         } catch (TopologyChangedException e) {
             logger.severe("Execution plans could not be created for " + jobAndExecutionId(jobId, executionId), e);
             scheduleRestart();
             return;
         } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
+            Thread.currentThread().setContextClassLoader(previousCL);
         }
 
         logger.fine("Built execution plans for " + jobAndExecutionId(jobId, executionId));
@@ -367,7 +366,7 @@ public class MasterContext {
         Function<ExecutionPlan, Operation> operationCtor = plan -> new ExecuteOperation(jobId, executionId);
         invoke(operationCtor, this::onExecuteStepCompleted, completionFuture);
 
-        if (getJobConfig().getSnapshotIntervalMillis() > 0) {
+        if (isSnapshottingEnabled()) {
             coordinationService.scheduleSnapshot(jobId, executionId);
         }
     }
@@ -584,6 +583,10 @@ public class MasterContext {
                  .invoke();
             futures.put(member, future);
         }
+    }
+
+    private boolean isSnapshottingEnabled() {
+        return getJobConfig().getProcessingGuarantee() != ProcessingGuarantee.NONE;
     }
 
     private static ClassLoader swapContextClassLoader(ClassLoader jobClassLoader) {

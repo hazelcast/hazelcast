@@ -25,6 +25,7 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.SnapshotRepository;
@@ -106,6 +107,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         dag.edge(between(generator, writeMap));
 
         JobConfig config = new JobConfig();
+        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(1200);
         Job job = instance1.newJob(dag, config);
 

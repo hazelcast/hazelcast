@@ -33,8 +33,7 @@ public class TestProcessorContext implements Processor.Context {
     private ILogger logger;
     private String vertexName = "testVertex";
     private int globalProcessorIndex;
-    private boolean snapshottingEnabled;
-    private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.EXACTLY_ONCE;
+    private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
 
     /**
      * Constructor with default values.
@@ -93,19 +92,6 @@ public class TestProcessorContext implements Processor.Context {
      */
     public TestProcessorContext setGlobalProcessorIndex(int globalProcessorIndex) {
         this.globalProcessorIndex = globalProcessorIndex;
-        return this;
-    }
-
-    @Override
-    public boolean snapshottingEnabled() {
-        return snapshottingEnabled;
-    }
-
-    /**
-     * Sets if snapshotting is enabled for the job.
-     */
-    public TestProcessorContext setSnapshottingEnabled(boolean snapshottingEnabled) {
-        this.snapshottingEnabled = snapshottingEnabled;
         return this;
     }
 

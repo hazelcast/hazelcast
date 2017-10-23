@@ -38,17 +38,15 @@ public final class Contexts {
         private final String vertexName;
         private final int index;
         private final SerializationService serService;
-        private final boolean snapshottingEnabled;
         private final ProcessingGuarantee processingGuarantee;
 
         public ProcCtx(JetInstance instance, SerializationService serService, ILogger logger, String vertexName,
-                       int index, boolean snapshottingEnabled, ProcessingGuarantee processingGuarantee) {
+                       int index, ProcessingGuarantee processingGuarantee) {
             this.instance = instance;
             this.serService = serService;
             this.logger = logger;
             this.vertexName = vertexName;
             this.index = index;
-            this.snapshottingEnabled = snapshottingEnabled;
             this.processingGuarantee = processingGuarantee;
         }
 
@@ -76,11 +74,6 @@ public final class Contexts {
         }
 
         @Override
-        public boolean snapshottingEnabled() {
-            return snapshottingEnabled;
-        }
-
-        @Override
         public ProcessingGuarantee processingGuarantee() {
             return processingGuarantee;
         }
@@ -93,13 +86,11 @@ public final class Contexts {
     static class ProcSupplierCtx implements ProcessorSupplier.Context {
         private final JetInstance instance;
         private final int perNodeParallelism;
-        private final boolean snapshottingEnabled;
         private final ILogger logger;
 
-        ProcSupplierCtx(JetInstance instance, ILogger logger, int perNodeParallelism, boolean snapshottingEnabled) {
+        ProcSupplierCtx(JetInstance instance, ILogger logger, int perNodeParallelism) {
             this.instance = instance;
             this.perNodeParallelism = perNodeParallelism;
-            this.snapshottingEnabled = snapshottingEnabled;
             this.logger = logger;
         }
 
@@ -114,11 +105,6 @@ public final class Contexts {
             return perNodeParallelism;
         }
 
-        @Override
-        public boolean snapshottingEnabled() {
-            return snapshottingEnabled;
-        }
-
         @Nonnull @Override
         public ILogger logger() {
             return logger;
@@ -130,15 +116,12 @@ public final class Contexts {
         private final ILogger logger;
         private final int totalParallelism;
         private final int localParallelism;
-        private final boolean snapshottingEnabled;
 
-        MetaSupplierCtx(JetInstance jetInstance, ILogger logger, int totalParallelism, int localParallelism, boolean
-                snapshottingEnabled) {
+        MetaSupplierCtx(JetInstance jetInstance, ILogger logger, int totalParallelism, int localParallelism) {
             this.jetInstance = jetInstance;
             this.logger = logger;
             this.totalParallelism = totalParallelism;
             this.localParallelism = localParallelism;
-            this.snapshottingEnabled = snapshottingEnabled;
         }
 
         @Nonnull
@@ -155,11 +138,6 @@ public final class Contexts {
         @Override
         public int localParallelism() {
             return localParallelism;
-        }
-
-        @Override
-        public boolean snapshottingEnabled() {
-            return snapshottingEnabled;
         }
 
         @Nonnull @Override

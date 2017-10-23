@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.util.Preconditions;
+
 import java.io.File;
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -31,8 +33,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class JobConfig implements Serializable {
 
-    private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.EXACTLY_ONCE;
-    private long snapshotIntervalMillis = -1;
+    private static final int SNAPSHOT_INTERVAL_MILLIS_DEFAULT = 10_000;
+
+    private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
+    private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
 
     private boolean splitBrainProtectionEnabled;
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
@@ -108,8 +112,12 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Sets the {@link ProcessingGuarantee processing guarantee}. The
-     * default is {@link ProcessingGuarantee#EXACTLY_ONCE EXACTLY_ONCE}.
+     * Set the {@link ProcessingGuarantee processing guarantee} for the job.
+     * When the processing guarantee is set to <i>at-least-once</i> or
+     * <i>exactly-once</i>, the snapshot interval can be configured via
+     * {@link #setSnapshotIntervalMillis(long)}.
+     * <p>
+     * The default value is {@link ProcessingGuarantee#NONE}.
      */
     public JobConfig setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
         this.processingGuarantee = processingGuarantee;
@@ -127,11 +135,13 @@ public class JobConfig implements Serializable {
     /**
      * Sets the snapshot interval in milliseconds &mdash; the interval between
      * the completion of the previous snapshot and the start of a new one.
-     * A zero or negative value disables snapshotting.
+     * Must be set to a positive value. This setting is only relevant when
+     * <i>>at-least-once</i> or <i>exactly-once</i> processing guarantees are used.
      * <p>
-     * By default, snapshots are disabled.
+     * Default value is set to 10 seconds.
      */
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
+        Preconditions.checkPositive(snapshotInterval, "snapshotInterval must be positive");
         this.snapshotIntervalMillis = snapshotInterval;
         return this;
     }

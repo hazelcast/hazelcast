@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.TimestampedEntry;
@@ -101,7 +102,7 @@ public class SlidingWindowP_twoStageSnapshotTest {
         TestOutbox stage1p2Outbox = newOutbox();
         TestOutbox stage2Outbox = newOutbox();
         TestInbox inbox = new TestInbox();
-        TestProcessorContext context = new TestProcessorContext().setSnapshottingEnabled(true);
+        TestProcessorContext context = new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
 
         stage1p1.init(stage1p1Outbox, context);
         stage1p2.init(stage1p2Outbox, context);

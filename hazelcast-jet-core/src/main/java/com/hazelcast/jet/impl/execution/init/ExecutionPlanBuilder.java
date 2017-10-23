@@ -81,8 +81,7 @@ public final class ExecutionPlanBuilder {
             final ProcessorMetaSupplier metaSupplier = vertex.getSupplier();
             ILogger logger = nodeEngine.getLogger(metaSupplier.getClass().getName() + "." + vertex.getName() +
                     "#ProcessorMetaSupplier");
-            metaSupplier.init(new MetaSupplierCtx(instance, logger, totalParallelism, localParallelism,
-                    jobConfig.getSnapshotIntervalMillis() > 0));
+            metaSupplier.init(new MetaSupplierCtx(instance, logger, totalParallelism, localParallelism));
 
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             int procIdxOffset = 0;

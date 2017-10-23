@@ -17,35 +17,61 @@
 package com.hazelcast.jet.config;
 
 /**
- * You can choose between {@link #EXACTLY_ONCE} and {@link #AT_LEAST_ONCE}
- * processing. The trade-off is between correctness and performance. It's
- * configured per-job.
- *<ol>
- * <li><i>Exactly once:</i> Favors correctness. Guarantees that each event is
- * processed exactly once by the processors. Might increase latency and
- * decrease throughput due to aligning of the barriers.
- * <li><i>At least once:</i> Events which came after the barrier in the stream
- * might be processed before the snapshot is taken. This will cause their
- * duplicate processing, if the job is restarted.
- *</ol>
- * The distributed snapshot algorithm works by sending <i>barriers</i> down the
- * stream. When one is received by a processor, it must do a state snapshot.
- * However, the processor can have multiple inputs, so to save correct snapshot
- * it must wait until the barrier is received from all other inputs and not
- * process any more items from inputs from which the barrier was already
- * received. If the stream is skewed (due to partition imbalance, long GC pause
- * on some member or a network hiccup), processing has to be halted until the
- * situation recovers. At-least-once mode allows processing of further items
- * during this alignment period.
+ * Defines what message processing guarantees are given under failure
+ * conditions. Specifically, if a member of the cluster leaves the cluster
+ * during job execution and the job is restarted automatically it defines
+ * the semantics of at which point in the stream the job is resumed from.
+ * <p>
+ * When {@link #AT_LEAST_ONCE} or {@link #EXACTLY_ONCE} is set, distributed
+ * snapshotting will be enabled for the job. The distributed snapshot algorithm
+ * works by sending <i>barriers</i> down the stream which upon receiving causes
+ * the processors to save their state as a snapshot. Snapshots are saved
+ * in memory and replicated across the cluster.
+ * <p>
+ * Since a processor can have multiple inputs, it must wait until the barrier is
+ * received from all inputs before taking a snapshot. The difference between
+ * {@link #AT_LEAST_ONCE} and {@link #EXACTLY_ONCE} is that in
+ * {@link #AT_LEAST_ONCE} mode the processor can continue to process items
+ * from inputs which have already received the barrier. This will result
+ * in lower latency and higher throughput overall, with the caveat that
+ * some items may be processed twice after a restart.
  */
 public enum ProcessingGuarantee {
+
     /**
-     * See {@link ProcessingGuarantee class javadoc}.
+     * No processing guarantees are given and no snapshots are taken during
+     * job execution. When a job is restarted automatically it will be as
+     * if the job is starting from scratch which can cause items to be lost
+     * or duplicated.
+     * <p>
+     * This option provides the overall best throughput and latency and no
+     * storage overheads from snapshotting. However, it doesn't provide any
+     * correctness guarantees under failure.
+     */
+    NONE,
+
+    /**
+     * Enables <i>at-least-once</i> processing semantics. When a job is restarted
+     * it will be resumed from the latest available snapshot. Items which have been
+     * processed before the snapshot might be processed again after the job is resumed.
+     * <p>
+     * This option requires in-memory snapshotting which will cause additional storage
+     * requirements and overhead compared to {@link #NONE}. However it provides better
+     * latency than {@link #EXACTLY_ONCE} with weaker guarantees.
+     */
+    AT_LEAST_ONCE,
+
+    /**
+     * Enables <i>exactly-once</i> processing semantics. When a job is restarted
+     * it will be resumed from the latest available snapshot. Items which have been
+     * processed before the snapshot are guaranteed not to be processed again after
+     * the job is resumed.
+     * <p>
+     * This option requires in-memory snapshotting which will cause additional storage
+     * requirements and overhead compared to {@link #NONE}. It provides the strongest
+     * correctness guarantee. However latency might increase due to the aligning of
+     * barriers which are required in this processing mode.
      */
     EXACTLY_ONCE,
 
-    /**
-     * See {@link ProcessingGuarantee class javadoc}.
-     */
-    AT_LEAST_ONCE;
 }

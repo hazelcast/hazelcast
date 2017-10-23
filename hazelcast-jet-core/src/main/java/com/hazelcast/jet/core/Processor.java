@@ -228,7 +228,9 @@ public interface Processor {
         /**
          * Returns true, if snapshots will be saved for this job.
          */
-        boolean snapshottingEnabled();
+        default boolean snapshottingEnabled() {
+            return processingGuarantee() != ProcessingGuarantee.NONE;
+        }
 
         /**
          * Returns the guarantee for current job.

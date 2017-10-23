@@ -21,6 +21,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Processor;
@@ -90,15 +91,15 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
     @Test
     public void integrationTest_noSnapshotting() throws Exception {
-        integrationTest(false);
+        integrationTest(ProcessingGuarantee.NONE);
     }
 
     @Test
     public void integrationTest_withSnapshotting() throws Exception {
-        integrationTest(true);
+        integrationTest(ProcessingGuarantee.EXACTLY_ONCE);
     }
 
-    private void integrationTest(boolean withSnapshotting) throws Exception {
+    private void integrationTest(ProcessingGuarantee guarantee) throws Exception {
         int messageCount = 20;
         JetInstance[] instances = new JetInstance[2];
         Arrays.setAll(instances, i -> createJetMember());
@@ -113,7 +114,8 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         dag.edge(between(source, sink));
 
         JobConfig config = new JobConfig();
-        config.setSnapshotIntervalMillis(withSnapshotting ? 500 : 0);
+        config.setProcessingGuarantee(guarantee);
+        config.setSnapshotIntervalMillis(500);
         Job job = instances[0].newJob(dag, config);
         sleepAtLeastSeconds(3);
         for (int i = 0; i < messageCount; i++) {
@@ -130,7 +132,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
             }
         }, 5);
 
-        if (withSnapshotting) {
+        if (guarantee != ProcessingGuarantee.NONE) {
             // wait until the items are consumed and a new snapshot appears
             assertTrueEventually(() -> assertTrue(list.size() == messageCount * 2));
             IStreamMap<Long, Object> snapshotsMap =
@@ -185,7 +187,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     public void when_snapshotSaved_then_offsetsRestored() throws Exception {
         StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 1, 60000);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
-        processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
+        processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
         produce(topic1Name, 0, "0");
         assertEquals(entry(0, "0"), consumeEventually(processor, outbox));
@@ -201,7 +203,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         // create new processor and restore snapshot
         processor = new StreamKafkaP(properties, asList(topic1Name, topic2Name), Util::entry, 1, 60000);
         outbox = new TestOutbox(new int[] {10}, 10);
-        processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
+        processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
         // restore snapshot
         processor.restoreFromSnapshot(snapshot);
@@ -221,7 +223,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         properties.setProperty("metadata.max.age.ms", "100");
         StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 1, 100);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
-        processor.init(outbox, new TestProcessorContext().setSnapshottingEnabled(true));
+        processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
         produce(topic1Name, 0, "0");
         assertEquals(entry(0, "0"), consumeEventually(processor, outbox));
@@ -255,7 +257,9 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         // one partition -> nothing will be assigned to it.
         StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 2, 500);
         TestOutbox outbox = new TestOutbox(new int[] {10}, 10);
-        TestProcessorContext context = new TestProcessorContext().setGlobalProcessorIndex(1).setSnapshottingEnabled(true);
+        TestProcessorContext context = new TestProcessorContext()
+                .setGlobalProcessorIndex(1)
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         processor.init(outbox, context);
 
         long endTime = System.nanoTime() + MILLISECONDS.toNanos(1000);

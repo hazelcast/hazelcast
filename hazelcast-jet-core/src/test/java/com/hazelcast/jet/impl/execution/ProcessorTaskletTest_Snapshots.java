@@ -76,7 +76,7 @@ public class ProcessorTaskletTest_Snapshots {
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.processor = new SnapshottableProcessor();
         this.context = new ProcCtx(null, new MockSerializationService(), null, null, 0,
-                true, EXACTLY_ONCE);
+                EXACTLY_ONCE);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
         this.snapshotCollector = new MockOutboundCollector(1024);

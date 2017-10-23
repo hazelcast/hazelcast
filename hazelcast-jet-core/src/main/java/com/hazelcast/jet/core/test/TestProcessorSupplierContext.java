@@ -31,7 +31,6 @@ public class TestProcessorSupplierContext implements ProcessorSupplier.Context {
 
     private JetInstance jetInstance;
     private int localParallelism = 1;
-    private boolean snapshottingEnabled;
 
     @Override
     public JetInstance jetInstance() {
@@ -51,22 +50,9 @@ public class TestProcessorSupplierContext implements ProcessorSupplier.Context {
         return localParallelism;
     }
 
-    @Override
-    public boolean snapshottingEnabled() {
-        return snapshottingEnabled;
-    }
-
     @Nonnull @Override
     public ILogger logger() {
         return getLogger(getClass());
-    }
-
-    /**
-     * Sets if snapshotting is enabled for the job.
-     */
-    public TestProcessorSupplierContext setSnapshottingEnabled(boolean snapshottingEnabled) {
-        this.snapshottingEnabled = snapshottingEnabled;
-        return this;
     }
 
     /**

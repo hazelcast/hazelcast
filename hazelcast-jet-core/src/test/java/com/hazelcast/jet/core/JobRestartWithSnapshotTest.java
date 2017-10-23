@@ -27,6 +27,7 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
@@ -173,6 +174,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
            .edge(between(map, writeMap));
 
         JobConfig config = new JobConfig();
+        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(1200);
         Job job = instance1.newJob(dag, config);
 
@@ -274,6 +276,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         dag.edge(between(source, sink).distributed());
 
         JobConfig config = new JobConfig();
+        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(500);
         Job job = masterInstance.newJob(dag, config);
 

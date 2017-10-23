@@ -59,8 +59,7 @@ public class SlidingWindowP_failoverTest {
 
         Outbox outbox = new TestOutbox(128);
         Context context = new TestProcessorContext()
-                .setProcessingGuarantee(guarantee)
-                .setSnapshottingEnabled(true);
+                .setProcessingGuarantee(guarantee);
         p.init(outbox, context);
     }
 

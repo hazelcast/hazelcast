@@ -75,7 +75,8 @@ public abstract class AbstractJobImpl implements Job {
         }));
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public final JobStatus getJobStatus() {
         if (future.isCancelled()) {
             return JobStatus.COMPLETED;
