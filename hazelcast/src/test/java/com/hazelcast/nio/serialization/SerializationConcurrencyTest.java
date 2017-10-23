@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Category(QuickTest.class)
 public class SerializationConcurrencyTest {
 
-    static final short FACTORY_ID = 1;
+    public static final short FACTORY_ID = 1;
 
     @Test
     public void test() throws IOException, InterruptedException {
@@ -114,7 +114,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    static class Address implements DataSerializable {
+    public static class Address implements DataSerializable {
 
         private String street;
 
@@ -169,7 +169,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    static class Person implements DataSerializable {
+    public static class Person implements DataSerializable {
 
         private int age;
 
@@ -254,7 +254,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    static class PortableAddress implements Portable {
+    public static class PortableAddress implements Portable {
 
         private String street;
 
@@ -317,7 +317,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    static class PortablePerson implements Portable {
+    public static class PortablePerson implements Portable {
 
         private int age;
 
