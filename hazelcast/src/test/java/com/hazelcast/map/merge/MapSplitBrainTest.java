@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.merge;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryView;
@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,11 +42,12 @@ import static org.junit.Assert.assertEquals;
  * Given:
  * 3-members cluster, maps configured with custom merge policy that subtracts merging from existing value (if exists)
  * or the merging value itself
- *
+ * <p>
  * When:
- * cluster splits in two subclusters with {1, 2} members respectively, on each brain put values:
+ * cluster splits in two sub-clusters with {1, 2} members respectively, on each brain put values:
  * on first brain, keys 0..1999 -> value 1
  * on second brain, keys 1000..2999 -> value 3
+ * <p>
  * Then:
  * custom merge policy's merge method is invoked for all entries of the map, assert final map values as follows:
  * keys 0..999 -> value 1 (merged, no existing value)
@@ -58,14 +58,14 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapSplitBrainTest extends SplitBrainTestSupport {
 
-    private static final CopyOnWriteArrayList<SubtractingMergePolicy> MERGE_POLICY_INSTANCES =
-            new CopyOnWriteArrayList<SubtractingMergePolicy>();
     private static final String TEST_MAPS_PREFIX = "MapSplitBrainTest";
+    private static final CopyOnWriteArrayList<SubtractingMergePolicy> MERGE_POLICY_INSTANCES
+            = new CopyOnWriteArrayList<SubtractingMergePolicy>();
+
+    private final CountDownLatch clusterMergedLatch = new CountDownLatch(1);
+    private final AtomicInteger countOfMerges = new AtomicInteger();
 
     private String testMapName;
-
-    final CountDownLatch clusterMergedLatch = new CountDownLatch(1);
-    final AtomicInteger countOfMerges = new AtomicInteger();
 
     @Override
     protected Config config() {
@@ -76,15 +76,14 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances)
-            throws Exception {
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         testMapName = TEST_MAPS_PREFIX + randomMapName();
+
         instances[0].getLifecycleService().addLifecycleListener(new MergedLifecycleListener());
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         // put value 1 for keys 0..1999 on first brain
         IMap<Integer, Integer> mapOnFirstBrain = firstBrain[0].getMap(testMapName);
         for (int i = 0; i < 2000; i++) {
@@ -99,11 +98,9 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances)
-            throws Exception {
-
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         assertOpenEventually(clusterMergedLatch, 30);
-        // Map on smaller, merging cluster has 2000 entries (0..1999), so 2000 merges should have happened
+        // map on smaller, merging cluster has 2000 entries (0..1999), so 2000 merges should have happened
         assertEquals(2000, countOfMerges.get());
         IMap<Integer, Integer> map = instances[0].getMap(testMapName);
         // final map should have:
@@ -121,10 +118,9 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     /**
-     * a merge policy that subtracts the integer value of merging entry from the existing entry (if one exists)
+     * Subtracts the integer value of the merging entry from the existing entry (if one exists).
      */
-    public static class SubtractingMergePolicy
-            implements MapMergePolicy {
+    public static class SubtractingMergePolicy implements MapMergePolicy {
 
         final AtomicInteger counter;
 

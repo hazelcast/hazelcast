@@ -23,7 +23,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 /**
- * Tests a node can be added to one of two brains in a {@link SplitBrainTestSupport} test.
+ * Tests that a node can be added to one of two brains in a {@link SplitBrainTestSupport} test.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})

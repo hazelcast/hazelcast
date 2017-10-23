@@ -31,9 +31,9 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class ListSplitBrainTest extends SplitBrainTestSupport {
 
-    private String name = randomString();
-    private int initialCount = 100;
-    private int finalCount = initialCount + 50;
+    private final String name = randomString();
+    private final int initialCount = 100;
+    private final int finalCount = initialCount + 50;
 
     @Override
     protected int[] brains() {
@@ -42,7 +42,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         IList<Object> list = instances[0].getList(name);
 
         for (int i = 0; i < initialCount; i++) {
@@ -53,8 +53,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
 
         IList<Object> list1 = firstBrain[0].getList(name);
         for (int i = initialCount; i < finalCount; i++) {
@@ -68,7 +67,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         for (HazelcastInstance instance : instances) {
             IList<Object> list = instance.getList(name);
             assertListContents(list);

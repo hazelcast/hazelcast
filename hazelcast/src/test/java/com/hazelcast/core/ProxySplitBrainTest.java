@@ -57,7 +57,7 @@ public class ProxySplitBrainTest extends SplitBrainTestSupport {
     private static void assertDistributedObjectCountEventually(final int expectedCount, final HazelcastInstance hz) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int actualSize = hz.getDistributedObjects().size();
                 assertEquals(expectedCount, actualSize);
             }

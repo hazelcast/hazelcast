@@ -1,7 +1,6 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -12,7 +11,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -22,7 +20,7 @@ public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainOnlyTest exte
     private static final String MAP_NAME = "mapConfigCreatedInSmallerBrain";
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) throws Exception {
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         HazelcastInstance instanceInSmallerBrain = firstBrain[0];
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT);
@@ -31,7 +29,7 @@ public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainOnlyTest exte
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         for (HazelcastInstance instance : instances) {
             final Config config = instance.getConfig();
             MapConfig mapConfig = config.findMapConfig(MAP_NAME);

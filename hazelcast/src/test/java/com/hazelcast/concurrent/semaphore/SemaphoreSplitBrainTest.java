@@ -57,16 +57,14 @@ public class SemaphoreSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
-
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) throws Exception {
         final ISemaphore semaphore = firstBrain[0].getSemaphore(name);
 
         // when member is down, permits are released.
         // since releasing the permits is async, we use assert eventually
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(permits, semaphore.availablePermits());
             }
         });
@@ -75,7 +73,7 @@ public class SemaphoreSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         for (HazelcastInstance instance : instances) {
             ISemaphore semaphore = instance.getSemaphore(name);
             assertEquals(1, semaphore.availablePermits());
