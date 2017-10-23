@@ -79,7 +79,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
                 instance.getHazelcastInstance().<Integer, Integer>getMap("test");
         List<Integer> allPartitions = IntStream.range(0, NUM_PARTITIONS).boxed().collect(toList());
         supplier = () -> new StreamEventJournalP<>(map, allPartitions, e -> true,
-                EventJournalMapEvent::getNewValue, false);
+                EventJournalMapEvent::getNewValue, false, true);
     }
 
     @Test

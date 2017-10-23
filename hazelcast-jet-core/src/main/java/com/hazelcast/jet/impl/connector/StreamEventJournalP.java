@@ -20,6 +20,7 @@ import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Partition;
 import com.hazelcast.jet.Traverser;
@@ -82,6 +83,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     private final SerializablePredicate<E> predicate;
     private final Projection<E, T> projection;
     private final boolean startFromNewest;
+    private final boolean isRemoteReader;
 
     // keep track of next offset to emit and read separately, as even when the
     // outbox is full we can still poll for new items.
@@ -105,12 +107,14 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                         List<Integer> assignedPartitions,
                         DistributedPredicate<E> predicateFn,
                         DistributedFunction<E, T> projectionFn,
-                        boolean startFromNewest) {
+                        boolean startFromNewest,
+                        boolean isRemoteReader) {
         this.eventJournalReader = eventJournalReader;
         this.assignedPartitions = new HashSet<>(assignedPartitions);
         this.predicate = predicateFn == null ? null : predicateFn::test;
         this.projection = projectionFn == null ? null : toProjection(projectionFn);
         this.startFromNewest = startFromNewest;
+        this.isRemoteReader = isRemoteReader;
     }
 
     @Override
@@ -224,7 +228,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             return future.get();
         } catch (ExecutionException e) {
             Throwable ex = peel(e);
-            if (ex instanceof StaleSequenceException) {
+            if (ex instanceof HazelcastInstanceNotActiveException && !isRemoteReader) {
+                // This exception can be safely ignored - it means the instance was shutting down,
+                // so we shouldn't unnecessarily throw an exception here.
+                return null;
+            } else if (ex instanceof StaleSequenceException) {
                 long headSeq = ((StaleSequenceException) e.getCause()).getHeadSeq();
                 // move both read and emitted offsets to the new head
                 long oldOffset = readOffsets.put(partition, headSeq);
@@ -233,8 +241,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                         "when reading from event journal. Increase journal size to avoid this error. " +
                         "Requested was: " + oldOffset + ", current head is: " + headSeq);
                 return null;
+            } else {
+                throw rethrow(ex);
             }
-            throw rethrow(ex);
         } catch (InterruptedException e) {
             throw rethrow(e);
         }
@@ -394,7 +403,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private Processor processorForPartitions(List<Integer> partitions) {
             return partitions.isEmpty()
                     ? Processors.noopP().get()
-                    : new StreamEventJournalP<>(eventJournalReader, partitions, predicate, projection, startFromNewest);
+                    : new StreamEventJournalP<>(eventJournalReader, partitions, predicate, projection,
+                    startFromNewest, client != null);
         }
     }
 

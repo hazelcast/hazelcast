@@ -61,6 +61,7 @@ public final class HazelcastWriters {
     @Nonnull
     @SuppressWarnings("unchecked")
     public static ProcessorSupplier writeMap(String name, ClientConfig clientConfig) {
+        boolean isLocal = clientConfig == null;
         return new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
                 index -> new ArrayMap(),
@@ -71,7 +72,7 @@ public final class HazelcastWriters {
                         try {
                             map.putAll(buffer);
                         } catch (HazelcastInstanceNotActiveException e) {
-                            logInstanceNotActive(instance, e);
+                            handleInstaceNotActive(instance, e, isLocal);
                         }
                         buffer.clear();
                     };
@@ -91,7 +92,7 @@ public final class HazelcastWriters {
                 serializableConfig(clientConfig),
                 index -> new ArrayMap(),
                 ArrayMap::add,
-                CacheFlush.flushToCache(name),
+                CacheFlush.flushToCache(name, clientConfig == null),
                 noopConsumer()
         );
     }
@@ -102,14 +103,16 @@ public final class HazelcastWriters {
      */
     private static class CacheFlush {
 
-        static DistributedFunction<HazelcastInstance, DistributedConsumer<ArrayMap>> flushToCache(String name) {
+        static DistributedFunction<HazelcastInstance, DistributedConsumer<ArrayMap>> flushToCache(
+                String name, boolean isLocal
+        ) {
             return instance -> {
                 ICache cache = instance.getCacheManager().getCache(name);
                 return buffer -> {
                     try {
                         cache.putAll(buffer);
                     } catch (HazelcastInstanceNotActiveException e) {
-                        logInstanceNotActive(instance, e);
+                        handleInstaceNotActive(instance, e, isLocal);
                     }
                     buffer.clear();
                 };
@@ -124,6 +127,7 @@ public final class HazelcastWriters {
 
     @Nonnull
     public static ProcessorSupplier writeList(String name, ClientConfig clientConfig) {
+        boolean isLocal = clientConfig == null;
         return new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
                 index -> new ArrayList(),
@@ -134,7 +138,7 @@ public final class HazelcastWriters {
                         try {
                             list.addAll(buffer);
                         } catch (HazelcastInstanceNotActiveException e) {
-                            logInstanceNotActive(instance, e);
+                            handleInstaceNotActive(instance, e, isLocal);
                         }
                         buffer.clear();
                     };
@@ -143,9 +147,17 @@ public final class HazelcastWriters {
         );
     }
 
-    private static void logInstanceNotActive(HazelcastInstance instance, HazelcastInstanceNotActiveException e) {
-        instance.getLoggingService().getLogger(HazelcastWriters.class).warning(
-                "Ignored HazelcastInstanceNotActiveException, we expect the job will be restarted", e);
+    private static void handleInstaceNotActive(
+            HazelcastInstance instance, HazelcastInstanceNotActiveException e, boolean isLocal
+    ) {
+        if (isLocal) {
+            // if we are writing to a local instance, we can safely ignore this exception
+            // as the job will eventually restart on its own.
+            instance.getLoggingService().getLogger(HazelcastWriters.class).warning(
+                    "Ignored HazelcastInstanceNotActiveException, we expect the job will be restarted", e);
+            return;
+        }
+        throw e;
     }
 
     private static SerializableClientConfig serializableConfig(ClientConfig clientConfig) {
