@@ -22,9 +22,13 @@ import org.junit.runners.model.Statement;
 
 /**
  * Prevents a test annotated with {@link RequireAssertEnabled} from running when Java assertions are disabled.
+ * <p>
  * Typically such a test will expect an {@code AssertionError} to be thrown.
+ * <p>
+ * <b>Note:</b> This rule is automatically registered when {@link RequireAssertEnabled} is used.
  */
 public class AssertEnabledFilterRule implements TestRule {
+
     @Override
     public Statement apply(final Statement base, final Description description) {
         if (description.getAnnotation(RequireAssertEnabled.class) == null) {
@@ -32,6 +36,7 @@ public class AssertEnabledFilterRule implements TestRule {
         }
         return new Statement() {
             @Override
+            @SuppressWarnings({"ConstantConditions", "AssertWithSideEffects"})
             public void evaluate() throws Throwable {
                 boolean assertEnabled = false;
                 assert assertEnabled = true;

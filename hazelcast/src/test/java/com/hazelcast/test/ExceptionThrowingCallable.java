@@ -19,6 +19,9 @@ package com.hazelcast.test;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 
+/**
+ * A {@link Callable} which just throws an {@link ExpectedRuntimeException} on execution.
+ */
 public class ExceptionThrowingCallable implements Callable, Serializable {
 
     @Override

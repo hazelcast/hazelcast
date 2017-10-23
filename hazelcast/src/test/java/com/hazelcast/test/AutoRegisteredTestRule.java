@@ -39,5 +39,4 @@ public @interface AutoRegisteredTestRule {
      * @return the class of connected {@link TestRule} implementation
      */
     Class<? extends TestRule> testRule();
-
 }

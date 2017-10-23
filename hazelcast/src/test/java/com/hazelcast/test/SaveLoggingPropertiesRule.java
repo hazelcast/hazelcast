@@ -22,7 +22,7 @@ import org.junit.runners.model.Statement;
 
 /**
  * Rule to save and restore logging-related System properties.
- *
+ * <p>
  * It's useful for tests poking test configuration.
  */
 public class SaveLoggingPropertiesRule implements TestRule {

@@ -35,6 +35,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static java.util.Collections.singletonList;
 
+@SuppressWarnings("unused")
 public final class PacketFiltersUtil {
 
     private PacketFiltersUtil() {
@@ -126,9 +127,8 @@ public final class PacketFiltersUtil {
 
         final Set<Address> blacklist = new HashSet<Address>();
 
-        EndpointAwarePacketFilter(InternalSerializationService serializationService,
-                                  Collection<Address> blacklist,
-                                  int factory, List<Integer> typeIds) {
+        EndpointAwarePacketFilter(InternalSerializationService serializationService, Collection<Address> blacklist, int factory,
+                                  List<Integer> typeIds) {
             super(serializationService, factory, typeIds);
             this.blacklist.addAll(blacklist);
         }
@@ -138,5 +138,4 @@ public final class PacketFiltersUtil {
             return super.allowOperation(endpoint, factory, type) || !blacklist.contains(endpoint);
         }
     }
-
 }

@@ -24,8 +24,12 @@ import java.io.InputStreamReader;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 
-public class TestStringUtils {
+public final class TestStringUtils {
+
     private static final int READ_BUFFER_SIZE = 8192;
+
+    private TestStringUtils() {
+    }
 
     public static String fileAsText(File file) {
         FileInputStream stream = null;

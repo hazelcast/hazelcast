@@ -17,7 +17,7 @@
 package com.hazelcast.test;
 
 /**
- * Constants in milliseconds for use in test annotations such as @Test(timeout = 5*SECOND)
+ * Constants in milliseconds for use in test annotations such as {@code @Test(timeout = 5 * SECOND)}.
  */
 public interface TimeConstants {
 

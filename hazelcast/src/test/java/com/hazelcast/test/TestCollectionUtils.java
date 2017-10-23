@@ -24,13 +24,14 @@ import java.util.Set;
 /**
  * Collection of convenience methods not suitable for production usage due performance characteristics, but handy for tests.
  */
-public class TestCollectionUtils {
+public final class TestCollectionUtils {
+
+    private TestCollectionUtils() {
+    }
 
     /**
      * Creates a new set containing items passed as arguments.
      *
-     * @param items
-     * @param <T>
      * @return a new instance of Set with all items passed as an argument
      */
     public static <T> Set<T> setOf(T... items) {

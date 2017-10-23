@@ -28,16 +28,17 @@ import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.singletonList;
+
 /**
  * Initialize once org.reflections library to avoid duplicate work scanning the classpath from individual tests.
  */
-public class ReflectionsHelper {
+public final class ReflectionsHelper {
 
     public static final Reflections REFLECTIONS;
 
@@ -62,6 +63,9 @@ public class ReflectionsHelper {
                 .setMetadataAdapter(new JavaReflectionAdapter()));
     }
 
+    private ReflectionsHelper() {
+    }
+
     // Overrides default implementation of getSubTypesOf to obtain also transitive subtypes of given class
     public static class ReflectionsTransitive extends Reflections {
 
@@ -74,7 +78,7 @@ public class ReflectionsHelper {
             return Sets.newHashSet(ReflectionUtils.<T>forNames(
                     store.getAll(
                             HierarchyTraversingSubtypesScanner.class.getSimpleName(),
-                            Arrays.asList(type.getName())),
+                            singletonList(type.getName())),
                             configuration.getClassLoaders()));
         }
     }
@@ -117,6 +121,7 @@ public class ReflectionsHelper {
             }
         }
 
+        @SuppressWarnings({"unchecked"})
         private void scanClassAndInterfaces(Class klass, String className) {
             if (acceptResult(klass.getName())) {
                 getStore().put(klass.getName(), className);

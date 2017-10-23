@@ -47,10 +47,7 @@ public class HazelcastVersionLocator {
     private static final String EE_CLIENT_PATH = "/com/hazelcast/hazelcast-enterprise-client/%1$s/hazelcast-enterprise-client-%1$s.jar";
 
     static {
-        StringBuilder localM2ReposBasePath = new StringBuilder(System.getProperty("user.home"));
-        localM2ReposBasePath.append(separator).append(".m2")
-                            .append(separator).append("repository");
-        LOCAL_M2_REPOSITORY_PREFIX = localM2ReposBasePath.toString();
+        LOCAL_M2_REPOSITORY_PREFIX = System.getProperty("user.home") + separator + ".m2" + separator + "repository";
         MAVEN_CENTRAL_PREFIX = "https://repo1.maven.org/maven2";
         HAZELCAST_REPOSITORY_PREFIX = "https://repository-hazelcast-l337.forge.cloudbees.com/release";
     }
@@ -119,10 +116,10 @@ public class HazelcastVersionLocator {
             CloseableHttpResponse response = client.execute(request);
             if (response.getStatusLine().getStatusCode() != SC_OK) {
                 throw new GuardianException("Cannot download file from " + url + ", http response code: "
-                                + response.getStatusLine().getStatusCode());
+                        + response.getStatusLine().getStatusCode());
             }
             HttpEntity entity = response.getEntity();
-            FileOutputStream  fos = new FileOutputStream(targetFile);
+            FileOutputStream fos = new FileOutputStream(targetFile);
             entity.writeTo(fos);
             fos.close();
             targetFile.deleteOnExit();
@@ -163,16 +160,16 @@ public class HazelcastVersionLocator {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Hazelcast binaries for version ").append(version).append(enterprise ? " EE " : " ")
-          .append("will be downloaded from a remote repository. You can speed up the compatibility tests by "
-                  + "installing the missing artifacts in your local maven repository so they don't have to be "
-                  + "downloaded each time:\n $ mvn dependency:get -Dartifact=com.hazelcast:");
+                .append("will be downloaded from a remote repository. You can speed up the compatibility tests by "
+                        + "installing the missing artifacts in your local maven repository so they don't have to be "
+                        + "downloaded each time:\n $ mvn dependency:get -Dartifact=com.hazelcast:");
         if (enterprise) {
             sb.append(member ? "hazelcast-enterprise:" : "hazelcast-enterprise-client:");
         } else {
             sb.append(member ? "hazelcast:" : "hazelcast-client:");
         }
         sb.append(version)
-          .append(enterprise ? " -DremoteRepositories=https://repository-hazelcast-l337.forge.cloudbees.com/release" : "");
+                .append(enterprise ? " -DremoteRepositories=https://repository-hazelcast-l337.forge.cloudbees.com/release" : "");
         LOGGER.warning(sb.toString());
     }
 }
