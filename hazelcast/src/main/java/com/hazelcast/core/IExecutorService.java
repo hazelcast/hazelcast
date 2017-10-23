@@ -39,7 +39,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
     /**
      * Executes a task on a randomly selected member.
      *
-     * @param command the task that is executed on a randomly selected member
+     * @param command        the task that is executed on a randomly selected member
      * @param memberSelector memberSelector
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
@@ -49,7 +49,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Executes a task on the owner of the specified key.
      *
      * @param command a task executed on the owner of the specified key
-     * @param key the specified key
+     * @param key     the specified key
      */
     void executeOnKeyOwner(Runnable command, Object key);
 
@@ -57,7 +57,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Executes a task on the specified member.
      *
      * @param command the task executed on the specified member
-     * @param member the specified member
+     * @param member  the specified member
      */
     void executeOnMember(Runnable command, Member member);
 
@@ -72,7 +72,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
     /**
      * Executes a task on each of the selected members.
      *
-     * @param command a task executed on each of the selected members
+     * @param command        a task executed on each of the selected members
      * @param memberSelector memberSelector
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
@@ -89,8 +89,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to a randomly selected member and returns a Future
      * representing that task.
      *
-     * @param task task submitted to a randomly selected member
+     * @param task           task submitted to a randomly selected member
      * @param memberSelector memberSelector
+     * @param <T>            the result type of callable
      * @return a Future representing pending completion of the task
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
@@ -101,7 +102,8 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * representing that task.
      *
      * @param task task submitted to the owner of the specified key
-     * @param key the specified key
+     * @param key  the specified key
+     * @param <T>  the result type of callable
      * @return a Future representing pending completion of the task
      */
     <T> Future<T> submitToKeyOwner(Callable<T> task, Object key);
@@ -110,8 +112,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to the specified member and returns a Future
      * representing that task.
      *
-     * @param task the task submitted to the specified member
+     * @param task   the task submitted to the specified member
      * @param member the specified member
+     * @param <T>    the result type of callable
      * @return a Future representing pending completion of the task
      */
     <T> Future<T> submitToMember(Callable<T> task, Member member);
@@ -120,8 +123,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to given members and returns
      * map of Member-Future pairs representing pending completion of the task on each member
      *
-     * @param task the task submitted to given members
+     * @param task    the task submitted to given members
      * @param members the given members
+     * @param <T>     the result type of callable
      * @return map of Member-Future pairs representing pending completion of the task on each member
      */
     <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members);
@@ -130,8 +134,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to selected members and returns a
      * map of Member-Future pairs representing pending completion of the task on each member.
      *
-     * @param task the task submitted to selected members
+     * @param task           the task submitted to selected members
      * @param memberSelector memberSelector
+     * @param <T>            the result type of callable
      * @return map of Member-Future pairs representing pending completion of the task on each member
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
@@ -142,6 +147,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * map of Member-Future pairs representing pending completion of the task on each member.
      *
      * @param task the task submitted to all cluster members
+     * @param <T>  the result type of callable
      * @return map of Member-Future pairs representing pending completion of the task on each member
      */
     <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task);
@@ -150,8 +156,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to a random member. Caller will be notified of the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task a task submitted to a random member
+     * @param task     a task submitted to a random member
      * @param callback callback
+     * @param <T>      the response type of callback
      */
     <T> void submit(Runnable task, ExecutionCallback<T> callback);
 
@@ -159,9 +166,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to randomly selected members. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task the task submitted to randomly selected members
+     * @param task           the task submitted to randomly selected members
      * @param memberSelector memberSelector
-     * @param callback callback
+     * @param callback       callback
+     * @param <T>            the response type of callback
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     <T> void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback<T> callback);
@@ -170,9 +178,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to the owner of the specified key. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task submitted to the owner of the specified key
-     * @param key the specified key
+     * @param task     task submitted to the owner of the specified key
+     * @param key      the specified key
      * @param callback callback
+     * @param <T>      the response type of callback
      */
     <T> void submitToKeyOwner(Runnable task, Object key, ExecutionCallback<T> callback);
 
@@ -180,9 +189,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to the specified member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task the task submitted to the specified member
-     * @param member the specified member
+     * @param task     the task submitted to the specified member
+     * @param member   the specified member
      * @param callback callback
+     * @param <T>      the response type of callback
      */
     <T> void submitToMember(Runnable task, Member member, ExecutionCallback<T> callback);
 
@@ -191,8 +201,8 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task the task submitted to the specified members
-     * @param members the specified members
+     * @param task     the task submitted to the specified members
+     * @param members  the specified members
      * @param callback callback
      */
     void submitToMembers(Runnable task, Collection<Member> members, MultiExecutionCallback callback);
@@ -202,9 +212,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task the task submitted to the selected members
+     * @param task           the task submitted to the selected members
      * @param memberSelector memberSelector
-     * @param callback callback
+     * @param callback       callback
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     void submitToMembers(Runnable task, MemberSelector memberSelector, MultiExecutionCallback callback);
@@ -214,7 +224,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task the task submitted to all the cluster members
+     * @param task     the task submitted to all the cluster members
      * @param callback callback
      */
     void submitToAllMembers(Runnable task, MultiExecutionCallback callback);
@@ -223,8 +233,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to a random member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task the task submitted to a random member
+     * @param task     the task submitted to a random member
      * @param callback callback
+     * @param <T>      the result type of callable
      */
     <T> void submit(Callable<T> task, ExecutionCallback<T> callback);
 
@@ -232,9 +243,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits task to a randomly selected member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task the task submitted to a randomly selected member
+     * @param task           the task submitted to a randomly selected member
      * @param memberSelector memberSelector
-     * @param callback callback
+     * @param callback       callback
+     * @param <T>            the result type of callable
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     <T> void submit(Callable<T> task, MemberSelector memberSelector, ExecutionCallback<T> callback);
@@ -243,8 +255,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits task to the owner of the specified key. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task the task submitted to the owner of the specified key
+     * @param task     the task submitted to the owner of the specified key
+     * @param key      the specified key
      * @param callback callback
+     * @param <T>      the result type of callable
      */
     <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback);
 
@@ -252,8 +266,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits a task to the specified member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task the task submitted to the specified member
+     * @param task     the task submitted to the specified member
+     * @param member   the specified member
      * @param callback callback
+     * @param <T>      the result type of callable
      */
     <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback);
 
@@ -262,9 +278,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task the task submitted to the specified members
-     * @param members the specified members
+     * @param task     the task submitted to the specified members
+     * @param members  the specified members
      * @param callback callback
+     * @param <T>      the result type of callable
      */
     <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback);
 
@@ -273,9 +290,10 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task the task submitted to the selected members
+     * @param task           the task submitted to the selected members
      * @param memberSelector memberSelector
-     * @param callback callback
+     * @param callback       callback
+     * @param <T>            the result type of callable
      * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     <T> void submitToMembers(Callable<T> task, MemberSelector memberSelector, MultiExecutionCallback callback);
@@ -285,8 +303,9 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task the task submitted to all the cluster members
+     * @param task     the task submitted to all the cluster members
      * @param callback callback
+     * @param <T>      the result type of callable
      */
     <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback);
 

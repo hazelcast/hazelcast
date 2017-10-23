@@ -22,7 +22,6 @@ import java.util.concurrent.locks.Lock;
 
 /**
  * Distributed implementation of {@link Lock}.
- *
  * <h1>Example</h1>
  * <pre><code>
  *     Lock mylock = Hazelcast.getLock(mylockobject); mylock.lock();
@@ -38,8 +37,6 @@ import java.util.concurrent.locks.Lock;
  * } finally {
  * map.unlock("1"); }
  * </code></pre>
- *
- * <p>
  * Behaviour of {@link ILock} under split-brain scenarios should be taken into account when using this
  * data structure.  During a split, each partitioned cluster will either create a brand new and un-acquired
  * {@link ILock} or it will continue to use the primary or back-up version. As the acquirer of the {@link ILock} might
@@ -59,7 +56,6 @@ import java.util.concurrent.locks.Lock;
  * partitioned clusters. It should be noted that there is still an inconsistency window between the time of
  * the split and the actual detection.  Therefore using this reduces the window of inconsistency but can never
  * completely eliminate it.
- * <p>
  *
  * @see Lock
  */
@@ -91,19 +87,19 @@ public interface ILock extends Lock, DistributedObject {
 
     /**
      * Tries to acquire the lock for the specified lease time.
-     * <p>After lease time, the lock will be released.
-     * <p/>
-     * <p>If the lock is not available, then
+     * <p>
+     * After lease time, the lock will be released.
+     * <p>
+     * If the lock is not available, then
      * the current thread becomes disabled for thread scheduling
      * purposes and lies dormant until one of two things happens:
      * <ul>
-     * <li>the lock is acquired by the current thread, or
-     * <li>the specified waiting time elapses.
+     * <li>the lock is acquired by the current thread, or</li>
+     * <li>the specified waiting time elapses.</li>
      * </ul>
-     * <p/>
      *
-     * @param time     maximum time to wait for the lock.
-     * @param unit time unit of the <tt>time</tt> argument.
+     * @param time      maximum time to wait for the lock.
+     * @param unit      time unit of the <tt>time</tt> argument.
      * @param leaseTime time to wait before releasing the lock.
      * @param leaseUnit unit of time to specify lease time.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
@@ -118,18 +114,16 @@ public interface ILock extends Lock, DistributedObject {
 
     /**
      * Acquires the lock for the specified lease time.
-     * <p>After lease time, lock will be released..
-     * <p/>
-     * <p>If the lock is not available then
+     * <p>
+     * After lease time, lock will be released..
+     * <p>
+     * If the lock is not available then
      * the current thread becomes disabled for thread scheduling
      * purposes and lies dormant until the lock has been acquired.
-     * <p/>
      *
      * @param leaseTime time to wait before releasing the lock.
-     * @param timeUnit unit of time for the lease time.
-     *
-     * @throws IllegalMonitorStateException if the current thread does not
-     * hold this lock
+     * @param timeUnit  unit of time for the lease time.
+     * @throws IllegalMonitorStateException if the current thread does not hold this lock
      */
     void lock(long leaseTime, TimeUnit timeUnit);
 
@@ -142,15 +136,15 @@ public interface ILock extends Lock, DistributedObject {
     /**
      * This method is not implemented! Use {@link #newCondition(String)} instead.
      *
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException the exception is always thrown, since this method is not implemented
      */
     Condition newCondition();
 
     /**
      * Returns a new {@link ICondition} instance that is bound to this
      * {@code ILock} instance with given name.
-     *
-     * <p>Before waiting on the condition the lock must be held by the
+     * <p>
+     * Before waiting on the condition the lock must be held by the
      * current thread.
      * A call to {@link ICondition#await()} will atomically release the lock
      * before waiting and re-acquire the lock before the wait returns.
@@ -189,5 +183,4 @@ public interface ILock extends Lock, DistributedObject {
      * @return remaining lease time in milliseconds.
      */
     long getRemainingLeaseTime();
-
 }

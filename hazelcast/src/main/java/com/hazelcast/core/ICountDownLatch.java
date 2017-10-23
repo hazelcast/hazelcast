@@ -21,26 +21,24 @@ import java.util.concurrent.TimeUnit;
 /**
  * ICountDownLatch is a backed-up distributed alternative to the
  * {@link java.util.concurrent.CountDownLatch java.util.concurrent.CountDownLatch}.
- * <p/>
+ * <p>
  * ICountDownLatch is a cluster-wide synchronization aid
  * that allows one or more threads to wait until a set of operations being
  * performed in other threads completes.
- * <p/>
+ * <p>
  * There are a few differences compared to the {@link ICountDownLatch}:
  * <ol>
- *    <li>
- *         the ICountDownLatch count can be reset using {@link #trySetCount(int)} after a countdown
- *         has finished but not during an active count. This allows the same latch instance to be reused.
- *    </li>
- *    <li>
- *         There is no await() method to do an unbound wait since this is undesirable in a distributed
- *         application: for example, a cluster can split or the master and
- *         replicas could all die. In most cases, it is best to configure an explicit timeout so you have the ability
- *         to deal with these situations.
- *    </li>
+ * <li>
+ * the ICountDownLatch count can be reset using {@link #trySetCount(int)} after a countdown
+ * has finished but not during an active count. This allows the same latch instance to be reused.
+ * </li>
+ * <li>
+ * There is no await() method to do an unbound wait since this is undesirable in a distributed
+ * application: for example, a cluster can split or the master and
+ * replicas could all die. In most cases, it is best to configure an explicit timeout so you have the ability
+ * to deal with these situations.
+ * </li>
  * </ol>
- *
- * <p>
  * Behaviour of {@link ICountDownLatch} under split-brain scenarios should be taken into account when using this
  * data structure.  During a split, each partitioned cluster will either create a brand new and uninitialised (zero'd)
  * {@link ICountDownLatch} or it will continue to use the primary or back-up version.  For example
@@ -55,19 +53,17 @@ import java.util.concurrent.TimeUnit;
  * If required, when using {@link ICountDownLatch} as an orchestration mechanism you should assess the state of the
  * orchestration outcome and the associated countdown actors after a split-brain heal has taken place, and take steps to
  * re-orchestrate if appropriate.
- * <p>
- *
  */
 public interface ICountDownLatch extends DistributedObject {
 
     /**
      * Causes the current thread to wait until the latch has counted down to
      * zero, or an exception is thrown, or the specified waiting time elapses.
-     * <p/>
-     * <p>If the current count is zero then this method returns immediately
+     * <p>
+     * If the current count is zero then this method returns immediately
      * with the value {@code true}.
-     * <p/>
-     * <p>If the current count is greater than zero, then the current
+     * <p>
+     * If the current count is greater than zero, then the current
      * thread becomes disabled for thread scheduling purposes and lies
      * dormant until one of five things happen:
      * <ul>
@@ -79,42 +75,41 @@ public interface ICountDownLatch extends DistributedObject {
      * the current thread, or
      * <li>the specified waiting time elapses.
      * </ul>
-     * <p/>
-     * <p>If the count reaches zero, then the method returns with the
+     * If the count reaches zero, then the method returns with the
      * value {@code true}.
-     * <p/>
-     * <p>If the current thread:
+     * <p>
+     * If the current thread:
      * <ul>
      * <li>has its interrupted status set on entry to this method, or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
      * </ul>
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
-     * <p>If the specified waiting time elapses then the value {@code false}
+     * <p>
+     * If the specified waiting time elapses then the value {@code false}
      * is returned.  If the time is less than or equal to zero, the method
      * will not wait at all.
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
      * @return {@code true} if the count reached zero, {@code false}
-     *         if the waiting time elapsed before the count reached zero
-     * @throws InterruptedException if the current thread is interrupted
+     * if the waiting time elapsed before the count reached zero
+     * @throws InterruptedException  if the current thread is interrupted
      * @throws IllegalStateException if the Hazelcast instance is shutdown while waiting
-     * @throws NullPointerException if unit is null
+     * @throws NullPointerException  if unit is null
      */
     boolean await(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
      * Decrements the count of the latch, releasing all waiting threads if
      * the count reaches zero.
-     * <p/>
+     * <p>
      * If the current count is greater than zero, then it is decremented.
      * If the new count is zero:
      * <ul>
      * <li>All waiting threads are re-enabled for thread scheduling purposes, and
      * <li>Countdown owner is set to {@code null}.
      * </ul>
-     * <p/>
      * If the current count equals zero, then nothing happens.
      */
     void countDown();
@@ -128,12 +123,12 @@ public interface ICountDownLatch extends DistributedObject {
 
     /**
      * Sets the count to the given value if the current count is zero.
-     * <p/>If count is not zero, then this method does nothing and returns {@code false}.
+     * <p>
+     * If count is not zero, then this method does nothing and returns {@code false}.
      *
      * @param count the number of times {@link #countDown} must be invoked
      *              before threads can pass through {@link #await}
-     * @return {@code true} if the new count was set, {@code false} if the current
-     *         count is not zero
+     * @return {@code true} if the new count was set, {@code false} if the current count is not zero
      * @throws IllegalArgumentException if {@code count} is negative
      */
     boolean trySetCount(int count);
