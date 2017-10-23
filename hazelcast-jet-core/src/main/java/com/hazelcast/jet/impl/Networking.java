@@ -102,9 +102,11 @@ public class Networking {
                     return;
                 }
                 Connection conn = getMemberConnection(nodeEngine, member);
-                conn.write(new Packet(packetBuf)
-                        .setPacketType(Packet.Type.JET)
-                        .raiseFlags(FLAG_URGENT | FLAG_JET_FLOW_CONTROL));
+                if (conn != null) {
+                    conn.write(new Packet(packetBuf)
+                            .setPacketType(Packet.Type.JET)
+                            .raiseFlags(FLAG_URGENT | FLAG_JET_FLOW_CONTROL));
+                }
             }));
         } catch (Throwable t) {
             logger.severe("Flow-control packet broadcast failed", t);
