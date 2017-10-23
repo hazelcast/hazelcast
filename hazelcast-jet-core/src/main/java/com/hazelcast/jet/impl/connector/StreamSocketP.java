@@ -22,38 +22,57 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * @see SourceProcessors#streamSocketP(String, int, Charset)
  */
 public final class StreamSocketP extends AbstractProcessor implements Closeable {
 
+    private static final int BUFFER_SIZE = 4096;
+    private static final int MAX_BYTES_PER_CHAR = 4;
+
     private final String host;
     private final int port;
-    private final Charset charset;
-    private BufferedReader bufferedReader;
+    private final CharsetDecoder charsetDecoder;
+    private StringBuilder lineBuilder = new StringBuilder();
     private String pendingLine;
+    private SocketChannel socketChannel;
+    private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+    private final CharBuffer charBuffer = CharBuffer.allocate(BUFFER_SIZE);
+    private boolean socketDone;
+    private boolean maybeLfExpected;
 
     private StreamSocketP(String host, int port, Charset charset) {
         this.host = host;
         this.port = port;
-        this.charset = charset;
+        this.charsetDecoder = charset.newDecoder();
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         getLogger().info("Connecting to socket " + hostAndPort());
-        Socket socket = new Socket(host, port);
+        socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
+        socketChannel.connect(new InetSocketAddress(host, port));
+        // block until connection is finished
+        while (!socketChannel.finishConnect()) {
+            LockSupport.parkNanos(MILLISECONDS.toNanos(1));
+        }
         getLogger().info("Connected to socket " + hostAndPort());
-        bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), charset));
+        byteBuffer.limit(0);
+        charBuffer.limit(0);
     }
 
     @Override
@@ -62,30 +81,72 @@ public final class StreamSocketP extends AbstractProcessor implements Closeable 
     }
 
     private boolean tryComplete() throws IOException {
-        if (pendingLine == null) {
-            pendingLine = bufferedReader.readLine();
+        fillCharBuffer();
+        emitFromCharBuffer();
+
+        return socketDone && pendingLine == null;
+    }
+
+    private void fillCharBuffer() throws IOException {
+        if (socketDone || charBuffer.hasRemaining()) {
+            return;
+        }
+        socketDone = socketChannel.read(byteBuffer) < 0;
+        byteBuffer.flip();
+        charBuffer.clear();
+        charsetDecoder.decode(byteBuffer, charBuffer, socketDone);
+        charBuffer.flip();
+        byteBuffer.compact();
+        assert byteBuffer.position() < MAX_BYTES_PER_CHAR - 1 : "position=" + byteBuffer.position();
+    }
+
+    private void emitFromCharBuffer() {
+        while (charBuffer.hasRemaining()) {
             if (pendingLine == null) {
-                return true;
+                pendingLine = tryReadLineFromBuffer();
+            }
+            if (pendingLine != null) {
+                if (tryEmit(pendingLine)) {
+                    pendingLine = null;
+                } else {
+                    break;
+                }
             }
         }
-        boolean success = tryEmit(pendingLine);
-        if (success) {
-            pendingLine = null;
+    }
+
+    private String tryReadLineFromBuffer() {
+        while (charBuffer.hasRemaining()) {
+            char ch = charBuffer.get();
+            if (ch == '\r' || ch == '\n') {
+                // Handle line ending
+                if (maybeLfExpected && ch == '\n') {
+                    maybeLfExpected = false;
+                    continue;
+                }
+                if (ch == '\r') {
+                    maybeLfExpected = true;
+                }
+                try {
+                    return lineBuilder.toString();
+                } finally {
+                    lineBuilder.setLength(0);
+                }
+            } else {
+                // Handle line content
+                lineBuilder.append(ch);
+                maybeLfExpected = false;
+            }
         }
-        return false;
+        return null;
     }
 
     @Override
     public void close() throws IOException {
-        if (bufferedReader != null) {
+        if (socketChannel != null) {
             getLogger().info("Closing socket " + hostAndPort());
-            bufferedReader.close();
+            socketChannel.close();
         }
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return false;
     }
 
     private String hostAndPort() {

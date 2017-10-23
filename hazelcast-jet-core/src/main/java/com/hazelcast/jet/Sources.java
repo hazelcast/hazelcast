@@ -533,11 +533,8 @@ public final class Sources {
      * to reconnect. Any {@code IOException} will cause the job to fail.
      * <p>
      * This source does not save any state to snapshot. On job restart, it will
-     * emit whichever items the server sends. Current implementation also uses
-     * blocking socket API which blocks until there are some data on the socket.
-     * Source processors are required to return control to be able to do the
-     * snapshot. So if there are no data on socket, the snapshot will be
-     * delayed and block the job.
+     * emit whichever items the server sends. The implementation uses
+     * non-blocking API, the processor is cooperative.
      */
     @Nonnull
     public static Source<String> streamSocket(

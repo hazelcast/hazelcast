@@ -21,32 +21,60 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collection;
+import java.util.List;
 import java.util.Queue;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class StreamSocketPTest extends JetTestSupport {
+
+    @Parameter
+    public String input;
+
+    @Parameter(1)
+    public List<String> output;
 
     private Queue<Object> bucket;
     private TestOutbox outbox;
     private TestProcessorContext context;
+
+    @Parameters(name = "input={0}, output={1}")
+    public static Collection<Object[]> parameters() {
+        List<String> onaAndTwo = asList("1", "2");
+        return asList(
+                new Object[]{"1\n2\n", onaAndTwo},
+                new Object[]{"1\r\n2\r\n", onaAndTwo},
+                new Object[]{"1\n2\r\n", onaAndTwo},
+                new Object[]{"1\r\n2\n", onaAndTwo},
+                new Object[]{"1\r2\n", onaAndTwo}, // mixed line terminators
+                new Object[]{"", emptyList()},
+                new Object[]{"\n", singletonList("")},
+                new Object[]{"1", emptyList()}, // no line terminator after the only line
+                new Object[]{"1\n2", singletonList("1")}, // no line terminator after the last line
+                new Object[]{"1\n\n2\n", asList("1", "", "2")}
+        );
+    }
 
     @Before
     public void before() {
@@ -57,13 +85,24 @@ public class StreamSocketPTest extends JetTestSupport {
 
     @Test
     public void smokeTest() throws Exception {
+        // we'll test the input as if it is split at every possible position. This is to test the logic that input can be
+        // split at any place: between \r\n, between the bytes of utf-16 sequence etc
+        byte[] inputBytes = input.getBytes(UTF_16);
+        for (int splitIndex = 0; splitIndex < inputBytes.length; splitIndex++) {
+            System.out.println("--------- runTest(" + splitIndex + ") ---------");
+            runTest(inputBytes, splitIndex);
+        }
+    }
+
+    private void runTest(byte[] inputBytes, int inputSplitAfter) throws Exception {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             Thread thread = new Thread(() -> uncheckRun(() -> {
                 Socket socket = serverSocket.accept();
-                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), UTF_16));
-                writer.write("hello\n");
-                writer.write("world\n");
-                writer.close();
+                OutputStream outputStream = socket.getOutputStream();
+                outputStream.write(inputBytes, 0, inputSplitAfter);
+                Thread.sleep(300);
+                outputStream.write(inputBytes, inputSplitAfter, inputBytes.length - inputSplitAfter);
+                outputStream.close();
                 socket.close();
             }));
             thread.start();
@@ -73,11 +112,12 @@ public class StreamSocketPTest extends JetTestSupport {
             processor.init(outbox, context);
 
             assertTrueEventually(() -> assertTrue(processor.complete()), 3);
-            assertEquals("hello", bucket.poll());
-            assertEquals("world", bucket.poll());
+            for (String s : output) {
+                assertEquals(s, bucket.poll());
+            }
+
             assertEquals(null, bucket.poll());
             assertTrueEventually(() -> assertFalse(thread.isAlive()));
         }
     }
-
 }
