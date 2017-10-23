@@ -61,8 +61,8 @@ import static java.lang.Integer.getInteger;
 
 /**
  * Base test runner which has base system properties and test repetition logic.
- *
- * The tests are run in random order.
+ * <p>
+ * The tests are executed in random order.
  */
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 

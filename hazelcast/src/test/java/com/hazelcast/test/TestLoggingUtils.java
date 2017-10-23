@@ -18,7 +18,10 @@ package com.hazelcast.test;
 
 import org.apache.logging.log4j.ThreadContext;
 
+import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
+
 public final class TestLoggingUtils {
+
     private static String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";
     private static String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
 
@@ -48,6 +51,7 @@ public final class TestLoggingUtils {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static boolean isClassAvailable(String classname) {
         try {
             Class.forName(classname);
@@ -61,7 +65,7 @@ public final class TestLoggingUtils {
         if (!IS_LOG4J2_AVAILABLE) {
             return false;
         }
-        if (JenkinsDetector.isOnJenkins()) {
+        if (isOnJenkins()) {
             return true;
         }
         if (System.getProperty(LOGGING_TYPE_PROP_NAME) == null && System.getProperty(LOGGING_CLASS_PROP_NAME) == null) {
@@ -69,6 +73,4 @@ public final class TestLoggingUtils {
         }
         return false;
     }
-
-
 }

@@ -22,8 +22,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Signals that a test method depends on Java assertions being enabled. Typically such
- * a method will expect an {@code AssertionError} to be thrown. To have this annotation honored,
- * a test class must define an instance of {@link AssertEnabledFilterRule}.
+ * a method will expect an {@code AssertionError} to be thrown.
+ * <p>
+ * To have this annotation honored, a test class must define an instance of {@link AssertEnabledFilterRule}.
+ * This is automatically done via {@link AutoRegisteredTestRule}.
  */
 @Retention(RUNTIME)
 @AutoRegisteredTestRule(testRule = AssertEnabledFilterRule.class)

@@ -21,7 +21,11 @@ import static java.lang.System.getenv;
 /**
  * Attempt to detect whether code is a test running on Jenkins.
  */
-public class JenkinsDetector {
+public final class JenkinsDetector {
+
+    private JenkinsDetector() {
+    }
+
     public static boolean isOnJenkins() {
         return getenv("JENKINS_URL") != null &&
                 getenv("BUILD_NUMBER") != null &&

@@ -19,10 +19,15 @@ package com.hazelcast.test;
 import java.util.Arrays;
 
 /**
- * Backport of selected convenient classes from JDK 7.
+ * Backport of some convenient methods from JDK 7.
+ * <p>
  * It's intended to be used in tests only.
  */
-public class ObjectTestUtils {
+public final class ObjectTestUtils {
+
+    private ObjectTestUtils() {
+    }
+
     public static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
     }

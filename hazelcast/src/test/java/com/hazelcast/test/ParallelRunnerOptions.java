@@ -16,9 +16,8 @@
 
 package com.hazelcast.test;
 
-
 /**
- * Options for configuring {@link HazelcastParallelClassRunner}
+ * Options for configuring {@link HazelcastParallelClassRunner}.
  */
 public interface ParallelRunnerOptions {
 

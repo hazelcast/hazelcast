@@ -16,7 +16,6 @@
 
 package com.hazelcast.test.jitter;
 
-import com.hazelcast.test.JenkinsDetector;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -24,6 +23,7 @@ import org.junit.runners.model.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -84,7 +84,7 @@ public class JitterRule implements TestRule {
             case ENABLED:
                 return true;
             case JENKINS:
-                return JenkinsDetector.isOnJenkins();
+                return isOnJenkins();
             default:
                 throw new IllegalArgumentException("Unknown mode: " + mode);
         }

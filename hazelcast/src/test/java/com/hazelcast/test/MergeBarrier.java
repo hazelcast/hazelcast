@@ -15,10 +15,9 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 
 /**
  * Protects against in-progress merging.
- *
- *
  */
 class MergeBarrier {
+
     private final AtomicInteger mergedInProgress = new AtomicInteger();
     private final Map<HazelcastInstance, String> registrations = new HashMap<HazelcastInstance, String>();
 
@@ -28,15 +27,14 @@ class MergeBarrier {
         for (HazelcastInstance instance : instances) {
             LifecycleService lifecycleService = instance.getLifecycleService();
             if (lifecycleService.isRunning()) {
-                String registeration = lifecycleService.addLifecycleListener(mergeCountingListener);
-                registrations.put(instance, registeration);
+                String registration = lifecycleService.addLifecycleListener(mergeCountingListener);
+                registrations.put(instance, registration);
             }
         }
     }
 
     /**
      * Await until there is no merging in progress.
-     *
      */
     void awaitNoMergeInProgressAndClose() {
         while (mergedInProgress.get() != 0) {

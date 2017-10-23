@@ -4,12 +4,13 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-
 /**
- * Set or clear a property before running a test. The property will be restored once the test is finished.
- *
+ * Sets or clears a property before running a test. The property will be restored once the test is finished.
+ * <p>
+ * Can be used for finer control of the scope of a System property.
  */
 public final class OverridePropertyRule implements TestRule {
+
     private final String propertyName;
     private final String value;
 
@@ -28,18 +29,16 @@ public final class OverridePropertyRule implements TestRule {
         return new OverridePropertyRule(propertyName, null);
     }
 
-
     /**
-     * Set the property to a newValue
+     * Set the property to a {@code newValue}.
      *
      * @param propertyName system property to set
-     * @param newValue value to set
+     * @param newValue     value to set
      * @return instance of the rule
      */
     public static OverridePropertyRule set(String propertyName, String newValue) {
         return new OverridePropertyRule(propertyName, newValue);
     }
-
 
     @Override
     public Statement apply(final Statement base, Description description) {

@@ -93,6 +93,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * Base class for Hazelcast tests which provides a big number of convenient test methods.
+ * <p>
+ * Has built-in support for {@link TestHazelcastInstanceFactory}, {@link JitterRule} and {@link DumpBuildInfoOnFailureRule}.
+ * <p>
+ * Tests which are be extended in Hazelcast Enterprise, should use {@link #getConfig()} instead of {@code new Config()},
+ * so the Enterprise test can override this method to return a config with a {@link com.hazelcast.config.NativeMemoryConfig}.
+ */
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public abstract class HazelcastTestSupport {
 
@@ -686,8 +694,7 @@ public abstract class HazelcastTestSupport {
     public static void assertNodeStartedEventually(final HazelcastInstance instance) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertNodeStarted(instance);
             }
         });
@@ -866,7 +873,7 @@ public abstract class HazelcastTestSupport {
     public static void assertCompletesEventually(final Future future) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue("Future has not completed", future.isDone());
             }
         });
@@ -921,7 +928,7 @@ public abstract class HazelcastTestSupport {
     public static void assertEqualsEventually(final int expected, final AtomicInteger value) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expected, value.get());
             }
         });
@@ -951,8 +958,7 @@ public abstract class HazelcastTestSupport {
                                                    long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertClusterSize(expectedSize, instance);
             }
         }, timeoutSeconds);
@@ -967,8 +973,7 @@ public abstract class HazelcastTestSupport {
     public static void assertMasterAddressEventually(final Address masterAddress, final HazelcastInstance... instances) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (HazelcastInstance instance : instances) {
                     assertMasterAddress(masterAddress, instance);
                 }
@@ -986,8 +991,7 @@ public abstract class HazelcastTestSupport {
     public static void assertClusterStateEventually(final ClusterState expectedState, final HazelcastInstance... instances) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertClusterState(expectedState, instances);
             }
         });
@@ -1024,7 +1028,7 @@ public abstract class HazelcastTestSupport {
                                              long timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
                     if (latch.getCount() != expectedCount) {
                         throw new AssertionError("Latch count has not been met. " + message);
@@ -1039,7 +1043,7 @@ public abstract class HazelcastTestSupport {
                                               int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
                     if (atomic.get() != expectedValue) {
                         throw new AssertionError("Atomic value has not been met. " + message);
@@ -1054,7 +1058,7 @@ public abstract class HazelcastTestSupport {
                                               int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
                     if (atomic.get() != expectedValue) {
                         throw new AssertionError("Atomic value has not been met. " + message);
@@ -1204,7 +1208,7 @@ public abstract class HazelcastTestSupport {
         final OperationParkerImpl waitNotifyService = getOperationParkingService(instance);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expectedOpsCount, waitNotifyService.getTotalParkedOperationCount());
             }
         });

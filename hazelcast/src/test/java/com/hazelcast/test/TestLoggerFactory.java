@@ -45,6 +45,7 @@ public class TestLoggerFactory implements LoggerFactory {
     }
 
     private static class DelegatingTestLogger implements ILogger {
+
         private static final long WARNING_THRESHOLD_NANOS = MILLISECONDS.toNanos(500);
 
         private ILogger delegate;
