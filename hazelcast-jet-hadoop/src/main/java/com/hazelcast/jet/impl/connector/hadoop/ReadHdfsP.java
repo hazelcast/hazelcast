@@ -388,7 +388,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
         private void readObject(ObjectInputStream in) throws Exception {
             index = in.readInt();
-            split = ClassLoaderUtil.newInstance(null, in.readUTF());
+            split = ClassLoaderUtil.newInstance(Thread.currentThread().getContextClassLoader(), in.readUTF());
             split.readFields(in);
         }
 
