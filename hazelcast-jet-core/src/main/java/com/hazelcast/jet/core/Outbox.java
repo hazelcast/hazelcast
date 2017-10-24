@@ -48,6 +48,10 @@ public interface Outbox {
      * Offers the supplied item to the bucket with the supplied ordinal. If
      * {@code ordinal == -1}, offers the supplied item to all buckets (behaves
      * the same as {@link #offer(Object)}).
+     * <p>
+     * Items offered to outbox should not be subsequently mutated because the
+     * same instance might be used by a downstream processor in different
+     * thread, causing concurrent access.
      *
      * @return {@code true} if the outbox accepted the item
      */
@@ -75,6 +79,9 @@ public interface Outbox {
      * <p>
      * This method may only be called from the {@link
      * Processor#saveToSnapshot()} method.
+     * <p>
+     * Keys and values offered to snapshot are serialized and can be further
+     * mutated as soon as this method returns.
      *
      * @return {@code true} if the outbox accepted the item
      */
