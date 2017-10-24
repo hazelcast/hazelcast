@@ -19,7 +19,6 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
@@ -53,7 +52,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readMapP(@Nonnull String mapName) {
-        return ReadWithPartitionIteratorP.readMap(mapName);
+        return ReadWithPartitionIteratorP.readMapP(mapName);
     }
 
     /**
@@ -66,7 +65,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readMap(mapName, predicate, projectionFn);
+        return ReadWithPartitionIteratorP.readMapP(mapName, predicate, projectionFn);
     }
 
     /**
@@ -79,7 +78,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readMap(mapName, predicate, toProjection(projectionFn));
+        return ReadWithPartitionIteratorP.readMapP(mapName, predicate, toProjection(projectionFn));
     }
 
 
@@ -89,7 +88,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier streamMapP(@Nonnull String mapName, boolean startFromLatestSequence) {
-        return StreamEventJournalP.streamMap(mapName, null, null, startFromLatestSequence);
+        return StreamEventJournalP.streamMapP(mapName, null, null, startFromLatestSequence);
     }
 
     /**
@@ -103,7 +102,7 @@ public final class SourceProcessors {
             @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
             boolean startFromLatestSequence
     ) {
-        return StreamEventJournalP.streamMap(mapName, predicate, projection, startFromLatestSequence);
+        return StreamEventJournalP.streamMapP(mapName, predicate, projection, startFromLatestSequence);
     }
 
     /**
@@ -112,7 +111,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return ReadWithPartitionIteratorP.readRemoteMap(mapName, clientConfig);
+        return ReadWithPartitionIteratorP.readRemoteMapP(mapName, clientConfig);
     }
 
     /**
@@ -126,7 +125,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return ReadWithPartitionIteratorP.readRemoteMap(mapName, clientConfig, projection, predicate);
+        return ReadWithPartitionIteratorP.readRemoteMapP(mapName, clientConfig, projection, predicate);
     }
 
     /**
@@ -140,7 +139,7 @@ public final class SourceProcessors {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
-        return ReadWithPartitionIteratorP.readRemoteMap(
+        return ReadWithPartitionIteratorP.readRemoteMapP(
                 mapName, clientConfig, toProjection(projectionFn), predicate
         );
     }
@@ -153,7 +152,7 @@ public final class SourceProcessors {
     @Nonnull
     public static ProcessorMetaSupplier streamRemoteMapP(
             @Nonnull String mapName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence) {
-        return StreamEventJournalP.streamMap(mapName, clientConfig, null, null, startFromLatestSequence);
+        return StreamEventJournalP.streamMapP(mapName, clientConfig, null, null, startFromLatestSequence);
     }
 
     /**
@@ -168,8 +167,9 @@ public final class SourceProcessors {
             @Nonnull ClientConfig clientConfig,
             @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
-            boolean startFromLatestSequence) {
-        return StreamEventJournalP.streamMap(mapName, clientConfig, predicate, projection, startFromLatestSequence);
+            boolean startFromLatestSequence
+    ) {
+        return StreamEventJournalP.streamMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence);
     }
 
     /**
@@ -178,7 +178,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readCacheP(@Nonnull String cacheName) {
-        return ReadWithPartitionIteratorP.readCache(cacheName);
+        return ReadWithPartitionIteratorP.readCacheP(cacheName);
     }
 
     /**
@@ -187,7 +187,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier streamCacheP(@Nonnull String cacheName, boolean startFromLatestSequence) {
-        return StreamEventJournalP.streamCache(cacheName, null, null, startFromLatestSequence);
+        return StreamEventJournalP.streamCacheP(cacheName, null, null, startFromLatestSequence);
     }
 
     /**
@@ -201,7 +201,7 @@ public final class SourceProcessors {
             @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
             boolean startFromLatestSequence
     ) {
-        return StreamEventJournalP.streamCache(cacheName, predicate, projection, startFromLatestSequence);
+        return StreamEventJournalP.streamCacheP(cacheName, predicate, projection, startFromLatestSequence);
     }
 
     /**
@@ -210,7 +210,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readRemoteCacheP(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
-        return ReadWithPartitionIteratorP.readRemoteCache(cacheName, clientConfig);
+        return ReadWithPartitionIteratorP.readRemoteCacheP(cacheName, clientConfig);
     }
 
     /**
@@ -221,7 +221,7 @@ public final class SourceProcessors {
     public static ProcessorMetaSupplier streamRemoteCacheP(
             @Nonnull String cacheName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence
     ) {
-        return StreamEventJournalP.streamCache(cacheName, clientConfig, null, null, startFromLatestSequence);
+        return StreamEventJournalP.streamRemoteCacheP(cacheName, clientConfig, null, null, startFromLatestSequence);
     }
 
     /**
@@ -238,7 +238,8 @@ public final class SourceProcessors {
             @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
             boolean startFromLatestSequence
     ) {
-        return StreamEventJournalP.streamCache(cacheName, clientConfig, predicate, projection, startFromLatestSequence);
+        return StreamEventJournalP.streamRemoteCacheP(
+                cacheName, clientConfig, predicate, projection, startFromLatestSequence);
     }
 
     /**
@@ -247,7 +248,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readListP(@Nonnull String listName) {
-        return ReadIListP.supplier(listName);
+        return ReadIListP.metaSupplier(listName, null);
     }
 
     /**
@@ -256,7 +257,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return ReadIListP.supplier(listName, clientConfig);
+        return ReadIListP.metaSupplier(listName, clientConfig);
     }
 
     /**
@@ -264,7 +265,7 @@ public final class SourceProcessors {
      * {@link com.hazelcast.jet.Sources#streamSocket(String, int, Charset)}.
      */
     @Nonnull
-    public static ProcessorSupplier streamSocketP(
+    public static ProcessorMetaSupplier streamSocketP(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
         return StreamSocketP.supplier(host, port, charset.name());
@@ -275,20 +276,20 @@ public final class SourceProcessors {
      * {@link com.hazelcast.jet.Sources#readFiles(String, Charset, String)}.
      */
     @Nonnull
-    public static ProcessorSupplier readFilesP(
+    public static ProcessorMetaSupplier readFilesP(
             @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return ReadFilesP.supplier(directory, charset.name(), glob);
+        return ReadFilesP.metaSupplier(directory, charset.name(), glob);
     }
 
     /**
      * Returns a supplier of processors for
      * {@link com.hazelcast.jet.Sources#streamFiles(String, Charset, String)}.
      */
-    public static ProcessorSupplier streamFilesP(
+    public static ProcessorMetaSupplier streamFilesP(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return StreamFilesP.supplier(watchedDirectory, charset.name(), glob);
+        return StreamFilesP.metaSupplier(watchedDirectory, charset.name(), glob);
     }
 
     private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {

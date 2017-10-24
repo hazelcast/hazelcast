@@ -19,8 +19,7 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.impl.connector.hadoop.ReadHdfsP.MetaSupplier;
-import com.hazelcast.jet.impl.connector.hadoop.SerializableJobConf;
+import com.hazelcast.jet.impl.connector.hadoop.ReadHdfsP;
 import com.hazelcast.jet.impl.connector.hadoop.WriteHdfsP;
 import org.apache.hadoop.mapred.JobConf;
 
@@ -42,10 +41,10 @@ public final class HdfsProcessors {
      * {@link com.hazelcast.jet.HdfsSources#readHdfs(JobConf, DistributedBiFunction)}.
      */
     @Nonnull
-    public static <K, V, R> MetaSupplier<K, V, R> readHdfsP(
+    public static <K, V, R> ReadHdfsP.MetaSupplier<K, V, R> readHdfsP(
             @Nonnull JobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper
     ) {
-        return new MetaSupplier<>(asSerializable(jobConf), mapper);
+        return new ReadHdfsP.MetaSupplier<>(asSerializable(jobConf), mapper);
     }
 
     /**
@@ -58,6 +57,6 @@ public final class HdfsProcessors {
             @Nonnull DistributedFunction<? super E, K> extractKeyFn,
             @Nonnull DistributedFunction<? super E, V> extractValueFn
     ) {
-        return new WriteHdfsP.MetaSupplier<>(SerializableJobConf.asSerializable(jobConf), extractKeyFn, extractValueFn);
+        return new WriteHdfsP.MetaSupplier<>(asSerializable(jobConf), extractKeyFn, extractValueFn);
     }
 }

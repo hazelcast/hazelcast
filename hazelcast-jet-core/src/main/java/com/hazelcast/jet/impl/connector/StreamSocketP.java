@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 
 import javax.annotation.Nonnull;
@@ -32,6 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -156,7 +157,8 @@ public final class StreamSocketP extends AbstractProcessor implements Closeable 
     /**
      * Internal API, use {@link SourceProcessors#streamSocketP(String, int, Charset)}.
      */
-    public static ProcessorSupplier supplier(String host, int port, @Nonnull String charset) {
-        return new CloseableProcessorSupplier<>(() -> new StreamSocketP(host, port, Charset.forName(charset)));
+    public static ProcessorMetaSupplier supplier(String host, int port, @Nonnull String charset) {
+        return dontParallelize(new CloseableProcessorSupplier<>(
+                () -> new StreamSocketP(host, port, Charset.forName(charset))));
     }
 }

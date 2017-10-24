@@ -16,19 +16,20 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.jet.ComputeStage;
+import com.hazelcast.jet.JoinClause;
+import com.hazelcast.jet.Stage;
+import com.hazelcast.jet.Transform;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.processor.HashJoinCollectP;
 import com.hazelcast.jet.impl.processor.HashJoinP;
-import com.hazelcast.jet.ComputeStage;
-import com.hazelcast.jet.JoinClause;
-import com.hazelcast.jet.Stage;
-import com.hazelcast.jet.Transform;
 import com.hazelcast.jet.impl.transform.CoGroupTransform;
 import com.hazelcast.jet.impl.transform.FilterTransform;
 import com.hazelcast.jet.impl.transform.FlatMapTransform;
@@ -36,7 +37,6 @@ import com.hazelcast.jet.impl.transform.GroupByTransform;
 import com.hazelcast.jet.impl.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.transform.MapTransform;
 import com.hazelcast.jet.impl.transform.ProcessorTransform;
-import com.hazelcast.jet.core.processor.Processors;
 
 import java.util.HashMap;
 import java.util.List;
@@ -114,7 +114,7 @@ class Planner {
     }
 
     private void handleSource(AbstractStage stage, SourceImpl source) {
-        addVertex(stage, source.name(), source.metaSupplier(), false);
+        addVertex(stage, source.name(), source.metaSupplier());
     }
 
     private void handleProcessorStage(AbstractStage stage, ProcessorTransform procTransform) {
@@ -139,6 +139,22 @@ class Planner {
         addEdges(stage, pv.v);
     }
 
+    //                       --------
+    //                      | source |
+    //                       --------
+    //                           |
+    //                      partitioned
+    //                           v
+    //                       ---------
+    //                      | stage1  |
+    //                       ---------
+    //                           |
+    //                      distributed
+    //                      partitioned
+    //                           v
+    //                       ---------
+    //                      | stage2  |
+    //                       ---------
     private void handleGroupBy(AbstractStage stage, GroupByTransform<Object, Object, Object, Object> groupBy) {
         String name = "groupByKey." + randomSuffix() + ".stage";
         Vertex v1 = dag.newVertex(name + '1',
@@ -149,6 +165,22 @@ class Planner {
         dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));
     }
 
+    //            ----------             ----------
+    //           | source-1 |           | source-2 |
+    //            ----------             ----------
+    //                |                       |
+    //           partitioned             partitioned
+    //                \--------v     v-------/
+    //                        ---------
+    //                       |    v1   |
+    //                        ---------
+    //                            |
+    //                       distributed
+    //                       partitioned
+    //                            v
+    //                        ---------
+    //                       |    v2   |
+    //                        ---------
     private void handleCoGroup(AbstractStage stage, CoGroupTransform<Object, Object, Object> coGroup) {
         List<DistributedFunction<?, ?>> groupKeyFs = coGroup.groupKeyFs();
         String name = "coGroup." + randomSuffix() + ".stage";
@@ -215,19 +247,16 @@ class Planner {
     }
 
     private void handleSink(AbstractStage stage, SinkImpl sink) {
-        PlannerVertex pv = addVertex(stage, sink.name(), sink.metaSupplier(), false);
+        PlannerVertex pv = addVertex(stage, sink.name(), sink.metaSupplier());
         addEdges(stage, pv.v);
     }
 
     private PlannerVertex addVertex(Stage stage, String name, DistributedSupplier<Processor> procSupplier) {
-        return addVertex(stage, name, ProcessorMetaSupplier.of(procSupplier), true);
+        return addVertex(stage, name, ProcessorMetaSupplier.of(procSupplier));
     }
 
-    private PlannerVertex addVertex(
-            Stage stage, String name, ProcessorMetaSupplier metaSupplier, boolean parallelize
-    ) {
-        Vertex v = dag.newVertex(name, metaSupplier).localParallelism(parallelize ? -1 : 1);
-        PlannerVertex pv = new PlannerVertex(v);
+    private PlannerVertex addVertex(Stage stage, String name, ProcessorMetaSupplier metaSupplier) {
+        PlannerVertex pv = new PlannerVertex(dag.newVertex(name, metaSupplier));
         stage2vertex.put(stage, pv);
         return pv;
     }

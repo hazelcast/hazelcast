@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -40,8 +40,8 @@ public class MergingSinkReducer<T, K, V, R> extends SinkReducer<T, K, V, R> {
                               DistributedFunction<? super T, ? extends K> keyMapper,
                               DistributedFunction<? super T, ? extends V> valueMapper,
                               DistributedBinaryOperator<V> mergeFunction,
-                              ProcessorSupplier processorSupplier) {
-        super(sinkName, toDistributedObject, keyMapper, valueMapper, processorSupplier);
+                              ProcessorMetaSupplier metaSupplier) {
+        super(sinkName, toDistributedObject, keyMapper, valueMapper, metaSupplier);
         this.mergeFunction = mergeFunction;
     }
 
@@ -54,7 +54,7 @@ public class MergingSinkReducer<T, K, V, R> extends SinkReducer<T, K, V, R> {
                 () -> new MergeP<>(keyMapper, valueMapper, mergeFunction));
         Vertex combine = dag.newVertex("merge-distributed",
                 () -> new MergeP<T, K, V>(null, null, mergeFunction));
-        Vertex writer = dag.newVertex(sinkName, processorSupplier);
+        Vertex writer = dag.newVertex(sinkName, metaSupplier);
 
         dag.edge(between(previous, merge).partitioned(keyMapper::apply, HASH_CODE))
            .edge(between(merge, combine).distributed().partitioned(entryKey()))

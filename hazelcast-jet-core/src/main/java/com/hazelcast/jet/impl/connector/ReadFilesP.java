@@ -20,7 +20,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 
 import javax.annotation.Nonnull;
@@ -139,10 +139,13 @@ public final class ReadFilesP extends AbstractProcessor implements Closeable {
      * Private API. Use {@link SourceProcessors#readFilesP(String, Charset, String)}
      * instead.
      */
-    public static ProcessorSupplier supplier(@Nonnull String directory, @Nonnull String charset, @Nonnull String glob) {
-        return new CloseableProcessorSupplier<>(
+    public static ProcessorMetaSupplier metaSupplier(
+            @Nonnull String directory, @Nonnull String charset, @Nonnull String glob
+    ) {
+        return ProcessorMetaSupplier.of(new CloseableProcessorSupplier<>(
                 count -> IntStream.range(0, count)
                                   .mapToObj(i -> new ReadFilesP(directory, Charset.forName(charset), glob, count, i))
-                                  .collect(toList()));
+                                  .collect(toList())),
+                2);
     }
 }

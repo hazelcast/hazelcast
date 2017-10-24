@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.IntStream.range;
@@ -70,8 +71,8 @@ public class WriteSocketTest extends JetTestSupport {
         TestInbox inbox = new TestInbox();
         range(0, ITEM_COUNT).forEach(inbox::add);
 
-        Processor p = writeSocketP("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8)
-                .get(1).iterator().next();
+        Processor p = supplierFrom(writeSocketP("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8))
+                .get();
         p.init(mock(Outbox.class), new TestProcessorContext());
         p.process(0, inbox);
         p.complete();

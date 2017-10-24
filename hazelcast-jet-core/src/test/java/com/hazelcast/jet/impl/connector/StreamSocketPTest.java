@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -36,6 +35,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
+import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.util.Arrays.asList;
@@ -107,8 +108,7 @@ public class StreamSocketPTest extends JetTestSupport {
             }));
             thread.start();
 
-            Processor processor = SourceProcessors.streamSocketP("localhost", serverSocket.getLocalPort(), UTF_16)
-                                                  .get(1).iterator().next();
+            Processor processor = supplierFrom(streamSocketP("localhost", serverSocket.getLocalPort(), UTF_16)).get();
             processor.init(outbox, context);
 
             assertTrueEventually(() -> assertTrue(processor.complete()), 3);

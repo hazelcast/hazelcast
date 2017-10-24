@@ -23,7 +23,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import javax.annotation.Nonnull;
 
 /**
- * See {@link DiagnosticProcessors#writeLogger()}
+ * See {@link DiagnosticProcessors#writeLoggerP()}
  */
 public class WriteLoggerP<T> extends AbstractProcessor {
 
@@ -34,7 +34,8 @@ public class WriteLoggerP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+    @SuppressWarnings("unchecked")
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         getLogger().info(toStringFn.apply((T) item));
         return true;
     }

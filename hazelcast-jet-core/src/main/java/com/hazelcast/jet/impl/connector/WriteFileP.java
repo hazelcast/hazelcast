@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.function.DistributedFunction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -29,6 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
@@ -48,13 +50,13 @@ public final class WriteFileP {
     /**
      * Use {@link SinkProcessors#writeFileP(String, DistributedFunction, Charset, boolean)}
      */
-    public static <T> ProcessorSupplier supplier(
+    public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String directoryName,
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull String charset,
             boolean append) {
 
-        return SinkProcessors.writeBufferedP(
+        return dontParallelize(writeBufferedP(
                 globalIndex -> createBufferedWriter(Paths.get(directoryName), globalIndex,
                         charset, append),
                 (fileWriter, item) -> uncheckRun(() -> {
@@ -63,7 +65,7 @@ public final class WriteFileP {
                 }),
                 fileWriter -> uncheckRun(fileWriter::flush),
                 fileWriter -> uncheckRun(fileWriter::close)
-        );
+        ));
     }
 
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE",

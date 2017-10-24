@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.JetTestSupport.assertTrueEventually;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLogger;
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.ONGOING;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUCCESSFUL;
 import static org.junit.Assert.assertFalse;
@@ -64,7 +64,7 @@ public class PostponedSnapshotTest {
         DAG dag = new DAG();
         Vertex highPrioritySource = dag.newVertex("highPrioritySource", () -> new SourceP(0));
         Vertex lowPrioritySource = dag.newVertex("lowPrioritySource", () -> new SourceP(1));
-        Vertex sink = dag.newVertex("sink", writeLogger());
+        Vertex sink = dag.newVertex("sink", writeLoggerP());
 
         dag.edge(between(highPrioritySource, sink).priority(-1))
            .edge(from(lowPrioritySource).to(sink, 1));

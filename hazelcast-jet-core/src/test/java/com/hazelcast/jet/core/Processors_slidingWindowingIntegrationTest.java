@@ -114,7 +114,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                             MyEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
             dag
                     .edge(between(insertPP, slidingWin).partitioned(MyEvent::getKey).distributed())
-                    .edge(between(slidingWin, sink).isolated());
+                    .edge(between(slidingWin, sink));
 
         } else {
             Vertex accumulateByFrame = dag.newVertex("accumulateByFrame",
@@ -124,7 +124,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
             dag
                     .edge(between(insertPP, accumulateByFrame).partitioned(MyEvent::getKey))
                     .edge(between(accumulateByFrame, slidingWin).partitioned(entryKey()).distributed())
-                    .edge(between(slidingWin, sink).isolated());
+                    .edge(between(slidingWin, sink));
         }
 
         Job job = instance.newJob(dag);

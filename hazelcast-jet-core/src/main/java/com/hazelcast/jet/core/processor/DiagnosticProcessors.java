@@ -19,7 +19,6 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
@@ -32,6 +31,7 @@ import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 
 /**
@@ -46,56 +46,63 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Returns a supplier of processor that acts as a sink and logs all items
-     * at the INFO level. {@link Watermark} items are not logged.
+     * Returns a meta-supplier of processors for a sink vertex that logs all
+     * the data items it receives. The log category is the fully-qualified
+     * name of the {@link WriteLoggerP} processor and the level is INFO. It
+     * does not log {@link Watermark watermark} items.
      * <p>
-     * Note that the event will be logged on the cluster members, not on the
-     * client, so it's mainly useful as a diagnostic tool.
-     * <p>
-     * {@link Vertex#localParallelism(int) Local parallelism} of 1 is
-     * recommended for this vertex.
+     * The vertex logs each item on whichever cluster member it happens to
+     * receive it. Its primary purpose is for development use, when running Jet
+     * on a local machine.
      *
-     * @param toStringFn Function to convert item to String.
-     * @param <T> input item type
+     * @param toStringFn a function that returns a string representation of a stream item
+     * @param <T> stream item type
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> writeLogger(
+    public static <T> ProcessorMetaSupplier writeLoggerP(
             @Nonnull DistributedFunction<T, String> toStringFn
     ) {
-        return () -> new WriteLoggerP(toStringFn);
+        return dontParallelize(() -> new WriteLoggerP<>(toStringFn));
     }
 
     /**
-     * Convenience for {@link #writeLogger(DistributedFunction)} that uses
+     * Convenience for {@link #writeLoggerP(DistributedFunction)} that uses
      * {@code toString()} as {@code toStringFn}.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> writeLogger() {
-        return writeLogger(Object::toString);
+    public static ProcessorMetaSupplier writeLoggerP() {
+        return writeLoggerP(Object::toString);
     }
 
     /**
-     * Returns a meta-supplier that will add logging to the processors created
-     * by the provided meta-supplier. Each item the processor removes from the
-     * inbox will be logged. Items are logged at the INFO level to the
-     * following logging category: {@link PeekWrappedP}.
+     * Returns a meta-supplier that wraps the provided one and adds a logging
+     * layer to each processor it creates. For each item the wrapped processor
+     * removes from the inbox, the wrapping processor:
+     * <ol><li>
+     *     uses the {@code shouldLogFn} predicate to see whether to log the item
+     * </li><li>
+     *     if the item passed, uses {@code toStringFn} to get a string
+     *     representation of the item
+     * </li><li>
+     *     logs the string at the INFO level, the category being the fully
+     *     qualified name of the {@link PeekWrappedP} processor.
      * <p>
-     * <strong>Warning:</strong> The {@code toStringFn} and {@code shouldLogFn}
-     * functions will see all items, including {@link Watermark}s.
+     * <strong>Note:</strong> {@link Watermark watermark} items are subject to
+     * logging, too, so the functions you supply must be able to handle them.
      *
-     * @param toStringFn function that returns the string representation of the item
-     * @param shouldLogFn function to filter logged items. {@link
-     *                   com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()} can be
-     *                   used as a pass-through filter when no filtering is needed.
+     * @param toStringFn  function that returns the string representation of the item
+     * @param shouldLogFn function to filter logged items. You can use {@link
+     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    alwaysTrue()} as a pass-through filter when you don't need any
+     *                    filtering.
      * @param wrapped The wrapped meta-supplier.
      * @param <T> input item type
      *
-     * @see #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
-     * @see #peekSnapshot(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     * @see #peekOutputP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     * @see #peekSnapshotP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
      */
-
     @Nonnull
-    public static <T> ProcessorMetaSupplier peekInput(
+    public static <T> ProcessorMetaSupplier peekInputP(
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull ProcessorMetaSupplier wrapped
@@ -105,12 +112,12 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Same as {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * Same as {@link #peekInputP(DistributedFunction, DistributedPredicate,
      * ProcessorMetaSupplier) peekInput(toStringFn, shouldLogFn, metaSupplier)},
      * but accepts a {@code ProcessorSupplier} instead of a meta-supplier.
      */
     @Nonnull
-    public static <T> ProcessorSupplier peekInput(
+    public static <T> ProcessorSupplier peekInputP(
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull ProcessorSupplier wrapped
@@ -120,13 +127,13 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Same as {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * Same as {@link #peekInputP(DistributedFunction, DistributedPredicate,
      * ProcessorMetaSupplier) peekInput(toStringFn, shouldLogFn, metaSupplier)},
      * but accepts a {@code DistributedSupplier} of processors instead of a
      * meta-supplier.
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> peekInput(
+    public static <T> DistributedSupplier<Processor> peekInputP(
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull DistributedSupplier<Processor> wrapped
@@ -135,62 +142,74 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Convenience for {@link #peekInput(DistributedFunction,
+     * Convenience for {@link #peekInputP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekInput(toStringFn,
      * shouldLogFn, metaSupplier)} with a pass-through filter and {@code
      * Object#toString} as the formatting function.
      */
     @Nonnull
-    public static ProcessorMetaSupplier peekInput(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    public static ProcessorMetaSupplier peekInputP(@Nonnull ProcessorMetaSupplier wrapped) {
+        return peekInputP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Convenience for {@link #peekInput(DistributedFunction,
+     * Convenience for {@link #peekInputP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekInput(toStringFn,
      * shouldLogFn, metaSupplier)} with a pass-through filter and {@code
      * Object#toString} as the formatting function. This variant accepts a
      * {@code ProcessorSupplier} instead of a meta-supplier.
      */
     @Nonnull
-    public static ProcessorSupplier peekInput(@Nonnull ProcessorSupplier wrapped) {
-        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    public static ProcessorSupplier peekInputP(@Nonnull ProcessorSupplier wrapped) {
+        return peekInputP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Convenience for {@link #peekInput(DistributedFunction,
+     * Convenience for {@link #peekInputP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekInput(toStringFn,
      * shouldLogFn, metaSupplier)} with a pass-through filter and {@code
      * Object#toString} as the formatting function. This variant accepts a
      * {@code DistributedSupplier} of processors instead of a meta-supplier.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> peekInput(@Nonnull DistributedSupplier<Processor> wrapped) {
-        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    public static DistributedSupplier<Processor> peekInputP(@Nonnull DistributedSupplier<Processor> wrapped) {
+        return peekInputP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Returns a meta-supplier that will add logging to the processors created
-     * by the provided meta-supplier. Each item the processor adds to the
-     * outbox will be logged. Items are logged at the INFO level to the
-     * following logging category: {@link PeekWrappedP}. Does not log items
-     * output to snapshot outbox, see {@code peekSnapshot()} methods.
+     * Returns a meta-supplier that wraps the provided one and adds a logging
+     * layer to each processor it creates. For each item the wrapped processor
+     * adds to the outbox, the wrapping processor:
+     * <ol><li>
+     *     uses the {@code shouldLogFn} predicate to see whether to log the item
+     * </li><li>
+     *     if the item passed, uses {@code toStringFn} to get a string
+     *     representation of the item
+     * </li><li>
+     *     logs the string at the INFO level, the category being the fully
+     *     qualified name of the {@link PeekWrappedP} processor.
      * <p>
-     * <strong>Warning:</strong> The {@code toStringFn} and {@code shouldLogFn}
-     * functions will see all items, including {@link Watermark}s.
+     * Technically speaking, snapshot data is emitted to the same outbox as regular
+     * data, but this wrapper only logs the regular data. See {@link
+     * #peekSnapshotP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     * peekSnapshot()}.
+     * <p>
+     * <strong>Note:</strong> {@link Watermark watermark} items are subject to
+     * logging, too, so the functions you supply must be able to handle them.
      *
-     * @param toStringFn function that returns the string representation of the item
-     * @param shouldLogFn function to filter logged items. {@link
-     *                   com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()} can be
-     *                   used as a pass-through filter when no filtering is needed.
+     * @param toStringFn  function that returns the string representation of the item
+     * @param shouldLogFn function to filter logged items. You can use {@link
+     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    alwaysTrue()} as a pass-through filter when you don't need any
+     *                    filtering.
      * @param wrapped The wrapped meta-supplier.
      * @param <T> output item type
      *
-     * @see #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
-     * @see #peekSnapshot(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     * @see #peekInputP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     * @see #peekSnapshotP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
      */
     @Nonnull
-    public static <T> ProcessorMetaSupplier peekOutput(
+    public static <T> ProcessorMetaSupplier peekOutputP(
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull ProcessorMetaSupplier wrapped
@@ -200,12 +219,12 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Same as {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * Same as {@link #peekOutputP(DistributedFunction, DistributedPredicate,
      * ProcessorMetaSupplier) peekOutput(toStringFn, shouldLogFn, metaSupplier)},
      * but accepts a {@code ProcessorSupplier} instead of a meta-supplier.
      */
     @Nonnull
-    public static <T> ProcessorSupplier peekOutput(
+    public static <T> ProcessorSupplier peekOutputP(
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull ProcessorSupplier wrapped
@@ -215,13 +234,13 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Same as {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * Same as {@link #peekOutputP(DistributedFunction, DistributedPredicate,
      * ProcessorMetaSupplier) peekOutput(toStringFn, shouldLogFn, metaSupplier)},
      * but accepts a {@code DistributedSupplier} of processors instead of a
      * meta-supplier.
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> peekOutput(
+    public static <T> DistributedSupplier<Processor> peekOutputP(
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull DistributedSupplier<Processor> wrapped) {
@@ -229,57 +248,67 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Convenience for {@link #peekOutput(DistributedFunction,
+     * Convenience for {@link #peekOutputP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekOutput(toStringFn,
      * shouldLogFn, metaSupplier} with a pass-through filter and {@code
      * Object#toString} as the formatting function.
      */
     @Nonnull
-    public static ProcessorMetaSupplier peekOutput(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    public static ProcessorMetaSupplier peekOutputP(@Nonnull ProcessorMetaSupplier wrapped) {
+        return peekOutputP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Convenience for {@link #peekOutput(DistributedFunction,
+     * Convenience for {@link #peekOutputP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekOutput(toStringFn,
      * shouldLogFn, metaSupplier} with a pass-through filter and {@code
      * Object#toString} as the formatting function. This variant accepts a
      * {@code ProcessorSupplier} instead of a meta-supplier.
      */
     @Nonnull
-    public static ProcessorSupplier peekOutput(@Nonnull ProcessorSupplier wrapped) {
-        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    public static ProcessorSupplier peekOutputP(@Nonnull ProcessorSupplier wrapped) {
+        return peekOutputP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Convenience for {@link #peekOutput(DistributedFunction,
+     * Convenience for {@link #peekOutputP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekOutput(toStringFn,
      * shouldLogFn, metaSupplier} with a pass-through filter and {@code
      * Object#toString} as the formatting function. This variant accepts a
      * {@code DistributedSupplier} of processors instead of a meta-supplier.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> peekOutput(@Nonnull DistributedSupplier<Processor> wrapped) {
-        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    public static DistributedSupplier<Processor> peekOutputP(@Nonnull DistributedSupplier<Processor> wrapped) {
+        return peekOutputP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Returns a meta-supplier that will add logging to the processors created
-     * by the provided meta-supplier. Each item the processor adds to the
-     * snapshot will be logged. Items are logged at the INFO level to the
-     * following logging category: {@link PeekWrappedP}.
-     * <p>
-     * @param toStringFn function that returns the string representation of the item
-     * @param shouldLogFn function to filter logged items. {@link
-     *                   com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()} can be
-     *                   used as a pass-through filter when no filtering is needed.
-     * @param wrapped The wrapped meta-supplier.
+     * Returns a meta-supplier that wraps the provided one and adds a logging
+     * layer to each processor it creates. For each item the wrapped processor
+     * adds to the snapshot storage, the wrapping processor:
+     * <ol><li>
+     *     uses the {@code shouldLogFn} predicate to see whether to log the item
+     * </li><li>
+     *     if the item passed, uses {@code toStringFn} to get a string
+     *     representation of the item
+     * </li><li>
+     *     logs the string at the INFO level, the category being the fully
+     *     qualified name of the {@link PeekWrappedP} processor.
      *
-     * @see #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
-     * @see #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     * @param toStringFn  function that returns the string representation of the item
+     * @param shouldLogFn function to filter logged items. You can use {@link
+     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    alwaysTrue()} as a pass-through filter when you don't need any
+     *                    filtering.
+     * @param wrapped The wrapped meta-supplier.
+     * @param <K> type of the key emitted to the snapshot
+     * @param <V> type of the value emitted to the snapshot
+     *
+     * @see #peekInputP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     * @see #peekOutputP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
      */
     @Nonnull
-    public static <K, V> ProcessorMetaSupplier peekSnapshot(
+    public static <K, V> ProcessorMetaSupplier peekSnapshotP(
             @Nonnull DistributedFunction<Entry<K, V>, String> toStringFn,
             @Nonnull DistributedPredicate<Entry<K, V>> shouldLogFn,
             @Nonnull ProcessorMetaSupplier wrapped
@@ -289,12 +318,12 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Same as {@link #peekSnapshot(DistributedFunction, DistributedPredicate,
+     * Same as {@link #peekSnapshotP(DistributedFunction, DistributedPredicate,
      * ProcessorMetaSupplier) peekSnapshot(toStringFn, shouldLogFn, metaSupplier)},
      * but accepts a {@code ProcessorSupplier} instead of a meta-supplier.
      */
     @Nonnull
-    public static <K, V> ProcessorSupplier peekSnapshot(
+    public static <K, V> ProcessorSupplier peekSnapshotP(
             @Nonnull DistributedFunction<Entry<K, V>, String> toStringFn,
             @Nonnull DistributedPredicate<Entry<K, V>> shouldLogFn,
             @Nonnull ProcessorSupplier wrapped
@@ -304,13 +333,13 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Same as {@link #peekSnapshot(DistributedFunction, DistributedPredicate,
+     * Same as {@link #peekSnapshotP(DistributedFunction, DistributedPredicate,
      * ProcessorMetaSupplier) peekSnapshot(toStringFn, shouldLogFn, metaSupplier)},
      * but accepts a {@code DistributedSupplier} of processors instead of a
      * meta-supplier.
      */
     @Nonnull
-    public static <K, V> DistributedSupplier<Processor> peekSnapshot(
+    public static <K, V> DistributedSupplier<Processor> peekSnapshotP(
             @Nonnull DistributedFunction<Entry<K, V>, String> toStringFn,
             @Nonnull DistributedPredicate<Entry<K, V>> shouldLogFn,
             @Nonnull DistributedSupplier<Processor> wrapped) {
@@ -318,37 +347,37 @@ public final class DiagnosticProcessors {
     }
 
     /**
-     * Convenience for {@link #peekSnapshot(DistributedFunction,
+     * Convenience for {@link #peekSnapshotP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekSnapshot(toStringFn,
      * shouldLogFn, metaSupplier} with a pass-through filter and {@code
      * Object#toString} as the formatting function. This variant accepts a
      * {@code DistributedSupplier} of processors instead of a meta-supplier.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> peekSnapshot(@Nonnull DistributedSupplier<Processor> wrapped) {
-        return peekSnapshot(Object::toString, alwaysTrue(), wrapped);
+    public static DistributedSupplier<Processor> peekSnapshotP(@Nonnull DistributedSupplier<Processor> wrapped) {
+        return peekSnapshotP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Convenience for {@link #peekSnapshot(DistributedFunction,
+     * Convenience for {@link #peekSnapshotP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekSnapshot(toStringFn,
      * shouldLogFn, metaSupplier} with a pass-through filter and {@code
      * Object#toString} as the formatting function.
      */
     @Nonnull
-    public static ProcessorMetaSupplier peekSnapshot(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekSnapshot(Object::toString, alwaysTrue(), wrapped);
+    public static ProcessorMetaSupplier peekSnapshotP(@Nonnull ProcessorMetaSupplier wrapped) {
+        return peekSnapshotP(Object::toString, alwaysTrue(), wrapped);
     }
 
     /**
-     * Convenience for {@link #peekSnapshot(DistributedFunction,
+     * Convenience for {@link #peekSnapshotP(DistributedFunction,
      * DistributedPredicate, ProcessorMetaSupplier) peekSnapshot(toStringFn,
      * shouldLogFn, metaSupplier} with a pass-through filter and {@code
      * Object#toString} as the formatting function. This variant accepts a
      * {@code ProcessorSupplier} instead of a meta-supplier.
      */
     @Nonnull
-    public static ProcessorSupplier peekSnapshot(@Nonnull ProcessorSupplier wrapped) {
-        return peekSnapshot(Object::toString, alwaysTrue(), wrapped);
+    public static ProcessorSupplier peekSnapshotP(@Nonnull ProcessorSupplier wrapped) {
+        return peekSnapshotP(Object::toString, alwaysTrue(), wrapped);
     }
 }

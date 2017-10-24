@@ -244,6 +244,11 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         }
 
         @Override
+        public int preferredLocalParallelism() {
+            return 2;
+        }
+
+        @Override
         public void init(@Nonnull Context context) {
             totalParallelism = context.totalParallelism();
         }

@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -36,18 +36,18 @@ public class SinkReducer<T, K, V, R> implements DistributedCollector.Reducer<T, 
     final DistributedFunction<JetInstance, ? extends R> toDistributedObject;
     final DistributedFunction<? super T, ? extends K> keyMapper;
     final DistributedFunction<? super T, ? extends V> valueMapper;
-    final ProcessorSupplier processorSupplier;
+    final ProcessorMetaSupplier metaSupplier;
 
     public SinkReducer(String sinkName,
                        DistributedFunction<JetInstance, ? extends R> toDistributedObject,
                        DistributedFunction<? super T, ? extends K> keyMapper,
                        DistributedFunction<? super T, ? extends V> valueMapper,
-                       ProcessorSupplier processorSupplier) {
+                       ProcessorMetaSupplier metaSupplier) {
         this.sinkName = sinkName;
         this.toDistributedObject = toDistributedObject;
         this.keyMapper = keyMapper;
         this.valueMapper = valueMapper;
-        this.processorSupplier = processorSupplier;
+        this.metaSupplier = metaSupplier;
     }
 
 
@@ -56,7 +56,7 @@ public class SinkReducer<T, K, V, R> implements DistributedCollector.Reducer<T, 
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
         Vertex mapper = dag.newVertex("map", Processors.mapP((T t) -> entry(keyMapper.apply(t), valueMapper.apply(t))));
-        Vertex writer = dag.newVertex(sinkName, processorSupplier);
+        Vertex writer = dag.newVertex(sinkName, metaSupplier);
 
         dag.edge(between(previous, mapper));
         dag.edge(between(mapper, writer));

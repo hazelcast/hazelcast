@@ -63,11 +63,7 @@ public final class ReadIListP extends AbstractProcessor {
         return false;
     }
 
-    public static ProcessorMetaSupplier supplier(String listName) {
-        return new MetaSupplier(listName);
-    }
-
-    public static ProcessorMetaSupplier supplier(String listName, ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier metaSupplier(String listName, ClientConfig clientConfig) {
         return new MetaSupplier(listName, clientConfig);
     }
 
@@ -79,13 +75,14 @@ public final class ReadIListP extends AbstractProcessor {
 
         private transient Address ownerAddress;
 
-        MetaSupplier(String name) {
-            this(name, null);
-        }
-
         MetaSupplier(String name, ClientConfig clientConfig) {
             this.name = name;
             this.clientConfig = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
+        }
+
+        @Override
+        public int preferredLocalParallelism() {
+            return 1;
         }
 
         @Override

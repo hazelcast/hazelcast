@@ -272,7 +272,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", new NonBalancedSource(
                 slaveInstance.getHazelcastInstance().getCluster().getLocalMember().getAddress().toString()));
-        Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLogger());
+        Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP());
         dag.edge(between(source, sink).distributed());
 
         JobConfig config = new JobConfig();

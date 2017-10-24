@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -121,6 +121,11 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
         public MetaSupplier(@Nonnull SerializableJobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper) {
             this.jobConf = jobConf;
             this.mapper = mapper;
+        }
+
+        @Override
+        public int preferredLocalParallelism() {
+            return 2;
         }
 
         @Override

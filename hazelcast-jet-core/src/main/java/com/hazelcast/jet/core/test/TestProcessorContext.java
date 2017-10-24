@@ -43,7 +43,7 @@ public class TestProcessorContext implements Processor.Context {
         logger = getLogger(vertexName + "#" + globalProcessorIndex);
     }
 
-    @Override
+    @Nonnull @Override
     public JetInstance jetInstance() {
         return jetInstance;
     }
@@ -56,7 +56,7 @@ public class TestProcessorContext implements Processor.Context {
         return this;
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     public ILogger logger() {
         return logger;
     }
@@ -69,7 +69,7 @@ public class TestProcessorContext implements Processor.Context {
         return this;
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     public String vertexName() {
         return vertexName;
     }

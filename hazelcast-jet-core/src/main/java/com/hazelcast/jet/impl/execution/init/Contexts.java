@@ -50,14 +50,12 @@ public final class Contexts {
             this.processingGuarantee = processingGuarantee;
         }
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         public JetInstance jetInstance() {
             return instance;
         }
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         public ILogger logger() {
             return logger;
         }
@@ -67,8 +65,7 @@ public final class Contexts {
             return index;
         }
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         public String vertexName() {
             return vertexName;
         }
@@ -94,8 +91,7 @@ public final class Contexts {
             this.logger = logger;
         }
 
-        @Nonnull
-        @Override
+        @Nonnull @Override
         public JetInstance jetInstance() {
             return instance;
         }

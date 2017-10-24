@@ -23,7 +23,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -37,13 +36,13 @@ import org.junit.runners.Parameterized.Parameters;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInput;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutput;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekSnapshot;
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInputP;
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekSnapshotP;
+import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -54,9 +53,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(Parameterized.class)
-@Category({QuickTest.class})
+@Category(QuickTest.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-public class Processors_peekTest {
+public class PeekingWrapperTest {
 
     @Parameter
     public DistributedFunction<Object, String> toStringFn;
@@ -66,11 +65,11 @@ public class Processors_peekTest {
 
     private TestProcessorContext context;
     private ILogger logger;
-    private Processor wrappedP;
+    private Processor peekP;
 
-    private final DistributedFunction<Entry<Integer, Integer>, String> ssToStringFn = e ->
-            toStringFn.apply(e.getKey()) + "=" + toStringFn.apply(e.getValue());
-    private final DistributedPredicate<Entry<Integer, Integer>> ssShouldLogFn = e ->
+    private final DistributedFunction<Entry<Integer, Integer>, String> snapshotToStringFn = e ->
+            toStringFn.apply(e.getKey()) + '=' + toStringFn.apply(e.getValue());
+    private final DistributedPredicate<Entry<Integer, Integer>> snapshotShouldLogFn = e ->
             shouldLogFn.test(e.getKey());
 
     @Parameters(name = "toStringFn={0}, shouldLogFn={1}")
@@ -90,17 +89,13 @@ public class Processors_peekTest {
         context = new TestProcessorContext().setLogger(logger);
     }
 
-    private DistributedSupplier<Processor> procSupplier(Class<? extends Processor> processor) {
-        return () -> uncheckCall(() -> processor.newInstance());
-    }
-
     @Test
-    public void when_peekInputWithPeekingProcessor_SupplierProcessor() {
+    public void when_peekInputWithPeekingProcessor_distributedSupplier() {
         // Given
-        DistributedSupplier<Processor> passThroughPSupplier = procSupplier(TestPeekRemoveProcessor.class);
-        wrappedP = (toStringFn == null
-                ? peekInput(passThroughPSupplier)
-                : peekInput(toStringFn, shouldLogFn, passThroughPSupplier)
+        DistributedSupplier<Processor> wrappedSupplier = procSupplier(TestPeekRemoveProcessor.class);
+        peekP = (toStringFn == null
+                ? peekInputP(wrappedSupplier)
+                : peekInputP(toStringFn, shouldLogFn, wrappedSupplier)
         ).get();
 
         // When+Then
@@ -108,12 +103,12 @@ public class Processors_peekTest {
     }
 
     @Test
-    public void when_peekInputWithPollingProcessor_SupplierProcessor() {
+    public void when_peekInputWithPollingProcessor_distributedSupplier() {
         // Given
         DistributedSupplier<Processor> passThroughPSupplier = procSupplier(TestPollProcessor.class);
-        wrappedP = (toStringFn == null
-                ? peekInput(passThroughPSupplier)
-                : peekInput(toStringFn, shouldLogFn, passThroughPSupplier)
+        peekP = (toStringFn == null
+                ? peekInputP(passThroughPSupplier)
+                : peekInputP(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get();
 
         // When+Then
@@ -121,39 +116,39 @@ public class Processors_peekTest {
     }
 
     @Test
-    public void when_peekInput_ProcessorSupplier() {
+    public void when_peekInput_processorSupplier() {
         // Given
-        ProcessorSupplier passThroughPSupplier = ProcessorSupplier.of(procSupplier(TestPeekRemoveProcessor.class));
-        wrappedP = (toStringFn == null
-                ? peekInput(passThroughPSupplier)
-                : peekInput(toStringFn, shouldLogFn, passThroughPSupplier)
-        ).get(1).iterator().next();
+        ProcessorSupplier wrappedProcSupplier = ProcessorSupplier.of(procSupplier(TestPeekRemoveProcessor.class));
+        ProcessorSupplier peekingProcSupplier = toStringFn == null
+                ? peekInputP(wrappedProcSupplier)
+                : peekInputP(toStringFn, shouldLogFn, wrappedProcSupplier);
+        peekP = supplierFrom(peekingProcSupplier).get();
 
         // When+Then
         assertPeekInput();
     }
 
     @Test
-    public void when_peekInput_ProcessorMetaSupplier() {
+    public void when_peekInput_metaSupplier() {
         // Given
-        ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(procSupplier(TestPeekRemoveProcessor.class));
-        Address address = new Address();
-        wrappedP = (toStringFn == null
-                ? peekInput(passThroughPSupplier)
-                : peekInput(toStringFn, shouldLogFn, passThroughPSupplier)
-        ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
+        ProcessorMetaSupplier wrappedMetaSupplier =
+                ProcessorMetaSupplier.of(procSupplier(TestPeekRemoveProcessor.class));
+        ProcessorMetaSupplier peekingMetaSupplier = toStringFn == null
+                ? peekInputP(wrappedMetaSupplier)
+                : peekInputP(toStringFn, shouldLogFn, wrappedMetaSupplier);
+        peekP = supplierFrom(peekingMetaSupplier).get();
 
         // When+Then
         assertPeekInput();
     }
 
     @Test
-    public void when_peekOutput_SupplierProcessor() {
+    public void when_peekOutput_distributedSupplier() {
         // Given
         DistributedSupplier<Processor> passThroughPSupplier = procSupplier(TestSourceProcessor.class);
-        wrappedP = (toStringFn == null
-                ? peekOutput(passThroughPSupplier)
-                : peekOutput(toStringFn, shouldLogFn, passThroughPSupplier)
+        peekP = (toStringFn == null
+                ? peekOutputP(passThroughPSupplier)
+                : peekOutputP(toStringFn, shouldLogFn, passThroughPSupplier)
         ).get();
 
         // When+Then
@@ -161,39 +156,38 @@ public class Processors_peekTest {
     }
 
     @Test
-    public void when_peekOutput_ProcessorSupplier() {
+    public void when_peekOutput_processorSupplier() {
         // Given
-        ProcessorSupplier passThroughPSupplier = ProcessorSupplier.of(procSupplier(TestSourceProcessor.class));
-        wrappedP = (toStringFn == null
-                ? peekOutput(passThroughPSupplier)
-                : peekOutput(toStringFn, shouldLogFn, passThroughPSupplier)
-        ).get(1).iterator().next();
+        ProcessorSupplier wrappedProcSupplier = ProcessorSupplier.of(procSupplier(TestSourceProcessor.class));
+        ProcessorSupplier peekingProcSupplier = toStringFn == null
+                ? peekOutputP(wrappedProcSupplier)
+                : peekOutputP(toStringFn, shouldLogFn, wrappedProcSupplier);
+        peekP = peekingProcSupplier.get(1).iterator().next();
 
         // When+Then
         assertPeekOutput();
     }
 
     @Test
-    public void when_peekOutput_ProcessorMetaSupplier() {
+    public void when_peekOutput_metaSupplier() {
         // Given
         ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(procSupplier(TestSourceProcessor.class));
-        Address address = new Address();
-        wrappedP = (toStringFn == null
-                ? peekOutput(passThroughPSupplier)
-                : peekOutput(toStringFn, shouldLogFn, passThroughPSupplier)
-        ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
+        ProcessorMetaSupplier peekingMetaSupplier = toStringFn == null
+                ? peekOutputP(passThroughPSupplier)
+                : peekOutputP(toStringFn, shouldLogFn, passThroughPSupplier);
+        peekP = supplierFrom(peekingMetaSupplier).get();
 
         // When+Then
         assertPeekOutput();
     }
 
     @Test
-    public void when_peekSnapshot_SupplierProcessor() {
+    public void when_peekSnapshot_distributedSupplier() {
         // Given
-        DistributedSupplier<Processor> passThroughPSupplier = procSupplier(TestSourceProcessor.class);
-        wrappedP = (toStringFn == null
-                ? peekSnapshot(passThroughPSupplier)
-                : peekSnapshot(ssToStringFn, ssShouldLogFn, passThroughPSupplier)
+        DistributedSupplier<Processor> wrappedSupplier = procSupplier(TestSourceProcessor.class);
+        peekP = (toStringFn == null
+                ? peekSnapshotP(wrappedSupplier)
+                : peekSnapshotP(snapshotToStringFn, snapshotShouldLogFn, wrappedSupplier)
         ).get();
 
         // When+Then
@@ -201,46 +195,49 @@ public class Processors_peekTest {
     }
 
     @Test
-    public void when_peekSnapshot_ProcessorSupplier() {
+    public void when_peekSnapshot_procSupplier() {
         // Given
-        ProcessorSupplier passThroughPSupplier = ProcessorSupplier.of(procSupplier(TestSourceProcessor.class));
-        wrappedP = (toStringFn == null
-                ? peekSnapshot(passThroughPSupplier)
-                : peekSnapshot(ssToStringFn, ssShouldLogFn, passThroughPSupplier)
-        ).get(1).iterator().next();
+        ProcessorSupplier wrappedProcSupplier = ProcessorSupplier.of(procSupplier(TestSourceProcessor.class));
+        ProcessorSupplier peekingProcSupplier = toStringFn == null
+                ? peekSnapshotP(wrappedProcSupplier)
+                : peekSnapshotP(snapshotToStringFn, snapshotShouldLogFn, wrappedProcSupplier);
+        peekP = supplierFrom(peekingProcSupplier).get();
 
         // When+Then
         assertPeekSnapshot();
     }
 
     @Test
-    public void when_peekSnapshot_ProcessorMetaSupplier() {
+    public void when_peekSnapshot_metaSupplier() {
         // Given
-        ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(procSupplier(TestSourceProcessor.class));
-        Address address = new Address();
-        wrappedP = (toStringFn == null
-                ? peekSnapshot(passThroughPSupplier)
-                : peekSnapshot(ssToStringFn, ssShouldLogFn, passThroughPSupplier)
-        ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
+        ProcessorMetaSupplier wrappedMetaSupplier = ProcessorMetaSupplier.of(procSupplier(TestSourceProcessor.class));
+        ProcessorMetaSupplier peekingMetaSupplier = toStringFn == null
+                ? peekSnapshotP(wrappedMetaSupplier)
+                : peekSnapshotP(snapshotToStringFn, snapshotShouldLogFn, wrappedMetaSupplier);
+        peekP = supplierFrom(peekingMetaSupplier).get();
 
         // When+Then
         assertPeekSnapshot();
+    }
+
+    private static DistributedSupplier<Processor> procSupplier(Class<? extends Processor> processor) {
+        return () -> uncheckCall(processor::newInstance);
     }
 
     private void assertPeekInput() {
-        wrappedP.init(mock(Outbox.class), context);
+        peekP.init(mock(Outbox.class), context);
 
         TestInbox inbox = new TestInbox();
         inbox.add(0);
-        wrappedP.process(0, inbox);
+        peekP.process(0, inbox);
         verify(logger).info("Input from 0: " + format(0));
 
         inbox.add(0);
-        wrappedP.process(1, inbox);
+        peekP.process(1, inbox);
         verify(logger).info("Input from 1: " + format(0));
 
         inbox.add(1);
-        wrappedP.process(0, inbox);
+        peekP.process(0, inbox);
         if (shouldLogFn == null) {
             verify(logger).info("Input from 0: " + format(1));
         }
@@ -249,9 +246,9 @@ public class Processors_peekTest {
 
     private void assertPeekOutput() {
         TestOutbox outbox = new TestOutbox(1, 1);
-        wrappedP.init(outbox, context);
+        peekP.init(outbox, context);
 
-        wrappedP.complete();
+        peekP.complete();
         verify(logger).info("Output to 0: " + format(0));
         verify(logger).info("Output to 1: " + format(0));
 
@@ -259,11 +256,11 @@ public class Processors_peekTest {
 
         if (shouldLogFn == null) {
             // only one queue has available space
-            wrappedP.complete();
+            peekP.complete();
             verify(logger).info("Output to 1: " + format(1));
 
             outbox.queueWithOrdinal(0).clear();
-            wrappedP.complete();
+            peekP.complete();
             verify(logger).info("Output to 0: " + format(1));
         }
         verifyZeroInteractions(logger);
@@ -271,15 +268,15 @@ public class Processors_peekTest {
 
     private void assertPeekSnapshot() {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
-        wrappedP.init(outbox, context);
+        peekP.init(outbox, context);
 
-        wrappedP.saveToSnapshot();
+        peekP.saveToSnapshot();
         verify(logger).info("Output to snapshot: " + formatEntry(0));
 
         // advance counter
-        wrappedP.complete();
+        peekP.complete();
         if (shouldLogFn == null) {
-            wrappedP.saveToSnapshot();
+            peekP.saveToSnapshot();
             verify(logger).info("Output to snapshot: " + formatEntry(1));
         }
         verifyZeroInteractions(logger);
@@ -290,7 +287,7 @@ public class Processors_peekTest {
     }
 
     private String formatEntry(int s) {
-        return toStringFn == null ? s + "=" + s : toStringFn.apply(s) + "=" + toStringFn.apply(s);
+        return toStringFn == null ? s + "=" + s : toStringFn.apply(s) + '=' + toStringFn.apply(s);
     }
 
     abstract static class TestProcessor implements Processor {

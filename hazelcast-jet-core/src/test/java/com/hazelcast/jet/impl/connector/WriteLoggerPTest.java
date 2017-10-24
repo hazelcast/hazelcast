@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.logging.ILogger;
@@ -28,6 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
+import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -39,7 +40,7 @@ public class WriteLoggerPTest {
     @Test
     public void test() {
         // Given
-        Processor p = DiagnosticProcessors.writeLogger().get();
+        Processor p = supplierFrom(writeLoggerP()).get();
         TestInbox inbox = new TestInbox();
         Outbox outbox = mock(Outbox.class);
         ILogger logger = mock(ILogger.class);

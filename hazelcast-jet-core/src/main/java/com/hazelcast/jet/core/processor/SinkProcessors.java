@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
@@ -33,6 +34,7 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -53,8 +55,8 @@ public final class SinkProcessors {
      * {@link com.hazelcast.jet.Sinks#writeMap(String)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeMapP(@Nonnull String mapName) {
-        return HazelcastWriters.writeMap(mapName);
+    public static ProcessorMetaSupplier writeMapP(@Nonnull String mapName) {
+        return HazelcastWriters.writeMapP(mapName, null);
     }
 
     /**
@@ -62,8 +64,8 @@ public final class SinkProcessors {
      * {@link com.hazelcast.jet.Sinks#writeRemoteMap(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriters.writeMap(mapName, clientConfig);
+    public static ProcessorMetaSupplier writeRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+        return HazelcastWriters.writeMapP(mapName, clientConfig);
     }
 
     /**
@@ -71,8 +73,8 @@ public final class SinkProcessors {
      * {@link com.hazelcast.jet.Sinks#writeCache(String)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeCacheP(@Nonnull String cacheName) {
-        return HazelcastWriters.writeCache(cacheName);
+    public static ProcessorMetaSupplier writeCacheP(@Nonnull String cacheName) {
+        return HazelcastWriters.writeCacheP(cacheName, null);
     }
 
     /**
@@ -80,8 +82,10 @@ public final class SinkProcessors {
      * {@link com.hazelcast.jet.Sinks#writeRemoteCache(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeRemoteCacheP(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriters.writeCache(cacheName, clientConfig);
+    public static ProcessorMetaSupplier writeRemoteCacheP(
+            @Nonnull String cacheName, @Nonnull ClientConfig clientConfig
+    ) {
+        return HazelcastWriters.writeCacheP(cacheName, clientConfig);
     }
 
     /**
@@ -89,8 +93,8 @@ public final class SinkProcessors {
      * {@link com.hazelcast.jet.Sinks#writeList(String)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeListP(@Nonnull String listName) {
-        return HazelcastWriters.writeList(listName);
+    public static ProcessorMetaSupplier writeListP(@Nonnull String listName) {
+        return HazelcastWriters.writeListP(listName, null);
     }
 
     /**
@@ -98,8 +102,70 @@ public final class SinkProcessors {
      * {@link com.hazelcast.jet.Sinks#writeRemoteList(String, ClientConfig)}.
      */
     @Nonnull
-    public static ProcessorSupplier writeRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriters.writeList(listName, clientConfig);
+    public static ProcessorMetaSupplier writeRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+        return HazelcastWriters.writeListP(listName, clientConfig);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeSocket(String, int)}.
+     */
+    public static <T> ProcessorMetaSupplier writeSocketP(
+            @Nonnull String host,
+            int port,
+            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull Charset charset
+    ) {
+        String charsetName = charset.name();
+        return dontParallelize(writeBufferedP(
+                index -> uncheckCall(
+                        () -> new BufferedWriter(new OutputStreamWriter(
+                                new Socket(host, port).getOutputStream(), charsetName))),
+                (bufferedWriter, item) -> {
+                    try {
+                        bufferedWriter.write(toStringFn.apply((T) item));
+                        bufferedWriter.write('\n');
+                    } catch (IOException e) {
+                        throw sneakyThrow(e);
+                    }
+                },
+                bufferedWriter -> uncheckRun(bufferedWriter::flush),
+                bufferedWriter -> uncheckRun(bufferedWriter::close)
+        ));
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction, Charset, boolean)}.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier writeFileP(
+            @Nonnull String directoryName,
+            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull Charset charset,
+            boolean append
+    ) {
+        return WriteFileP.metaSupplier(directoryName, toStringFn, charset.name(), append);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction)}.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier writeFileP(
+            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringFn
+    ) {
+        return writeFileP(directoryName, toStringFn, UTF_8, false);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#writeFile(String)}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeFileP(@Nonnull String directoryName) {
+        return writeFileP(directoryName, Object::toString, UTF_8, false);
     }
 
     /**
@@ -149,67 +215,5 @@ public final class SinkProcessors {
             @Nonnull DistributedConsumer<B> disposeBufferFn
     ) {
         return WriteBufferedP.supplier(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeSocket(String, int)}.
-     */
-    public static <T> ProcessorSupplier writeSocketP(
-            @Nonnull String host,
-            int port,
-            @Nonnull DistributedFunction<T, String> toStringFn,
-            @Nonnull Charset charset
-    ) {
-        String charsetName = charset.name();
-        return writeBufferedP(
-                index -> uncheckCall(
-                        () -> new BufferedWriter(new OutputStreamWriter(
-                                new Socket(host, port).getOutputStream(), charsetName))),
-                (bufferedWriter, item) -> {
-                    try {
-                        bufferedWriter.write(toStringFn.apply((T) item));
-                        bufferedWriter.write('\n');
-                    } catch (IOException e) {
-                        throw sneakyThrow(e);
-                    }
-                },
-                bufferedWriter -> uncheckRun(bufferedWriter::flush),
-                bufferedWriter -> uncheckRun(bufferedWriter::close)
-        );
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction, Charset, boolean)}.
-     */
-    @Nonnull
-    public static <T> ProcessorSupplier writeFileP(
-            @Nonnull String directoryName,
-            @Nonnull DistributedFunction<T, String> toStringFn,
-            @Nonnull Charset charset,
-            boolean append
-    ) {
-        return WriteFileP.supplier(directoryName, toStringFn, charset.name(), append);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction)}.
-     */
-    @Nonnull
-    public static <T> ProcessorSupplier writeFileP(
-            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringFn
-    ) {
-        return writeFileP(directoryName, toStringFn, UTF_8, false);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeFile(String)}.
-     */
-    @Nonnull
-    public static ProcessorSupplier writeFileP(@Nonnull String directoryName) {
-        return writeFileP(directoryName, Object::toString, UTF_8, false);
     }
 }

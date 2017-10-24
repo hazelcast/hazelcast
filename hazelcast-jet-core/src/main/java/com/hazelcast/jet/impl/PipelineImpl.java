@@ -36,8 +36,8 @@ public class PipelineImpl implements Pipeline {
 
     private final Map<Stage, List<Stage>> adjacencyMap = new HashMap<>();
 
-    @Override
-    public <E> ComputeStage<E> drawFrom(Source<E> source) {
+    @Nonnull @Override
+    public <E> ComputeStage<E> drawFrom(@Nonnull Source<E> source) {
         return new ComputeStageImpl<>(source, this);
     }
 

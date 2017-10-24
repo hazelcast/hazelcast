@@ -21,16 +21,10 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.SourceImpl;
-import com.hazelcast.jet.impl.connector.ReadFilesP;
-import com.hazelcast.jet.impl.connector.ReadIListP;
-import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
-import com.hazelcast.jet.impl.connector.StreamFilesP;
-import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
@@ -41,6 +35,19 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteCacheP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteMapP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -67,7 +74,10 @@ public final class Sources {
      * @param sourceName user-friendly source name
      * @param metaSupplier the processor meta-supplier
      */
-    public static <T> Source<T> fromProcessor(@Nonnull String sourceName, @Nonnull ProcessorMetaSupplier metaSupplier) {
+    public static <T> Source<T> fromProcessor(
+            @Nonnull String sourceName,
+            @Nonnull ProcessorMetaSupplier metaSupplier
+    ) {
         return new SourceImpl<>(sourceName, metaSupplier);
     }
 
@@ -78,7 +88,10 @@ public final class Sources {
      * @param sourceName user-friendly source name
      * @param supplier the processor supplier
      */
-    public static <T> Source<T> fromProcessor(@Nonnull String sourceName, @Nonnull ProcessorSupplier supplier) {
+    public static <T> Source<T> fromProcessor(
+            @Nonnull String sourceName,
+            @Nonnull ProcessorSupplier supplier
+    ) {
         return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
     }
 
@@ -89,7 +102,9 @@ public final class Sources {
      * @param supplier the supplier of processors
      */
     public static <T> Source<T> fromProcessor(
-            @Nonnull String sourceName, @Nonnull DistributedSupplier<Processor> supplier) {
+            @Nonnull String sourceName,
+            @Nonnull DistributedSupplier<Processor> supplier
+    ) {
         return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
     }
 
@@ -107,7 +122,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     public static <K, V> Source<Map.Entry<K, V>> readMap(@Nonnull String mapName) {
-        return fromProcessor("readMap(" + mapName + ')', SourceProcessors.readMapP(mapName));
+        return fromProcessor("readMap(" + mapName + ')', readMapP(mapName));
     }
 
     /**
@@ -142,8 +157,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return fromProcessor("readMap(" + mapName + ')',
-                SourceProcessors.readMapP(mapName, predicate, projection));
+        return fromProcessor("readMap(" + mapName + ')', readMapP(mapName, predicate, projection));
     }
 
     /**
@@ -155,8 +169,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
     ) {
-        return fromProcessor("readMap(" + mapName + ')',
-                SourceProcessors.readMapP(mapName, predicate, projectionFn));
+        return fromProcessor("readMap(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
     }
 
     /**
@@ -207,7 +220,7 @@ public final class Sources {
             boolean startFromLatestSequence
     ) {
         return fromProcessor("streamMap(" + mapName + ')',
-                SourceProcessors.streamMapP(mapName, predicate, projection, startFromLatestSequence));
+                streamMapP(mapName, predicate, projection, startFromLatestSequence));
     }
 
     /**
@@ -220,8 +233,7 @@ public final class Sources {
             @Nonnull String mapName,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamMap(" + mapName + ')',
-                SourceProcessors.streamMapP(mapName, startFromLatestSequence));
+        return fromProcessor("streamMap(" + mapName + ')', streamMapP(mapName, startFromLatestSequence));
     }
 
     /**
@@ -241,8 +253,7 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return fromProcessor("readRemoteMap(" + mapName + ')',
-                SourceProcessors.readRemoteMapP(mapName, clientConfig));
+        return fromProcessor("readRemoteMap(" + mapName + ')', readRemoteMapP(mapName, clientConfig));
     }
 
     /**
@@ -276,7 +287,7 @@ public final class Sources {
             @Nonnull Projection<Entry<K, V>, T> projectionFn
     ) {
         return fromProcessor("readRemoteMap(" + mapName + ')',
-                SourceProcessors.readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
+                readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
     }
 
     /**
@@ -290,7 +301,7 @@ public final class Sources {
             @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
         return fromProcessor("readRemoteMap(" + mapName + ')',
-                SourceProcessors.readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
+                readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
     }
 
     /**
@@ -329,7 +340,7 @@ public final class Sources {
             boolean startFromLatestSequence
     ) {
         return fromProcessor("streamRemoteMap(" + mapName + ')',
-                SourceProcessors.streamRemoteMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence));
+                streamRemoteMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence));
     }
 
     /**
@@ -344,7 +355,7 @@ public final class Sources {
             boolean startFromLatestSequence
     ) {
         return fromProcessor("streamRemoteMap(" + mapName + ')',
-                SourceProcessors.streamRemoteMapP(mapName, clientConfig, startFromLatestSequence));
+                streamRemoteMapP(mapName, clientConfig, startFromLatestSequence));
     }
 
     /**
@@ -363,7 +374,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> readCache(@Nonnull String cacheName) {
-        return fromProcessor("readCache(" + cacheName + ')', SourceProcessors.readCacheP(cacheName));
+        return fromProcessor("readCache(" + cacheName + ')', readCacheP(cacheName));
     }
 
     /**
@@ -402,7 +413,8 @@ public final class Sources {
             boolean startFromLatestSequence
     ) {
         return fromProcessor("streamCache(" + cacheName + ')',
-                SourceProcessors.streamCacheP(cacheName, predicate, projection, startFromLatestSequence));
+                streamCacheP(cacheName, predicate, projection, startFromLatestSequence)
+        );
     }
 
     /**
@@ -414,8 +426,7 @@ public final class Sources {
             @Nonnull String cacheName,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamCache(" + cacheName + ')',
-                SourceProcessors.streamCacheP(cacheName, startFromLatestSequence));
+        return fromProcessor("streamCache(" + cacheName + ')', streamCacheP(cacheName, startFromLatestSequence));
     }
 
     /**
@@ -435,8 +446,7 @@ public final class Sources {
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return fromProcessor("readRemoteCache(" + cacheName + ')',
-                ReadWithPartitionIteratorP.readRemoteCache(cacheName, clientConfig)
+        return fromProcessor("readRemoteCache(" + cacheName + ')', readRemoteCacheP(cacheName, clientConfig)
         );
     }
 
@@ -474,10 +484,7 @@ public final class Sources {
             boolean startFromLatestSequence
     ) {
         return fromProcessor("streamRemoteCache(" + cacheName + ')',
-                SourceProcessors.streamRemoteCacheP(
-                        cacheName, clientConfig, predicate, projection, startFromLatestSequence
-                )
-        );
+                streamRemoteCacheP(cacheName, clientConfig, predicate, projection, startFromLatestSequence));
     }
 
     /**
@@ -492,7 +499,7 @@ public final class Sources {
             boolean startFromLatestSequence
     ) {
         return fromProcessor("streamRemoteCache(" + cacheName + ')',
-                SourceProcessors.streamRemoteCacheP(cacheName, clientConfig, startFromLatestSequence));
+                streamRemoteCacheP(cacheName, clientConfig, startFromLatestSequence));
     }
 
     /**
@@ -505,7 +512,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> readList(@Nonnull String listName) {
-        return fromProcessor("readList(" + listName + ')', ReadIListP.supplier(listName));
+        return fromProcessor("readList(" + listName + ')', readListP(listName));
     }
 
     /**
@@ -518,7 +525,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> readRemoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return fromProcessor("readRemoteList(" + listName + ')', ReadIListP.supplier(listName, clientConfig));
+        return fromProcessor("readRemoteList(" + listName + ')', readRemoteListP(listName, clientConfig));
     }
 
     /**
@@ -540,8 +547,7 @@ public final class Sources {
     public static Source<String> streamSocket(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
-        return fromProcessor("streamSocket(" + host + ':' + port + ')',
-                StreamSocketP.supplier(host, port, charset.name()));
+        return fromProcessor("streamSocket(" + host + ':' + port + ')', streamSocketP(host, port, charset));
     }
 
     /**
@@ -568,9 +574,7 @@ public final class Sources {
     public static Source<String> readFiles(
             @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return fromProcessor("readFiles(" + directory + '/' + glob + ')',
-                ReadFilesP.supplier(directory, charset.name(), glob)
-        );
+        return fromProcessor("readFiles(" + directory + '/' + glob + ')', readFilesP(directory, charset, glob));
     }
 
     /**
@@ -630,7 +634,7 @@ public final class Sources {
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
         return fromProcessor("streamFiles(" + watchedDirectory + '/' + glob + ')',
-                StreamFilesP.supplier(watchedDirectory, charset.name(), glob)
+                streamFilesP(watchedDirectory, charset, glob)
         );
     }
 

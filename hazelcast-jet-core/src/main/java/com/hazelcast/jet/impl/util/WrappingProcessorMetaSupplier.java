@@ -41,8 +41,12 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
         this.wrapperSupplier = wrapperSupplier;
     }
 
-    @Nonnull
     @Override
+    public int preferredLocalParallelism() {
+        return wrapped.preferredLocalParallelism();
+    }
+
+    @Nonnull @Override
     public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         Function<Address, ProcessorSupplier> function = wrapped.get(addresses);
         return address -> new WrappingProcessorSupplier(function.apply(address), wrapperSupplier);

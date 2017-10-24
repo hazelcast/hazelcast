@@ -42,7 +42,8 @@ public class VertexDef implements IdentifiedDataSerializable {
     VertexDef() {
     }
 
-    public VertexDef(int id, String name, ProcessorSupplier processorSupplier, int procIdxOffset, int parallelism) {
+    VertexDef(int id, String name, ProcessorSupplier processorSupplier,
+              int procIdxOffset, int parallelism) {
         this.id = id;
         this.name = name;
         this.processorSupplier = processorSupplier;
@@ -50,41 +51,76 @@ public class VertexDef implements IdentifiedDataSerializable {
         this.parallelism = parallelism;
     }
 
-    public int vertexId() {
-        return id;
-    }
-
-    public void addInboundEdges(List<EdgeDef> edges) {
-        this.inboundEdges.addAll(edges);
-    }
-
-    public void addOutboundEdges(List<EdgeDef> edges) {
-        this.outboundEdges.addAll(edges);
-    }
-
-    public List<EdgeDef> inboundEdges() {
-        return inboundEdges;
-    }
-
-    public List<EdgeDef> outboundEdges() {
-        return outboundEdges;
-    }
-
-    public ProcessorSupplier processorSupplier() {
-        return processorSupplier;
-    }
-
-    public String name() {
+    String name() {
         return name;
     }
 
-    public int parallelism() {
+    int parallelism() {
         return parallelism;
     }
 
-    public int getProcIdxOffset() {
+    int vertexId() {
+        return id;
+    }
+
+    void addInboundEdges(List<EdgeDef> edges) {
+        this.inboundEdges.addAll(edges);
+    }
+
+    void addOutboundEdges(List<EdgeDef> edges) {
+        this.outboundEdges.addAll(edges);
+    }
+
+    List<EdgeDef> inboundEdges() {
+        return inboundEdges;
+    }
+
+    List<EdgeDef> outboundEdges() {
+        return outboundEdges;
+    }
+
+    ProcessorSupplier processorSupplier() {
+        return processorSupplier;
+    }
+
+    int getProcIdxOffset() {
         return procIdxOffset;
     }
+
+    /**
+     * Returns true in any of the following cases:
+     * <ul><li>
+     *     the priority of this vertex is {@link
+     *     MasterContext#SNAPSHOT_RESTORE_EDGE_PRIORITY}
+     * </li><li>
+     *     this vertex is a higher-priority source for some of its downstream
+     *     vertices
+     * </li><li>
+     *     it sits upstream of a vertex that satisfies the above condition
+     * </li></ul>
+     */
+    boolean isHigherPriorityUpstream() {
+        for (EdgeDef outboundEdge : outboundEdges) {
+            VertexDef downstream = outboundEdge.destVertex();
+            if (outboundEdge.priority() == MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY
+                    || downstream.isHigherPriorityUpstream()
+                    || downstream.inboundEdges.stream()
+                                              .anyMatch(edge -> edge.priority() > outboundEdge.priority())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "VertexDef{" +
+                "name='" + name + '\'' +
+                '}';
+    }
+
+
+    //             IdentifiedDataSerializable implementation
 
     @Override
     public int getFactoryId() {
@@ -94,30 +130,6 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return JetInitDataSerializerHook.VERTEX_DEF;
-    }
-
-    /**
-     * Returns true, if either:<ul>
-     *     <li>this vertex is higher priority source for some of it's
-     *     downstream vertices
-     *
-     *     <li>some of it's downstream vertices is higher priority source
-     *     itself (determined by recursion)
-     *
-     *     <li>this vertex has
-     *     {@link MasterContext#SNAPSHOT_RESTORE_EDGE_PRIORITY} priority
-     * </ul>
-     */
-    boolean isHigherPriorityUpstream() {
-        for (EdgeDef outboundEdge : outboundEdges) {
-            if (outboundEdge.priority() == MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY
-                    || outboundEdge.destVertex().isHigherPriorityUpstream()
-                    || outboundEdge.destVertex().inboundEdges.stream()
-                              .anyMatch(edge -> edge.priority() > outboundEdge.priority())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override
@@ -140,12 +152,5 @@ public class VertexDef implements IdentifiedDataSerializable {
         processorSupplier = CustomClassLoadedObject.read(in);
         procIdxOffset = in.readInt();
         parallelism = in.readInt();
-    }
-
-    @Override
-    public String toString() {
-        return "VertexDef{" +
-                "name='" + name + '\'' +
-                '}';
     }
 }

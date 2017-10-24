@@ -50,9 +50,9 @@ public class SourcesTest extends AbstractStreamTest {
     @Test
     public void testFile() throws IOException {
         File dir = createTempFile();
-        ProcessorSupplier processorSupplier = readFilesP(dir.getAbsolutePath(), UTF_8, "*");
+        ProcessorMetaSupplier metaSupplier = readFilesP(dir.getAbsolutePath(), UTF_8, "*");
         IStreamList<String> sink = DistributedStream
-                .<String>fromSource(getInstance(), ProcessorMetaSupplier.of(processorSupplier))
+                .<String>fromSource(getInstance(), metaSupplier)
                 .flatMap(line -> Arrays.stream(line.split(" ")))
                 .collect(DistributedCollectors.toIList(dir.getName()));
 

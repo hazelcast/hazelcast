@@ -19,8 +19,10 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.Log4jFactory;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,6 +43,7 @@ import java.nio.file.Files;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
 import static java.lang.Thread.interrupted;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -80,8 +83,10 @@ public class StreamFilesPTest extends JetTestSupport {
     }
 
     @Test
-    public void supplier() {
-        ProcessorSupplier supplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*");
+    public void when_metaSupplier_then_returnsCorrectProcessors() {
+        ProcessorMetaSupplier metaSupplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*");
+        Address a = new Address();
+        ProcessorSupplier supplier = metaSupplier.get(singletonList(a)).apply(a);
         assertEquals(1, supplier.get(1).size());
         supplier.complete(null);
     }

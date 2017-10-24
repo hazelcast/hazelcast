@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -327,12 +327,13 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
      * instead.
      */
     @Nonnull
-    public static ProcessorSupplier supplier(
+    public static ProcessorMetaSupplier metaSupplier(
             @Nonnull String watchedDirectory, @Nonnull String charset, @Nonnull String glob
     ) {
-        return new CloseableProcessorSupplier<>(
+        return ProcessorMetaSupplier.of(new CloseableProcessorSupplier<>(
                 count -> IntStream.range(0, count)
                         .mapToObj(i -> new StreamFilesP(watchedDirectory, Charset.forName(charset), glob, count, i))
-                        .collect(toList()));
+                        .collect(toList())),
+                2);
     }
 }

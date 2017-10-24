@@ -113,6 +113,11 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         }
 
         @Override
+        public int preferredLocalParallelism() {
+            return 2;
+        }
+
+        @Override
         public void init(@Nonnull Context context) {
             address = context.jetInstance().getCluster().getLocalMember().getAddress();
         }

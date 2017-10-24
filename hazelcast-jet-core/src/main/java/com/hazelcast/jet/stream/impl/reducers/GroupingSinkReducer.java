@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.DistributedCollector;
@@ -40,18 +40,18 @@ public class GroupingSinkReducer<T, A, K, D, R> implements DistributedCollector.
     private final DistributedFunction<JetInstance, ? extends R> toDistributedObject;
     private final DistributedFunction<? super T, ? extends K> classifier;
     private final Collector<? super T, A, D> collector;
-    private final ProcessorSupplier processorSupplier;
+    private final ProcessorMetaSupplier metaSupplier;
 
     public GroupingSinkReducer(String sinkName,
                                DistributedFunction<JetInstance, ? extends R> toDistributedObject,
                                DistributedFunction<? super T, ? extends K> classifier,
                                Collector<? super T, A, D> collector,
-                               ProcessorSupplier processorSupplier) {
+                               ProcessorMetaSupplier metaSupplier) {
         this.sinkName = sinkName;
         this.toDistributedObject = toDistributedObject;
         this.classifier = classifier;
         this.collector = collector;
-        this.processorSupplier = processorSupplier;
+        this.metaSupplier = metaSupplier;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class GroupingSinkReducer<T, A, K, D, R> implements DistributedCollector.
         Vertex merger = dag.newVertex("group-and-accumulate",
                 () -> new GroupAndAccumulateP<>(classifier, collector));
         Vertex combiner = dag.newVertex("combine-groups", () -> new CombineGroupsP<>(collector));
-        Vertex writer = dag.newVertex(sinkName, processorSupplier);
+        Vertex writer = dag.newVertex(sinkName, metaSupplier);
 
         dag.edge(between(previous, merger).partitioned(classifier::apply, HASH_CODE))
            .edge(between(merger, combiner).distributed().partitioned(entryKey()))

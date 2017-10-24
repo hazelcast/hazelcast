@@ -51,7 +51,13 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class Vertex implements IdentifiedDataSerializable {
 
-    private ProcessorMetaSupplier supplier;
+    /**
+     * The value of {@link #localParallelism(int)} with the meaning
+     * "use the default local parallelism".
+     */
+    public static final int LOCAL_PARALLELISM_USE_DEFAULT = -1;
+
+    private ProcessorMetaSupplier metaSupplier;
     private String name;
     private int localParallelism = -1;
 
@@ -100,20 +106,30 @@ public class Vertex implements IdentifiedDataSerializable {
         checkNotNull(metaSupplier, "supplier");
         checkSerializable(metaSupplier, "metaSupplier");
 
-        this.supplier = metaSupplier;
+        this.metaSupplier = metaSupplier;
         this.name = name;
+    }
+
+    /**
+     * Says whether the given integer is valid as the value of {@link
+     * #localParallelism(int) localParallelism}.
+     */
+    public static boolean isValidLocalParallelism(int parallelism) {
+        return parallelism == LOCAL_PARALLELISM_USE_DEFAULT || parallelism > 0;
     }
 
     /**
      * Sets the number of processors corresponding to this vertex that will be
      * created on each member.
      * <p>
-     * If the value is -1, use the default local parallelism from configuration.
+     * If the value is {@value #LOCAL_PARALLELISM_USE_DEFAULT}, Jet will
+     * determine the vertex's local parallelism during job initialization
+     * from the global default and processor meta-supplier's preferred value.
      */
     @Nonnull
     public Vertex localParallelism(int localParallelism) {
-        if (localParallelism < -1 || localParallelism == 0) {
-            throw new IllegalArgumentException("Parallelism must be greater than 0 or -1");
+        if (!isValidLocalParallelism(localParallelism)) {
+            throw new IllegalArgumentException("Parallelism must be either -1 or a positive number");
         }
         this.localParallelism = localParallelism;
         return this;
@@ -141,8 +157,8 @@ public class Vertex implements IdentifiedDataSerializable {
      * Returns this vertex's meta-supplier of processors.
      */
     @Nonnull
-    public ProcessorMetaSupplier getSupplier() {
-        return supplier;
+    public ProcessorMetaSupplier getMetaSupplier() {
+        return metaSupplier;
     }
 
     @Override
@@ -157,14 +173,14 @@ public class Vertex implements IdentifiedDataSerializable {
     public void writeData(@Nonnull ObjectDataOutput out) throws IOException {
         out.writeInt(localParallelism);
         out.writeUTF(name);
-        CustomClassLoadedObject.write(out, supplier);
+        CustomClassLoadedObject.write(out, metaSupplier);
     }
 
     @Override
     public void readData(@Nonnull ObjectDataInput in) throws IOException {
         localParallelism = in.readInt();
         name = in.readUTF();
-        supplier = CustomClassLoadedObject.read(in);
+        metaSupplier = CustomClassLoadedObject.read(in);
     }
 
     @Override

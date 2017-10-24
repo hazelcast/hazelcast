@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.JetInstance;
@@ -41,22 +42,23 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
+import static java.lang.Integer.min;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public final class ExecutionPlanBuilder {
 
     private ExecutionPlanBuilder() {
-
     }
 
     public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
             NodeEngine nodeEngine, MembersView membersView, DAG dag, JobConfig jobConfig, long lastSnapshotId
     ) {
-        JetInstance instance = getJetInstance(nodeEngine);
-        int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
+        final JetInstance instance = getJetInstance(nodeEngine);
+        final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
         final Collection<MemberInfo> members = new HashSet<>(membersView.size());
         final Address[] partitionOwners = new Address[nodeEngine.getPartitionService().getPartitionCount()];
         initPartitionOwnersAndMembers(nodeEngine, membersView, members, partitionOwners);
@@ -70,17 +72,17 @@ public final class ExecutionPlanBuilder {
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
+            final ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
             final int vertexId = entry.getValue();
-            final int localParallelism =
-                    vertex.getLocalParallelism() != -1 ? vertex.getLocalParallelism() : defaultParallelism;
+            final int localParallelism = determineParallelism(vertex,
+                    metaSupplier.preferredLocalParallelism(), defaultParallelism);
             final int totalParallelism = localParallelism * clusterSize;
             final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> vertexIdMap.get(e.getSourceName()), isJobDistributed);
             final List<EdgeDef> outbound = toEdgeDefs(dag.getOutboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> vertexIdMap.get(e.getDestName()), isJobDistributed);
-            final ProcessorMetaSupplier metaSupplier = vertex.getSupplier();
-            ILogger logger = nodeEngine.getLogger(metaSupplier.getClass().getName() + "." + vertex.getName() +
-                    "#ProcessorMetaSupplier");
+            final ILogger logger = nodeEngine.getLogger(String.format("%s.%s#ProcessorMetaSupplier",
+                    metaSupplier.getClass().getName(), vertex.getName()));
             metaSupplier.init(new MetaSupplierCtx(instance, logger, totalParallelism, localParallelism));
 
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
@@ -88,8 +90,8 @@ public final class ExecutionPlanBuilder {
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
                 checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
-                final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier,
-                        procIdxOffset, localParallelism);
+                final VertexDef vertexDef = new VertexDef(
+                        vertexId, vertex.getName(), processorSupplier, procIdxOffset, localParallelism);
                 vertexDef.addInboundEdges(inbound);
                 vertexDef.addOutboundEdges(outbound);
                 e.getValue().addVertex(vertexDef);
@@ -106,8 +108,27 @@ public final class ExecutionPlanBuilder {
         return vertexIdMap;
     }
 
-    private static List<EdgeDef> toEdgeDefs(List<Edge> edges, EdgeConfig defaultEdgeConfig,
-                                            Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
+    private static int determineParallelism(Vertex vertex, int preferredLocalParallelism, int defaultParallelism) {
+        if (!Vertex.isValidLocalParallelism(preferredLocalParallelism)) {
+            throw new JetException(String.format(
+                    "ProcessorMetaSupplier in vertex %s specifies preferred local parallelism of %d",
+                    vertex.getName(), preferredLocalParallelism));
+        }
+        int localParallelism = vertex.getLocalParallelism();
+        if (!Vertex.isValidLocalParallelism(localParallelism)) {
+            throw new JetException(String.format(
+                    "Vertex %s specifies local parallelism of %d", vertex.getName(), localParallelism));
+        }
+        return localParallelism != LOCAL_PARALLELISM_USE_DEFAULT
+                        ? localParallelism
+             : preferredLocalParallelism != LOCAL_PARALLELISM_USE_DEFAULT
+                        ? min(preferredLocalParallelism, defaultParallelism)
+             : defaultParallelism;
+    }
+
+    private static List<EdgeDef> toEdgeDefs(
+            List<Edge> edges, EdgeConfig defaultEdgeConfig,
+            Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
     ) {
         return edges.stream()
                     .map(edge -> new EdgeDef(edge, edge.getConfig() == null ? defaultEdgeConfig : edge.getConfig(),

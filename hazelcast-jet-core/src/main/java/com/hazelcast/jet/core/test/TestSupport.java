@@ -515,7 +515,8 @@ public final class TestSupport {
     }
 
     /**
-     * Gets single processor instance from processor supplier.
+     * Wraps the provided {@code ProcessorSupplier} with a {@code
+     * Supplier<Processor>} that returns processors obtained from it.
      */
     public static Supplier<Processor> supplierFrom(ProcessorSupplier supplier) {
         supplier.init(new TestProcessorSupplierContext());
@@ -523,7 +524,8 @@ public final class TestSupport {
     }
 
     /**
-     * Gets single processor instance from meta processor supplier.
+     * Wraps the provided {@code ProcessorMetaSupplier} with a {@code
+     * Supplier<Processor>} that returns processors obtained from it.
      */
     public static Supplier<Processor> supplierFrom(ProcessorMetaSupplier supplier) {
         supplier.init(new TestProcessorMetaSupplierContext());

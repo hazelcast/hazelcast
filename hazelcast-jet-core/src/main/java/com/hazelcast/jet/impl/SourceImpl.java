@@ -20,7 +20,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.Source;
 
 public class SourceImpl<E> implements Source<E> {
-
     private final String name;
     private final ProcessorMetaSupplier metaSupplier;
 

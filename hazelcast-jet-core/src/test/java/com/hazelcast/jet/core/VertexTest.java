@@ -110,7 +110,7 @@ public class VertexTest {
 
     private void validateProcessor() throws UnknownHostException {
         Address address = new Address("localhost", 5701);
-        Function<Address, ProcessorSupplier> fn = v.getSupplier().get(singletonList(address));
+        Function<Address, ProcessorSupplier> fn = v.getMetaSupplier().get(singletonList(address));
         ProcessorSupplier supplier = fn.apply(address);
         Collection<? extends Processor> processors = supplier.get(1);
         assertEquals(NoopP.class, processors.iterator().next().getClass());
