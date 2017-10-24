@@ -80,14 +80,14 @@ public final class Traversers {
     }
 
     /**
-     * Returns a traverser over the given stream. The stream is traversed through
-     * its spliterator, which is obtained immediately.
+     * Returns a traverser over the given stream of non-null elements. It will
+     * traverse the stream through its spliterator, which it obtains
+     * immediately. When it exhausts the stream, it will close it.
      */
     @Nonnull
     public static <T> Traverser<T> traverseStream(@Nonnull Stream<T> stream) {
-        return spliterate(stream.spliterator());
+        return spliterate(stream.spliterator()).onFirstNull(stream::close);
     }
-
     /**
      * Returns a traverser over the given iterable. The iterator is obtained
      * immediately.
