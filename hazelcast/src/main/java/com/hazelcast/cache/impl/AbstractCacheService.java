@@ -116,7 +116,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
-    protected CacheSplitBrainHandler cacheSplitBrainHandler;
+    protected CacheSplitBrainHandlerService splitBrainHandlerService;
     protected RingbufferCacheEventJournalImpl eventJournal;
     protected ILogger logger;
 
@@ -129,7 +129,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             segments[i] = newPartitionSegment(i);
         }
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
-        this.cacheSplitBrainHandler = new CacheSplitBrainHandler(nodeEngine, configs, segments);
+        this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
         this.logger = nodeEngine.getLogger(getClass());
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
         postInit(nodeEngine, properties);
@@ -711,7 +711,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public Runnable prepareMergeRunnable() {
-        return cacheSplitBrainHandler.prepareMergeRunnable();
+        return splitBrainHandlerService.prepareMergeRunnable();
     }
 
     public CacheEventHandler getCacheEventHandler() {

@@ -34,9 +34,10 @@ public class MergeOperation extends BasePutOperation {
 
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
-    private boolean merged;
-    private Data mergingValue;
     private boolean disableWanReplicationEvent;
+
+    private transient boolean merged;
+    private transient Data mergingValue;
 
     public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
                           MapMergePolicy policy) {

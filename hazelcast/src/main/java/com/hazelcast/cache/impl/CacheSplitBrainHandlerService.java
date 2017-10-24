@@ -29,9 +29,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,24 +39,27 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 /**
  * Handles split-brain functionality for cache.
  */
-class CacheSplitBrainHandler {
+class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
     private final NodeEngine nodeEngine;
     private final Map<String, CacheConfig> configs;
     private final CachePartitionSegment[] segments;
     private final CacheMergePolicyProvider mergePolicyProvider;
 
-    CacheSplitBrainHandler(NodeEngine nodeEngine, Map<String, CacheConfig> configs, CachePartitionSegment[] segments) {
+    CacheSplitBrainHandlerService(NodeEngine nodeEngine, Map<String, CacheConfig> configs, CachePartitionSegment[] segments) {
         this.nodeEngine = nodeEngine;
         this.configs = configs;
         this.segments = segments;
         this.mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
     }
 
-    Runnable prepareMergeRunnable() {
+    @Override
+    public Runnable prepareMergeRunnable() {
         final Map<String, Map<Data, CacheRecord>> recordMap = new HashMap<String, Map<Data, CacheRecord>>(configs.size());
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
@@ -66,9 +69,9 @@ class CacheSplitBrainHandler {
             // add your owned entries so they will be merged
             if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
                 CachePartitionSegment segment = segments[i];
-                Iterator<ICacheRecordStore> iter = segment.recordStoreIterator();
-                while (iter.hasNext()) {
-                    ICacheRecordStore cacheRecordStore = iter.next();
+                Iterator<ICacheRecordStore> iterator = segment.recordStoreIterator();
+                while (iterator.hasNext()) {
+                    ICacheRecordStore cacheRecordStore = iterator.next();
                     if (!(cacheRecordStore instanceof SplitBrainAwareCacheRecordStore)) {
                         continue;
                     }
@@ -106,10 +109,8 @@ class CacheSplitBrainHandler {
         private final CacheMergePolicyProvider mergePolicyProvider;
         private final ILogger logger;
 
-        public CacheMerger(NodeEngine nodeEngine,
-                           Map<String, CacheConfig> configs,
-                           Map<String, Map<Data, CacheRecord>> recordMap,
-                           CacheMergePolicyProvider mergePolicyProvider) {
+        CacheMerger(NodeEngine nodeEngine, Map<String, CacheConfig> configs, Map<String, Map<Data, CacheRecord>> recordMap,
+                    CacheMergePolicyProvider mergePolicyProvider) {
             this.nodeEngine = nodeEngine;
             this.configs = configs;
             this.recordMap = recordMap;
@@ -122,7 +123,7 @@ class CacheSplitBrainHandler {
             final Semaphore semaphore = new Semaphore(0);
             int recordCount = 0;
 
-            ExecutionCallback mergeCallback = new ExecutionCallback() {
+            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
                 @Override
                 public void onResponse(Object response) {
                     semaphore.release(1);
@@ -147,7 +148,7 @@ class CacheSplitBrainHandler {
                     Data key = recordEntry.getKey();
                     CacheRecord record = recordEntry.getValue();
                     recordCount++;
-                    CacheEntryView entryView = new DefaultCacheEntryView(
+                    CacheEntryView<Data, Data> entryView = new DefaultCacheEntryView(
                             key,
                             serializationService.toData(record.getValue()),
                             record.getCreationTime(),
@@ -161,16 +162,14 @@ class CacheSplitBrainHandler {
                             cacheMergePolicy);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        ICompletableFuture f = nodeEngine.getOperationService()
+                        ICompletableFuture<Object> future = nodeEngine.getOperationService()
                                 .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId);
-
-                        f.andThen(mergeCallback);
+                        future.andThen(mergeCallback);
                     } catch (Throwable t) {
-                        throw ExceptionUtil.rethrow(t);
+                        throw rethrow(t);
                     }
                 }
             }
-
             try {
                 semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {

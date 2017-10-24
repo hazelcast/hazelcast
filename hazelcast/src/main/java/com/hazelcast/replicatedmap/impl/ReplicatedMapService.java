@@ -87,8 +87,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final ClusterService clusterService;
     private final OperationService operationService;
     private final ReplicatedMapEventPublishingService eventPublishingService;
-    private final MergePolicyProvider mergePolicyProvider;
-    private final ReplicatedMapSplitBrainHandlerService replicatedMapSplitBrainHandlerService;
+    private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
     private ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
             new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
     private ConstructorFunction<String, LocalReplicatedMapStatsImpl> constructorFunction =
@@ -107,9 +106,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.operationService = nodeEngine.getOperationService();
         this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);
-        this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
-        this.replicatedMapSplitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this,
-                mergePolicyProvider);
+        this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this, new MergePolicyProvider(nodeEngine));
     }
 
     @Override
@@ -129,7 +126,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         }, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
-    /** Send an operation to all replicas to check their replica versions for all partitions for which this node is the owner */
+    /**
+     * Send an operation to all replicas to check their replica versions for all partitions for which this node is the owner
+     */
     public void triggerAntiEntropy() {
         if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
             return;
@@ -363,7 +362,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public Runnable prepareMergeRunnable() {
-        return replicatedMapSplitBrainHandlerService.prepareMergeRunnable();
+        return splitBrainHandlerService.prepareMergeRunnable();
     }
 
     @Override
