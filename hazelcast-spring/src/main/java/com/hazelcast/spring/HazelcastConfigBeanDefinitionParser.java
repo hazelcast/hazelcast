@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -53,8 +52,10 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -334,6 +335,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             quorumManagedMap.put(name, beanDefinition);
+        }
+
+        private void handleMergePolicyConfig(Node node, BeanDefinitionBuilder builder) {
+            BeanDefinitionBuilder mergePolicyConfigBuilder = createBeanBuilder(MergePolicyConfig.class);
+            AbstractBeanDefinition beanDefinition = mergePolicyConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, mergePolicyConfigBuilder);
+            mergePolicyConfigBuilder.addPropertyValue("policy", getTextContent(node).trim());
+            builder.addPropertyValue("mergePolicyConfig", beanDefinition);
         }
 
         private void handleLiteMember(Node node) {

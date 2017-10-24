@@ -19,6 +19,8 @@ package com.hazelcast.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
@@ -32,6 +34,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * A support class for high-level split-brain tests.
@@ -385,7 +388,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         void apply(HazelcastInstance h1, HazelcastInstance h2);
     }
 
-    protected class Brains {
+    protected static class Brains {
 
         private final HazelcastInstance[] firstHalf;
         private final HazelcastInstance[] secondHalf;
@@ -401,6 +404,26 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
         public HazelcastInstance[] getSecondHalf() {
             return secondHalf;
+        }
+    }
+
+    protected static class MergeLifecycleListener implements LifecycleListener {
+
+        private final CountDownLatch latch;
+
+        public MergeLifecycleListener(int mergingClusterSize) {
+            latch = new CountDownLatch(mergingClusterSize);
+        }
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                latch.countDown();
+            }
+        }
+
+        public void await() {
+            assertOpenEventually(latch);
         }
     }
 }
