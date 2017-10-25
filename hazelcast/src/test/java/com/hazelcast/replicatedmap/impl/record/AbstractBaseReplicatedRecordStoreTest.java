@@ -101,12 +101,12 @@ public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport 
         }
 
         @Override
-        public Object unmarshall(Object key) {
+        public Object unmarshallValue(Object key) {
             return key;
         }
 
         @Override
-        public Object marshall(Object key) {
+        public Object marshallValue(Object key) {
             return key;
         }
     }

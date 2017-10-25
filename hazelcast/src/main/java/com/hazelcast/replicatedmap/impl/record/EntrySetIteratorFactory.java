@@ -80,8 +80,8 @@ class EntrySetIteratorFactory<K, V> implements IteratorFactory<K, V, Map.Entry<K
                 throw new NoSuchElementException();
             }
 
-            key = recordStore.unmarshall(key);
-            value = recordStore.unmarshall(value);
+            key = recordStore.unmarshallKey(key);
+            value = recordStore.unmarshallValue(value);
             return new AbstractMap.SimpleEntry<K, V>((K) key, (V) value);
         }
 

@@ -60,8 +60,8 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
                 .getReplicatedRecordStore(name, true, getPartitionId());
         InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<K, V>();
         for (RecordMigrationInfo record : recordSet) {
-            K key = (K) store.marshall(record.getKey());
-            V value = (V) store.marshall(record.getValue());
+            K key = (K) store.marshallKey(record.getKey());
+            V value = (V) store.marshallValue(record.getValue());
             ReplicatedRecord<K, V> replicatedRecord = buildReplicatedRecord(key, value, record.getTtl());
             ReplicatedRecord oldRecord = store.getReplicatedRecord(key);
             if (oldRecord != null) {
