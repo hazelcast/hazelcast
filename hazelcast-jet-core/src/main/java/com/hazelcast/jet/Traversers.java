@@ -17,12 +17,12 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ResettableSingletonTraverser;
 
 import javax.annotation.Nonnull;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -55,17 +55,14 @@ public final class Traversers {
     }
 
     /**
-     * Returns a simple adapter from {@code Spliterator} to {@code Traverser}.
-     * Each time its {@code next()} method is called, the traverser will take
-     * another item from the spliterator and return it.
+     * Returns an adapter from {@code Spliterator} to {@code Traverser}. Each
+     * time its {@code next()} method is called, the traverser will take
+     * another item from the spliterator and return it. The spliterator must
+     * not emit {@code null} items.
      */
     @Nonnull
-    public static <T> Traverser<T> spliterate(@Nonnull Spliterator<T> spliterator) {
-        final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
-        return () -> {
-            spliterator.tryAdvance(trav);
-            return trav.next();
-        };
+    public static <T> Traverser<T> traverseSpliterator(@Nonnull Spliterator<T> spliterator) {
+        return new SpliteratorTraverser<>(spliterator);
     }
 
     /**
@@ -82,7 +79,7 @@ public final class Traversers {
     /**
      * Returns a traverser over the given stream of non-null elements. It will
      * traverse the stream through its spliterator, which it obtains
-     * immediately. When it exhausts the stream, it will close it.
+     * immediately. When it exhausts the stream, it closes it.
      */
     @Nonnull
     public static <T> Traverser<T> traverseStream(@Nonnull Stream<T> stream) {
@@ -107,8 +104,8 @@ public final class Traversers {
     }
 
     /**
-     * Flattens a supplier of traverser into a lazy-initialized traverser. The
-     * traverser is obtained from this method's argument just once, upon the
+     * Flattens a supplier of traverser into a lazy-initialized traverser. It
+     * obtains the traverser from this method's argument just once, upon the
      * first invocation of {@code get()}.
      */
     @Nonnull
@@ -149,6 +146,31 @@ public final class Traversers {
         @Override
         public T next() {
             return i < array.length && i >= 0 ? array[i++] : null;
+        }
+    }
+
+    private static class SpliteratorTraverser<T> implements Traverser<T>, Consumer<T> {
+        private final Spliterator<T> spliterator;
+        private T nextItem;
+
+        SpliteratorTraverser(Spliterator<T> spliterator) {
+            this.spliterator = spliterator;
+        }
+
+        @Override
+        public T next() {
+            try {
+                boolean advanced = spliterator.tryAdvance(this);
+                assert advanced == (nextItem != null) : "Spliterator emitted a null item";
+                return nextItem;
+            } finally {
+                nextItem = null;
+            }
+        }
+
+        @Override
+        public void accept(T t) {
+            nextItem = t;
         }
     }
 }
