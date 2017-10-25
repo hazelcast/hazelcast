@@ -45,7 +45,7 @@ public class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T
     /**
      * Resets this traverser so that the following {@code next()} call will
      * return the item supplied here. If the traverser already has an item, it
-     * is illegal to call this method until that items is consumed by calling
+     * is illegal to call this method until that item is consumed by calling
      * {@link #next()}.
      *
      * @param item the item to return from {@code next()}

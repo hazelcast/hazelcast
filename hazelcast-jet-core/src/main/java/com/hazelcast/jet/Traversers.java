@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -51,7 +52,7 @@ public final class Traversers {
      */
     @Nonnull
     public static <T> Traverser<T> traverseIterator(@Nonnull Iterator<? extends T> iterator) {
-        return () -> iterator.hasNext() ? iterator.next() : null;
+        return () -> iterator.hasNext() ? ensureNotNull(iterator.next(), "Iterator returned a null item") : null;
     }
 
     /**
@@ -75,7 +76,9 @@ public final class Traversers {
      */
     @Nonnull
     public static <T> Traverser<T> traverseEnumeration(@Nonnull Enumeration<T> enumeration) {
-        return () -> enumeration.hasMoreElements() ? enumeration.nextElement() : null;
+        return () -> enumeration.hasMoreElements()
+                ? ensureNotNull(enumeration.nextElement(), "Enumeration contains a null element")
+                : null;
     }
 
     /**
@@ -115,6 +118,11 @@ public final class Traversers {
         return new LazyTraverser<>(supplierOfTraverser);
     }
 
+    private static <T> T ensureNotNull(@Nullable T t, String failureMsg) {
+        assert t != null : failureMsg;
+        return t;
+    }
+
     private static final class LazyTraverser<T> implements Traverser<T> {
         private Supplier<Traverser<T>> supplierOfTraverser;
         private Traverser<T> traverser;
@@ -147,7 +155,7 @@ public final class Traversers {
 
         @Override
         public T next() {
-            return i < array.length && i >= 0 ? array[i++] : null;
+            return i >= 0 && i < array.length ? ensureNotNull(array[i++], "Array contains a null element") : null;
         }
     }
 
