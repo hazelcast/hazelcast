@@ -19,9 +19,13 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.stream.IntStream;
@@ -32,6 +36,8 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertTrue;
 
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class SlowSourceYieldTest {
 
     private JetInstance instance;

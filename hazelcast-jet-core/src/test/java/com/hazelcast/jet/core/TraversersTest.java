@@ -32,8 +32,10 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Stream.of;
+import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 @Category(QuickTest.class)
@@ -46,23 +48,38 @@ public class TraversersTest {
     }
 
     @Test
-    public void iterate() {
+    public void traverseIterator() {
         validateTraversal(Traversers.traverseIterator(Stream.of(1, 2).iterator()));
     }
 
     @Test
-    public void spliterate() {
+    public void traverseSpliterator() {
         validateTraversal(Traversers.traverseSpliterator(Stream.of(1, 2).spliterator()));
     }
 
     @Test
-    public void enumerate() {
+    public void traverseEnumeration() {
         validateTraversal(Traversers.traverseEnumeration(new Vector<>(asList(1, 2)).elements()));
     }
 
     @Test
     public void traverseStream() {
         validateTraversal(Traversers.traverseStream(of(1, 2)));
+    }
+
+    @Test
+    public void when_traverseStreamConsumed_then_streamClosed() {
+        // Given
+        boolean[] closed = {false};
+        Traverser<Integer> trav = Traversers.traverseStream(of(1).onClose(() -> closed[0] = true));
+        trav.next();
+        assertFalse(closed[0]);
+
+        // When
+        trav.next();
+
+        // Then
+        assertTrue(closed[0]);
     }
 
     @Test
