@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.TimestampedEntry;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.test.HazelcastParallelClassRunner;

@@ -22,7 +22,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.TimestampedEntry;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.core.test.TestInbox;

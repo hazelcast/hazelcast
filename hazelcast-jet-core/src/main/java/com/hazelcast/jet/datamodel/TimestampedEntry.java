@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core;
+package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;

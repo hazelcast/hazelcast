@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Session;
+import com.hazelcast.jet.datamodel.Session;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.Watermark;

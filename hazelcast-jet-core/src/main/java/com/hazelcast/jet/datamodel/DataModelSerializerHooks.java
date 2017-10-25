@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.datamodel;
 
-import com.hazelcast.jet.core.TimestampedEntry;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -68,6 +67,49 @@ class DataModelSerializerHooks {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.TIMESTAMPED_ENTRY;
+                }
+
+                @Override
+                public void destroy() {
+                }
+            };
+        }
+
+        @Override public boolean isOverwritable() {
+            return false;
+        }
+    }
+
+    public static final class SessionHook implements SerializerHook<Session> {
+
+        @Override
+        public Class<Session> getSerializationType() {
+            return Session.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<Session>() {
+                @Override
+                public void write(ObjectDataOutput out, Session object) throws IOException {
+                    out.writeObject(object.getKey());
+                    out.writeLong(object.getStart());
+                    out.writeLong(object.getEnd());
+                    out.writeObject(object.getResult());
+                }
+
+                @Override
+                public Session read(ObjectDataInput in) throws IOException {
+                    Object key = in.readObject();
+                    long start = in.readLong();
+                    long end = in.readLong();
+                    Object result = in.readObject();
+                    return new Session<>(key, start, end, result);
+                }
+
+                @Override
+                public int getTypeId() {
+                    return SerializerHookConstants.SESSION;
                 }
 
                 @Override

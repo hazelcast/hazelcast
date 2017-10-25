@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.Session;
+import com.hazelcast.jet.datamodel.Session;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperations;

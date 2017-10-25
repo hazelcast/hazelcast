@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.TimestampedEntry;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
@@ -581,7 +581,7 @@ public final class Processors {
      * Returns a supplier of processors for a vertex that aggregates events into
      * session windows. Events and windows under different grouping keys are
      * treated independently. Outputs objects of type {@link
-     * com.hazelcast.jet.core.Session}.
+     * com.hazelcast.jet.datamodel.Session}.
      * <p>
      * The functioning of this vertex is easiest to explain in terms of the
      * <em>event interval</em>: the range {@code [timestamp, timestamp +
