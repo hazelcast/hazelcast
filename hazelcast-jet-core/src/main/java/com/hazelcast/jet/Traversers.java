@@ -56,9 +56,11 @@ public final class Traversers {
 
     /**
      * Returns an adapter from {@code Spliterator} to {@code Traverser}. Each
-     * time its {@code next()} method is called, the traverser will take
-     * another item from the spliterator and return it. The spliterator must
-     * not emit {@code null} items.
+     * time its {@code next()} method is called, the traverser calls {@link
+     * Spliterator#tryAdvance(Consumer)}. If it returns {@code true}, the
+     * traverser returns the item it emitted to the consumer; otherwise the
+     * traverser returns {@code null}. The spliterator must not emit {@code
+     * null} items.
      */
     @Nonnull
     public static <T> Traverser<T> traverseSpliterator(@Nonnull Spliterator<T> spliterator) {
@@ -66,10 +68,10 @@ public final class Traversers {
     }
 
     /**
-     * Returns a simple adapter from {@code Enumeration} to {@code Traverser}. The
-     * enumeration must return non-{@code null} items. Each time its {@code next()}
-     * method is called, the traverser will take another item from the enumeration
-     * and return it.
+     * Returns an adapter from {@code Enumeration} to {@code Traverser}. Each
+     * time its {@code next()} method is called, the traverser takes another
+     * item from the enumeration and returns it. The enumeration must not
+     * contain {@code null} items.
      */
     @Nonnull
     public static <T> Traverser<T> traverseEnumeration(@Nonnull Enumeration<T> enumeration) {
@@ -77,9 +79,9 @@ public final class Traversers {
     }
 
     /**
-     * Returns a traverser over the given stream of non-null elements. It will
-     * traverse the stream through its spliterator, which it obtains
-     * immediately. When it exhausts the stream, it closes it.
+     * Returns a traverser over the given stream. It will traverse it through
+     * its spliterator, which it obtains immediately. When it exhausts the
+     * stream, it closes it. The stream must not contain {@code null} items.
      */
     @Nonnull
     public static <T> Traverser<T> traverseStream(@Nonnull Stream<T> stream) {

@@ -24,7 +24,9 @@ import java.util.function.Consumer;
 /**
  * Traverses over a single item which can be set from the outside, by using
  * this traverser as a {@code Consumer<T>}. Another item can be set at any
- * time and the subsequent {@code next()} call will consume it.
+ * time and the subsequent {@code next()} call will consume it. However,
+ * if this traverser already has an item, it is illegal to set another one
+ * before consuming it.
  *
  * @param <T> item type
  */
@@ -41,8 +43,10 @@ public class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T
     }
 
     /**
-     * Resets this traverser so that the following {@code next()} call
-     * will return the item supplied here.
+     * Resets this traverser so that the following {@code next()} call will
+     * return the item supplied here. If the traverser already has an item, it
+     * is illegal to call this method until that items is consumed by calling
+     * {@link #next()}.
      *
      * @param item the item to return from {@code next()}
      */
