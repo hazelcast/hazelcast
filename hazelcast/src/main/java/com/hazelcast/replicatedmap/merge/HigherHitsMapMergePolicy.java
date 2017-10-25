@@ -22,16 +22,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 
-import java.io.IOException;
-
 /**
- * HigherHitsMapMergePolicy causes the merging entry to be merged from source to destination map
- * if source entry has more hits than the destination one.
+ * Merges replicated map entries from source to destination map if the source entry
+ * has more hits than the destination one.
  */
 public final class HigherHitsMapMergePolicy implements ReplicatedMapMergePolicy, IdentifiedDataSerializable {
 
     /**
-     * Single instance of this class
+     * Single instance of this class.
      */
     public static final HigherHitsMapMergePolicy INSTANCE = new HigherHitsMapMergePolicy();
 
@@ -57,14 +55,10 @@ public final class HigherHitsMapMergePolicy implements ReplicatedMapMergePolicy,
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-    }
-
-    private Object readResolve() {
-        return INSTANCE;
+    public void readData(ObjectDataInput in) {
     }
 }

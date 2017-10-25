@@ -66,6 +66,5 @@ public class PassThroughMapMergePolicyTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 }

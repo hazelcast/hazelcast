@@ -22,18 +22,16 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 
-import java.io.IOException;
-
 /**
- * LatestUpdateMapMergePolicy causes the merging entry to be merged from source to destination map
- * if source entry has updated more recently than the destination entry.
- * <p/>
- * This policy can only be used of the clocks of the machines are in sync.
+ * Merges replicated map entries from source to destination map if the source entry
+ * was updated more recently than the destination entry.
+ * <p>
+ * <b>Note:</b> This policy can only be used if the clocks of the nodes are in sync.
  */
 public final class LatestUpdateMapMergePolicy implements ReplicatedMapMergePolicy, IdentifiedDataSerializable {
 
     /**
-     * Single instance of this class
+     * Single instance of this class.
      */
     public static final LatestUpdateMapMergePolicy INSTANCE = new LatestUpdateMapMergePolicy();
 
@@ -59,14 +57,10 @@ public final class LatestUpdateMapMergePolicy implements ReplicatedMapMergePolic
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-    }
-
-    private Object readResolve() {
-        return INSTANCE;
+    public void readData(ObjectDataInput in) {
     }
 }

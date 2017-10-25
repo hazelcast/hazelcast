@@ -32,7 +32,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class MergePolicyProvider {
 
-    private final ConcurrentMap<String, ReplicatedMapMergePolicy> mergePolicyMap;
+    private final ConcurrentMap<String, ReplicatedMapMergePolicy> mergePolicyMap
+            = new ConcurrentHashMap<String, ReplicatedMapMergePolicy>();
 
     private final NodeEngine nodeEngine;
 
@@ -51,7 +52,6 @@ public final class MergePolicyProvider {
 
     public MergePolicyProvider(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        mergePolicyMap = new ConcurrentHashMap<String, ReplicatedMapMergePolicy>();
         addOutOfBoxPolicies();
     }
 
