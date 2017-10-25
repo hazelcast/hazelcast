@@ -51,8 +51,8 @@ import java.util.HashSet;
  * <p>Another responsibility of this implementation is filtering events by using the already configured
  * event filters.</p>
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  * @see javax.cache.event.CacheEntryCreatedListener
  * @see javax.cache.event.CacheEntryUpdatedListener
  * @see javax.cache.event.CacheEntryRemovedListener

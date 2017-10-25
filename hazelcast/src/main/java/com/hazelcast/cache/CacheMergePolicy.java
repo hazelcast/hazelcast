@@ -26,9 +26,9 @@ import java.io.Serializable;
  * </p>
  *
  * <p>
- * Passed {@link CacheEntryView} instances wraps the key and value as their original types
- * with convertion to object from their storage types. If user doesn't need to original types of key and value,
- * (s)he should use {@link StorageTypeAwareCacheMergePolicy} which is sub-type of this interface.
+ * Passed {@link CacheEntryView} instances wrap the key and value as their original types
+ * with convertion to object from their storage types. If you don't need the original types of key and value,
+ * you should use {@link StorageTypeAwareCacheMergePolicy} which is sub-type of this interface.
  * </p>
  */
 @BinaryInterface
@@ -41,14 +41,14 @@ public interface CacheMergePolicy extends Serializable {
      *
      * <p>
      * Note that as mentioned also in arguments, the {@link CacheEntryView} instance that represents existing cache entry
-     * may be null if there is no existing entry for the specified key in the the {@link CacheEntryView} instance
+     * may be null if there is no existing entry for the specified key in the {@link CacheEntryView} instance
      * that represents merging cache entry.
      * </p>
      *
      * @param cacheName     name of the cache
      * @param mergingEntry  {@link CacheEntryView} instance that has cache entry to be merged
-     * @param existingEntry {@link CacheEntryView} instance that has existing cache entry.
-     *                      This entry may be <code>null</code> if there is no existing cache entry.
+     * @param existingEntry {@link CacheEntryView} instance that has existing cache entry
+     *                      This entry may be <code>null</code> if there is no existing cache entry
      * @return the selected value for merging
      */
     Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry);

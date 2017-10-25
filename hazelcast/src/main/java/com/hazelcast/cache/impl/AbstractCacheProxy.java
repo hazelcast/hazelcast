@@ -51,8 +51,8 @@ import static java.util.Collections.emptyMap;
  * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
  * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  * @see com.hazelcast.cache.impl.CacheProxy
  * @see com.hazelcast.cache.ICache
  */
@@ -217,11 +217,11 @@ abstract class AbstractCacheProxy<K, V>
         validateNotNull(map);
 
         try {
-            // first we fill entry set per partition
+            // first entry set is filled per partition
             int partitionCount = partitionService.getPartitionCount();
             List<Map.Entry<Data, Data>>[] entriesPerPartition = groupDataToPartitions(map, partitionCount);
 
-            // then we invoke the operations and sync on completion of these operations
+            // then the operations are invoked and synced on completion of these operations
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy);
         } catch (Exception e) {
             throw rethrow(e);
@@ -279,18 +279,18 @@ abstract class AbstractCacheProxy<K, V>
         }
         if (error != null) {
             /*
-             * There maybe multiple exceptions but we throw only the first one.
+             * There maybe multiple exceptions but only the first one is thrown.
              * There are some ideas to throw all exceptions to caller but all of them have drawbacks:
              *      - `Thread::addSuppressed` can be used to add other exceptions to the first one
              *        but it is available since JDK 7.
              *      - `Thread::initCause` can be used but this is wrong as semantic
              *        since the other exceptions are not cause of the first one.
-             *      - We may wrap all exceptions in our custom exception (such as `MultipleCacheException`)
+             *      - All exceptions may be wrapped in a custom exception (such as `MultipleCacheException`)
              *        but in this case caller may wait different exception type and this idea causes problem.
              *        For example see this TCK test:
              *              `org.jsr107.tck.integration.CacheWriterTest::shouldWriteThoughUsingPutAll_partialSuccess`
              *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
-             * So as a result, we only throw the first exception and others are suppressed by only logging.
+             * So as a result, only the first exception is thrown and others are suppressed by only logging.
              */
             throw rethrow(error);
         }

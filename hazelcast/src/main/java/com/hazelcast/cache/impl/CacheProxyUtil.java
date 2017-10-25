@@ -132,7 +132,7 @@ public final class CacheProxyUtil {
 
         boolean containsNullKey = false;
         boolean containsNullValue = false;
-        // we catch possible NPE since the Map implementation could not support null values
+        // A possible NPE is caught since the Map implementation could not support null values
         // TODO: is it possible to validate a map more efficiently without try-catch blocks?
         try {
             containsNullKey = map.containsKey(null);

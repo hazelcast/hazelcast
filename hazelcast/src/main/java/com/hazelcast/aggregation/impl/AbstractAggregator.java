@@ -66,7 +66,7 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
                 E result = results.get(i);
                 if (result == null && multiResult.isNullEmptyTarget() && !nullEmptyTargetSkipped) {
                     // if a null or empty target is reached there will be a single null added to the multi-result.
-                    // in aggregators we do not care about this null so we have to skip it.
+                    // in aggregators this null is discarded so it needs to be skipped.
                     // if there are more nulls in the multi-result, they have been added as values.
                     nullEmptyTargetSkipped = true;
                     continue;
@@ -90,7 +90,7 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
         } else if (input instanceof Extractable) {
             return (T) ((Extractable) input).getAttributeValue(attributePath);
         }
-        throw new IllegalArgumentException("Can't extract " + attributePath + " from the given input");
+        throw new IllegalArgumentException("Cannot extract " + attributePath + " from the given input");
     }
 
     /**

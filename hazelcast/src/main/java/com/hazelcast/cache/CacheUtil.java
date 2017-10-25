@@ -87,7 +87,7 @@ public final class CacheUtil {
      *
      * @param cacheName   the simple name of the cache without any prefix
      * @return            the name of the {@link ICache} distributed object corresponding to given cacheName, assuming
-     *                    null URI & class loader prefixes.
+     *                    null URI & class loader prefixes
      * @see #getDistributedObjectName(String, URI, ClassLoader)
      */
     public static String getDistributedObjectName(String cacheName) {

@@ -27,12 +27,12 @@ import java.util.NoSuchElementException;
 /**
  * {@link AbstractClusterWideIterator} provides the core iterator functionality shared by its descendants.
  * <p>
- * <p>Hazelcast cluster is made of partitions which holds a slice of all clusters data. Partition count
- * never increase or decrease in a cluster. In order to implement an iterator over a partitioned data, we use
- * the following parameters.
+ * <p>Hazelcast cluster is made of partitions which holds a slice of all cluster's data. Partition count
+ * never increase or decrease in a cluster. In order to implement an iterator over a partitioned data, 
+ * the following parameters are used.
  * <ul>
- * <li>To iterate over partitioned data, we use partitionId as the first parameter of this iterator.</li>
- * <li>Each partition may have a lot of entries, so we use a second parameter to track the iteration of the
+ * <li>To iterate over partitioned data, partitionId is used as the first parameter of this iterator.</li>
+ * <li>Each partition may have a lot of entries, so a second parameter is used to track the iteration of the
  * partition.</li>
  * </ul>
  * </p>
@@ -62,13 +62,13 @@ import java.util.NoSuchElementException;
  * <li>{@link #hasNext()} only return false when all known keys are fetched and iterated.</li>
  * <li>{@link #next()} may return null although cache never has null value. This may happen when, for example,
  * someone removes the entry after the current thread has checked with {@link #hasNext()}.</li>
- * <li>This implementation does not affected by value updates as each value is got from the cluster
+ * <li>This implementation is not affected by the value updates as each value is got from the cluster
  * when {@link #next()} called.</li>
  * </ul>
  * </p>
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  * @see com.hazelcast.cache.impl.CacheRecordStore#fetchKeys(int tableIndex, int size)
  * @see com.hazelcast.cache.impl.ClusterWideIterator
  * @see CacheKeyIterationResult
@@ -189,7 +189,7 @@ public abstract class AbstractClusterWideIterator<K, V> implements Iterator<Cach
 
     protected void ensureOpen() {
         if (cache.isClosed()) {
-            throw new IllegalStateException("Cache operations can not be performed. The cache closed");
+            throw new IllegalStateException("Cache operations cannot be performed. The cache is closed");
         }
     }
 

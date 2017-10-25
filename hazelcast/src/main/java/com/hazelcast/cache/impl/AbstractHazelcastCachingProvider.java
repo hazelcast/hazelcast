@@ -81,7 +81,7 @@ public abstract class AbstractHazelcastCachingProvider
     private final Map<ClassLoader, Map<URI, AbstractHazelcastCacheManager>> cacheManagers;
 
     public AbstractHazelcastCachingProvider() {
-        // We use a WeakHashMap to prevent strong references to a classLoader to avoid memory leak.
+        // a WeakHashMap is used to prevent strong references to a classLoader to avoid memory leak.
         this.cacheManagers = new WeakHashMap<ClassLoader, Map<URI, AbstractHazelcastCacheManager>>();
         this.defaultClassLoader = getClass().getClassLoader();
         try {
@@ -142,7 +142,7 @@ public abstract class AbstractHazelcastCachingProvider
 
     @Override
     public void close() {
-        // Closing a `CachingProvider` does not mean to close it forever see javadoc of `close()`
+        // Closing a `CachingProvider` does not mean to close it forever, see javadoc of `close()`
         synchronized (cacheManagers) {
             for (Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI : cacheManagers.values()) {
                 for (AbstractHazelcastCacheManager cacheManager : cacheManagersByURI.values()) {

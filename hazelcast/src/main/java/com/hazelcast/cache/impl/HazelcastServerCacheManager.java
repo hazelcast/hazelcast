@@ -137,8 +137,8 @@ public class HazelcastServerCacheManager
             }
         }
         if (config != null) {
-            // Also create cache config on other nodes to be sure that cache config is exist on all nodes.
-            // This is needed because even though cache config is exist on this node
+            // Also create cache config on other nodes to be sure that cache config exists on all nodes.
+            // This is needed because even though cache config exists on this node
             // (for example added by an in-flight cache config creation operation)
             // it still might not exist on other nodes yet (but will created eventually).
             createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
@@ -156,7 +156,7 @@ public class HazelcastServerCacheManager
         // Create cache config on all nodes.
         CacheCreateConfigOperation op =
                 new CacheCreateConfigOperation(config, createAlsoOnOthers);
-        // Run "CacheCreateConfigOperation" on this node. Its itself handles interaction with other nodes.
+        // Run "CacheCreateConfigOperation" on this node. It handles interaction with other nodes by itself.
         // This operation doesn't block operation thread even "syncCreate" is specified.
         // In that case, scheduled thread is used, not operation thread.
         InternalCompletableFuture future =

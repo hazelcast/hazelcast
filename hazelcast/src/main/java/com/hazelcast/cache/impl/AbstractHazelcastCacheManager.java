@@ -322,7 +322,7 @@ public abstract class AbstractHazelcastCacheManager
         } catch (HazelcastInstanceNotActiveException e) {
             // if hazelcastInstance is terminated already,
             // `lifecycleService.removeLifecycleListener` will throw HazelcastInstanceNotActiveException.
-            // We can safely ignore this exception. See TerminatedLifecycleService.
+            // this exception can safely be ignored. See TerminatedLifecycleService.
             EmptyStatement.ignore(e);
         }
     }

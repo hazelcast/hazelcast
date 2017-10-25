@@ -28,7 +28,7 @@ import javax.cache.processor.EntryProcessor;
  * object to the backup-partition, is that implementations of this sub-interface can create
  * additional {@link javax.cache.processor.EntryProcessor} instances that are sent
  * to the backup partitions to apply logic which is either different from the owner
- * partition (e.g. not sending emails) or is the simple case of being similar to the main
+ * partition, e.g., not sending emails, or is the simple case of being similar to the main
  * operations. In the later case {@link #createBackupEntryProcessor()} can also return
  * <pre>this</pre>.
  *

@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Holds some specific informations for per cache in the node and shared by all partitions of that cache on the node.
+ * Holds some specific information per cache in the node that are shared by all partitions of that cache on the node.
  */
 public class CacheContext {
 

@@ -30,7 +30,7 @@ public enum CacheEventType {
     CREATED(1),
 
     /**
-     * An event type indicating that the cache entry was updated, i.e. a previous
+     * An event type indicating that the cache entry was updated, i.e., a previous
      * mapping existed.
      */
     UPDATED(2),

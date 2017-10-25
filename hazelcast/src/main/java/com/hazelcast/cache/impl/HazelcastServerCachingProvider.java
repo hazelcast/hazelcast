@@ -103,20 +103,20 @@ public final class HazelcastServerCachingProvider
                     return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
                 } catch (Exception e) {
                     if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Could not get or create hazelcast instance from URI " + uri.toString(), e);
+                        LOGGER.finest("Could not get or create Hazelcast instance from URI " + uri.toString(), e);
                     }
                 }
             } else {
                 try {
-                    // try again, this time interpreting CacheManager URI as hazelcast instance name
+                    // try again, this time interpreting CacheManager URI as Hazelcast instance name
                     return getOrCreateByInstanceName(uri.toString());
                 } catch (Exception e) {
                     if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Could not get hazelcast instance from instance name" + uri.toString(), e);
+                        LOGGER.finest("Could not get Hazelcast instance from instance name" + uri.toString(), e);
                     }
                 }
             }
-            // could not locate hazelcast instance, return null and an exception will be thrown from invoker
+            // could not locate Hazelcast instance, return null and an exception will be thrown from invoker
             return null;
         } else {
             return getDefaultInstance();
