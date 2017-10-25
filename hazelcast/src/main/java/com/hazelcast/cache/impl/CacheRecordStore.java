@@ -237,8 +237,8 @@ public class CacheRecordStore
 
     private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime, long expirationTime,
                                                 long lastAccessTime, long accessHit, CacheMergePolicy mergePolicy) {
-        // null serialization service means that use as storage type without convertion,
-        // non-null serialization service means that convertion is required
+        // null serialization service means that use as storage type without conversion,
+        // non-null serialization service means that conversion is required
         SerializationService ss = mergePolicy instanceof StorageTypeAwareCacheMergePolicy ? null : serializationService;
         return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, ss);
     }

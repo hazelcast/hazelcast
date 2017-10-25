@@ -24,7 +24,7 @@ package com.hazelcast.cache;
  * So there is no need to convert them to their original types.
  * <p>
  * In the worst case, the value is returned from the merge method as selected, which means that in all cases
- * the value is accessed. So although the convertion is done lazily, it will be processed at this point.
+ * the value is accessed. So although the conversion is done lazily, it will be processed at this point.
  * But by default, the key and value are converted to their original types
  * unless this {@link com.hazelcast.cache.StorageTypeAwareCacheMergePolicy} is used.
  * <p>

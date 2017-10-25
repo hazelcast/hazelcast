@@ -35,7 +35,7 @@ import java.util.Map;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
 /**
- * Provides base features for predicates, such as extraction and convertion of the attribute's value.
+ * Provides base features for predicates, such as extraction and conversion of the attribute's value.
  * It also handles apply() on MultiResult.
  */
 @BinaryInterface

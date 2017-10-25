@@ -36,7 +36,7 @@ public class LazyCacheEntryView<K, V>
 
     public LazyCacheEntryView(Object key, Object value, long creationTime,
                               long expirationTime, long lastAccessTime, long accessHit) {
-        // `null` `serializationService` means, use raw type without any convertion
+        // `null` `serializationService` means, use raw type without any conversion
         this(key, value, creationTime, expirationTime, lastAccessTime, accessHit, null);
     }
 
@@ -54,7 +54,7 @@ public class LazyCacheEntryView<K, V>
 
     @Override
     public K getKey() {
-        // `null` `serializationService` means, use raw type without any convertion
+        // `null` `serializationService` means, use raw type without any conversion
         if (serializationService != null) {
             key = serializationService.toObject(key);
         }
@@ -63,7 +63,7 @@ public class LazyCacheEntryView<K, V>
 
     @Override
     public V getValue() {
-        // `null` `serializationService` means, use raw type without any convertion
+        // `null` `serializationService` means, use raw type without any conversion
         if (serializationService != null) {
             value = serializationService.toObject(value);
         }
