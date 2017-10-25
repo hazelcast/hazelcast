@@ -40,7 +40,7 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
 
     private final IntIntConstructorFunction constructorFunction = new IntIntConstructorFunction();
 
-    private ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+    private final ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
 
     @Test
     public void testConstructor() {
@@ -75,7 +75,8 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
     @SuppressWarnings("ConstantConditions")
     @Test(expected = NullPointerException.class)
     public void testGetOrPutSynchronized_whenMutexIsNull_thenThrowException() {
-        ConcurrencyUtil.getOrPutSynchronized(map, 5, (Object) null, constructorFunction);
+        Object mutex = null;
+        ConcurrencyUtil.getOrPutSynchronized(map, 5, mutex, constructorFunction);
     }
 
     @Test
@@ -111,7 +112,7 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
         volatile long value;
     }
 
-    private static class IntIntConstructorFunction implements ConstructorFunction<Integer, Integer> {
+    private static final class IntIntConstructorFunction implements ConstructorFunction<Integer, Integer> {
 
         private AtomicInteger constructions = new AtomicInteger();
 
