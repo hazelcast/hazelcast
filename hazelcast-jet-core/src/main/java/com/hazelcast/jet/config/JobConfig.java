@@ -115,7 +115,8 @@ public class JobConfig implements Serializable {
      * Set the {@link ProcessingGuarantee processing guarantee} for the job.
      * When the processing guarantee is set to <i>at-least-once</i> or
      * <i>exactly-once</i>, the snapshot interval can be configured via
-     * {@link #setSnapshotIntervalMillis(long)}.
+     * {@link #setSnapshotIntervalMillis(long)}, otherwise it will default to
+     * 10 seconds.
      * <p>
      * The default value is {@link ProcessingGuarantee#NONE}.
      */

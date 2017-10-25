@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector.kafka;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
@@ -85,8 +86,10 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     private Traverser<T> traverser;
     private ConsumerRecord<Object, Object> lastEmittedItem;
 
-    StreamKafkaP(Properties properties, List<String> topics, DistributedBiFunction<K, V, T> projectionFn,
-                 int globalParallelism, long metadataRefreshInterval) {
+    StreamKafkaP(@Nonnull Properties properties, @Nonnull List<String> topics,
+                 @Nonnull DistributedBiFunction<K, V, T> projectionFn, int globalParallelism,
+                 long metadataRefreshInterval
+    ) {
         this.properties = properties;
         this.topics = topics;
         this.projectionFn = projectionFn;
@@ -104,6 +107,8 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
 
     private void assignPartitions(boolean seekToBeginning) {
         List<Integer> partitionCounts = topics.stream().map(t -> consumer.partitionsFor(t).size()).collect(toList());
+        validateEnoughPartitions(topics, partitionCounts, globalParallelism);
+
         KafkaPartitionAssigner assigner = new KafkaPartitionAssigner(topics, partitionCounts, globalParallelism);
         Set<TopicPartition> newAssignments = assigner.topicPartitionsFor(processorIndex);
         logFinest(getLogger(), "Currently assigned partitions: %s", newAssignments);
@@ -145,9 +150,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         if (System.nanoTime() >= nextPartitionCheck) {
             assignPartitions(true);
         }
-        if (currentAssignment.isEmpty()) {
-            return false;
-        }
+
+        assert !currentAssignment.isEmpty() : "No topic partitions assigned to this processor.";
+
         if (traverser == null) {
             ConsumerRecords<Object, Object> records = consumer.poll(POLL_TIMEOUT_MS);
             if (records.isEmpty()) {
@@ -293,6 +298,25 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         private int processorIndexFor(int topicIndex, int partition) {
             int startIndex = topicIndex * Math.max(1, globalParallelism / topics.size());
             return (startIndex + partition) % globalParallelism;
+        }
+    }
+
+    /**
+     *  Validate that there are enough Kafka partitions to assign to all processors.
+     *  If a processor is generating no events, this can cause watermarks to never advance on one node.
+     */
+    private static void validateEnoughPartitions(
+            List<String> topics, List<Integer> partitionCounts, int globalParallelism
+    ) {
+        int totalPartitionCount = partitionCounts.stream().mapToInt(i -> i).sum();
+        if (totalPartitionCount < globalParallelism) {
+            Map<String, Integer> topicToCount = new HashMap<>();
+            for (int i = 0; i < topics.size(); i++) {
+                topicToCount.put(topics.get(i), partitionCounts.get(i));
+            }
+            throw new JetException("Total number of Kafka topic partitions (" + totalPartitionCount  + ")" +
+                    " is less than the global parallelism (" + globalParallelism + ") for this vertex. "
+                    + " The partition counts for individual Kafka topics are " + topicToCount);
         }
     }
 }
