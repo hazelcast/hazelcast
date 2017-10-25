@@ -44,6 +44,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -74,6 +75,21 @@ public class ProcessorsTest {
 
         // Then
         assertEquals("1", bucket.remove());
+    }
+
+    @Test
+    public void filteringWithMap() {
+        // Given
+        final Processor p = processorFrom(Processors.mapP((Integer i) -> i > 1 ? i : null));
+        inbox.add(1);
+        inbox.add(2);
+
+        // When
+        p.process(0, inbox);
+
+        // Then
+        assertEquals(2, bucket.remove());
+        assertNull(bucket.poll());
     }
 
     @Test
