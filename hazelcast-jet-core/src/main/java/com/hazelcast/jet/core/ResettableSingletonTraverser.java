@@ -48,7 +48,8 @@ public class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T
      */
     @Override
     public void accept(@Nullable T item) {
-        assert this.item == null || item == null : "Previous item not emitted. Old=" + this.item + ", new=" + item;
+        assert this.item == null :
+                "accept() called, but previous item still present. Previous: " + this.item + ", new: " + item;
         this.item = item;
     }
 }
