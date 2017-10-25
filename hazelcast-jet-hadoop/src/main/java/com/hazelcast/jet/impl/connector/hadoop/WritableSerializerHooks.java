@@ -145,7 +145,7 @@ final class WritableSerializerHooks {
             }
             String className = in.readUTF();
             try {
-                Writable instance = ClassLoaderUtil.newInstance(null, className);
+                Writable instance = ClassLoaderUtil.newInstance(Thread.currentThread().getContextClassLoader(), className);
                 instance.readFields(in);
                 return instance;
             } catch (Exception e) {
