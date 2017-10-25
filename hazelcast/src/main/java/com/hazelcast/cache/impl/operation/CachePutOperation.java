@@ -72,6 +72,7 @@ public class CachePutOperation
             CacheWanEventPublisher publisher = cacheService.getCacheWanEventPublisher();
             publisher.publishWanReplicationUpdate(name, entryView);
         }
+        super.afterRun();
     }
 
     @Override

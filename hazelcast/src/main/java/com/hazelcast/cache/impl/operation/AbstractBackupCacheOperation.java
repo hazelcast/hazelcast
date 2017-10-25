@@ -54,5 +54,6 @@ abstract class AbstractBackupCacheOperation extends AbstractCacheOperation {
         if (cache != null) {
             afterRunInternal();
         }
+        super.afterRun();
     }
 }
