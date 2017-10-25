@@ -132,9 +132,12 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     private String getAccountToken() {
+        return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    }
+
+    protected static String readFileContents(String tokenFile) {
         InputStream is = null;
         try {
-            String tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token";
             File file = new File(tokenFile);
             byte[] data = new byte[(int) file.length()];
             is = new FileInputStream(file);
