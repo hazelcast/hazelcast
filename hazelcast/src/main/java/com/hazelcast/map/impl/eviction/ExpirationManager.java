@@ -24,7 +24,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
@@ -241,7 +243,6 @@ public final class ExpirationManager {
             sort(partitionContainers, partitionContainerComparator);
         }
 
-
         private void sendCleanupOperations(List<PartitionContainer> partitionContainers) {
             final int start = 0;
             int end = cleanupOperationCount;
@@ -294,14 +295,22 @@ public final class ExpirationManager {
     }
 
     private Operation createExpirationOperation(int expirationPercentage, int partitionId) {
-        return new ClearExpiredOperation(expirationPercentage)
+        final ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(expirationPercentage);
+        return clearExpiredOperation
                 .setNodeEngine(nodeEngine)
                 .setCallerUuid(nodeEngine.getLocalMember().getUuid())
                 .setPartitionId(partitionId)
                 .setValidateTarget(false)
-                .setServiceName(SERVICE_NAME);
+                .setServiceName(SERVICE_NAME)
+                .setOperationResponseHandler(new OperationResponseHandler() {
+                    @Override
+                    public void sendResponse(Operation op, Object response) {
+                        assert response instanceof CallTimeoutResponse;
+                        // this response handler is used to be notified from call timeouts
+                        clearExpiredOperation.prepareForNextCleanup();
+                    }
+                });
     }
-
 
     /**
      * Sets last clean-up time before sorting.

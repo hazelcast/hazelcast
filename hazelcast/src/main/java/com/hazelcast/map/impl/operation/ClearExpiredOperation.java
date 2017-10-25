@@ -62,19 +62,32 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
         }
     }
 
-    private boolean isOwner() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(getPartitionId());
-        return nodeEngine.getThisAddress().equals(owner);
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        try {
+            super.onExecutionFailure(e);
+        } finally {
+            prepareForNextCleanup();
+        }
     }
 
     @Override
     public void afterRun() throws Exception {
-        final MapService mapService = getService();
+        prepareForNextCleanup();
+    }
+
+    public void prepareForNextCleanup() {
+        MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         partitionContainer.setHasRunningCleanup(false);
         partitionContainer.setLastCleanupTime(Clock.currentTimeMillis());
+    }
+
+    private boolean isOwner() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(getPartitionId());
+        return nodeEngine.getThisAddress().equals(owner);
     }
 
     @Override
