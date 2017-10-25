@@ -47,17 +47,17 @@ public class TraversersTest {
 
     @Test
     public void iterate() {
-        validateTraversal(Traversers.iterate(Stream.of(1, 2).iterator()));
+        validateTraversal(Traversers.traverseIterator(Stream.of(1, 2).iterator()));
     }
 
     @Test
     public void spliterate() {
-        validateTraversal(Traversers.spliterate(Stream.of(1, 2).spliterator()));
+        validateTraversal(Traversers.traverseSpliterator(Stream.of(1, 2).spliterator()));
     }
 
     @Test
     public void enumerate() {
-        validateTraversal(Traversers.enumerate(new Vector<>(asList(1, 2)).elements()));
+        validateTraversal(Traversers.traverseEnumeration(new Vector<>(asList(1, 2)).elements()));
     }
 
     @Test

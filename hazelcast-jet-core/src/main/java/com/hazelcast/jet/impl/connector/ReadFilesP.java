@@ -73,7 +73,7 @@ public final class ReadFilesP extends AbstractProcessor implements Closeable {
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         directoryStream = Files.newDirectoryStream(directory, glob);
-        outputTraverser = Traversers.iterate(directoryStream.iterator())
+        outputTraverser = Traversers.traverseIterator(directoryStream.iterator())
                                     .filter(this::shouldProcessEvent)
                                     .flatMap(this::processFile)
                                     .onFirstNull(() -> {

@@ -44,13 +44,13 @@ public final class Traversers {
     }
 
     /**
-     * Returns a simple adapter from {@code Iterator} to {@code Traverser}. The
+     * Returns an adapter from {@code Iterator} to {@code Traverser}. The
      * iterator must return non-{@code null} items. Each time its {@code next()}
      * method is called, the traverser will take another item from the iterator
      * and return it.
      */
     @Nonnull
-    public static <T> Traverser<T> iterate(@Nonnull Iterator<? extends T> iterator) {
+    public static <T> Traverser<T> traverseIterator(@Nonnull Iterator<? extends T> iterator) {
         return () -> iterator.hasNext() ? iterator.next() : null;
     }
 
@@ -75,7 +75,7 @@ public final class Traversers {
      * and return it.
      */
     @Nonnull
-    public static <T> Traverser<T> enumerate(@Nonnull Enumeration<T> enumeration) {
+    public static <T> Traverser<T> traverseEnumeration(@Nonnull Enumeration<T> enumeration) {
         return () -> enumeration.hasMoreElements() ? enumeration.nextElement() : null;
     }
 
@@ -86,15 +86,16 @@ public final class Traversers {
      */
     @Nonnull
     public static <T> Traverser<T> traverseStream(@Nonnull Stream<T> stream) {
-        return spliterate(stream.spliterator()).onFirstNull(stream::close);
+        return traverseSpliterator(stream.spliterator()).onFirstNull(stream::close);
     }
+
     /**
-     * Returns a traverser over the given iterable. The iterator is obtained
+     * Returns a traverser over the given iterable. It obtains the iterator
      * immediately.
      */
     @Nonnull
     public static <T> Traverser<T> traverseIterable(@Nonnull Iterable<? extends T> iterable) {
-        return iterate(iterable.iterator());
+        return traverseIterator(iterable.iterator());
     }
 
     /**
