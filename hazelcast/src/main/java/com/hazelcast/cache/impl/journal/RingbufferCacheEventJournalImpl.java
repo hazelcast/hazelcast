@@ -107,7 +107,9 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
         try {
             service = getRingbufferService();
         } catch (Exception e) {
-            logger.fine("Could not retrieve ringbuffer service to destroy event journal " + namespace, e);
+            if (nodeEngine.isRunning()) {
+                logger.fine("Could not retrieve ringbuffer service to destroy event journal " + namespace, e);
+            }
             return;
         }
         service.destroyContainer(partitionId, namespace);
