@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
 import java.util.Map;
 
+import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
@@ -247,8 +248,8 @@ public final class Sinks {
     /**
      * Returns a sink that logs all the data items it receives, at the INFO
      * level to the log category {@link
-     * com.hazelcast.jet.impl.connector.WriteLoggerP}. It does not log {@link
-     * Watermark watermark} items.
+     * com.hazelcast.jet.impl.connector.WriteLoggerP}. It doesn't log {@link
+     * com.hazelcast.jet.core.Watermark watermark} items.
      * <p>
      * The sink logs each item on whichever cluster member it happens to
      * receive it. Its primary purpose is for development use, when running Jet
@@ -259,7 +260,7 @@ public final class Sinks {
      */
     @Nonnull
     public static <E> Sink<E> writeLogger(DistributedFunction<E, String> toStringFn) {
-        return fromProcessor("writeLogger", DiagnosticProcessors.writeLoggerP(toStringFn));
+        return fromProcessor("writeLogger", writeLoggerP(toStringFn));
     }
 
     /**

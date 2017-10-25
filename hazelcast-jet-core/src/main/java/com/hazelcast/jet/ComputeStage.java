@@ -26,7 +26,10 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 
+import javax.annotation.Nonnull;
 import java.util.Map.Entry;
+
+import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 
 /**
  * Represents a stage in a distributed computation {@link Pipeline
@@ -191,6 +194,61 @@ public interface ComputeStage<E> extends Stage {
      */
     default <K> CoGroupBuilder<K, E> coGroupBuilder(DistributedFunction<? super E, K> thisKeyFn) {
         return new CoGroupBuilder<>(this, thisKeyFn);
+    }
+
+    /**
+     * Adds a peeking layer to this compute stage which logs its output. For
+     * each item the stage emits, it:
+     * <ol><li>
+     *     uses the {@code shouldLogFn} predicate to see whether to log the item
+     * </li><li>
+     *     if the item passed, uses {@code toStringFn} to get a string
+     *     representation of the item
+     * </li><li>
+     *     logs the string at the INFO level, the log category being {@code
+     *     com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     *
+     * @param shouldLogFn a function to filter the logged items. You can use {@link
+     *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
+     *                    alwaysTrue()} as a pass-through filter when you don't need any
+     *                    filtering.
+     * @param toStringFn  a function that returns a string representation of the item
+     * @see #peek(DistributedFunction)
+     * @see #peek()
+     */
+    ComputeStage<E> peek(
+            @Nonnull DistributedPredicate<? super E> shouldLogFn,
+            @Nonnull DistributedFunction<? super E, String> toStringFn
+    );
+
+    /**
+     * Adds a peeking layer to this compute stage which logs its output. For
+     * each item the stage emits, it:
+     * <ol><li>
+     *     uses {@code toStringFn} to get a string representation of the item
+     * </li><li>
+     *     logs the string at the INFO level, the log category being {@code
+     *     com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     *
+     * @param toStringFn  a function that returns a string representation of the item
+     * @see #peek(DistributedPredicate, DistributedFunction)
+     * @see #peek()
+     */
+    default ComputeStage<E> peek(@Nonnull DistributedFunction<? super E, String> toStringFn) {
+        return peek(alwaysTrue(), toStringFn);
+    }
+
+    /**
+     * Adds a peeking layer to this compute stage which logs its output. For
+     * each item the stage emits, it logs the result of its {@code toString()}
+     * method at the INFO level, the log category being {@code
+     * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     *
+     * @see #peek(DistributedPredicate, DistributedFunction)
+     * @see #peek(DistributedFunction)
+     */
+    default ComputeStage<E> peek() {
+        return peek(alwaysTrue(), Object::toString);
     }
 
     /**

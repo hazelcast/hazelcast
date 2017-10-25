@@ -350,6 +350,20 @@ public class ComputeStageTest extends TestInClusterSupport {
     }
 
     @Test
+    public void peekIsTransparent() {
+        // Given
+        srcStage.peek().drainTo(sink);
+
+        // When
+        List<Integer> input = sequence(50);
+        putToSrcMap(input);
+        execute();
+
+        // Then
+        assertEquals(toBag(input), sinkToBag());
+    }
+
+    @Test
     public void customTransform() {
         // Given
         ComputeStage<Object> custom = srcStage.customTransform("map", Processors.mapP(Object::toString));

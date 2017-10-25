@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -159,6 +160,15 @@ public class Vertex implements IdentifiedDataSerializable {
     @Nonnull
     public ProcessorMetaSupplier getMetaSupplier() {
         return metaSupplier;
+    }
+
+    /**
+     * Applies the provided operator function to the current processor
+     * meta-supplier and replaces it with the one it returns. Typically used to
+     * decorate the existing meta-supplier.
+     */
+    public void updateMetaSupplier(@Nonnull UnaryOperator<ProcessorMetaSupplier> updateFn) {
+        metaSupplier = updateFn.apply(metaSupplier);
     }
 
     @Override

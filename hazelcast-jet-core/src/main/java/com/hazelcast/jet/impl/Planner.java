@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -36,6 +37,7 @@ import com.hazelcast.jet.impl.transform.FlatMapTransform;
 import com.hazelcast.jet.impl.transform.GroupByTransform;
 import com.hazelcast.jet.impl.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.transform.MapTransform;
+import com.hazelcast.jet.impl.transform.PeekTransform;
 import com.hazelcast.jet.impl.transform.ProcessorTransform;
 
 import java.util.HashMap;
@@ -91,6 +93,8 @@ class Planner {
                 handleCoGroup(stage, (CoGroupTransform) transform);
             } else if (transform instanceof HashJoinTransform) {
                 handleHashJoin(stage, (HashJoinTransform) transform);
+            } else if (transform instanceof PeekTransform) {
+                handlePeek(stage, (PeekTransform) transform);
             } else if (transform instanceof SinkImpl) {
                 handleSink(stage, (SinkImpl) transform);
             } else {
@@ -244,6 +248,15 @@ class Planner {
                     .broadcast().priority(-1));
             collectorOrdinal++;
         }
+    }
+
+    private void handlePeek(AbstractStage stage, PeekTransform peekTransform) {
+        PlannerVertex peekedPv = stage2vertex.get(stage.upstream.get(0));
+        // Peeking transform doesn't add a vertex, so point to the upstream stage's
+        // vertex:
+        stage2vertex.put(stage, peekedPv);
+        peekedPv.v.updateMetaSupplier(sup ->
+                DiagnosticProcessors.peekOutputP(peekTransform.toStringFn(), peekTransform.shouldLogFn(), sup));
     }
 
     private void handleSink(AbstractStage stage, SinkImpl sink) {

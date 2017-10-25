@@ -84,14 +84,14 @@ public final class DiagnosticProcessors {
      *     if the item passed, uses {@code toStringFn} to get a string
      *     representation of the item
      * </li><li>
-     *     logs the string at the INFO level, the category being the fully
-     *     qualified name of the {@link PeekWrappedP} processor.
+     *     logs the string at the INFO level, the category being
+     *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
      * <p>
      * <strong>Note:</strong> {@link Watermark watermark} items are subject to
      * logging, too, so the functions you supply must be able to handle them.
      *
-     * @param toStringFn  function that returns the string representation of the item
-     * @param shouldLogFn function to filter logged items. You can use {@link
+     * @param toStringFn  a function that returns the string representation of the item
+     * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.
@@ -197,8 +197,8 @@ public final class DiagnosticProcessors {
      * <strong>Note:</strong> {@link Watermark watermark} items are subject to
      * logging, too, so the functions you supply must be able to handle them.
      *
-     * @param toStringFn  function that returns the string representation of the item
-     * @param shouldLogFn function to filter logged items. You can use {@link
+     * @param toStringFn  a function that returns the string representation of the item
+     * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.
@@ -295,8 +295,8 @@ public final class DiagnosticProcessors {
      *     logs the string at the INFO level, the category being the fully
      *     qualified name of the {@link PeekWrappedP} processor.
      *
-     * @param toStringFn  function that returns the string representation of the item
-     * @param shouldLogFn function to filter logged items. You can use {@link
+     * @param toStringFn  a function that returns the string representation of the item
+     * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
      *                    filtering.

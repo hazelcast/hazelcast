@@ -40,9 +40,11 @@ import com.hazelcast.jet.impl.transform.GroupByTransform;
 import com.hazelcast.jet.impl.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.transform.MapTransform;
 import com.hazelcast.jet.impl.transform.MultiTransform;
+import com.hazelcast.jet.impl.transform.PeekTransform;
 import com.hazelcast.jet.impl.transform.ProcessorTransform;
 import com.hazelcast.jet.impl.transform.UnaryTransform;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -126,6 +128,14 @@ public class ComputeStageImpl<E> extends AbstractStage implements ComputeStage<E
             AggregateOperation3<? super E, ? super E1, ? super E2, A, R> aggrOp
     ) {
         return attach(new CoGroupTransform<K, A, R>(asList(thisKeyFn, key1Fn, key2Fn), aggrOp), asList(stage1, stage2));
+    }
+
+    @Override
+    public ComputeStage<E> peek(
+            @Nonnull DistributedPredicate<? super E> shouldLogFn,
+            @Nonnull DistributedFunction<? super E, String> toStringFn
+    ) {
+        return attach(new PeekTransform<>(shouldLogFn, toStringFn));
     }
 
     private <R> ComputeStage<R> attach(UnaryTransform<? super E, R> unaryTransform) {
