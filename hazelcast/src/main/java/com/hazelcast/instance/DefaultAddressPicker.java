@@ -145,7 +145,7 @@ class DefaultAddressPicker implements AddressPicker {
             String message;
             if (networkConfig.isPortAutoIncrement()) {
                 message = "ServerSocket bind has failed. Hazelcast cannot start. config-port: " + networkConfig.getPort()
-                                + ", latest-port: " + (port + portTrialCount);
+                                + ", latest-port: " + (port + portTrialCount - 1);
             } else {
                 message = "Port [" + port + "] is already in use and auto-increment is disabled."
                         + " Hazelcast cannot start.";
