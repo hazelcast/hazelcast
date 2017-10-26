@@ -205,8 +205,12 @@ public interface ComputeStage<E> extends Stage {
      *     if the item passed, uses {@code toStringFn} to get a string
      *     representation of the item
      * </li><li>
-     *     logs the string at the INFO level, the log category being {@code
+     *     logs the string at the INFO level to the log category {@code
      *     com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * </li></ol>
+     * The stage logs each item on whichever cluster member it happens to
+     * receive it. Its primary purpose is for development use, when running Jet
+     * on a local machine.
      *
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
@@ -227,8 +231,12 @@ public interface ComputeStage<E> extends Stage {
      * <ol><li>
      *     uses {@code toStringFn} to get a string representation of the item
      * </li><li>
-     *     logs the string at the INFO level, the log category being {@code
+     *     logs the string at the INFO level to the log category {@code
      *     com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * </li></ol>
+     * The stage logs each item on whichever cluster member it happens to
+     * receive it. Its primary purpose is for development use, when running Jet
+     * on a local machine.
      *
      * @param toStringFn  a function that returns a string representation of the item
      * @see #peek(DistributedPredicate, DistributedFunction)
@@ -241,8 +249,11 @@ public interface ComputeStage<E> extends Stage {
     /**
      * Adds a peeking layer to this compute stage which logs its output. For
      * each item the stage emits, it logs the result of its {@code toString()}
-     * method at the INFO level, the log category being {@code
-     * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * method at the INFO level to the log category {@code
+     * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}.
+     * The stage logs each item on whichever cluster member it happens to
+     * receive it. Its primary purpose is for development use, when running Jet
+     * on a local machine.
      *
      * @see #peek(DistributedPredicate, DistributedFunction)
      * @see #peek(DistributedFunction)

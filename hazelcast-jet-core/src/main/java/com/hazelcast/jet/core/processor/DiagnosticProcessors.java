@@ -47,9 +47,10 @@ public final class DiagnosticProcessors {
 
     /**
      * Returns a meta-supplier of processors for a sink vertex that logs all
-     * the data items it receives. The log category is the fully-qualified
-     * name of the {@link WriteLoggerP} processor and the level is INFO. It
-     * does not log {@link Watermark watermark} items.
+     * the data items it receives. The log category is {@code
+     * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * and the level is INFO. It does not log {@link Watermark watermark}
+     * items.
      * <p>
      * The vertex logs each item on whichever cluster member it happens to
      * receive it. Its primary purpose is for development use, when running Jet
@@ -186,8 +187,8 @@ public final class DiagnosticProcessors {
      *     if the item passed, uses {@code toStringFn} to get a string
      *     representation of the item
      * </li><li>
-     *     logs the string at the INFO level, the category being the fully
-     *     qualified name of the {@link PeekWrappedP} processor.
+     *     logs the string at the INFO level, the category being
+     *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
      * <p>
      * Technically speaking, snapshot data is emitted to the same outbox as regular
      * data, but this wrapper only logs the regular data. See {@link
@@ -292,8 +293,8 @@ public final class DiagnosticProcessors {
      *     if the item passed, uses {@code toStringFn} to get a string
      *     representation of the item
      * </li><li>
-     *     logs the string at the INFO level, the category being the fully
-     *     qualified name of the {@link PeekWrappedP} processor.
+     *     logs the string at the INFO level, the category being
+     *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
      *
      * @param toStringFn  a function that returns the string representation of the item
      * @param shouldLogFn a function to filter the logged items. You can use {@link
