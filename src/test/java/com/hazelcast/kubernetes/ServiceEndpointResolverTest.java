@@ -2,6 +2,7 @@ package com.hazelcast.kubernetes;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import io.fabric8.kubernetes.api.model.EndpointAddress;
 import io.fabric8.kubernetes.api.model.EndpointSubset;
@@ -9,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ClientMixedOperation;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -18,6 +20,12 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -105,6 +113,27 @@ public class ServiceEndpointResolverTest {
 
         assertEquals(1, nodes.size());
         assertEquals(2, nodes.get(0).getPrivateAddress().getPort());
+    }
+
+    @Test
+    public void testReadFileContents() throws IOException {
+        String expectedContents = "Hello, world!\nThis is a test with Unicode ✓.";
+        String testFile = createTestFile(expectedContents);
+        String actualContents = ServiceEndpointResolver.readFileContents(testFile);
+        Assert.assertEquals(expectedContents, actualContents);
+    }
+
+    private String createTestFile(String expectedContents) throws IOException {
+        File temp = File.createTempFile("test", ".tmp");
+        temp.deleteOnExit();
+        BufferedWriter bufferedWriter = null;
+        try {
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), Charset.forName("UTF-8")));
+            bufferedWriter.write(expectedContents);
+        } finally {
+            IOUtil.closeResource(bufferedWriter);
+        }
+        return temp.getAbsolutePath();
     }
 
     private Endpoints createEndpoints(int id) {
