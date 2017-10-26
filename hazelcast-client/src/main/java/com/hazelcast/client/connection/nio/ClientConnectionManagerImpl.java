@@ -862,7 +862,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             }
         }
         throw new IllegalStateException(
-                "Unable to connect to any address in the config!" + " The following addresses were tried: " + triedAddresses);
+                "Unable to connect to any address! The following addresses were tried: " + triedAddresses);
     }
 
     @Override
