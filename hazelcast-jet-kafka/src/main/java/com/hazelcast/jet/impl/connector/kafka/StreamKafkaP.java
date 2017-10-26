@@ -176,7 +176,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
 
     @Override
     public void close() {
-        consumer.close();
+        if (consumer != null) {
+            consumer.close();
+        }
     }
 
     @Override
@@ -302,8 +304,8 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     }
 
     /**
-     *  Validate that there are enough Kafka partitions to assign to all processors.
-     *  If a processor is generating no events, this can cause watermarks to never advance on one node.
+     * Validate that there are enough Kafka partitions to assign to all processors.
+     * If a processor is generating no events, this can cause watermarks to never advance on one node.
      */
     private static void validateEnoughPartitions(
             List<String> topics, List<Integer> partitionCounts, int globalParallelism
@@ -314,7 +316,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
             for (int i = 0; i < topics.size(); i++) {
                 topicToCount.put(topics.get(i), partitionCounts.get(i));
             }
-            throw new JetException("Total number of Kafka topic partitions (" + totalPartitionCount  + ")" +
+            throw new JetException("Total number of Kafka topic partitions (" + totalPartitionCount + ")" +
                     " is less than the global parallelism (" + globalParallelism + ") for this vertex. "
                     + " The partition counts for individual Kafka topics are " + topicToCount);
         }
