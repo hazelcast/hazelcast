@@ -20,27 +20,31 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * A policy for merging maps after a splitbrain was detected and the different network partitions need
- * to be merged.
+ * Policy for merging map entries after a split-brain has been healed.
  *
- * @see com.hazelcast.map.merge.MapMergePolicy
- * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
+ * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
  * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
  * @see com.hazelcast.map.merge.PassThroughMergePolicy
- * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
+ * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
  */
 public interface MapMergePolicy extends DataSerializable {
 
     /**
-     * Returns the value of the entry after the merge
-     * of entries with the same key.
-     * You should consider the case where existingEntry's value is null.
+     * Selects one of the merging and existing map entries to be merged.
+     * <p>
+     * Note that the {@code existingEntry} may be {@code null} if there
+     * is no entry with the same key in the destination map.
+     * This happens, when the entry for that key was
+     * <ul>
+     * <li>only created in the smaller sub-cluster during the split-brain</li>
+     * <li>removed in the larger sub-cluster during the split-brain</li>
+     * </ul>
      *
      * @param mapName       name of the map
-     * @param mergingEntry  entry merging into the destination cluster
-     * @param existingEntry existing entry in the destination cluster
-     * @return final value of the entry. If returns null, then the entry will be removed.
+     * @param mergingEntry  {@link EntryView} instance that has the map entry to be merged
+     * @param existingEntry {@link EntryView} instance that has the existing map entry
+     *                      or {@code null} if there is no existing map entry
+     * @return the selected value for merging or {@code null} if the entry should be removed
      */
     Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
-
 }

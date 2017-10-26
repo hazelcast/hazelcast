@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
  * Handles split-brain functionality for cache.
  */
 class CacheSplitBrainHandler {
+
     private final NodeEngine nodeEngine;
     private final Map<String, CacheConfig> configs;
     private final CachePartitionSegment[] segments;
@@ -62,7 +63,7 @@ class CacheSplitBrainHandler {
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
 
         for (int i = 0; i < partitionCount; i++) {
-            // Add your owned entries so they will be merged
+            // add your owned entries so they will be merged
             if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
                 CachePartitionSegment segment = segments[i];
                 Iterator<ICacheRecordStore> iter = segment.recordStoreIterator();
@@ -82,11 +83,11 @@ class CacheSplitBrainHandler {
                         CacheRecord cacheRecord = cacheRecordEntry.getValue();
                         records.put(key, cacheRecord);
                     }
-                    // Clear all records either owned or backup
+                    // clear all records either owned or backup
                     cacheRecordStore.clear();
 
-                    // send the cache invalidation event regardless if any actually cleared or not (no need to know how many
-                    // actually cleared)
+                    // send the cache invalidation event regardless if any actually cleared or not
+                    // (no need to know how many actually cleared)
                     final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
                     cacheService.sendInvalidationEvent(cacheName, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
                 }
@@ -146,25 +147,22 @@ class CacheSplitBrainHandler {
                     Data key = recordEntry.getKey();
                     CacheRecord record = recordEntry.getValue();
                     recordCount++;
-                    CacheEntryView entryView =
-                            new DefaultCacheEntryView(
-                                    key,
-                                    serializationService.toData(record.getValue()),
-                                    record.getCreationTime(),
-                                    record.getExpirationTime(),
-                                    record.getLastAccessTime(),
-                                    record.getAccessHit());
-                    CacheMergeOperation operation =
-                            new CacheMergeOperation(
-                                    cacheName,
-                                    key,
-                                    entryView,
-                                    cacheMergePolicy);
+                    CacheEntryView entryView = new DefaultCacheEntryView(
+                            key,
+                            serializationService.toData(record.getValue()),
+                            record.getCreationTime(),
+                            record.getExpirationTime(),
+                            record.getLastAccessTime(),
+                            record.getAccessHit());
+                    CacheMergeOperation operation = new CacheMergeOperation(
+                            cacheName,
+                            key,
+                            entryView,
+                            cacheMergePolicy);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        ICompletableFuture f =
-                                nodeEngine.getOperationService()
-                                        .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId);
+                        ICompletableFuture f = nodeEngine.getOperationService()
+                                .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId);
 
                         f.andThen(mergeCallback);
                     } catch (Throwable t) {
@@ -179,7 +177,5 @@ class CacheSplitBrainHandler {
                 logger.finest("Interrupted while waiting merge operation...");
             }
         }
-
     }
-
 }

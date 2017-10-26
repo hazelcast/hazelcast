@@ -48,6 +48,7 @@ public abstract class AbstractCacheMergePolicyTest {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void merge_mergingWins_sinceExistingIsNotExist() {
         CacheEntryView existing = null;
         CacheEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
@@ -85,5 +86,4 @@ public abstract class AbstractCacheMergePolicyTest {
             throw new RuntimeException(e);
         }
     }
-
 }

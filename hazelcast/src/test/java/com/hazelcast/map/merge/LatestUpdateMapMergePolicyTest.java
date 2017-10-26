@@ -31,5 +31,4 @@ public class LatestUpdateMapMergePolicyTest extends AbstractMapMergePolicyTest {
     public void given() {
         policy = new LatestUpdateMapMergePolicy();
     }
-
 }

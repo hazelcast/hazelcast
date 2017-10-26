@@ -30,25 +30,28 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 @SuppressWarnings("unchecked")
 public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
-    @Parameterized.Parameters(name = "mergePolicy:{0}")
+    @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
-        return Arrays.asList(new Object[]{
+        return asList(new Object[]{
                 LatestAccessCacheMergePolicy.class,
                 HigherHitsCacheMergePolicy.class,
                 PutIfAbsentCacheMergePolicy.class,
@@ -57,7 +60,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
         });
     }
 
-    @Parameterized.Parameter
+    @Parameter
     public Class<? extends CacheMergePolicy> mergePolicyClass;
 
     private String cacheName = randomMapName();
@@ -72,14 +75,12 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         warmUpPartitions(instances);
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
-
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         mergeLifecycleListener = new MergeLifecycleListener(secondBrain.length);
         for (HazelcastInstance instance : secondBrain) {
             instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
@@ -107,7 +108,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         // wait until merge completes
         mergeLifecycleListener.await();
 
@@ -130,22 +131,26 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
     private void afterSplitLatestAccessCacheMergePolicy() {
         cache1.put("key1", "value");
-        assertEquals("value", cache1.get("key1")); // Access to record
+        // access to record
+        assertEquals("value", cache1.get("key1"));
 
-        // Prevent updating at the same time
+        // prevent updating at the same time
         sleepAtLeastMillis(100);
 
         cache2.put("key1", "LatestAccessedValue");
-        assertEquals("LatestAccessedValue", cache2.get("key1")); // Access to record
+        // access to record
+        assertEquals("LatestAccessedValue", cache2.get("key1"));
 
         cache2.put("key2", "value2");
-        assertEquals("value2", cache2.get("key2")); // Access to record
+        // access to record
+        assertEquals("value2", cache2.get("key2"));
 
-        // Prevent updating at the same time
+        // prevent updating at the same time
         sleepAtLeastMillis(100);
 
         cache1.put("key2", "LatestAccessedValue2");
-        assertEquals("LatestAccessedValue2", cache1.get("key2")); // Access to record
+        // access to record
+        assertEquals("LatestAccessedValue2", cache1.get("key2"));
     }
 
     private void afterMergeLatestAccessCacheMergePolicy() {
@@ -160,14 +165,14 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
         cache1.put("key1", "higherHitsValue");
         cache1.put("key2", "value2");
 
-        // Increase hits number
+        // increase hits number
         assertEquals("higherHitsValue", cache1.get("key1"));
         assertEquals("higherHitsValue", cache1.get("key1"));
 
         cache2.put("key1", "value1");
         cache2.put("key2", "higherHitsValue2");
 
-        // Increase hits number
+        // increase hits number
         assertEquals("higherHitsValue2", cache2.get("key2"));
         assertEquals("higherHitsValue2", cache2.get("key2"));
     }
@@ -240,6 +245,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private static class MergeLifecycleListener implements LifecycleListener {
+
         private final CountDownLatch latch;
 
         MergeLifecycleListener(int mergingClusterSize) {

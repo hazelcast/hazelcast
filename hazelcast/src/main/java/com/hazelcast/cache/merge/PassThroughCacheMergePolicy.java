@@ -21,19 +21,16 @@ import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
- * `PassThroughCacheMergePolicy` policy merges cache entry from source to destination directly.
+ * Merges cache entries from source to destination directly unless the merging entry is {@code null}.
  */
 @BinaryInterface
-public class PassThroughCacheMergePolicy
-        implements StorageTypeAwareCacheMergePolicy {
+public class PassThroughCacheMergePolicy implements StorageTypeAwareCacheMergePolicy {
 
     public PassThroughCacheMergePolicy() {
-
     }
 
     @Override
     public Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry) {
         return mergingEntry != null ? mergingEntry.getValue() : existingEntry.getValue();
     }
-
 }

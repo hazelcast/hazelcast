@@ -29,16 +29,14 @@ import com.hazelcast.nio.serialization.Data;
  * @see CacheEntryView
  * @see CacheMergePolicy
  */
-public interface SplitBrainAwareCacheRecordStore
-        extends ICacheRecordStore {
+public interface SplitBrainAwareCacheRecordStore extends ICacheRecordStore {
 
     /**
      * Merges given record (inside given {@link CacheEntryView}) with the existing record as given {@link CacheMergePolicy}.
      *
-     * @param cacheEntryView    the {@link CacheEntryView} instance that wraps key/value for merging and existing entry
-     * @param mergePolicy       the {@link CacheMergePolicy} instance for handling merge policy
-     * @return the used {@link CacheRecord} if merge is applied, otherwise <code>null</code>
+     * @param cacheEntryView the {@link CacheEntryView} instance that wraps key/value for merging and existing entry
+     * @param mergePolicy    the {@link CacheMergePolicy} instance for handling merge policy
+     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
      */
     CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy);
-
 }

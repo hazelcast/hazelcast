@@ -46,6 +46,7 @@ public class PutIfAbsentCacheMergePolicyTest {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void merge_existingValueAbsent() {
         CacheEntryView existing = null;
         CacheEntryView merging = entryWithGivenValue(MERGING);
@@ -78,5 +79,4 @@ public class PutIfAbsentCacheMergePolicyTest {
             throw new RuntimeException(e);
         }
     }
-
 }

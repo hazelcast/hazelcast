@@ -76,7 +76,5 @@ public class PutIfAbsentMapMergePolicyTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
-
 }

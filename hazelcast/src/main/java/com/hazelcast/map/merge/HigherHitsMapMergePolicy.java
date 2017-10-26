@@ -26,8 +26,8 @@ import java.io.IOException;
 
 
 /**
- * HigherHitsMapMergePolicy causes the merging entry to be merged from source to destination map
- * if source entry has more hits than the destination one.
+ * Merges map entries from source to destination map if the source entry
+ * has more hits than the destination one.
  */
 public class HigherHitsMapMergePolicy implements MapMergePolicy, IdentifiedDataSerializable {
 

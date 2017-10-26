@@ -53,6 +53,7 @@ public class PassThroughCacheMergePolicyTest {
     }
 
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
         CacheEntryView existing = entryWithGivenValue(EXISTING);
         CacheEntryView merging = null;
@@ -69,5 +70,4 @@ public class PassThroughCacheMergePolicyTest {
             throw new RuntimeException(e);
         }
     }
-
 }

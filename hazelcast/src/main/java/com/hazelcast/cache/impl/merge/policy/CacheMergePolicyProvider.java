@@ -33,7 +33,7 @@ import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
  */
 public final class CacheMergePolicyProvider {
 
-    private final ConcurrentMap<String, CacheMergePolicy> mergePolicyMap;
+    private final ConcurrentMap<String, CacheMergePolicy> mergePolicyMap = new ConcurrentHashMap<String, CacheMergePolicy>();
     private final NodeEngine nodeEngine;
 
     private final ConstructorFunction<String, CacheMergePolicy> policyConstructorFunction
@@ -51,16 +51,15 @@ public final class CacheMergePolicyProvider {
 
     public CacheMergePolicyProvider(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.mergePolicyMap = new ConcurrentHashMap<String, CacheMergePolicy>();
         addOutOfBoxPolicies();
     }
 
     private void addOutOfBoxPolicies() {
         for (BuiltInCacheMergePolicies mergePolicy : BuiltInCacheMergePolicies.values()) {
-            final CacheMergePolicy cacheMergePolicy = mergePolicy.newInstance();
-            // Register `CacheMergePolicy` by its constant
+            CacheMergePolicy cacheMergePolicy = mergePolicy.newInstance();
+            // register `CacheMergePolicy` by its constant
             mergePolicyMap.put(mergePolicy.name(), cacheMergePolicy);
-            // Register `CacheMergePolicy` by its name
+            // register `CacheMergePolicy` by its name
             mergePolicyMap.put(mergePolicy.getImplementationClassName(), cacheMergePolicy);
         }
     }
@@ -71,5 +70,4 @@ public final class CacheMergePolicyProvider {
         }
         return ConcurrencyUtil.getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
     }
-
 }

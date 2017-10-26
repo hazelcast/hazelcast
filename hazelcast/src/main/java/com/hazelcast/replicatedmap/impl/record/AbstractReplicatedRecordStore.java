@@ -375,7 +375,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             Data dataValue = serializationService.toData(newValue);
             VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
             sendReplicationOperation(false, getName(), dataKey, dataValue, record.getTtlMillis(), responsePair);
-
         }
         return true;
     }

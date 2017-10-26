@@ -118,7 +118,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
         private static final int TIMEOUT_FACTOR = 500;
 
-        private Map<MapContainer, Collection<Record>> recordMap;
+        private final Map<MapContainer, Collection<Record>> recordMap;
 
         Merger(Map<MapContainer, Collection<Record>> recordMap) {
             this.recordMap = recordMap;
@@ -126,9 +126,8 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
         @Override
         public void run() {
-            final Semaphore semaphore = new Semaphore(0);
-            int recordCount = 0;
             final ILogger logger = nodeEngine.getLogger(MapSplitBrainHandlerService.class);
+            final Semaphore semaphore = new Semaphore(0);
 
             ExecutionCallback mergeCallback = new ExecutionCallback() {
                 @Override
@@ -143,6 +142,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 }
             };
 
+            int recordCount = 0;
             for (Map.Entry<MapContainer, Collection<Record>> recordMapEntry : recordMap.entrySet()) {
                 MapContainer mapContainer = recordMapEntry.getKey();
                 Collection<Record> recordList = recordMapEntry.getValue();
@@ -159,8 +159,8 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                     EntryView entryView = EntryViews.createSimpleEntryView(record.getKey(),
                             mapServiceContext.toData(record.getValue()), record);
 
-                    MapOperation operation = operationProvider.createMergeOperation(mapName,
-                            record.getKey(), entryView, finalMergePolicy, false);
+                    MapOperation operation = operationProvider.createMergeOperation(mapName, record.getKey(), entryView,
+                            finalMergePolicy, false);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
                         ICompletableFuture f = nodeEngine.getOperationService()
@@ -179,6 +179,5 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 logger.finest("Interrupted while waiting merge operation...");
             }
         }
-
     }
 }

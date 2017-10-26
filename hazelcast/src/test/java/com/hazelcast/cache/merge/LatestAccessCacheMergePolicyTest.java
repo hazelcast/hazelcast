@@ -31,5 +31,4 @@ public class LatestAccessCacheMergePolicyTest extends AbstractCacheMergePolicyTe
     protected CacheMergePolicy createCacheMergePolicy() {
         return new LatestAccessCacheMergePolicy();
     }
-
 }

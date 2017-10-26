@@ -25,8 +25,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * IgnoreMergingEntryMapMergePolicy causes the merging entry to be ignored while collecting merge-needed entries on merging side
- * Its operations are not implemented since it is only used as a marker
+ * Ignores the merging entry while collecting merge-needed entries on merging side.
+ * <p>
+ * <b>Note:</b> Its operations are not implemented since it is only used as a marker.
+ *
  * @since 3.9
  */
 public final class IgnoreMergingEntryMapMergePolicy implements MapMergePolicy, IdentifiedDataSerializable {

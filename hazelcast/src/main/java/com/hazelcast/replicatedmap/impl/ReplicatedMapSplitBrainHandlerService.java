@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
- * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}
+ * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}.
  */
 public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService {
 
@@ -54,8 +54,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
     private final NodeEngine nodeEngine;
     private final SerializationService serializationService;
 
-    public ReplicatedMapSplitBrainHandlerService(ReplicatedMapService service,
-                                                 MergePolicyProvider mergePolicyProvider) {
+    public ReplicatedMapSplitBrainHandlerService(ReplicatedMapService service, MergePolicyProvider mergePolicyProvider) {
         this.service = service;
         this.mergePolicyProvider = mergePolicyProvider;
         this.nodeEngine = service.getNodeEngine();
@@ -100,9 +99,8 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
 
         @Override
         public void run() {
-            final Semaphore semaphore = new Semaphore(0);
-            int recordCount = 0;
             final ILogger logger = nodeEngine.getLogger(ReplicatedMapService.class);
+            final Semaphore semaphore = new Semaphore(0);
 
             ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
                 @Override
@@ -117,6 +115,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
                 }
             };
 
+            int recordCount = 0;
             for (Map.Entry<String, Collection<ReplicatedRecord>> entry : recordMap.entrySet()) {
                 recordCount++;
                 String name = entry.getKey();

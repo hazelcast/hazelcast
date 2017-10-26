@@ -64,50 +64,42 @@ public class CacheMergePolicyProviderTest extends HazelcastTestSupport {
 
     @Test
     public void getMergePolicy_withClassName_PutIfAbsentCacheMergePolicy() {
-        assertMergePolicyCorrectlyInitialised(PutIfAbsentCacheMergePolicy.class.getName(),
-                PutIfAbsentCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(PutIfAbsentCacheMergePolicy.class.getName(), PutIfAbsentCacheMergePolicy.class);
     }
 
     @Test
     public void getMergePolicy_withConstant_PutIfAbsentCacheMergePolicy() {
-        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.PUT_IF_ABSENT.name(),
-                PutIfAbsentCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.PUT_IF_ABSENT.name(), PutIfAbsentCacheMergePolicy.class);
     }
 
     @Test
     public void getMergePolicy_withClassName_LatestAccessCacheMergePolicy() {
-        assertMergePolicyCorrectlyInitialised(LatestAccessCacheMergePolicy.class.getName(),
-                LatestAccessCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(LatestAccessCacheMergePolicy.class.getName(), LatestAccessCacheMergePolicy.class);
     }
 
     @Test
     public void getMergePolicy_withConstant_LatestAccessCacheMergePolicy() {
-        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.LATEST_ACCESS.name(),
-                LatestAccessCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.LATEST_ACCESS.name(), LatestAccessCacheMergePolicy.class);
     }
 
     @Test
     public void getMergePolicy_withClassName_PassThroughCachePolicy() {
-        assertMergePolicyCorrectlyInitialised(PassThroughCacheMergePolicy.class.getName(),
-                PassThroughCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(PassThroughCacheMergePolicy.class.getName(), PassThroughCacheMergePolicy.class);
     }
 
     @Test
     public void getMergePolicy_withConstant_PassThroughCachePolicy() {
-        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.PASS_THROUGH.name(),
-                PassThroughCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.PASS_THROUGH.name(), PassThroughCacheMergePolicy.class);
     }
 
     @Test
     public void getMergePolicy_withClassName_HigherHitsMapCachePolicy() {
-        assertMergePolicyCorrectlyInitialised(HigherHitsCacheMergePolicy.class.getName(),
-                HigherHitsCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(HigherHitsCacheMergePolicy.class.getName(), HigherHitsCacheMergePolicy.class);
     }
 
     @Test
     public void getMergePolicy_withConstant_HigherHitsMapCachePolicy() {
-        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.HIGHER_HITS.name(),
-                HigherHitsCacheMergePolicy.class);
+        assertMergePolicyCorrectlyInitialised(BuiltInCacheMergePolicies.HIGHER_HITS.name(), HigherHitsCacheMergePolicy.class);
     }
 
     private void assertMergePolicyCorrectlyInitialised(String mergePolicyName,
@@ -117,5 +109,4 @@ public class CacheMergePolicyProviderTest extends HazelcastTestSupport {
         assertNotNull(mergePolicy);
         assertEquals(expectedMergePolicyClass, mergePolicy.getClass());
     }
-
 }
