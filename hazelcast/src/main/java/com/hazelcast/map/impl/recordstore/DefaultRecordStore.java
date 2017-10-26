@@ -76,13 +76,28 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
-    // loadingFutures are modified by partition threads and could be accessed by query threads
+    /**
+     * A collection of futures representing pending completion of the key and
+     * value loading tasks.
+     * The loadingFutures are modified by partition threads and can be accessed
+     * by query threads.
+     *
+     * @see #loadAll(boolean)
+     * @see #loadAllFromStore(List, boolean)
+     */
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
-    // record store may be created with or without triggering the load
-    // this flag guards that the loading on create is invoked not more than once should the record store be migrated.
+    /**
+     * The record store may be created with or without triggering the load.
+     * This flag guards that the loading on create is invoked not more than
+     * once should the record store be migrated.
+     */
     private boolean loadedOnCreate;
-    // records if the record store has been loaded just before the migrations starts
-    // if so, the loading should NOT be started after the migration commit
+    /**
+     * Records if the record store on the migration source has been loaded.
+     * If the record store has already been loaded, the migration target should
+     * NOT trigger loading again on migration commit, otherwise it may trigger
+     * key loading.
+     */
     private boolean loadedOnPreMigration;
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
@@ -95,6 +110,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.loadedOnCreate = false;
     }
 
+    @Override
     public void startLoading() {
         if (logger.isFinestEnabled()) {
             logger.finest("StartLoading invoked " + getStateMessage());

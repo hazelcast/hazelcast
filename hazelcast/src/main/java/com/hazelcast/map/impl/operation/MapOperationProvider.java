@@ -83,6 +83,15 @@ public interface MapOperationProvider {
 
     MapOperation createQueryPartitionOperation(Query query);
 
+    /**
+     * Creates an operation to load entry values for the provided {@code keys} on
+     * the partition owner.
+     *
+     * @param name                  the map name
+     * @param keys                  the keys for which values are to be loaded
+     * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
+     * @return the operation for triggering entry value loading
+     */
     MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues);
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);

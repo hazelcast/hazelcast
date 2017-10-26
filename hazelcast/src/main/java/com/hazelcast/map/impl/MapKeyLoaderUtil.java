@@ -39,6 +39,19 @@ public final class MapKeyLoaderUtil {
     private MapKeyLoaderUtil() {
     }
 
+    /**
+     * Returns the role for the map key loader based on the passed parameters.
+     * The partition owner of the map name partition is the sender.
+     * The first replica of the map name partition is the sender backup.
+     * Other partition owners are receivers and other partition replicas do
+     * not have a role.
+     *
+     * @param isPartitionOwner               if this is the partition owner
+     * @param isMapNamePartition             if this is the partition containing the map name
+     * @param isMapNamePartitionFirstReplica if this is the first replica for the partition
+     *                                       containing the map name
+     * @return the map key loader role
+     */
     static MapKeyLoader.Role assignRole(boolean isPartitionOwner, boolean isMapNamePartition,
                                         boolean isMapNamePartitionFirstReplica) {
         if (isMapNamePartition) {
@@ -60,9 +73,21 @@ public final class MapKeyLoaderUtil {
         }
     }
 
+    /**
+     * Transforms an iterator of entries to an iterator of entry batches
+     * where each batch is represented as a map from entry key to
+     * list of entry values.
+     * The maximum size of the entry value list in any batch is
+     * determined by the {@code maxBatch} parameter. Only one
+     * entry value list may have the {@code maxBatch} size, other
+     * lists will be smaller.
+     *
+     * @param entries  the entries to be batched
+     * @param maxBatch the maximum size of an entry group in a single batch
+     * @return an iterator with entry batches
+     */
     static Iterator<Map<Integer, List<Data>>> toBatches(final Iterator<Entry<Integer, Data>> entries,
                                                         final int maxBatch) {
-
         return new UnmodifiableIterator<Map<Integer, List<Data>>>() {
             @Override
             public boolean hasNext() {
@@ -79,10 +104,17 @@ public final class MapKeyLoaderUtil {
         };
     }
 
-    static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries, int maxBatch) {
-
+    /**
+     * Groups entries by the entry key. The entries will be grouped
+     * until at least one group has up to {@code maxBatch}
+     * entries or until the {@code entries} have been exhausted.
+     *
+     * @param entries  the entries to be grouped by key
+     * @param maxBatch the maximum size of a group
+     * @return the grouped entries by entry key
+     */
+    private static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries, int maxBatch) {
         Map<Integer, List<Data>> batch = new HashMap<Integer, List<Data>>();
-
         while (entries.hasNext()) {
             Entry<Integer, Data> e = entries.next();
             List<Data> partitionKeys = CollectionUtil.addToValueList(batch, e.getKey(), e.getValue());
@@ -91,10 +123,19 @@ public final class MapKeyLoaderUtil {
                 break;
             }
         }
-
         return batch;
     }
 
+    /**
+     * Returns the configured maximum entry count per node if the max
+     * size policy is {@link MaxSizeConfig.MaxSizePolicy#PER_NODE}
+     * and is not the default, otherwise returns {@code -1}.
+     *
+     * @param maxSizeConfig the max size configuration
+     * @return the max size per node or {@code -1} if not configured or is the default
+     * @see MaxSizeConfig#getMaxSizePolicy()
+     * @see MaxSizeConfig#getSize()
+     */
     public static int getMaxSizePerNode(MaxSizeConfig maxSizeConfig) {
         // max size or -1 if policy is different or not set
         double maxSizePerNode = maxSizeConfig.getMaxSizePolicy() == PER_NODE ? maxSizeConfig.getSize() : -1D;
@@ -107,6 +148,13 @@ public final class MapKeyLoaderUtil {
         return (int) maxSizePerNode;
     }
 
+    /**
+     * Returns a {@link IFunction} that transforms a {@link Data}
+     * parameter to an map entry where the key is the partition ID
+     * and the value is the provided parameter.
+     *
+     * @param partitionService the partition service
+     */
     static IFunction<Data, Entry<Integer, Data>> toPartition(final IPartitionService partitionService) {
         return new DataToEntry(partitionService);
     }

@@ -402,8 +402,8 @@ public final class FutureUtil {
     /**
      * Check if all futures are done
      *
-     * @param futures
-     * @return true if all futures are done. false otherwise
+     * @param futures the list of futures
+     * @return {@code true} if all futures are done
      */
     public static boolean allDone(Collection<Future> futures) {
         for (Future f : futures) {

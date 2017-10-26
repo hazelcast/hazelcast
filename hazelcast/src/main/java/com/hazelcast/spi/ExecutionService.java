@@ -73,14 +73,21 @@ public interface ExecutionService {
     String OFFLOADABLE_EXECUTOR = "hz:offloadable";
 
     /**
-     * Name of the map-loader executor that loads the {@link com.hazelcast.core.MapLoader#loadAll(java.util.Collection)}.
+     * Name of the map-loader executor that loads the entry values
+     * for a given key set locally on the member owning the partition
+     * which contains the keys. This is the executor you want to
+     * configure when you want to load more data from the database
+     * in parallel.
      *
-     * This is the executor you want to configure when you want to load more data from the database in parallel.
+     * @see com.hazelcast.core.MapLoader#loadAll(java.util.Collection)
      */
     String MAP_LOADER_EXECUTOR = "hz:map-load";
 
     /**
-     * The name of the executor that loads the {@link com.hazelcast.core.MapLoader#loadAllKeys()}
+     * The name of the executor that loads the entry keys and dispatches
+     * the keys to the partition owners for value loading.
+     *
+     * @see com.hazelcast.core.MapLoader#loadAllKeys()
      */
     String MAP_LOAD_ALL_KEYS_EXECUTOR = "hz:map-loadAllKeys";
 

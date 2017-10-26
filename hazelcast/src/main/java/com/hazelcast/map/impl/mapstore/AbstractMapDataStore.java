@@ -62,6 +62,8 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Directly removes keys from map store as in write-through mode.
      * It works same for write-behind and write-through stores.
      */
@@ -86,7 +88,14 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         return store;
     }
 
-    protected List<Object> convertToObjectKeys(Collection keys) {
+    /**
+     * Deserialises all of the items in the provided collection if they
+     * are not deserialised already.
+     *
+     * @param keys the items to be deserialised
+     * @return the list of deserialised items
+     */
+    private List<Object> convertToObjectKeys(Collection keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyList();
         }

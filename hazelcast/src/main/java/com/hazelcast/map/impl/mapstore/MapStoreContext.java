@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.MapLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
@@ -54,10 +55,16 @@ public interface MapStoreContext {
 
     MapStoreConfig getMapStoreConfig();
 
+    /**
+     * Returns an {@link Iterable} over all keys or an empty iterable
+     * if there is no map loader configured for this map.
+     *
+     * @see MapLoader#loadAllKeys()
+     */
     Iterable<Object> loadAllKeys();
 
     /**
-     * @return {@code true} if MapLoader or MapStore is defined
+     * @return {@code true} if a {@link MapLoader} is configured for this map
      */
     boolean isMapLoader();
 }

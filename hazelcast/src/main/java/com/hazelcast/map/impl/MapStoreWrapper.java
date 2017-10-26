@@ -34,9 +34,15 @@ import java.util.Properties;
 
 @SuppressWarnings("unchecked")
 public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
-
+    /**
+     * An instance of {@link MapLoader} configured for this map
+     * or {@code null} if none was provided.
+     */
     private MapLoader mapLoader;
-
+    /**
+     * An instance of {@link MapStore} configured for this map
+     * or {@code null} if none was provided.
+     */
     private MapStore mapStore;
 
     private final String mapName;
@@ -81,6 +87,9 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         return (mapStore != null);
     }
 
+    /**
+     * @return {@code true} if a {@link MapLoader} is configured for this map
+     */
     public boolean isMapLoader() {
         return (mapLoader != null);
     }
@@ -131,6 +140,11 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         }
     }
 
+    /**
+     * Returns an {@link Iterable} of all keys or {@code null}
+     * if a map loader is not configured for this map.
+     * {@inheritDoc}
+     */
     @Override
     public Iterable<Object> loadAllKeys() {
         if (isMapLoader()) {
