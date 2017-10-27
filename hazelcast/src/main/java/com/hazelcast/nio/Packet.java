@@ -20,11 +20,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.spi.annotation.PrivateApi;
 
-import java.nio.ByteBuffer;
-
-import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.PacketIOHelper.HEADER_SIZE;
 
 /**
  * A Packet is a piece of data sent over the wire. The Packet is used for member to member communication.
@@ -106,18 +102,11 @@ public final class Packet extends HeapData implements OutboundFrame {
     //            END OF HEADER FLAG SECTION
 
 
-    private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
-
     // char is a 16-bit unsigned integer. Here we use it as a bitfield.
     private char flags;
 
     private int partitionId;
     private transient Connection conn;
-
-    // These 3 fields are only used during read/write. Otherwise they have no meaning.
-    private int valueOffset;
-    private int size;
-    private boolean headerComplete;
 
     public Packet() {
     }
@@ -226,133 +215,6 @@ public final class Packet extends HeapData implements OutboundFrame {
     @Override
     public boolean isUrgent() {
         return isFlagRaised(FLAG_URGENT);
-    }
-
-    /**
-     * The methods {@link #readFrom(ByteBuffer)} and {@link #writeTo(ByteBuffer)} do not complete their I/O operation
-     * within a single call, and between calls there is some progress state to keep within this instance.
-     * Calling this method resets the state back to "no bytes read/written yet".
-     */
-    public void reset() {
-        headerComplete = false;
-        valueOffset = 0;
-    }
-
-    /**
-     * Writes the packet data to the supplied {@code ByteBuffer}, up to the buffer's limit. If it returns {@code false},
-     * it should be called again to write the remaining data.
-     *
-     * @param dst the destination byte buffer
-     * @return {@code true} if all the packet's data is now written out; {@code false} otherwise.
-     */
-    public boolean writeTo(ByteBuffer dst) {
-        if (!headerComplete) {
-            if (dst.remaining() < HEADER_SIZE) {
-                return false;
-            }
-
-            dst.put(VERSION);
-            dst.putChar(flags);
-            dst.putInt(partitionId);
-            size = totalSize();
-            dst.putInt(size);
-            headerComplete = true;
-        }
-
-        return writeValue(dst);
-    }
-
-    /**
-     * Reads the packet data from the supplied {@code ByteBuffer}. The buffer may not contain the complete packet.
-     * If this method returns {@code false}, it should be called again to read more packet data.
-     *
-     * @param src the source byte buffer
-     * @return {@code true} if all the packet's data is now read; {@code false} otherwise.
-     */
-    public boolean readFrom(ByteBuffer src) {
-        if (!headerComplete) {
-            if (src.remaining() < HEADER_SIZE) {
-                return false;
-            }
-
-            byte version = src.get();
-            if (VERSION != version) {
-                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
-                        + VERSION + ", Incoming -> " + version);
-            }
-
-            flags = src.getChar();
-            partitionId = src.getInt();
-            size = src.getInt();
-            headerComplete = true;
-        }
-
-        return readValue(src);
-    }
-
-    // ========================= value =================================================
-
-    private boolean readValue(ByteBuffer src) {
-        if (payload == null) {
-            payload = new byte[size];
-        }
-
-        if (size > 0) {
-            int bytesReadable = src.remaining();
-
-            int bytesNeeded = size - valueOffset;
-
-            boolean done;
-            int bytesRead;
-            if (bytesReadable >= bytesNeeded) {
-                bytesRead = bytesNeeded;
-                done = true;
-            } else {
-                bytesRead = bytesReadable;
-                done = false;
-            }
-
-            // read the data from the byte-buffer into the bytes-array.
-            src.get(payload, valueOffset, bytesRead);
-            valueOffset += bytesRead;
-
-            if (!done) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean writeValue(ByteBuffer dst) {
-        if (size > 0) {
-            // the number of bytes that can be written to the bb.
-            int bytesWritable = dst.remaining();
-
-            // the number of bytes that need to be written.
-            int bytesNeeded = size - valueOffset;
-
-            int bytesWrite;
-            boolean done;
-            if (bytesWritable >= bytesNeeded) {
-                // All bytes for the value are available.
-                bytesWrite = bytesNeeded;
-                done = true;
-            } else {
-                // Not all bytes for the value are available. So lets write as much as is available.
-                bytesWrite = bytesWritable;
-                done = false;
-            }
-
-            byte[] byteArray = toByteArray();
-            dst.put(byteArray, valueOffset, bytesWrite);
-            valueOffset += bytesWrite;
-
-            if (!done) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**

@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioChannelReader;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,7 +71,8 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
         ByteBuffer buffer = ByteBuffer.allocate(1000);
         Packet packet = new Packet(serializationService.toBytes("foobar"));
         packet.raiseFlags(Packet.FLAG_URGENT);
-        packet.writeTo(buffer);
+        new PacketIOHelper().writeTo(packet, buffer);
+
 
         buffer.flip();
         readHandler.onRead(buffer);
@@ -86,7 +88,7 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
     public void whenNormalPacket() throws Exception {
         ByteBuffer buffer = ByteBuffer.allocate(1000);
         Packet packet = new Packet(serializationService.toBytes("foobar"));
-        packet.writeTo(buffer);
+        new PacketIOHelper().writeTo(packet, buffer);
 
         buffer.flip();
         readHandler.onRead(buffer);
@@ -103,17 +105,17 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
         ByteBuffer buffer = ByteBuffer.allocate(1000);
 
         Packet packet1 = new Packet(serializationService.toBytes("packet1"));
-        packet1.writeTo(buffer);
+        new PacketIOHelper().writeTo(packet1, buffer);
 
         Packet packet2 = new Packet(serializationService.toBytes("packet2"));
-        packet2.writeTo(buffer);
+        new PacketIOHelper().writeTo(packet2, buffer);
 
         Packet packet3 = new Packet(serializationService.toBytes("packet3"));
-        packet3.writeTo(buffer);
+        new PacketIOHelper().writeTo(packet3, buffer);
 
         Packet packet4 = new Packet(serializationService.toBytes("packet4"));
         packet4.raiseFlags(Packet.FLAG_URGENT);
-        packet4.writeTo(buffer);
+        new PacketIOHelper().writeTo(packet4, buffer);
 
         buffer.flip();
         readHandler.onRead(buffer);

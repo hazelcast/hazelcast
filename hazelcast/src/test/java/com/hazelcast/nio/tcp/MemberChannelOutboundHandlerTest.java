@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -56,8 +57,7 @@ public class MemberChannelOutboundHandlerTest extends HazelcastTestSupport {
 
         // now we read out the bb and check if we can find the written packet.
         bb.flip();
-        Packet resultPacket = new Packet();
-        resultPacket.readFrom(bb);
+        Packet resultPacket = new PacketIOHelper().readFrom(bb);
         assertEquals(packet, resultPacket);
     }
 }

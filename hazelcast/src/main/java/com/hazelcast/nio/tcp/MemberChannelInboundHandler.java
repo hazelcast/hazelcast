@@ -19,9 +19,12 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.PacketHandler;
 
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
 
 /**
  * The {@link ChannelInboundHandler} for member to member communication.
@@ -34,9 +37,8 @@ import java.nio.ByteBuffer;
 public class MemberChannelInboundHandler extends ChannelInboundHandlerWithCounters {
 
     protected final TcpIpConnection connection;
-    protected Packet packet;
-
     private final PacketHandler handler;
+    private final PacketIOHelper packetReader = new PacketIOHelper();
 
     public MemberChannelInboundHandler(TcpIpConnection connection, PacketHandler handler) {
         this.connection = connection;
@@ -46,21 +48,16 @@ public class MemberChannelInboundHandler extends ChannelInboundHandlerWithCounte
     @Override
     public void onRead(ByteBuffer src) throws Exception {
         while (src.hasRemaining()) {
+            Packet packet = packetReader.readFrom(src);
             if (packet == null) {
-                packet = new Packet();
-            }
-            boolean complete = packet.readFrom(src);
-            if (complete) {
-                handlePacket(packet);
-                packet = null;
-            } else {
                 break;
             }
+            onPacketComplete(packet);
         }
     }
 
-    protected void handlePacket(Packet packet) throws Exception {
-        if (packet.isFlagRaised(Packet.FLAG_URGENT)) {
+    protected void onPacketComplete(Packet packet) throws Exception {
+        if (packet.isFlagRaised(FLAG_URGENT)) {
             priorityPacketsRead.inc();
         } else {
             normalPacketsRead.inc();

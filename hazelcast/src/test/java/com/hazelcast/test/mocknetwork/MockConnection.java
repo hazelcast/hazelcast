@@ -22,6 +22,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.net.InetAddress;
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.mocknetwork.MockConnectionManager.isTargetLeft;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static org.junit.Assert.assertNotNull;
 
 public class MockConnection implements Connection {
 
@@ -79,24 +81,22 @@ public class MockConnection implements Connection {
     }
 
     private Packet readFromPacket(Packet packet) {
-        Packet newPacket = new Packet();
+        Packet newPacket;
+        PacketIOHelper packetReader = new PacketIOHelper();
+        PacketIOHelper packetWriter = new PacketIOHelper();
         ByteBuffer buffer = ByteBuffer.allocate(4096);
         boolean writeDone;
-        boolean readDone;
         do {
-            writeDone = packet.writeTo(buffer);
+            writeDone = packetWriter.writeTo(packet, buffer);
             buffer.flip();
-            readDone = newPacket.readFrom(buffer);
+            newPacket = packetReader.readFrom(buffer);
             if (buffer.hasRemaining()) {
                 throw new IllegalStateException("Buffer should be empty! " + buffer);
             }
             buffer.clear();
         } while (!writeDone);
 
-        if (!readDone) {
-            throw new IllegalStateException("Read should be completed!");
-        }
-
+        assertNotNull(newPacket);
         newPacket.setConn(localConnection);
         return newPacket;
     }
