@@ -30,7 +30,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Triggers map store load of all given keys.
+ * Triggers loading values for the given keys from the defined
+ * {@link com.hazelcast.core.MapLoader}.
+ * The values are loaded asynchronously and the loaded key-value pairs are sent to
+ * the partition threads to update the record stores.
+ * <p>
+ * This operation is executed on the partition thread and loads values for keys
+ * provided by the {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER}.
  */
 public class LoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
@@ -61,6 +67,12 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
         invalidateNearCache(keys);
     }
 
+    /**
+     * Filters the {@link #keys} list for keys matching the partition on
+     * which this operation is executed.
+     *
+     * @return the filtered key list
+     */
     private List<Data> selectThisPartitionsKeys() {
         final IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         final int partitionId = getPartitionId();

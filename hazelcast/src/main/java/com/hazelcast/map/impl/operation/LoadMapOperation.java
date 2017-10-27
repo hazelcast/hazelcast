@@ -23,7 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * Triggers map loading from a map store
+ * Triggers map loading from a map store. This operation is invoked on the
+ * partition of the map key loader with the
+ * {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER} role.
  */
 public class LoadMapOperation extends MapOperation {
 

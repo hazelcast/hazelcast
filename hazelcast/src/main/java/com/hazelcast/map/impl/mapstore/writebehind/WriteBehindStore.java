@@ -208,6 +208,17 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return toObject(delayedEntry.getValue());
     }
 
+    /**
+     * {@inheritDoc}
+     * The method first checks if some of the keys to be loaded
+     * have entries that are staged to be persisted to the
+     * underlying store and returns those values instead of loading
+     * the values from the store.
+     * The keys which don't have staged entries to be persisted will
+     * be loaded from the underlying store.
+     *
+     * @see com.hazelcast.core.MapLoader#loadAll(Collection)
+     */
     @Override
     public Map loadAll(Collection keys) {
         if (keys == null || keys.isEmpty()) {
@@ -232,19 +243,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return map;
     }
 
-    /**
-     * * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
-     * If the write-behind map-store feature is enabled, some things may lead to possible data inconsistencies.
-     * These are:
-     * - calling evict/evictAll,
-     * - calling remove, and
-     * - not yet stored write-behind queue operations.
-     * <p/>
-     * With this method, we can be sure if a key can be loadable from map-store or not.
-     *
-     * @param key the key to query whether it is loadable or not.
-     * @return <code>true</code> if loadable, false otherwise.
-     */
     @Override
     public boolean loadable(Data key) {
         if (NATIVE == inMemoryFormat) {

@@ -45,6 +45,15 @@ public interface MapDataStore<K, V> {
 
     V load(K key);
 
+    /**
+     * Loads values for the provided keys if a {@link com.hazelcast.core.MapLoader} is
+     * configured for this map. This method never returns {@code null}.
+     * The returned map will contain deserialised keys and values.
+     *
+     * @param keys the keys for which values are loaded
+     * @return the map from deserialised key to deserialised value
+     * @see com.hazelcast.core.MapLoader#loadAll(Collection)
+     */
     Map loadAll(Collection keys);
 
     /**
@@ -55,6 +64,19 @@ public interface MapDataStore<K, V> {
      */
     void removeAll(Collection keys);
 
+    /**
+     * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
+     * If the write-behind map-store feature is enabled, some things may lead to possible data inconsistencies.
+     * These are:
+     * - calling evict/evictAll,
+     * - calling remove, and
+     * - not yet stored write-behind queue operations.
+     * <p/>
+     * With this method, we can be sure if a key can be loadable from map-store or not.
+     *
+     * @param key the key to query whether it is loadable or not
+     * @return {@code true} if the key is loadable
+     */
     boolean loadable(K key);
 
     int notFinishedOperationsCount();

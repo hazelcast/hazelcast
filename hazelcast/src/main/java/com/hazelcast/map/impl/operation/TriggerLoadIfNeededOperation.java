@@ -21,7 +21,11 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
 /**
- * Triggers key loading on member with SENDER or SENDER_BACKUP key loader role, if keys have not finished loading yet.
+ * Triggers key loading on member with {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER}
+ * or {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER_BACKUP} key
+ * loader role if keys have not yet been loaded.
+ * <p>
+ * Returns the previous state of the key loading and dispatching future.
  */
 public class TriggerLoadIfNeededOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 

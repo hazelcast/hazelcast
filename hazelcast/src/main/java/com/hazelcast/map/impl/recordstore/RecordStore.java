@@ -279,6 +279,10 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     long getOwnedEntryCost();
 
+    /**
+     * Returns {@code true} if all key and value loading tasks have completed
+     * on this record store.
+     */
     boolean isLoaded();
 
     void checkIfLoaded() throws RetryableHazelcastException;
@@ -320,12 +324,28 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     void doPostEvictionOperations(Record record, boolean backup);
 
     /**
-     * Loads all given keys from defined map store.
+     * Triggers loading values for the given {@code keys} from the
+     * defined {@link com.hazelcast.core.MapLoader}.
+     * The values will be loaded asynchronously and this method will
+     * return as soon as the value loading task has been offloaded
+     * to a different thread.
      *
-     * @param keys keys to be loaded.
+     * @param keys                  the keys for which values will be loaded
+     * @param replaceExistingValues if the existing entries for the keys should
+     *                              be replaced with the loaded values
      */
     void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
 
+    /**
+     * Advances the state of the map key loader for this partition and sets the key
+     * loading future result if the {@code lastBatch} is {@code true}.
+     * <p>
+     * If there was an exception during key loading, you may pass it as the
+     * {@code exception} paramter and it will be set as the result of the future.
+     *
+     * @param lastBatch if the last key batch was sent
+     * @param exception an exception that occurred during key loading
+     */
     void updateLoadStatus(boolean lastBatch, Throwable exception);
 
     MapDataStore<Data, Object> getMapDataStore();
@@ -356,15 +376,18 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     boolean shouldEvict();
 
     /**
-     * Loads all keys and values
+     * Triggers key and value loading if there is no ongoing or completed
+     * key loading task, otherwise does nothing.
+     * The actual loading is done on a separate thread.
      *
-     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
-     **/
+     * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
+     */
     void loadAll(boolean replaceExistingValues);
 
     /**
-     * Performs initial loading from a MapLoader if it has not been done before
-     **/
+     * Resets the map loader state if necessary and triggers initial key and
+     * value loading if it has not been done before.
+     */
     void maybeDoInitialLoad();
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
@@ -383,18 +406,26 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     Storage getStorage();
 
     /**
-     * Starts mapLoader
+     * Starts the map loader if there is a configured and enabled
+     * {@link com.hazelcast.core.MapLoader} and the key loading has not already
+     * been started.
+     * The loading may start again if there was a migration and the record store
+     * on the migration source has started but not completed the loading.
      */
     void startLoading();
 
     /**
-     * Informs this recordStore about the loading status of the recordStore that this store is migrated from.
-     * If the 'predecessor' has been loaded this record store should trigger the load again.
-     * Will be taken into account only if invoked before the startLoading method. Otherwise has no effect.
+     * Informs this recordStore about the loading status of the recordStore
+     * that this store is migrated from.
+     * If the record store on the migration source has been loaded then this
+     * record store should NOT trigger the load again.
+     * Will be taken into account only if invoked before {@link #startLoading()},
+     * otherwise has no effect.
      * <p>
-     * This method should be deleted when the map's lifecycle has been cleaned-up. Currently it's impossible to
-     * pass additional state when the record store is created, thus this this state has to be passed in post-creation
-     * setters which is cumbersome and error-prone.
+     * This method should be deleted when the map's lifecycle has been
+     * cleaned-up. Currently it's impossible to pass additional state when
+     * the record store is created, thus this state has to be passed in
+     * post-creation setters which is cumbersome and error-prone.
      */
     void setPreMigrationLoadedStatus(boolean loaded);
 
@@ -404,8 +435,9 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     void init();
 
     /**
-     * @return Returns true if key load has finished, false otherwise.
-     **/
+     * @return {@code true} if the key loading and dispatching has finished on
+     * this record store
+     */
     boolean isKeyLoadFinished();
 
     InvalidationQueue<ExpiredKey> getExpiredKeys();

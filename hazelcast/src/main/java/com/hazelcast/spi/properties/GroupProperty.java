@@ -217,6 +217,10 @@ public final class GroupProperty {
     public static final HazelcastProperty HTTP_HEALTHCHECK_ENABLED
             = new HazelcastProperty("hazelcast.http.healthcheck.enabled", false);
 
+    /**
+     * The maximum size of the key batch sent to the partition owners for value loading
+     * and the maximum size of a key batch for which values are loaded in a single partition.
+     */
     public static final HazelcastProperty MAP_LOAD_CHUNK_SIZE
             = new HazelcastProperty("hazelcast.map.load.chunk.size", 1000);
 

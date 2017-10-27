@@ -37,6 +37,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.StateMachine;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
@@ -83,31 +84,67 @@ public class MapKeyLoader {
     private ExecutionService execService;
     private CoalescingDelayedTrigger delayedTrigger;
 
+    /**
+     * The configured maximum entry count per node or {@code -1} if the
+     * default is used or the max size policy is not
+     * {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE}
+     */
     private int maxSizePerNode;
+    /**
+     * The maximum size of a batch of loaded keys sent to a
+     * single partition for value loading
+     *
+     * @see GroupProperty#MAP_LOAD_CHUNK_SIZE
+     */
     private int maxBatch;
     private int mapNamePartition;
     private int partitionId;
     private boolean hasBackup;
 
+    /**
+     * The future representing pending completion of the key loading task
+     * on the {@link Role#SENDER} partition. The result of this future
+     * represents the result of process of key loading and dispatching to
+     * the partition owners for value loading but not the result of
+     * the value loading itself or the overall result of populating the
+     * record stores with map loader data.
+     * This future may also denote that this is the map key loader with
+     * the {@link Role#RECEIVER} role and that it has triggered key
+     * loading on the {@link Role#SENDER} partition.
+     *
+     * @see #sendKeys(MapStoreContext, boolean)
+     * @see #triggerLoading()
+     * @see #trackLoading(boolean, Throwable)
+     * @see MapLoader#loadAllKeys()
+     */
     private LoadFinishedFuture keyLoadFinished = new LoadFinishedFuture(true);
     private MapOperationProvider operationProvider;
 
     /**
-     * Role of this MapKeyLoader
-     **/
+     * Role of this {@link MapKeyLoader}
+     */
     enum Role {
         NONE,
         /**
-         * Sends out keys to all other partitions
-         **/
+         * Loads keys from the map loader and dispatches them to the partition owners.
+         * The sender map key loader is equal to the partition owner for the
+         * partition containing the map name.
+         *
+         * @see MapLoader#loadAllKeys()
+         * @see com.hazelcast.map.impl.operation.LoadMapOperation
+         */
         SENDER,
         /**
-         * Receives keys from sender
-         **/
+         * Receives keys from sender.
+         * The receiver map key loader is the partition owner for keys received
+         * by the sender.
+         */
         RECEIVER,
         /**
-         * Restarts sending if SENDER fails
-         **/
+         * Restarts sending if SENDER fails.
+         * The sender backup map key loader is equal to the first replica of the
+         * partition containing the map name.
+         */
         SENDER_BACKUP
     }
 
@@ -137,8 +174,15 @@ public class MapKeyLoader {
         this.logger = getLogger(MapKeyLoader.class);
     }
 
+    /**
+     * Triggers key loading on the map key loader with the {@link Role#SENDER}
+     * role.
+     *
+     * @param mapStoreContext the map store context for this map
+     * @param partitionId     the partition ID of this map key loader
+     * @return a future representing pending completion of the key loading task
+     */
     public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
-
         this.partitionId = partitionId;
         this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
         Role newRole = calculateRole();
@@ -161,6 +205,9 @@ public class MapKeyLoader {
         }
     }
 
+    /**
+     * Calculates and returns the role for the map key loader on this partition
+     */
     private Role calculateRole() {
         boolean isPartitionOwner = partitionService.isPartitionOwner(partitionId);
         boolean isMapNamePartition = partitionId == mapNamePartition;
@@ -177,12 +224,19 @@ public class MapKeyLoader {
     }
 
     /**
-     * Sends keys to all partitions in batches.
+     * Triggers key loading if there is no ongoing key loading task, otherwise
+     * does nothing. The actual loading is done on the
+     * {@link ExecutionService#MAP_LOAD_ALL_KEYS_EXECUTOR} executor.
+     * The loaded keys will be dispatched to partition owners for value loading.
+     *
+     * @param mapStoreContext       the map store context for this map
+     * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
+     * @return a future representing pending completion of the key loading task
+     * @see MapLoader#loadAllKeys()
+     * @see #sendKeysInBatches(MapStoreContext, boolean)
      */
-    public Future<?> sendKeys(final MapStoreContext mapStoreContext, final boolean replaceExistingValues) {
-
+    private Future<?> sendKeys(final MapStoreContext mapStoreContext, final boolean replaceExistingValues) {
         if (keyLoadFinished.isDone()) {
-
             keyLoadFinished = new LoadFinishedFuture();
 
             Future<Boolean> sent = execService.submit(MAP_LOAD_ALL_KEYS_EXECUTOR, new Callable<Boolean>() {
@@ -200,12 +254,14 @@ public class MapKeyLoader {
     }
 
     /**
-     * Check if loaded on SENDER partition. Triggers key loading if it hadn't started
+     * Triggers key loading if needed on the map key loader with the
+     * {@link Role#SENDER} or {@link Role#SENDER_BACKUP} role if this
+     * partition does not have any ongoing key loading task.
+     *
+     * @return a future representing pending completion of the key loading task
      */
-    public Future triggerLoading() {
-
+    private Future triggerLoading() {
         if (keyLoadFinished.isDone()) {
-
             keyLoadFinished = new LoadFinishedFuture();
 
             // side effect -> just trigger load on SENDER_BACKUP ID SENDER died
@@ -221,10 +277,14 @@ public class MapKeyLoader {
                 }
             });
         }
-
         return keyLoadFinished;
     }
 
+
+    /**
+     * Returns an execution callback to notify the record store for this map
+     * key loader that the key loading has finished.
+     */
     private ExecutionCallback<Boolean> loadingFinishedCallback() {
         return new ExecutionCallback<Boolean>() {
             @Override
@@ -241,6 +301,13 @@ public class MapKeyLoader {
         };
     }
 
+    /**
+     * Notifies the record store of this map key loader that key loading has
+     * completed.
+     *
+     * @param t an exception that occurred during key loading or {@code null}
+     *          if there was no exception
+     */
     private void updateLocalKeyLoadStatus(Throwable t) {
         Operation op = new KeyLoadStatusOperation(mapName, t);
         // This updates the local record store on the partition thread.
@@ -253,8 +320,16 @@ public class MapKeyLoader {
         }
     }
 
+    /**
+     * Triggers key and value loading if there is no ongoing or completed
+     * key loading task, otherwise does nothing.
+     * The actual loading is done on a separate thread.
+     *
+     * @param mapStoreContext       the map store context for this map
+     * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
+     * @return a future representing pending completion of the key loading task
+     */
     public Future<?> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
-
         role.nextOrStay(Role.SENDER);
 
         if (state.is(State.LOADING)) {
@@ -265,6 +340,16 @@ public class MapKeyLoader {
         return sendKeys(mapStoreContext, replaceExistingValues);
     }
 
+    /**
+     * Advances the state of this map key loader and sets the {@link #keyLoadFinished}
+     * result if the {@code lastBatch} is {@code true}.
+     * <p>
+     * If there was an exception during key loading, you may pass it as the
+     * {@code exception} paramter and it will be set as the result of the future.
+     *
+     * @param lastBatch if the last key batch was sent
+     * @param exception an exception that occurred during key loading
+     */
     public void trackLoading(boolean lastBatch, Throwable exception) {
         if (lastBatch) {
             state.nextOrStay(State.LOADED);
@@ -280,7 +365,7 @@ public class MapKeyLoader {
 
     /**
      * Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times.
-     **/
+     */
     public void triggerLoadingWithDelay() {
         if (delayedTrigger == null) {
             Runnable runnable = new Runnable() {
@@ -296,9 +381,13 @@ public class MapKeyLoader {
         delayedTrigger.executeWithDelay();
     }
 
-    // If this gets invoked on SENDER BACKUP it means the SENDER died and SENDER BACKUP takes over.
+    /**
+     * Returns {@code true} if the keys are not loaded yet, promoting this key
+     * loader and resetting the loading state if necessary in the process.
+     * If this gets invoked on SENDER BACKUP it means the SENDER died and
+     * SENDER BACKUP takes over.
+     */
     public boolean shouldDoInitialLoad() {
-
         if (role.is(Role.SENDER_BACKUP)) {
             // was backup. become primary sender
             role.next(Role.SENDER);
@@ -313,8 +402,25 @@ public class MapKeyLoader {
         return state.is(State.NOT_LOADED);
     }
 
+    /**
+     * Loads keys from the map loader and sends them to the partition owners in batches
+     * for value loading. This method will return after all keys have been dispatched
+     * to the partition owners for value loading and all partitions have been notified
+     * that the key loading has completed.
+     * The values will still be loaded asynchronously and can be put into the record
+     * stores after this method has returned.
+     * If there is a configured max size policy per node, the keys will be loaded until this
+     * many keys have been loaded from the map loader. If the keys returned from the
+     * map loader are not equally distributed over all partitions, this may cause some nodes
+     * to load more entries than others and exceed the configured policy.
+     *
+     * @param mapStoreContext       the map store context for this map
+     * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
+     * @throws Exception if there was an exception when notifying the record stores that the key
+     *                   loading has finished
+     * @see MapLoader#loadAllKeys()
+     */
     private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) throws Exception {
-
         if (logger.isFinestEnabled()) {
             logger.finest("sendKeysInBatches invoked " + getStateMessage());
         }
@@ -360,6 +466,18 @@ public class MapKeyLoader {
         }
     }
 
+    /**
+     * Sends the key batches to the partition owners for value loading.
+     * The returned futures represent pending offloading of the value loading on the
+     * partition owner. This means that once the partition owner receives the keys,
+     * it will offload the value loading task and return immediately, thus completing
+     * the future. The future does not mean the value loading tasks have been completed
+     * or that the entries have been loaded and put into the record store.
+     *
+     * @param batch                 a map from partition ID to a batch of keys for that partition
+     * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
+     * @return a list of futures representing pending completion of the value offloading task
+     */
     private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues) {
         Set<Entry<Integer, List<Data>>> entries = batch.entrySet();
         List<Future> futures = new ArrayList<Future>(entries.size());
@@ -375,6 +493,19 @@ public class MapKeyLoader {
         return futures;
     }
 
+    /**
+     * Notifies the record stores of the {@link MapKeyLoader.Role#SENDER},
+     * {@link MapKeyLoader.Role#SENDER_BACKUP} and all other partition record
+     * stores that the key loading has finished and the keys have been dispatched
+     * to the partition owners for value loading.
+     *
+     * @param clusterSize the size of the cluster
+     * @param exception   the exception that occurred during key loading or
+     *                    {@code null} if there was no exception
+     * @throws Exception if there was an exception when notifying the record stores that the key
+     *                   loading has finished
+     * @see com.hazelcast.map.impl.recordstore.RecordStore#updateLoadStatus(boolean, Throwable)
+     */
     private void sendKeyLoadCompleted(int clusterSize, Throwable exception) throws Exception {
         // Notify SENDER first - reason why this is so important:
         // Someone may do map.get(other_nodes_key) and when it finishes do map.loadAll
@@ -408,14 +539,31 @@ public class MapKeyLoader {
         opService.invokeOnAllPartitions(SERVICE_NAME, new KeyLoadStatusOperationFactory(mapName, exception));
     }
 
+    /**
+     * Sets the maximum size of a batch of loaded keys sent
+     * to the partition owner for value loading.
+     *
+     * @param maxBatch the maximum size for a key batch
+     */
     public void setMaxBatch(int maxBatch) {
         this.maxBatch = maxBatch;
     }
 
+    /**
+     * Sets the configured maximum entry count per node.
+     *
+     * @param maxSize the maximum entry count per node
+     * @see com.hazelcast.config.MaxSizeConfig
+     */
     public void setMaxSize(int maxSize) {
         this.maxSizePerNode = maxSize;
     }
 
+    /**
+     * Sets if this map is configured with at least one backup.
+     *
+     * @param hasBackup if this map is configured with at least one backup
+     */
     public void setHasBackup(boolean hasBackup) {
         this.hasBackup = hasBackup;
     }
@@ -424,10 +572,17 @@ public class MapKeyLoader {
         this.operationProvider = operationProvider;
     }
 
+    /**
+     * Returns {@code true} if there is no ongoing key loading and dispatching
+     * task on this map key loader.
+     */
     public boolean isKeyLoadFinished() {
         return keyLoadFinished.isDone();
     }
 
+    /**
+     * Advances the state of the map key loader to {@link State#LOADED}
+     */
     public void promoteToLoadedOnMigration() {
         // The state machine cannot skip states so we need to promote to loaded step by step
         state.next(State.LOADING);
@@ -439,6 +594,13 @@ public class MapKeyLoader {
                 + " state=" + state;
     }
 
+    /**
+     * A future that can be used as a callback for a pending task.
+     *
+     * @see #sendKeys(MapStoreContext, boolean)
+     * @see #triggerLoading()
+     * @see MapLoader#loadAllKeys()
+     */
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
             implements ExecutionCallback<Boolean> {
 

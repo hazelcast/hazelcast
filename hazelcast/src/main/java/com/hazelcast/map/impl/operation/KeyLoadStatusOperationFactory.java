@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /**
  * Factory for {@link KeyLoadStatusOperation}
- **/
+ */
 public class KeyLoadStatusOperationFactory extends AbstractMapOperationFactory {
 
     private Throwable exception;

@@ -25,7 +25,11 @@ import java.util.concurrent.Future;
  * Loader contract for a {@link RecordStore}.
  */
 interface RecordStoreLoader {
-
+    /**
+     * Implementation of the {@link RecordStoreLoader} used
+     * when the map store is not configured for a map or the
+     * map store is disabled.
+     */
     RecordStoreLoader EMPTY_LOADER = new RecordStoreLoader() {
         @Override
         public Future loadValues(List<Data> keys, boolean replaceExistingValues) {
@@ -34,11 +38,16 @@ interface RecordStoreLoader {
     };
 
     /**
-     * Loads all keys from defined map store.
+     * Triggers loading values for the given {@code keys} from the
+     * defined {@link com.hazelcast.core.MapLoader}.
+     * The values will be loaded asynchronously and this method will
+     * return as soon as the value loading task has been offloaded
+     * to a different thread.
      *
-     * @param keys                  keys to be loaded.
-     * @param replaceExistingValues replace existing values
-     * @return future for checking when loading is complete
+     * @param keys                  the keys for which values will be loaded
+     * @param replaceExistingValues if the existing entries for the keys should
+     *                              be replaced with the loaded values
+     * @return future representing the pending completion for the value loading task
      */
     Future<?> loadValues(List<Data> keys, boolean replaceExistingValues);
 }
