@@ -33,11 +33,11 @@ public class ClientMessageChannelInboundHandler extends ChannelInboundHandlerWit
 
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
-    private final MessageHandler delegate;
+    private final ClientMessageHandler messageHandler;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageChannelInboundHandler(MessageHandler messageHandler) {
-        this.delegate = messageHandler;
+    public ClientMessageChannelInboundHandler(ClientMessageHandler messageHandler) {
+        this.messageHandler = messageHandler;
     }
 
     @Override
@@ -90,19 +90,19 @@ public class ClientMessageChannelInboundHandler extends ChannelInboundHandlerWit
 
     private void handleMessage(ClientMessage message) {
         message.index(message.getDataOffset());
-        delegate.handleMessage(message);
+        messageHandler.handle(message);
     }
 
     /**
-     * Implementers will be responsible to delegate the constructed message
+     * Implementers will be responsible to messageHandler the constructed message
      */
-    public interface MessageHandler {
+    public interface ClientMessageHandler {
 
         /**
          * Received message to be processed
          *
          * @param message the ClientMessage
          */
-        void handleMessage(ClientMessage message);
+        void handle(ClientMessage message);
     }
 }
