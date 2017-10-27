@@ -26,8 +26,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
@@ -62,7 +62,7 @@ public class SnapshotRepository {
     /**
      * Registers a new snapshot. Returns the ID for the registered snapshot
      */
-    long registerSnapshot(long jobId, Set<String> vertexNames) {
+    long registerSnapshot(long jobId, Collection<String> vertexNames) {
         IStreamMap<Long, Object> snapshots = getSnapshotMap(jobId);
 
         SnapshotRecord record;

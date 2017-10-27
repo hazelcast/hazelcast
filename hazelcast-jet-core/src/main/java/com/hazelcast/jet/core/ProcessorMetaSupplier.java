@@ -87,6 +87,25 @@ public interface ProcessorMetaSupplier extends Serializable {
     Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**
+     * Called on coordinator member after execution is finished on all the
+     * nodes whether successfully or not. This method will be called after
+     * {@link ProcessorSupplier#complete(Throwable)} has been called on all
+     * the members.
+     * <p>
+     * If there is an exception during creation of the execution plan this method
+     * will be called regardless if the {@link #init(Context)} method has
+     * been called or not.
+     * <p>
+     * If coordinator member fails during execution, this method will
+     * not be called.
+     *
+     * @param error the exception (if any) that caused the job to fail;
+     *              {@code null} in the case of successful job completion
+     */
+    default void complete(Throwable error) {
+    }
+
+    /**
      * Factory method that wraps the given {@code ProcessorSupplier} and
      * returns the same instance for each given {@code Address}.
      *

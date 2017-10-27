@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.Collection;
 
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.FAILED;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.ONGOING;
@@ -47,12 +47,12 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
     private long snapshotId;
     private long startTime = System.currentTimeMillis();
     private SnapshotStatus status = ONGOING;
-    private Set<String> vertices;
+    private Collection<String> vertices;
 
     public SnapshotRecord() {
     }
 
-    public SnapshotRecord(long jobId, long snapshotId, Set<String> vertices) {
+    public SnapshotRecord(long jobId, long snapshotId, Collection<String> vertices) {
         this.jobId = jobId;
         this.snapshotId = snapshotId;
         this.vertices = vertices;
@@ -66,7 +66,7 @@ public class SnapshotRecord implements IdentifiedDataSerializable {
         return jobId;
     }
 
-    public Set<String> vertices() {
+    public Collection<String> vertices() {
         return vertices;
     }
 

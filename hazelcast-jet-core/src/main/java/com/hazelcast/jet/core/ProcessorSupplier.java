@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
 
@@ -51,13 +52,13 @@ public interface ProcessorSupplier extends Serializable {
     Collection<? extends Processor> get(int count);
 
     /**
-     * Called after execution is finished on all the nodes, whether successfully
+     * Called after execution is finished on all the members, whether successfully
      * or not. Execution can also be <em>aborted</em>, for example if a topology
      * change is detected in the cluster. In such a case this method will be
      * called immediately, without waiting for completion on other members.
      * <p>
-     * Note: this method can be called before {@link ProcessorSupplier#get(int)}
-     * is called in case the job fails before we manage to call it
+     * Note: this method can be called even if {@link ProcessorSupplier#init(Context)}
+     * is not called yet in case the job fails during init phase.
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion

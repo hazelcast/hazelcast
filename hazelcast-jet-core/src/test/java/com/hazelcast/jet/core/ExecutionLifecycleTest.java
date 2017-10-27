@@ -55,8 +55,10 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
@@ -90,9 +92,13 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        MockSupplier.completeCount.set(0);
-        MockSupplier.initCount.set(0);
-        MockSupplier.completeErrors.clear();
+        MockPMS.initCalled.set(false);
+        MockPMS.completeCalled.set(false);
+        MockPMS.completeError.set(null);
+
+        MockPS.completeCount.set(0);
+        MockPS.initCount.set(0);
+        MockPS.completeErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
@@ -113,36 +119,27 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     }
 
     @Test
-    public void when_procSupplierInit_then_completeCalled() throws Throwable {
+    public void when_jobCompleted_then_completeCalled() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(Identity::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(() -> new MockPS(Identity::new))));
 
         // When
         Job job = instance.newJob(dag);
         job.join();
 
         // Then
-        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
-        assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
-        assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
-
-        for (int i = 0; i < NODE_COUNT; i++) {
-            assertNull(MockSupplier.completeErrors.get(i));
-        }
-
-        JetService jetService = getJetService(instance);
-        assertNull(jetService.getJobRepository().getJob(job.getJobId()));
-        JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
-        assertNotNull(jobResult);
-        assertTrue(jobResult.isSuccessful());
-        assertNull(jobResult.getFailure());
+        assertPsCompleted();
+        assertPmsCompleted();
+        assertJobSucceeded(job);
     }
 
     @Test
-    public void when_procSupplierFailsOnInit_then_completeCalledWithError() throws Throwable {
+    public void when_pmsInitThrows_then_jobCompletedWithError() throws Throwable {
         // Given
         RuntimeException e = new RuntimeException("mock error");
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(e, Identity::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(
+                e, () -> new MockPS(Identity::new)))
+        );
 
         // When
         Job job = null;
@@ -156,31 +153,45 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         }
 
         // Then
-        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
-
-        assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
-        assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
-
-        for (int i = 0; i < NODE_COUNT; i++) {
-            assertEquals(e.getMessage(), MockSupplier.completeErrors.get(i).getMessage());
-        }
-
-        assertNotNull(job);
-        JetService jetService = getJetService(instance);
-        assertNull(jetService.getJobRepository().getJob(job.getJobId()));
-        JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
-        assertNotNull(jobResult);
-        assertFalse(jobResult.isSuccessful());
-        assertTrue(jobResult.getFailure() instanceof RuntimeException);
+        assertPmsCompletedWithError(e);
+        assertJobFailed(job, e);
     }
 
     @Test
-    public void when_executionFails_then_completeCalledWithError() throws Throwable {
+    public void when_psInitThrows_then_jobCompletedWithError() throws Throwable {
+        // Given
+        RuntimeException e = new RuntimeException("mock error");
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(
+                () -> new MockPS(e, Identity::new))
+        ));
+
+        // When
+        Job job = null;
+        try {
+            job = instance.newJob(dag);
+            job.join();
+            fail("Job execution should fail");
+        } catch (Exception expected) {
+            Throwable cause = peel(expected);
+            assertEquals(e.getMessage(), cause.getMessage());
+        }
+
+        // Then
+        assertPsCompletedWithError(e);
+        assertPmsCompletedWithError(e);
+        assertJobFailed(job, e);
+    }
+
+    @Test
+    public void when_executionFails_then_jobCompletedWithError() throws Throwable {
         // Given
         RuntimeException e = new RuntimeException("mock error");
         String vertexName = "test";
-        DAG dag = new DAG().vertex(new Vertex(vertexName, new MockSupplier(() -> new ProcessorThatFailsInComplete(e))));
-
+        DAG dag = new DAG().vertex(new Vertex(vertexName, new MockPMS(
+                () -> new MockPS(
+                        () -> new ProcessorThatFailsInComplete(e)
+                )
+        )));
         // When
         Job job = null;
         try {
@@ -196,32 +207,19 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         }
 
         // Then
-        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
-        assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
-        assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
-
-        for (Throwable caught : MockSupplier.completeErrors) {
-            assertExceptionInCauses(e, caught);
-        }
-
-        assertNotNull(job);
-        JetService jetService = getJetService(instance);
-        assertNull(jetService.getJobRepository().getJob(job.getJobId()));
-        JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
-        assertNotNull(jobResult);
-        assertFalse(jobResult.isSuccessful());
-        assertTrue(jobResult.getFailure() instanceof RuntimeException);
-        assertEquals(JobStatus.FAILED, job.getJobStatus());
+        assertPsCompletedWithError(e);
+        assertPmsCompletedWithError(e);
+        assertJobFailed(job, e);
     }
 
     @Test
-    public void when_executionCancelled_then_completeCalledAfterExecutionDone() throws Throwable {
+    public void when_executionCancelled_then_jobCompletedWithCancellationException() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(() -> new MockPS(StuckProcessor::new))));
 
         // When
+        Job job = instance.newJob(dag);
         try {
-            Job job = instance.newJob(dag);
             StuckProcessor.executionStarted.await();
             job.cancel();
             job.join();
@@ -230,29 +228,27 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         }
 
         // Then
-        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
+        assertEquals(NODE_COUNT, MockPS.initCount.get());
         assertTrueFiveSeconds(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(0, MockSupplier.completeCount.get());
+                assertEquals(0, MockPS.completeCount.get());
             }
         });
 
         StuckProcessor.proceedLatch.countDown();
 
         assertTrueEventually(() -> {
-            assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
-            assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
-            for (int i = 0; i < NODE_COUNT; i++) {
-                assertInstanceOf(CancellationException.class, MockSupplier.completeErrors.get(i));
-            }
+            assertJobFailed(job, new CancellationException());
+            assertPsCompletedWithError(new CancellationException());
+            assertPmsCompletedWithError(new CancellationException());
         });
     }
 
     @Test
     public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new)));
 
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance.getHazelcastInstance());
         Address localAddress = nodeEngineImpl.getThisAddress();
@@ -285,24 +281,143 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     }
 
     @Test
-    public void when_completeStepThrowsException_then_jobStillSucceeds() throws Throwable {
+    public void when_pmsCompleteStepThrowsException_then_jobStillSucceeds() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new FailingOnCompleteSupplier(Identity::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new FailingOnCompletePMS(
+                () -> new MockPS(Identity::new)
+        )));
 
         // When
         Job job = instance.newJob(dag);
 
         // Then
         job.join();
-        assertEquals(JobStatus.COMPLETED, job.getJobStatus());
+
+        assertJobSucceeded(job);
     }
 
-    private static class FailingOnCompleteSupplier implements ProcessorSupplier {
+    @Test
+    public void when_psCompleteStepThrowsException_then_jobStillSucceeds() throws Throwable {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new FailingOnCompletePS(Identity::new)));
 
-        private final DistributedSupplier<Processor> supplier;
+        // When
+        Job job = instance.newJob(dag);
 
-        FailingOnCompleteSupplier(DistributedSupplier<Processor> supplier) {
-            this.supplier = supplier;
+        // Then
+        job.join();
+
+        assertJobSucceeded(job);
+    }
+
+
+    private void assertPmsCompleted() {
+        assertTrue("initCalled", MockPMS.initCalled.get());
+        assertTrue("completeCalled", MockPMS.completeCalled.get());
+        assertNull("completeError", MockPMS.completeError.get());
+    }
+
+    private void assertPmsCompletedWithError(RuntimeException e) {
+        assertTrue("initCalled", MockPMS.initCalled.get());
+        assertTrue("completeCalled", MockPMS.completeCalled.get());
+        assertExceptionInCauses(e, MockPMS.completeError.get());
+    }
+
+    private void assertPsCompleted() {
+        assertEquals(NODE_COUNT, MockPS.initCount.get());
+        assertEquals(NODE_COUNT, MockPS.completeCount.get());
+        assertEquals(NODE_COUNT, MockPS.completeErrors.size());
+
+        for (int i = 0; i < NODE_COUNT; i++) {
+            assertNull(MockPS.completeErrors.get(i));
+        }
+    }
+
+    private void assertPsCompletedWithError(Throwable e) {
+        assertEquals(NODE_COUNT, MockPS.initCount.get());
+        assertEquals(NODE_COUNT, MockPS.completeCount.get());
+        assertEquals(NODE_COUNT, MockPS.completeErrors.size());
+
+        for (int i = 0; i < NODE_COUNT; i++) {
+            assertExceptionInCauses(e, MockPS.completeErrors.get(i));
+        }
+    }
+
+    private void assertJobSucceeded(Job job) {
+        JobResult jobResult = getJobResult(job);
+        assertTrue(jobResult.isSuccessful());
+        assertNull(jobResult.getFailure());
+    }
+
+    private void assertJobFailed(Job job, Throwable e) {
+        JobResult jobResult = getJobResult(job);
+        assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
+        assertExceptionInCauses(e, jobResult.getFailure());
+        JobStatus expectedStatus = e instanceof CancellationException ? JobStatus.COMPLETED : JobStatus.FAILED;
+        assertEquals("jobStatus", expectedStatus, job.getJobStatus());
+    }
+
+    private JobResult getJobResult(Job job) {
+        JetService jetService = getJetService(instance);
+        assertNull(jetService.getJobRepository().getJob(job.getJobId()));
+        JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
+        assertNotNull(jobResult);
+        return jobResult;
+    }
+
+    private static class MockPMS implements ProcessorMetaSupplier {
+
+        static AtomicBoolean initCalled = new AtomicBoolean();
+        static AtomicBoolean completeCalled = new AtomicBoolean();
+        static AtomicReference<Throwable> completeError = new AtomicReference<>();
+
+        private final RuntimeException initError;
+        private final DistributedSupplier<MockPS> supplierFn;
+
+        MockPMS(DistributedSupplier<MockPS> supplierFn) {
+            this(null, supplierFn);
+        }
+
+        MockPMS(RuntimeException initError, DistributedSupplier<MockPS> supplierFn) {
+            this.initError = initError;
+            this.supplierFn = supplierFn;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            assertTrue("PMS.init() already called once",
+                    initCalled.compareAndSet(false, true)
+            );
+            if (initError != null) {
+                throw initError;
+            }
+        }
+
+        @Nonnull @Override
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return a -> supplierFn.get();
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            assertEquals("all PS that have been init should have been completed at this point",
+                    MockPS.initCount.get(), MockPS.completeCount.get());
+            assertTrue("Complete called without calling init()", initCalled.get());
+            assertTrue("PMS.complete() already called once",
+                    completeCalled.compareAndSet(false, true)
+            );
+            assertTrue("PMS.complete() already called once",
+                    completeError.compareAndSet(null, error)
+            );
+        }
+    }
+
+    private static class FailingOnCompletePMS implements ProcessorMetaSupplier {
+
+        private final DistributedSupplier<ProcessorSupplier> supplierFn;
+
+        FailingOnCompletePMS(DistributedSupplier<ProcessorSupplier> supplierFn) {
+            this.supplierFn = supplierFn;
         }
 
         @Override
@@ -310,10 +425,9 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         }
 
-        @Nonnull
-        @Override
-        public Collection<? extends Processor> get(int count) {
-            return Stream.generate(supplier).limit(count).collect(toList());
+        @Nonnull @Override
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return a -> supplierFn.get();
         }
 
         @Override
@@ -322,7 +436,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         }
     }
 
-    private static class MockSupplier implements ProcessorSupplier {
+    private static class MockPS implements ProcessorSupplier {
 
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger completeCount = new AtomicInteger();
@@ -333,11 +447,11 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         private boolean initCalled;
 
-        MockSupplier(DistributedSupplier<Processor> supplier) {
+        MockPS(DistributedSupplier<Processor> supplier) {
             this(null, supplier);
         }
 
-        MockSupplier(RuntimeException initError, DistributedSupplier<Processor> supplier) {
+        MockPS(RuntimeException initError, DistributedSupplier<Processor> supplier) {
             this.initError = initError;
             this.supplier = supplier;
         }
@@ -352,7 +466,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
             }
         }
 
-        @Override @Nonnull
+        @Nonnull @Override
         public List<Processor> get(int count) {
             return Stream.generate(supplier).limit(count).collect(toList());
         }
@@ -367,6 +481,30 @@ public class ExecutionLifecycleTest extends JetTestSupport {
             if (initCount.get() != NODE_COUNT) {
                 throw new IllegalStateException("Complete called without init being called on all the nodes");
             }
+        }
+    }
+
+    private static class FailingOnCompletePS implements ProcessorSupplier {
+
+        private final DistributedSupplier<Processor> supplierFn;
+
+        FailingOnCompletePS(DistributedSupplier<Processor> supplierFn) {
+            this.supplierFn = supplierFn;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+
+        }
+
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            return Stream.generate(supplierFn).limit(count).collect(toList());
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            throw new ExpectedRuntimeException();
         }
     }
 
