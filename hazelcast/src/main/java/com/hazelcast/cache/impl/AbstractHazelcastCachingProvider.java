@@ -36,6 +36,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.System.getProperty;
+
 /**
  * Abstract {@link CachingProvider} implementation providing shared functionality to server and client caching
  * providers.
@@ -52,6 +55,20 @@ import java.util.WeakHashMap;
  */
 public abstract class AbstractHazelcastCachingProvider
         implements CachingProvider {
+
+    /**
+     * Name of default {@link HazelcastInstance} which may be started when obtaining the default {@link CachingProvider}.
+     */
+    public static final String SHARED_JCACHE_INSTANCE_NAME = "_hzinstance_jcache_shared";
+
+    /**
+     * System property to control whether the default Hazelcast instance, which may be started when obtaining the default
+     * {@link CachingProvider}, will have an instance name set or not. When not set or when system property
+     * {@code hazelcast.named.jcache.instance} is {@code "true"}, then a common instance name is used to get-or-create the
+     * default {@link HazelcastInstance}. When system property {@code hazelcast.named.jcache.instance} is {@code "false"}, then
+     * no instance name is set on the default configuration.
+     */
+    public static final String NAMED_JCACHE_HZ_INSTANCE = "hazelcast.named.jcache.instance";
 
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
@@ -77,6 +94,7 @@ public abstract class AbstractHazelcastCachingProvider
 
     protected final ClassLoader defaultClassLoader;
     protected final URI defaultURI;
+    protected final boolean namedDefaultHzInstance = parseBoolean(getProperty(NAMED_JCACHE_HZ_INSTANCE, "true"));
 
     private final Map<ClassLoader, Map<URI, AbstractHazelcastCacheManager>> cacheManagers;
 
@@ -246,7 +264,7 @@ public abstract class AbstractHazelcastCachingProvider
         if (scheme == null) {
             // interpret as place holder
             try {
-                String resolvedPlaceholder = System.getProperty(location.getRawSchemeSpecificPart());
+                String resolvedPlaceholder = getProperty(location.getRawSchemeSpecificPart());
                 if (resolvedPlaceholder == null) {
                     return false;
                 }
