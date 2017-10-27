@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -154,7 +155,11 @@ public final class HazelcastServerCachingProvider
     }
 
     private Config getDefaultConfig() {
-        return new XmlConfigBuilder().build();
+        Config config = new XmlConfigBuilder().build();
+        if (namedDefaultHzInstance && StringUtil.isNullOrEmpty(config.getInstanceName())) {
+            config.setInstanceName(SHARED_JCACHE_INSTANCE_NAME);
+        }
+        return config;
     }
 
     private Config getConfigFromLocation(String location, ClassLoader classLoader, String instanceName)
