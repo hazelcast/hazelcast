@@ -39,7 +39,7 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.KafkaSources#streamKafka(Properties, DistributedBiFunction, String...)}.
+     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties, DistributedBiFunction, String...)}.
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
@@ -53,7 +53,7 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.KafkaSources#streamKafka(Properties, String...)}.
+     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties, String...)}.
      */
     public static ProcessorMetaSupplier streamKafkaP(@Nonnull Properties properties, @Nonnull String... topics) {
         return streamKafkaP(properties, Util::entry, topics);
@@ -61,7 +61,7 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.KafkaSinks#writeKafka(String, Properties, DistributedFunction, DistributedFunction)}.
+     * {@link com.hazelcast.jet.KafkaSinks#kafka(String, Properties, DistributedFunction, DistributedFunction)}.
      */
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
             @Nonnull String topic,

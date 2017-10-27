@@ -121,7 +121,7 @@ public final class Sources {
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V> Source<Map.Entry<K, V>> readMap(@Nonnull String mapName) {
+    public static <K, V> Source<Map.Entry<K, V>> map(@Nonnull String mapName) {
         return fromProcessor("readMap(" + mapName + ')', readMapP(mapName));
     }
 
@@ -152,7 +152,7 @@ public final class Sources {
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V, T> Source<T> readMap(
+    public static <K, V, T> Source<T> map(
             @Nonnull String mapName,
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projection
@@ -161,10 +161,10 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #readMap(String, Predicate, Projection)}
+     * Convenience for {@link #map(String, Predicate, Projection)}
      * which uses a {@link DistributedFunction} as the projection function.
      */
-    public static <K, V, T> Source<T> readMap(
+    public static <K, V, T> Source<T> map(
             @Nonnull String mapName,
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
@@ -213,7 +213,7 @@ public final class Sources {
      * @param <T> type of emitted item
      */
     @Nonnull
-    public static <K, V, T> Source<T> streamMap(
+    public static <K, V, T> Source<T> mapJournal(
             @Nonnull String mapName,
             @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
@@ -224,12 +224,12 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamMap(String, DistributedPredicate,
+     * Convenience for {@link #mapJournal(String, DistributedPredicate,
      * DistributedFunction, boolean)} with no projection or filtering. It
      * emits {@link EventJournalMapEvent}s.
      */
     @Nonnull
-    public static <K, V> Source<EventJournalMapEvent<K, V>> streamMap(
+    public static <K, V> Source<EventJournalMapEvent<K, V>> mapJournal(
             @Nonnull String mapName,
             boolean startFromLatestSequence
     ) {
@@ -249,7 +249,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     @Nonnull
-    public static <K, V> Source<Map.Entry<K, V>> readRemoteMap(
+    public static <K, V> Source<Map.Entry<K, V>> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
@@ -280,7 +280,7 @@ public final class Sources {
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
      */
-    public static <K, V, T> Source<T> readRemoteMap(
+    public static <K, V, T> Source<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<K, V> predicate,
@@ -291,10 +291,10 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #readRemoteMap(String, ClientConfig, Predicate, Projection)}
+     * Convenience for {@link #remoteMap(String, ClientConfig, Predicate, Projection)}
      * which use a {@link DistributedFunction} as the projection function.
      */
-    public static <K, V, T> Source<T> readRemoteMap(
+    public static <K, V, T> Source<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<K, V> predicate,
@@ -332,7 +332,7 @@ public final class Sources {
      * @param <T> type of emitted item
      */
     @Nonnull
-    public static <K, V, T> Source<T> streamRemoteMap(
+    public static <K, V, T> Source<T> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
@@ -344,12 +344,12 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamRemoteMap(String, ClientConfig,
+     * Convenience for {@link #remoteMapJournal(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, boolean)} with no projection
      * or filtering. It emits {@link EventJournalMapEvent}s.
      */
     @Nonnull
-    public static <K, V> Source<EventJournalMapEvent<K, V>> streamRemoteMap(
+    public static <K, V> Source<EventJournalMapEvent<K, V>> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             boolean startFromLatestSequence
@@ -373,7 +373,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     @Nonnull
-    public static <K, V> Source<Map.Entry<K, V>> readCache(@Nonnull String cacheName) {
+    public static <K, V> Source<Map.Entry<K, V>> cache(@Nonnull String cacheName) {
         return fromProcessor("readCache(" + cacheName + ')', readCacheP(cacheName));
     }
 
@@ -406,7 +406,7 @@ public final class Sources {
      * @param <T>                     type of emitted item
      */
     @Nonnull
-    public static <K, V, T> Source<T> streamCache(
+    public static <K, V, T> Source<T> cacheJournal(
             @Nonnull String cacheName,
             @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
             @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
@@ -418,11 +418,11 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamCache(String, DistributedPredicate,
+     * Convenience for {@link #cacheJournal(String, DistributedPredicate,
      * DistributedFunction, boolean)} with no projection or filtering.
      */
     @Nonnull
-    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamCache(
+    public static <K, V> Source<EventJournalCacheEvent<K, V>> cacheJournal(
             @Nonnull String cacheName,
             boolean startFromLatestSequence
     ) {
@@ -442,7 +442,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     @Nonnull
-    public static <K, V> Source<Map.Entry<K, V>> readRemoteCache(
+    public static <K, V> Source<Map.Entry<K, V>> remoteCache(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig
     ) {
@@ -476,7 +476,7 @@ public final class Sources {
      * @param <T>                     type of emitted item
      */
     @Nonnull
-    public static <K, V, T> Source<T> streamRemoteCache(
+    public static <K, V, T> Source<T> remoteCacheJournal(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
             @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
@@ -488,12 +488,12 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamRemoteCache(String, ClientConfig,
+     * Convenience for {@link #remoteCacheJournal(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, boolean)} with no projection
      * or filtering. It emits {@link EventJournalCacheEvent}s.
      */
     @Nonnull
-    public static <K, V> Source<EventJournalCacheEvent<K, V>> streamRemoteCache(
+    public static <K, V> Source<EventJournalCacheEvent<K, V>> remoteCacheJournal(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
             boolean startFromLatestSequence
@@ -511,7 +511,7 @@ public final class Sources {
      * it will re-emit all entries.
      */
     @Nonnull
-    public static <E> Source<E> readList(@Nonnull String listName) {
+    public static <E> Source<E> list(@Nonnull String listName) {
         return fromProcessor("readList(" + listName + ')', readListP(listName));
     }
 
@@ -524,7 +524,7 @@ public final class Sources {
      * it will re-emit all entries.
      */
     @Nonnull
-    public static <E> Source<E> readRemoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+    public static <E> Source<E> remoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return fromProcessor("readRemoteList(" + listName + ')', readRemoteListP(listName, clientConfig));
     }
 
@@ -544,7 +544,7 @@ public final class Sources {
      * non-blocking API, the processor is cooperative.
      */
     @Nonnull
-    public static Source<String> streamSocket(
+    public static Source<String> socket(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
         return fromProcessor("streamSocket(" + host + ':' + port + ')', streamSocketP(host, port, charset));
@@ -571,17 +571,17 @@ public final class Sources {
      *             Use {@code "*"} for all files.
      */
     @Nonnull
-    public static Source<String> readFiles(
+    public static Source<String> files(
             @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
     ) {
         return fromProcessor("readFiles(" + directory + '/' + glob + ')', readFilesP(directory, charset, glob));
     }
 
     /**
-     * Convenience for {@link #readFiles(String, Charset, String) readFiles(directory, UTF_8, "*")}.
+     * Convenience for {@link #files(String, Charset, String) readFiles(directory, UTF_8, "*")}.
      */
-    public static Source<String> readFiles(@Nonnull String directory) {
-        return readFiles(directory, UTF_8, GLOB_WILDCARD);
+    public static Source<String> files(@Nonnull String directory) {
+        return files(directory, UTF_8, GLOB_WILDCARD);
     }
 
     /**
@@ -630,7 +630,7 @@ public final class Sources {
      *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
      *             Use {@code "*"} for all files.
      */
-    public static Source<String> streamFiles(
+    public static Source<String> fileWatcher(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
         return fromProcessor("streamFiles(" + watchedDirectory + '/' + glob + ')',
@@ -639,10 +639,10 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamFiles(String, Charset, String)
+     * Convenience for {@link #fileWatcher(String, Charset, String)
      * streamFiles(watchedDirectory, UTF_8, "*")}.
      */
-    public static Source<String> streamFiles(@Nonnull String watchedDirectory) {
-        return streamFiles(watchedDirectory, UTF_8, GLOB_WILDCARD);
+    public static Source<String> fileWatcher(@Nonnull String watchedDirectory) {
+        return fileWatcher(watchedDirectory, UTF_8, GLOB_WILDCARD);
     }
 }

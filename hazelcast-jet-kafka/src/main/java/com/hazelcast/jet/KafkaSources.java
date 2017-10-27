@@ -32,10 +32,10 @@ public final class KafkaSources {
     }
 
     /**
-     * Convenience for {@link #streamKafka(Properties, DistributedBiFunction,
+     * Convenience for {@link #kafka(Properties, DistributedBiFunction,
      * String...)} wrapping the output in {@code Map.Entry}.
      */
-    public static <K, V> Source<Entry<K, V>> streamKafka(@Nonnull Properties properties, @Nonnull String... topics) {
+    public static <K, V> Source<Entry<K, V>> kafka(@Nonnull Properties properties, @Nonnull String... topics) {
         return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, topics));
     }
 
@@ -83,8 +83,11 @@ public final class KafkaSources {
      * @param projectionFn function to create output objects from key and value
      * @param topics     the list of topics
      */
-    public static <K, V, T> Source<T> streamKafka(@Nonnull Properties properties,
-                @Nonnull DistributedBiFunction<K, V, T> projectionFn, @Nonnull String... topics) {
+    public static <K, V, T> Source<T> kafka(
+            @Nonnull Properties properties,
+            @Nonnull DistributedBiFunction<K, V, T> projectionFn,
+            @Nonnull String... topics
+    ) {
         return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, projectionFn, topics));
     }
 }

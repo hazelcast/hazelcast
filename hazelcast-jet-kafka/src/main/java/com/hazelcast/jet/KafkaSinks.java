@@ -56,7 +56,7 @@ public final class KafkaSinks {
      * @param <K> type of the key published to Kafka
      * @param <V> type of the value published to Kafka
      */
-    public static <E, K, V> Sink<E> writeKafka(
+    public static <E, K, V> Sink<E> kafka(
             @Nonnull String topic,
             @Nonnull Properties properties,
             @Nonnull DistributedFunction<? super E, K> extractKeyFn,
@@ -67,7 +67,7 @@ public final class KafkaSinks {
     }
 
     /**
-     * Convenience for {@link #writeKafka(String, Properties,
+     * Convenience for {@link #kafka(String, Properties,
      * DistributedFunction, DistributedFunction)} which expects {@code
      * Map.Entry<K, V>} as input and extracts its key and value parts to be
      * published to Kafka.
@@ -79,7 +79,7 @@ public final class KafkaSinks {
      * @param <K> type of the key published to Kafka
      * @param <V> type of the value published to Kafka
      */
-    public static <K, V> Sink<Entry<K, V>> writeKafka(@Nonnull String topic, @Nonnull Properties properties) {
-        return writeKafka(topic, properties, Entry::getKey, Entry::getValue);
+    public static <K, V> Sink<Entry<K, V>> kafka(@Nonnull String topic, @Nonnull Properties properties) {
+        return kafka(topic, properties, Entry::getKey, Entry::getValue);
     }
 }

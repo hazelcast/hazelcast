@@ -58,7 +58,7 @@ public final class HdfsSinks {
      * @param <V> type of value to write to HDFS
      */
     @Nonnull
-    public static <E, K, V> Sink<E> writeHdfs(
+    public static <E, K, V> Sink<E> hdfs(
             @Nonnull JobConf jobConf,
             @Nonnull DistributedFunction<? super E, K> extractKeyF,
             @Nonnull DistributedFunction<? super E, V> extractValueF
@@ -67,13 +67,13 @@ public final class HdfsSinks {
     }
 
     /**
-     * Convenience for {@link #writeHdfs(JobConf, DistributedFunction,
+     * Convenience for {@link #hdfs(JobConf, DistributedFunction,
      * DistributedFunction)} which expects {@code Map.Entry<K, V>} as
      * input and extracts its key and value parts to be written to HDFS.
      */
     @Nonnull
-    public static <K, V> Sink<Entry<K, V>> writeHdfs(@Nonnull JobConf jobConf) {
-        return writeHdfs(jobConf, Entry::getKey, Entry::getValue);
+    public static <K, V> Sink<Entry<K, V>> hdfs(@Nonnull JobConf jobConf) {
+        return hdfs(jobConf, Entry::getKey, Entry::getValue);
     }
 
 }

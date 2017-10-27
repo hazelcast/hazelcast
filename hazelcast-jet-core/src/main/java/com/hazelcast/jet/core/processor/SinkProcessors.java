@@ -52,7 +52,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeMap(String)}.
+     * {@link com.hazelcast.jet.Sinks#map(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeMapP(@Nonnull String mapName) {
@@ -61,7 +61,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeRemoteMap(String, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sinks#remoteMap(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
@@ -70,7 +70,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeCache(String)}.
+     * {@link com.hazelcast.jet.Sinks#cache(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeCacheP(@Nonnull String cacheName) {
@@ -79,7 +79,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeRemoteCache(String, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sinks#remoteCache(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteCacheP(
@@ -90,7 +90,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeList(String)}.
+     * {@link com.hazelcast.jet.Sinks#list(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeListP(@Nonnull String listName) {
@@ -99,7 +99,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeRemoteList(String, ClientConfig)}.
+     * {@link com.hazelcast.jet.Sinks#remoteList(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -108,7 +108,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeSocket(String, int)}.
+     * {@link com.hazelcast.jet.Sinks#socket(String, int)}.
      */
     public static <T> ProcessorMetaSupplier writeSocketP(
             @Nonnull String host,
@@ -136,7 +136,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction, Charset, boolean)}.
+     * {@link com.hazelcast.jet.Sinks#file(String, DistributedFunction, Charset, boolean)}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
@@ -150,7 +150,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeFile(String, DistributedFunction)}.
+     * {@link com.hazelcast.jet.Sinks#file(String, DistributedFunction)}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
@@ -161,7 +161,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#writeFile(String)}.
+     * {@link com.hazelcast.jet.Sinks#file(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFileP(@Nonnull String directoryName) {

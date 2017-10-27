@@ -79,7 +79,7 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      */
-    public static <E extends Map.Entry> Sink<E> writeMap(String mapName) {
+    public static <E extends Map.Entry> Sink<E> map(String mapName) {
         return fromProcessor("writeMap(" + mapName + ')', writeMapP(mapName));
     }
 
@@ -93,7 +93,7 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      */
-    public static <E extends Map.Entry> Sink<E> writeRemoteMap(String mapName, ClientConfig clientConfig) {
+    public static <E extends Map.Entry> Sink<E> remoteMap(String mapName, ClientConfig clientConfig) {
         return fromProcessor("writeRemoteMap(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
     }
 
@@ -106,7 +106,7 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      */
-    public static <E extends Map.Entry> Sink<E> writeCache(String cacheName) {
+    public static <E extends Map.Entry> Sink<E> cache(String cacheName) {
         return fromProcessor("writeCache(" + cacheName + ')', writeCacheP(cacheName));
     }
 
@@ -120,7 +120,7 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      */
-    public static <E extends Map.Entry> Sink<E> writeRemoteCache(String cacheName, ClientConfig clientConfig) {
+    public static <E extends Map.Entry> Sink<E> remoteCache(String cacheName, ClientConfig clientConfig) {
         return fromProcessor("writeRemoteCache(" + cacheName + ')', writeRemoteCacheP(cacheName, clientConfig));
     }
 
@@ -132,7 +132,7 @@ public final class Sinks {
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      */
-    public static <E> Sink<E> writeList(String listName) {
+    public static <E> Sink<E> list(String listName) {
         return fromProcessor("writeList(" + listName + ')', writeListP(listName));
     }
 
@@ -145,7 +145,7 @@ public final class Sinks {
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      */
-    public static <E> Sink<E> writeRemoteList(String listName, ClientConfig clientConfig) {
+    public static <E> Sink<E> remoteList(String listName, ClientConfig clientConfig) {
         return fromProcessor("writeRemoteList(" + listName + ')', writeRemoteListP(listName, clientConfig));
     }
 
@@ -160,7 +160,7 @@ public final class Sinks {
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
      */
-    public static <E> Sink<E> writeSocket(
+    public static <E> Sink<E> socket(
             @Nonnull String host,
             int port,
             @Nonnull DistributedFunction<E, String> toStringFn,
@@ -170,10 +170,10 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #writeSocket(String, int, DistributedFunction,
+     * Convenience for {@link #socket(String, int, DistributedFunction,
      * Charset)} with UTF-8 as the charset.
      */
-    public static <E> Sink<E> writeSocket(
+    public static <E> Sink<E> socket(
             @Nonnull String host,
             int port,
             @Nonnull DistributedFunction<E, String> toStringFn
@@ -182,11 +182,11 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #writeSocket(String, int, DistributedFunction,
+     * Convenience for {@link #socket(String, int, DistributedFunction,
      * Charset)} with {@code Object.toString} as the conversion function and
      * UTF-8 as the charset.
      */
-    public static <E> Sink<E> writeSocket(@Nonnull String host, int port) {
+    public static <E> Sink<E> socket(@Nonnull String host, int port) {
         return fromProcessor("writeSocket(" + host + ':' + port + ')',
                 writeSocketP(host, port, Object::toString, UTF_8));
     }
@@ -215,7 +215,7 @@ public final class Sinks {
      *               an existing file
      */
     @Nonnull
-    public static <E> Sink<E> writeFile(
+    public static <E> Sink<E> file(
             @Nonnull String directoryName,
             @Nonnull DistributedFunction<E, String> toStringFn,
             @Nonnull Charset charset,
@@ -226,23 +226,23 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
+     * Convenience for {@link #file(String, DistributedFunction, Charset,
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      */
     @Nonnull
-    public static <E> Sink<E> writeFile(
+    public static <E> Sink<E> file(
             @Nonnull String directoryName, @Nonnull DistributedFunction<E, String> toStringFn
     ) {
-        return writeFile(directoryName, toStringFn, UTF_8, false);
+        return file(directoryName, toStringFn, UTF_8, false);
     }
 
     /**
-     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
+     * Convenience for {@link #file(String, DistributedFunction, Charset,
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      */
     @Nonnull
-    public static <E> Sink<E> writeFile(@Nonnull String directoryName) {
-        return writeFile(directoryName, Object::toString, UTF_8, false);
+    public static <E> Sink<E> file(@Nonnull String directoryName) {
+        return file(directoryName, Object::toString, UTF_8, false);
     }
 
     /**

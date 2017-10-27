@@ -71,7 +71,7 @@ public class ComputeStageTest extends TestInClusterSupport {
         srcMap = jet().getMap(srcName);
 
         String sinkName = randomName();
-        sink = Sinks.writeList(sinkName);
+        sink = Sinks.list(sinkName);
         sinkList = jet().getList(sinkName);
     }
 
@@ -87,7 +87,7 @@ public class ComputeStageTest extends TestInClusterSupport {
 
     @Test
     public void when_minimalPipeline_then_validDag() {
-        srcStage.drainTo(Sinks.writeList("out"));
+        srcStage.drainTo(Sinks.list("out"));
         assertTrue(pipeline.toDag().iterator().hasNext());
     }
 
@@ -169,7 +169,7 @@ public class ComputeStageTest extends TestInClusterSupport {
     public void hashJoinTwo() {
         // Given
         String enrichingName = randomName();
-        ComputeStage<Entry<Integer, String>> enrichingStage = pipeline.drawFrom(Sources.readMap(enrichingName));
+        ComputeStage<Entry<Integer, String>> enrichingStage = pipeline.drawFrom(Sources.map(enrichingName));
 
         ComputeStage<Tuple2<Integer, String>> joined = srcStage.hashJoin(enrichingStage, joinMapEntries(wholeItem()));
         joined.drainTo(sink);
@@ -193,8 +193,8 @@ public class ComputeStageTest extends TestInClusterSupport {
         // Given
         String enriching1Name = randomName();
         String enriching2Name = randomName();
-        ComputeStage<Entry<Integer, String>> enrichingStage1 = pipeline.drawFrom(Sources.readMap(enriching1Name));
-        ComputeStage<Entry<Integer, String>> enrichingStage2 = pipeline.drawFrom(Sources.readMap(enriching2Name));
+        ComputeStage<Entry<Integer, String>> enrichingStage1 = pipeline.drawFrom(Sources.map(enriching1Name));
+        ComputeStage<Entry<Integer, String>> enrichingStage2 = pipeline.drawFrom(Sources.map(enriching2Name));
         ComputeStage<Tuple3<Integer, String, String>> joined = srcStage.hashJoin(
                 enrichingStage1, joinMapEntries(wholeItem()),
                 enrichingStage2, joinMapEntries(wholeItem())
@@ -222,8 +222,8 @@ public class ComputeStageTest extends TestInClusterSupport {
         // Given
         String enriching1Name = randomName();
         String enriching2Name = randomName();
-        ComputeStage<Entry<Integer, String>> enrichingStage1 = pipeline.drawFrom(Sources.readMap(enriching1Name));
-        ComputeStage<Entry<Integer, String>> enrichingStage2 = pipeline.drawFrom(Sources.readMap(enriching2Name));
+        ComputeStage<Entry<Integer, String>> enrichingStage1 = pipeline.drawFrom(Sources.map(enriching1Name));
+        ComputeStage<Entry<Integer, String>> enrichingStage2 = pipeline.drawFrom(Sources.map(enriching2Name));
         HashJoinBuilder<Integer> b = srcStage.hashJoinBuilder();
         Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
         Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
@@ -403,7 +403,7 @@ public class ComputeStageTest extends TestInClusterSupport {
     }
 
     private static Source<Integer> readMapValues(String srcName) {
-        return Sources.readMap(srcName, truePredicate(),
+        return Sources.map(srcName, truePredicate(),
                 (DistributedFunction<Entry<Integer, Integer>, Integer>) Entry::getValue);
     }
 

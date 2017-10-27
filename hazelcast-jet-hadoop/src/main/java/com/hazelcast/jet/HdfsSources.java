@@ -55,18 +55,18 @@ public final class HdfsSources {
      * @param mapper  mapper which can be used to map the key and value to another value
      */
     @Nonnull
-    public static <K, V, E> Source<E> readHdfs(
+    public static <K, V, E> Source<E> hdfs(
             @Nonnull JobConf jobConf, @Nonnull DistributedBiFunction<K, V, E> mapper
     ) {
         return Sources.fromProcessor("readHdfs", new MetaSupplier<>(asSerializable(jobConf), mapper));
     }
 
     /**
-     * Convenience for {@link #readHdfs(JobConf, DistributedBiFunction)}
+     * Convenience for {@link #hdfs(JobConf, DistributedBiFunction)}
      * with {@link java.util.Map.Entry} as its output type.
      */
     @Nonnull
-    public static <K, V> Source<Entry<K, V>> readHdfs(@Nonnull JobConf jobConf) {
-        return readHdfs(jobConf, (DistributedBiFunction<K, V, Entry<K, V>>) Util::entry);
+    public static <K, V> Source<Entry<K, V>> hdfs(@Nonnull JobConf jobConf) {
+        return hdfs(jobConf, (DistributedBiFunction<K, V, Entry<K, V>>) Util::entry);
     }
 }

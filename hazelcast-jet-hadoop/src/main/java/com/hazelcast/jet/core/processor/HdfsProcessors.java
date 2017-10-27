@@ -38,7 +38,7 @@ public final class HdfsProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.HdfsSources#readHdfs(JobConf, DistributedBiFunction)}.
+     * {@link com.hazelcast.jet.HdfsSources#hdfs(JobConf, DistributedBiFunction)}.
      */
     @Nonnull
     public static <K, V, R> ReadHdfsP.MetaSupplier<K, V, R> readHdfsP(
@@ -49,7 +49,7 @@ public final class HdfsProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.HdfsSinks#writeHdfs(JobConf, DistributedFunction, DistributedFunction)}.
+     * {@link com.hazelcast.jet.HdfsSinks#hdfs(JobConf, DistributedFunction, DistributedFunction)}.
      */
     @Nonnull
     public static <E, K, V> ProcessorMetaSupplier writeHdfsP(
