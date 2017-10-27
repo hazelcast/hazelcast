@@ -25,10 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Parameter Flyweight
- */
-public class MessageFlyweight {
+public abstract class AbstractClientMessage {
     /**
      * Long mask
      */
@@ -48,11 +45,11 @@ public class MessageFlyweight {
     //starts from zero, incremented each time something set to buffer
     private int index;
 
-    public MessageFlyweight() {
+    public AbstractClientMessage() {
         offset = 0;
     }
 
-    public MessageFlyweight wrap(byte[] buffer, int offset, boolean useUnsafe) {
+    public AbstractClientMessage wrap(byte[] buffer, int offset, boolean useUnsafe) {
         this.buffer = useUnsafe ? new UnsafeBuffer(buffer) : new SafeBuffer(buffer);
         this.offset = offset;
         this.index = 0;
@@ -63,7 +60,7 @@ public class MessageFlyweight {
         return index;
     }
 
-    public MessageFlyweight index(int index) {
+    public AbstractClientMessage index(int index) {
         this.index = index;
         return this;
     }
@@ -73,36 +70,36 @@ public class MessageFlyweight {
     }
 
     //region SET Overloads
-    public MessageFlyweight set(boolean value) {
+    public AbstractClientMessage set(boolean value) {
         buffer.putByte(index + offset, (byte) (value ? 1 : 0));
         index += Bits.BYTE_SIZE_IN_BYTES;
         return this;
     }
 
-    public MessageFlyweight set(byte value) {
+    public AbstractClientMessage set(byte value) {
         buffer.putByte(index + offset, value);
         index += Bits.BYTE_SIZE_IN_BYTES;
         return this;
     }
 
-    public MessageFlyweight set(int value) {
+    public AbstractClientMessage set(int value) {
         buffer.putInt(index + offset, value);
         index += Bits.INT_SIZE_IN_BYTES;
         return this;
     }
 
-    public MessageFlyweight set(long value) {
+    public AbstractClientMessage set(long value) {
         buffer.putLong(index + offset, value);
         index += Bits.LONG_SIZE_IN_BYTES;
         return this;
     }
 
-    public MessageFlyweight set(String value) {
+    public AbstractClientMessage set(String value) {
         index += buffer.putStringUtf8(index + offset, value);
         return this;
     }
 
-    public MessageFlyweight set(Data data) {
+    public AbstractClientMessage set(Data data) {
         int length = data.totalSize();
         set(length);
         data.copyTo(buffer.byteArray(), index);
@@ -110,7 +107,7 @@ public class MessageFlyweight {
         return this;
     }
 
-    public MessageFlyweight set(final byte[] value) {
+    public AbstractClientMessage set(final byte[] value) {
         final int length = value.length;
         set(length);
         buffer.putBytes(index + offset, value);
@@ -118,7 +115,7 @@ public class MessageFlyweight {
         return this;
     }
 
-    public MessageFlyweight set(final Collection<Data> value) {
+    public AbstractClientMessage set(final Collection<Data> value) {
         final int length = value.size();
         set(length);
         for (Data v : value) {
@@ -127,7 +124,7 @@ public class MessageFlyweight {
         return this;
     }
 
-    public MessageFlyweight set(final Map.Entry<Data, Data> entry) {
+    public AbstractClientMessage set(final Map.Entry<Data, Data> entry) {
         return set(entry.getKey()).set(entry.getValue());
     }
 

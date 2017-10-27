@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.protocol;
 
-import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
+import com.hazelcast.client.impl.protocol.util.AbstractClientMessage;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -38,19 +38,21 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class FlyweightTest {
+public class AbstractClientMessageTest {
 
     private static byte[] DATA = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,
             (byte) 0x98, (byte) 0xBA};
 
-    private MessageFlyweight flyweight = new MessageFlyweight();
+    private AbstractClientMessage message = new AbstractClientMessage(){
+
+    };
     private ByteBuffer byteBuffer;
 
     @Before
     public void setUp() {
         byteBuffer = ByteBuffer.allocate(512);
 
-        flyweight.wrap(byteBuffer.array(), 0, true);
+        message.wrap(byteBuffer.array(), 0, true);
     }
 
     @After
@@ -59,8 +61,8 @@ public class FlyweightTest {
 
     @Test
     public void shouldEncodeLong() {
-        flyweight.set(0x12345678L);
-        assertEquals(8, flyweight.index());
+        message.set(0x12345678L);
+        assertEquals(8, message.index());
         assertThat(byteBuffer.get(0), is((byte) 0x78));
         assertThat(byteBuffer.get(1), is((byte) 0x56));
         assertThat(byteBuffer.get(2), is((byte) 0x34));
@@ -69,23 +71,23 @@ public class FlyweightTest {
 
     @Test
     public void shouldEncodeInt() {
-        flyweight.set(0x1234);
-        assertEquals(4, flyweight.index());
+        message.set(0x1234);
+        assertEquals(4, message.index());
         assertThat(byteBuffer.get(0), is((byte) 0x34));
         assertThat(byteBuffer.get(1), is((byte) 0x12));
     }
 
     @Test
     public void shouldEncodeBoolean() {
-        flyweight.set(true);
-        assertEquals(1, flyweight.index());
+        message.set(true);
+        assertEquals(1, message.index());
         assertThat(byteBuffer.get(0), is((byte) 0x1));
     }
 
     @Test
     public void shouldEncodeStringUtf8() {
-        flyweight.set("abc©☺");//0x61 0x62 0x63 0xC2 0xA9 0xE2 0x98 0xBA
-        assertEquals(12, flyweight.index());
+        message.set("abc©☺");//0x61 0x62 0x63 0xC2 0xA9 0xE2 0x98 0xBA
+        assertEquals(12, message.index());
         assertThat(byteBuffer.get(0), is((byte) 0x08));
         assertThat(byteBuffer.get(1), is((byte) 0x00));
         assertThat(byteBuffer.get(2), is((byte) 0x00));
@@ -105,8 +107,8 @@ public class FlyweightTest {
         byte[] data = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,
                 (byte) 0x98, (byte) 0xBA};
 
-        flyweight.set(data);
-        assertEquals(12, flyweight.index());
+        message.set(data);
+        assertEquals(12, message.index());
         assertThat(byteBuffer.get(0), is((byte) 0x08));
         assertThat(byteBuffer.get(1), is((byte) 0x00));
         assertThat(byteBuffer.get(2), is((byte) 0x00));
@@ -123,61 +125,61 @@ public class FlyweightTest {
 
     @Test
     public void shouldDecodeLong() {
-        flyweight.set(0x12345678L);
-        flyweight.index(0);
-        assertEquals(0x12345678L, flyweight.getLong());
+        message.set(0x12345678L);
+        message.index(0);
+        assertEquals(0x12345678L, message.getLong());
     }
 
     @Test
     public void shouldDecodeInt() {
-        flyweight.set(0x1234);
-        flyweight.index(0);
-        assertEquals(0x1234, flyweight.getInt());
-        assertEquals(4, flyweight.index());
+        message.set(0x1234);
+        message.index(0);
+        assertEquals(0x1234, message.getInt());
+        assertEquals(4, message.index());
     }
 
     @Test
     public void shouldDecodeBoolean() {
-        flyweight.set(true);
-        flyweight.index(0);
-        assertTrue(flyweight.getBoolean());
-        assertEquals(1, flyweight.index());
+        message.set(true);
+        message.index(0);
+        assertTrue(message.getBoolean());
+        assertEquals(1, message.index());
     }
 
     @Test
     public void shouldDecodeStringUtf8() {
         final String staticValue = "abc©☺";
-        flyweight.set(staticValue);
-        flyweight.index(0);
+        message.set(staticValue);
+        message.index(0);
 
-        assertThat(flyweight.getStringUtf8(), is(staticValue));
-        assertEquals(12, flyweight.index());
+        assertThat(message.getStringUtf8(), is(staticValue));
+        assertEquals(12, message.index());
     }
 
     @Test
     public void shouldDecodeByteArray() {
-        flyweight.set(DATA);
-        flyweight.index(0);
+        message.set(DATA);
+        message.index(0);
 
-        assertArrayEquals(DATA, flyweight.getByteArray());
-        assertEquals(4 + DATA.length, flyweight.index());
+        assertArrayEquals(DATA, message.getByteArray());
+        assertEquals(4 + DATA.length, message.index());
     }
 
     @Test
     public void shouldDecodeData() {
-        flyweight.set(DATA);
-        flyweight.index(0);
+        message.set(DATA);
+        message.index(0);
 
-        assertArrayEquals(DATA, flyweight.getData().toByteArray());
-        assertEquals(4 + DATA.length, flyweight.index());
+        assertArrayEquals(DATA, message.getData().toByteArray());
+        assertEquals(4 + DATA.length, message.index());
     }
 
     @Test
     public void shouldEncodeDecodeMultipleData() {
-        flyweight.set(0x12345678L);
-        flyweight.set(0x1234);
-        flyweight.set((short) 0x12);
-        flyweight.set(true);
-        flyweight.set(DATA);
+        message.set(0x12345678L);
+        message.set(0x1234);
+        message.set((short) 0x12);
+        message.set(true);
+        message.set(DATA);
     }
 }
