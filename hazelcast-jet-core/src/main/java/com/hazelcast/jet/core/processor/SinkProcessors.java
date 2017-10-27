@@ -136,7 +136,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#file(String, DistributedFunction, Charset, boolean)}.
+     * {@link com.hazelcast.jet.Sinks#files(String, DistributedFunction, Charset, boolean)}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
@@ -150,7 +150,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#file(String, DistributedFunction)}.
+     * {@link com.hazelcast.jet.Sinks#files(String, DistributedFunction)}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
@@ -161,7 +161,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#file(String)}.
+     * {@link com.hazelcast.jet.Sinks#files(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFileP(@Nonnull String directoryName) {

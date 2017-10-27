@@ -215,7 +215,7 @@ public final class Sinks {
      *               an existing file
      */
     @Nonnull
-    public static <E> Sink<E> file(
+    public static <E> Sink<E> files(
             @Nonnull String directoryName,
             @Nonnull DistributedFunction<E, String> toStringFn,
             @Nonnull Charset charset,
@@ -226,23 +226,23 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #file(String, DistributedFunction, Charset,
+     * Convenience for {@link #files(String, DistributedFunction, Charset,
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      */
     @Nonnull
-    public static <E> Sink<E> file(
+    public static <E> Sink<E> files(
             @Nonnull String directoryName, @Nonnull DistributedFunction<E, String> toStringFn
     ) {
-        return file(directoryName, toStringFn, UTF_8, false);
+        return files(directoryName, toStringFn, UTF_8, false);
     }
 
     /**
-     * Convenience for {@link #file(String, DistributedFunction, Charset,
+     * Convenience for {@link #files(String, DistributedFunction, Charset,
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      */
     @Nonnull
-    public static <E> Sink<E> file(@Nonnull String directoryName) {
-        return file(directoryName, Object::toString, UTF_8, false);
+    public static <E> Sink<E> files(@Nonnull String directoryName) {
+        return files(directoryName, Object::toString, UTF_8, false);
     }
 
     /**
