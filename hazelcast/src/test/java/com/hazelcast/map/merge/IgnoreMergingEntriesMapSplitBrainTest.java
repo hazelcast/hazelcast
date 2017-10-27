@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.merge;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -34,33 +33,30 @@ import java.util.concurrent.CountDownLatch;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Before merge, puts some entries to the merging sub-cluster and expects not to see them after merge
+ * Before merging, put some entries to the merging sub-cluster and expect not to see them after merge.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class IgnoreMergingEntriesMapSplitBrainTest extends SplitBrainTestSupport {
 
-    private String testMapName = randomMapName();
-
-    final CountDownLatch clusterMergedLatch = new CountDownLatch(1);
+    private final String testMapName = randomMapName();
+    private final CountDownLatch clusterMergedLatch = new CountDownLatch(1);
 
     @Override
     protected Config config() {
         Config config = super.config();
         config.getMapConfig(testMapName)
-              .setMergePolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
+                .setMergePolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
         return config;
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances)
-            throws Exception {
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         instances[0].getLifecycleService().addLifecycleListener(new MergedLifecycleListener());
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         IMap<Integer, Integer> mapOnFirstBrain = firstBrain[0].getMap(testMapName);
         for (int i = 0; i < 100; i++) {
             mapOnFirstBrain.put(i, i);
@@ -68,16 +64,15 @@ public class IgnoreMergingEntriesMapSplitBrainTest extends SplitBrainTestSupport
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances)
-            throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         assertOpenEventually(clusterMergedLatch, 30);
 
         IMap<Integer, Integer> map = instances[0].getMap(testMapName);
         assertTrue(map.isEmpty());
-
     }
 
     class MergedLifecycleListener implements LifecycleListener {
+
         @Override
         public void stateChanged(LifecycleEvent event) {
             if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
@@ -85,5 +80,4 @@ public class IgnoreMergingEntriesMapSplitBrainTest extends SplitBrainTestSupport
             }
         }
     }
-
 }

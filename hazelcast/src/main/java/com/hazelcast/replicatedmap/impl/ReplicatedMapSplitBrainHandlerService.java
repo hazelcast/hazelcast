@@ -30,7 +30,6 @@ import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,18 +42,19 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}.
  */
-public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService {
+class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService {
 
     private final ReplicatedMapService service;
     private final MergePolicyProvider mergePolicyProvider;
     private final NodeEngine nodeEngine;
     private final SerializationService serializationService;
 
-    public ReplicatedMapSplitBrainHandlerService(ReplicatedMapService service, MergePolicyProvider mergePolicyProvider) {
+    ReplicatedMapSplitBrainHandlerService(ReplicatedMapService service, MergePolicyProvider mergePolicyProvider) {
         this.service = service;
         this.mergePolicyProvider = mergePolicyProvider;
         this.nodeEngine = service.getNodeEngine();
@@ -132,7 +132,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
                                 .invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
                         future.andThen(mergeCallback);
                     } catch (Throwable t) {
-                        throw ExceptionUtil.rethrow(t);
+                        throw rethrow(t);
                     }
                 }
             }

@@ -41,7 +41,7 @@ public class CountDownLatchSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         warmUpPartitions(instances);
         name = generateKeyOwnedBy(instances[instances.length - 1]);
 
@@ -52,9 +52,7 @@ public class CountDownLatchSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
-
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         ICountDownLatch latch1 = firstBrain[0].getCountDownLatch(name);
         // count = 4
         latch1.countDown();
@@ -68,7 +66,7 @@ public class CountDownLatchSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         for (HazelcastInstance instance : instances) {
             ICountDownLatch latch = instance.getCountDownLatch(name);
             assertEquals(count, latch.getCount());

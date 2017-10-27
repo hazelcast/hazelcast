@@ -26,12 +26,12 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
 
-    private static final int POLLERS_COUNT = 1000;
+    private static final int POLL_COUNT = 1000;
+
     private String queueName;
 
     @Override
@@ -49,7 +49,7 @@ public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
         assertOnlyOwnerHasWaitingOperationsEventually(queueName, instances);
 
         final IQueue<Object> queue = instances[0].getQueue(queueName);
-        for (int i = 0; i < POLLERS_COUNT; i++) {
+        for (int i = 0; i < POLL_COUNT; i++) {
             queue.offer(i);
         }
         assertWaitingOperationCountEventually(0, instances);
@@ -58,13 +58,13 @@ public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
     private void assertOnlyOwnerHasWaitingOperationsEventually(String name, HazelcastInstance... instances) {
         for (HazelcastInstance hz : instances) {
             Member owner = hz.getPartitionService().getPartition(name).getOwner();
-            int expectedWaitingOps = owner.equals(hz.getCluster().getLocalMember()) ? POLLERS_COUNT : 0;
+            int expectedWaitingOps = owner.equals(hz.getCluster().getLocalMember()) ? POLL_COUNT : 0;
             assertWaitingOperationCountEventually(expectedWaitingOps, hz);
         }
     }
 
     private void startTakingFromQueue(final IQueue<Object> queue) {
-        for (int i = 0; i < POLLERS_COUNT; i++) {
+        for (int i = 0; i < POLL_COUNT; i++) {
             new Thread() {
                 public void run() {
                     try {
@@ -78,8 +78,6 @@ public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void assertTakeOperationsAreWaitingEventually(HazelcastInstance instance) {
-        assertWaitingOperationCountEventually(POLLERS_COUNT, instance);
+        assertWaitingOperationCountEventually(POLL_COUNT, instance);
     }
-
-
 }

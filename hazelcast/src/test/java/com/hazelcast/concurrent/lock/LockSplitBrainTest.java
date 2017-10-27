@@ -40,7 +40,7 @@ public class LockSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         warmUpPartitions(instances);
 
         HazelcastInstance lastInstance = instances[instances.length - 1];
@@ -53,9 +53,7 @@ public class LockSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
-
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         // acquire lock on 1st brain
         firstBrain[0].getLock(key).lock();
 
@@ -64,7 +62,7 @@ public class LockSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         // all instances observe lock as acquired
         for (HazelcastInstance instance : instances) {
             ILock lock = instance.getLock(key);

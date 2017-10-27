@@ -18,20 +18,17 @@ package com.hazelcast.spi;
 
 /**
  * An interface that can be implemented by SPI services that want to be able to resolve a split brain.
- * <p/>
- * So when the 2 separate clusters merge, the {@link #prepareMergeRunnable()} method is called to return
- * a Runnable that will merge the clusters.
- *
- * @author mdogan 1/31/13
+ * <p>
+ * When the two separate clusters merge, the {@link #prepareMergeRunnable()} method is called to return
+ * a {@link Runnable} that will merge the clusters.
  */
 public interface SplitBrainHandlerService {
 
     /**
-     * When the 2 separate clusters merge (resolve a split brain), this method is called to return
-     * a Runnable that will merge the clusters.
+     * When the two separate clusters merge (resolve a split brain), this method is called to return
+     * a {@link Runnable} that will merge the clusters.
      *
-     * @return a Runnable that will merge the clusters
+     * @return a {@link Runnable} that will merge the clusters
      */
     Runnable prepareMergeRunnable();
-
 }

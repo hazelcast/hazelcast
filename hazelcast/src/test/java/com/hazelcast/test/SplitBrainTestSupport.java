@@ -35,18 +35,20 @@ import java.util.List;
 
 /**
  * A support class for high-level split-brain tests.
- * It will form a cluster, create a split-brain situation and then heal the cluster again.
- *
- * Tests are supposed to subclass this class and use its hooks to be notified about state transitions.
+ * <p>
+ * Forms a cluster, creates a split-brain situation and then heals the cluster again.
+ * <p>
+ * Implementing tests are supposed to subclass this class and use its hooks to be notified about state transitions.
  * See {@link #onBeforeSplitBrainCreated(HazelcastInstance[])},
  * {@link #onAfterSplitBrainCreated(HazelcastInstance[], HazelcastInstance[])}
  * and {@link #onAfterSplitBrainHealed(HazelcastInstance[])}
- *
- * The current implementation always isolate the 1st member of the cluster, but it should be simple to customize this
+ * <p>
+ * The current implementation always isolates the first member of the cluster, but it should be simple to customize this
  * class to support mode advanced split-brain scenarios.
- *
+ * <p>
  * See {@link SplitBrainTestSupportTest} for an example test.
  */
+@SuppressWarnings({"RedundantThrows", "WeakerAccess"})
 public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory;
@@ -92,44 +94,13 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     @Before
     public final void setUpInternals() {
         onBeforeSetup();
-        final Config config = config();
 
         brains = brains();
         validateBrainsConfig(brains);
+
+        Config config = config();
         int clusterSize = getClusterSize();
         instances = startInitialCluster(config, clusterSize);
-    }
-
-    /**
-     * Override this for custom Hazelcast configuration
-     *
-     * @return
-     */
-    protected Config config() {
-        final Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
-        return config;
-    }
-
-    /**
-     * Override this to create a custom brain sizes
-     *
-     * @return
-     */
-    protected int[] brains() {
-        return DEFAULT_BRAINS;
-    }
-
-
-    /**
-     * Override this to create the split-brain situation multiple-times. The test will use
-     * the same members for all iterations.
-     *
-     * @return
-     */
-    protected int iterations() {
-        return DEFAULT_ITERATION_COUNT;
     }
 
     /**
@@ -137,7 +108,37 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
      */
     protected void onBeforeSetup() {
+    }
 
+    /**
+     * Override this method to create a custom brain sizes
+     *
+     * @return the default number of brains
+     */
+    protected int[] brains() {
+        return DEFAULT_BRAINS;
+    }
+
+    /**
+     * Override this method to create a custom Hazelcast configuration.
+     *
+     * @return the default Hazelcast configuration
+     */
+    protected Config config() {
+        return new Config()
+                .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
+                .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+    }
+
+    /**
+     * Override this method to create the split-brain situation multiple-times.
+     * <p>
+     * The test will use the same members for all iterations.
+     *
+     * @return the default number of iterations
+     */
+    protected int iterations() {
+        return DEFAULT_ITERATION_COUNT;
     }
 
     /**
@@ -146,14 +147,12 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * @param instances all Hazelcast instances in your cluster
      */
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
-
     }
 
     /**
      * Called just after a split brain situation was created
      */
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) throws Exception {
-
     }
 
     /**
@@ -162,7 +161,6 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * @param instances all Hazelcast instances in your cluster
      */
     protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
-
     }
 
     /**
@@ -221,17 +219,16 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         HazelcastInstance[] instancesToBlock = brain == 1 ? brains.firstHalf : brains.secondHalf;
 
         List<Address> addressesToBlock = new ArrayList<Address>(instancesToBlock.length);
-        for (int i = 0; i < instancesToBlock.length; i++) {
-            if (isInstanceActive(instancesToBlock[i])) {
-                addressesToBlock.add(getAddress(instancesToBlock[i]));
+        for (HazelcastInstance hz : instancesToBlock) {
+            if (isInstanceActive(hz)) {
+                addressesToBlock.add(getAddress(hz));
                 // block communication from these instances to the new address
-
-                FirewallingConnectionManager connectionManager = getFireWalledConnectionManager(instancesToBlock[i]);
+                FirewallingConnectionManager connectionManager = getFireWalledConnectionManager(hz);
                 connectionManager.blockNewConnection(newMemberAddress);
                 connectionManager.closeActiveConnection(newMemberAddress);
             }
         }
-        // indicate we need to unblacklist addresses from joiner when split-brain will be healed
+        // indicate that we need to unblacklist addresses from the joiner when split-brain will be healed
         unblacklistHint = true;
         // create a new Hazelcast instance which has blocked addresses blacklisted in its joiner
         return factory.newHazelcastInstance(config(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
@@ -388,6 +385,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     protected class Brains {
+
         private final HazelcastInstance[] firstHalf;
         private final HazelcastInstance[] secondHalf;
 

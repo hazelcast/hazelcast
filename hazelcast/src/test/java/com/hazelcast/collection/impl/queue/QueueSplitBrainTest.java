@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class QueueSplitBrainTest extends SplitBrainTestSupport {
 
-    private String name = randomString();
+    private final String name = randomString();
     private final int initialCount = 100;
     private final int finalCount = initialCount + 50;
 
@@ -42,7 +42,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         IQueue<Object> queue = instances[0].getQueue(name);
 
         for (int i = 0; i < initialCount; i++) {
@@ -53,9 +53,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
-            throws Exception {
-
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         IQueue<Object> queue1 = firstBrain[0].getQueue(name);
         for (int i = initialCount; i < finalCount; i++) {
             queue1.offer("item" + i);
@@ -68,7 +66,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         for (HazelcastInstance instance : instances) {
             IQueue<Object> queue = instance.getQueue(name);
             assertEquals(finalCount, queue.size());
