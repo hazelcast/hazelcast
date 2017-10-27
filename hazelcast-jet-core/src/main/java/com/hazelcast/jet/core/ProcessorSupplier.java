@@ -55,6 +55,9 @@ public interface ProcessorSupplier extends Serializable {
      * or not. Execution can also be <em>aborted</em>, for example if a topology
      * change is detected in the cluster. In such a case this method will be
      * called immediately, without waiting for completion on other members.
+     * <p>
+     * Note: this method can be called before {@link ProcessorSupplier#get(int)}
+     * is called in case the job fails before we manage to call it
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion

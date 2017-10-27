@@ -30,6 +30,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.InterruptException;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
@@ -154,7 +155,12 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         assert !currentAssignment.isEmpty() : "No topic partitions assigned to this processor.";
 
         if (traverser == null) {
-            ConsumerRecords<Object, Object> records = consumer.poll(POLL_TIMEOUT_MS);
+            ConsumerRecords<Object, Object> records;
+            try {
+                records = consumer.poll(POLL_TIMEOUT_MS);
+            } catch (InterruptException e) {
+                return true;
+            }
             if (records.isEmpty()) {
                 return false;
             }

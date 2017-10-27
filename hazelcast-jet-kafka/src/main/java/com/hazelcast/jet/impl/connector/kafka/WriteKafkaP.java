@@ -105,7 +105,9 @@ public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
 
         @Override
         public void complete(Throwable error) {
-            producer.close();
+            if (producer != null) {
+                producer.close();
+            }
         }
     }
 }

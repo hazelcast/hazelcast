@@ -231,7 +231,9 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         @Override
         public void complete(Throwable error) {
-            client.shutdown();
+            if (client != null) {
+                client.shutdown();
+            }
         }
 
         @Override @Nonnull
