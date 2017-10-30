@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -64,7 +65,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         Map<String, String> parameters = phoneHome.phoneHome(node1, "test_version", false);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
-
         assertEquals(parameters.get("version"), "test_version");
         assertEquals(parameters.get("m"), node1.getLocalMember().getUuid());
         assertEquals(parameters.get("e"), "false");
@@ -87,6 +87,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("osv"), osMxBean.getVersion());
         assertEquals(parameters.get("jvmn"), runtimeMxBean.getVmName());
         assertEquals(parameters.get("jvmv"), System.getProperty("java.version"));
+        assertEquals(parameters.get("mcver"), "");
+        assertEquals(parameters.get("mclicense"), "");
     }
 
     @Test
