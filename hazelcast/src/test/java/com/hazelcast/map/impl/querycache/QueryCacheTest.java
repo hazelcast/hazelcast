@@ -38,6 +38,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -200,6 +202,19 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         queryCache.destroy();
 
         assertEquals(0, queryCache.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void getAll_throws_exception_when_supplied_keySet_contains_null_key() {
+        String cacheName = "cache-name";
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
+
+        Set<Integer> keySet = new HashSet<Integer>();
+        keySet.add(1);
+        keySet.add(2);
+        keySet.add(null);
+
+        queryCache.getAll(keySet);
     }
 
     @SuppressWarnings("unchecked")
