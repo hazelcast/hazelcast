@@ -64,6 +64,9 @@ import java.util.concurrent.TimeUnit;
  * }
  * </code>
  * </pre>
+ * <h2>Split-brain</h2>
+ * It should be noted that transactions do not provide any consistency support in case of a split-brain or
+ * node failures.
  *
  * @param <K> key
  * @param <V> value
