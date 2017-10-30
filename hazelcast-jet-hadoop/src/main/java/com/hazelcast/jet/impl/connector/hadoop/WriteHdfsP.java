@@ -37,7 +37,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
@@ -77,14 +76,12 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         return true;
     }
 
-    @Override
-    public boolean complete() {
-        return uncheckCall(() -> {
+    private void close() {
+        uncheckRun(() -> {
             recordWriter.close(Reporter.NULL);
             if (outputCommitter.needsTaskCommit(taskAttemptContext)) {
                 outputCommitter.commitTask(taskAttemptContext);
             }
-            return true;
         });
     }
 
@@ -101,7 +98,8 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         private final DistributedFunction<? super T, K> extractKeyFn;
         private final DistributedFunction<? super T, V> extractValueFn;
 
-        private transient Address address;
+        private transient OutputCommitter outputCommitter;
+        private transient JobContextImpl jobContext;
 
         public MetaSupplier(SerializableJobConf jobConf,
                             DistributedFunction<? super T, K> extractKeyFn,
@@ -119,12 +117,21 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
-            address = context.jetInstance().getCluster().getLocalMember().getAddress();
+            outputCommitter = jobConf.getOutputCommitter();
+            jobContext = new JobContextImpl(jobConf, new JobID());
+            uncheckRun(() -> outputCommitter.setupJob(jobContext));
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            if (outputCommitter != null && jobContext != null) {
+                uncheckRun(() -> outputCommitter.commitJob(jobContext));
+            }
         }
 
         @Override @Nonnull
         public DistributedFunction<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new Supplier<>(address.equals(this.address), jobConf, extractKeyFn, extractValueFn);
+            return address -> new Supplier<>(jobConf, extractKeyFn, extractValueFn);
         }
     }
 
@@ -132,7 +139,6 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final boolean commitJob;
         private final SerializableJobConf jobConf;
         private final DistributedFunction<? super T, K> extractKeyFn;
         private final DistributedFunction<? super T, V> extractValueFn;
@@ -140,13 +146,12 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         private transient Context context;
         private transient OutputCommitter outputCommitter;
         private transient JobContextImpl jobContext;
+        private transient List<Processor> processorList;
 
-        Supplier(boolean commitJob,
-                 SerializableJobConf jobConf,
+        Supplier(SerializableJobConf jobConf,
                  DistributedFunction<? super T, K> extractKeyFn,
                  DistributedFunction<? super T, V> extractValueFn
         ) {
-            this.commitJob = commitJob;
             this.jobConf = jobConf;
             this.extractKeyFn = extractKeyFn;
             this.extractValueFn = extractValueFn;
@@ -161,18 +166,15 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
 
         @Override
         public void complete(Throwable error) {
-            if (commitJob) {
-                uncheckRun(() -> outputCommitter.commitJob(jobContext));
+            if (processorList != null) {
+                processorList.forEach(p -> ((WriteHdfsP) p).close());
             }
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return range(0, count).mapToObj(i -> {
+            return processorList = range(0, count).mapToObj(i -> {
                 try {
-                    if (i == 0) {
-                        outputCommitter.setupJob(jobContext);
-                    }
                     String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
                     TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),
                             JOB_SETUP, i, 0);
