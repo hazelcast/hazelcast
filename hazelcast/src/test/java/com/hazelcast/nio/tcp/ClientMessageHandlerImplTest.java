@@ -40,9 +40,9 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MessageHandlerImplTest {
+public class ClientMessageHandlerImplTest {
 
-    private MessageHandlerImpl messageHandler;
+    private ClientMessageHandlerImpl messageHandler;
     private IOService ioService;
     private Connection connection;
     private SwCounter counter;
@@ -55,7 +55,7 @@ public class MessageHandlerImplTest {
         connection = mock(Connection.class);
         counter = SwCounter.newSwCounter();
         clientEngine = mock(ClientEngine.class);
-        messageHandler = new MessageHandlerImpl(connection, clientEngine);
+        messageHandler = new ClientMessageHandlerImpl(connection, clientEngine);
         inboundHandler = new ClientMessageChannelInboundHandler(messageHandler);
         inboundHandler.setNormalPacketsRead(counter);
     }

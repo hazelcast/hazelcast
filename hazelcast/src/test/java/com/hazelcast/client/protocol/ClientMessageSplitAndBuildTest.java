@@ -52,9 +52,9 @@ public class ClientMessageSplitAndBuildTest {
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage);
         ClientMessageChannelInboundHandler clientMessageReadHandler = new ClientMessageChannelInboundHandler(
-                new ClientMessageChannelInboundHandler.MessageHandler() {
+                new ClientMessageChannelInboundHandler.ClientMessageHandler() {
                     @Override
-                    public void handleMessage(ClientMessage message) {
+                    public void handle(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessage, message);
                     }
@@ -100,9 +100,9 @@ public class ClientMessageSplitAndBuildTest {
         }
 
         ClientMessageChannelInboundHandler clientMessageReadHandler = new ClientMessageChannelInboundHandler(
-                new ClientMessageChannelInboundHandler.MessageHandler() {
+                new ClientMessageChannelInboundHandler.ClientMessageHandler() {
                     @Override
-                    public void handleMessage(ClientMessage message) {
+                    public void handle(ClientMessage message) {
                         int correlationId = (int) message.getCorrelationId();
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessages.get(correlationId), message);
@@ -133,9 +133,9 @@ public class ClientMessageSplitAndBuildTest {
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
         ClientMessageChannelInboundHandler clientMessageReadHandler = new ClientMessageChannelInboundHandler(
-                new ClientMessageChannelInboundHandler.MessageHandler() {
+                new ClientMessageChannelInboundHandler.ClientMessageHandler() {
                     @Override
-                    public void handleMessage(ClientMessage message) {
+                    public void handle(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessage, message);
                     }

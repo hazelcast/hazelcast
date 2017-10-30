@@ -24,21 +24,21 @@ import com.hazelcast.nio.Connection;
 import java.io.IOException;
 
 /**
- * A {@link com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler.MessageHandler} implementation
+ * A {@link ClientMessageChannelInboundHandler.ClientMessageHandler} implementation
  * that passes the message to the {@link ClientEngine}.
  */
-public class MessageHandlerImpl implements ClientMessageChannelInboundHandler.MessageHandler {
+public class ClientMessageHandlerImpl implements ClientMessageChannelInboundHandler.ClientMessageHandler {
 
     private final Connection connection;
     private final ClientEngine clientEngine;
 
-    public MessageHandlerImpl(Connection connection, ClientEngine clientEngine) throws IOException {
+    public ClientMessageHandlerImpl(Connection connection, ClientEngine clientEngine) throws IOException {
         this.connection = connection;
         this.clientEngine = clientEngine;
     }
 
     @Override
-    public void handleMessage(ClientMessage message) {
+    public void handle(ClientMessage message) {
         clientEngine.handleClientMessage(message, connection);
     }
 }
