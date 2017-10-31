@@ -468,22 +468,24 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @see LocalEventDispatcher
      */
     private void executeLocal(String serviceName, Object event, EventRegistration registration, int orderKey) {
-        if (nodeEngine.isRunning()) {
-            Registration reg = (Registration) registration;
-            try {
-                if (reg.getListener() != null) {
-                    eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener()
-                            , orderKey, eventQueueTimeoutMs));
-                } else {
-                    logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
-                }
-            } catch (RejectedExecutionException e) {
-                rejectedCount.inc();
+        if (!nodeEngine.isRunning()) {
+            return;
+        }
 
-                if (eventExecutor.isLive()) {
-                    logFailure("EventQueue overloaded! %s failed to publish to %s:%s",
-                            event, reg.getServiceName(), reg.getTopic());
-                }
+        Registration reg = (Registration) registration;
+        try {
+            if (reg.getListener() != null) {
+                eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener()
+                        , orderKey, eventQueueTimeoutMs));
+            } else {
+                logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
+            }
+        } catch (RejectedExecutionException e) {
+            rejectedCount.inc();
+
+            if (eventExecutor.isLive()) {
+                logFailure("EventQueue overloaded! %s failed to publish to %s:%s",
+                        event, reg.getServiceName(), reg.getTopic());
             }
         }
     }
