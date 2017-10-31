@@ -25,6 +25,7 @@ import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.InvocationBuilder;
 
@@ -393,14 +394,14 @@ public final class GroupProperty {
     /**
      * Heartbeat failure detector type. Available options are:
      * <ul>
-     *    <li><code>deadline</code>:  A deadline based failure detector uses an absolute timeout
-     *    for missing/lost heartbeats. After timeout member is considered as dead/unavailable.
-     *    </li>
-     *    <li><code>phi-accrual</code>: Implementation of 'The Phi Accrual Failure Detector' by Hayashibara et al.
-     *    as defined in their paper. Phi Accrual Failure Detector is adaptive to network/environment conditions,
-     *    that's why a lower {@link #MAX_NO_HEARTBEAT_SECONDS} (for example 10 or 15 seconds) can be used to provide
-     *    faster detection of unavailable members.
-     *    </li>
+     * <li><code>deadline</code>:  A deadline based failure detector uses an absolute timeout
+     * for missing/lost heartbeats. After timeout member is considered as dead/unavailable.
+     * </li>
+     * <li><code>phi-accrual</code>: Implementation of 'The Phi Accrual Failure Detector' by Hayashibara et al.
+     * as defined in their paper. Phi Accrual Failure Detector is adaptive to network/environment conditions,
+     * that's why a lower {@link #MAX_NO_HEARTBEAT_SECONDS} (for example 10 or 15 seconds) can be used to provide
+     * faster detection of unavailable members.
+     * </li>
      * </ul>
      *
      * Default failure detector is <code>deadline</code>.
@@ -483,10 +484,14 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
     public static final HazelcastProperty CONNECTION_MONITOR_MAX_FAULTS
             = new HazelcastProperty("hazelcast.connection.monitor.max.faults", 3);
-    /** Time in seconds to sleep after a migration task. */
+    /**
+     * Time in seconds to sleep after a migration task.
+     */
     public static final HazelcastProperty PARTITION_MIGRATION_INTERVAL
             = new HazelcastProperty("hazelcast.partition.migration.interval", 0, SECONDS);
-    /** Timeout in seconds for all migration operations. */
+    /**
+     * Timeout in seconds for all migration operations.
+     */
     public static final HazelcastProperty PARTITION_MIGRATION_TIMEOUT
             = new HazelcastProperty("hazelcast.partition.migration.timeout", 300, SECONDS);
     public static final HazelcastProperty PARTITION_FRAGMENTED_MIGRATION_ENABLED
@@ -747,6 +752,26 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty QUERY_OPTIMIZER_TYPE
             = new HazelcastProperty("hazelcast.query.optimizer.type", QueryOptimizerFactory.Type.RULES.toString());
+
+    /**
+     * Type of Query Index result copying behavior.
+     * Valid Values:
+     * <ul>
+     * <li>READ - Internal data structures of the index are concurrently modified without copy-on-write semantics.
+     * Index queries copy the results of a query on index read to detach the result from the source map.
+     * Should be used in index-write intensive cases. (default value).</li>
+     * <li>WRITE - Internal data structures of the index are modified with copy-on-write semantics.
+     * Previously returned indexed query results reflect the state of the index at the time of the query and are not
+     * affected by future index modifications.</li></li>
+     * <li>NEVER - Internal data structures of the index are concurrently modified without copy-on-write semantics.
+     * Index reads never copy the results of a query to a separate map.
+     * It means that the results backed by the underlying index-map can change after the query has been executed.
+     * Specifically an entry might have been added / removed from an index, or it might have been remapped.</li>
+     * </ul>
+     * <p/>
+     */
+    public static final HazelcastProperty QUERY_INDEX_RESULT_COPY
+            = new HazelcastProperty("hazelcast.query.index.result.copy", IndexCopyBehavior.READ.toString());
 
 
     /**

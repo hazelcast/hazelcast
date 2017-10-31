@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.ExecutionService;
@@ -41,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_INDEX_RESULT_COPY;
 
 public class PartitionContainer {
 
@@ -120,9 +122,10 @@ public class PartitionContainer {
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig);
+        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig, hazelcastProperties);
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false);
+            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false,
+                    hazelcastProperties.getEnum(QUERY_INDEX_RESULT_COPY, IndexCopyBehavior.class));
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -266,8 +269,10 @@ public class PartitionContainer {
             InternalSerializationService ss = (InternalSerializationService)
                     mapServiceContext.getNodeEngine().getSerializationService();
             Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
-            IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig());
-            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false);
+            HazelcastProperties props = mapServiceContext.getProperties();
+            IndexCopyBehavior copyBehavior = props.getEnum(QUERY_INDEX_RESULT_COPY, IndexCopyBehavior.class);
+            IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig(), props);
+            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false, copyBehavior);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

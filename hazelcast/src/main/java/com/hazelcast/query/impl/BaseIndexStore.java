@@ -22,6 +22,7 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -35,7 +36,17 @@ public abstract class BaseIndexStore implements IndexStore {
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
+    private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
+
     private boolean multiResultHasToDetectDuplicates;
+
+    BaseIndexStore(IndexCopyBehavior copyOn) {
+        if (copyOn == IndexCopyBehavior.WRITE || copyOn == IndexCopyBehavior.NEVER) {
+            resultCopyFunctor = new PassThroughFunctor();
+        } else {
+            resultCopyFunctor = new CopyInputFunctor();
+        }
+    }
 
     abstract void newIndexInternal(Comparable newValue, QueryableEntry record);
 
@@ -141,11 +152,36 @@ public abstract class BaseIndexStore implements IndexStore {
         return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
     }
 
-    final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
-        resultSet.addResultSet(new HashMap<Data, QueryableEntry>(records));
+    interface CopyFunctor<A, B> {
+        Map<A, B> invoke(Map<A, B> map);
     }
 
-    final SingleResultSet toSingleResultSet(Map<Data, QueryableEntry> records) {
-        return new SingleResultSet(records != null ? new HashMap<Data, QueryableEntry>(records) : null);
+    private static class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
+        @Override
+        public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
+            return map;
+        }
+    }
+
+    private static class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
+        @Override
+        public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
+            if (map != null && !map.isEmpty()) {
+                return new HashMap<Data, QueryableEntry>(map);
+            }
+            return map;
+        }
+    }
+
+    final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
+        resultSet.addResultSet(resultCopyFunctor.invoke(records));
+    }
+
+    final Set<QueryableEntry> toSingleResultSet(Map<Data, QueryableEntry> records) {
+        return new SingleResultSet(resultCopyFunctor.invoke(records));
+    }
+
+    interface IndexFunctor<A, B> {
+        void invoke(A param1, B param2);
     }
 }
