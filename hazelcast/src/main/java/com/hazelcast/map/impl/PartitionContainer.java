@@ -122,7 +122,8 @@ public class PartitionContainer {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
         IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig);
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false);
+            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false,
+                    serviceContext.getIndexCopyBehavior());
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -267,7 +268,7 @@ public class PartitionContainer {
                     mapServiceContext.getNodeEngine().getSerializationService();
             Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
             IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig());
-            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false);
+            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false, mapServiceContext.getIndexCopyBehavior());
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

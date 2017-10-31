@@ -39,6 +39,7 @@ public class IndexImpl implements Index {
 
     protected final InternalSerializationService ss;
     protected final IndexStore indexStore;
+    private final IndexCopyBehavior copyQueryResultOn;
 
     private volatile TypeConverter converter;
 
@@ -46,16 +47,18 @@ public class IndexImpl implements Index {
     private final boolean ordered;
     private final Extractors extractors;
 
-    public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors) {
+    public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors,
+                     IndexCopyBehavior copyQueryResultOn) {
         this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
+        this.copyQueryResultOn = copyQueryResultOn;
         this.indexStore = createIndexStore(ordered);
         this.extractors = extractors;
     }
 
     public IndexStore createIndexStore(boolean ordered) {
-        return ordered ? new SortedIndexStore() : new UnsortedIndexStore();
+        return ordered ? new SortedIndexStore(copyQueryResultOn) : new UnsortedIndexStore(copyQueryResultOn);
     }
 
     @Override
