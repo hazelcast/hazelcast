@@ -300,15 +300,15 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Override
     public boolean deregisterListener(String serviceName, String topic, Object id) {
         EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            Registration reg = segment.removeRegistration(topic, String.valueOf(id));
-            if (reg != null && !reg.isLocalOnly()) {
-                Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
-                invokeOnAllMembers(supplier);
-            }
-            return reg != null;
+        if (segment == null) {
+            return false;
         }
-        return false;
+        Registration reg = segment.removeRegistration(topic, String.valueOf(id));
+        if (reg != null && !reg.isLocalOnly()) {
+            Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
+            invokeOnAllMembers(supplier);
+        }
+        return reg != null;
     }
 
     private void invokeOnAllMembers(Supplier<Operation> operationSupplier) {
@@ -338,15 +338,15 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Override
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            if (registrations == null || registrations.isEmpty()) {
-                return EMPTY_REGISTRATIONS;
-            } else {
-                return registrations.toArray(new Registration[registrations.size()]);
-            }
+        if (segment == null) {
+            return EMPTY_REGISTRATIONS;
         }
-        return EMPTY_REGISTRATIONS;
+        Collection<Registration> registrations = segment.getRegistrations(topic, false);
+        if (registrations == null || registrations.isEmpty()) {
+            return EMPTY_REGISTRATIONS;
+        } else {
+            return registrations.toArray(new Registration[registrations.size()]);
+        }
     }
 
     /**
@@ -375,10 +375,10 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Override
     public boolean hasEventRegistration(String serviceName, String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            return segment.hasRegistration(topic);
+        if (segment == null) {
+            return false;
         }
-        return false;
+        return segment.hasRegistration(topic);
     }
 
     @Override
@@ -559,15 +559,16 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     @Override
     public void executeEventCallback(Runnable callback) {
-        if (nodeEngine.isRunning()) {
-            try {
-                eventExecutor.execute(callback);
-            } catch (RejectedExecutionException e) {
-                rejectedCount.inc();
+        if (!nodeEngine.isRunning()) {
+            return;
+        }
+        try {
+            eventExecutor.execute(callback);
+        } catch (RejectedExecutionException e) {
+            rejectedCount.inc();
 
-                if (eventExecutor.isLive()) {
-                    logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
-                }
+            if (eventExecutor.isLive()) {
+                logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
             }
         }
     }
