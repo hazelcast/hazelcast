@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.jet.JetInstance;
@@ -30,7 +32,9 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.MasterContext;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.operation.InitOperation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,7 +50,9 @@ import org.junit.runners.Parameterized;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -75,6 +81,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(Parameterized.class)
@@ -509,6 +516,31 @@ public class TopologyChangeTest extends JetTestSupport {
 
         // Then, the job restarts and successfully completes
         job.join();
+    }
+
+    @Test
+    public void when_nodeIsNotJobParticipant_then_initFails() throws Throwable {
+        int jobId = 1;
+        int executionId = 1;
+        HazelcastInstance master = instances[0].getHazelcastInstance();
+        int memberListVersion = getClusterService(master).getMemberListVersion();
+        Set<MemberInfo> memberInfos = new HashSet<>();
+        for (int i = 1; i < instances.length; i++) {
+            memberInfos.add(new MemberInfo(getNode(instances[i].getHazelcastInstance()).getLocalMember()));
+        }
+        ExecutionPlan plan = mock(ExecutionPlan.class);
+
+        InitOperation op = new InitOperation(jobId, executionId, memberListVersion, memberInfos, plan);
+        Future<Object> future = getOperationService(master)
+                .createInvocationBuilder(JetService.SERVICE_NAME, op, getAddress(master))
+                .invoke();
+
+        try {
+            future.get();
+            fail();
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof IllegalArgumentException);
+        }
     }
 
     static class MockSupplier implements ProcessorSupplier {

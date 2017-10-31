@@ -200,8 +200,13 @@ public class JobExecutionService {
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
         int localMemberListVersion = membershipManager.getMemberListVersion();
+        Address thisAddress = nodeEngine.getThisAddress();
+
         if (coordinatorMemberListVersion > localMemberListVersion) {
-            assert masterAddress != nodeEngine.getThisAddress();
+            assert !masterAddress.equals(thisAddress) : String.format(
+                    "Local node: %s is master but InitOperation has coordinator member list version: %s larger than "
+                    + " local member list version: %s", thisAddress, coordinatorMemberListVersion,
+                    localMemberListVersion);
 
             nodeEngine.getOperationService().send(new TriggerMemberListPublishOp(), masterAddress);
             throw new RetryableHazelcastException(String.format(
@@ -211,7 +216,12 @@ public class JobExecutionService {
                     coordinatorMemberListVersion));
         }
 
+        boolean isLocalMemberParticipant = false;
         for (MemberInfo participant : participants) {
+            if (participant.getAddress().equals(thisAddress)) {
+                isLocalMemberParticipant = true;
+            }
+
             if (membershipManager.getMember(participant.getAddress(), participant.getUuid()) == null) {
                 throw new TopologyChangedException(String.format(
                         "Cannot initialize %s for coordinator %s: participant %s not found in local member list." +
@@ -219,6 +229,12 @@ public class JobExecutionService {
                         jobAndExecutionId(jobId, executionId), coordinator, participant,
                         localMemberListVersion, coordinatorMemberListVersion));
             }
+        }
+
+        if (!isLocalMemberParticipant) {
+            throw new IllegalArgumentException(String.format(
+                    "Cannot initialize %s since member %s is not in participants: %s",
+                    jobAndExecutionId(jobId, executionId), thisAddress, participants));
         }
     }
 
@@ -257,7 +273,7 @@ public class JobExecutionService {
 
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
-            throw new IllegalStateException(String.format(
+            throw new TopologyChangedException(String.format(
                     "%s not found for coordinator %s for '%s'",
                     jobAndExecutionId(jobId, executionId), coordinator, operationName));
         } else if (!executionContext.verify(coordinator, jobId)) {
