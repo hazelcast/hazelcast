@@ -254,7 +254,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public void populate(LiveOperations liveOperations) {
-        operationExecutor.scan(liveOperations);
+        operationExecutor.populate(liveOperations);
 
         for (Operation op : asyncOperations) {
             liveOperations.add(op.getCallerAddress(), op.getCallId());
