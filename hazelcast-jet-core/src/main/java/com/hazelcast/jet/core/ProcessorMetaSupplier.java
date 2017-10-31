@@ -87,17 +87,17 @@ public interface ProcessorMetaSupplier extends Serializable {
     Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**
-     * Called on coordinator member after execution is finished on all the
-     * nodes whether successfully or not. This method will be called after
-     * {@link ProcessorSupplier#complete(Throwable)} has been called on all
-     * the members.
+     * Called on coordinator member after execution has finished on all
+     * members, successfully or not. This method will be called after {@link
+     * ProcessorSupplier#complete(Throwable)} has been called on all
+     * <em>available</em> members.
      * <p>
-     * If there is an exception during creation of the execution plan this method
-     * will be called regardless if the {@link #init(Context)} method has
-     * been called or not.
+     * If there is an exception during the creation of the execution plan, this
+     * method will be called regardless of whether the {@link #init(Context)
+     * init()} or {@link #get(List) get()} method have been called or not.
      * <p>
-     * If coordinator member fails during execution, this method will
-     * not be called.
+     * If you rely on the fact that this method is run once per cluster, it can
+     * happen that it is not called, if the coordinator member crashed.
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion
