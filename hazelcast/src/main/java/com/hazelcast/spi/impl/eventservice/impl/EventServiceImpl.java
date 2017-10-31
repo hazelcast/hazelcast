@@ -64,7 +64,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -132,9 +131,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     final ILogger logger;
     final NodeEngineImpl nodeEngine;
 
-    /** The exception handler for remote listener registrations (those sent to other cluster members) */
-    private final ExceptionHandler registrationExceptionHandler;
-    private final ExceptionHandler deregistrationExceptionHandler;
     /** Service name to event service segment map */
     private final ConcurrentMap<String, EventServiceSegment> segments;
     /** The executor responsible for processing events */
@@ -192,10 +188,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                 createThreadName(nodeEngine.getHazelcastInstance().getName(), "event"),
                 eventThreadCount,
                 eventQueueCapacity);
-        this.registrationExceptionHandler
-                = new FutureUtilExceptionHandler(logger, "Member left while registering listener...");
-        this.deregistrationExceptionHandler
-                = new FutureUtilExceptionHandler(logger, "Member left while de-registering listener...");
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
