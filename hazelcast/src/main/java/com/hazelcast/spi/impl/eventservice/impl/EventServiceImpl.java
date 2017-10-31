@@ -632,12 +632,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     private OnJoinRegistrationOperation getOnJoinRegistrationOperation() {
         Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
-            //todo: this should be moved into the Segment.
-            for (Registration reg : (Iterable<Registration>) segment.getRegistrationIdMap().values()) {
-                if (!reg.isLocalOnly()) {
-                    registrations.add(reg);
-                }
-            }
+            segment.collectRemoteRegistrations(registrations);
         }
         return registrations.isEmpty() ? null : new OnJoinRegistrationOperation(registrations);
     }
