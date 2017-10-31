@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.REPLICATION;
+
 public class AtomicLongReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
 
@@ -45,9 +47,9 @@ public class AtomicLongReplicationOperation extends Operation
         AtomicLongService atomicLongService = getService();
         for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
             String name = longEntry.getKey();
-            AtomicLongContainer atomicLongContainer = atomicLongService.getLongContainer(name);
+            AtomicLongContainer container = atomicLongService.getLongContainer(name);
             Long value = longEntry.getValue();
-            atomicLongContainer.set(value);
+            container.set(value);
         }
     }
 
@@ -63,7 +65,7 @@ public class AtomicLongReplicationOperation extends Operation
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.REPLICATION;
+        return REPLICATION;
     }
 
     @Override
