@@ -172,19 +172,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         this.eventThreadCount = hazelcastProperties.getInteger(EVENT_THREAD_COUNT);
         this.eventQueueCapacity = hazelcastProperties.getInteger(EVENT_QUEUE_CAPACITY);
         this.eventQueueTimeoutMs = hazelcastProperties.getMillis(EVENT_QUEUE_TIMEOUT_MILLIS);
-        int eventSyncFrequency;
-        try {
-            eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));
-            if (eventSyncFrequency <= 0) {
-                eventSyncFrequency = EVENT_SYNC_FREQUENCY;
-            }
-        } catch (Exception e) {
-            eventSyncFrequency = EVENT_SYNC_FREQUENCY;
-        }
-
         this.sendEventSyncTimeoutMillis = hazelcastProperties.getInteger(EVENT_SYNC_TIMEOUT_MILLIS);
-
-        this.eventSyncFrequency = eventSyncFrequency;
+        this.eventSyncFrequency = loadEventSyncFrequency();
 
         this.eventExecutor = new StripedExecutor(
                 nodeEngine.getNode().getLogger(EventServiceImpl.class),
@@ -192,6 +181,19 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                 eventThreadCount,
                 eventQueueCapacity);
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
+    }
+
+
+    private static int loadEventSyncFrequency() {
+        try {
+            int eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));
+            if (eventSyncFrequency <= 0) {
+                eventSyncFrequency = EVENT_SYNC_FREQUENCY;
+            }
+            return eventSyncFrequency;
+        } catch (Exception e) {
+            return EVENT_SYNC_FREQUENCY;
+        }
     }
 
     @Override
