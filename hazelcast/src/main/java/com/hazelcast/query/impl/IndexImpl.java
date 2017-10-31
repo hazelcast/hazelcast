@@ -46,11 +46,12 @@ public class IndexImpl implements Index {
     private final InternalSerializationService ss;
     private final Extractors extractors;
 
-    public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors) {
+    public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors,
+                     IndexCopyBehavior copyQueryResultOn) {
         this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
-        this.indexStore = ordered ? new SortedIndexStore() : new UnsortedIndexStore();
+        this.indexStore = ordered ? new SortedIndexStore(copyQueryResultOn) : new UnsortedIndexStore(copyQueryResultOn);
         this.extractors = extractors;
     }
 

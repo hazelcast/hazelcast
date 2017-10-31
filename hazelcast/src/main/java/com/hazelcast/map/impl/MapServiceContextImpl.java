@@ -57,6 +57,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
@@ -95,6 +96,7 @@ import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptim
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 
 /**
@@ -751,5 +753,10 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public QueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
+    }
+
+    @Override
+    public IndexCopyBehavior getIndexCopyBehavior() {
+        return nodeEngine.getProperties().getEnum(INDEX_COPY_BEHAVIOR, IndexCopyBehavior.class);
     }
 }
