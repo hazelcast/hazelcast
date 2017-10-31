@@ -307,9 +307,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public boolean deregisterListener(String serviceName, String topic, Object id) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
+        EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
-            final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
+            Registration reg = segment.removeRegistration(topic, String.valueOf(id));
             if (reg != null && !reg.isLocalOnly()) {
                 Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
                 invokeOnAllMembers(supplier);
@@ -333,7 +333,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public void deregisterAllListeners(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
+        EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
         }
@@ -345,9 +345,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
+        EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
-            final Collection<Registration> registrations = segment.getRegistrations(topic, false);
+            Collection<Registration> registrations = segment.getRegistrations(topic, false);
             if (registrations == null || registrations.isEmpty()) {
                 return EMPTY_REGISTRATIONS;
             } else {
@@ -367,21 +367,22 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     @Override
     public Collection<EventRegistration> getRegistrations(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            final Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            if (registrations == null || registrations.isEmpty()) {
-                return Collections.<EventRegistration>emptySet();
-            } else {
-                return Collections.<EventRegistration>unmodifiableCollection(registrations);
-            }
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment == null) {
+            return Collections.emptySet();
         }
-        return Collections.emptySet();
+
+        Collection<Registration> registrations = segment.getRegistrations(topic, false);
+        if (registrations == null || registrations.isEmpty()) {
+            return Collections.<EventRegistration>emptySet();
+        } else {
+            return Collections.<EventRegistration>unmodifiableCollection(registrations);
+        }
     }
 
     @Override
     public boolean hasEventRegistration(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
+        EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             return segment.hasRegistration(topic);
         }
@@ -497,8 +498,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * exception (see {@link RemoteEventProcessor})
      */
     private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
-        final String serviceName = eventEnvelope.getServiceName();
-        final EventServiceSegment segment = getSegment(serviceName, true);
+        String serviceName = eventEnvelope.getServiceName();
+        EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % eventSyncFrequency == 0;
 
         if (sync) {
@@ -629,7 +630,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @return the on join operation containing all non-local registrations
      */
     private OnJoinRegistrationOperation getOnJoinRegistrationOperation() {
-        final Collection<Registration> registrations = new LinkedList<Registration>();
+        Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
             //todo: this should be moved into the Segment.
             for (Registration reg : (Iterable<Registration>) segment.getRegistrationIdMap().values()) {
@@ -651,7 +652,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     public void onMemberLeft(MemberImpl member) {
-        final Address address = member.getAddress();
+        Address address = member.getAddress();
         for (EventServiceSegment segment : segments.values()) {
             segment.onMemberLeft(address);
         }
