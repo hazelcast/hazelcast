@@ -17,10 +17,11 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.GET_AND_ALTER;
 
 public class GetAndAlterOperation extends AbstractAlterOperation {
 
@@ -35,22 +36,22 @@ public class GetAndAlterOperation extends AbstractAlterOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
+        AtomicReferenceContainer container = getReferenceContainer();
 
-        response = atomicReferenceContainer.get();
-        Object input = nodeEngine.toObject(atomicReferenceContainer.get());
+        response = container.get();
+        Object input = nodeEngine.toObject(container.get());
         //noinspection unchecked
         Object output = f.apply(input);
         Data serializedOutput = nodeEngine.toData(output);
         shouldBackup = !isEquals(response, serializedOutput);
         if (shouldBackup) {
-            atomicReferenceContainer.set(serializedOutput);
+            container.set(serializedOutput);
             backup = serializedOutput;
         }
     }
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.GET_AND_ALTER;
+        return GET_AND_ALTER;
     }
 }

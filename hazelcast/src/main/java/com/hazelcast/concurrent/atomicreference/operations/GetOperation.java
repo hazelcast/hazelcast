@@ -16,9 +16,10 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
+
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.GET;
 
 public class GetOperation extends AbstractAtomicReferenceOperation implements ReadonlyOperation {
 
@@ -43,6 +44,6 @@ public class GetOperation extends AbstractAtomicReferenceOperation implements Re
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.GET;
+        return GET;
     }
 }
