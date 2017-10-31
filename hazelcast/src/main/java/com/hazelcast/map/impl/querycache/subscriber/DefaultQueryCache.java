@@ -52,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -277,6 +278,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Map<K, V> getAll(Set<K> keys) {
         checkNotNull(keys, "keys cannot be null");
+        checkNoNullInside(keys, "supplied key-set cannot contain null key");
+
         if (keys.isEmpty()) {
             return Collections.emptyMap();
         }
