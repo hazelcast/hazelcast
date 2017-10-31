@@ -39,7 +39,6 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
@@ -63,6 +62,10 @@ import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -166,9 +169,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.logger = nodeEngine.getLogger(EventService.class.getName());
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        this.eventThreadCount = hazelcastProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
-        this.eventQueueCapacity = hazelcastProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
-        this.eventQueueTimeoutMs = hazelcastProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
+        this.eventThreadCount = hazelcastProperties.getInteger(EVENT_THREAD_COUNT);
+        this.eventQueueCapacity = hazelcastProperties.getInteger(EVENT_QUEUE_CAPACITY);
+        this.eventQueueTimeoutMs = hazelcastProperties.getMillis(EVENT_QUEUE_TIMEOUT_MILLIS);
         int eventSyncFrequency;
         try {
             eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));
@@ -179,7 +182,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             eventSyncFrequency = EVENT_SYNC_FREQUENCY;
         }
 
-        this.sendEventSyncTimeoutMillis = hazelcastProperties.getInteger(GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS);
+        this.sendEventSyncTimeoutMillis = hazelcastProperties.getInteger(EVENT_SYNC_TIMEOUT_MILLIS);
 
         this.eventSyncFrequency = eventSyncFrequency;
 
