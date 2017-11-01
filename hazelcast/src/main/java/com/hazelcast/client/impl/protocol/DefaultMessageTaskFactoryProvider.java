@@ -1720,7 +1720,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new DeployClassesMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec.REQUEST_TYPE] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddPartitionListenerMessageTask(clientMessage, node, connection);
             }
@@ -2046,7 +2046,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new AddCacheConfigMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec.REQUEST_TYPE] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddEventJournalConfigMessageTask(clientMessage, node, connection);
             }

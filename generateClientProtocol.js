@@ -47,17 +47,20 @@ function toString(t){
 }
 
 function readVariable(var_name, type, isNullable, isEvent, containsNullable=false){
-    isNullVariableName = var_name + "_isNull"
     if(isNullable){
+         isNullVariableName = var_name + "_isNull"
 .        boolean @{isNullVariableName} = clientMessage.getBoolean();
 .        if (!@{isNullVariableName}) {
-    }
-.        @{getterTextInternal(var_name, type, containsNullable)}
-    if(!isEvent){
-.        parameters.@{var_name} = @{var_name};
-    }
-    if(isNullable){
+.            @{getterTextInternal(var_name, type, containsNullable)}
+         if(!isEvent){
+.            parameters.@{var_name} = @{var_name};
+         }
 .        }
+    } else {
+.        @{getterTextInternal(var_name, type, containsNullable)}
+         if(!isEvent){
+.        parameters.@{var_name} = @{var_name};
+         }
     }
 .
 }
@@ -156,22 +159,22 @@ function getterTextInternal(var_name, varType, containsNullable=false){
         case "COLLECTION":
             var collectionType = "java.util.ArrayList"
             var itemVariableType = getGenericType(varType)
-            var itemVariableName = var_name + "_item"
-            var sizeVariableName = var_name + "_size"
-            var indexVariableName = var_name + "_index"
-            var isNullVariableName = itemVariableName + "_isNull"
+            var itemVariableName = var_name + "Item"
+            var sizeVariableName = var_name + "Size"
+            var indexVariableName = var_name + "Index"
+            var isNullVariableName = itemVariableName + "IsNull"
 .        int @{sizeVariableName} = clientMessage.getInt();
 .        @{var_name} = new @{collectionType}<@{itemVariableType}>(@{sizeVariableName});
-.        for (int @{indexVariableName} = 0;@{indexVariableName}<@{sizeVariableName};@{indexVariableName}++) {
+.        for (int @{indexVariableName} = 0; @{indexVariableName} < @{sizeVariableName}; @{indexVariableName}++) {
 .            @{itemVariableType} @{itemVariableName};
             if(containsNullable){
 .            @{itemVariableName} = null;
 .            boolean @{isNullVariableName} = clientMessage.getBoolean();
 .            if (!@{isNullVariableName}) {
-            }
-.            @{getterTextInternal(itemVariableName, itemVariableType)}
-            if(containsNullable){
-.             }
+.                @{getterTextInternal(itemVariableName, itemVariableType)}
+.            }
+            } else {
+.             @{getterTextInternal(itemVariableName, itemVariableType)}
             }
 .            @{var_name}.add(@{itemVariableName});
 .        }
@@ -184,16 +187,16 @@ function getterTextInternal(var_name, varType, containsNullable=false){
             var isNullVariableName = itemVariableName + "_isNull"
 .        int @{sizeVariableName} = clientMessage.getInt();
 .        @{var_name} = new @{itemVariableType}[@{sizeVariableName}];
-.        for (int @{indexVariableName} = 0;@{indexVariableName}<@{sizeVariableName};@{indexVariableName}++) {
+.        for (int @{indexVariableName} = 0; @{indexVariableName} < @{sizeVariableName} ; @{indexVariableName}++) {
 .            @{itemVariableType} @{itemVariableName};
             if(containsNullable){
-.                    @{itemVariableName} = null;
-.                    boolean @{isNullVariableName} = clientMessage.getBoolean();
-.                    if (!@{isNullVariableName}) {
-            }
-.            @{getterTextInternal(itemVariableName, itemVariableType)}
-            if(containsNullable){
-.                    }
+.            @{itemVariableName} = null;
+.            boolean @{isNullVariableName} = clientMessage.getBoolean();
+.            if (!@{isNullVariableName}) {
+.                @{getterTextInternal(itemVariableName, itemVariableType)}
+.            }
+            } else {
+.             @{getterTextInternal(itemVariableName, itemVariableType)}
             }
 .            @{var_name}[@{indexVariableName}] = @{itemVariableName};
 .        }
@@ -235,7 +238,7 @@ function getDefaultValueForType(type){
     }
 }
 
-function setterTextInternal(var_name, type, isNullable=false, containsNullable=false){
+function setterTextInternal(var_name, type, containsNullable=false){
     var category = getTypeCategory(type)
     switch(category){
         case "OTHER":
@@ -249,7 +252,7 @@ function setterTextInternal(var_name, type, isNullable=false, containsNullable=f
             var itemType = getGenericType(type)
             var itemVarName = var_name + "_item"
 .           for (@{itemType} @{itemVarName} : @{var_name}) {
-.                @{setterText(itemVarName, itemType, false, isNullable)}
+.                @{setterText(itemVarName, itemType, containsNullable, false)}
 .            }
         break;
         case "ARRAY":
@@ -257,7 +260,7 @@ function setterTextInternal(var_name, type, isNullable=false, containsNullable=f
             var itemType = getArrayType(type)
             var itemVarName = var_name + "_item"
 .           for (@{itemType} @{itemVarName} : @{var_name}) {
-.                @{setterText(itemVarName, itemType, false, isNullable)}
+.                @{setterText(itemVarName, itemType, containsNullable, false)}
 .            }
         break;
         case "MAPENTRY":
@@ -276,19 +279,17 @@ function setterTextInternal(var_name, type, isNullable=false, containsNullable=f
 }
 
 function setterText(var_name, type, isNullable=false, containsNullable=false){
-    isNullVariableName = var_name + "_isNull"
     if(isNullable){
+         isNullVariableName = var_name + "IsNull"
 .        boolean @{isNullVariableName};
 .        if (@{var_name} == null) {
-.            @{isNullVariableName} = true;
-.            clientMessage.set(@{isNullVariableName});
+.            clientMessage.set(true);
 .        } else {
-.            @{isNullVariableName}= false;
-.            clientMessage.set(@{isNullVariableName});
-    }
-.        @{setterTextInternal(var_name, type, containsNullable)}
-    if(isNullable){
+.            clientMessage.set(false);
+.            @{setterTextInternal(var_name, type, containsNullable)}
 .        }
+    } else {
+.        @{setterTextInternal(var_name, type, containsNullable)}
     }
 .
 }
@@ -322,14 +323,14 @@ function sizeTextInternal(var_name, type, containsNullable=false){
 .           dataSize += Bits.INT_SIZE_IN_BYTES;
             var genericType = getGenericType(type)
 .           for (@{genericType} @{var_name}_item : @{var_name} ) {
-.               @{sizeText(var_name + "_item", genericType, false, containsNullable)}
+.               @{sizeText(var_name + "_item", genericType, containsNullable, false)}
 .           }
         break;
         case "ARRAY":
 .           dataSize += Bits.INT_SIZE_IN_BYTES;
             var genericType = getArrayType(type)
 .           for (@{genericType} @{var_name}_item : @{var_name} ) {
-.               @{sizeText(var_name + "_item", genericType, false, containsNullable)}
+.               @{sizeText(var_name + "_item", genericType, containsNullable, false)}
 .           }
         break;
         case "MAPENTRY":
@@ -352,10 +353,10 @@ function sizeText(name, type, isNullable, containsNullable){
     if(isNullable){
 .        dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
 .        if (@{name} != null) {
-    }
-.        @{sizeTextInternal(name, type, containsNullable)}
-    if(isNullable){
+.            @{sizeTextInternal(name, type, containsNullable)}
 .        }
+    } else {
+.        @{sizeTextInternal(name, type, containsNullable)}
     }
 .
 }
@@ -441,7 +442,7 @@ function requestPart(item){
 .            }
 .        }
          }else {
-.           @{getterText(param.name, param.type, toBoolean(param.nullable), false, toBoolean(param.containsNullable))}
+.        @{getterText(param.name, param.type, toBoolean(param.nullable), false, toBoolean(param.containsNullable))}
          }
          if(parseFloat(param.since) > parseFloat(item.since)){
 .        parameters.@{param.name}Exist = true;
@@ -588,6 +589,22 @@ for(var i = 0; i < data.length; i++){
 console.log(i + " of " + data.length)
     item = data[i]
 ./!output("./hazelcast/src/main/java/com/hazelcast/client/impl/protocol/codec/" + item.fullName + ".java")
+./*
+. * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+. *
+. * Licensed under the Apache License, Version 2.0 (the "License");
+. * you may not use this file except in compliance with the License.
+. * You may obtain a copy of the License at
+. *
+. * http://www.apache.org/licenses/LICENSE-2.0
+. *
+. * Unless required by applicable law or agreed to in writing, software
+. * distributed under the License is distributed on an "AS IS" BASIS,
+. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+. * See the License for the specific language governing permissions and
+. * limitations under the License.
+. */
+.//DO NOT MODIFY. THIS FILE IS GENERATED. TO MODIFY IT  generateClientProtocol.js
 .package com.hazelcast.client.impl.protocol.codec;
 .
 .import com.hazelcast.client.impl.protocol.ClientMessage;
