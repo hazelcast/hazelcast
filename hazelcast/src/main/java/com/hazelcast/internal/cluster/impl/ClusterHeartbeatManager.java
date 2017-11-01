@@ -23,6 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetector;
+import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.cluster.fd.DeadlineClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.PingFailureDetector;
@@ -177,19 +178,21 @@ public class ClusterHeartbeatManager {
 
     private ClusterFailureDetector createHeartbeatFailureDetector(HazelcastProperties properties) {
         String type = properties.getString(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE);
-        if ("deadline".equals(type)) {
-            return new DeadlineClusterFailureDetector(maxNoHeartbeatMillis);
+        ClusterFailureDetectorType fdType = ClusterFailureDetectorType.of(type);
+        switch (fdType) {
+            case DEADLINE:
+                return new DeadlineClusterFailureDetector(maxNoHeartbeatMillis);
+            case PHI_ACCRUAL:
+                int defaultValue = Integer.parseInt(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
+                if (maxNoHeartbeatMillis == TimeUnit.SECONDS.toMillis(defaultValue)) {
+                    logger.warning("When using Phi-Accrual Failure Detector, please consider using a lower '"
+                            + GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
+                            + defaultValue + " seconds.");
+                }
+                return new PhiAccrualClusterFailureDetector(maxNoHeartbeatMillis, heartbeatIntervalMillis, properties);
+            default:
+                throw new IllegalArgumentException("Unknown failure detector type: " + type);
         }
-        if ("phi-accrual".equals(type)) {
-            int defaultValue = Integer.parseInt(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
-            if (maxNoHeartbeatMillis == TimeUnit.SECONDS.toMillis(defaultValue)) {
-                logger.warning("When using Phi-Accrual Failure Detector, please consider using a lower '"
-                        + GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
-                        + defaultValue + " seconds.");
-            }
-            return new PhiAccrualClusterFailureDetector(maxNoHeartbeatMillis, heartbeatIntervalMillis, properties);
-        }
-        throw new IllegalArgumentException("Unknown failure detector type: " + type);
     }
 
     public long getHeartbeatIntervalMillis() {
