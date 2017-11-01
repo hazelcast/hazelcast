@@ -17,12 +17,13 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.SET_OPERATION;
 
 public class SetOperation extends AtomicLongBackupAwareOperation {
 
@@ -38,8 +39,8 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicLongContainer atomicLongContainer = getLongContainer();
-        atomicLongContainer.set(newValue);
+        AtomicLongContainer container = getLongContainer();
+        container.set(newValue);
     }
 
     @Override
@@ -49,7 +50,7 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.SET_OPERATION;
+        return SET_OPERATION;
     }
 
     @Override
