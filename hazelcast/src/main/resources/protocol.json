@@ -459,6 +459,13 @@
         "containsNullable" : "false",
         "type"     : "java.util.List<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>>",
         "name"     : "partitions"
+      },
+      {
+        "since"    : "1.5",
+        "nullable" : "false",
+        "containsNullable" : "false",
+        "type"     : "int",
+        "name"     : "partitionStateVersion"
       }
     ]
   }
@@ -800,6 +807,12 @@
           "nullable" : "false",
           "type"     : "java.util.List<java.util.Map.Entry<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>>",
           "name"     : "partitions"
+        },
+        {
+          "since"    : "1.5",
+          "nullable" : "false",
+          "type"     : "int",
+          "name"     : "partitionStateVersion"
         }
       ]
     }
@@ -20278,6 +20291,63 @@
         "containsNullable" : "false",
         "type"     : "com.hazelcast.config.HotRestartConfig",
         "name"     : "hotRestartConfig"
+      }
+    ],
+
+    "responseId" : "0x0064"
+
+
+
+  },
+  {
+    "fullName"  : "DynamicConfigAddEventJournalConfigCodec",
+    "retryable" : "0",
+    "since"     : "1.5",
+    "comment"   : "Adds a new event journal configuration to a running cluster.<br> If an event journal configuration for the same map or cache name already exists, then<br> the new configuration is ignored and the existing one is preserved.",
+    "object"    : "com.hazelcast.client.impl.protocol.template.DynamicConfigTemplate",
+    "request"   : "AddEventJournalConfig",
+    "partition" : "-1",
+    "requestId" : "0x1e11",
+    "requests" : [
+      {
+        "comment"  : "name of {@code IMap} to use as event source",
+        "since"    : "1.5",
+        "nullable" : "true",
+        "containsNullable" : "false",
+        "type"     : "java.lang.String",
+        "name"     : "mapName"
+      },
+      {
+        "comment"  : "name of {@code ICache} to use as event source",
+        "since"    : "1.5",
+        "nullable" : "true",
+        "containsNullable" : "false",
+        "type"     : "java.lang.String",
+        "name"     : "cacheName"
+      },
+      {
+        "comment"  : "{@code true} to enable this event journal configuration, otherwise {@code false}",
+        "since"    : "1.5",
+        "nullable" : "false",
+        "containsNullable" : "false",
+        "type"     : "boolean",
+        "name"     : "enabled"
+      },
+      {
+        "comment"  : "capacity of event journal",
+        "since"    : "1.5",
+        "nullable" : "false",
+        "containsNullable" : "false",
+        "type"     : "int",
+        "name"     : "capacity"
+      },
+      {
+        "comment"  : "time to live (in seconds). This is the time the event journal retains items before removing them<br>                          from the journal.",
+        "since"    : "1.5",
+        "nullable" : "false",
+        "containsNullable" : "false",
+        "type"     : "int",
+        "name"     : "timeToLiveSeconds"
       }
     ],
 
