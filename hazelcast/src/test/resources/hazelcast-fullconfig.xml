@@ -770,4 +770,22 @@
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
         <statistics-enabled>false</statistics-enabled>
     </pn-counter>
+
+    <quorum enabled="true" name="member-count-quorum">
+        <quorum-type>READ_WRITE</quorum-type>
+        <quorum-size>3</quorum-size>
+        <member-count-quorum/>
+    </quorum>
+
+    <quorum enabled="true" name="probabilistic-quorum">
+        <quorum-size>3</quorum-size>
+        <quorum-type>READ_WRITE</quorum-type>
+        <probabilistic-quorum acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
+    </quorum>
+
+    <quorum enabled="true" name="recently-active-quorum">
+        <quorum-size>4</quorum-size>
+        <quorum-type>READ_WRITE</quorum-type>
+        <recently-active-quorum heartbeat-tolerance-millis="60000" />
+    </quorum>
 </hazelcast>

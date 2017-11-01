@@ -180,6 +180,17 @@ public class HazelcastProperties {
     }
 
     /**
+     * Returns the configured double value of a {@link HazelcastProperty}.
+     *
+     * @param property the {@link HazelcastProperty} to get the value from
+     * @return the value as double
+     * @throws NumberFormatException if the value cannot be parsed
+     */
+    public double getDouble(HazelcastProperty property) {
+        return Double.valueOf(getString(property));
+    }
+
+    /**
      * Returns the configured value of a {@link HazelcastProperty} converted to nanoseconds.
      *
      * @param property the {@link HazelcastProperty} to get the value from

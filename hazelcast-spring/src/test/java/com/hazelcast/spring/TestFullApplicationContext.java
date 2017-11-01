@@ -121,6 +121,8 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
+import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -1112,7 +1114,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testQuorumConfig() {
         assertNotNull(config);
-        assertEquals(1, config.getQuorumConfigs().size());
+        assertEquals(3, config.getQuorumConfigs().size());
         QuorumConfig quorumConfig = config.getQuorumConfig("my-quorum");
         assertNotNull(quorumConfig);
         assertEquals("my-quorum", quorumConfig.getName());
@@ -1123,6 +1125,44 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(QuorumType.READ, quorumConfig.getType());
         assertEquals("com.hazelcast.spring.DummyQuorumListener", quorumConfig.getListenerConfigs().get(0).getClassName());
         assertNotNull(quorumConfig.getListenerConfigs().get(1).getImplementation());
+    }
+
+    @Test
+    public void testProbabilisticQuorumConfig() {
+        QuorumConfig probabilisticQuorumConfig = config.getQuorumConfig("probabilistic-quorum");
+        assertNotNull(probabilisticQuorumConfig);
+        assertEquals("probabilistic-quorum", probabilisticQuorumConfig.getName());
+        assertNotNull(probabilisticQuorumConfig.getQuorumFunctionImplementation());
+        assertInstanceOf(ProbabilisticQuorumFunction.class, probabilisticQuorumConfig.getQuorumFunctionImplementation());
+        assertTrue(probabilisticQuorumConfig.isEnabled());
+        assertEquals(3, probabilisticQuorumConfig.getSize());
+        assertEquals(2, probabilisticQuorumConfig.getListenerConfigs().size());
+        assertEquals(QuorumType.READ_WRITE, probabilisticQuorumConfig.getType());
+        assertEquals("com.hazelcast.spring.DummyQuorumListener",
+                probabilisticQuorumConfig.getListenerConfigs().get(0).getClassName());
+        assertNotNull(probabilisticQuorumConfig.getListenerConfigs().get(1).getImplementation());
+        ProbabilisticQuorumFunction quorumFunction =
+                (ProbabilisticQuorumFunction) probabilisticQuorumConfig.getQuorumFunctionImplementation();
+        assertEquals(11, quorumFunction.getSuspicionThreshold(), 0.001d);
+        assertEquals(31415, quorumFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(42, quorumFunction.getMaxSampleSize());
+        assertEquals(77123, quorumFunction.getHeartbeatIntervalMillis());
+        assertEquals(1000, quorumFunction.getMinStdDeviationMillis());
+    }
+
+    @Test
+    public void testRecentlyActiveQuorumConfig() {
+        QuorumConfig recentlyActiveQuorumConfig = config.getQuorumConfig("recently-active-quorum");
+        assertNotNull(recentlyActiveQuorumConfig);
+        assertEquals("recently-active-quorum", recentlyActiveQuorumConfig.getName());
+        assertNotNull(recentlyActiveQuorumConfig.getQuorumFunctionImplementation());
+        assertInstanceOf(RecentlyActiveQuorumFunction.class, recentlyActiveQuorumConfig.getQuorumFunctionImplementation());
+        assertTrue(recentlyActiveQuorumConfig.isEnabled());
+        assertEquals(5, recentlyActiveQuorumConfig.getSize());
+        assertEquals(QuorumType.READ_WRITE, recentlyActiveQuorumConfig.getType());
+        RecentlyActiveQuorumFunction quorumFunction =
+                (RecentlyActiveQuorumFunction) recentlyActiveQuorumConfig.getQuorumFunctionImplementation();
+        assertEquals(5123, quorumFunction.getHeartbeatToleranceMillis());
     }
 
     @Test

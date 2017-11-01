@@ -35,6 +35,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -85,7 +86,7 @@ public class ClusterHeartbeatManager {
     private final ClusterClockImpl clusterClock;
 
     private final ClusterFailureDetector heartbeatFailureDetector;
-    private final PingFailureDetector icmpFailureDetector;
+    private final PingFailureDetector<Member> icmpFailureDetector;
 
     private final long maxNoHeartbeatMillis;
     private final long heartbeatIntervalMillis;
@@ -394,27 +395,29 @@ public class ClusterHeartbeatManager {
      * @param timestamp the timestamp when the heartbeat was created
      */
     public void onHeartbeat(MemberImpl member, long timestamp) {
-        if (member != null) {
-            long clusterTime = clusterClock.getClusterTime();
-            if (logger.isFineEnabled()) {
-                logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
-                        member, timeToString(clusterTime), timeToString(timestamp)));
-            }
-
-            if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
-                logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
-                        timeToString(clusterTime), timeToString(timestamp)));
-                return;
-            }
-
-            if (isMaster(member)) {
-                clusterClock.setMasterTime(timestamp);
-            }
-            heartbeatFailureDetector.heartbeat(member, clusterClock.getClusterTime());
-
-            MembershipManager membershipManager = clusterService.getMembershipManager();
-            membershipManager.clearMemberSuspicion(member.getAddress(), "Valid heartbeat");
+        if (member == null) {
+            return;
         }
+        long clusterTime = clusterClock.getClusterTime();
+        if (logger.isFineEnabled()) {
+            logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
+                    member, timeToString(clusterTime), timeToString(timestamp)));
+        }
+
+        if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
+            logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
+                    timeToString(clusterTime), timeToString(timestamp)));
+            return;
+        }
+
+        if (isMaster(member)) {
+            clusterClock.setMasterTime(timestamp);
+        }
+        heartbeatFailureDetector.heartbeat(member, clusterClock.getClusterTime());
+
+        MembershipManager membershipManager = clusterService.getMembershipManager();
+        membershipManager.clearMemberSuspicion(member.getAddress(), "Valid heartbeat");
+        nodeEngine.getQuorumService().onHeartbeat(member, timestamp);
     }
 
     /**
@@ -695,11 +698,20 @@ public class ClusterHeartbeatManager {
         nodeEngine.getOperationService().send(op, masterAddress);
     }
 
+    /**
+     * @return the {@code icmpFailureDetector} if configured, otherwise {@code null}
+     */
+    public PingFailureDetector getIcmpFailureDetector() {
+        return icmpFailureDetector;
+    }
+
     /** Reset all heartbeats to the current cluster time. Called when system clock jump is detected. */
     private void resetHeartbeats() {
+        QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
         long now = clusterClock.getClusterTime();
         for (MemberImpl member : clusterService.getMemberImpls()) {
             heartbeatFailureDetector.heartbeat(member, now);
+            quorumService.onHeartbeat(member, now);
         }
     }
 
@@ -763,6 +775,7 @@ public class ClusterHeartbeatManager {
 
     private class PeriodicPingTask
             extends PingTask {
+        final QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
 
         PeriodicPingTask(Member member) {
             super(member);
@@ -773,11 +786,15 @@ public class ClusterHeartbeatManager {
                 Address address = member.getAddress();
                 logger.fine(format("%s will ping %s", node.getThisAddress(), address));
                 if (doPing(address, Level.FINE)) {
-                    icmpFailureDetector.heartbeat(member);
+                    boolean pingRestored = (icmpFailureDetector.heartbeat(member) > 0);
+                    if (pingRestored) {
+                        quorumService.onPingRestored(member);
+                    }
                     return;
                 }
 
                 icmpFailureDetector.logAttempt(member);
+                quorumService.onPingLost(member);
 
                 // host not reachable
                 String reason = format("%s could not ping %s", node.getThisAddress(), address);

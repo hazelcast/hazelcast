@@ -16,12 +16,15 @@
 
 package com.hazelcast.quorum.impl;
 
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.quorum.HeartbeatAware;
+import com.hazelcast.quorum.PingAware;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
 import com.hazelcast.quorum.QuorumException;
@@ -39,13 +42,17 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.ExecutorType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.quorum.QuorumType.READ;
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
@@ -60,31 +67,57 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * specified one.
  */
 public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, QuorumListener>, MembershipAwareService,
-        QuorumService {
+                                          QuorumService, HeartbeatAware, PingAware {
 
     public static final String SERVICE_NAME = "hz:impl:quorumService";
+
+    /**
+     * Single threaded quorum executor. Quorum updates are executed in order, without concurrency.
+     */
+    private static final String QUORUM_EXECUTOR = "hz:quorum";
 
     private final NodeEngineImpl nodeEngine;
     private final EventService eventService;
     private boolean inactive;
-    private final Map<String, QuorumImpl> quorums = new HashMap<String, QuorumImpl>();
+    private Map<String, QuorumImpl> quorums;
+    // true when at least one configured quorum implementation is HeartbeatAware
+    private boolean heartbeatAware;
+    // true when at least one configured quorum implementation is PingAware
+    private boolean pingAware;
 
     public QuorumServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.eventService = nodeEngine.getEventService();
-        initializeQuorums();
-        this.inactive = quorums.isEmpty();
     }
 
     public void start() {
+        // before starting, no quorums are used, just QuorumService dependency is provided to services which depend on it
+        // so it's safe to initialize quorums here (and we have ClusterService already constructed)
+        this.quorums = Collections.unmodifiableMap(initializeQuorums());
+        this.inactive = quorums.isEmpty();
+        scanQuorums();
         initializeListeners();
+
+        if (inactive) {
+            return;
+        }
+
+        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        // single thread quorum executor
+        executionService.register(QUORUM_EXECUTOR, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
+
+        long heartbeatInterval = nodeEngine.getProperties().getSeconds(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+        executionService.scheduleWithRepetition(QUORUM_EXECUTOR, new UpdateQuorums(),
+                heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
     }
 
-    private void initializeQuorums() {
+    private Map<String, QuorumImpl> initializeQuorums() {
+        Map<String, QuorumImpl> quorums = new HashMap<String, QuorumImpl>();
         for (QuorumConfig quorumConfig : nodeEngine.getConfig().getQuorumConfigs().values()) {
             QuorumImpl quorum = new QuorumImpl(quorumConfig, nodeEngine);
             quorums.put(quorumConfig.getName(), quorum);
         }
+        return quorums;
     }
 
     private void initializeListeners() {
@@ -111,6 +144,18 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         }
         if (listener != null) {
             addQuorumListener(instanceName, listener);
+        }
+    }
+
+    // scan quorums for heartbeat- and ping-aware implementations and set corresponding flags
+    private void scanQuorums() {
+        for (QuorumImpl quorum : quorums.values()) {
+            if (quorum.isHeartbeatAware()) {
+                this.heartbeatAware = true;
+            }
+            if (quorum.isPingAware()) {
+                this.pingAware = true;
+            }
         }
     }
 
@@ -212,12 +257,18 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
-        updateQuorums(event);
+        if (inactive) {
+            return;
+        }
+        nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new UpdateQuorums(event));
     }
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        updateQuorums(event);
+        if (inactive) {
+            return;
+        }
+        nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new UpdateQuorums(event));
     }
 
     @Override
@@ -225,18 +276,6 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         // nop
         // MemberAttributeServiceEvent does NOT contain set of members
         // They cannot change quorum state
-    }
-
-    /**
-     * Updates the quorum presences if there was a change in data members that own partitions (ignores changes in lite members).
-     *
-     * @param event the membership change event
-     */
-    private void updateQuorums(MembershipEvent event) {
-        final Collection<Member> members = new MemberSelectingCollection<Member>(event.getMembers(), DATA_MEMBER_SELECTOR);
-        for (QuorumImpl quorum : quorums.values()) {
-            quorum.update(members);
-        }
     }
 
     @Override
@@ -247,5 +286,106 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
             throw new IllegalArgumentException("No quorum configuration named [ " + quorumName + " ] is found!");
         }
         return quorum;
+    }
+
+    @Override
+    public void onHeartbeat(Member member, long timestamp) {
+        if (inactive) {
+            return;
+        }
+        if (!heartbeatAware) {
+            return;
+        }
+        nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new OnHeartbeat(member, timestamp));
+    }
+
+    @Override
+    public void onPingLost(Member member) {
+        if (!pingAware) {
+            return;
+        }
+        nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new OnPing(member, false));
+    }
+
+    @Override
+    public void onPingRestored(Member member) {
+        if (!pingAware) {
+            return;
+        }
+        nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new OnPing(member, true));
+    }
+
+    private class UpdateQuorums implements Runnable {
+        private final MembershipEvent event;
+
+        UpdateQuorums() {
+            this.event = null;
+        }
+
+        UpdateQuorums(MembershipEvent event) {
+            this.event = event;
+        }
+
+        @Override
+        public void run() {
+            ClusterService clusterService = nodeEngine.getClusterService();
+            Collection<Member> members = clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
+            for (QuorumImpl quorum : quorums.values()) {
+                if (event != null && quorum.isMembershipListener()) {
+                    switch (event.getEventType()) {
+                        case MembershipEvent.MEMBER_ADDED:
+                            quorum.onMemberAdded(event);
+                            break;
+                        case MembershipEvent.MEMBER_REMOVED:
+                            quorum.onMemberRemoved(event);
+                            break;
+                        default:
+                            // nop
+                            break;
+                    }
+                }
+                quorum.update(members);
+            }
+        }
+    }
+
+    private class OnHeartbeat implements Runnable {
+        private final Member member;
+        private final long timestamp;
+
+        OnHeartbeat(Member member, long timestamp) {
+            this.member = member;
+            this.timestamp = timestamp;
+        }
+
+        @Override
+        public void run() {
+            ClusterService clusterService = nodeEngine.getClusterService();
+            Collection<Member> members = clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
+            for (QuorumImpl quorum : quorums.values()) {
+                quorum.onHeartbeat(member, timestamp);
+                quorum.update(members);
+            }
+        }
+    }
+
+    private class OnPing implements Runnable {
+        private final Member member;
+        private final boolean successful;
+
+        public OnPing(Member member, boolean successful) {
+            this.member = member;
+            this.successful = successful;
+        }
+
+        @Override
+        public void run() {
+            ClusterService clusterService = nodeEngine.getClusterService();
+            Collection<Member> members = clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
+            for (QuorumImpl quorum : quorums.values()) {
+                quorum.onPing(member, successful);
+                quorum.update(members);
+            }
+        }
     }
 }

@@ -29,6 +29,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -75,12 +76,15 @@ import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.ProbabilisticQuorumConfigBuilder;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.QuorumConfigBuilder;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.RecentlyActiveQuorumConfigBuilder;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -370,6 +374,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
             boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
             quorumConfigBuilder.addPropertyValue("enabled", enabled);
+            // probabilistic-quorum and recently-active-quorum quorum configs are constructed via QuorumConfigBuilder
+            QuorumConfigBuilder configBuilder = null;
+            // initialized to a placeholder value; we may need to use this value before actually parsing the quorum-size
+            // node; it will anyway have the proper value in the final quorum config.
+            int quorumSize = 3;
+            String quorumClassName = null;
+
             for (Node n : childElements(node)) {
                 String value = getTextContent(n).trim();
                 String nodeName = cleanNodeName(n);
@@ -381,10 +392,63 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("quorum-type".equals(nodeName)) {
                     quorumConfigBuilder.addPropertyValue("type", QuorumType.valueOf(value));
                 } else if ("quorum-function-class-name".equals(nodeName)) {
+                    quorumClassName = value;
                     quorumConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), value);
+                } else if ("recently-active-quorum".equals(nodeName)) {
+                    configBuilder = handleRecentlyActiveQuorum(name, n, quorumSize);
+                } else if ("probabilistic-quorum".equals(nodeName)) {
+                    configBuilder = handleProbabilisticQuorum(name, n, quorumSize);
                 }
             }
+            if (configBuilder != null) {
+                boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumClassName);
+                if (quorumFunctionDefinedByClassName) {
+                    throw new ConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
+                            + "recently-active-quorum and a quorum function class name.");
+                }
+                QuorumConfig constructedConfig = configBuilder.build();
+                // set the constructed quorum function implementation in the bean definition
+                quorumConfigBuilder.addPropertyValue("quorumFunctionImplementation",
+                        constructedConfig.getQuorumFunctionImplementation());
+            }
             quorumManagedMap.put(name, beanDefinition);
+        }
+
+        private QuorumConfigBuilder handleRecentlyActiveQuorum(String name, Node node, int quorumSize) {
+            QuorumConfigBuilder quorumConfigBuilder;
+            int heartbeatToleranceMillis = getIntegerValue("heartbeat-tolerance-millis",
+                    getAttribute(node, "heartbeat-tolerance-millis"),
+                    RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
+            quorumConfigBuilder = QuorumConfig.newRecentlyActiveQuorumConfigBuilder(name,
+                    quorumSize,
+                    heartbeatToleranceMillis);
+            return quorumConfigBuilder;
+        }
+
+        private QuorumConfigBuilder handleProbabilisticQuorum(String name, Node node, int quorumSize) {
+            QuorumConfigBuilder quorumConfigBuilder;
+            long acceptableHeartPause = getLongValue("acceptable-heartbeat-pause-millis",
+                    getAttribute(node, "acceptable-heartbeat-pause-millis"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
+            double threshold = getDoubleValue("suspicion-threshold",
+                    getAttribute(node, "suspicion-threshold"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD);
+            int maxSampleSize = getIntegerValue("max-sample-size",
+                    getAttribute(node, "max-sample-size"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE);
+            long minStdDeviation = getLongValue("min-std-deviation-millis",
+                    getAttribute(node, "min-std-deviation-millis"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
+            long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
+                    getAttribute(node, "heartbeat-interval-millis"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
+            quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
+                                              .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                                              .withSuspicionThreshold(threshold)
+                                              .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                                              .withMinStdDeviationMillis(minStdDeviation)
+                                              .withMaxSampleSize(maxSampleSize);
+            return quorumConfigBuilder;
         }
 
         private void handleMergePolicyConfig(Node node, BeanDefinitionBuilder builder) {

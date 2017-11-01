@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -182,4 +183,31 @@ public class QuorumConfig implements IdentifiedDataSerializable {
         quorumFunctionClassName = in.readUTF();
         quorumFunctionImplementation = in.readObject();
     }
+
+    /**
+     * Returns a builder for {@link QuorumConfig} with the given {@code name} using a probabilistic quorum function,
+     * for the given quorum {@code size} that is enabled by default.
+     *
+     * @param name  the quorum's name
+     * @param size  minimum count of members for quorum to be considered present
+     * @see ProbabilisticQuorumFunction
+     */
+    public static ProbabilisticQuorumConfigBuilder newProbabilisticQuorumConfigBuilder(String name, int size) {
+        return new ProbabilisticQuorumConfigBuilder(name, size);
+    }
+
+    /**
+     * Returns a builder for a {@link QuorumConfig} with the given {@code name} using a recently-active
+     * quorum function for the given quorum {@code size} that is enabled by default.
+     * @param name              the quorum's name
+     * @param size              minimum count of members for quorum to be considered present
+     * @param toleranceMillis   maximum amount of milliseconds that may have passed since last heartbeat was received for a
+     *                          member to be considered present for quorum.
+     * @see com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction
+     */
+    public static RecentlyActiveQuorumConfigBuilder newRecentlyActiveQuorumConfigBuilder(String name, int size,
+                                                                                         int toleranceMillis) {
+        return new RecentlyActiveQuorumConfigBuilder(name, size, toleranceMillis);
+    }
+
 }

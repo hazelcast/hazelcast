@@ -58,13 +58,16 @@ import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
 /**
  * Contains Hazelcast XML Configuration helper methods and variables.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractXmlConfigHelper {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
@@ -186,7 +189,7 @@ public abstract class AbstractXmlConfigHelper {
             SAXSource source = new SAXSource(new InputSource(is));
             validator.validate(source);
         } catch (Exception e) {
-            throw new InvalidConfigurationException(e.getMessage());
+            throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             for (StreamSource source : schemas) {
                 closeResource(source.getInputStream());
@@ -315,6 +318,13 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
+    protected static int getIntegerValue(final String parameterName, final String value, int defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return getIntegerValue(parameterName, value);
+    }
+
     protected static long getLongValue(final String parameterName, final String value) {
         try {
             return Long.parseLong(value);
@@ -322,6 +332,29 @@ public abstract class AbstractXmlConfigHelper {
             throw new InvalidConfigurationException(
                     format("Invalid long integer value for parameter %s: %s", parameterName, value));
         }
+    }
+
+    protected static long getLongValue(final String parameterName, final String value, long defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return getLongValue(parameterName, value);
+    }
+
+    protected static double getDoubleValue(final String parameterName, final String value) {
+        try {
+            return parseDouble(value);
+        } catch (final Exception e) {
+            throw new InvalidConfigurationException(
+                    format("Invalid long integer value for parameter %s: %s", parameterName, value));
+        }
+    }
+
+    protected static double getDoubleValue(final String parameterName, final String value, double defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return getDoubleValue(parameterName, value);
     }
 
     protected String getAttribute(Node node, String attName) {

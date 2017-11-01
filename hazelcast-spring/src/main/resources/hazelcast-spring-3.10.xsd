@@ -1638,7 +1638,7 @@
                             </xs:unique>
                         </xs:element>
                         <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="lite-member" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
                                 <xs:attribute name="enabled" type="parameterized-boolean">
@@ -3027,6 +3027,12 @@
     <xs:simpleType name="parameterized-unsigned-int">
         <xs:union memberTypes="xs:unsignedInt parameterizedValueType"/>
     </xs:simpleType>
+    <xs:simpleType name="parameterized-unsigned-long">
+        <xs:union memberTypes="xs:unsignedLong parameterizedValueType"/>
+    </xs:simpleType>
+    <xs:simpleType name="parameterized-double">
+        <xs:union memberTypes="xs:double parameterizedValueType"/>
+    </xs:simpleType>
     <xs:simpleType name="parameterized-positive-integer">
         <xs:union memberTypes="xs:positiveInteger parameterizedValueType"/>
     </xs:simpleType>
@@ -3562,6 +3568,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element ref="choice-of-quorum-function" minOccurs="0" maxOccurs="1" />
         </xs:all>
         <xs:attribute name="enabled" type="parameterized-boolean" use="required"/>
         <xs:attribute name="name" use="required">
@@ -3570,6 +3577,54 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:element name="choice-of-quorum-function" abstract="true"/>
+
+    <xs:element name="probabilistic-quorum" substitutionGroup="choice-of-quorum-function">
+        <xs:complexType>
+            <xs:annotation>
+                <xs:documentation>
+                    A probabilistic quorum function based on Phi Accrual failure detector. See
+                    com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector for implementation
+                    details. Configuration:<br/>
+                    - <code>acceptable-heartbeat-pause</code>: duration in milliseconds corresponding to number
+                    of potentially lost/delayed heartbeats that will be accepted before considering it to be an anomaly.
+                    This margin is important to be able to survive sudden, occasional, pauses in heartbeat arrivals,
+                    due to for example garbage collection or network drops.<br/>
+                    - <code>threshold</code>: threshold for suspicion level. A low threshold is prone to generate
+                    many wrong suspicions but ensures a quick detection in the event of a real crash. Conversely, a high
+                    threshold generates fewer mistakes but needs more time to detect actual crashes.<br/>
+                    - <code>max-sample-size</code>: number of samples to use for calculation of mean and standard
+                    deviation of inter-arrival times.<br/>
+                    - <code>first-heartbeat-estimate</code>: bootstrap the stats with heartbeats that corresponds to
+                    this duration in milliseconds, with a rather high standard deviation (since environment is unknown
+                    in the beginning)<br/>
+                    - <code>min-std-deviation</code>: minimum standard deviation (in milliseconds) to use for the normal
+                    distribution used when calculating phi. Too low standard deviation might result in too much
+                    sensitivity for sudden, but normal, deviations in heartbeat inter arrival times.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="acceptable-heartbeat-pause-millis" type="parameterized-unsigned-int" use="optional"
+                          default="60000"/>
+            <xs:attribute name="suspicion-threshold" type="parameterized-double" use="optional" default="10" />
+            <xs:attribute name="max-sample-size" type="parameterized-unsigned-int" use="optional" default="200"/>
+            <xs:attribute name="min-std-deviation-millis" type="parameterized-unsigned-long" use="optional" default="100" />
+            <xs:attribute name="heartbeat-interval-millis" type="parameterized-unsigned-long" use="optional" default="5000"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="recently-active-quorum" substitutionGroup="choice-of-quorum-function">
+        <xs:complexType>
+            <xs:annotation>
+                <xs:documentation>
+                    A quorum function that keeps track of the last heartbeat timestamp per each member. For a member
+                    to be considered live (for the purpose of determining presence of quorum), a heartbeat must have
+                    been received at most <code>heartbeat-tolerance</code> milliseconds before current time.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="heartbeat-tolerance-millis" type="parameterized-unsigned-int" default="5000"/>
+        </xs:complexType>
+    </xs:element>
 
     <xs:simpleType name="quorum-type">
         <xs:restriction base="xs:string">
