@@ -81,6 +81,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.PartitionGroupConfig.MemberGroupType.SPI;
 import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.spi.discovery.DiscoverySpiTest.ParametrizedDiscoveryStrategyFactory.BOOL_PROPERTY;
 import static org.junit.Assert.assertEquals;
@@ -421,6 +422,31 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             verify(discoveryService, atLeastOnce()).discoverNodes();
         } finally {
             instance.getLifecycleService().terminate();
+        }
+    }
+
+    @Test
+    public void testMemberGroup_givenSPIMemberGroupIsActived_whenInstanceStarting_wontThrowNPE() {
+        // this test has no assert. it's a regression test checking an instance can start when a SPI-driven member group
+        // strategy is configured. see #11681
+        Config config = new Config();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        joinConfig.getMulticastConfig().setEnabled(false);
+
+        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(MetadataProvidingDiscoveryStrategy.class.getName());
+        joinConfig.getDiscoveryConfig()
+                .addDiscoveryStrategyConfig(discoveryStrategyConfig);
+        config.getPartitionGroupConfig().setGroupType(SPI).setEnabled(true);
+
+        HazelcastInstance hazelcastInstance = null;
+        try {
+            // check the instance can actually be started
+            hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        } finally {
+            if (hazelcastInstance != null) {
+                hazelcastInstance.shutdown();
+            }
         }
     }
 

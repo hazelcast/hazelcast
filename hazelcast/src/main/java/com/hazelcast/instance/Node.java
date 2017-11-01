@@ -213,12 +213,12 @@ public class Node {
 
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
+            discoveryService = createDiscoveryService(
+                    this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this, localMember);
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
-            discoveryService = createDiscoveryService(
-                    this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
             try {
