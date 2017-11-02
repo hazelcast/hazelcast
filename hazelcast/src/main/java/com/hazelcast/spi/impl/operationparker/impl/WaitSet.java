@@ -148,7 +148,6 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
-
     public void onShutdown() {
         Object response = new HazelcastInstanceNotActiveException();
         Address thisAddress = nodeEngine.getThisAddress();
