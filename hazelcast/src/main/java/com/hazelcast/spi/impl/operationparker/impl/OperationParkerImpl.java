@@ -201,7 +201,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         @Override
         public void run() {
             while (true) {
-                if (Thread.interrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
 
@@ -210,6 +210,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                         return;
                     }
                 } catch (InterruptedException e) {
+                    // restore the interrupt
+                    Thread.currentThread().interrupt();
                     return;
                 } catch (Throwable t) {
                     logger.warning(t);
