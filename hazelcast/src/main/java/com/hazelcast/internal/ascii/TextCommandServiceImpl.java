@@ -401,7 +401,9 @@ public class TextCommandServiceImpl implements TextCommandService {
                 } catch (OutOfMemoryError e) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory(e);
                     throw e;
-                }
+                } catch (Throwable t) {
+                    logger.severe(t);
+                }                
             }
         }
 
