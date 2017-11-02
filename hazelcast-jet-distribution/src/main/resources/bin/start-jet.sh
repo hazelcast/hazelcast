@@ -6,6 +6,7 @@ SCRIPT_DIR=`dirname "$0"`
 echo "########################################"
 echo "# JAVA=$JAVA"
 echo "# JAVA_OPTS=$JAVA_OPTS"
+echo "# CLASSPATH=$CLASSPATH"
 echo "# starting now...."
 echo "########################################"
 

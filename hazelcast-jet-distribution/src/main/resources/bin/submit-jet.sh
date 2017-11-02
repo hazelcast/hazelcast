@@ -9,6 +9,7 @@ shift
 echo "########################################"
 echo "# JAVA=$JAVA"
 echo "# JAVA_OPTS=$JAVA_OPTS"
+echo "# CLASSPATH=$CLASSPATH"
 echo "########################################"
 
 $JAVA $JAVA_OPTS -cp $CLASSPATH:$JAR_FILE com.hazelcast.jet.server.JetBootstrap $JAR_FILE $@
