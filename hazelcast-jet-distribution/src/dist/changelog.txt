@@ -1,19 +1,44 @@
+** Hazelcast Jet 0.5 **
+
+* Introduction of Pipeline API for building Jet applications with support for
+  group by, hash join and co-group operations. The DAG API is still supported,
+  and referred to as the core API.
+* Generalization of AggregateOperation abstraction to support multiple inbound
+  streams.
+* Improved job lifecycle management - jobs can now be restarted automatically
+  when a node leaves the cluster.
+* Exactly-once and at-least-once processing guarantees when restarting streaming
+  jobs with use of distributed in memory snapshotting.
+* New streaming source from IMap and ICache using Hazelcast event journal
+* Support for predicates and projections when reading from Hazelcast IMap
+* Ability to create a distributed java.util.stream from any source.
+* Update Hazelcast version to 3.9.
+
 ** Hazelcast Jet 0.4 **
 
 * Improved streaming support including windowing support with event-time semantics.
 * Out of the box support for tumbling, sliding and session window aggregations.
-* Streaming file reader to process change streams of files and general improvements to file readers and writers.
-* New AggregateOperation abstraction with several built-in ones including count, average, sum, min, max and linear regression.
-* Hazelcast ICache support added. ICache can be used as a source or sink with both core API and java.util.stream.
+* Streaming file reader to process change streams of files and general improvements
+  to file readers and writers.
+* New AggregateOperation abstraction with several built-in ones including count,
+  average, sum, min, max and linear regression.
+* Hazelcast ICache support added. ICache can be used as a source or sink with both
+  core API and java.util.stream.
 * Socket connector is overhauled and can now also be used as a sink.
-* Many new code samples including several streaming examples and enrichment and co-group for batch operations.
-* Hazelcast version updated to 3.8.2. Hazelcast IMDG is now shaded inside the Jet JAR.
-* Several built-in diagnostic processors and unit test support for writing custom Processors.
+* Many new code samples including several streaming examples and enrichment and
+  co-group for batch operations.
+* Hazelcast version updated to 3.8.2. Hazelcast IMDG is now shaded inside the
+  Jet JAR.
+* Several built-in diagnostic processors and unit test support for writing custom
+  Processors.
 * Hazelcast Jet tile for Pivotal Cloud Foundry is released,
 
 ** Hazelcast Jet 0.3.1 **
 
-* The Jet cluster can be scaled up without affecting running jobs. Please refer to the [elasticity](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Introduction.md#elasticity) section in the user guide for details. 
-* Added support for reading and writing non-text data from or to HDFS. Please refer to the  [hazelcast-jet-hadoop documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-hadoop) for details.
+* The Jet cluster can be scaled up without affecting running jobs.
+  Please refer to the [elasticity](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Introduction.md#elasticity)
+  section in the user guide for details.
+* Added support for reading and writing non-text data from or to HDFS.
+  Please refer to the  [hazelcast-jet-hadoop documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-hadoop) for details.
 * Kafka Connector extended. Please refer to the [hazelcast-jet-kafka documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-kafka) for details.
 * Hazelcast version updated to 3.8

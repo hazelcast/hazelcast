@@ -1,71 +1,49 @@
-In this Release Notes document, you will find the new features and fixes of the Hazelcast Jet release. 
-The numbers in the square brackets refer to the issue number in Hazelcast Jet GitHub repository. You can reach to the full descriptions of the issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
+In this Release Notes document, you will find the new features and fixes of the
+Hazelcast Jet release. The numbers in the square brackets refer to the issue number
+in Hazelcast Jet GitHub repository. You can reach to the full descriptions of the
+issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
+
 The label in the brackets refer to the respective module.
 
-** Hazelcast Jet 0.4 **
+** Hazelcast Jet 0.5 **
 
 1. New Features
 
-[core] Infinite stream processing with event-time semantics using watermarks
-[core] Out of the box processsors for tumbling, sliding and session window aggregations. 
-[core] New AggregateOperation abstraction with several out of the box aggregators
-[core] Bootstrapper script for submitting a JAR and running a DAG from it [421]
-[core] Sources and Sinks reorganized into Sources and Sinks static classes
-[core] Added Sources.streamSocket() and Sinks.writeSocket() for reading from and writing to sockets [358, 363]
-[core] Added Sources.readFile(), Sources.streamFile() and Sources.writeFile() for reading and writing files [373, 376]
-[core] Added Sources.readCache() and Sinks.writeCache() for reading and writing to Hazelcast ICache [357]
-[core] Add diagnostic processors for debugging [426] 
-
-[java.util.stream] java.util.stream support for ICache [360]
-[pcf] Hazelcast Jet tile for Pivotal Cloud Foundry was released
-
-2. Enhancements 
-
-[core] Hazelcast IMDG updated to 3.8.2 and is now shaded in the Jet JAR [367]
-[core] Blocking outbox support for non-cooperative processors [372, 375]
-[core] JobFuture added to Processor.Context [381]
-[core] Processor.Context.index() renamed to globalProcessorIndex() and now returns a global index [405]
-[core] Fairer distribution of tasklets when number of cores is larger than number of tasklets in a job [443]
-[java.util.stream] Added configuration option to DistributedStream [359]
-
-3. Fixes
-
-[core] Missing return value for JobConfig.addJar() [393]
-[core] Improve reliability of ExecutionSerivce on shutdown [409]
-[core] Metaspace memory was not recovered fully when custom class loader is used [466]
-
-4. Code Samples Improvements
-
-- Sliding window Stock exchange streaming sample [19, 21]
-- Hazelcast IMap/IList/ICache sample [16]
-- PCF-integration with Spring Boot sample [17]
-- Socket reader and writer examples with Netty [15]
-- Read and write files example [24]
-- Top N streaming example [27]
-- HashJoin and CoGroup samples added [28, 29]
-
-** Hazelcast Jet 0.3.1 **
-
-1. New features
-- [core] The Jet cluster can be scaled up without affecting running jobs. Please refer to the [elasticity](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Introduction.md#elasticity) section in the user guide for details. 
+[core] New Pipeline API with support for group by, hash join and co group [497]
+[core] Event journal streaming source for Map and Cache [487]
+[core] Improved Jet job lifecycle management including auto-restart [492]
+[core] Support for in-memory snapshots and at-least and exactly-once processing [500]
 
 2. Enhancements
 
-- [core] Improved DAG.toString [310] 
-- [core] Convenience to make any processor non-cooperative [321] 
-- [core] Update Hazelcast version to 3.8 [323] 
-- [core] Add missing functional interfaces to the Distributed class [324] 
-- [java.util.stream] Refactor of Jet collectors into a new type called Reducer [313]
-- [java.util.stream] Allow branching of the j.u.s pipeline [318]
-- [hadoop] Added support for reading and writing non-text data from or to HDFS. Please refer to the  [hazelcast-jet-hadoop documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-hadoop) for details.
-- [hadoop] Added key/value mappers for ReadHdfsP and WriteHdfsP [328]
-- [kafka] Kafka connector now makes use consumer groups. Please refer to (hazelcast-jet-kafka documentation) [https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-kafka] 
-- [code-samples] Jet vs java.util.stream benchmark added to code samples
-- [code-samples] New hadoop word count example added
-- [code-samples] Kafka consumer example added
+[core] Add projection and predicate capability to map reader [490]
+[core] Hazelcast version updated to 3.9 [474]
+[core] InsertWatermarksProcessor will now log late events [551]
+[core] Add preferred local parallelism to all the sources and sinks [552]
+[core] Socket source now uses non-blocking IO [554]
+[core] Add ProcessorMetaSupplier.complete() method to support global cleanup [571]
+[java.util.stream] Support for creating a stream from any source [360]
+[kafka] Add snapshotting support for Kafka reader [500]
+[kafka] Add optional projection function to Kafka reader [534]
+[kafka] Add ability to create own ProducerRecord instances for Kafka writer [588]
 
 3. Fixes
-- [core] Remove dead and potentially racy code from async operations [320] 
-- [core] ReadSocketTextStreamP should emit items immediately after reading [335]
-- [core] Wrong configuration file is used for IMDG when Jet config file present in classpath [345]
-- [java.util.stream] Do not require forEach action to be serializable [340, 341] 
+
+[core] Fix NPE when releasing uninitialized ResourceStore  [478]
+[core] Add cache manager in order not to require a dependency on javax.cache [485]
+[core] JetClassLoader should not throw on findResource [549]
+[core] Fix ignored charset in StreamSocketP [553]
+[core] Suppress exception for flow control packet when member has already left cluster [556]
+[core] Kafka source should throw when partition count < global parallelism [559]
+[core] Traversers.traverseStream should close stream when exhausted [560]
+[core] Add missing serializer for Session type [562]
+[hdfs] Make sure proper global cleanup is performed on job cancellation [572]
+
+4. Code Samples Improvements
+
+* Overall module reorganization roughly divided to code samples using pipeline API and core API.
+* Several examples migrated to use the new pipeline API
+* New examples using hash join enrichment and co group
+* New code samples illustrating the new event journal and fault tolerance features
+* New code samples showing how to use HDFS with java.util.stream
+
