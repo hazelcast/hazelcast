@@ -34,8 +34,8 @@ abstract class BackupAwareCountDownLatchOperation extends AbstractCountDownLatch
     @Override
     public Operation getBackupOperation() {
         CountDownLatchService service = getService();
-        CountDownLatchContainer latchContainer = service.getCountDownLatchContainer(name);
-        int count = latchContainer != null ? latchContainer.getCount() : 0;
+        CountDownLatchContainer container = service.getCountDownLatchContainer(name);
+        int count = container != null ? container.getCount() : 0;
         return new CountDownLatchBackupOperation(name, count);
     }
 
