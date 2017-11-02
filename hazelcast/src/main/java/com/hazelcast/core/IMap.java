@@ -189,8 +189,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
      * expire when the initial TTL has elapsed.
-     * <p/>
-     * <p><b>Note:</b></p>
+     * <p>
+     * <p><b>Note:</b>
      * Use {@link #set(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
      * @throws NullPointerException if the specified key or value is null
@@ -205,7 +205,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p/>
+     * <p>
      * <b>Warning 2:</b>
      * <p>
      * This method returns a clone of the previous value, not the original (identically equal) value
@@ -424,8 +424,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
      * expire when the initial TTL has elapsed.
-     * <p/>
-     * <p><b>Note:</b></p>
+     * <p>
+     * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
      * @param key   the key of the map entry
@@ -485,8 +485,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p/>
-     * <p><b>Note:</b></p>
+     * <p>
+     * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
      * more efficient.
      *
@@ -704,8 +704,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
-     * <p/>
-     * <p><b>Note:</b></p>
+     * <p>
+     * <p><b>Note:</b>
      * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
      *
      * @param key      key of the entry

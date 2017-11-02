@@ -52,8 +52,6 @@ public class MutableLong {
 
     @Override
     public String toString() {
-        return "MutableLong{" +
-                "value=" + value +
-                '}';
+        return "MutableLong{value=" + value + '}';
     }
 }

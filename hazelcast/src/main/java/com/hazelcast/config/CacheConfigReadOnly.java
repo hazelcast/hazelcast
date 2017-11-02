@@ -197,6 +197,6 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     private UnsupportedOperationException throwReadOnly() {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        throw new UnsupportedOperationException("This config is read-only");
     }
 }

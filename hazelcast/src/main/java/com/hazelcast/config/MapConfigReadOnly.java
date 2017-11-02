@@ -265,6 +265,6 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     private UnsupportedOperationException throwReadOnly() {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw new UnsupportedOperationException("This config is read-only");
     }
 }
