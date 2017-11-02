@@ -28,6 +28,7 @@ set CLASSPATH=%~dp0..\lib\hazelcast-jet-${project.version}.jar;%CLASSPATH%
 ECHO ########################################
 ECHO # RUN_JAVA=%RUN_JAVA%
 ECHO # JAVA_OPTS=%JAVA_OPTS%
+ECHO # CLASSPATH=%CLASSPATH%
 ECHO # starting now....
 ECHO ########################################
 

@@ -10,6 +10,7 @@ SET JAR_FILE=%1
 
 ECHO ########################################
 ECHO # RUN_JAVA=%RUN_JAVA%
+ECHO # CLASSPATH=%CLASSPATH%
 ECHO # starting now....
 ECHO ########################################
 
