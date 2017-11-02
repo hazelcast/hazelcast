@@ -50,14 +50,12 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     private static final long FIRST_WAIT_TIME = 1000;
 
-    private final ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap =
-            new ConcurrentHashMap<WaitNotifyKey, WaitSet>(100);
+    private final ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap = new ConcurrentHashMap<WaitNotifyKey, WaitSet>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationExecutor;
     private final Future expirationTaskFuture;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-
     private final ConstructorFunction<WaitNotifyKey, WaitSet> waitSetConstructor
             = new ConstructorFunction<WaitNotifyKey, WaitSet>() {
         @Override
@@ -66,15 +64,13 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     };
 
-    public OperationParkerImpl(final NodeEngineImpl nodeEngine) {
+    public OperationParkerImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         Node node = nodeEngine.getNode();
-        this.logger = node.getLogger(OperationParker.class.getName());
-
+        this.logger = node.getLogger(OperationParker.class);
         this.expirationExecutor = Executors.newSingleThreadExecutor(
                 new SingleExecutorThreadFactory(node.getConfigClassLoader(),
                         createThreadName(nodeEngine.getHazelcastInstance().getName(), "operation-parker")));
-
         this.expirationTaskFuture = expirationExecutor.submit(new ExpirationTask());
     }
 
