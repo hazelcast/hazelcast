@@ -87,7 +87,10 @@ public class CachePutAllOperation
             Data key = entry.getKey();
             Data value = entry.getValue();
             CacheRecord backupRecord = cache.put(key, value, expiryPolicy, callerUuid, completionId);
-            backupRecords.put(key, backupRecord);
+            // backupRecord may be null (eg expired on put)
+            if (backupRecord != null) {
+                backupRecords.put(key, backupRecord);
+            }
 
             publishWanEvent(key, value, backupRecord);
         }
