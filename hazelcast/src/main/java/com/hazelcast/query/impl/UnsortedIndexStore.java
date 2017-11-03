@@ -65,7 +65,11 @@ public class UnsortedIndexStore extends BaseIndexStore {
     public void clear() {
         takeWriteLock();
         try {
-            recordsWithNullValue.clear();
+            if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
+                recordsWithNullValue = Collections.emptyMap();
+            } else {
+                recordsWithNullValue.clear();
+            }
             recordMap.clear();
         } finally {
             releaseWriteLock();
@@ -222,7 +226,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records == null) {
-                    records = new HashMap<Data, QueryableEntry>();
+                    records = Collections.emptyMap();
                 }
 
                 records = new HashMap<Data, QueryableEntry>(records);
