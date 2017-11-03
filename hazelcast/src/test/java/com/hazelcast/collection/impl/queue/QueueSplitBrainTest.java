@@ -36,12 +36,6 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     private final int finalCount = initialCount + 50;
 
     @Override
-    protected int[] brains() {
-        // 2nd merges to the 1st
-        return new int[]{2, 1};
-    }
-
-    @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         IQueue<Object> queue = instances[0].getQueue(name);
 

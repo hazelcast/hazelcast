@@ -64,12 +64,6 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     private ReplicatedMap<Object, Object> replicatedMap2;
 
     @Override
-    protected int[] brains() {
-        // second half should merge to first 
-        return new int[]{2, 1};
-    }
-
-    @Override
     protected Config config() {
         Config config = super.config();
         config.getReplicatedMapConfig(replicatedMapName)

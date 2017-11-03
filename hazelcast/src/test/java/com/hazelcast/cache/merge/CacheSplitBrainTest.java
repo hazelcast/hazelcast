@@ -69,12 +69,6 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private MergeLifecycleListener mergeLifecycleListener;
 
     @Override
-    protected int[] brains() {
-        // second half should merge to first 
-        return new int[]{2, 1};
-    }
-
-    @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         warmUpPartitions(instances);
     }

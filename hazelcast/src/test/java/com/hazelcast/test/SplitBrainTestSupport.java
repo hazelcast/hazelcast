@@ -53,7 +53,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory;
 
-    private static final int[] DEFAULT_BRAINS = new int[]{1, 2};
+    // per default the second half should merge into the first half
+    private static final int[] DEFAULT_BRAINS = new int[]{2, 1};
     private static final int DEFAULT_ITERATION_COUNT = 1;
     private HazelcastInstance[] instances;
     private int[] brains;
