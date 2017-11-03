@@ -67,7 +67,11 @@ public class SortedIndexStore extends BaseIndexStore {
     public void clear() {
         takeWriteLock();
         try {
-            recordsWithNullValue.clear();
+            if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
+                recordsWithNullValue = Collections.emptyMap();
+            } else {
+                recordsWithNullValue.clear();
+            }
             recordMap.clear();
         } finally {
             releaseWriteLock();

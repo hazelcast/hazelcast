@@ -758,9 +758,10 @@ public final class GroupProperty {
      *
      * Defines the behavior for index copying on index read/write.
      *
-     * Supported in BINARY and OBJECT in-memory-formats. Ignored in NATIVE in-memory-format.
+     * Supported for BINARY and OBJECT in-memory formats.
+     * It is also supported for NATIVE in-memory format ONLY in Hazelcast 3.8.7 (and further 3.8.x releases).
      *
-     * Why is it needed? In order to support correctness the internal data-structures used by indexes need to do some copying.
+     * Why is it needed? In order to support correctness the underlying data structures used by indexes need to do some copying.
      * The copying may take place on-read or on-write:
      *
      * -> Copying on-read means that each index-read operation will copy the result of the query before returning it to the
@@ -772,7 +773,7 @@ public final class GroupProperty {
      * copy-on-write semantics. Depending on the index size, it may be a very expensive operation.
      * Each index-read operation will be very fast, however, since it may just access the map and return it to the caller.
      *
-     * -> Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
+     * -> Never copying is tricky. It means that the underlying data structures of the index are concurrently modified without
      * copy-on-write semantics. Index reads never copy the results of a query to a separate map.
      * It means that the results backed by the underlying index-map can change after the query has been executed.
      * Specifically an entry might have been added / removed from an index, or it might have been remapped.
@@ -784,17 +785,17 @@ public final class GroupProperty {
      *
      * Valid Values:
      * <ul>
-     * <li>COPY_ON_READY - Internal data structures of the index are concurrently modified without copy-on-write semantics.
+     * <li>COPY_ON_READY - Underlying data structures of the index are concurrently modified without copy-on-write semantics.
      * Index queries copy the results of a query on index read to detach the result from the source map.
      * Should be used in index-write intensive cases, since the reads will slow down due to the copying.
      * Default value.
      * </li>
-     * <li>COPY_ON_WRITE - Internal data structures of the index are modified with copy-on-write semantics.
+     * <li>COPY_ON_WRITE - Underlying data structures of the index are modified with copy-on-write semantics.
      * Previously returned index query results reflect the state of the index at the time of the query and are not
      * affected by future index modifications.
      * Should be used in index-read intensive cases, since the writes will slow down due to the copying.
      * </li>
-     * <li>NEVER - Internal data structures of the index are concurrently modified without copy-on-write semantics.
+     * <li>NEVER - Underlying data structures of the index are concurrently modified without copy-on-write semantics.
      * Index reads never copy the results of a query to a separate map.
      * It means that the results backed by the underlying index-map can change after the query has been executed.
      * Specifically an entry might have been added / removed from an index, or it might have been remapped.
