@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -48,7 +49,6 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
-import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -79,6 +79,9 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
      * back to polling the event queue.
      */
     private static final int LINES_IN_ONE_BATCH = 64;
+    private static final String SENSITIVITY_MODIFIER_CLASSNAME = "com.sun.nio.file.SensitivityWatchEventModifier";
+    private static final WatchEvent.Kind[] WATCH_EVENT_KINDS = {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE};
+    private static final WatchEvent.Modifier[] WATCH_EVENT_MODIFIERS = getHighSensitivityModifiers();
 
     // exposed for testing
     final Map<Path, Long> fileOffsets = new HashMap<>();
@@ -117,7 +120,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
             }
         }
         watcher = FileSystems.getDefault().newWatchService();
-        watchedDirectory.register(watcher, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
+        watchedDirectory.register(watcher, WATCH_EVENT_KINDS, WATCH_EVENT_MODIFIERS);
         getLogger().info("Started to watch directory: " + watchedDirectory);
     }
 
@@ -335,5 +338,19 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
                         .mapToObj(i -> new StreamFilesP(watchedDirectory, Charset.forName(charset), glob, count, i))
                         .collect(toList())),
                 2);
+    }
+
+    private static WatchEvent.Modifier[] getHighSensitivityModifiers() {
+        // Modifiers for file watch service to achieve the highest possible sensitivity.
+        // Background: Java 7 SE defines no standard modifiers for a watch service. However some JDKs use internal
+        // modifiers to increase sensitivity. This field contains modifiers to be used for highest possible sensitivity.
+        // It's JVM-specific and hence it's just a best-effort.
+        // I believe this is useful on platforms without native watch service (or where Java does not use it) e.g. MacOSX
+        Object modifier = ReflectionUtils.readStaticFieldOrNull(SENSITIVITY_MODIFIER_CLASSNAME, "HIGH");
+        if (modifier instanceof WatchEvent.Modifier) {
+            return new WatchEvent.Modifier[]{(WatchEvent.Modifier) modifier};
+        }
+        //bad luck, we did not find the modifier
+        return new WatchEvent.Modifier[0];
     }
 }
