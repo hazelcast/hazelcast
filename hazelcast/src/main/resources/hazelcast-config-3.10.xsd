@@ -2913,7 +2913,7 @@
                         entry key.
 
                         4 merge policy implementations for IMap and 2 merge policy implementations for
-                        ICache are provided out of the box.
+                        ICache are provided out-of-the-box.
 
                         IMap has the following merge policies:
                         com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
