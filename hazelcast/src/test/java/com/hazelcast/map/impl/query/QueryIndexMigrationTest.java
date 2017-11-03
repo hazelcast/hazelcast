@@ -24,9 +24,10 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,8 +39,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +61,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelTest.class})
 public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
@@ -81,16 +85,34 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         shutdownNodeFactory();
     }
 
+    @Parameterized.Parameter(0)
+    public IndexCopyBehavior copyBehavior;
+
+    @Parameterized.Parameters(name = "copyBehavior: {0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {IndexCopyBehavior.READ},
+                {IndexCopyBehavior.WRITE},
+                {IndexCopyBehavior.NEVER}
+        });
+    }
+
+    private Config getTestConfig() {
+        Config config = getConfig();
+        config.setProperty(GroupProperty.QUERY_INDEX_RESULT_COPY.getName(), copyBehavior.name());
+        return config;
+    }
+
     @Test(timeout = MINUTE)
     public void testQueryDuringAndAfterMigration() throws Exception {
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(getTestConfig());
         int count = 500;
         IMap<String, Employee> map = instance.getMap("employees");
         for (int i = 0; i < count; i++) {
             map.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
         }
 
-        nodeFactory.newInstances(new Config(), 3);
+        nodeFactory.newInstances(getTestConfig(), 3);
 
         final IMap<String, Employee> employees = instance.getMap("employees");
         assertTrueAllTheTime(new AssertTask() {
@@ -107,7 +129,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
-        Config config = new Config();
+        Config config = getTestConfig();
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance.getMap("employees");
@@ -136,7 +158,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(getTestConfig());
         IMap<String, Employee> map = instance.getMap("employees");
         map.addIndex("age", true);
         map.addIndex("active", false);
@@ -148,7 +170,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("active=true and age>44"));
         assertEquals(30, entries.size());
 
-        nodeFactory.newInstances(new Config(), 3);
+        nodeFactory.newInstances(getTestConfig(), 3);
 
         long startNow = Clock.currentTimeMillis();
         while ((Clock.currentTimeMillis() - startNow) < 10000) {
@@ -185,7 +207,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     }
 
     private Config newConfigWithIndex(String mapName, String attribute) {
-        Config config = new Config();
+        Config config = getTestConfig();
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig(attribute, false));
         return config;

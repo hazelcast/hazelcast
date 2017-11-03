@@ -15,30 +15,48 @@
  */
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class QueryNullIndexingTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter(0)
+    public IndexCopyBehavior copyBehavior;
+
+    @Parameterized.Parameters(name = "copyBehavior: {0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {IndexCopyBehavior.READ},
+                {IndexCopyBehavior.WRITE},
+                {IndexCopyBehavior.NEVER}
+        });
+    }
 
     @Test
     public void testIndexedNullValueOnUnorderedIndexStoreWithLessPredicate() {
@@ -111,7 +129,9 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
     }
 
     private List<Long> queryIndexedDateFieldAsNullValue(boolean ordered, Predicate pred) {
-        HazelcastInstance instance = createHazelcastInstance();
+        Config config = getConfig();
+        config.setProperty(GroupProperty.QUERY_INDEX_RESULT_COPY.getName(), copyBehavior.name());
+        HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, SampleTestObjects.Employee> map = instance.getMap("default");
 
         map.addIndex("date", ordered);

@@ -42,6 +42,7 @@ import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
 import java.util.Map;
@@ -155,7 +156,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapOperationProvider getMapOperationProvider(MapConfig mapConfig);
 
-    IndexProvider getIndexProvider(MapConfig mapConfig);
+    IndexProvider getIndexProvider(MapConfig mapConfig, HazelcastProperties properties);
 
     Extractors getExtractors(String mapName);
 
@@ -184,4 +185,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
 
     String addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
+
+    HazelcastProperties getProperties();
 }

@@ -38,6 +38,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -64,6 +65,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_INDEX_RESULT_COPY;
 import static java.lang.System.getProperty;
 
 /**
@@ -134,8 +136,11 @@ public class MapContainer {
         initWanReplication(nodeEngine);
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
         if (shouldUseGlobalIndex(mapConfig)) {
+            IndexCopyBehavior copyBehavior = mapServiceContext.getProperties().getEnum(QUERY_INDEX_RESULT_COPY,
+                    IndexCopyBehavior.class);
             this.globalIndexes = new Indexes((InternalSerializationService) serializationService,
-                    mapServiceContext.getIndexProvider(mapConfig), extractors, true);
+                    mapServiceContext.getIndexProvider(mapConfig, mapServiceContext.getProperties()), extractors,
+                    true, copyBehavior);
         } else {
             this.globalIndexes = null;
         }

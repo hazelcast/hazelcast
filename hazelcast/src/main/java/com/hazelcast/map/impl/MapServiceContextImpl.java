@@ -74,6 +74,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -708,7 +709,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public IndexProvider getIndexProvider(MapConfig mapConfig) {
+    public IndexProvider getIndexProvider(MapConfig mapConfig, HazelcastProperties properties) {
         return indexProvider;
     }
 
@@ -808,5 +809,10 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public QueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
+    }
+
+    @Override
+    public HazelcastProperties getProperties() {
+        return nodeEngine.getProperties();
     }
 }
