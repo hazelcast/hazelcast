@@ -22,7 +22,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -33,7 +32,6 @@ import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
-import com.hazelcast.internal.partition.operation.LegacyMigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
@@ -54,7 +52,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.MutableInteger;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -973,11 +970,8 @@ public class MigrationManager {
          */
         private Boolean executeMigrateOperation(MemberImpl fromMember) {
             int partitionStateVersion = partitionService.getPartitionStateVersion();
-            Version clusterVersion = node.getClusterService().getClusterVersion();
-            Operation migrationRequestOp = clusterVersion.isGreaterOrEqual(Versions.V3_9)
-                    ? new MigrationRequestOperation(migrationInfo, partitionStateVersion, fragmentedMigrationEnabled)
-                    : new LegacyMigrationRequestOperation(migrationInfo, partitionStateVersion);
-            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, migrationRequestOp,
+            Operation op = new MigrationRequestOperation(migrationInfo, partitionStateVersion, fragmentedMigrationEnabled);
+            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op,
                     fromMember.getAddress())
                     .setCallTimeout(partitionMigrationTimeout)
                     .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)

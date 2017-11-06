@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
@@ -61,11 +62,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * ping packets (an ICMP ping or an echo packet depending on the environment and settings).
  * <p/>
  * If it detects a member is not live anymore, that member is kicked out of cluster.
- * <p/>
- * Another job of ClusterHeartbeatManager is to send (if not master node) and track (if master)
- * master-confirmation requests. Each slave node sends a master-confirmation periodically and
- * master node stores them with timestamps. A slave node which does not send master-confirmation in
- * a timeout will be kicked out of the cluster by master node.
  */
 public class ClusterHeartbeatManager {
 
@@ -81,10 +77,8 @@ public class ClusterHeartbeatManager {
     private final ClusterClockImpl clusterClock;
 
     private final ClusterFailureDetector heartbeatFailureDetector;
-    private final ClusterFailureDetector masterConfirmationFailureDetector;
 
     private final long maxNoHeartbeatMillis;
-    private final long maxNoMasterConfirmationMillis;
     private final long heartbeatIntervalMillis;
     private final long pingIntervalMillis;
     private final boolean icmpEnabled;
@@ -105,7 +99,6 @@ public class ClusterHeartbeatManager {
 
         HazelcastProperties hazelcastProperties = node.getProperties();
         maxNoHeartbeatMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
-        maxNoMasterConfirmationMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
 
         heartbeatIntervalMillis = getHeartbeatInterval(hazelcastProperties);
         pingIntervalMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
@@ -115,7 +108,6 @@ public class ClusterHeartbeatManager {
         icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
 
         heartbeatFailureDetector = createHeartbeatFailureDetector(hazelcastProperties);
-        masterConfirmationFailureDetector = new DeadlineClusterFailureDetector(maxNoMasterConfirmationMillis);
     }
 
     private ClusterFailureDetector createHeartbeatFailureDetector(HazelcastProperties properties) {
@@ -354,31 +346,6 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Accepts the master confirmation message sent from cluster members to the master. The timestamp must be
-     * related to the cluster clock, not the local clock. If the duration between {@code timestamp} and the current
-     * cluster clock time is more than {@link GroupProperty#MAX_NO_MASTER_CONFIRMATION_SECONDS}/2 then the confirmation
-     * is ignored.
-     *
-     * @param member    the member sending the confirmation to the master node
-     * @param timestamp the cluster timestamp when the confirmation was made
-     */
-    void acceptMasterConfirmation(MemberImpl member, long timestamp) {
-        if (member != null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("MasterConfirmation has been received from " + member);
-            }
-            long clusterTime = clusterClock.getClusterTime();
-            if (clusterTime - timestamp > maxNoMasterConfirmationMillis / 2) {
-                logger.warning(
-                        format("Ignoring master confirmation from %s, since it is expired (now: %s, timestamp: %s)",
-                                member, timeToString(clusterTime), timeToString(timestamp)));
-                return;
-            }
-            masterConfirmationFailureDetector.heartbeat(member, clusterTime);
-        }
-    }
-
-    /**
      * Send heartbeats and calculate clock drift. This method is expected to be called periodically because it calculates
      * the clock drift based on the expected and actual invocation period.
      */
@@ -406,10 +373,6 @@ public class ClusterHeartbeatManager {
      * the change in diff from the previous and current value is less than {@link #CLOCK_JUMP_THRESHOLD}.
      * In the case that the diff change is larger than the threshold, we assume that the current clock diff is not
      * from any local cause but that this node received a heartbeat message from the master, setting the cluster clock diff.
-     * </li>
-     * <li>
-     * reset the master confirmations if the absolute diff is greater or equal to
-     * {@link GroupProperty#MAX_NO_MASTER_CONFIRMATION_SECONDS}/2
      * </li>
      * <li>
      * Reset the heartbeat timestamps if the absolute diff is greater or equal to
@@ -440,11 +403,6 @@ public class ClusterHeartbeatManager {
                 }
             }
 
-            if (absoluteClockJump >= maxNoMasterConfirmationMillis / 2) {
-                logger.warning(format("Resetting master confirmation timestamps because of huge system clock jump!"
-                        + " Clock-Jump: %d ms, Master-Confirmation-Timeout: %d ms", clockJump, maxNoMasterConfirmationMillis));
-                resetMemberMasterConfirmations();
-            }
             if (absoluteClockJump >= maxNoHeartbeatMillis / 2) {
                 logger.warning(format("Resetting heartbeat timestamps because of huge system clock jump!"
                         + " Clock-Jump: %d ms, Heartbeat-Timeout: %d ms", clockJump, maxNoHeartbeatMillis));
@@ -457,8 +415,8 @@ public class ClusterHeartbeatManager {
 
     /**
      * Sends heartbeat to each of the cluster members.
-     * Checks whether a member has failed to send a heartbeat or master-confirmation in time
-     * (see {@link #maxNoHeartbeatMillis} and {@link #maxNoMasterConfirmationMillis})
+     * Checks whether a member has failed to send a heartbeat in time
+     * (see {@link #maxNoHeartbeatMillis})
      * and removes that member from the cluster.
      * <p></p>
      * This method is only called on the master member.
@@ -472,10 +430,6 @@ public class ClusterHeartbeatManager {
                 try {
                     logIfConnectionToEndpointIsMissing(now, member);
                     if (suspectMemberIfNotHeartBeating(now, member)) {
-                        continue;
-                    }
-
-                    if (removeMemberIfMasterConfirmationExpired(now, member)) {
                         continue;
                     }
 
@@ -515,36 +469,6 @@ public class ClusterHeartbeatManager {
             double suspicionLevel = heartbeatFailureDetector.suspicionLevel(member, now);
             logger.fine(format("Not receiving any heartbeats from %s since %s, suspicion level: %.2f",
                     member, timeToString(lastHeartbeat), suspicionLevel));
-        }
-        return false;
-    }
-
-    /**
-     * Removes the {@code member} if it has not sent any master confirmation in
-     * {@link GroupProperty#MAX_NO_MASTER_CONFIRMATION_SECONDS}.
-     *
-     * @param now    the current cluster clock time
-     * @param member the member which needs to be checked
-     * @return if the member has been removed
-     */
-    private boolean removeMemberIfMasterConfirmationExpired(long now, MemberImpl member) {
-        if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
-            return false;
-        }
-
-        if (!masterConfirmationFailureDetector.isAlive(member, now)) {
-            long lastConfirmation = masterConfirmationFailureDetector.lastHeartbeat(member);
-            String reason = format("Removing %s because it has not sent any master confirmation for %d ms. "
-                            + " Clock time: %s."
-                            + " Cluster time: %s."
-                            + " Last confirmation time was %s.",
-                    member, maxNoMasterConfirmationMillis,
-                    timeToString(Clock.currentTimeMillis()),
-                    timeToString(now),
-                    timeToString(lastConfirmation));
-            logger.warning(reason);
-            clusterService.suspectMember(member, reason, true);
-            return true;
         }
         return false;
     }
@@ -671,9 +595,13 @@ public class ClusterHeartbeatManager {
     /**
      * Sends a {@link MasterConfirmationOp} to the master if this node is joined, it is not in the
      * {@link NodeState#SHUT_DOWN} state and is not the master node.
+     * This method is here only for 3.9 compatibility
+     * @deprecated since 3.10
      */
+    @Deprecated
     public void sendMasterConfirmation() {
-        if (!clusterService.isJoined() || node.getState() == NodeState.SHUT_DOWN || clusterService.isMaster()) {
+        if (!clusterService.isJoined() || node.getState() == NodeState.SHUT_DOWN || clusterService.isMaster()
+                || clusterService.getClusterVersion().isGreaterThan(V3_9)) {
             return;
         }
         Address masterAddress = clusterService.getMasterAddress();
@@ -705,17 +633,6 @@ public class ClusterHeartbeatManager {
         nodeEngine.getOperationService().send(op, masterAddress);
     }
 
-    /**
-     * Reset all master confirmations to the current cluster time. Called just before this node becomes the master and when
-     * system clock jump is detected.
-     */
-    void resetMemberMasterConfirmations() {
-        long now = clusterClock.getClusterTime();
-        for (MemberImpl member : clusterService.getMemberImpls()) {
-            masterConfirmationFailureDetector.heartbeat(member, now);
-        }
-    }
-
     /** Reset all heartbeats to the current cluster time. Called when system clock jump is detected. */
     private void resetHeartbeats() {
         long now = clusterClock.getClusterTime();
@@ -724,14 +641,12 @@ public class ClusterHeartbeatManager {
         }
     }
 
-    /** Remove the {@code member}'s master confirmation and heartbeat timestamps */
+    /** Remove the {@code member}'s heartbeat timestamps */
     void removeMember(MemberImpl member) {
-        masterConfirmationFailureDetector.remove(member);
         heartbeatFailureDetector.remove(member);
     }
 
     void reset() {
-        masterConfirmationFailureDetector.reset();
         heartbeatFailureDetector.reset();
     }
 }

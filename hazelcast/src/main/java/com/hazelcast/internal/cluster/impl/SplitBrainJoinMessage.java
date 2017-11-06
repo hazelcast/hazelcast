@@ -26,8 +26,6 @@ import com.hazelcast.version.Version;
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
-
 /**
  * A {@code JoinMessage} issued by the master node of a subcluster to the master of another subcluster
  * while searching for other clusters for split brain recovery.
@@ -55,9 +53,7 @@ public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
             throws IOException {
         super.readData(in);
         clusterVersion = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(V3_9)) {
-            memberListVersion = in.readInt();
-        }
+        memberListVersion = in.readInt();
     }
 
     @Override
@@ -65,9 +61,7 @@ public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
             throws IOException {
         super.writeData(out);
         out.writeObject(clusterVersion);
-        if (out.getVersion().isGreaterOrEqual(V3_9)) {
-            out.writeInt(memberListVersion);
-        }
+        out.writeInt(memberListVersion);
     }
 
     @Override

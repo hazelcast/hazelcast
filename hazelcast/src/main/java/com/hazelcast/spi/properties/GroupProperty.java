@@ -382,12 +382,16 @@ public final class GroupProperty {
 
     /**
      * The interval at which master confirmations are sent from non-master nodes to the master node
+     * @deprecated since 3.10
      */
+    @Deprecated
     public static final HazelcastProperty MASTER_CONFIRMATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.master.confirmation.interval.seconds", 30, SECONDS);
     /**
      * The timeout which defines when a cluster member is removed because it has not sent any master confirmations.
+     * @deprecated since 3.10
      */
+    @Deprecated
     public static final HazelcastProperty MAX_NO_MASTER_CONFIRMATION_SECONDS
             = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 150, SECONDS);
 

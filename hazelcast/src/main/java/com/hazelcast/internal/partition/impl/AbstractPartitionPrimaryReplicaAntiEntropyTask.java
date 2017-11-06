@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.operation.PartitionBackupReplicaAntiEntropyOperation;
 import com.hazelcast.nio.Address;
@@ -94,13 +93,6 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
         }
 
         boolean hasCallback = (callback != null);
-
-        if (versionMap.isEmpty() && nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            if (hasCallback) {
-                callback.onResponse(true);
-            }
-            return;
-        }
 
         PartitionBackupReplicaAntiEntropyOperation op = new PartitionBackupReplicaAntiEntropyOperation(versionMap, hasCallback);
         op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(SERVICE_NAME);

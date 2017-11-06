@@ -58,7 +58,6 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -768,10 +767,7 @@ public class ClusterJoinManager {
     }
 
     private OnJoinOp preparePreJoinOps() {
-        Operation[] preJoinOps = null;
-        if (clusterService.getClusterVersion().isGreaterOrEqual(V3_9)) {
-            preJoinOps = nodeEngine.getPreJoinOperations();
-        }
+        Operation[] preJoinOps = nodeEngine.getPreJoinOperations();
         return (preJoinOps != null && preJoinOps.length > 0) ? new OnJoinOp(preJoinOps) : null;
     }
 

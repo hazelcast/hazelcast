@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -234,23 +233,19 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeInt(allNamespaces.size());
-            for (ServiceNamespace namespace : allNamespaces) {
-                out.writeObject(namespace);
-            }
+        out.writeInt(allNamespaces.size());
+        for (ServiceNamespace namespace : allNamespaces) {
+            out.writeObject(namespace);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            int len = in.readInt();
-            allNamespaces = new ArrayList<ServiceNamespace>(len);
-            for (int i = 0; i < len; i++) {
-                ServiceNamespace ns = in.readObject();
-                allNamespaces.add(ns);
-            }
+        int len = in.readInt();
+        allNamespaces = new ArrayList<ServiceNamespace>(len);
+        for (int i = 0; i < len; i++) {
+            ServiceNamespace ns = in.readObject();
+            allNamespaces.add(ns);
         }
     }
 

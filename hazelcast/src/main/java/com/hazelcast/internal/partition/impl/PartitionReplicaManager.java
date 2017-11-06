@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
@@ -213,11 +212,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             return;
         }
 
-        // ASSERTION
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            assert namespaces.size() == 1 : "Only single namespace is allowed before V3.9: " + namespaces;
-        }
-
         if (logger.isFinestEnabled()) {
             logger.finest("Sending sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
                     + ", namespaces=" + namespaces);
@@ -251,7 +245,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
     @Override
     public ServiceNamespace getServiceNamespace(Operation operation) {
-        if (operation instanceof ServiceNamespaceAware && clusterVersion.isGreaterOrEqual(Versions.V3_9)) {
+        if (operation instanceof ServiceNamespaceAware) {
             return ((ServiceNamespaceAware) operation).getServiceNamespace();
         }
         return NonFragmentedServiceNamespace.INSTANCE;
