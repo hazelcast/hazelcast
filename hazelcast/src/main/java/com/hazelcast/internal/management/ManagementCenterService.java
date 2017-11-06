@@ -524,7 +524,7 @@ public class ManagementCenterService {
 
                     Class<? extends ConsoleRequest> requestClass = consoleRequests.get(type);
                     if (requestClass == null) {
-                        throw new RuntimeException("Failed to find a request for requestType:" + type);
+                        throw new RuntimeException("Failed to find a request for requestType: " + type);
                     }
                     ConsoleRequest task = requestClass.newInstance();
                     task.fromJson(getObject(innerRequest, "request"));

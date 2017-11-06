@@ -30,46 +30,50 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
 
     @Override
     public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public ReplicatedMapConfig setName(String name) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public void setAsyncFillup(boolean asyncFillup) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
-        throw new UnsupportedOperationException("This config is read-only");
+        throw throwReadOnly();
     }
 
     @Override
     public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
+        throw throwReadOnly();
+    }
+
+    private UnsupportedOperationException throwReadOnly() {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

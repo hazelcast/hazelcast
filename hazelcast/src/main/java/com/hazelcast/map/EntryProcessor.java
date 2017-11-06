@@ -75,7 +75,7 @@ public interface EntryProcessor<K, V> extends Serializable {
      * <p/>
      * <pre>
      * <code>
-     * {@literal}Override
+     * {@literal @}Override
      *        public Object process(Map.Entry entry) {
      *          Value value = entry.getValue();
      *          // process and modify value
@@ -85,17 +85,18 @@ public interface EntryProcessor<K, V> extends Serializable {
      *        }
      * </code>
      * </pre>
-     * otherwise EntryProcessor does not guarantee to modify the entry.
+     * otherwise the {@code EntryProcessor} does not guarantee to modify the entry.
      *
      * @param entry entry to be processed
-     * @return result of the process
+     * @return a result that will be returned from the method taking the {@link EntryProcessor}, such as
+     * {@link com.hazelcast.core.IMap#executeOnKey(Object, EntryProcessor) IMap.executeOnKey()}
      */
     Object process(Map.Entry<K, V> entry);
 
     /**
      * Get the entry processor to be applied to backup entries.
      *
-     * In case of a readonly execution, null can be returned to indicate that no backups should be made.
+     * In case of a readonly execution, {@code null} can be returned to indicate that no backups should be made.
      *
      * @return the back up processor
      */

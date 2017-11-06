@@ -427,31 +427,35 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
 
         @Override
         public RingbufferConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setAsyncBackupCount(int asyncBackupCount) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setBackupCount(int backupCount) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
+            throw throwReadOnly();
+        }
+
+        private UnsupportedOperationException throwReadOnly() {
             throw new UnsupportedOperationException("This config is read-only");
         }
     }

@@ -156,7 +156,7 @@ public class HealthMonitor {
                             }
                             break;
                         default:
-                            throw new IllegalStateException("unrecognized HealthMonitorLevel:" + monitorLevel);
+                            throw new IllegalStateException("Unrecognized HealthMonitorLevel: " + monitorLevel);
                     }
 
                     try {

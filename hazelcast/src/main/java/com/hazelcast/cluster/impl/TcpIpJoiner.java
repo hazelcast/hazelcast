@@ -93,7 +93,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     private void joinViaTargetMember(Address targetAddress, long maxJoinMillis) {
         try {
             if (targetAddress == null) {
-                throw new IllegalArgumentException("Invalid target address -> NULL");
+                throw new IllegalArgumentException("Invalid target address: NULL");
             }
             if (logger.isFineEnabled()) {
                 logger.fine("Joining over target member " + targetAddress);

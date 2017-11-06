@@ -124,7 +124,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
             final long callId = clientMessage.getCorrelationId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
-                throw new IOException("Packet not send to " + connection.getEndPoint());
+                throw new IOException("Packet not sent to " + connection.getEndPoint());
             } else {
                 if (invocationLogger.isFinestEnabled()) {
                     invocationLogger.finest("Invocation not found to deregister for call ID " + callId);

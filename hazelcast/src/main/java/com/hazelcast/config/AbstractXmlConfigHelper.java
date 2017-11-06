@@ -204,7 +204,7 @@ public abstract class AbstractXmlConfigHelper {
             try {
                 inputStream = new URL(schemaLocation).openStream();
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Your xsd schema couldn't be load");
+                throw new InvalidConfigurationException("Your xsd schema couldn't be loaded");
             }
         }
         return inputStream;

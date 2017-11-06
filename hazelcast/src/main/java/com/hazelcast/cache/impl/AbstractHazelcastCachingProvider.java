@@ -56,7 +56,7 @@ public abstract class AbstractHazelcastCachingProvider
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
     protected static final String INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE =
-            "Not available Hazelcast instance. "
+            "No available Hazelcast instance. "
             + "Please specify your Hazelcast configuration file path via "
             + "\"HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION\" property or "
             + "specify Hazelcast instance name via "
@@ -87,7 +87,7 @@ public abstract class AbstractHazelcastCachingProvider
         try {
             defaultURI = new URI("hazelcast");
         } catch (URISyntaxException e) {
-            throw new CacheException("Cannot create Default URI", e);
+            throw new CacheException("Cannot create default URI", e);
         }
     }
 

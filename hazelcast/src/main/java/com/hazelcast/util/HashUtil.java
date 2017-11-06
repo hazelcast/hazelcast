@@ -331,7 +331,7 @@ public final class HashUtil {
      * @throws IllegalArgumentException if mod smaller than 1.
      */
     public static int hashToIndex(int hash, int length) {
-        checkPositive(length, "mod must be larger than 0");
+        checkPositive(length, "length must be larger than 0");
 
         if (hash == Integer.MIN_VALUE) {
             hash = 0;

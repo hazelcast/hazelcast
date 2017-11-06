@@ -67,7 +67,7 @@ public class TaskRingBuffer {
 
     private int findEmptySpot() {
         if (callableCounter == ringItems.length) {
-            throw new RejectedExecutionException("Capacity[" + ringItems.length + "] is reached! ");
+            throw new RejectedExecutionException("Capacity (" + ringItems.length + ") is reached!");
         }
         for (Object ringItem : ringItems) {
             head++;

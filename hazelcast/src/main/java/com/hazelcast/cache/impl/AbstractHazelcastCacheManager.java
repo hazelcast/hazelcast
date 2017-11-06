@@ -115,7 +115,7 @@ public abstract class AbstractHazelcastCacheManager
         CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
         validateCacheConfig(newCacheConfig);
         if (caches.containsKey(newCacheConfig.getNameWithPrefix())) {
-            throw new CacheException("A cache named " + cacheName + " already exists.");
+            throw new CacheException("A cache named '" + cacheName + "' already exists.");
         }
         // Create cache config on all nodes as sync
         createCacheConfig(cacheName, newCacheConfig, true, true);
@@ -223,7 +223,7 @@ public abstract class AbstractHazelcastCacheManager
                 return ensureOpenIfAvailable((ICacheInternal<K, V>) cache);
             } else {
                 throw new IllegalArgumentException(
-                        "Cache " + cacheName + " was " + "defined with specific types Cache<" + configuration.getKeyType() + ", "
+                        "Cache '" + cacheName + "' was defined with specific types Cache<" + configuration.getKeyType() + ", "
                                 + configuration.getValueType() + "> "
                                 + "in which case CacheManager.getCache(String, Class, Class) must be used");
             }

@@ -58,7 +58,7 @@ public class ManagementCenterIdentifier implements JsonSerializable {
             }
             return version;
         }
-        throw new IllegalArgumentException(format("version string '%s' is not valid", versionString));
+        throw new IllegalArgumentException(format("Version string '%s' is not valid", versionString));
     }
 
     public static String convertVersionToString(int version) {

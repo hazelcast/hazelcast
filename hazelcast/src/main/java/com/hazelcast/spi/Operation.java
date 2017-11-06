@@ -103,6 +103,13 @@ public abstract class Operation implements DataSerializable {
     public void afterRun() throws Exception {
     }
 
+    /**
+     * Method is intended to be subclassed. If it returns {@code true}, {@link #getResponse()} will be
+     * called right after {@link #run()} method. If it returns {@code false}, {@link #sendResponse(Object)}
+     * must be called later to finish the operation.
+     * <p>
+     * In other words, {@code true} is for synchronous operation and {@code false} is for asynchronous one.
+     */
     public boolean returnsResponse() {
         return true;
     }
