@@ -108,7 +108,8 @@ public class MapContainer {
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         initWanReplication(nodeEngine);
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
-        this.indexes = new Indexes((InternalSerializationService) serializationService, extractors);
+        this.indexes = new Indexes((InternalSerializationService) serializationService, extractors,
+                mapServiceContext.getIndexCopyBehavior());
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();

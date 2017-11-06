@@ -64,6 +64,7 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
+import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.Matchers.allOf;
@@ -309,7 +310,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty());
+        Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty(), COPY_ON_READ);
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
 
