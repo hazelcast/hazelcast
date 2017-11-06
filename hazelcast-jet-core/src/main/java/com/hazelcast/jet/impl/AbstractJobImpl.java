@@ -78,14 +78,16 @@ public abstract class AbstractJobImpl implements Job {
     @Nonnull
     @Override
     public final JobStatus getJobStatus() {
-        if (future.isCancelled()) {
-            return JobStatus.COMPLETED;
-        } else if (future.isCompletedExceptionally()) {
-            return JobStatus.FAILED;
-        } else if (future.isDone()) {
-            return JobStatus.COMPLETED;
+        if (!future.isCancelled()) {
+            // only check for the completion of the future is the job is cancelled
+            // - in which case the future doesn't indicate if the job is still running
+            // on the cluster or not
+            if (future.isCompletedExceptionally()) {
+                return JobStatus.FAILED;
+            } else if (future.isDone()) {
+                return JobStatus.COMPLETED;
+            }
         }
-
         return sendJobStatusRequest();
     }
 

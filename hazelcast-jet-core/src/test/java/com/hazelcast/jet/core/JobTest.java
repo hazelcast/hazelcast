@@ -117,7 +117,8 @@ public class JobTest extends JetTestSupport {
         job.cancel();
         joinAndExpectCancellation(job);
 
-        assertEquals(COMPLETED, job.getJobStatus());
+        StuckProcessor.proceedLatch.countDown();
+        assertCompletedEventually(job);
     }
 
     @Test
@@ -197,7 +198,8 @@ public class JobTest extends JetTestSupport {
         // Then
         joinAndExpectCancellation(trackedJob);
 
-        assertEquals(COMPLETED, trackedJob.getJobStatus());
+        StuckProcessor.proceedLatch.countDown();
+        assertCompletedEventually(trackedJob);
     }
 
     @Test
@@ -240,8 +242,10 @@ public class JobTest extends JetTestSupport {
         joinAndExpectCancellation(trackedJob);
         joinAndExpectCancellation(submittedJob);
 
-        assertEquals(COMPLETED, trackedJob.getJobStatus());
-        assertEquals(COMPLETED, submittedJob.getJobStatus());
+        StuckProcessor.proceedLatch.countDown();
+
+        assertCompletedEventually(trackedJob);
+        assertCompletedEventually(submittedJob);
     }
 
     @Test
@@ -273,6 +277,10 @@ public class JobTest extends JetTestSupport {
             fail();
         } catch (CancellationException ignored) {
         }
+    }
+
+    private void assertCompletedEventually(Job job) {
+        assertTrueEventually(() -> assertEquals(COMPLETED, job.getJobStatus()));
     }
 
 }

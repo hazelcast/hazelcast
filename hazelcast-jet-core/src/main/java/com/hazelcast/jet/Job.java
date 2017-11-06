@@ -52,7 +52,10 @@ public interface Job {
     JobStatus getJobStatus();
 
     /**
-     * Attempts to cancel execution of this job.
+     * Attempts to cancel execution of this job. Upon cancellation the job
+     * future will be completed immediately as per the contract of {@code Future.cancel()},
+     * however the job might still be running on the cluster. You can query
+     * the status via {@link #getJobStatus()} to check for actual completion.
      *
      * Shorthand for <code>job.getFuture().cancel()</code>
      */
