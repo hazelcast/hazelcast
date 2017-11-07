@@ -32,15 +32,17 @@ public abstract class BaseIndexStore implements IndexStore {
 
     static final float LOAD_FACTOR = 0.75F;
 
+    protected final IndexCopyBehavior copyOn;
+
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
-
     private boolean multiResultHasToDetectDuplicates;
 
     BaseIndexStore(IndexCopyBehavior copyOn) {
+        this.copyOn = copyOn;
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
             resultCopyFunctor = new PassThroughFunctor();
         } else {
