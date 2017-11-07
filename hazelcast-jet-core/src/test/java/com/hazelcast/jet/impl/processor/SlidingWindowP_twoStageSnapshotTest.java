@@ -22,18 +22,23 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Collection;
 import java.util.Map.Entry;
@@ -51,15 +56,25 @@ import static org.junit.Assert.assertTrue;
  * This test checks the flushing of internal buffer downstream instead of saving
  * anything to snapshot in stage 1 out of 2.
  */
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class SlidingWindowP_twoStageSnapshotTest {
 
     private static final Long KEY = 77L;
 
+    @Parameter
+    public boolean simulateRestore;
+
     private SlidingWindowP<?, ?, ?> lastSuppliedStage1Processor;
     private SlidingWindowP<?, ?, ?> lastSuppliedStage2Processor;
     private DistributedSupplier<SlidingWindowP> stage1Supplier;
     private DistributedSupplier<SlidingWindowP> stage2Supplier;
+
+    @Parameters(name = "simulateRestore={0}")
+    public static Collection<Object> data() throws Exception {
+        return asList(true, false);
+    }
 
     @Before
     public void before() {
@@ -122,13 +137,15 @@ public class SlidingWindowP_twoStageSnapshotTest {
         assertEmptyState(stage1p2);
         // process normal outbox in stage2
         processStage2(stage2p, stage1p1Outbox, stage1p2Outbox, inbox);
-        // create new instances for stage1
-        stage1p1 = stage1Supplier.get();
-        stage1p2 = stage1Supplier.get();
-        stage1p1Outbox = newOutbox();
-        stage1p2Outbox = newOutbox();
-        stage1p1.init(stage1p1Outbox, context);
-        stage1p2.init(stage1p2Outbox, context);
+        if (simulateRestore) {
+            // create new instances for stage1
+            stage1p1 = stage1Supplier.get();
+            stage1p2 = stage1Supplier.get();
+            stage1p1Outbox = newOutbox();
+            stage1p2Outbox = newOutbox();
+            stage1p1.init(stage1p1Outbox, context);
+            stage1p2.init(stage1p2Outbox, context);
+        }
 
         // process some more events in 1st stage
         assertTrue(stage1p1.tryProcess0(entry(3L, 3L)));

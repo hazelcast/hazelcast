@@ -98,7 +98,11 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         this.getKeyFn = getKeyFn;
         this.aggrOp = aggrOp;
         this.isLastStage = isLastStage;
-        this.wmFlatMapper = flatMapper(wm -> windowTraverserAndEvictor(wm.timestamp()).append(wm));
+        this.wmFlatMapper = flatMapper(
+                wm -> windowTraverserAndEvictor(wm.timestamp())
+                        .append(wm)
+                        .onFirstNull(() -> nextWinToEmit = wDef.higherFrameTs(wm.timestamp()))
+        );
         this.emptyAcc = aggrOp.createFn().get();
     }
 
@@ -176,10 +180,12 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     }
 
     private Traverser<Object> windowTraverserAndEvictor(long wm) {
-        if (nextWinToEmit == Long.MIN_VALUE) {
+        long rangeStart;
+        if (nextWinToEmit != Long.MIN_VALUE) {
+            rangeStart = nextWinToEmit;
+        } else {
             if (tsToKeyToAcc.isEmpty()) {
                 // no item was observed, but initialize nextWinToEmit to the next window
-                nextWinToEmit = wDef.higherFrameTs(wm);
                 return Traversers.empty();
             }
             // This is the first watermark we are acting upon. Find the lowest frame
@@ -193,10 +199,8 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
                     .keySet().stream()
                     .min(naturalOrder())
                     .orElseThrow(() -> new AssertionError("Failed to find the min key in a non-empty map"));
-            nextWinToEmit = min(bottomTs, wDef.floorFrameTs(wm));
+            rangeStart = min(bottomTs, wDef.floorFrameTs(wm));
         }
-        long rangeStart = nextWinToEmit;
-        nextWinToEmit = wDef.higherFrameTs(wm);
         return traverseStream(range(rangeStart, wm, wDef.frameLength()).boxed())
                 .flatMap(window -> traverseIterable(computeWindow(window).entrySet())
                         .map(e -> new TimestampedEntry<>(window, e.getKey(), aggrOp.finishFn().apply(e.getValue())))
