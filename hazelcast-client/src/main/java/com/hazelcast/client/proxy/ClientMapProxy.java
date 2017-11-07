@@ -969,26 +969,25 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         ClientMessage response = invoke(request, keyData);
 
         MapGetEntryViewCodec.ResponseParameters parameters = MapGetEntryViewCodec.decodeResponse(response);
-        SimpleEntryView<K, V> entryView = new SimpleEntryView<K, V>();
         SimpleEntryView<Data, Data> dataEntryView = parameters.response;
 
         if (dataEntryView == null) {
             return null;
         }
-        entryView.setKey((K) toObject(dataEntryView.getKey()));
-        entryView.setValue((V) toObject(dataEntryView.getValue()));
-        entryView.setCost(dataEntryView.getCost());
-        entryView.setCreationTime(dataEntryView.getCreationTime());
-        entryView.setExpirationTime(dataEntryView.getExpirationTime());
-        entryView.setHits(dataEntryView.getHits());
-        entryView.setLastAccessTime(dataEntryView.getLastAccessTime());
-        entryView.setLastStoredTime(dataEntryView.getLastStoredTime());
-        entryView.setLastUpdateTime(dataEntryView.getLastUpdateTime());
-        entryView.setVersion(dataEntryView.getVersion());
-        entryView.setHits(dataEntryView.getHits());
-        entryView.setTtl(dataEntryView.getTtl());
         // TODO: putCache
-        return entryView;
+        return new SimpleEntryView<K, V>()
+                .withKey((K) toObject(dataEntryView.getKey()))
+                .withValue((V) toObject(dataEntryView.getValue()))
+                .withCost(dataEntryView.getCost())
+                .withCreationTime(dataEntryView.getCreationTime())
+                .withExpirationTime(dataEntryView.getExpirationTime())
+                .withHits(dataEntryView.getHits())
+                .withLastAccessTime(dataEntryView.getLastAccessTime())
+                .withLastStoredTime(dataEntryView.getLastStoredTime())
+                .withLastUpdateTime(dataEntryView.getLastUpdateTime())
+                .withVersion(dataEntryView.getVersion())
+                .withHits(dataEntryView.getHits())
+                .withTtl(dataEntryView.getTtl());
     }
 
     @Override

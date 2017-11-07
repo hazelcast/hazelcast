@@ -20,8 +20,8 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
@@ -47,12 +47,6 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     private long lastUpdateTime;
     private long version;
     private long ttl;
-    /**
-     * @deprecated this field is not used any more but it is here to prevent `client <-> member` binary compatibility issues
-     * due to the its usage in SimpleEntryViewCodec.
-     */
-    @Deprecated
-    private long evictionCriteriaNumber;
 
     public SimpleEntryView(K key, V value) {
         this.key = key;
@@ -71,6 +65,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.key = key;
     }
 
+    public SimpleEntryView<K, V> withKey(K key) {
+        this.key = key;
+        return this;
+    }
+
     @Override
     public V getValue() {
         return value;
@@ -78,6 +77,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     public void setValue(V value) {
         this.value = value;
+    }
+
+    public SimpleEntryView<K, V> withValue(V value) {
+        this.value = value;
+        return this;
     }
 
     @Override
@@ -89,6 +93,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.cost = cost;
     }
 
+    public SimpleEntryView<K, V> withCost(long cost) {
+        this.cost = cost;
+        return this;
+    }
+
     @Override
     public long getCreationTime() {
         return creationTime;
@@ -96,6 +105,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     public void setCreationTime(long creationTime) {
         this.creationTime = creationTime;
+    }
+
+    public SimpleEntryView<K, V> withCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+        return this;
     }
 
     @Override
@@ -107,6 +121,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.expirationTime = expirationTime;
     }
 
+    public SimpleEntryView<K, V> withExpirationTime(long expirationTime) {
+        this.expirationTime = expirationTime;
+        return this;
+    }
+
     @Override
     public long getHits() {
         return hits;
@@ -114,6 +133,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     public void setHits(long hits) {
         this.hits = hits;
+    }
+
+    public SimpleEntryView<K, V> withHits(long hits) {
+        this.hits = hits;
+        return this;
     }
 
     @Override
@@ -125,6 +149,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.lastAccessTime = lastAccessTime;
     }
 
+    public SimpleEntryView<K, V> withLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+        return this;
+    }
+
     @Override
     public long getLastStoredTime() {
         return lastStoredTime;
@@ -132,6 +161,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     public void setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = lastStoredTime;
+    }
+
+    public SimpleEntryView<K, V> withLastStoredTime(long lastStoredTime) {
+        this.lastStoredTime = lastStoredTime;
+        return this;
     }
 
     @Override
@@ -143,6 +177,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.lastUpdateTime = lastUpdateTime;
     }
 
+    public SimpleEntryView<K, V> withLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+        return this;
+    }
+
     @Override
     public long getVersion() {
         return version;
@@ -150,6 +189,11 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     public void setVersion(long version) {
         this.version = version;
+    }
+
+    public SimpleEntryView<K, V> withVersion(long version) {
+        this.version = version;
+        return this;
     }
 
     @Override
@@ -161,10 +205,23 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.ttl = ttl;
     }
 
+    public SimpleEntryView<K, V> withTtl(long ttl) {
+        this.ttl = ttl;
+        return this;
+    }
+
+    /**
+     * Needed for client protocol compatibility.
+     */
+    @SuppressWarnings("unused")
     public long getEvictionCriteriaNumber() {
         return 0;
     }
 
+    /**
+     * Needed for client protocol compatibility.
+     */
+    @SuppressWarnings("unused")
     public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
     }
 
@@ -180,7 +237,8 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
-        out.writeLong(evictionCriteriaNumber);
+        // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
+        out.writeLong(0);
         out.writeLong(ttl);
     }
 
@@ -196,7 +254,8 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
-        evictionCriteriaNumber = in.readLong();
+        // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
+        in.readLong();
         ttl = in.readLong();
     }
 
@@ -220,7 +279,6 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         }
 
         SimpleEntryView<?, ?> that = (SimpleEntryView<?, ?>) o;
-
         if (cost != that.cost) {
             return false;
         }
@@ -252,7 +310,6 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
             return false;
         }
         return value != null ? value.equals(that.value) : that.value == null;
-
     }
 
     @Override

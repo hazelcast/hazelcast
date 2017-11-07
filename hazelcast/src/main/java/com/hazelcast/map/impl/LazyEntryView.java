@@ -64,8 +64,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return key;
     }
 
-    public void setKey(K key) {
+    public LazyEntryView<K, V> setKey(K key) {
         this.key = key;
+        return this;
     }
 
     @Override
@@ -84,8 +85,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
                 || mergePolicy instanceof LatestUpdateMapMergePolicy;
     }
 
-    public void setValue(V value) {
+    public LazyEntryView<K, V> setValue(V value) {
         this.value = value;
+        return this;
     }
 
     @Override
@@ -93,8 +95,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return cost;
     }
 
-    public void setCost(long cost) {
+    public LazyEntryView<K, V> setCost(long cost) {
         this.cost = cost;
+        return this;
     }
 
     @Override
@@ -102,8 +105,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return creationTime;
     }
 
-    public void setCreationTime(long creationTime) {
+    public LazyEntryView<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
+        return this;
     }
 
     @Override
@@ -111,8 +115,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return expirationTime;
     }
 
-    public void setExpirationTime(long expirationTime) {
+    public LazyEntryView<K, V> setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
+        return this;
     }
 
     @Override
@@ -120,8 +125,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return hits;
     }
 
-    public void setHits(long hits) {
+    public LazyEntryView<K, V> setHits(long hits) {
         this.hits = hits;
+        return this;
     }
 
     @Override
@@ -129,8 +135,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return lastAccessTime;
     }
 
-    public void setLastAccessTime(long lastAccessTime) {
+    public LazyEntryView<K, V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
+        return this;
     }
 
     @Override
@@ -138,8 +145,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return lastStoredTime;
     }
 
-    public void setLastStoredTime(long lastStoredTime) {
+    public LazyEntryView<K, V> setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = lastStoredTime;
+        return this;
     }
 
     @Override
@@ -147,8 +155,9 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return lastUpdateTime;
     }
 
-    public void setLastUpdateTime(long lastUpdateTime) {
+    public LazyEntryView<K, V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
+        return this;
     }
 
     @Override
@@ -156,15 +165,17 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return version;
     }
 
-    public void setVersion(long version) {
+    public LazyEntryView<K, V> setVersion(long version) {
         this.version = version;
+        return this;
     }
 
     public long getEvictionCriteriaNumber() {
         return 0;
     }
 
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+    public LazyEntryView<K, V> setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+        return this;
     }
 
     @Override
@@ -172,7 +183,8 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return ttl;
     }
 
-    public void setTtl(long ttl) {
+    public LazyEntryView<K, V> setTtl(long ttl) {
         this.ttl = ttl;
+        return this;
     }
 }

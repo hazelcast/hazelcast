@@ -52,13 +52,14 @@ public class EntryViewTest extends HazelcastTestSupport {
     }
 
     private ReplicatedMapEntryView createEntryView() {
-        ReplicatedMapEntryView entryView = new ReplicatedMapEntryView<String, String>("foo", "bar");
-        entryView.setCreationTime(1);
-        entryView.setLastAccessTime(2);
-        entryView.setLastUpdateTime(3);
-        entryView.setHits(4);
-        entryView.setTtl(5);
-        return entryView;
+        return new ReplicatedMapEntryView<String, String>()
+                .setKey("foo")
+                .setValue("bar")
+                .setCreationTime(1)
+                .setLastAccessTime(2)
+                .setLastUpdateTime(3)
+                .setHits(4)
+                .setTtl(5);
     }
 
     private void verifyFields(ReplicatedMapEntryView entryView) {
