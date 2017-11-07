@@ -62,24 +62,25 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     <li>initializes the processor by calling
  *     {@link Processor#init(Outbox, Context) Processor.init()}
  *
- *     <li>does snapshot+restore (optional, see below)
+ *     <li>does snapshot or snapshot+restore (optional, see below)
  *
  *     <li>calls {@link Processor#process(int, com.hazelcast.jet.core.Inbox)
  *     Processor.process(0, inbox)}. The inbox always contains one item
  *     from {@code input} parameter
  *
- *     <li>every time the inbox gets empty does snapshot+restore
+ *     <li>every time the inbox gets empty does snapshot or snapshot+restore
  *
  *     <li>{@link #disableCompleteCall() optionally} calls {@link Processor#complete()}
  *     until it returns {@code true} or calls it until {@link #disableRunUntilCompleted(long)
  *     specified timeout} elapses (for streaming sources)
  *
- *     <li>does snapshot+restore each time the {@code complete()} method
- *     returned {@code false} and made a progress
+ *     <li>does snapshot or snapshot+restore each time the {@code complete()}
+ *     method returned {@code false} and made a progress
  * </ul>
  * The {@link #disableSnapshots() optional} snapshot+restore test procedure:
  * <ul>
- *     <li>{@code saveToSnapshot()} is called
+ *     <li>{@code saveToSnapshot()} is called. If we are not doing restore, this
+ *     is the last step.
  *
  *     <li>new processor instance is created, from now on only this
  *     instance will be used
@@ -222,7 +223,7 @@ public final class TestSupport {
      */
     public void expectOutput(@Nonnull List<?> expectedOutput) {
         this.expectedOutput = expectedOutput;
-        runTest(doSnapshots);
+        runTest(doSnapshots, doSnapshots);
     }
 
     /**
@@ -318,15 +319,18 @@ public final class TestSupport {
         return this;
     }
 
-    private void runTest(boolean doSnapshots) {
+    private void runTest(boolean doSnapshots, boolean doRestore) {
+        assert doSnapshots || !doRestore : "Illegal combination: don't do snapshots, but do restore";
         IdleStrategy idler = new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1),
                 MILLISECONDS.toNanos(1));
         int idleCount = 0;
-        if (doSnapshots) {
-            // if we test with snapshots, also do the test without snapshots
+        if (doSnapshots && doRestore) {
+            // we do all 3 possible combinations: no snapshot, only snapshots and snapshots+restore
             System.out.println("### Running the test with doSnapshots=false");
-            runTest(false);
-            System.out.println("### Running the test with doSnapshots=true");
+            runTest(false, false);
+            System.out.println("### Running the test with doSnapshots=true, doRestore=false");
+            runTest(true, false);
+            System.out.println("### Running the test with doSnapshots=true, doRestore=true");
         }
 
         TestInbox inbox = new TestInbox();
@@ -341,7 +345,7 @@ public final class TestSupport {
         initProcessor(processor[0], outbox);
 
         // do snapshot+restore before processing any item. This will test saveToSnapshot() in this edge case
-        snapshotAndRestore(processor, outbox, actualOutput, doSnapshots);
+        snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestore);
 
         // call the process() method
         Iterator<?> inputIterator = input.iterator();
@@ -364,7 +368,7 @@ public final class TestSupport {
             }
             drainOutbox(outbox.queueWithOrdinal(0), actualOutput, logInputOutput);
             if (inbox.isEmpty()) {
-                snapshotAndRestore(processor, outbox, actualOutput, doSnapshots);
+                snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestore);
             }
         }
 
@@ -378,7 +382,7 @@ public final class TestSupport {
                 boolean madeProgress = done[0] || !outbox.queueWithOrdinal(0).isEmpty();
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
                 drainOutbox(outbox.queueWithOrdinal(0), actualOutput, logInputOutput);
-                snapshotAndRestore(processor, outbox, actualOutput, madeProgress && doSnapshots && !done[0]);
+                snapshotAndRestore(processor, outbox, actualOutput, madeProgress && doSnapshots && !done[0], doRestore);
                 idleCount = idle(idler, idleCount, madeProgress);
                 if (runUntilCompletedTimeout > 0) {
                     elapsed = toMillis(System.nanoTime() - completeStart);
@@ -410,8 +414,9 @@ public final class TestSupport {
             Processor[] processor,
             TestOutbox outbox,
             List<Object> actualOutput,
-            boolean enabled) {
-        if (!enabled) {
+            boolean doSnapshot,
+            boolean doRestore) {
+        if (!doSnapshot) {
             return;
         }
 
@@ -435,14 +440,14 @@ public final class TestSupport {
             outbox.snapshotQueue().clear();
         } while (!done[0]);
 
+        if (!doRestore) {
+            return;
+        }
+
         // restore state to new processor
         processor[0] = supplier.get();
         initProcessor(processor[0], outbox);
 
-        if (snapshotInbox.isEmpty()) {
-            // don't call finishSnapshotRestore, if snapshot was empty
-            return;
-        }
         int lastInboxSize = snapshotInbox.size();
         while (!snapshotInbox.isEmpty()) {
             checkTime("restoreSnapshot", isCooperative,
