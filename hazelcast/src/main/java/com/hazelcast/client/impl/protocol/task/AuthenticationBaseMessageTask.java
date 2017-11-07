@@ -95,7 +95,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
 
     @Override
     protected ClientEndpointImpl getEndpoint() {
-        return new ClientEndpointImpl(clientEngine, connection);
+        return new ClientEndpointImpl(clientEngine, nodeEngine, connection);
     }
 
     @Override
