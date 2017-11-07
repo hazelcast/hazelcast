@@ -26,6 +26,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
@@ -45,6 +46,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class ClientEndpointImpl implements ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
+    private final NodeEngineImpl nodeEngine;
     private final Connection connection;
     private final ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
@@ -62,8 +64,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private long authenticationCorrelationId;
     private volatile String stats;
 
-    public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection connection) {
+    public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
+        this.nodeEngine = nodeEngine;
         this.connection = connection;
         if (connection instanceof TcpIpConnection) {
             TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
@@ -243,6 +246,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     public void destroy() throws LoginException {
         clearAllListeners();
+        nodeEngine.onClientDisconnected(getUuid());
 
         LoginContext lc = loginContext;
         if (lc != null) {
