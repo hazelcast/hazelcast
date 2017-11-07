@@ -335,41 +335,42 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     public boolean merge(Object key, ReplicatedMapEntryView mergingEntry, ReplicatedMapMergePolicy policy) {
-        Object marshalledKey = marshall(key);
+        K marshalledKey = (K) marshall(key);
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         ReplicatedRecord<K, V> record = storage.get(marshalledKey);
-        Object newValue;
         if (record == null) {
-            ReplicatedMapEntryView nullEntryView = new ReplicatedMapEntryView(unmarshall(key), null);
-            newValue = policy.merge(getName(), mergingEntry, nullEntryView);
+            ReplicatedMapEntryView nullEntryView = new ReplicatedMapEntryView<Object, V>()
+                    .setKey(unmarshall(key));
+            V newValue = (V) policy.merge(getName(), mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;
             }
-            record = buildReplicatedRecord((K) marshalledKey, (V) newValue, 0);
-            storage.put((K) marshalledKey, record);
+            record = buildReplicatedRecord(marshalledKey, newValue, 0);
+            storage.put(marshalledKey, record);
             storage.incrementVersion();
             Data dataKey = serializationService.toData(marshalledKey);
             Data dataValue = serializationService.toData(newValue);
             VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
             sendReplicationOperation(false, getName(), dataKey, dataValue, record.getTtlMillis(), responsePair);
         } else {
-            Object oldValue = record.getValueInternal();
-            ReplicatedMapEntryView existingEntry = new ReplicatedMapEntryView(unmarshall(key), unmarshall(oldValue));
-            existingEntry.setCreationTime(record.getCreationTime());
-            existingEntry.setLastUpdateTime(record.getUpdateTime());
-            existingEntry.setLastAccessTime(record.getLastAccessTime());
-            existingEntry.setHits(record.getHits());
-            existingEntry.setTtl(record.getTtlMillis());
-            newValue = policy.merge(getName(), mergingEntry, existingEntry);
+            ReplicatedMapEntryView existingEntry = new ReplicatedMapEntryView<Object, Object>()
+                    .setKey(unmarshall(key))
+                    .setValue(unmarshall(record.getValueInternal()))
+                    .setCreationTime(record.getCreationTime())
+                    .setLastUpdateTime(record.getUpdateTime())
+                    .setLastAccessTime(record.getLastAccessTime())
+                    .setHits(record.getHits())
+                    .setTtl(record.getTtlMillis());
+            V newValue = (V) policy.merge(getName(), mergingEntry, existingEntry);
             if (newValue == null) {
-                storage.remove((K) marshalledKey, record);
+                storage.remove(marshalledKey, record);
                 storage.incrementVersion();
                 Data dataKey = serializationService.toData(marshalledKey);
                 VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
                 sendReplicationOperation(true, getName(), dataKey, null, record.getTtlMillis(), responsePair);
                 return false;
             }
-            record.setValueInternal((V) newValue, record.getTtlMillis());
+            record.setValueInternal(newValue, record.getTtlMillis());
             storage.incrementVersion();
             Data dataKey = serializationService.toData(marshalledKey);
             Data dataValue = serializationService.toData(newValue);

@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -154,15 +153,14 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                             mergePolicy, false);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
-                        ICompletableFuture<Object> future = nodeEngine.getOperationService()
-                                .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                        future.andThen(mergeCallback);
+                        nodeEngine.getOperationService()
+                                .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                                .andThen(mergeCallback);
                     } catch (Throwable t) {
                         throw rethrow(t);
                     }
                 }
             }
-
             try {
                 semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {

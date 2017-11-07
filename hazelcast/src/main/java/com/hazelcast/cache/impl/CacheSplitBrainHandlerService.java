@@ -24,7 +24,6 @@ import com.hazelcast.cache.impl.operation.CacheMergeOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -162,9 +161,9 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                             cacheMergePolicy);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        ICompletableFuture<Object> future = nodeEngine.getOperationService()
-                                .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId);
-                        future.andThen(mergeCallback);
+                        nodeEngine.getOperationService()
+                                .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId)
+                                .andThen(mergeCallback);
                     } catch (Throwable t) {
                         throw rethrow(t);
                     }

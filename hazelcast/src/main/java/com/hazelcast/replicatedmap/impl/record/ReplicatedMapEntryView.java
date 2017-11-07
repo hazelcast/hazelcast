@@ -37,11 +37,6 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
     private long lastUpdateTime;
     private long ttl;
 
-    public ReplicatedMapEntryView(K key, V value) {
-        this.key = key;
-        this.value = value;
-    }
-
     public ReplicatedMapEntryView() {
     }
 
@@ -50,8 +45,9 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return key;
     }
 
-    public void setKey(K key) {
+    public ReplicatedMapEntryView<K, V> setKey(K key) {
         this.key = key;
+        return this;
     }
 
     @Override
@@ -59,8 +55,9 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return value;
     }
 
-    public void setValue(V value) {
+    public ReplicatedMapEntryView<K, V> setValue(V value) {
         this.value = value;
+        return this;
     }
 
     @Override
@@ -73,8 +70,9 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return creationTime;
     }
 
-    public void setCreationTime(long creationTime) {
+    public ReplicatedMapEntryView<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
+        return this;
     }
 
     @Override
@@ -87,8 +85,9 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return hits;
     }
 
-    public void setHits(long hits) {
+    public ReplicatedMapEntryView<K, V> setHits(long hits) {
         this.hits = hits;
+        return this;
     }
 
     @Override
@@ -96,8 +95,9 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return lastAccessTime;
     }
 
-    public void setLastAccessTime(long lastAccessTime) {
+    public ReplicatedMapEntryView<K, V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
+        return this;
     }
 
     @Override
@@ -110,8 +110,9 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return lastUpdateTime;
     }
 
-    public void setLastUpdateTime(long lastUpdateTime) {
+    public ReplicatedMapEntryView<K, V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
+        return this;
     }
 
     @Override
@@ -124,8 +125,9 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return ttl;
     }
 
-    public void setTtl(long ttl) {
+    public ReplicatedMapEntryView<K, V> setTtl(long ttl) {
         this.ttl = ttl;
+        return this;
     }
 
     @Override
