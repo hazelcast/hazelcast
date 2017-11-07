@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.EndpointSubset;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.dsl.ClientMixedOperation;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -65,7 +64,7 @@ public class DnsEndpointResolverTest {
     @Test
     public void testValidServiceDns() throws Exception {
         DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", SERVICE_DNS_TIMEOUT));
-        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup", null)).withNoArguments().thenReturn(lookup);
+        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments().thenReturn(lookup);
         when(lookup.getResult()).thenReturn(Lookup.SUCCESSFUL);
         when(lookup.run()).thenReturn(getRecords());
         List<DiscoveryNode> nodes = endpointResolver.resolve();
@@ -76,7 +75,7 @@ public class DnsEndpointResolverTest {
     @Test
     public void testDnsFailFlow() throws Exception {
         DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", SERVICE_DNS_TIMEOUT));
-        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup", null)).withNoArguments().thenReturn(lookup);
+        PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments().thenReturn(lookup);
 
         when(lookup.getResult()).thenReturn(Lookup.HOST_NOT_FOUND);
         when(lookup.run()).thenReturn(getRecords());
