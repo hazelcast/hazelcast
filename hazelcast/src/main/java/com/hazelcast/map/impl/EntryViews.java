@@ -71,8 +71,8 @@ public final class EntryViews {
         lazyEntryView.setLastUpdateTime(record.getLastUpdateTime());
         lazyEntryView.setTtl(record.getTtl());
         lazyEntryView.setCreationTime(record.getCreationTime());
-        lazyEntryView.setExpirationTime(lazyEntryView.getExpirationTime());
-        lazyEntryView.setLastStoredTime(lazyEntryView.getLastStoredTime());
+        lazyEntryView.setExpirationTime(record.getExpirationTime());
+        lazyEntryView.setLastStoredTime(record.getLastStoredTime());
         return lazyEntryView;
     }
 
