@@ -16,7 +16,25 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.nio.Address;
+import com.hazelcast.test.ExpectedRuntimeException;
+
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestProcessors {
 
@@ -53,6 +71,167 @@ public class TestProcessors {
         protected void init(@Nonnull Context context) throws Exception {
             throw e;
         }
+    }
 
+    public static final class StuckProcessor implements Processor {
+        public static volatile CountDownLatch executionStarted;
+        public static volatile CountDownLatch proceedLatch;
+
+        @Override
+        public boolean complete() {
+            executionStarted.countDown();
+            try {
+                return proceedLatch.await(1, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                return false;
+            }
+        }
+    }
+
+    public static class FailingOnCompletePS implements ProcessorSupplier {
+
+        private final DistributedSupplier<Processor> supplierFn;
+
+        FailingOnCompletePS(DistributedSupplier<Processor> supplierFn) {
+            this.supplierFn = supplierFn;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+
+        }
+
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            return Stream.generate(supplierFn).limit(count).collect(toList());
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            throw new ExpectedRuntimeException();
+        }
+    }
+
+    public static class FailingOnCompletePMS implements ProcessorMetaSupplier {
+
+        private final DistributedSupplier<ProcessorSupplier> supplierFn;
+
+        public FailingOnCompletePMS(DistributedSupplier<ProcessorSupplier> supplierFn) {
+            this.supplierFn = supplierFn;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+
+        }
+
+        @Nonnull @Override
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return a -> supplierFn.get();
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            throw new ExpectedRuntimeException();
+        }
+    }
+
+    public static class MockPMS implements ProcessorMetaSupplier {
+
+        static AtomicBoolean initCalled = new AtomicBoolean();
+        static AtomicBoolean completeCalled = new AtomicBoolean();
+        static AtomicReference<Throwable> completeError = new AtomicReference<>();
+
+        private final RuntimeException initError;
+        private final DistributedSupplier<MockPS> supplierFn;
+
+        public MockPMS(DistributedSupplier<MockPS> supplierFn) {
+            this(null, supplierFn);
+        }
+
+        public MockPMS(RuntimeException initError, DistributedSupplier<MockPS> supplierFn) {
+            this.initError = initError;
+            this.supplierFn = supplierFn;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            assertTrue("PMS.init() already called once",
+                    initCalled.compareAndSet(false, true)
+            );
+            if (initError != null) {
+                throw initError;
+            }
+        }
+
+        @Nonnull @Override
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return a -> supplierFn.get();
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            assertEquals("all PS that have been init should have been completed at this point",
+                    MockPS.initCount.get(), MockPS.completeCount.get());
+            assertTrue("Complete called without calling init()", initCalled.get());
+            assertTrue("PMS.complete() already called once",
+                    completeCalled.compareAndSet(false, true)
+            );
+            assertTrue("PMS.complete() already called once",
+                    completeError.compareAndSet(null, error)
+            );
+        }
+    }
+
+    public static class MockPS implements ProcessorSupplier {
+
+        static AtomicInteger initCount = new AtomicInteger();
+        static AtomicInteger completeCount = new AtomicInteger();
+        static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
+
+        private final RuntimeException initError;
+        private final DistributedSupplier<Processor> supplier;
+        private final int nodeCount;
+
+        private boolean initCalled;
+
+        MockPS(DistributedSupplier<Processor> supplier, int nodeCount) {
+            this(null, supplier, nodeCount);
+        }
+
+        MockPS(RuntimeException initError, DistributedSupplier<Processor> supplier, int nodeCount) {
+            this.initError = initError;
+            this.supplier = supplier;
+            this.nodeCount = nodeCount;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            initCalled = true;
+            initCount.incrementAndGet();
+
+            if (initError != null) {
+                throw initError;
+            }
+        }
+
+        @Nonnull @Override
+        public List<Processor> get(int count) {
+            return Stream.generate(supplier).limit(count).collect(toList());
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            if (error != null) {
+                completeErrors.add(error);
+            }
+            completeCount.incrementAndGet();
+
+            assertTrue("Complete called without calling init()", initCalled);
+            assertTrue("Complete called without init being called on all the nodes! init count: "
+                    + initCount.get() + " node count: " + nodeCount, initCount.get() >= nodeCount);
+            assertTrue("Complete called " + completeCount.get() + " but init called "
+                    + initCount.get() + " times!", completeCount.get() <= initCount.get());
+        }
     }
 }

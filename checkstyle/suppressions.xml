@@ -23,6 +23,7 @@
 
     <!-- Exclude these packages from JavaDoc checks -->
     <suppress checks="JavadocMethod" files="JetException\.java"/>
+    <suppress checks="JavadocMethod" files="JobNotFoundException\.java"/>
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/](impl|internal)[\\/]"/>
 

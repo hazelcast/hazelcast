@@ -20,8 +20,8 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.TopologyChangeTest.MockSupplier;
-import com.hazelcast.jet.core.TopologyChangeTest.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.MockPS;
+import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository;
@@ -59,9 +59,9 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
     @Override
     protected void onBeforeSetup() {
-        MockSupplier.completeCount.set(0);
-        MockSupplier.initCount.set(0);
-        MockSupplier.completeErrors.clear();
+        MockPS.completeCount.set(0);
+        MockPS.initCount.set(0);
+        MockPS.completeErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
     }
@@ -80,7 +80,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(StuckProcessor.executionStarted);
@@ -92,7 +92,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             StuckProcessor.proceedLatch.countDown();
 
             assertTrueEventually(() ->
-                    assertEquals(clusterSize + firstSubClusterSize, MockSupplier.initCount.get()));
+                    assertEquals(clusterSize + firstSubClusterSize, MockPS.initCount.get()));
 
             long jobId = jobRef[0].getJobId();
 
@@ -116,12 +116,12 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         Consumer<JetInstance[]> afterMerge = instances -> {
             assertTrueEventually(() -> {
-                assertEquals(clusterSize + firstSubClusterSize, MockSupplier.initCount.get());
-                assertEquals(clusterSize + firstSubClusterSize, MockSupplier.completeCount.get());
+                assertEquals(clusterSize + firstSubClusterSize, MockPS.initCount.get());
+                assertEquals(clusterSize + firstSubClusterSize, MockPS.completeCount.get());
             });
 
-            assertEquals(clusterSize, MockSupplier.completeErrors.size());
-            MockSupplier.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
+            assertEquals(clusterSize, MockPS.completeErrors.size());
+            MockPS.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
 
             try {
                 minorityJobFutureRef[0].get();
@@ -144,7 +144,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(StuckProcessor.executionStarted);
@@ -172,12 +172,12 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         Consumer<JetInstance[]> afterMerge = instances -> {
             assertTrueEventually(() -> {
-                assertEquals(clusterSize * 2, MockSupplier.initCount.get());
-                assertEquals(clusterSize * 2, MockSupplier.completeCount.get());
+                assertEquals(clusterSize * 2, MockPS.initCount.get());
+                assertEquals(clusterSize * 2, MockPS.completeCount.get());
             });
 
-            assertEquals(clusterSize, MockSupplier.completeErrors.size());
-            MockSupplier.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
+            assertEquals(clusterSize, MockPS.completeErrors.size());
+            MockPS.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, beforeSplit, onSplit, afterMerge);
@@ -192,7 +192,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Job[] jobRef = new Job[1];
 
         Consumer<JetInstance[]> beforeSplit = instances -> {
-            MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = instances[0].newJob(dag);
             assertOpenEventually(StuckProcessor.executionStarted);
@@ -213,12 +213,12 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         Consumer<JetInstance[]> afterMerge = instances -> {
             assertTrueEventually(() -> {
-                assertEquals(clusterSize * 2, MockSupplier.initCount.get());
-                assertEquals(clusterSize * 2, MockSupplier.completeCount.get());
+                assertEquals(clusterSize * 2, MockPS.initCount.get());
+                assertEquals(clusterSize * 2, MockPS.completeCount.get());
             });
 
-            assertEquals(clusterSize, MockSupplier.completeErrors.size());
-            MockSupplier.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
+            assertEquals(clusterSize, MockPS.completeErrors.size());
+            MockPS.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, beforeSplit, onSplit, afterMerge);
@@ -233,15 +233,15 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Job[] jobRef = new Job[1];
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
-            MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
             jobRef[0] = secondSubCluster[1].newJob(dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(StuckProcessor.executionStarted);
         };
 
         Consumer<JetInstance[]> afterMerge = instances -> {
-            assertEquals(secondSubClusterSize, MockSupplier.completeErrors.size());
-            MockSupplier.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
+            assertEquals(secondSubClusterSize, MockPS.completeErrors.size());
+            MockPS.completeErrors.forEach(t -> assertTrue(t instanceof TopologyChangedException));
 
             try {
                 jobRef[0].getFuture().get(30, TimeUnit.SECONDS);
@@ -265,7 +265,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         }
 
         StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
-        MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+        MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
         DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(StuckProcessor.executionStarted);
@@ -291,7 +291,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         }
 
         StuckProcessor.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
-        MockSupplier processorSupplier = new MockSupplier(StuckProcessor::new, clusterSize);
+        MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
         DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(StuckProcessor.executionStarted);

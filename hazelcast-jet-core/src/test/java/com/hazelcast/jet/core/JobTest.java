@@ -20,9 +20,10 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.TestProcessors.Identity;
+import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
-import com.hazelcast.jet.core.TopologyChangeTest.MockSupplier;
-import com.hazelcast.jet.core.TopologyChangeTest.StuckProcessor;
+import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -36,16 +37,23 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category(QuickTest.class)
@@ -66,9 +74,9 @@ public class JobTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        MockSupplier.completeCount.set(0);
-        MockSupplier.initCount.set(0);
-        MockSupplier.completeErrors.clear();
+        MockPS.completeCount.set(0);
+        MockPS.initCount.set(0);
+        MockPS.completeErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
@@ -89,25 +97,19 @@ public class JobTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobIsSubmitted_then_jobStatusIsRunningEventually() throws InterruptedException {
-        // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
+    public void when_jobIsSubmittedFromNonMaster_then_jobStatusShouldBeStarting() {
+        testJobStatusDuringStart(instance2);
+    }
 
-        // When
-        Job job = instance1.newJob(dag);
-        StuckProcessor.executionStarted.await();
-
-        // Then
-        assertEquals(RUNNING, job.getJobStatus());
-
-        job.cancel();
-        joinAndExpectCancellation(job);
+    @Test
+    public void when_jobIsSubmittedFromClient_then_jobStatusShouldBeStarting() {
+        testJobStatusDuringStart(factory.newClient());
     }
 
     @Test
     public void when_jobIsCancelled_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
         // When
         Job job = instance1.newJob(dag);
@@ -124,7 +126,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsFailed_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier((DistributedSupplier<Processor>)
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS((DistributedSupplier<Processor>)
                 () -> new ProcessorThatFailsInComplete(new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
@@ -142,7 +144,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsSubmitted_then_trackedJobCanQueryJobStatus() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
         // When
         Job submittedJob = instance1.newJob(dag);
@@ -162,7 +164,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsCompleted_then_trackedJobCanQueryJobResult() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
         // When
         instance1.newJob(dag);
@@ -183,7 +185,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsCancelled_then_trackedJobCanQueryJobResult() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
         // When
         Job submittedJob = instance1.newJob(dag);
@@ -205,7 +207,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsFailed_then_trackedJobCanQueryJobResult() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier((DistributedSupplier<Processor>)
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS((DistributedSupplier<Processor>)
                 () -> new ProcessorThatFailsInComplete(new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
@@ -227,7 +229,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_trackedJobCancels_then_jobCompletes() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
         Job submittedJob = instance1.newJob(dag);
 
@@ -251,7 +253,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsCompleted_then_trackedJobCanQueryJobResultFromClient() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
         // When
         instance1.newJob(dag);
@@ -271,6 +273,22 @@ public class JobTest extends JetTestSupport {
         assertEquals(COMPLETED, trackedJob.getJobStatus());
     }
 
+    private void testJobStatusDuringStart(JetInstance submitter) {
+        PSThatWaitsOnInit.initLatch = new CountDownLatch(1);
+        DAG dag = new DAG().vertex(new Vertex("test", new PSThatWaitsOnInit(Identity::new)));
+
+        // When
+        Job job = submitter.newJob(dag);
+        JobStatus status = job.getJobStatus();
+
+        assertTrue(status == NOT_STARTED || status == STARTING);
+
+        PSThatWaitsOnInit.initLatch.countDown();
+
+        // Then
+        assertCompletedEventually(job);
+    }
+
     private void joinAndExpectCancellation(Job job) {
         try {
             job.join();
@@ -283,4 +301,24 @@ public class JobTest extends JetTestSupport {
         assertTrueEventually(() -> assertEquals(COMPLETED, job.getJobStatus()));
     }
 
+    private static final class PSThatWaitsOnInit implements ProcessorSupplier {
+
+        public static volatile CountDownLatch initLatch;
+        private final DistributedSupplier<Processor> supplier;
+
+        PSThatWaitsOnInit(DistributedSupplier<Processor> supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            uncheckRun(() -> initLatch.await());
+        }
+
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            return Stream.generate(supplier).limit(count).collect(toList());
+
+        }
+    }
 }

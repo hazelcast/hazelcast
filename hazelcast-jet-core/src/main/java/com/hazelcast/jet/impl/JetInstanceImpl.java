@@ -104,9 +104,9 @@ public class JetInstanceImpl extends AbstractJetInstance {
         return jobs;
     }
 
-    private JobStatus sendJobStatusRequest(long jobId) {
+    private JobStatus sendJobStatusRequest(long jobId, boolean rertryOnNotFound) {
         try {
-            Operation op = new GetJobStatusOperation(jobId);
+            Operation op = new GetJobStatusOperation(jobId, rertryOnNotFound);
             OperationService operationService = nodeEngine.getOperationService();
             InternalCompletableFuture<JobStatus> f = operationService
                     .createInvocationBuilder(JetService.SERVICE_NAME, op, nodeEngine.getMasterAddress()).invoke();
@@ -139,7 +139,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
         @Override
         protected JobStatus sendJobStatusRequest() {
-            return JetInstanceImpl.this.sendJobStatusRequest(getJobId());
+            return JetInstanceImpl.this.sendJobStatusRequest(getJobId(), true);
         }
 
     }
@@ -165,7 +165,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
         @Override
         protected JobStatus sendJobStatusRequest() {
-            return JetInstanceImpl.this.sendJobStatusRequest(getJobId());
+            return JetInstanceImpl.this.sendJobStatusRequest(getJobId(), false);
         }
 
     }

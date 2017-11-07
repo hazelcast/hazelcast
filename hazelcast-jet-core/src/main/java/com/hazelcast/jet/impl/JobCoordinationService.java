@@ -24,6 +24,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
@@ -218,7 +219,7 @@ public class JobCoordinationService {
             return jobResult.asCompletableFuture();
         }
 
-        throw new IllegalArgumentException("Job " + idToString(jobId) + " not found to join!");
+        throw new JobNotFoundException(jobId);
     }
 
     // Tries to automatically start a job if it is not already running or completed
@@ -286,7 +287,7 @@ public class JobCoordinationService {
     }
 
     /**
-     * Returns the job status or fails with {@link IllegalArgumentException} if the requested job is not found
+     * Returns the job status or fails with {@link JobNotFoundException} if the requested job is not found
      */
     public JobStatus getJobStatus(long jobId) {
         if (!isMaster()) {
@@ -306,7 +307,7 @@ public class JobCoordinationService {
                 return jobResult.getJobStatus();
             }
 
-            throw new IllegalArgumentException("Job " + idToString(jobId) + " not found");
+            throw new JobNotFoundException(jobId);
         } else {
             return NOT_STARTED;
         }
@@ -321,7 +322,7 @@ public class JobCoordinationService {
         long jobId = masterContext.getJobId();
         JobRecord jobRecord = jobRepository.getJob(jobId);
         if (jobRecord == null) {
-            throw new IllegalArgumentException("Job record not found for job id: " + idToString(jobId));
+            throw new JobNotFoundException(jobId);
         }
 
         String coordinator = nodeEngine.getNode().getThisUuid();

@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -29,14 +31,16 @@ import java.io.IOException;
 public class GetJobStatusOperation extends Operation implements IdentifiedDataSerializable {
 
     private long jobId;
+    private boolean retryOnNotFound;
 
     private JobStatus response;
 
     public GetJobStatusOperation() {
     }
 
-    public GetJobStatusOperation(long jobId) {
+    public GetJobStatusOperation(long jobId, boolean retryOnNotFound) {
         this.jobId = jobId;
+        this.retryOnNotFound = retryOnNotFound;
     }
 
     @Override
@@ -48,6 +52,13 @@ public class GetJobStatusOperation extends Operation implements IdentifiedDataSe
     @Override
     public Object getResponse() {
         return response;
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        return throwable instanceof JobNotFoundException && retryOnNotFound
+                ? ExceptionAction.RETRY_INVOCATION
+                : super.onInvocationException(throwable);
     }
 
     @Override
@@ -64,11 +75,13 @@ public class GetJobStatusOperation extends Operation implements IdentifiedDataSe
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(jobId);
+        out.writeBoolean(retryOnNotFound);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         jobId = in.readLong();
+        retryOnNotFound = in.readBoolean();
     }
 }

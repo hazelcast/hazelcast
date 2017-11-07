@@ -31,7 +31,7 @@ public interface JetCodecTemplate {
     void cancelJob(long jobId);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
-    Object getJobStatus(long jobId);
+    Object getJobStatus(long jobId, boolean retryOnNotFound);
 
     @Request(id = 4, retryable = false, response = ResponseMessageConst.DATA)
     Object getJobIds();

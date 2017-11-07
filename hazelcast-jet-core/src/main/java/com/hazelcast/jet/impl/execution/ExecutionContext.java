@@ -149,7 +149,7 @@ public class ExecutionContext {
         procSuppliers.forEach(s -> {
             try {
                 s.complete(error);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.severe(jobAndExecutionId(jobId, executionId)
                         + " encountered an exception in ProcessorSupplier.complete(), ignoring it", e);
             }

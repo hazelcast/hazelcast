@@ -26,7 +26,8 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.core.TestProcessors.MockPS;
+import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobCoordinationService;
@@ -47,18 +48,13 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.SHUTDOWN_REQUEST;
@@ -67,12 +63,10 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.TestUtil.getJetService;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.EXECUTE_OP;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_OP;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -124,9 +118,9 @@ public class TopologyChangeTest extends JetTestSupport {
             }
         }
 
-        MockSupplier.completeCount.set(0);
-        MockSupplier.initCount.set(0);
-        MockSupplier.completeErrors.clear();
+        MockPS.completeCount.set(0);
+        MockPS.initCount.set(0);
+        MockPS.completeErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(nodeCount * PARALLELISM);
@@ -158,7 +152,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_addNodeDuringExecution_then_completeSuccessfully() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
         Job job = instances[0].newJob(dag);
@@ -168,18 +162,18 @@ public class TopologyChangeTest extends JetTestSupport {
         job.join();
 
         // Then
-        assertEquals(nodeCount, MockSupplier.initCount.get());
+        assertEquals(nodeCount, MockPS.initCount.get());
 
         assertTrueEventually(() -> {
-            assertEquals(nodeCount, MockSupplier.completeCount.get());
-            assertThat(MockSupplier.completeErrors, empty());
+            assertEquals(nodeCount, MockPS.completeCount.get());
+            assertThat(MockPS.completeErrors, empty());
         });
     }
 
     @Test
     public void when_addAndRemoveNodeDuringExecution_then_completeSuccessfully() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
         Job job = instances[0].newJob(dag);
@@ -190,18 +184,18 @@ public class TopologyChangeTest extends JetTestSupport {
         job.join();
 
         // Then
-        assertEquals(nodeCount, MockSupplier.initCount.get());
+        assertEquals(nodeCount, MockPS.initCount.get());
 
         assertTrueEventually(() -> {
-            assertEquals(nodeCount, MockSupplier.completeCount.get());
-            assertThat(MockSupplier.completeErrors, empty());
+            assertEquals(nodeCount, MockPS.completeCount.get());
+            assertThat(MockPS.completeErrors, empty());
         });
     }
 
     @Test
     public void when_nonCoordinatorLeavesDuringExecution_then_jobRestarts() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
         Job job = instances[0].newJob(dag);
@@ -214,15 +208,15 @@ public class TopologyChangeTest extends JetTestSupport {
 
         // upon non-coordinator member leave, remaining members restart and complete the job
         final int count = nodeCount * 2 - 1;
-        assertEquals(count, MockSupplier.initCount.get());
+        assertEquals(count, MockPS.initCount.get());
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(count, MockSupplier.completeCount.get());
-                assertEquals(nodeCount, MockSupplier.completeErrors.size());
-                for (int i = 0; i < MockSupplier.completeErrors.size(); i++) {
-                    Throwable error = MockSupplier.completeErrors.get(i);
+                assertEquals(count, MockPS.completeCount.get());
+                assertEquals(nodeCount, MockPS.completeErrors.size());
+                for (int i = 0; i < MockPS.completeErrors.size(); i++) {
+                    Throwable error = MockPS.completeErrors.get(i);
                     assertTrue(error instanceof TopologyChangedException
                             || error instanceof HazelcastInstanceNotActiveException);
                 }
@@ -233,7 +227,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_nonCoordinatorLeavesDuringExecutionAndNoRestartConfigured_then_jobFails() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
         JobConfig config = new JobConfig().setAutoRestartOnMemberFailure(false);
 
         // When
@@ -251,7 +245,7 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_nonCoordinatorLeavesDuringExecution_then_clientStillGetsJobResult() throws Throwable {
         // Given
         JetClientInstanceImpl client = factory.newClient();
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
         Job job = client.newJob(dag);
@@ -266,7 +260,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_coordinatorLeavesDuringExecution_then_jobCompletes() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
         Long jobId = null;
@@ -301,13 +295,13 @@ public class TopologyChangeTest extends JetTestSupport {
         });
 
         final int count = liteMemberFlags[0] ? (2 * nodeCount) : (2 * nodeCount - 1);
-        assertEquals(count, MockSupplier.initCount.get());
+        assertEquals(count, MockPS.initCount.get());
 
         assertTrueEventually(() -> {
-            assertEquals(count, MockSupplier.completeCount.get());
-            assertEquals(nodeCount, MockSupplier.completeErrors.size());
-            for (int i = 0; i < MockSupplier.completeErrors.size(); i++) {
-                Throwable error = MockSupplier.completeErrors.get(i);
+            assertEquals(count, MockPS.completeCount.get());
+            assertEquals(nodeCount, MockPS.completeErrors.size());
+            for (int i = 0; i < MockPS.completeErrors.size(); i++) {
+                Throwable error = MockPS.completeErrors.get(i);
                 assertTrue(error instanceof TopologyChangedException
                         || error instanceof HazelcastInstanceNotActiveException);
             }
@@ -318,7 +312,7 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_coordinatorLeavesDuringExecutionAndNoRestartConfigured_then_jobFails() throws Throwable {
         // Given
         JetClientInstanceImpl client = factory.newClient();
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
         JobConfig config = new JobConfig().setAutoRestartOnMemberFailure(false);
 
         // When
@@ -336,7 +330,7 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_coordinatorLeavesDuringExecution_then_nonCoordinatorJobSubmitterStillGetsJobResult()
             throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
         Job job = instances[1].newJob(dag);
@@ -353,7 +347,7 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_coordinatorLeavesDuringExecution_then_clientStillGetsJobResult() throws Throwable {
         // Given
         JetClientInstanceImpl client = factory.newClient();
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, nodeCount)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
         Job job = client.newJob(dag);
@@ -371,7 +365,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // Given
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 ClusterDataSerializerHook.F_ID, singletonList(MEMBER_INFO_UPDATE));
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(TestProcessors.Identity::new, nodeCount + 1)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount + 1)));
 
 
         // When
@@ -403,7 +397,7 @@ public class TopologyChangeTest extends JetTestSupport {
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
 
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(TestProcessors.Identity::new, nodeCount + 1)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount + 1)));
 
         Job job = instances[0].newJob(dag);
         JetService jetService = getJetService(instances[0]);
@@ -454,7 +448,7 @@ public class TopologyChangeTest extends JetTestSupport {
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
 
         // When a job participant starts its shutdown after the job is submitted
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(TestProcessors.Identity::new, nodeCount - 1)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount - 1)));
 
         Job job = instances[0].newJob(dag);
 
@@ -499,7 +493,7 @@ public class TopologyChangeTest extends JetTestSupport {
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(EXECUTE_OP));
 
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(TestProcessors.Identity::new, nodeCount - 1)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount - 1)));
 
         Job job = instances[0].newJob(dag);
 
@@ -540,82 +534,6 @@ public class TopologyChangeTest extends JetTestSupport {
             fail();
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
-        }
-    }
-
-    static class MockSupplier implements ProcessorSupplier {
-
-        static AtomicInteger initCount = new AtomicInteger();
-        static AtomicInteger completeCount = new AtomicInteger();
-        static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
-
-        private final RuntimeException initError;
-        private final DistributedSupplier<Processor> supplier;
-        private final int nodeCount;
-
-        private boolean initCalled;
-
-        MockSupplier(DistributedSupplier<Processor> supplier, int nodeCount) {
-            this(null, supplier, nodeCount);
-        }
-
-        MockSupplier(RuntimeException initError, DistributedSupplier<Processor> supplier, int nodeCount) {
-            this.initError = initError;
-            this.supplier = supplier;
-            this.nodeCount = nodeCount;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            initCalled = true;
-            initCount.incrementAndGet();
-
-            if (initError != null) {
-                throw initError;
-            }
-        }
-
-        @Override  @Nonnull
-        public List<Processor> get(int count) {
-            return Stream.generate(supplier).limit(count).collect(toList());
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            if (error != null) {
-                completeErrors.add(error);
-            }
-            completeCount.incrementAndGet();
-            if (!initCalled) {
-                throw new IllegalStateException("Complete called without calling init()");
-            }
-
-            if (completeCount.get() > initCount.get()) {
-                throw new IllegalStateException("Complete called " + completeCount.get() + " but init called "
-                        + initCount.get() + " times!");
-            }
-
-            if (initCount.get() < nodeCount) {
-                throw new IllegalStateException("Complete called without init being called on all the nodes! init count: "
-                        + initCount.get() + " node count: " + nodeCount);
-            }
-        }
-    }
-
-    static final class StuckProcessor implements Processor {
-        static volatile CountDownLatch executionStarted;
-        static volatile CountDownLatch proceedLatch;
-
-        @Override
-        public boolean complete() {
-            executionStarted.countDown();
-            try {
-                proceedLatch.await();
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                throw rethrow(e);
-            }
-            return true;
         }
     }
 }

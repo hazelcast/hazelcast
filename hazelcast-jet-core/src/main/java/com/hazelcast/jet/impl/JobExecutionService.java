@@ -126,7 +126,7 @@ public class JobExecutionService {
                 logger.fine(message);
                 completeExecution(executionId, t);
             }));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe(String.format("Local cancellation of %s failed",
                     jobAndExecutionId(exeCtx.getJobId(), exeCtx.getExecutionId())), e);
         }
@@ -292,14 +292,18 @@ public class JobExecutionService {
     void completeExecution(long executionId, Throwable error) {
         ExecutionContext executionContext = executionContexts.remove(executionId);
         if (executionContext != null) {
-            executionContext.complete(error);
-            classLoaders.remove(executionContext.getJobId());
-            executionContextJobIds.remove(executionContext.getJobId());
-            logger.fine("Completed execution of " + jobAndExecutionId(executionContext.getJobId(), executionId));
+            try {
+                executionContext.complete(error);
+            } finally {
+                classLoaders.remove(executionContext.getJobId());
+                executionContextJobIds.remove(executionContext.getJobId());
+                logger.fine("Completed execution of " + jobAndExecutionId(executionContext.getJobId(), executionId));
+            }
         } else {
             logger.fine("Execution " + idToString(executionId) + " not found for completion");
         }
     }
+
     public CompletionStage<Void> beginSnapshot(Address coordinator, long jobId, long executionId, long snapshotId) {
         ExecutionContext executionContext = verifyAndGetExecutionContext(coordinator, jobId, executionId,
                 SnapshotOperation.class.getSimpleName());

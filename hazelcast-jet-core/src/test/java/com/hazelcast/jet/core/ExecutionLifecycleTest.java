@@ -24,9 +24,13 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.TestProcessors.FailingOnCompletePMS;
+import com.hazelcast.jet.core.TestProcessors.FailingOnCompletePS;
 import com.hazelcast.jet.core.TestProcessors.Identity;
+import com.hazelcast.jet.core.TestProcessors.MockPMS;
+import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -35,8 +39,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -47,26 +49,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.getJetService;
 import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -121,14 +113,14 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     @Test
     public void when_jobCompleted_then_completeCalled() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(() -> new MockPS(Identity::new))));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(() -> new MockPS(Identity::new, NODE_COUNT))));
 
         // When
         Job job = instance.newJob(dag);
         job.join();
 
         // Then
-        assertPsCompleted();
+        assertPsCompletedWithoutError();
         assertPmsCompleted();
         assertJobSucceeded(job);
     }
@@ -138,7 +130,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         // Given
         RuntimeException e = new RuntimeException("mock error");
         DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(
-                e, () -> new MockPS(Identity::new)))
+                e, () -> new MockPS(Identity::new, NODE_COUNT)))
         );
 
         // When
@@ -162,7 +154,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         // Given
         RuntimeException e = new RuntimeException("mock error");
         DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(
-                () -> new MockPS(e, Identity::new))
+                () -> new MockPS(e, Identity::new, NODE_COUNT))
         ));
 
         // When
@@ -188,9 +180,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         RuntimeException e = new RuntimeException("mock error");
         String vertexName = "test";
         DAG dag = new DAG().vertex(new Vertex(vertexName, new MockPMS(
-                () -> new MockPS(
-                        () -> new ProcessorThatFailsInComplete(e)
-                )
+                () -> new MockPS(() -> new ProcessorThatFailsInComplete(e), NODE_COUNT)
         )));
         // When
         Job job = null;
@@ -215,7 +205,9 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     @Test
     public void when_executionCancelled_then_jobCompletedWithCancellationException() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(() -> new MockPS(StuckProcessor::new))));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(
+                () -> new MockPS(StuckProcessor::new, NODE_COUNT)
+        )));
 
         // When
         Job job = instance.newJob(dag);
@@ -227,17 +219,6 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         } catch (CancellationException ignored) {
         }
 
-        // Then
-        assertEquals(NODE_COUNT, MockPS.initCount.get());
-        assertTrueFiveSeconds(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, MockPS.completeCount.get());
-            }
-        });
-
-        StuckProcessor.proceedLatch.countDown();
-
         assertTrueEventually(() -> {
             assertJobFailed(job, new CancellationException());
             assertPsCompletedWithError(new CancellationException());
@@ -248,7 +229,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     @Test
     public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance.getHazelcastInstance());
         Address localAddress = nodeEngineImpl.getThisAddress();
@@ -284,7 +265,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     public void when_pmsCompleteStepThrowsException_then_jobStillSucceeds() throws Throwable {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new FailingOnCompletePMS(
-                () -> new MockPS(Identity::new)
+                () -> new MockPS(Identity::new, NODE_COUNT)
         )));
 
         // When
@@ -323,14 +304,10 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         assertExceptionInCauses(e, MockPMS.completeError.get());
     }
 
-    private void assertPsCompleted() {
+    private void assertPsCompletedWithoutError() {
         assertEquals(NODE_COUNT, MockPS.initCount.get());
         assertEquals(NODE_COUNT, MockPS.completeCount.get());
-        assertEquals(NODE_COUNT, MockPS.completeErrors.size());
-
-        for (int i = 0; i < NODE_COUNT; i++) {
-            assertNull(MockPS.completeErrors.get(i));
-        }
+        assertEquals(0, MockPS.completeErrors.size());
     }
 
     private void assertPsCompletedWithError(Throwable e) {
@@ -363,165 +340,5 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
         assertNotNull(jobResult);
         return jobResult;
-    }
-
-    private static class MockPMS implements ProcessorMetaSupplier {
-
-        static AtomicBoolean initCalled = new AtomicBoolean();
-        static AtomicBoolean completeCalled = new AtomicBoolean();
-        static AtomicReference<Throwable> completeError = new AtomicReference<>();
-
-        private final RuntimeException initError;
-        private final DistributedSupplier<MockPS> supplierFn;
-
-        MockPMS(DistributedSupplier<MockPS> supplierFn) {
-            this(null, supplierFn);
-        }
-
-        MockPMS(RuntimeException initError, DistributedSupplier<MockPS> supplierFn) {
-            this.initError = initError;
-            this.supplierFn = supplierFn;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            assertTrue("PMS.init() already called once",
-                    initCalled.compareAndSet(false, true)
-            );
-            if (initError != null) {
-                throw initError;
-            }
-        }
-
-        @Nonnull @Override
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return a -> supplierFn.get();
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            assertEquals("all PS that have been init should have been completed at this point",
-                    MockPS.initCount.get(), MockPS.completeCount.get());
-            assertTrue("Complete called without calling init()", initCalled.get());
-            assertTrue("PMS.complete() already called once",
-                    completeCalled.compareAndSet(false, true)
-            );
-            assertTrue("PMS.complete() already called once",
-                    completeError.compareAndSet(null, error)
-            );
-        }
-    }
-
-    private static class FailingOnCompletePMS implements ProcessorMetaSupplier {
-
-        private final DistributedSupplier<ProcessorSupplier> supplierFn;
-
-        FailingOnCompletePMS(DistributedSupplier<ProcessorSupplier> supplierFn) {
-            this.supplierFn = supplierFn;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-
-        }
-
-        @Nonnull @Override
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return a -> supplierFn.get();
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            throw new ExpectedRuntimeException();
-        }
-    }
-
-    private static class MockPS implements ProcessorSupplier {
-
-        static AtomicInteger initCount = new AtomicInteger();
-        static AtomicInteger completeCount = new AtomicInteger();
-        static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
-
-        private final RuntimeException initError;
-        private final DistributedSupplier<Processor> supplier;
-
-        private boolean initCalled;
-
-        MockPS(DistributedSupplier<Processor> supplier) {
-            this(null, supplier);
-        }
-
-        MockPS(RuntimeException initError, DistributedSupplier<Processor> supplier) {
-            this.initError = initError;
-            this.supplier = supplier;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            initCalled = true;
-            initCount.incrementAndGet();
-
-            if (initError != null) {
-                throw initError;
-            }
-        }
-
-        @Nonnull @Override
-        public List<Processor> get(int count) {
-            return Stream.generate(supplier).limit(count).collect(toList());
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            completeErrors.add(error);
-            completeCount.incrementAndGet();
-            if (!initCalled) {
-                throw new IllegalStateException("Complete called without calling init()");
-            }
-            if (initCount.get() != NODE_COUNT) {
-                throw new IllegalStateException("Complete called without init being called on all the nodes");
-            }
-        }
-    }
-
-    private static class FailingOnCompletePS implements ProcessorSupplier {
-
-        private final DistributedSupplier<Processor> supplierFn;
-
-        FailingOnCompletePS(DistributedSupplier<Processor> supplierFn) {
-            this.supplierFn = supplierFn;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-
-        }
-
-        @Nonnull @Override
-        public Collection<? extends Processor> get(int count) {
-            return Stream.generate(supplierFn).limit(count).collect(toList());
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            throw new ExpectedRuntimeException();
-        }
-    }
-
-    private static final class StuckProcessor implements Processor {
-        static CountDownLatch executionStarted;
-        static CountDownLatch proceedLatch;
-
-        @Override
-        public boolean complete() {
-            executionStarted.countDown();
-            try {
-                proceedLatch.await();
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                throw rethrow(e);
-            }
-            return false;
-        }
     }
 }

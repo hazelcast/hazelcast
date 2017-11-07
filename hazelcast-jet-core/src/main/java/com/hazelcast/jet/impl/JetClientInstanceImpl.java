@@ -113,8 +113,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         return jobs;
     }
 
-    private JobStatus sendJobStatusRequest(long jobId) {
-        ClientMessage request = JetGetJobStatusCodec.encodeRequest(jobId);
+    private JobStatus sendJobStatusRequest(long jobId, boolean retryOnNotFound) {
+        ClientMessage request = JetGetJobStatusCodec.encodeRequest(jobId, retryOnNotFound);
         ClientInvocation invocation = new ClientInvocation(client, request, jobObjectName(jobId), masterAddress());
         try {
             ClientMessage clientMessage = invocation.invoke().get();
@@ -158,7 +158,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
         @Override
         protected JobStatus sendJobStatusRequest() {
-            return JetClientInstanceImpl.this.sendJobStatusRequest(getJobId());
+            return JetClientInstanceImpl.this.sendJobStatusRequest(getJobId(), true);
         }
 
         private ClientMessage createJoinJobRequest() {
@@ -189,7 +189,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
         @Override
         protected JobStatus sendJobStatusRequest() {
-            return JetClientInstanceImpl.this.sendJobStatusRequest(getJobId());
+            return JetClientInstanceImpl.this.sendJobStatusRequest(getJobId(), false);
         }
 
     }
