@@ -72,7 +72,9 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
+import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
@@ -120,7 +122,16 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     }
 
     @Test
-    public void when_nodeDown_then_jobRestartsFromSnapshot() throws InterruptedException {
+    public void when_nodeDown_then_jobRestartsFromSnapshot_singleStage() throws Exception {
+        when_nodeDown_then_jobRestartsFromSnapshot(false);
+    }
+
+    @Test
+    public void when_nodeDown_then_jobRestartsFromSnapshot_twoStage() throws Exception {
+        when_nodeDown_then_jobRestartsFromSnapshot(true);
+    }
+
+    public void when_nodeDown_then_jobRestartsFromSnapshot(boolean twoStage) throws Exception {
         /* Design of this test:
 
         It uses random partitioned generator of source events. The events are Map.Entry(partitionId, timestamp).
@@ -159,19 +170,36 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Vertex insWm = dag.newVertex("insWm", insertWatermarksP(entry -> ((Entry<Integer, Integer>) entry).getValue(),
                 withFixedLag(0), emitByFrame(wDef)))
                           .localParallelism(1);
-        Vertex aggregate = dag.newVertex("aggregate", aggregateToSlidingWindowP(
-                t -> ((Entry<Integer, Integer>) t).getKey(),
-                t -> ((Entry<Integer, Integer>) t).getValue(),
-                TimestampKind.EVENT, wDef, aggrOp));
         Vertex map = dag.newVertex("map",
                 mapP((TimestampedEntry e) -> entry(asList(e.getTimestamp(), (long) (int) e.getKey()), e.getValue())));
         Vertex writeMap = dag.newVertex("writeMap", SinkProcessors.writeMapP("result"));
 
+        if (twoStage) {
+            Vertex aggregateStage1 = dag.newVertex("aggregateStage1", accumulateByFrameP(
+                    t -> ((Entry<Integer, Integer>) t).getKey(),
+                    t -> ((Entry<Integer, Integer>) t).getValue(),
+                    TimestampKind.EVENT, wDef, aggrOp));
+            Vertex aggregateStage2 = dag.newVertex("aggregateStage2", combineToSlidingWindowP(wDef, aggrOp));
+
+            dag.edge(between(insWm, aggregateStage1)
+                    .partitioned(entryKey()))
+               .edge(between(aggregateStage1, aggregateStage2)
+                       .distributed()
+                       .partitioned(entryKey()))
+               .edge(between(aggregateStage2, map));
+        } else {
+            Vertex aggregate = dag.newVertex("aggregate", aggregateToSlidingWindowP(
+                    t -> ((Entry<Integer, Integer>) t).getKey(),
+                    t -> ((Entry<Integer, Integer>) t).getValue(),
+                    TimestampKind.EVENT, wDef, aggrOp));
+
+            dag.edge(between(insWm, aggregate)
+                    .distributed()
+                    .partitioned(entryKey()))
+               .edge(between(aggregate, map));
+        }
+
         dag.edge(between(generator, insWm))
-           .edge(between(insWm, aggregate)
-                   .distributed()
-                   .partitioned(entryKey()))
-           .edge(between(aggregate, map))
            .edge(between(map, writeMap));
 
         JobConfig config = new JobConfig();

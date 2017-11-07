@@ -117,8 +117,8 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         T t = (T) item;
         final long frameTs = getFrameTsFn.applyAsLong(t);
         assert frameTs == wDef.floorFrameTs(frameTs) : "getFrameTsFn returned an invalid frame timestamp";
-        assert frameTs + wDef.windowLength() >= nextWinToEmit
-                : "late event received, it should have been filtered out by InsertWatermarksP: " + item;
+        assert frameTs + wDef.windowLength() >= nextWinToEmit : "late event received, it should have been filtered out " +
+                "by InsertWatermarksP: item=" + item + ", nextWinToEmit=" + nextWinToEmit;
         final Object key = getKeyFn.apply(t);
         A acc = tsToKeyToAcc.computeIfAbsent(frameTs, x -> new HashMap<>())
                             .computeIfAbsent(key, k -> aggrOp.createFn().get());
@@ -160,7 +160,8 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
             long newNextWinToEmit = (long) value;
             assert processingGuarantee != ProcessingGuarantee.EXACTLY_ONCE
                         || minRestoredNextWinToEmit == Long.MAX_VALUE || minRestoredNextWinToEmit == newNextWinToEmit
-                    : "different values for nextWinToEmit restored, before=" + nextWinToEmit + ", new=" + newNextWinToEmit;
+                    : "different values for nextWinToEmit restored, before=" + minRestoredNextWinToEmit
+                            + ", new=" + newNextWinToEmit;
             minRestoredNextWinToEmit = Math.min(newNextWinToEmit, minRestoredNextWinToEmit);
             return;
         }
@@ -174,7 +175,12 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
 
     @Override
     public boolean finishSnapshotRestore() {
-        nextWinToEmit = minRestoredNextWinToEmit;
+        // For first-stage, we should theoretically have saved nextWinToEmit to snapshot. But we don't bother, since the
+        // first stage is always tumbling window and it makes no difference in that case. So we don't restore and remain
+        // at MIN_VALUE.
+        if (isLastStage) {
+            nextWinToEmit = minRestoredNextWinToEmit;
+        }
         logFine(getLogger(), "Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
         return true;
     }
