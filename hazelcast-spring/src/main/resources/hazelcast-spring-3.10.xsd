@@ -221,15 +221,13 @@
                                     <xs:element name="queue-store" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
-                                                <xs:element name="properties" type="properties" minOccurs="0"
-                                                            maxOccurs="1"/>
+                                                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                                             </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
                                             <xs:attribute name="class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="store-implementation" use="optional" type="xs:string"/>
-                                            <xs:attribute name="factory-implementation" use="optional"
-                                                          type="xs:string"/>
+                                            <xs:attribute name="factory-implementation" use="optional" type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
@@ -244,6 +242,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size" use="optional" type="xs:string">

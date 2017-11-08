@@ -844,6 +844,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleQueueStoreConfig(childNode, queueConfigBuilder);
                 } else if ("quorum-ref".equals(nodeName)) {
                     queueConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, queueConfigBuilder);
                 }
             }
             queueManagedMap.put(name, queueConfigBuilder.getBeanDefinition());

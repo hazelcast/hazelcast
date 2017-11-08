@@ -248,6 +248,7 @@
         <async-backup-count>0</async-backup-count>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </cardinality-estimator>
+
     <queue name="default">
         <statistics-enabled>false</statistics-enabled>
         <!--
@@ -275,7 +276,9 @@
         </queue-store>
 
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </queue>
+
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.

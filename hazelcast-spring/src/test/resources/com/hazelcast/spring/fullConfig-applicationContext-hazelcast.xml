@@ -243,15 +243,15 @@
                     <hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true"/>
                 </hz:item-listeners>
             </hz:queue>
-            <hz:queue name="q"
+            <hz:queue name="queueWithSplitBrainConfig"
                       max-size="2500"
                       backup-count="1"
                       async-backup-count="1"
                       statistics-enabled="false"
                       empty-queue-ttl="100">
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
             </hz:queue>
-
             <hz:queue name="queueWithStore1">
                 <hz:queue-store enabled="true" class-name="com.hazelcast.spring.DummyQueueStore"/>
             </hz:queue>

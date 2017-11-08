@@ -27,6 +27,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
@@ -47,6 +50,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -60,7 +64,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * </ul>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueContainer implements IdentifiedDataSerializable {
+public class QueueContainer implements IdentifiedDataSerializable, SplitBrainAwareDataContainer<Long, Data, QueueItem> {
 
     /**
      * Contains item ID to queue item mappings for current transactions
@@ -99,10 +103,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public QueueContainer(String name) {
         this.name = name;
-        pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
-        offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
+        this.pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
+        this.offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
-
 
     public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) {
         this(name);
@@ -135,7 +138,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public QueueStoreWrapper getStore() {
         return store;
     }
-//TX Methods
+
+    public String getName() {
+        return name;
+    }
+
+    // TX Methods
 
     /**
      * Checks if there is a reserved item (within a transaction) with the given {@code itemId}.
@@ -161,7 +169,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
     }
 
-    //TX Poll
+    // TX Poll
 
     /**
      * Tries to obtain an item by removing the head of the
@@ -290,7 +298,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         iterator.add(txQueueItem);
     }
 
-    //TX Offer
+    // TX Offer
 
     /**
      * Reserves an ID for a future queue item and associates it with the given {@code transactionId}.
@@ -319,7 +327,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
     }
 
-    /** Add a reservation for an item with {@code itemId} offered in transaction with {@code transactionId} */
+    /**
+     * Add a reservation for an item with {@code itemId} offered in transaction with {@code transactionId}
+     */
     private TxQueueItem txnOfferReserveInternal(long itemId, String transactionId) {
         final TxQueueItem item = new TxQueueItem(this, itemId, null)
                 .setTransactionId(transactionId)
@@ -427,8 +437,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return item;
     }
 
-    //TX Methods Ends
-
+    // TX Methods Ends
 
     public long offer(Data data) {
         QueueItem item = new QueueItem(this, nextId(), null);
@@ -569,7 +578,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public void pollBackup(long itemId) {
         QueueItem item = getBackupMap().remove(itemId);
         if (item != null) {
-            //For Stats
+            // for stats
             age(item, Clock.currentTimeMillis());
         }
     }
@@ -599,7 +608,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         long current = Clock.currentTimeMillis();
         for (int i = 0; i < maxSizeParam; i++) {
             final QueueItem item = getItemQueue().poll();
-            //For Stats
+            // for stats
             age(item, current);
         }
         if (maxSizeParam != 0) {
@@ -608,10 +617,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return map;
     }
 
-    public void mapDrainIterator(int maxSize, Map map) {
-        Iterator<QueueItem> iter = getItemQueue().iterator();
+    public void mapDrainIterator(int maxSize, Map<Long, Data> map) {
+        Iterator<QueueItem> iterator = getItemQueue().iterator();
         for (int i = 0; i < maxSize; i++) {
-            QueueItem item = iter.next();
+            QueueItem item = iterator.next();
             if (store.isEnabled() && item.getData() == null) {
                 try {
                     load(item);
@@ -656,7 +665,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         final Map<Long, Data> map = createLinkedHashMap(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             map.put(item.getItemId(), item.getData());
-            // For stats
+            // for stats
             age(item, current);
         }
         if (store.isEnabled() && !map.isEmpty()) {
@@ -681,9 +690,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * This method does not trigger store load.
      */
     public long remove(Data data) {
-        Iterator<QueueItem> iter = getItemQueue().iterator();
-        while (iter.hasNext()) {
-            QueueItem item = iter.next();
+        Iterator<QueueItem> iterator = getItemQueue().iterator();
+        while (iterator.hasNext()) {
+            QueueItem item = iterator.next();
             if (data.equals(item.getData())) {
                 if (store.isEnabled()) {
                     try {
@@ -692,8 +701,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
                         throw new HazelcastException(e);
                     }
                 }
-                iter.remove();
-                //For Stats
+                iterator.remove();
+                // for stats
                 age(item, Clock.currentTimeMillis());
                 scheduleEvictionIfEmpty();
                 return item.getItemId();
@@ -711,7 +720,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public void removeBackup(long itemId) {
         getBackupMap().remove(itemId);
     }
-
 
     /**
      * Checks if the queue contains all items in the dataSet. This method does not trigger store load.
@@ -806,12 +814,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        final Iterator<QueueItem> iter = getItemQueue().iterator();
-        while (iter.hasNext()) {
-            final QueueItem item = iter.next();
+        final Iterator<QueueItem> iterator = getItemQueue().iterator();
+        while (iterator.hasNext()) {
+            final QueueItem item = iterator.next();
             if (map.containsKey(item.getItemId())) {
-                iter.remove();
-                //For Stats
+                iterator.remove();
+                // for stats
                 age(item, Clock.currentTimeMillis());
             }
         }
@@ -841,12 +849,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
             item.setData(store.load(item.getItemId()));
         } else if (bulkLoad > 1) {
             long maxIdToLoad = -1;
-            final Iterator<QueueItem> iter = getItemQueue().iterator();
+            final Iterator<QueueItem> iterator = getItemQueue().iterator();
             final Set<Long> keySet = createHashSet(bulkLoad);
 
             keySet.add(item.getItemId());
-            while (keySet.size() < bulkLoad && iter.hasNext()) {
-                final long itemId = iter.next().getItemId();
+            while (keySet.size() < bulkLoad && iterator.hasNext()) {
+                final long itemId = iterator.next().getItemId();
                 if (itemId > lastIdLoaded) {
                     keySet.add(itemId);
                     maxIdToLoad = Math.max(itemId, maxIdToLoad);
@@ -930,7 +938,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return backupMap;
     }
 
-
     public Data getDataFromMap(long itemId) {
         return dataMap.remove(itemId);
     }
@@ -940,14 +947,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.service = service;
         this.logger = nodeEngine.getLogger(QueueContainer.class);
         this.config = new QueueConfig(config);
-        // init queue store.
+        // init QueueStore
         final QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         final SerializationService serializationService = nodeEngine.getSerializationService();
         ClassLoader classLoader = nodeEngine.getConfigClassLoader();
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
     }
 
-    /** Returns the next ID that can be used for uniquely identifying queue items */
+    /**
+     * Returns the next ID that can be used for uniquely identifying queue items
+     */
     long nextId() {
         return ++idGenerator;
     }
@@ -967,7 +976,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private void age(QueueItem item, long currentTime) {
         long elapsed = currentTime - item.getCreationTime();
         if (elapsed <= 0) {
-            //elapsed time can not be a negative value, a system clock problem maybe. ignored
+            // elapsed time can not be a negative value, a system clock problem maybe (ignored)
             return;
         }
         totalAgedCount++;
@@ -996,7 +1005,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (getItemQueue().isEmpty() && txMap.isEmpty() && !isEvictionScheduled) {
             if (emptyQueueTtl == 0) {
                 nodeEngine.getProxyService().destroyDistributedObject(QueueService.SERVICE_NAME, name);
-            } else if (emptyQueueTtl > 0) {
+            } else {
                 service.scheduleEviction(name, TimeUnit.SECONDS.toMillis(emptyQueueTtl));
                 isEvictionScheduled = true;
             }
@@ -1085,5 +1094,38 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
+    }
+
+    @Override
+    public QueueItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
+
+        // try to find an existing item with the same value
+        QueueItem existingItem = null;
+        for (QueueItem item : getItemQueue()) {
+            if (mergingEntry.getValue().equals(item.getData())) {
+                existingItem = item;
+                break;
+            }
+        }
+
+        QueueItem mergedItem = null;
+        if (existingItem == null) {
+            Data newValue = mergePolicy.merge(mergingEntry, null);
+            if (newValue != null) {
+                QueueItem item = new QueueItem(this, nextId(), newValue);
+                if (getItemQueue().add(item)) {
+                    mergedItem = item;
+                }
+            }
+        } else {
+            SplitBrainMergeEntryView<Long, Data> existingEntry = createSplitBrainMergeEntryView(existingItem);
+            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            if (newValue != null && !newValue.equals(existingEntry.getValue())) {
+                existingItem.setData(newValue);
+                mergedItem = existingItem;
+            }
+        }
+        return mergedItem;
     }
 }

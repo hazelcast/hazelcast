@@ -95,4 +95,14 @@ public class QueueConfigReadOnly extends QueueConfig {
     public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
+
+    @Override
+    public QueueConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+    }
+
+    @Override
+    public QueueConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+    }
 }
