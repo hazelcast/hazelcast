@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,7 +42,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore
 public class MapReduceStressTest
         extends HazelcastTestSupport {
 

@@ -46,7 +46,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,7 +70,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore
 @ConfigureParallelRunnerWith(MapReduceParallelRunnerOptions.class)
 public class MapReduceTest extends HazelcastTestSupport {
 
@@ -344,7 +342,7 @@ public class MapReduceTest extends HazelcastTestSupport {
         }
     }
 
-    @Ignore//https://github.com/hazelcast/hazelcast/issues/6059
+    //https://github.com/hazelcast/hazelcast/issues/6059
     @Test(timeout = TEST_TIMEOUT)
     public void testKeyedMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -374,7 +372,7 @@ public class MapReduceTest extends HazelcastTestSupport {
         }
     }
 
-    @Ignore//https://github.com/hazelcast/hazelcast/issues/6059
+    //https://github.com/hazelcast/hazelcast/issues/6059
     @Test(timeout = TEST_TIMEOUT)
     public void testKeyPredicateMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
