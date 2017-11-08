@@ -75,17 +75,12 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
 
     @Override
     List<DiscoveryNode> resolve() {
-        List<DiscoveryNode> result = Collections.emptyList();
         if (serviceName != null && !serviceName.isEmpty()) {
-            result = getSimpleDiscoveryNodes(client.endpoints().inNamespace(namespace).withName(serviceName).get());
+            return getSimpleDiscoveryNodes(client.endpoints().inNamespace(namespace).withName(serviceName).get());
+        } else if (serviceLabel != null && !serviceLabel.isEmpty()) {
+            return getDiscoveryNodes(client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
         }
-
-        if (result.isEmpty() && serviceLabel != null && !serviceLabel.isEmpty()) {
-            result = getDiscoveryNodes(
-                    client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
-        }
-
-        return result.isEmpty() ? getNodesByNamespace() : result;
+        return getNodesByNamespace();
     }
 
     private List<DiscoveryNode> getNodesByNamespace() {
