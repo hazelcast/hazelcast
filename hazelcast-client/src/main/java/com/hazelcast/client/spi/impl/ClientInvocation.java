@@ -247,7 +247,6 @@ public class ClientInvocation implements Runnable {
             //when invocation send over address
             //if exception is target not member and
             //address is not available in member list , don't retry
-            clientInvocationFuture.complete(exception);
             return true;
         }
         return false;
