@@ -36,6 +36,7 @@ public class Indexes {
     private static final Index[] EMPTY_INDEX = {};
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
+    private final IndexCopyBehavior copyBehavior;
     private volatile boolean hasIndex;
     private final InternalSerializationService serializationService;
     private final IndexProvider indexProvider;
@@ -44,11 +45,12 @@ public class Indexes {
 
 
     public Indexes(InternalSerializationService serializationService, IndexProvider indexProvider,
-                   Extractors extractors, boolean global) {
+                   Extractors extractors, boolean global, IndexCopyBehavior copyBehavior) {
         this.serializationService = serializationService;
         this.indexProvider = indexProvider;
         this.extractors = extractors;
         this.global = global;
+        this.copyBehavior = copyBehavior;
     }
 
     public synchronized Index destroyIndex(String attribute) {
@@ -60,7 +62,7 @@ public class Indexes {
         if (index != null) {
             return index;
         }
-        index = indexProvider.createIndex(attribute, ordered, extractors, serializationService);
+        index = indexProvider.createIndex(attribute, ordered, extractors, serializationService, copyBehavior);
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();
         Index[] newIndexes = new Index[indexObjects.length];
