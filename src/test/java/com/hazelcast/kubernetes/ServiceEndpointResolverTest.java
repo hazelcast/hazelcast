@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.EndpointSubset;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.dsl.ClientMixedOperation;
+import io.fabric8.kubernetes.client.dsl.base.BaseOperation;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -49,13 +49,13 @@ public class ServiceEndpointResolverTest {
     private DefaultKubernetesClient client;
 
     @Mock
-    private ClientMixedOperation endpoints;
+    private BaseOperation endpoints;
 
     @Mock
-    private ClientMixedOperation inNamespace;
+    private BaseOperation inNamespace;
 
     @Mock
-    private ClientMixedOperation withLabel;
+    private BaseOperation withLabel;
 
     private EndpointsList nodesInNamespace = new EndpointsList();
     private EndpointsList nodesWithLabel = new EndpointsList();
