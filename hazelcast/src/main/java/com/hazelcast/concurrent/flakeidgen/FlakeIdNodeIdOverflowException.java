@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
+package com.hazelcast.concurrent.flakeidgen;
+
 /**
- * This package contains IdGenerator functionality for Hazelcast.
- * <p>
- * With the {@link com.hazelcast.core.IdGenerator} it is very simple to create cluster wide IDs.
- * This can also be done with the {@link com.hazelcast.core.IAtomicLong}, but this would require
- * access to the cluster for every ID generated. With the IdGenerator this is a lot more efficient
- * by claiming a whole chunk and only when the chunk is depleted, cluster access is needed.
- *
- * @since 2
+ * Exception thrown from member if that member is not able to generate Flake IDs, because its
+ * node ID is too big.
  */
-package com.hazelcast.concurrent.idgen;
+public class FlakeIdNodeIdOverflowException extends RuntimeException {
+    public FlakeIdNodeIdOverflowException(String message) {
+        super(message);
+    }
+}

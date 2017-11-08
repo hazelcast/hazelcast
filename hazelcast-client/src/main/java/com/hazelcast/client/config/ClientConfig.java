@@ -40,6 +40,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.util.Preconditions.checkFalse;
 
 /**
@@ -114,6 +116,8 @@ public class ClientConfig {
     private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
 
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+
+    private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap = new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
@@ -227,7 +231,7 @@ public class ClientConfig {
      * @return the found config. If none is found, a default configured one is returned.
      */
     public ClientReliableTopicConfig getReliableTopicConfig(String name) {
-        ClientReliableTopicConfig reliableTopicConfig = lookupByPattern(reliableTopicConfigMap, name);
+        ClientReliableTopicConfig reliableTopicConfig = lookupByPattern(configPatternMatcher, reliableTopicConfigMap, name);
         if (reliableTopicConfig == null) {
             reliableTopicConfig = new ClientReliableTopicConfig(name);
             addReliableTopicConfig(reliableTopicConfig);
@@ -292,7 +296,7 @@ public class ClientConfig {
      * @see com.hazelcast.config.NearCacheConfig
      */
     public NearCacheConfig getNearCacheConfig(String name) {
-        NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, name);
+        NearCacheConfig nearCacheConfig = lookupByPattern(configPatternMatcher, nearCacheConfigMap, name);
         if (nearCacheConfig == null) {
             nearCacheConfig = nearCacheConfigMap.get("default");
             if (nearCacheConfig != null) {
@@ -325,6 +329,50 @@ public class ClientConfig {
         this.nearCacheConfigMap.clear();
         this.nearCacheConfigMap.putAll(nearCacheConfigMap);
         for (Entry<String, NearCacheConfig> entry : this.nearCacheConfigMap.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigMap() {
+        return flakeIdGeneratorConfigMap;
+    }
+
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
+        String baseName = getBaseName(name);
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
+        if (config != null) {
+            return config;
+        }
+        return getFlakeIdGeneratorConfig("default");
+    }
+
+    public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
+        String baseName = getBaseName(name);
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
+        if (config != null) {
+            return config;
+        }
+        FlakeIdGeneratorConfig defConfig = flakeIdGeneratorConfigMap.get("default");
+        if (defConfig == null) {
+            defConfig = new FlakeIdGeneratorConfig("default");
+            flakeIdGeneratorConfigMap.put(defConfig.getName(), defConfig);
+        }
+        config = new FlakeIdGeneratorConfig(defConfig);
+        config.setName(name);
+        flakeIdGeneratorConfigMap.put(config.getName(), config);
+        return config;
+    }
+
+    public ClientConfig addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig config) {
+        flakeIdGeneratorConfigMap.put(config.getName(), config);
+        return this;
+    }
+
+    public ClientConfig setFlakeIdGeneratorConfigMap(Map<String, FlakeIdGeneratorConfig> map) {
+        flakeIdGeneratorConfigMap.clear();
+        flakeIdGeneratorConfigMap.putAll(map);
+        for (Entry<String, FlakeIdGeneratorConfig> entry : map.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -713,21 +761,6 @@ public class ClientConfig {
         this.queryCacheConfigs = queryCacheConfigs;
     }
 
-    private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
-        T candidate = configPatterns.get(itemName);
-        if (candidate != null) {
-            return candidate;
-        }
-        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
-        if (configPatternKey != null) {
-            return configPatterns.get(configPatternKey);
-        }
-        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
-            LOGGER.finest("No configuration found for " + itemName + ", using default config!");
-        }
-        return null;
-    }
-
     public String getInstanceName() {
         return instanceName;
     }
@@ -775,13 +808,13 @@ public class ClientConfig {
     public QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName) {
         Map<String, Map<String, QueryCacheConfig>> allQueryCacheConfig = getQueryCacheConfigs();
 
-        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(allQueryCacheConfig, mapName);
+        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(configPatternMatcher, allQueryCacheConfig, mapName);
         if (queryCacheConfigsForMap == null) {
             queryCacheConfigsForMap = new HashMap<String, QueryCacheConfig>();
             allQueryCacheConfig.put(mapName, queryCacheConfigsForMap);
         }
 
-        QueryCacheConfig queryCacheConfig = lookupByPattern(queryCacheConfigsForMap, cacheName);
+        QueryCacheConfig queryCacheConfig = lookupByPattern(configPatternMatcher, queryCacheConfigsForMap, cacheName);
         if (queryCacheConfig == null) {
             queryCacheConfig = new QueryCacheConfig(cacheName);
             queryCacheConfigsForMap.put(cacheName, queryCacheConfig);
@@ -800,11 +833,11 @@ public class ClientConfig {
             return null;
         }
 
-        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(queryCacheConfigs, mapName);
+        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(configPatternMatcher, queryCacheConfigs, mapName);
         if (queryCacheConfigsForMap == null) {
             return null;
         }
 
-        return lookupByPattern(queryCacheConfigsForMap, cacheName);
+        return lookupByPattern(configPatternMatcher, queryCacheConfigsForMap, cacheName);
     }
 }

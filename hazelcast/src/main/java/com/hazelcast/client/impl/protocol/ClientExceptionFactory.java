@@ -21,6 +21,7 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
+import com.hazelcast.concurrent.flakeidgen.FlakeIdNodeIdOverflowException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.DuplicateInstanceNameException;
@@ -635,6 +636,12 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new IndeterminateOperationStateException(message, cause);
+            }
+        });
+        register(ClientProtocolErrorCodes.FLAKE_ID_NODE_ID_OVERFLOW_EXCEPTION, FlakeIdNodeIdOverflowException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new FlakeIdNodeIdOverflowException(message);
             }
         });
     }

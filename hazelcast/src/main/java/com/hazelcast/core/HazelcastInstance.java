@@ -252,15 +252,41 @@ public interface HazelcastInstance {
     TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
-     * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
+     * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
      * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
-     * <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
+     * local <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
      *
      * @param name name of the {@link IdGenerator}
      * @return IdGenerator for the given name
+     *
+     * @deprecated The implementation can produce duplicate IDs in case of network split, even
+     * with split-brain protection enabled (during short window while split-brain is detected).
+     * Use {@link #getFlakeIdGenerator(String)} for alternative implementation which does not suffer
+     * from this problems.
      */
+    @Deprecated
     IdGenerator getIdGenerator(String name);
+
+    /**
+     * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
+     * and are k-ordered (roughly ordered). IDs are in the range from {@code Long.MIN_VALUE} to
+     * {@code Long.MAX_VALUE}.
+     * <p>
+     * The IDs contain timestamp component and a node ID, which is assigned when the member
+     * joins the cluster. This allows the IDs to be ordered and unique without any coordination between
+     * members, which makes the generator safe even in split-brain scenario (for caveats,
+     * {@link com.hazelcast.internal.cluster.ClusterService#getMemberListJoinVersion() see here}).
+     * <p>
+     * For more details and caveats, see {@link FlakeIdGenerator} class documentation.
+     * <p>
+     * Note: this implementation doesn't share namespace with {@link #getIdGenerator(String)}.
+     * That is, {@code getIdGenerator("a")} is distinct from {@code getFlakeIdGenerator("a")}.
+     *
+     * @param name name of the {@link IdGenerator}
+     * @return IdGenerator for the given name
+     */
+    FlakeIdGenerator getFlakeIdGenerator(String name);
 
     /**
      * Creates cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed

@@ -58,6 +58,7 @@ import java.util.Set;
 
 import static com.hazelcast.client.config.ClientXmlElements.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
+import static com.hazelcast.client.config.ClientXmlElements.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
 import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
@@ -214,7 +215,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         for (Node node : childElements(docElement)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
-                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration");
             }
             handleXmlNode(node, nodeName);
             if (!canOccurMultipleTimes(nodeName)) {
@@ -256,6 +257,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleConnectionStrategy(node);
         } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
             handleUserCodeDeployment(node);
+        } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
+            handleFlakeIdGenerator(node);
         }
     }
 
@@ -339,6 +342,21 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                     + " This setting will have no effect!");
         }
         clientConfig.addNearCacheConfig(nearCacheConfig);
+    }
+
+    private void handleFlakeIdGenerator(Node node) {
+        String name = getAttribute(node, "name");
+        FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("prefetch-count".equals(nodeName)) {
+                config.setPrefetchCount(Integer.parseInt(value));
+            } else if ("prefetch-validity".equalsIgnoreCase(nodeName)) {
+                config.setPrefetchValidity(Long.parseLong(value));
+            }
+        }
+        clientConfig.addFlakeIdGeneratorConfig(config);
     }
 
     private EvictionConfig getEvictionConfig(Node node) {

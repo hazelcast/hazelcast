@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
+import com.hazelcast.client.config.FlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
@@ -102,8 +103,11 @@ public class TestClientApplicationContext {
     @Resource(name = "client8")
     private HazelcastClientProxy client8;
 
-    @Resource(name = "user-code-deployment-test")
+    @Resource(name = "client9-user-code-deployment-test")
     private HazelcastClientProxy userCodeDeploymentTestClient;
+
+    @Resource(name = "client10-flakeIdGenerator")
+    private HazelcastClientProxy client10;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -369,6 +373,16 @@ public class TestClientApplicationContext {
         ClientConnectionStrategyConfig connectionStrategyConfig = client8.getClientConfig().getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
         assertEquals(ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
+    }
+
+    @Test
+    public void testClientFlakeIdGeneratorConfig() {
+        Map<String, FlakeIdGeneratorConfig> configMap = client10.getClientConfig().getFlakeIdGeneratorConfigMap();
+        assertEquals(1, configMap.size());
+        FlakeIdGeneratorConfig config = configMap.values().iterator().next();
+        assertEquals("gen1", config.getName());
+        assertEquals(3, config.getPrefetchCount());
+        assertEquals(3000L, config.getPrefetchValidity());
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {

@@ -36,6 +36,7 @@ import com.hazelcast.client.proxy.ClientCardinalityEstimatorProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
+import com.hazelcast.client.proxy.ClientFlakeIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientListProxy;
 import com.hazelcast.client.proxy.ClientLockProxy;
@@ -50,8 +51,8 @@ import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -62,6 +63,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -195,6 +197,12 @@ public final class ProxyManager {
             public ClientProxy create(String id, ClientContext context) {
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, context, atomicLong);
+            }
+        });
+        register(FlakeIdGeneratorService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
+            @Override
+            public ClientProxy create(String id, ClientContext context) {
+                return new ClientFlakeIdGeneratorProxy(FlakeIdGeneratorService.SERVICE_NAME, id, context);
             }
         });
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);

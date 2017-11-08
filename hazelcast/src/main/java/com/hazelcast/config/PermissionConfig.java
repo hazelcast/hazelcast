@@ -83,6 +83,10 @@ public class PermissionConfig {
          */
         ID_GENERATOR("id-generator-permission"),
         /**
+         * Flake ID generator
+         */
+        FLAKE_ID_GENERATOR("flake-id-generator-permission"),
+        /**
          * Lock
          */
         LOCK("lock-permission"),

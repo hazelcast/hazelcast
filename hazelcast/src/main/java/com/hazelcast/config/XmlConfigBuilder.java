@@ -2184,6 +2184,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.SEMAPHORE;
             } else if ("id-generator-permission".equals(nodeName)) {
                 type = PermissionType.ID_GENERATOR;
+            } else if ("flake-id-generator-permission".equals(nodeName)) {
+                type = PermissionType.FLAKE_ID_GENERATOR;
             } else if ("executor-service-permission".equals(nodeName)) {
                 type = PermissionType.EXECUTOR_SERVICE;
             } else if ("transaction-permission".equals(nodeName)) {

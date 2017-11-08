@@ -90,7 +90,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @After
     @Before
-    public void after() {
+    public void beforeAndAfter() {
         System.clearProperty("hazelcast.client.config");
     }
 
@@ -314,6 +314,21 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testFlakeIdGeneratorConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<flake-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity>10</prefetch-validity>"
+                + "</flake-id-generator>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        FlakeIdGeneratorConfig fconfig = config.findFlakeIdGeneratorConfig("gen");
+        assertEquals("gen", fconfig.getName());
+        assertEquals(3, fconfig.getPrefetchCount());
+        assertEquals(10L, fconfig.getPrefetchValidity());
+    }
+
+    @Test
     public void testConnectionStrategyConfig() {
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
@@ -367,7 +382,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastClientTagAppearsTwice() {
-        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
+        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/><hazelcast-client/>";
         buildConfig(xml);
     }
 

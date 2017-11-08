@@ -1804,7 +1804,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testMemberAddressProvider_classnameIsMandatory() {
+    public void testMemberAddressProvider_classNameIsMandatory() {
         String xml = HAZELCAST_START_TAG
                 + "<network> "
                 + "  <member-address-provider enabled=\"true\">"

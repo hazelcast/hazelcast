@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -44,6 +43,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -76,6 +76,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -184,6 +185,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
+
+    @Resource(name = "flakeIdGenerator")
+    private FlakeIdGenerator flakeIdGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -743,6 +747,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
+        assertNotNull(flakeIdGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -757,6 +762,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
+        assertEquals("flakeIdGenerator", flakeIdGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());

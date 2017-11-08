@@ -126,23 +126,24 @@ import static org.springframework.util.Assert.isTrue;
  * BeanDefinitionParser for Hazelcast Config Configuration.
  * <p>
  * <b>Sample Spring XML for Hazelcast Config:</b>
- * <pre>
- * &lt;hz:config&gt;
- *  &lt;hz:map name="map1"&gt;
- *      &lt;hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
- *          eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/&gt;
  *
- *  &lt;hz:map-store enabled="true" class-name="com.foo.DummyStore"
- *          write-delay-seconds="0"/&gt;
- *  &lt;/hz:map&gt;
- *  &lt;hz:map name="map2"&gt;
- *      &lt;hz:map-store enabled="true" implementation="dummyMapStore"
- *          write-delay-seconds="0"/&gt;
- *  &lt;/hz:map&gt;
+ * <pre>{@code
+ *   <hz:config>
+ *     <hz:map name="map1">
+ *       <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+ *            eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
  *
- *  &lt;bean id="dummyMapStore" class="com.foo.DummyStore" /&gt;
- * &lt;/hz:config&gt;
- * </pre>
+ *     <hz:map-store enabled="true" class-name="com.foo.DummyStore"
+ *            write-delay-seconds="0"/>
+ *     </hz:map>
+ *     <hz:map name="map2">
+ *       <hz:map-store enabled="true" implementation="dummyMapStore"
+ *          write-delay-seconds="0"/>
+ *       </hz:map>
+ *
+ *     <bean id="dummyMapStore" class="com.foo.DummyStore" />
+ *  </hz:config>
+ * }</pre>
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:executablestatementcount", "checkstyle:cyclomaticcomplexity",
         "WeakerAccess"})

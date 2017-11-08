@@ -631,7 +631,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <!--max-size-policy attribute didn't converted into enumeration to support case-insensitivity-->
+                                <!--max-size-policy attribute wasn't converted to enumeration to support case-insensitivity-->
                                 <xs:attribute name="max-size-policy" use="optional" type="xs:string">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -1571,6 +1571,7 @@
                         <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
@@ -1728,6 +1729,18 @@
         <xs:annotation>
             <xs:documentation>
                 Retrieve a Hazelcast IdGenerator instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IdGenerator"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="flakeIdGenerator" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast FlakeIdGenerator instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -2812,6 +2825,35 @@
             <xs:annotation>
                 <xs:documentation>
                     True to enable User Code Deployment on this client, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="flake-id-generator">
+        <xs:attribute name="name" type="xs:string" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the flake-id generator.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefetchCount" type="xs:int" default="100" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    How many IDs are pre-fetched on the background when one call to newId() is made.
+                    Value must be >= 1, default is 100.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefetchValidity" type="xs:long" default="10000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
+                    Time unit is milliseconds.
+                    If value is &lt;= 0, validity is unlimited. Default value is 10000 (10 seconds).
+                    The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
+                    is assigned to an event that occurred much later, it will be much out of order.
+                    If you don't need ordering, set this value to 0.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
