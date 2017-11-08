@@ -114,7 +114,7 @@ public final class Sources {
      * data locality by making each of the underlying processors fetch only those
      * entries that are stored on the member where it is running.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
@@ -131,21 +131,24 @@ public final class Sources {
      * {@code projection} here instead of in separate {@code map/filter}
      * transforms you allow the source to apply these functions early, before
      * generating any output, with the potential of significantly reducing
-     * data traffic. There are additional optimizations available when using
-     * specific projection subtypes (such as {@link
-     * com.hazelcast.projection.Projections#singleAttribute(String)
-     * singleAttribute()} and {@link
-     * com.hazelcast.projection.Projections#multiAttribute(String...)
-     * multiAttribute()}), depending on how the data is stored in the map.
-     * Similarly, using the {@link com.hazelcast.query.PredicateBuilder
-     * PredicateBuilder} will build a predicate that makes use of any indexes
-     * created on the map.
+     * data traffic. If your data is stored in the IMDG using the <a href=
+     *     "http://docs.hazelcast.org/docs/3.9/manual/html-single/index.html#implementing-portable-serialization">
+     * portable serialization format</a>, there are additional optimizations
+     * available when using {@link
+     *     com.hazelcast.projection.Projections#singleAttribute(String)
+     * Projections.singleAttribute()} and {@link
+     *     com.hazelcast.projection.Projections#multiAttribute(String...)
+     * Projections.multiAttribute()}) to create your projection instance and
+     * using the {@link com.hazelcast.query.Predicates Predicates} factory or
+     * {@link com.hazelcast.query.PredicateBuilder PredicateBuilder} to create
+     * the predicate. In this case Jet can test the predicate and apply the
+     * projection without deserializing the whole object.
      * <p>
      * The source leverages data locality by making each of the underlying
      * processors fetch only those entries that are stored on the member where
      * it is running.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
@@ -241,7 +244,7 @@ public final class Sources {
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
@@ -263,17 +266,20 @@ public final class Sources {
      * {@code projection} here instead of in separate {@code map/filter}
      * transforms you allow the source to apply these functions early, before
      * generating any output, with the potential of significantly reducing
-     * data traffic. There are additional optimizations available when using
-     * specific projection subtypes (such as {@link
-     * com.hazelcast.projection.Projections#singleAttribute(String)
-     * singleAttribute()} and {@link
-     * com.hazelcast.projection.Projections#multiAttribute(String...)
-     * multiAttribute()}), depending on how the data is stored in the map.
-     * Similarly, using the {@link com.hazelcast.query.PredicateBuilder
-     * PredicateBuilder} will build a predicate that makes use of any indexes
-     * created on the map.
+     * data traffic. If your data is stored in the IMDG using the <a href=
+     *     "http://docs.hazelcast.org/docs/3.9/manual/html-single/index.html#implementing-portable-serialization">
+     * portable serialization format</a>, there are additional optimizations
+     * available when using {@link
+     *     com.hazelcast.projection.Projections#singleAttribute(String)
+     * Projections.singleAttribute()} and {@link
+     *     com.hazelcast.projection.Projections#multiAttribute(String...)
+     * Projections.multiAttribute()}) to create your projection instance and
+     * using the {@link com.hazelcast.query.Predicates Predicates} factory or
+     * {@link com.hazelcast.query.PredicateBuilder PredicateBuilder} to create
+     * the predicate. In this case Jet can test the predicate and apply the
+     * projection without deserializing the whole object.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
@@ -365,7 +371,7 @@ public final class Sources {
      * fetch only those entries that are stored on the member where it is
      * running.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
@@ -434,7 +440,7 @@ public final class Sources {
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
@@ -507,7 +513,7 @@ public final class Sources {
      * IList}. All elements are emitted on a single member &mdash; the one
      * where the entire list is stored by the IMDG.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      */
     @Nonnull
@@ -520,7 +526,7 @@ public final class Sources {
      * IList} in a remote cluster identified by the supplied {@code
      * ClientConfig}. All elements are emitted on a single member.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      */
     @Nonnull
@@ -539,7 +545,7 @@ public final class Sources {
      * The source completes when the server closes the socket. It never attempts
      * to reconnect. Any {@code IOException} will cause the job to fail.
      * <p>
-     * This source does not save any state to snapshot. On job restart, it will
+     * The source does not save any state to snapshot. On job restart, it will
      * emit whichever items the server sends. The implementation uses
      * non-blocking API, the processor is cooperative.
      */
@@ -559,7 +565,7 @@ public final class Sources {
      * member. For example, if the pathname resolves to a shared network
      * filesystem visible by multiple members, they will emit duplicate data.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
      * Any {@code IOException} will cause the job to fail.
@@ -605,7 +611,7 @@ public final class Sources {
      * <p>
      * Any {@code IOException} will cause the job to fail.
      * <p>
-     * This source does not save any state to snapshot. If the job is restarted,
+     * The source does not save any state to snapshot. If the job is restarted,
      * lines added after the restart will be emitted, which gives at-most-once
      * behavior.
      *
