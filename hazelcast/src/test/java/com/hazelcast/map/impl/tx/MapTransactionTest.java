@@ -982,6 +982,46 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertTrue(b);
     }
 
+    // ========================= containsValue =====================
+    @Test(expected = NullPointerException.class)
+    public void testContainsValue_whenNullValue() throws TransactionException {
+        final HazelcastInstance hz = createHazelcastInstance();
+
+        hz.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> txMap = context.getMap("default");
+                txMap.containsValue(null);
+                return true;
+            }
+        });
+    }
+
+    @Test
+    public void testContainsValue() throws TransactionException {
+        Config config = getConfig();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final IMap<String, String> map = h1.getMap("default");
+        map.put("1", "1");
+        map.put("2", "2");
+        map.put("3", "2");
+
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap("default");
+                txMap.delete("1");
+                txMap.delete("2");
+                assertFalse(txMap.containsValue("1"));
+                assertTrue(txMap.containsValue("2"));
+                assertFalse(txMap.containsValue("3"));
+                txMap.put("4", "1");
+                assertTrue(txMap.containsValue("1"));
+                return true;
+            }
+        });
+        assertTrue(b);
+    }
+
     @Test
     // TODO: @mm - Review following case...
     public void testFailingMapStore() throws TransactionException {

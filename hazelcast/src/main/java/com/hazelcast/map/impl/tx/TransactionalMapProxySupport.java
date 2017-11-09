@@ -40,6 +40,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.HashMap;
+import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -124,6 +125,23 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         try {
             Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return (Boolean) future.get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    boolean containsValueInternal(Object value, Set<Data> removedKeys) {
+        // TODO: what to do if near cache is enabled?
+        OperationFactory operationFactory = operationProvider.createContainsValueExceptKeysOperation(name, value, removedKeys);
+        try {
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
+            for (Object result : results.values()) {
+                if ((Boolean) result){
+                    return true;
+                }
+            }
+
+            return false;
         } catch (Throwable t) {
             throw rethrow(t);
         }

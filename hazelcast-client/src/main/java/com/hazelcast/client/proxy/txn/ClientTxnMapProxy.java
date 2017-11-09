@@ -18,6 +18,7 @@ package com.hazelcast.client.proxy.txn;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapDeleteCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapGetForUpdateCodec;
@@ -70,6 +71,16 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         return TransactionalMapContainsKeyCodec.decodeResponse(response).response;
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        checkNotNull(value, "Value can't be null");
+
+        ClientMessage request = TransactionalMapContainsValueCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(value));
+        ClientMessage response = invoke(request);
+        return TransactionalMapContainsValueCodec.decodeResponse(response).response;
     }
 
     @Override

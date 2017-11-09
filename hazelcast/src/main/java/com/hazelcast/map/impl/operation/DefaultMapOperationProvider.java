@@ -243,6 +243,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public OperationFactory createContainsValueExceptKeysOperation(String name, Object value, Set<Data> deletedKeys) {
+        return new ContainsValueExceptKeysFactory(name, value, deletedKeys);
+    }
+
+    @Override
     public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
         return new PutFromLoadAllOperation(name, keyValueSequence);
     }

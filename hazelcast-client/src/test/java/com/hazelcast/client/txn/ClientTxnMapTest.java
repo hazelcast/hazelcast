@@ -387,6 +387,29 @@ public class ClientTxnMapTest {
     }
 
     @Test
+    public void testTnxMapContainsValue() throws Exception {
+        final String mapName = randomString();
+        IMap map = client.getMap(mapName);
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value2");
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+        assertTrue(txMap.containsValue("value1"));
+        txMap.delete("key1");
+        assertFalse(txMap.containsValue("value1"));
+        txMap.delete("key2");
+        assertTrue(txMap.containsValue("value2"));
+        txMap.put("key4", "value1");
+        assertTrue(txMap.containsValue("value1"));
+        assertFalse(txMap.containsValue("value3"));
+
+        context.commitTransaction();
+    }
+
+    @Test
     public void testTnxMapIsEmpty() throws Exception {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);

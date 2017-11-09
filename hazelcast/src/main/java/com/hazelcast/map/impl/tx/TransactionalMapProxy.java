@@ -74,6 +74,28 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     }
 
     @Override
+    public boolean containsValue(Object value) {
+        checkTransactionState();
+        checkNotNull(value, "value can't be null");
+
+        Set<Data> removedKeys = new HashSet<Data>();
+        for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
+            TxnValueWrapper wrappedValue = entry.getValue();
+            if (value.equals(wrappedValue.value)) {
+                if (wrappedValue.type != Type.REMOVED) {
+                    return true;
+                } else {
+                    Data key = mapServiceContext.toData(entry.getKey(), partitionStrategy);
+                    removedKeys.add(key);
+                }
+            }
+        }
+
+        Data valueData = mapServiceContext.toData(value, partitionStrategy);
+        return containsValueInternal(valueData, removedKeys);
+    }
+
+    @Override
     public int size() {
         checkTransactionState();
         int currentSize = sizeInternal();

@@ -41,6 +41,8 @@ import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.ClearOperationFactory;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
+import com.hazelcast.map.impl.operation.ContainsValueExceptKeysFactory;
+import com.hazelcast.map.impl.operation.ContainsValueExceptKeysOperation;
 import com.hazelcast.map.impl.operation.ContainsValueOperation;
 import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
 import com.hazelcast.map.impl.operation.DeleteOperation;
@@ -304,8 +306,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_JOURNAL_DESERIALIZING_MAP_EVENT = 143;
     public static final int EVENT_JOURNAL_INTERNAL_MAP_EVENT = 144;
     public static final int EVENT_JOURNAL_READ_RESULT_SET = 145;
+    public static final int CONTAINS_VALUE_EXCEPT_KEYS = 146;
+    public static final int CONTAINS_VALUE_EXCEPT_KEYS_FACTORY = 147;
 
-    private static final int LEN = EVENT_JOURNAL_READ_RESULT_SET + 1;
+    private static final int LEN = CONTAINS_VALUE_EXCEPT_KEYS_FACTORY + 1;
 
     @Override
     public int getFactoryId() {
@@ -1024,6 +1028,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[EVENT_JOURNAL_READ_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapEventJournalReadResultSetImpl<Object, Object, Object>();
+            }
+        };
+        constructors[CONTAINS_VALUE_EXCEPT_KEYS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ContainsValueExceptKeysOperation();
+            }
+        };
+        constructors[CONTAINS_VALUE_EXCEPT_KEYS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ContainsValueExceptKeysFactory();
             }
         };
 

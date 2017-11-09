@@ -1133,6 +1133,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.transactionalmap.TransactionalMapContainsKeyMessageTask(clientMessage, node, connection);
             }
         };
+        factories[com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsValueCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.transactionalmap.TransactionalMapContainsValueMessageTask(clientMessage, node, connection);
+            }
+        };
         factories[com.hazelcast.client.impl.protocol.codec.TransactionalMapRemoveIfSameCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.transactionalmap.TransactionalMapRemoveIfSameMessageTask(clientMessage, node, connection);

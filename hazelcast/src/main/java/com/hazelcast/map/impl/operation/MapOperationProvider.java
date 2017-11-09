@@ -147,5 +147,7 @@ public interface MapOperationProvider {
     OperationFactory createMapSizeOperationFactory(String name);
 
     OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries);
+
+    OperationFactory createContainsValueExceptKeysOperation(String name, Object value, Set<Data> deletedKeys);
 }
 

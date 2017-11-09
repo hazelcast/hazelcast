@@ -256,4 +256,9 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     public MapOperation createFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query) {
         return getDelegate().createFetchWithQueryOperation(name, lastTableIndex, fetchSize, query);
     }
+
+    @Override
+    public OperationFactory createContainsValueExceptKeysOperation(String name, Object value, Set<Data> deletedKeys) {
+        return getDelegate().createContainsValueExceptKeysOperation(name, value, deletedKeys);
+    }
 }
