@@ -75,7 +75,7 @@ public class KafkaTestSupport extends JetTestSupport {
         }
     }
 
-    final String createKafkaCluster() throws IOException {
+    public final String createKafkaCluster() throws IOException {
         zkServer = new EmbeddedZookeeper();
         String zkConnect = ZK_HOST + ':' + zkServer.port();
         ZkClient zkClient = new ZkClient(zkConnect, SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
@@ -95,11 +95,11 @@ public class KafkaTestSupport extends JetTestSupport {
         return BROKER_HOST + ':' + brokerPort;
     }
 
-    void createTopic(String topicId, int partitionCount) {
+    public void createTopic(String topicId, int partitionCount) {
         AdminUtils.createTopic(zkUtils, topicId, partitionCount, 1, new Properties(), MODULE$);
     }
 
-    void setPartitionCount(String topicId, int numPartitions) {
+    public void setPartitionCount(String topicId, int numPartitions) {
         // doesn't actually add the given number to existing partitions, just sets to it
         AdminUtils.addPartitions(zkUtils, topicId, numPartitions, "", true, null);
     }
@@ -123,7 +123,7 @@ public class KafkaTestSupport extends JetTestSupport {
         return producer;
     }
 
-    static KafkaConsumer<String, String> createConsumer(String brokerConnectionString, String... topicIds) {
+    public static KafkaConsumer<String, String> createConsumer(String brokerConnectionString, String... topicIds) {
         Properties consumerProps = new Properties();
         consumerProps.setProperty("bootstrap.servers", brokerConnectionString);
         consumerProps.setProperty("group.id", randomString());

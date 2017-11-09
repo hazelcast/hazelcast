@@ -23,6 +23,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.connector.kafka.StreamKafkaP;
 import com.hazelcast.jet.impl.connector.kafka.WriteKafkaP;
 import com.hazelcast.util.Preconditions;
+import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -61,16 +62,27 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.KafkaSinks#kafka(String, Properties, DistributedFunction, DistributedFunction)}.
+     * {@link com.hazelcast.jet.KafkaSinks#kafka(Properties, String, DistributedFunction, DistributedFunction)}.
      */
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
-            @Nonnull String topic,
             @Nonnull Properties properties,
+            @Nonnull String topic,
             @Nonnull DistributedFunction<? super T, K> extractKeyFn,
             @Nonnull DistributedFunction<? super T, V> extractValueFn
     ) {
-        return ProcessorMetaSupplier.of(
-                new WriteKafkaP.Supplier<>(topic, properties, extractKeyFn, extractValueFn),
-                2);
+        return writeKafkaP(properties, (T t) ->
+                new ProducerRecord<>(topic, extractKeyFn.apply(t), extractValueFn.apply(t))
+        );
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.KafkaSinks#kafka(Properties, DistributedFunction)}.
+     */
+    public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
+            @Nonnull Properties properties,
+            @Nonnull DistributedFunction<? super T, ProducerRecord<K, V>> toRecordFn
+    ) {
+        return ProcessorMetaSupplier.of(new WriteKafkaP.Supplier<T, K, V>(properties, toRecordFn), 2);
     }
 }

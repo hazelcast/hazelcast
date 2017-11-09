@@ -32,24 +32,18 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#writeKafkaP(
- *      String, Properties, com.hazelcast.jet.function.DistributedFunction,
- *      com.hazelcast.jet.function.DistributedFunction)
+ * Properties, String, com.hazelcast.jet.function.DistributedFunction,
+ * com.hazelcast.jet.function.DistributedFunction)
  * KafkaProcessors.writeKafka()}.
  */
 public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
 
-    private final String topic;
     private final KafkaProducer<K, V> producer;
-    private final Function<? super T, K> extractKeyFn;
-    private final Function<? super T, V> extractValueFn;
+    private final Function<T, ProducerRecord<K, V>> toRecordFn;
 
-    WriteKafkaP(String topic, KafkaProducer<K, V> producer,
-                Function<? super T, K> extractKeyFn, Function<? super T, V> extractValueFn
-    ) {
-        this.topic = topic;
+    WriteKafkaP(KafkaProducer<K, V> producer, Function<T, ProducerRecord<K, V>> toRecordFn) {
         this.producer = producer;
-        this.extractKeyFn = extractKeyFn;
-        this.extractValueFn = extractValueFn;
+        this.toRecordFn = toRecordFn;
     }
 
     @Override
@@ -60,8 +54,7 @@ public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        T t =  (T) item;
-        producer.send(new ProducerRecord<>(topic, extractKeyFn.apply(t), extractValueFn.apply(t)));
+        producer.send(toRecordFn.apply((T) item));
         return true;
     }
 
@@ -75,20 +68,14 @@ public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final String topicId;
         private final Properties properties;
-        private final Function<? super T, K> extractKeyFn;
-        private final Function<? super T, V> extractValueFn;
+        private final Function<? super T, ProducerRecord<K, V>> toRecordFn;
 
         private transient KafkaProducer<K, V> producer;
 
-        public Supplier(String topicId, Properties properties,
-                        Function<? super T, K> extractKeyFn, Function<? super T, V> extractValueFn
-        ) {
-            this.topicId = topicId;
+        public Supplier(Properties properties, Function<? super T, ProducerRecord<K, V>> toRecordFn) {
             this.properties = properties;
-            this.extractKeyFn = extractKeyFn;
-            this.extractValueFn = extractValueFn;
+            this.toRecordFn = toRecordFn;
         }
 
         @Override
@@ -98,7 +85,7 @@ public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new WriteKafkaP<>(topicId, producer, extractKeyFn, extractValueFn))
+            return Stream.generate(() -> new WriteKafkaP<>(producer, toRecordFn))
                          .limit(count)
                          .collect(toList());
         }

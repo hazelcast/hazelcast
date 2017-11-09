@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.core.processor.KafkaProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
+import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.Properties;
+
+import static com.hazelcast.jet.core.processor.KafkaProcessors.writeKafkaP;
 
 /**
  * Contains factory methods for Apache Kafka sinks.
@@ -33,8 +35,8 @@ public final class KafkaSinks {
 
     /**
      * Returns a source that publishes messages to an Apache Kafka topic.
-     * It transforms each received item to a key-value pair using the two
-     * supplied mapping functions.
+     * It transforms each received item to a {@code ProducerRecord} using the
+     * supplied mapping function.
      * <p>
      * The source creates a single {@code KafkaProducer} per cluster
      * member using the supplied properties.
@@ -46,40 +48,57 @@ public final class KafkaSinks {
      * IO failures are generally handled by Kafka producer and generally do not
      * cause the processor to fail. Refer to Kafka documentation for details.
      *
-     * @param topic          name of the Kafka topic to publish to
      * @param properties     producer properties which should contain broker
      *                       address and key/value serializers
-     * @param extractKeyFn   function that extracts the key from the stream item
-     * @param extractValueFn function that extracts the value from the stream item
+     * @param toRecordFn   function that extracts the key from the stream item
      *
      * @param <E> type of stream item
      * @param <K> type of the key published to Kafka
      * @param <V> type of the value published to Kafka
      */
     public static <E, K, V> Sink<E> kafka(
-            @Nonnull String topic,
             @Nonnull Properties properties,
-            @Nonnull DistributedFunction<? super E, K> extractKeyFn,
-            @Nonnull DistributedFunction<? super E, V> extractValueFn
+            @Nonnull DistributedFunction<? super E, ProducerRecord<K, V>> toRecordFn
     ) {
-        return Sinks.fromProcessor("writeKafka",
-                KafkaProcessors.writeKafkaP(topic, properties, extractKeyFn, extractValueFn));
+        return Sinks.fromProcessor("writeKafka", writeKafkaP(properties, toRecordFn));
     }
 
     /**
-     * Convenience for {@link #kafka(String, Properties,
-     * DistributedFunction, DistributedFunction)} which expects {@code
-     * Map.Entry<K, V>} as input and extracts its key and value parts to be
-     * published to Kafka.
+     * Convenience for {@link #kafka(Properties, DistributedFunction)} which creates
+     * a {@code ProducerRecord} using the given topic and the given key and value
+     * mapping functions
      *
-     * @param topic      Kafka topic name to publish to
-     * @param properties producer properties which should contain broker
-     *                   address and key/value serializers
-     *
+     * @param <E> type of stream item
      * @param <K> type of the key published to Kafka
      * @param <V> type of the value published to Kafka
+     * @param properties     producer properties which should contain broker
+*                       address and key/value serializers
+     * @param topic          name of the Kafka topic to publish to
+     * @param extractKeyFn   function that extracts the key from the stream item
+     * @param extractValueFn function that extracts the value from the stream item
+*
      */
-    public static <K, V> Sink<Entry<K, V>> kafka(@Nonnull String topic, @Nonnull Properties properties) {
-        return kafka(topic, properties, Entry::getKey, Entry::getValue);
+    public static <E, K, V> Sink<E> kafka(
+            @Nonnull Properties properties,
+            @Nonnull String topic,
+            @Nonnull DistributedFunction<? super E, K> extractKeyFn,
+            @Nonnull DistributedFunction<? super E, V> extractValueFn
+    ) {
+        return Sinks.fromProcessor("writeKafka", writeKafkaP(properties, topic, extractKeyFn, extractValueFn));
+    }
+
+    /**
+     * Convenience for {@link #kafka(Properties, String, DistributedFunction, DistributedFunction)}
+     * which expects {@code Map.Entry<K, V>} as input and extracts its key and value
+     * parts to be published to Kafka.
+     *
+     * @param <K>        type of the key published to Kafka
+     * @param <V>        type of the value published to Kafka
+     * @param properties producer properties which should contain broker
+     *                   address and key/value serializers
+     * @param topic      Kafka topic name to publish to
+     */
+    public static <K, V> Sink<Entry<K, V>> kafka(@Nonnull Properties properties, @Nonnull String topic) {
+        return kafka(properties, topic, Entry::getKey, Entry::getValue);
     }
 }
