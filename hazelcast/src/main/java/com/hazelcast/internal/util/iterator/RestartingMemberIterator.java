@@ -24,34 +24,33 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
-
 
 /**
  * Iterates over stable cluster from the oldest to youngest member.
  * It restarts when detects a cluster topology change.
- *
+ * <p>
  * It can be used from multiple threads, but not concurrently.
- *
  */
 public class RestartingMemberIterator implements Iterator<Member>, ChainingFuture.ExceptionHandler {
 
-    private final ClusterService clusterService;
     private final Queue<Member> memberQueue = new ConcurrentLinkedQueue<Member>();
+    private final AtomicInteger retryCounter = new AtomicInteger();
+
+    private final ClusterService clusterService;
     private final int maxRetries;
 
-    private volatile Set<Member> initialMembers;
-    private volatile Member nextMember;
-    private volatile int retryCounter;
     private volatile boolean topologyChanged;
+    private volatile Member nextMember;
+    private volatile Set<Member> initialMembers;
 
     public RestartingMemberIterator(ClusterService clusterService, int maxRetries) {
         this.clusterService = clusterService;
@@ -63,11 +62,9 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
 
     private void startNewRound(Set<Member> currentMembers) {
         topologyChanged = false;
-        for (Member member : currentMembers) {
-            memberQueue.add(member);
-        }
+        memberQueue.addAll(currentMembers);
         nextMember = memberQueue.poll();
-        this.initialMembers = currentMembers;
+        initialMembers = currentMembers;
     }
 
     @Override
@@ -82,7 +79,7 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
         Set<Member> currentMembers = clusterService.getMembers();
         if (topologyChanged(currentMembers)) {
             retry(currentMembers);
-            // at any given moment there should always be at least 1 cluster member (our own member)
+            // at any given moment there should always be at least one cluster member (our own member)
             assert nextMember != null;
             return true;
         }
@@ -91,11 +88,8 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
         return nextMember != null;
     }
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "retryCounter is accessed by multiple threads, but never concurrently")
     private void retry(Set<Member> currentMembers) {
-        retryCounter++;
-        if (retryCounter > maxRetries) {
+        if (retryCounter.incrementAndGet() > maxRetries) {
             throw new HazelcastException(format("Cluster topology was not stable for %d retries,"
                     + " invoke on stable cluster failed", maxRetries));
         }
@@ -128,14 +122,14 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
     }
 
     @Override
-    public <T extends Throwable> void handle(T throwable)
-            throws T {
+    public <T extends Throwable> void handle(T throwable) throws T {
         if (throwable instanceof ClusterTopologyChangedException) {
             topologyChanged = true;
             return;
         }
 
-        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException
+        if (throwable instanceof MemberLeftException
+                || throwable instanceof TargetNotMemberException
                 || throwable instanceof HazelcastInstanceNotActiveException) {
             return;
         }
@@ -143,6 +137,6 @@ public class RestartingMemberIterator implements Iterator<Member>, ChainingFutur
     }
 
     public int getRetryCount() {
-        return retryCounter;
+        return retryCounter.get();
     }
 }
