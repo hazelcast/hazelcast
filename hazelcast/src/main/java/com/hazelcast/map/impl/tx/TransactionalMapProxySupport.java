@@ -136,7 +136,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         try {
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
             for (Object result : results.values()) {
-                if ((Boolean) result){
+                if ((Boolean) result) {
                     return true;
                 }
             }
