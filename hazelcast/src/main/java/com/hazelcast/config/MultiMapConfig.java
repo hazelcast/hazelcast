@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
@@ -126,7 +127,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
      * @return the collection type for the values of this MultiMap
      */
     public ValueCollectionType getValueCollectionType() {
-        return ValueCollectionType.valueOf(valueCollectionType.toUpperCase());
+        return ValueCollectionType.valueOf(valueCollectionType.toUpperCase(Locale.ROOT));
     }
 
     /**
