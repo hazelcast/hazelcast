@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -37,6 +38,8 @@ import java.util.function.Supplier;
 @Category({QuickTest.class, ParallelTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public abstract class TestInClusterSupport extends JetTestSupport {
+
+    static final String JOURNALED_MAP_PREFIX = "journaledMap.";
 
     private static final int MEMBER_COUNT = 2;
 
@@ -62,7 +65,9 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         int parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(parallelism <= 2 ? 2 : parallelism);
-        config.getHazelcastConfig().addCacheConfig(new CacheSimpleConfig().setName("*"));
+        Config hzConfig = config.getHazelcastConfig();
+        hzConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
+        hzConfig.getMapEventJournalConfig(JOURNALED_MAP_PREFIX + '*').setEnabled(true);
         member = createCluster(MEMBER_COUNT, config);
         client = factory.newClient();
     }
@@ -80,7 +85,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         return allJetInstances;
     }
 
-    private static JetInstance createCluster(int nodeCount, JetConfig config) throws Exception {
+    private static JetInstance createCluster(int nodeCount, JetConfig config) {
         factory = new JetTestInstanceFactory();
         allJetInstances = new JetInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
