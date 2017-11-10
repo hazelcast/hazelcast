@@ -119,6 +119,14 @@ public class PartitionWideEntryOperation extends MapOperation
         return backupOperation;
     }
 
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", entryProcessor=").append(entryProcessor);
+    }
+
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
