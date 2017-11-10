@@ -190,7 +190,8 @@ public final class Predicates {
     }
 
     /**
-     * Creates an <b>instance of</b> predicate that will pass items which are {@code instanceof} the given {@code klass}.
+     * Creates an <b>instance of</b> predicate that will pass entries for which
+     * the value class is an {@code instanceof} the given {@code klass}.
      *
      * @param klass the class the created predicate will check for.
      * @return the created <b>instance of</b> predicate.

@@ -26,7 +26,7 @@ package com.hazelcast.client.spi;
  * <pre>
  *           JetClientProxyDescriptor
  *           TreeClientProxyDescriptor
- *                    ....
+ *           ....
  * </pre>
  */
 public interface ClientProxyDescriptor {

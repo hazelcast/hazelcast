@@ -149,7 +149,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         } catch (Throwable e) {
             try {
                 // Terminate the node by terminating node engine,
-                // connection manager, multicast service, operation threads, etc ... if they are exist
+                // connection manager, multicast service, operation threads, etc... if they exist
                 node.shutdown(true);
             } catch (Throwable ignored) {
                 EmptyStatement.ignore(ignored);

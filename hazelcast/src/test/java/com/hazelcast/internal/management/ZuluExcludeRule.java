@@ -64,7 +64,7 @@ public class ZuluExcludeRule implements MethodRule {
             String className = method.getMethod().getDeclaringClass().getName();
             String methodName = method.getName();
 
-            System.out.println("EXCLUDING '" + className + "#" + methodName + "()' ...");
+            System.out.println("EXCLUDING '" + className + "#" + methodName + "()'...");
         }
     }
 }
