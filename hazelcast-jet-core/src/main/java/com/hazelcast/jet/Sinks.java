@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.SinkImpl;
 
@@ -60,17 +59,6 @@ public final class Sinks {
     }
 
     /**
-     * Returns a sink constructed directly from the given Core API processor
-     * supplier.
-     *
-     * @param sinkName user-friendly sink name
-     * @param supplier the processor supplier
-     */
-    public static <E> Sink<E> fromProcessor(String sinkName, ProcessorSupplier supplier) {
-        return new SinkImpl<>(sinkName, supplier);
-    }
-
-    /**
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code IMap} with the specified name.
      * <p>
@@ -80,7 +68,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> map(String mapName) {
-        return fromProcessor("writeMap(" + mapName + ')', writeMapP(mapName));
+        return fromProcessor("map(" + mapName + ')', writeMapP(mapName));
     }
 
     /**
@@ -94,7 +82,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> remoteMap(String mapName, ClientConfig clientConfig) {
-        return fromProcessor("writeRemoteMap(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
+        return fromProcessor("remoteMap(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
     }
 
     /**
@@ -107,7 +95,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> cache(String cacheName) {
-        return fromProcessor("writeCache(" + cacheName + ')', writeCacheP(cacheName));
+        return fromProcessor("cache(" + cacheName + ')', writeCacheP(cacheName));
     }
 
     /**
@@ -121,7 +109,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> remoteCache(String cacheName, ClientConfig clientConfig) {
-        return fromProcessor("writeRemoteCache(" + cacheName + ')', writeRemoteCacheP(cacheName, clientConfig));
+        return fromProcessor("remoteCache(" + cacheName + ')', writeRemoteCacheP(cacheName, clientConfig));
     }
 
     /**
@@ -133,7 +121,7 @@ public final class Sinks {
      * guarantee.
      */
     public static <E> Sink<E> list(String listName) {
-        return fromProcessor("writeList(" + listName + ')', writeListP(listName));
+        return fromProcessor("list(" + listName + ')', writeListP(listName));
     }
 
     /**
@@ -146,7 +134,7 @@ public final class Sinks {
      * guarantee.
      */
     public static <E> Sink<E> remoteList(String listName, ClientConfig clientConfig) {
-        return fromProcessor("writeRemoteList(" + listName + ')', writeRemoteListP(listName, clientConfig));
+        return fromProcessor("remoteList(" + listName + ')', writeRemoteListP(listName, clientConfig));
     }
 
     /**
@@ -166,7 +154,7 @@ public final class Sinks {
             @Nonnull DistributedFunction<E, String> toStringFn,
             @Nonnull Charset charset
     ) {
-        return fromProcessor("writeSocket(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, charset));
+        return fromProcessor("socket(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, charset));
     }
 
     /**
@@ -178,7 +166,7 @@ public final class Sinks {
             int port,
             @Nonnull DistributedFunction<E, String> toStringFn
     ) {
-        return fromProcessor("writeSocket(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, UTF_8));
+        return fromProcessor("socket(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, UTF_8));
     }
 
     /**
@@ -187,7 +175,7 @@ public final class Sinks {
      * UTF-8 as the charset.
      */
     public static <E> Sink<E> socket(@Nonnull String host, int port) {
-        return fromProcessor("writeSocket(" + host + ':' + port + ')',
+        return fromProcessor("socket(" + host + ':' + port + ')',
                 writeSocketP(host, port, Object::toString, UTF_8));
     }
 
@@ -221,7 +209,7 @@ public final class Sinks {
             @Nonnull Charset charset,
             boolean append
     ) {
-        return fromProcessor("writeFile(" + directoryName + ')',
+        return fromProcessor("files(" + directoryName + ')',
                 writeFileP(directoryName, toStringFn, charset, append));
     }
 

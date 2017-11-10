@@ -18,12 +18,9 @@ package com.hazelcast.jet;
 
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.SourceImpl;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
@@ -82,33 +79,6 @@ public final class Sources {
     }
 
     /**
-     * Returns a source constructed directly from the given Core API processor
-     * supplier.
-     *
-     * @param sourceName user-friendly source name
-     * @param supplier the processor supplier
-     */
-    public static <T> Source<T> fromProcessor(
-            @Nonnull String sourceName,
-            @Nonnull ProcessorSupplier supplier
-    ) {
-        return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
-    }
-
-    /**
-     * Returns a source constructed directly from the given supplier of Core API processors.
-     *
-     * @param sourceName user-friendly source name
-     * @param supplier the supplier of processors
-     */
-    public static <T> Source<T> fromProcessor(
-            @Nonnull String sourceName,
-            @Nonnull DistributedSupplier<Processor> supplier
-    ) {
-        return new SourceImpl<>(sourceName, ProcessorMetaSupplier.of(supplier));
-    }
-
-    /**
      * Returns a source that fetches entries from a local Hazelcast {@code IMap}
      * with the specified name and emits them as {@code Map.Entry}. It leverages
      * data locality by making each of the underlying processors fetch only those
@@ -122,7 +92,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     public static <K, V> Source<Map.Entry<K, V>> map(@Nonnull String mapName) {
-        return fromProcessor("readMap(" + mapName + ')', readMapP(mapName));
+        return fromProcessor("map(" + mapName + ')', readMapP(mapName));
     }
 
     /**
@@ -160,7 +130,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return fromProcessor("readMap(" + mapName + ')', readMapP(mapName, predicate, projection));
+        return fromProcessor("map(" + mapName + ')', readMapP(mapName, predicate, projection));
     }
 
     /**
@@ -172,7 +142,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
     ) {
-        return fromProcessor("readMap(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
+        return fromProcessor("map(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
     }
 
     /**
@@ -209,21 +179,21 @@ public final class Sources {
      * We plan to address this issue in a future release.
      *
      * @param mapName the name of the map
-     * @param predicate the predicate to filter the events, can be {@code null}
-     * @param projection the projection to map the events, can be {@code null}
+     * @param predicateFn the predicate to filter the events, can be {@code null}
+     * @param projectionFn the projection to map the events, can be {@code null}
      * @param startFromLatestSequence starting point of the events in event journal.
-     *          {@code true} to start from latest, {@code false} to start from oldest
+     *          {@code true} to start from the latest, {@code false} to start from the earliest
      * @param <T> type of emitted item
      */
     @Nonnull
     public static <K, V, T> Source<T> mapJournal(
             @Nonnull String mapName,
-            @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
-            @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
+            @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
+            @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamMap(" + mapName + ')',
-                streamMapP(mapName, predicate, projection, startFromLatestSequence));
+        return fromProcessor("mapJournal(" + mapName + ')',
+                streamMapP(mapName, predicateFn, projectionFn, startFromLatestSequence));
     }
 
     /**
@@ -236,7 +206,7 @@ public final class Sources {
             @Nonnull String mapName,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamMap(" + mapName + ')', streamMapP(mapName, startFromLatestSequence));
+        return fromProcessor("mapJournal(" + mapName + ')', streamMapP(mapName, startFromLatestSequence));
     }
 
     /**
@@ -256,7 +226,7 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return fromProcessor("readRemoteMap(" + mapName + ')', readRemoteMapP(mapName, clientConfig));
+        return fromProcessor("remoteMap(" + mapName + ')', readRemoteMapP(mapName, clientConfig));
     }
 
     /**
@@ -290,10 +260,10 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<K, V> predicate,
-            @Nonnull Projection<Entry<K, V>, T> projectionFn
+            @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return fromProcessor("readRemoteMap(" + mapName + ')',
-                readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
+        return fromProcessor("remoteMap(" + mapName + ')',
+                readRemoteMapP(mapName, clientConfig, predicate, projection));
     }
 
     /**
@@ -306,7 +276,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
-        return fromProcessor("readRemoteMap(" + mapName + ')',
+        return fromProcessor("remoteMap(" + mapName + ')',
                 readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
     }
 
@@ -329,8 +299,8 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
-     * @param predicate the predicate to filter the events, can be {@code null}
-     * @param projection the projection to map the events, can be {@code null}
+     * @param predicateFn the predicate to filter the events, can be {@code null}
+     * @param projectionFn the projection to map the events, can be {@code null}
      * @param startFromLatestSequence starting point of the events in event journal.
      *          {@code true} to start from latest, {@code false} to start from oldest.
      * @param <K> type of key
@@ -341,12 +311,12 @@ public final class Sources {
     public static <K, V, T> Source<T> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
-            @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
+            @Nullable DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
+            @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamRemoteMap(" + mapName + ')',
-                streamRemoteMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence));
+        return fromProcessor("remoteMapJournal(" + mapName + ')',
+                streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, startFromLatestSequence));
     }
 
     /**
@@ -360,7 +330,7 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamRemoteMap(" + mapName + ')',
+        return fromProcessor("remoteMapJournal(" + mapName + ')',
                 streamRemoteMapP(mapName, clientConfig, startFromLatestSequence));
     }
 
@@ -380,7 +350,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> cache(@Nonnull String cacheName) {
-        return fromProcessor("readCache(" + cacheName + ')', readCacheP(cacheName));
+        return fromProcessor("cache(" + cacheName + ')', readCacheP(cacheName));
     }
 
     /**
@@ -405,8 +375,8 @@ public final class Sources {
      * exactly-once guarantee (unless the journal has overflowed).
      *
      * @param cacheName               The name of the cache
-     * @param predicate               The predicate to filter the events, can be null
-     * @param projection              The projection to map the events, can be null
+     * @param predicateFn               The predicate to filter the events, can be null
+     * @param projectionFn              The projection to map the events, can be null
      * @param startFromLatestSequence starting point of the events in event journal
      *                                {@code true} to start from latest, {@code false} to start from oldest
      * @param <T>                     type of emitted item
@@ -414,25 +384,26 @@ public final class Sources {
     @Nonnull
     public static <K, V, T> Source<T> cacheJournal(
             @Nonnull String cacheName,
-            @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
-            @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
+            @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
+            @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamCache(" + cacheName + ')',
-                streamCacheP(cacheName, predicate, projection, startFromLatestSequence)
+        return fromProcessor("cacheJournal(" + cacheName + ')',
+                streamCacheP(cacheName, predicateFn, projectionFn, startFromLatestSequence)
         );
     }
 
     /**
      * Convenience for {@link #cacheJournal(String, DistributedPredicate,
-     * DistributedFunction, boolean)} with no projection or filtering.
+     * DistributedFunction, boolean)} with no projection or filtering. It
+     * emits {@link EventJournalCacheEvent}s.
      */
     @Nonnull
     public static <K, V> Source<EventJournalCacheEvent<K, V>> cacheJournal(
             @Nonnull String cacheName,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamCache(" + cacheName + ')', streamCacheP(cacheName, startFromLatestSequence));
+        return fromProcessor("cacheJournal(" + cacheName + ')', streamCacheP(cacheName, startFromLatestSequence));
     }
 
     /**
@@ -452,7 +423,7 @@ public final class Sources {
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return fromProcessor("readRemoteCache(" + cacheName + ')', readRemoteCacheP(cacheName, clientConfig)
+        return fromProcessor("remoteCache(" + cacheName + ')', readRemoteCacheP(cacheName, clientConfig)
         );
     }
 
@@ -475,8 +446,8 @@ public final class Sources {
      *
      * @param cacheName               The name of the cache
      * @param clientConfig            configuration for the client to connect to the remote cluster
-     * @param predicate               The predicate to filter the events, can be null
-     * @param projection              The projection to map the events, can be null
+     * @param predicateFn               The predicate to filter the events, can be null
+     * @param projectionFn              The projection to map the events, can be null
      * @param startFromLatestSequence starting point of the events in event journal
      *                                {@code true} to start from latest, {@code false} to start from oldest
      * @param <T>                     type of emitted item
@@ -485,12 +456,12 @@ public final class Sources {
     public static <K, V, T> Source<T> remoteCacheJournal(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
-            @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
+            @Nullable DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
+            @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamRemoteCache(" + cacheName + ')',
-                streamRemoteCacheP(cacheName, clientConfig, predicate, projection, startFromLatestSequence));
+        return fromProcessor("remoteCacheJournal(" + cacheName + ')',
+                streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, startFromLatestSequence));
     }
 
     /**
@@ -504,7 +475,7 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("streamRemoteCache(" + cacheName + ')',
+        return fromProcessor("remoteCacheJournal(" + cacheName + ')',
                 streamRemoteCacheP(cacheName, clientConfig, startFromLatestSequence));
     }
 
@@ -518,7 +489,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> list(@Nonnull String listName) {
-        return fromProcessor("readList(" + listName + ')', readListP(listName));
+        return fromProcessor("list(" + listName + ')', readListP(listName));
     }
 
     /**
@@ -531,7 +502,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> remoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return fromProcessor("readRemoteList(" + listName + ')', readRemoteListP(listName, clientConfig));
+        return fromProcessor("remoteList(" + listName + ')', readRemoteListP(listName, clientConfig));
     }
 
     /**
@@ -553,7 +524,7 @@ public final class Sources {
     public static Source<String> socket(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
-        return fromProcessor("streamSocket(" + host + ':' + port + ')', streamSocketP(host, port, charset));
+        return fromProcessor("socket(" + host + ':' + port + ')', streamSocketP(host, port, charset));
     }
 
     /**
@@ -580,7 +551,7 @@ public final class Sources {
     public static Source<String> files(
             @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return fromProcessor("readFiles(" + directory + '/' + glob + ')', readFilesP(directory, charset, glob));
+        return fromProcessor("files(" + directory + '/' + glob + ')', readFilesP(directory, charset, glob));
     }
 
     /**
@@ -639,7 +610,7 @@ public final class Sources {
     public static Source<String> fileWatcher(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return fromProcessor("streamFiles(" + watchedDirectory + '/' + glob + ')',
+        return fromProcessor("fileWatcher(" + watchedDirectory + '/' + glob + ')',
                 streamFilesP(watchedDirectory, charset, glob)
         );
     }
