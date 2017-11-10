@@ -106,12 +106,17 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
         if (endpoints == null) {
             return Collections.emptyList();
         }
+        List<EndpointSubset> endpointsSubsets = endpoints.getSubsets();
+        if (endpointsSubsets == null) {
+            return Collections.emptyList();
+        }
         List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
-        for (EndpointSubset endpointSubset : endpoints.getSubsets()) {
-            if (endpointSubset.getAddresses() == null) {
+        for (EndpointSubset endpointSubset : endpointsSubsets) {
+            List<EndpointAddress> endpointAddresses = endpointSubset.getAddresses();
+            if (endpointAddresses == null) {
                 continue;
             }
-            for (EndpointAddress endpointAddress : endpointSubset.getAddresses()) {
+            for (EndpointAddress endpointAddress : endpointAddresses) {
                 Map<String, Object> properties = endpointAddress.getAdditionalProperties();
                 String ip = endpointAddress.getIp();
                 InetAddress inetAddress = mapAddress(ip);
