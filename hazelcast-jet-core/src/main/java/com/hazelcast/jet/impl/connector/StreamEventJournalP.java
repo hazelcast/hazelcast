@@ -426,7 +426,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, V, T> ProcessorMetaSupplier streamMapP(
+    public static <K, V, T> ProcessorMetaSupplier streamRemoteMapP(
             String mapName,
             ClientConfig clientConfig,
             DistributedPredicate<EventJournalMapEvent<K, V>> predicate,

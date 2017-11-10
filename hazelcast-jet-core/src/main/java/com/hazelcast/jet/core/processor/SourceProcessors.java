@@ -144,15 +144,17 @@ public final class SourceProcessors {
         );
     }
 
-
     /**
      * Returns a supplier of processors for
      * {@link com.hazelcast.jet.Sources#remoteMapJournal(String, ClientConfig, boolean)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier streamRemoteMapP(
-            @Nonnull String mapName, @Nonnull ClientConfig clientConfig, boolean startFromLatestSequence) {
-        return StreamEventJournalP.streamMapP(mapName, clientConfig, null, null, startFromLatestSequence);
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            boolean startFromLatestSequence
+    ) {
+        return StreamEventJournalP.streamRemoteMapP(mapName, clientConfig, null, null, startFromLatestSequence);
     }
 
     /**
@@ -169,7 +171,8 @@ public final class SourceProcessors {
             @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
             boolean startFromLatestSequence
     ) {
-        return StreamEventJournalP.streamMapP(mapName, clientConfig, predicate, projection, startFromLatestSequence);
+        return StreamEventJournalP.streamRemoteMapP(
+                mapName, clientConfig, predicate, projection, startFromLatestSequence);
     }
 
     /**

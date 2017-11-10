@@ -259,17 +259,16 @@ public final class Sinks {
      * @param <E> stream item type
      */
     @Nonnull
-    public static <E> Sink<E> writeLogger(DistributedFunction<E, String> toStringFn) {
-        return fromProcessor("writeLogger", writeLoggerP(toStringFn));
+    public static <E> Sink<E> logger(DistributedFunction<E, String> toStringFn) {
+        return fromProcessor("logger", writeLoggerP(toStringFn));
     }
 
     /**
-     * Convenience for {@link #writeLogger(DistributedFunction)} with {@code
+     * Convenience for {@link #logger(DistributedFunction)} with {@code
      * Object.toString()} as the {@code toStringFn}.
      */
     @Nonnull
-    public static <E> Sink<E> writeLogger() {
-        return writeLogger(Object::toString);
-
+    public static <E> Sink<E> logger() {
+        return logger(Object::toString);
     }
 }
