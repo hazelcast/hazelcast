@@ -97,14 +97,14 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
         }
 
         if (!node.isRunning()) {
-            logger.info("Ignoring join check from " + getCallerAddress() + ", because this node is not active...");
+            logger.info("Ignoring join check from " + getCallerAddress() + " because this node is not active...");
             return false;
         }
 
         final ClusterState clusterState = clusterService.getClusterState();
         if (!clusterState.isJoinAllowed()) {
-            logger.info("Ignoring join check from " + getCallerAddress() + ", because cluster is in "
-                    + clusterState + " state ...");
+            logger.info("Ignoring join check from " + getCallerAddress() + " because cluster is in "
+                    + clusterState + " state...");
             return false;
         }
 

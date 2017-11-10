@@ -405,7 +405,7 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
      */
     private final class StartMigrationTask implements Runnable {
         // field is called 'theNewOwner' to prevent any ambiguity problems with the outboundHandler.newOwner.
-        // Else you get a lot of ugly ChannelOutboundHandler.this.newOwner is ...
+        // Else you get a lot of ugly ChannelOutboundHandler.this.newOwner is...
         private final NioThread theNewOwner;
 
         StartMigrationTask(NioThread theNewOwner) {

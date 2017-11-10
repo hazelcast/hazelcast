@@ -195,7 +195,7 @@ public class PartitionStateManager {
         if (initialized) {
             throw new IllegalStateException("Partition table is already initialized!");
         }
-        logger.info("Setting cluster partition table ...");
+        logger.info("Setting cluster partition table...");
         boolean foundReplica = false;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];

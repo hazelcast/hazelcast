@@ -30,7 +30,7 @@ import com.hazelcast.internal.eviction.Expirable;
 public interface CacheRecord<V> extends Expirable, Evictable<V> {
 
     /**
-     * Represents invalid (not set) time for creation time, expiration time, access time, etc ...
+     * Represents invalid (not set) time for creation time, expiration time, access time, etc...
      */
     long TIME_NOT_AVAILABLE = -1;
 

@@ -27,7 +27,7 @@ import java.nio.charset.Charset;
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
 
 /**
- * Access and manipulate bits, bytes, primitives ...
+ * Access and manipulate bits, bytes, primitives...
  */
 @SuppressWarnings({"checkstyle:magicnumber", "MagicNumber"})
 @PrivateApi
