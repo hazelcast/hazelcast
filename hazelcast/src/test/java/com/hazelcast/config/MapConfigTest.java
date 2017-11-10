@@ -446,4 +446,10 @@ public class MapConfigTest {
                       .verify();
 
     }
+
+    @Test
+    public void testDefaultHashCode() {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.hashCode();
+    }
 }
