@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.StringUtil;
 
 import java.util.Properties;
 /**
@@ -60,7 +61,7 @@ public class LoginModuleConfig {
 
         public static LoginModuleUsage get(String v) {
             try {
-                return LoginModuleUsage.valueOf(v.toUpperCase());
+                return LoginModuleUsage.valueOf(v.toUpperCase(StringUtil.LOCALE_INTERNAL));
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }

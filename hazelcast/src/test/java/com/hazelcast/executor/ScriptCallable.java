@@ -18,6 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.util.StringUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -49,7 +50,7 @@ class ScriptCallable implements Callable, Serializable, HazelcastInstanceAware {
         e.put("hazelcast", hazelcastInstance);
         try {
             // for new JavaScript engine called Nashorn we need the compatibility script
-            if (e.getFactory().getEngineName().toLowerCase().contains("nashorn")) {
+            if (e.getFactory().getEngineName().toLowerCase(StringUtil.LOCALE_INTERNAL).contains("nashorn")) {
                 e.eval("load('nashorn:mozilla_compat.js');");
             }
 
