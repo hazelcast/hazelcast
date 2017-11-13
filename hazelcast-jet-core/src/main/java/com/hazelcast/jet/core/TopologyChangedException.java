@@ -19,8 +19,10 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetException;
 
 /**
- * Thrown when a topology change (member addition/removal) happens
- * while executing a job.
+ * Thrown when a topology change causes a job to abort. The job
+ * is aborted when a participating member leaves the cluster. If
+ * auto-restart is enabled for the job, the job will be restarted
+ * automatically and this exception will not be thrown to the user.
  */
 public class TopologyChangedException extends JetException {
 
