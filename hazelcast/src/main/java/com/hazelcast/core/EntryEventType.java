@@ -21,52 +21,65 @@ package com.hazelcast.core;
  */
 public enum EntryEventType {
 
-    ADDED(Type.ADDED),
-    REMOVED(Type.REMOVED),
-    UPDATED(Type.UPDATED),
-    EVICTED(Type.EVICTED),
-    EVICT_ALL(Type.EVICT_ALL),
-    CLEAR_ALL(Type.CLEAR_ALL),
-    MERGED(Type.MERGED),
-    EXPIRED(Type.EXPIRED),
-    INVALIDATION(Type.INVALIDATION);
+    ADDED(TypeId.ADDED),
+    REMOVED(TypeId.REMOVED),
+    UPDATED(TypeId.UPDATED),
+    EVICTED(TypeId.EVICTED),
+    EVICT_ALL(TypeId.EVICT_ALL),
+    CLEAR_ALL(TypeId.CLEAR_ALL),
+    MERGED(TypeId.MERGED),
+    EXPIRED(TypeId.EXPIRED),
+    INVALIDATION(TypeId.INVALIDATION);
 
-    private int type;
+    private int typeId;
 
-    EntryEventType(final int type) {
-        this.type = type;
+    EntryEventType(final int typeId) {
+        this.typeId = typeId;
     }
 
     /**
-     * Returns the event type.
-     *
-     * @return the event type.
+     * @return the event type ID.
      */
     public int getType() {
-        return type;
+        return typeId;
     }
 
     /**
-     * Returns the EntryEventType as an enum.
-     *
-     * @return the EntryEventType as an enum.
+     * @return the matching EntryEventType for the supplied {@code typeId} or null if there is no match.
      */
-    public static EntryEventType getByType(final int eventType) {
-        for (EntryEventType entryEventType : values()) {
-            if (entryEventType.type == eventType) {
-                return entryEventType;
-            }
+    @SuppressWarnings("checkstyle:returncount")
+    public static EntryEventType getByType(final int typeId) {
+        switch (typeId) {
+            case TypeId.ADDED:
+                return ADDED;
+            case TypeId.REMOVED:
+                return REMOVED;
+            case TypeId.UPDATED:
+                return UPDATED;
+            case TypeId.EVICTED:
+                return EVICTED;
+            case TypeId.EVICT_ALL:
+                return EVICT_ALL;
+            case TypeId.CLEAR_ALL:
+                return CLEAR_ALL;
+            case TypeId.MERGED:
+                return MERGED;
+            case TypeId.EXPIRED:
+                return EXPIRED;
+            case TypeId.INVALIDATION:
+                return INVALIDATION;
+            default:
+                return null;
         }
-        return null;
     }
 
     /**
-     * These constants represent type ID and bit-mask of events.
+     * These constants represent event type ID and bit-mask of events.
      *
      * @see com.hazelcast.map.impl.MapListenerFlagOperator
      */
     //CHECKSTYLE:OFF
-    private static class Type {
+    private static class TypeId {
         private static final int ADDED = 1;
         private static final int REMOVED = 1 << 1;
         private static final int UPDATED = 1 << 2;
