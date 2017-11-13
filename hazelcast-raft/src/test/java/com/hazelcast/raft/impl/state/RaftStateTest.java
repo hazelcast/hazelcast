@@ -1,6 +1,8 @@
 package com.hazelcast.raft.impl.state;
 
+import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftGroupIdImpl;
 import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.log.RaftLog;
@@ -34,11 +36,13 @@ public class RaftStateTest {
 
     private RaftState state;
     private String name = randomName();
+    private RaftGroupId groupId;
     private RaftEndpoint localEndpoint;
     private Collection<RaftEndpoint> endpoints;
 
     @Before
     public void setup() {
+        groupId = new RaftGroupIdImpl(name, 1);
         localEndpoint = newRaftEndpoint(5000);
         endpoints = new HashSet<RaftEndpoint>(asList(
                 localEndpoint,
@@ -47,12 +51,13 @@ public class RaftStateTest {
                 newRaftEndpoint(5003),
                 newRaftEndpoint(5004)));
 
-        state = new RaftState(name, localEndpoint, endpoints);
+        state = new RaftState(groupId, localEndpoint, endpoints);
     }
 
     @Test
     public void test_initialState() throws Exception {
         assertEquals(name, state.name());
+        assertEquals(groupId, state.groupId());
         assertEquals(endpoints.size(), state.memberCount());
 
         assertEquals(endpoints, state.members());
@@ -73,8 +78,8 @@ public class RaftStateTest {
         assertNull(state.candidateState());
 
         RaftLog log = state.log();
-        assertEquals(0, log.lastLogIndex());
-        assertEquals(0, log.lastLogTerm());
+        assertEquals(0, log.lastLogOrSnapshotIndex());
+        assertEquals(0, log.lastLogOrSnapshotTerm());
     }
 
     @Test
@@ -166,7 +171,7 @@ public class RaftStateTest {
         int term = state.term();
         RaftLog log = state.log();
         log.appendEntries(new LogEntry(term, 1, null), new LogEntry(term, 2, null), new LogEntry(term, 3, null));
-        int lastLogIndex = log.lastLogIndex();
+        long lastLogIndex = log.lastLogOrSnapshotIndex();
 
         state.toLeader();
 
@@ -182,9 +187,9 @@ public class RaftStateTest {
             assertEquals(lastLogIndex + 1, leaderState.getNextIndex(endpoint));
         }
 
-        Collection<Integer> matchIndices = leaderState.matchIndices();
+        Collection<Long> matchIndices = leaderState.matchIndices();
         assertEquals(state.remoteMembers().size(), matchIndices.size());
-        for (int index : matchIndices) {
+        for (long index : matchIndices) {
             assertEquals(0, index);
         }
     }
@@ -218,7 +223,7 @@ public class RaftStateTest {
             endpoints.add(new RaftEndpoint(randomString(), newAddress(1000 + i)));
         }
 
-        state = new RaftState(name, localEndpoint, endpoints);
+        state = new RaftState(groupId, localEndpoint, endpoints);
 
         assertEquals(majority(count), state.majority());
     }

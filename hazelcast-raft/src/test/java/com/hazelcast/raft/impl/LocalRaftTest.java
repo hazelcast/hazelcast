@@ -1,13 +1,15 @@
 package com.hazelcast.raft.impl;
 
-import com.hazelcast.raft.LeaderDemotedException;
-import com.hazelcast.raft.NotLeaderException;
+import com.hazelcast.raft.RaftConfig;
+import com.hazelcast.raft.exception.CannotReplicateException;
+import com.hazelcast.raft.exception.LeaderDemotedException;
+import com.hazelcast.raft.exception.NotLeaderException;
 import com.hazelcast.raft.impl.dto.AppendRequest;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.raft.impl.dto.VoteRequest;
-import com.hazelcast.raft.impl.service.RaftAddOperation;
+import com.hazelcast.raft.impl.service.RaftTestApplyOperation;
 import com.hazelcast.raft.impl.service.RaftDataService;
-import com.hazelcast.raft.impl.testing.RaftGroup;
+import com.hazelcast.raft.impl.testing.LocalRaftGroup;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -21,7 +23,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -30,10 +31,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.raft.impl.RaftUtil.getCommitIndex;
-import static com.hazelcast.raft.impl.RaftUtil.getLastLogEntry;
+import static com.hazelcast.raft.impl.RaftUtil.getLastLogOrSnapshotEntry;
 import static com.hazelcast.raft.impl.RaftUtil.getLeaderEndpoint;
 import static com.hazelcast.raft.impl.RaftUtil.getTerm;
-import static com.hazelcast.raft.impl.service.RaftDataService.SERVICE_NAME;
+import static com.hazelcast.raft.impl.RaftUtil.newGroupWithService;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -47,7 +48,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class LocalRaftTest extends HazelcastTestSupport {
 
-    private RaftGroup group;
+    private LocalRaftGroup group;
 
     @Before
     public void init() {
@@ -71,7 +72,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     private void testLeaderElection(int nodeCount) throws Exception {
-        group = new RaftGroup(nodeCount);
+        group = new LocalRaftGroup(nodeCount, new RaftConfig());
         group.start();
         group.waitUntilLeaderElected();
 
@@ -81,7 +82,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
         int leaderIndex = group.getLeaderIndex();
         assertThat(leaderIndex, greaterThanOrEqualTo(0));
 
-        RaftNode leaderNode = group.getLeaderNode();
+        RaftNodeImpl leaderNode = group.getLeaderNode();
         assertNotNull(leaderNode);
     }
 
@@ -96,13 +97,12 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     private void testSingleCommitEntry(final int nodeCount) throws Exception {
-        group = newGroupWithService(nodeCount);
+        group = newGroupWithService(nodeCount, new RaftConfig());
         group.start();
         group.waitUntilLeaderElected();
 
         final Object val = "val";
-        Future f = group.getLeaderNode().replicate(new RaftAddOperation(val));
-        Object result = f.get();
+        Object result = group.getLeaderNode().replicate(new RaftTestApplyOperation(val)).get();
         assertEquals(result, val);
 
         final int commitIndex = 1;
@@ -110,10 +110,12 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 for (int i = 0; i < nodeCount; i++) {
-                    RaftNode node = group.getNode(i);
-                    assertEquals(commitIndex, getCommitIndex(node));
-                    RaftDataService service = group.getIntegration(i).getService(SERVICE_NAME);
-                    assertEquals(val, service.get(commitIndex));
+                    RaftNodeImpl node = group.getNode(i);
+                    long index = getCommitIndex(node);
+                    assertEquals(commitIndex, index);
+                    RaftDataService service = group.getIntegration(i).getService();
+                    Object actual = service.get(commitIndex);
+                    assertEquals(val, actual);
                 }
             }
         });
@@ -121,13 +123,17 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test(expected = NotLeaderException.class)
     public void when_followerAttemptsToReplicate_then_itFails() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3);
+        group = newGroupWithService(3, new RaftConfig());
         group.start();
-        RaftNode leader = group.waitUntilLeaderElected();
-        RaftNode[] followers = group.getNodesExcept(leader.getLocalEndpoint());
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalEndpoint());
 
-        Future f = followers[0].replicate(new RaftAddOperation("val"));
-        f.get();
+        followers[0].replicate(new RaftTestApplyOperation("val")).get();
+
+        for (RaftNodeImpl raftNode : group.getNodes()) {
+            RaftDataService service = group.getIntegration(raftNode.getLocalEndpoint()).getService();
+            assertEquals(0, service.size());
+        }
     }
 
     @Test
@@ -142,43 +148,43 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     private void testNoCommitWhenOnlyLeaderAppends(int nodeCount)
             throws InterruptedException, ExecutionException {
-        group = newGroupWithService(nodeCount);
+        group = newGroupWithService(nodeCount, new RaftConfig());
         group.start();
-        RaftNode leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         group.dropMessagesToAll(leader.getLocalEndpoint(), AppendRequest.class);
 
-        Future f = leader.replicate(new RaftAddOperation("val"));
-
         try {
-            f.get(10, TimeUnit.SECONDS);
+            leader.replicate(new RaftTestApplyOperation("val")).get(10, TimeUnit.SECONDS);
             fail();
         } catch (TimeoutException ignored) {
         }
 
-        for (RaftNode raftNode : group.getNodes()) {
+        for (RaftNodeImpl raftNode : group.getNodes()) {
             assertEquals(0, getCommitIndex(raftNode));
+            RaftDataService service = group.getIntegration(raftNode.getLocalEndpoint()).getService();
+            assertEquals(0, service.size());
         }
     }
 
     @Test
     public void when_leaderAppendsToMinority_then_itCannotCommit() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(5);
+        group = newGroupWithService(5, new RaftConfig());
         group.start();
-        final RaftNode leader = group.waitUntilLeaderElected();
-        final RaftNode[] followers = group.getNodesExcept(leader.getLocalEndpoint());
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalEndpoint());
 
         for (int i = 1; i < followers.length; i++) {
             group.dropMessagesToEndpoint(leader.getLocalEndpoint(), followers[i].getLocalEndpoint(), AppendRequest.class);
         }
 
-        Future f = leader.replicate(new RaftAddOperation("val"));
+        Future f = leader.replicate(new RaftTestApplyOperation("val"));
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(1, getLastLogEntry(leader).index());
-                assertEquals(1, getLastLogEntry(followers[0]).index());
+                assertEquals(1, getLastLogOrSnapshotEntry(leader).index());
+                assertEquals(1, getLastLogOrSnapshotEntry(followers[0]).index());
             }
         });
 
@@ -188,41 +194,43 @@ public class LocalRaftTest extends HazelcastTestSupport {
         } catch (TimeoutException ignored) {
         }
 
-        for (RaftNode raftNode : group.getNodes()) {
+        for (RaftNodeImpl raftNode : group.getNodes()) {
             assertEquals(0, getCommitIndex(raftNode));
+            RaftDataService service = group.getIntegration(raftNode.getLocalEndpoint()).getService();
+            assertEquals(0, service.size());
         }
     }
 
     @Test
-    public void when_fourNodeCluster_then_leaderReplicaEntriesSequentially() throws ExecutionException, InterruptedException {
+    public void when_fourNodeCluster_then_leaderReplicateEntriesSequentially() throws ExecutionException, InterruptedException {
         testReplicateEntriesSequentially(4);
     }
 
     @Test
-    public void when_fiveNodeCluster_then_leaderReplicaEntriesSequentially() throws ExecutionException, InterruptedException {
+    public void when_fiveNodeCluster_then_leaderReplicateEntriesSequentially() throws ExecutionException, InterruptedException {
         testReplicateEntriesSequentially(5);
     }
 
 
     private void testReplicateEntriesSequentially(int nodeCount) throws ExecutionException, InterruptedException {
-        group = newGroupWithService(nodeCount);
+        group = newGroupWithService(nodeCount, newRaftConfigWithNoSnapshotting());
         group.start();
-        RaftNode leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         final int entryCount = 100;
         for (int i = 0; i < entryCount; i++) {
             final Object val = "val" + i;
-            Future f = leader.replicate(new RaftAddOperation(val));
-            f.get();
+            leader.replicate(new RaftTestApplyOperation(val)).get();
         }
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(entryCount, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode, RaftDataService.SERVICE_NAME);
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(100, service.size());
                     for (int i = 0; i < entryCount; i++) {
                         int commitIndex = i + 1;
                         Object val = "val" + i;
@@ -244,15 +252,15 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     private void testReplicateEntriesConcurrently(int nodeCount) throws ExecutionException, InterruptedException {
-        group = newGroupWithService(nodeCount);
+        group = newGroupWithService(nodeCount, newRaftConfigWithNoSnapshotting());
         group.start();
-        RaftNode leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         final int entryCount = 100;
         List<Future> futures = new ArrayList<Future>(entryCount);
         for (int i = 0; i < entryCount; i++) {
             final Object val = "val" + i;
-            futures.add(leader.replicate(new RaftAddOperation(val)));
+            futures.add(leader.replicate(new RaftTestApplyOperation(val)));
         }
 
         for (Future f : futures) {
@@ -263,9 +271,10 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(entryCount, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode, RaftDataService.SERVICE_NAME);
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(100, service.size());
                     Set<Object> values = service.values();
                     for (int i = 0; i < entryCount; i++) {
                         Object val = "val" + i;
@@ -287,12 +296,12 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     private void testReplicateEntriesInParallel(int nodeCount) throws ExecutionException, InterruptedException {
-        group = newGroupWithService(nodeCount);
+        group = newGroupWithService(nodeCount, newRaftConfigWithNoSnapshotting());
         group.start();
-        final RaftNode leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         int threadCount = 10;
-        final int opsPerThread = 20;
+        final int opsPerThread = 10;
         Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threadCount; i++) {
             final int start = i * opsPerThread;
@@ -301,7 +310,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
                 public void run() {
                     final List<Future> futures = new ArrayList<Future>();
                     for (int j = start; j < start + opsPerThread; j++) {
-                        futures.add(leader.replicate(new RaftAddOperation(j)));
+                        futures.add(leader.replicate(new RaftTestApplyOperation(j)));
                     }
 
                     for (Future f : futures) {
@@ -331,9 +340,10 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(entryCount, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode, RaftDataService.SERVICE_NAME);
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(entryCount, service.size());
                     Set<Object> values = service.values();
                     for (int i = 0; i < entryCount; i++) {
                         assertTrue(values.contains(i));
@@ -345,18 +355,17 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_followerSlowsDown_then_itCatchesLeaderEventually() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3);
+        group = newGroupWithService(3, newRaftConfigWithNoSnapshotting());
         group.start();
-        RaftNode leader = group.waitUntilLeaderElected();
-        RaftNode slowFollower = group.getNodesExcept(leader.getLocalEndpoint())[0];
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl slowFollower = group.getAnyFollowerNode();
 
         group.dropMessagesToEndpoint(leader.getLocalEndpoint(), slowFollower.getLocalEndpoint(), AppendRequest.class);
 
         final int entryCount = 100;
         for (int i = 0; i < entryCount; i++) {
             final Object val = "val" + i;
-            Future f = leader.replicate(new RaftAddOperation(val));
-            f.get();
+            leader.replicate(new RaftTestApplyOperation(val)).get();
         }
 
         assertEquals(0, getCommitIndex(slowFollower));
@@ -366,9 +375,10 @@ public class LocalRaftTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(entryCount, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode, RaftDataService.SERVICE_NAME);
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(entryCount, service.size());
                     Set<Object> values = service.values();
                     for (int i = 0; i < entryCount; i++) {
                         Object val = "val" + i;
@@ -380,44 +390,44 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_disruptiveFollowerStartsElection_then_itCannotTakeOverLeadershipFromLegitimateLeader() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3);
+    public void when_disruptiveFollowerStartsElection_then_itCannotTakeOverLeadershipFromLegitimateLeader()
+            throws ExecutionException, InterruptedException {
+        group = newGroupWithService(3, new RaftConfig());
         group.start();
-        RaftNode leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
         final int leaderTerm = getTerm(leader);
-        final RaftNode disruptiveFollower = group.getNodesExcept(leader.getLocalEndpoint())[0];
+        final RaftNodeImpl disruptiveFollower = group.getAnyFollowerNode();
 
         group.dropMessagesToEndpoint(leader.getLocalEndpoint(), disruptiveFollower.getLocalEndpoint(), AppendRequest.class);
 
-        Future f = leader.replicate(new RaftAddOperation("val"));
-        f.get();
+        leader.replicate(new RaftTestApplyOperation("val")).get();
 
         group.split(disruptiveFollower.getLocalEndpoint());
 
         final int[] disruptiveFollowerTermRef = new int[1];
-        assertTrueEventually(new AssertTask() {
+        assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 int followerTerm = getTerm(disruptiveFollower);
-                assertTrue(leaderTerm < followerTerm);
+                assertEquals(leaderTerm, followerTerm);
                 disruptiveFollowerTermRef[0] = followerTerm;
             }
-        });
+        }, 5);
 
+        group.resetAllDropRulesFrom(leader.getLocalEndpoint());
         group.merge();
 
-        RaftNode newLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertNotEquals(disruptiveFollower.getLocalEndpoint(), newLeader.getLocalEndpoint());
-        assertTrue(getTerm(newLeader) > disruptiveFollowerTermRef[0]);
+        assertEquals(getTerm(newLeader), disruptiveFollowerTermRef[0]);
     }
 
 
     @Test
     public void when_followerTerminatesInMinority_then_clusterRemainsAvailable() throws Exception {
-        group = newGroupWithService(3);
+        group = newGroupWithService(3, new RaftConfig());
         group.start();
-        RaftNode leaderNode = group.waitUntilLeaderElected();
+        RaftNodeImpl leaderNode = group.waitUntilLeaderElected();
 
         int leaderIndex = group.getLeaderIndex();
         for (int i = 0; i < group.size(); i++) {
@@ -428,17 +438,17 @@ public class LocalRaftTest extends HazelcastTestSupport {
         }
 
         String value = "value";
-        Future future = leaderNode.replicate(new RaftAddOperation(value));
+        Future future = leaderNode.replicate(new RaftTestApplyOperation(value));
         assertEquals(value, future.get());
     }
 
     @Test
     public void when_leaderTerminatesInMinority_then_clusterRemainsAvailable() throws Exception {
-        group = newGroupWithService(3);
+        group = newGroupWithService(3, new RaftConfig());
         group.start();
 
-        final RaftNode leaderNode = group.waitUntilLeaderElected();
-        final RaftNode[] followers = group.getNodesExcept(leaderNode.getLocalEndpoint());
+        final RaftNodeImpl leaderNode = group.waitUntilLeaderElected();
+        final RaftNodeImpl[] followers = group.getNodesExcept(leaderNode.getLocalEndpoint());
         int leaderTerm = getTerm(leaderNode);
 
         group.terminateNode(leaderNode.getLocalEndpoint());
@@ -446,23 +456,23 @@ public class LocalRaftTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                for (RaftNode raftNode : followers) {
+                for (RaftNodeImpl raftNode : followers) {
                     assertNotEquals(leaderNode.getLocalEndpoint(), getLeaderEndpoint(raftNode));
                 }
             }
         });
 
-        RaftNode newLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertTrue(getTerm(newLeader) > leaderTerm);
 
         String value = "value";
-        Future future = newLeader.replicate(new RaftAddOperation(value));
+        Future future = newLeader.replicate(new RaftTestApplyOperation(value));
         assertEquals(value, future.get());
     }
 
     @Test
     public void when_leaderStaysInMajorityDuringSplit_thenItMergesBackSuccessfully() throws Exception {
-        group = new RaftGroup(5);
+        group = new LocalRaftGroup(5);
         group.start();
         group.waitUntilLeaderElected();
 
@@ -485,7 +495,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     @Test
     public void when_leaderStaysInMinorityDuringSplit_thenItMergesBackSuccessfully() throws Exception {
         int nodeCount = 5;
-        group = new RaftGroup(nodeCount);
+        group = new LocalRaftGroup(nodeCount);
         group.start();
         final RaftEndpoint leaderEndpoint = group.waitUntilLeaderElected().getLocalEndpoint();
 
@@ -513,23 +523,22 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderCrashes_then_theFollowerWithLongestLogBecomesLeader() throws Exception {
-        group = newGroupWithService(4);
+        group = newGroupWithService(4, new RaftConfig());
         group.start();
 
-        RaftNode leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
-        Future f1 = leader.replicate(new RaftAddOperation("val1"));
-        f1.get();
+        leader.replicate(new RaftTestApplyOperation("val1")).get();
 
-        final RaftNode[] followers = group.getNodesExcept(leader.getLocalEndpoint());
-        final RaftNode nextLeader = followers[0];
-        final int commitIndex = getCommitIndex(leader);
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalEndpoint());
+        final RaftNodeImpl nextLeader = followers[0];
+        final long commitIndex = getCommitIndex(leader);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(commitIndex, getCommitIndex(raftNode));
                 }
             }
@@ -539,13 +548,13 @@ public class LocalRaftTest extends HazelcastTestSupport {
             group.dropMessagesToEndpoint(leader.getLocalEndpoint(), followers[i].getLocalEndpoint(), AppendRequest.class);
         }
 
-        leader.replicate(new RaftAddOperation("val2"));
+        leader.replicate(new RaftTestApplyOperation("val2"));
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(getLastLogEntry(nextLeader).index() > commitIndex);
+                assertTrue(getLastLogOrSnapshotEntry(nextLeader).index() > commitIndex);
             }
         });
 
@@ -553,7 +562,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(commitIndex, getCommitIndex(raftNode));
                 }
             }
@@ -564,7 +573,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                for (RaftNode raftNode : followers) {
+                for (RaftNodeImpl raftNode : followers) {
                     assertEquals(nextLeader.getLocalEndpoint(), getLeaderEndpoint(raftNode));
                 }
             }
@@ -574,9 +583,13 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : followers) {
+                for (RaftNodeImpl raftNode : followers) {
                     assertEquals(commitIndex, getCommitIndex(raftNode));
-                    assertTrue(getLastLogEntry(raftNode).index() > commitIndex);
+                    assertTrue(getLastLogOrSnapshotEntry(raftNode).index() > commitIndex);
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(1, service.size());
+                    assertEquals("val1", service.get(1));
+                    // val2 not committed yet
                 }
             }
         });
@@ -584,23 +597,22 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_followerBecomesLeaderWithUncommittedEntries_then_thoseEntriesAreCommittedWithANewEntryOfCurrentTerm() throws Exception {
-        group = newGroupWithService(3);
+        group = newGroupWithService(3, new RaftConfig());
         group.start();
 
-        final RaftNode leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
-        Future f1 = leader.replicate(new RaftAddOperation("val1"));
-        f1.get();
+        leader.replicate(new RaftTestApplyOperation("val1")).get();
 
-        final RaftNode[] followers = group.getNodesExcept(leader.getLocalEndpoint());
-        final RaftNode nextLeader = followers[0];
-        final int commitIndex = getCommitIndex(leader);
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalEndpoint());
+        final RaftNodeImpl nextLeader = followers[0];
+        final long commitIndex = getCommitIndex(leader);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(commitIndex, getCommitIndex(raftNode));
                 }
             }
@@ -609,13 +621,13 @@ public class LocalRaftTest extends HazelcastTestSupport {
         group.dropMessagesToEndpoint(leader.getLocalEndpoint(), followers[1].getLocalEndpoint(), AppendRequest.class);
         group.dropMessagesToEndpoint(nextLeader.getLocalEndpoint(), leader.getLocalEndpoint(), AppendSuccessResponse.class);
 
-        leader.replicate(new RaftAddOperation("val2"));
+        leader.replicate(new RaftTestApplyOperation("val2"));
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(getLastLogEntry(nextLeader).index() > commitIndex);
+                assertTrue(getLastLogOrSnapshotEntry(nextLeader).index() > commitIndex);
             }
         });
 
@@ -623,7 +635,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(commitIndex, getCommitIndex(raftNode));
                 }
             }
@@ -634,22 +646,23 @@ public class LocalRaftTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                for (RaftNode raftNode : followers) {
+                for (RaftNodeImpl raftNode : followers) {
                     assertEquals(nextLeader.getLocalEndpoint(), getLeaderEndpoint(raftNode));
                 }
             }
         });
 
-        nextLeader.replicate(new RaftAddOperation("val3"));
+        nextLeader.replicate(new RaftTestApplyOperation("val3"));
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : followers) {
+                for (RaftNodeImpl raftNode : followers) {
                     assertEquals(3, getCommitIndex(raftNode));
-                    assertEquals(3, getLastLogEntry(raftNode).index());
-                    RaftDataService service = group.getService(raftNode, RaftDataService.SERVICE_NAME);
+                    assertEquals(3, getLastLogOrSnapshotEntry(raftNode).index());
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(3, service.size());
                     assertEquals("val1", service.get(1));
                     assertEquals("val2", service.get(2));
                     assertEquals("val3", service.get(3));
@@ -660,23 +673,22 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderCrashes_then_theFollowerWithLongestLogMayNotBecomeLeaderIfItsLogIsNotMajority() throws Exception {
-        group = newGroupWithService(5);
+        group = newGroupWithService(5, new RaftConfig());
         group.start();
 
-        final RaftNode leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
-        Future f1 = leader.replicate(new RaftAddOperation("val1"));
-        f1.get();
+        leader.replicate(new RaftTestApplyOperation("val1")).get();
 
-        final RaftNode[] followers = group.getNodesExcept(leader.getLocalEndpoint());
-        final RaftNode followerWithLongerLog = followers[0];
-        final int commitIndex = getCommitIndex(leader);
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalEndpoint());
+        final RaftNodeImpl followerWithLongerLog = followers[0];
+        final long commitIndex = getCommitIndex(leader);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(commitIndex, getCommitIndex(raftNode));
                 }
             }
@@ -686,13 +698,13 @@ public class LocalRaftTest extends HazelcastTestSupport {
             group.dropMessagesToEndpoint(leader.getLocalEndpoint(), followers[i].getLocalEndpoint(), AppendRequest.class);
         }
 
-        leader.replicate(new RaftAddOperation("val2"));
+        leader.replicate(new RaftTestApplyOperation("val2"));
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(getLastLogEntry(followerWithLongerLog).index() > commitIndex);
+                assertTrue(getLastLogOrSnapshotEntry(followerWithLongerLog).index() > commitIndex);
             }
         });
 
@@ -700,7 +712,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(commitIndex, getCommitIndex(raftNode));
                 }
             }
@@ -711,14 +723,14 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
         group.terminateNode(leader.getLocalEndpoint());
 
-        RaftNode newLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
 
         // followerWithLongerLog has 2 entries, other 3 followers have 1 entry and the 3 followers will elect their leaders
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                for (RaftNode raftNode : followers) {
+                for (RaftNodeImpl raftNode : followers) {
                     RaftEndpoint newLeader = getLeaderEndpoint(raftNode);
                     assertNotEquals(leader.getLocalEndpoint(), newLeader);
                     assertNotEquals(followerWithLongerLog.getLocalEndpoint(), newLeader);
@@ -728,84 +740,87 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
         for (int i = 1; i < followers.length; i++) {
             assertEquals(commitIndex, getCommitIndex(followers[i]));
-            assertEquals(commitIndex, getLastLogEntry(followers[i]).index());
+            assertEquals(commitIndex, getLastLogOrSnapshotEntry(followers[i]).index());
         }
 
         // followerWithLongerLog has not truncated its extra log entry until the new leader appends a new entry
-        assertTrue(getLastLogEntry(followerWithLongerLog).index() > commitIndex);
+        assertTrue(getLastLogOrSnapshotEntry(followerWithLongerLog).index() > commitIndex);
 
-        Future f3 = newLeader.replicate(new RaftAddOperation("val3"));
-        f3.get();
+        newLeader.replicate(new RaftTestApplyOperation("val3")).get();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                for (RaftNode raftNode : followers) {
+                for (RaftNodeImpl raftNode : followers) {
                     assertEquals(2, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode, RaftDataService.SERVICE_NAME);
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(2, service.size());
                     assertEquals("val1", service.get(1));
                     assertEquals("val3", service.get(2));
                 }
             }
         });
 
-        assertEquals(2, getLastLogEntry(followerWithLongerLog).index());
+        assertEquals(2, getLastLogOrSnapshotEntry(followerWithLongerLog).index());
     }
 
     @Test
     public void when_leaderStaysInMinorityDuringSplit_then_itCannotCommitNewEntries() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3);
+        group = newGroupWithService(3, newRaftConfigWithNoSnapshotting());
         group.start();
 
-        final RaftNode leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
 
-        Future f1 = leader.replicate(new RaftAddOperation("val1"));
-        f1.get();
+        leader.replicate(new RaftTestApplyOperation("val1")).get();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : group.getNodes()) {
+                for (RaftNodeImpl raftNode : group.getNodes()) {
                     assertEquals(1, getCommitIndex(raftNode));
                 }
             }
         });
 
-        final RaftNode[] followers = group.getNodesExcept(leader.getLocalEndpoint());
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalEndpoint());
         group.split(leader.getLocalEndpoint());
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : followers) {
-                    assertNotEquals(leader.getLocalEndpoint(), getLeaderEndpoint(raftNode));
+                for (RaftNodeImpl raftNode : followers) {
+                    RaftEndpoint leaderEndpoint = getLeaderEndpoint(raftNode);
+                    assertNotNull(leaderEndpoint);
+                    assertNotEquals(leader.getLocalEndpoint(), leaderEndpoint);
                 }
             }
         });
 
         List<Future> isolatedFutures = new ArrayList<Future>();
         for (int i = 0; i < 10; i++) {
-            isolatedFutures.add(leader.replicate(new RaftAddOperation("isolated" + i)));
+            isolatedFutures.add(leader.replicate(new RaftTestApplyOperation("isolated" + i)));
         }
 
-        RaftNode newLeader = group.getNode(getLeaderEndpoint(followers[0]));
-        newLeader.replicate(new RaftAddOperation("val2"));
+        RaftNodeImpl newLeader = group.getNode(getLeaderEndpoint(followers[0]));
+        for (int i = 0; i < 10; i++) {
+            newLeader.replicate(new RaftTestApplyOperation("valNew" + i)).get();
+        }
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                for (RaftNode raftNode : followers) {
-                    assertEquals(2, getCommitIndex(raftNode));
+                for (RaftNodeImpl raftNode : followers) {
+                    assertEquals(11, getCommitIndex(raftNode));
                 }
             }
         });
 
         group.merge();
 
-        RaftNode finalLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl finalLeader = group.waitUntilLeaderElected();
 
         assertNotEquals(leader.getLocalEndpoint(), finalLeader.getLocalEndpoint());
         for (Future f : isolatedFutures) {
@@ -813,12 +828,47 @@ public class LocalRaftTest extends HazelcastTestSupport {
                 f.get();
                 fail();
             } catch (LeaderDemotedException ignored) {
-
             }
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (RaftNodeImpl raftNode : followers) {
+                    RaftDataService service = group.getService(raftNode);
+                    assertEquals(11, service.size());
+                    assertEquals("val1", service.get(1));
+                    for (int i = 0; i < 10; i++) {
+                        assertEquals(("valNew" + i), service.get(i + 2));
+                    }
+                }
+            }
+        });
+    }
+
+    @Test
+    public void when_thereAreTooManyInflightAppendedEntries_then_newAppendsAreRejected() throws ExecutionException, InterruptedException {
+        int uncommittedEntryCount = 10;
+        RaftConfig raftConfig = new RaftConfig().setUncommittedEntryCountToRejectNewAppends(uncommittedEntryCount);
+        group = newGroupWithService(2, raftConfig);
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl follower = group.getAnyFollowerNode();
+        group.terminateNode(follower.getLocalEndpoint());
+
+        for (int i = 0; i < uncommittedEntryCount; i++) {
+            leader.replicate(new RaftTestApplyOperation("val" + i));
+        }
+
+        try {
+            leader.replicate(new RaftTestApplyOperation("valFinal")).get();
+            fail();
+        } catch (CannotReplicateException ignored) {
         }
     }
 
-    private RaftGroup newGroupWithService(int nodeCount) {
-        return new RaftGroup(nodeCount, Collections.<String, Class>singletonMap(SERVICE_NAME, RaftDataService.class));
+    private static RaftConfig newRaftConfigWithNoSnapshotting() {
+        return new RaftConfig().setCommitIndexAdvanceCountToSnapshot(Integer.MAX_VALUE);
     }
 }

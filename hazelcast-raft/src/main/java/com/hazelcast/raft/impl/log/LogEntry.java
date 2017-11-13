@@ -3,30 +3,33 @@ package com.hazelcast.raft.impl.log;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.RaftOperation;
 import com.hazelcast.raft.impl.RaftDataSerializerHook;
+import com.hazelcast.raft.operation.RaftOperation;
 
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Represents an entry in the {@link RaftLog}.
+ * <p>
+ * Each log entry stores a state machine command ({@link RaftOperation}) along with the term number
+ * when the entry was received by the leader. The term numbers in log entries are used to detect inconsistencies
+ * between logs. Each log entry also has an integer index identifying its position in the log.
  */
 public class LogEntry implements IdentifiedDataSerializable {
     private int term;
-    private int index;
+    private long index;
     private RaftOperation operation;
 
     public LogEntry() {
     }
 
-    public LogEntry(int term, int index, RaftOperation operation) {
+    public LogEntry(int term, long index, RaftOperation operation) {
         this.term = term;
         this.index = index;
         this.operation = operation;
     }
 
-    public int index() {
+    public long index() {
         return index;
     }
 
@@ -41,14 +44,14 @@ public class LogEntry implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(term);
-        out.writeInt(index);
+        out.writeLong(index);
         out.writeObject(operation);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         term = in.readInt();
-        index = in.readInt();
+        index = in.readLong();
         operation = in.readObject();
     }
 

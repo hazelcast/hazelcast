@@ -1,15 +1,13 @@
 package com.hazelcast.raft.impl.handler;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.raft.impl.state.LeaderState;
-import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.RaftEndpoint;
-import com.hazelcast.raft.impl.log.RaftLog;
-import com.hazelcast.raft.impl.RaftNode;
+import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.RaftRole;
-import com.hazelcast.raft.impl.state.RaftState;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.raft.impl.log.LogEntry;
+import com.hazelcast.raft.impl.log.RaftLog;
+import com.hazelcast.raft.impl.state.LeaderState;
+import com.hazelcast.raft.impl.state.RaftState;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,27 +15,29 @@ import java.util.Collection;
 import static java.util.Arrays.sort;
 
 /**
- * TODO: Javadoc Pending...
+ * Handles {@link AppendSuccessResponse} sent by {@link AppendRequestHandlerTask} after an append-entries request
+ * or {@link InstallSnapshotHandlerTask} after an install snapshot request.
+ * <p>
+ * Advances {@link RaftState#commitIndex} according to {@code matchIndex}es of followers.
+ * <p>
+ * See <i>5.3 Log replication</i> section of <i>In Search of an Understandable Consensus Algorithm</i>
+ * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
  *
+ * @see com.hazelcast.raft.impl.dto.AppendRequest
+ * @see com.hazelcast.raft.impl.dto.AppendSuccessResponse
+ * @see com.hazelcast.raft.impl.dto.AppendFailureResponse
  */
-public class AppendSuccessResponseHandlerTask implements StripedRunnable {
-    private final RaftNode raftNode;
+public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTask {
     private final AppendSuccessResponse resp;
-    private final ILogger logger;
 
-    public AppendSuccessResponseHandlerTask(RaftNode raftNode, AppendSuccessResponse response) {
-        this.raftNode = raftNode;
+    public AppendSuccessResponseHandlerTask(RaftNodeImpl raftNode, AppendSuccessResponse response) {
+        super(raftNode);
         this.resp = response;
-        this.logger = raftNode.getLogger(getClass());
     }
 
     @Override
-    public void run() {
+    protected void handleResponse() {
         RaftState state = raftNode.state();
-        if (!state.isKnownEndpoint(resp.follower())) {
-            logger.warning("Ignored " + resp + ", since sender is unknown to us");
-            return;
-        }
 
         if (state.role() != RaftRole.LEADER) {
             logger.warning("Ignored " + resp + ". We are not LEADER anymore.");
@@ -55,14 +55,14 @@ public class AppendSuccessResponseHandlerTask implements StripedRunnable {
 
         // If there exists an N such that N > commitIndex, a majority of matchIndex[i] ≥ N, and log[N].term == currentTerm:
         // set commitIndex = N (§5.3, §5.4)
-        int quorumMatchIndex = findQuorumMatchIndex(state);
-        int commitIndex = state.commitIndex();
+        long quorumMatchIndex = findQuorumMatchIndex(state);
+        long commitIndex = state.commitIndex();
         RaftLog raftLog = state.log();
         for (; quorumMatchIndex > commitIndex; quorumMatchIndex--) {
             // Only log entries from the leader’s current term are committed by counting replicas; once an entry
             // from the current term has been committed in this way, then all prior entries are committed indirectly
             // because of the Log Matching Property.
-            LogEntry entry = raftLog.getEntry(quorumMatchIndex);
+            LogEntry entry = raftLog.getLogEntry(quorumMatchIndex);
             if (entry.term() == state.term()) {
                 commitEntries(state, quorumMatchIndex);
                 break;
@@ -75,34 +75,46 @@ public class AppendSuccessResponseHandlerTask implements StripedRunnable {
     private void updateFollowerIndices(RaftState state) {
         RaftEndpoint follower = resp.follower();
         LeaderState leaderState = state.leaderState();
-        int matchIndex = leaderState.getMatchIndex(follower);
-        int followerLastLogIndex = resp.lastLogIndex();
+        long matchIndex = leaderState.getMatchIndex(follower);
+        long followerLastLogIndex = resp.lastLogIndex();
 
         if (followerLastLogIndex > matchIndex) {
-            int newNextIndex = followerLastLogIndex + 1;
-            logger.info("Updating match index: " + followerLastLogIndex + " and next index: " + newNextIndex
-                    + " for follower: " + follower);
+            long newNextIndex = followerLastLogIndex + 1;
+            if (logger.isFineEnabled()) {
+                logger.fine("Updating match index: " + followerLastLogIndex + " and next index: " + newNextIndex
+                        + " for follower: " + follower);
+            }
             leaderState.setMatchIndex(follower, followerLastLogIndex);
             leaderState.setNextIndex(follower, newNextIndex);
         } else if (followerLastLogIndex < matchIndex) {
-            logger.warning("Will not update match index for follower: " + follower + ". follower last log index: "
+            logger.info("Will not update match index for follower: " + follower + ". follower last log index: "
                     + followerLastLogIndex + ", match index: " + matchIndex);
         }
     }
 
-    private int findQuorumMatchIndex(RaftState state) {
+    private long findQuorumMatchIndex(RaftState state) {
         LeaderState leaderState = state.leaderState();
-        Collection<Integer> matchIndices = leaderState.matchIndices();
-        int[] indices = new int[matchIndices.size() + 1];
-        indices[0] = state.log().lastLogIndex();
+        Collection<Long> matchIndices = leaderState.matchIndices();
 
-        int k = 1;
-        for (int index : matchIndices) {
+        long[] indices;
+        int k;
+
+        // if the leader is leaving, it should not count its vote for quorum...
+        if (raftNode.state().isKnownEndpoint(raftNode.getLocalEndpoint())) {
+            indices = new long[matchIndices.size() + 1];
+            indices[0] = state.log().lastLogOrSnapshotIndex();
+            k = 1;
+        } else {
+            indices = new long[matchIndices.size()];
+            k = 0;
+        }
+
+        for (long index : matchIndices) {
             indices[k++] = index;
         }
         sort(indices);
 
-        int quorumMatchIndex = indices[(indices.length - 1) / 2];
+        long quorumMatchIndex = indices[(indices.length - 1) / 2];
         if (logger.isFineEnabled()) {
             logger.fine("Quorum match index: " + quorumMatchIndex + ", indices: " + Arrays.toString(indices));
         }
@@ -110,15 +122,15 @@ public class AppendSuccessResponseHandlerTask implements StripedRunnable {
         return quorumMatchIndex;
     }
 
-    private void commitEntries(RaftState state, int commitIndex) {
-        logger.info("Setting commit index: " + commitIndex);
+    private void commitEntries(RaftState state, long commitIndex) {
+        logger.fine("Setting commit index: " + commitIndex);
         state.commitIndex(commitIndex);
         raftNode.broadcastAppendRequest();
-        raftNode.processLogs();
+        raftNode.processLogEntries();
     }
 
     @Override
-    public int getKey() {
-        return raftNode.getStripeKey();
+    protected RaftEndpoint senderEndpoint() {
+        return resp.follower();
     }
 }

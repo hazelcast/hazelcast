@@ -9,20 +9,24 @@ import com.hazelcast.raft.impl.RaftEndpoint;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Struct for VoteRequest RPC.
+ * <p>
+ * See <i>5.2 Leader election</i> section of <i>In Search of an Understandable Consensus Algorithm</i>
+ * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
+ * <p>
+ * Invoked by candidates to gather votes (§5.2).
  */
 public class VoteRequest implements IdentifiedDataSerializable {
 
     private RaftEndpoint candidate;
     private int term;
     private int lastLogTerm;
-    private int lastLogIndex;
+    private long lastLogIndex;
 
     public VoteRequest() {
     }
 
-    public VoteRequest(RaftEndpoint candidate, int term, int lastLogTerm, int lastLogIndex) {
+    public VoteRequest(RaftEndpoint candidate, int term, int lastLogTerm, long lastLogIndex) {
         this.term = term;
         this.candidate = candidate;
         this.lastLogTerm = lastLogTerm;
@@ -41,7 +45,7 @@ public class VoteRequest implements IdentifiedDataSerializable {
         return lastLogTerm;
     }
 
-    public int lastLogIndex() {
+    public long lastLogIndex() {
         return lastLogIndex;
     }
 
@@ -60,7 +64,7 @@ public class VoteRequest implements IdentifiedDataSerializable {
         out.writeInt(term);
         out.writeObject(candidate);
         out.writeInt(lastLogTerm);
-        out.writeInt(lastLogIndex);
+        out.writeLong(lastLogIndex);
     }
 
     @Override
@@ -68,13 +72,13 @@ public class VoteRequest implements IdentifiedDataSerializable {
         term = in.readInt();
         candidate = in.readObject();
         lastLogTerm = in.readInt();
-        lastLogIndex = in.readInt();
+        lastLogIndex = in.readLong();
     }
 
     @Override
     public String toString() {
-        return "VoteRequest{" + "candidate=" + candidate + ", term=" + term + ", lastLogTerm=" + lastLogTerm + ", lastLogIndex="
-                + lastLogIndex + '}';
+        return "VoteRequest{" + "candidate=" + candidate + ", term=" + term + ", lastLogTerm=" + lastLogTerm
+                + ", lastLogIndex=" + lastLogIndex + '}';
     }
 
 }

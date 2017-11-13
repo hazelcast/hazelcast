@@ -4,17 +4,21 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
+import com.hazelcast.raft.impl.dto.InstallSnapshot;
+import com.hazelcast.raft.impl.dto.PreVoteRequest;
+import com.hazelcast.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
-import com.hazelcast.raft.impl.operation.AppendFailureResponseOp;
-import com.hazelcast.raft.impl.operation.AppendRequestOp;
-import com.hazelcast.raft.impl.operation.AppendSuccessResponseOp;
-import com.hazelcast.raft.impl.operation.VoteRequestOp;
-import com.hazelcast.raft.impl.operation.VoteResponseOp;
 import com.hazelcast.raft.impl.log.LogEntry;
+import com.hazelcast.raft.impl.log.SnapshotEntry;
+import com.hazelcast.raft.impl.operation.ApplyRaftGroupMembersOp;
+import com.hazelcast.raft.impl.operation.NopEntryOp;
+import com.hazelcast.raft.impl.operation.RestoreSnapshotOp;
+import com.hazelcast.raft.operation.TerminateRaftGroupOp;
 
 public final class RaftDataSerializerHook implements DataSerializerHook {
 
@@ -23,18 +27,22 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(RAFT_DS_FACTORY, RAFT_DS_FACTORY_ID);
 
-    public static final int VOTE_REQUEST = 1;
-    public static final int VOTE_REQUEST_OP = 2;
-    public static final int VOTE_RESPONSE = 3;
-    public static final int VOTE_RESPONSE_OP = 4;
-    public static final int APPEND_REQUEST = 5;
-    public static final int APPEND_REQUEST_OP = 6;
-    public static final int APPEND_SUCCESS_RESPONSE = 7;
-    public static final int APPEND_SUCCESS_RESPONSE_OP = 8;
+    public static final int GROUP_ID = 1;
+    public static final int ENDPOINT = 2;
+    public static final int PRE_VOTE_REQUEST = 3;
+    public static final int PRE_VOTE_RESPONSE = 4;
+    public static final int VOTE_REQUEST = 5;
+    public static final int VOTE_RESPONSE = 6;
+    public static final int APPEND_REQUEST = 7;
+    public static final int APPEND_SUCCESS_RESPONSE = 8;
     public static final int APPEND_FAILURE_RESPONSE = 9;
-    public static final int APPEND_FAILURE_RESPONSE_OP = 10;
-    public static final int LOG_ENTRY = 11;
-    public static final int ENDPOINT = 12;
+    public static final int LOG_ENTRY = 10;
+    public static final int SNAPSHOT_ENTRY = 11;
+    public static final int INSTALL_SNAPSHOT = 12;
+    public static final int RESTORE_SNAPSHOT_OP = 13;
+    public static final int TERMINATE_RAFT_GROUP_OP = 14;
+    public static final int APPLY_RAFT_GROUP_MEMBERS_OP = 15;
+    public static final int NOP_ENTRY_OP = 16;
 
     @Override
     public int getFactoryId() {
@@ -47,30 +55,39 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case VOTE_REQUEST:
-                        return new VoteRequest();
-                    case VOTE_REQUEST_OP:
-                        return new VoteRequestOp();
-                    case VOTE_RESPONSE:
-                        return new VoteResponse();
-                    case VOTE_RESPONSE_OP:
-                        return new VoteResponseOp();
-                    case APPEND_REQUEST:
-                        return new AppendRequest();
-                    case APPEND_REQUEST_OP:
-                        return new AppendRequestOp();
-                    case APPEND_SUCCESS_RESPONSE:
-                        return new AppendSuccessResponse();
-                    case APPEND_SUCCESS_RESPONSE_OP:
-                        return new AppendSuccessResponseOp();
-                    case APPEND_FAILURE_RESPONSE:
-                        return new AppendFailureResponse();
-                    case APPEND_FAILURE_RESPONSE_OP:
-                        return new AppendFailureResponseOp();
-                    case LOG_ENTRY:
-                        return new LogEntry();
+                    case GROUP_ID:
+                        return new RaftGroupIdImpl();
                     case ENDPOINT:
                         return new RaftEndpoint();
+                    case PRE_VOTE_REQUEST:
+                        return new PreVoteRequest();
+                    case PRE_VOTE_RESPONSE:
+                        return new PreVoteResponse();
+                    case VOTE_REQUEST:
+                        return new VoteRequest();
+                    case VOTE_RESPONSE:
+                        return new VoteResponse();
+                    case APPEND_REQUEST:
+                        return new AppendRequest();
+                    case APPEND_SUCCESS_RESPONSE:
+                        return new AppendSuccessResponse();
+                    case APPEND_FAILURE_RESPONSE:
+                        return new AppendFailureResponse();
+                    case LOG_ENTRY:
+                        return new LogEntry();
+                    case SNAPSHOT_ENTRY:
+                        return new SnapshotEntry();
+                    case INSTALL_SNAPSHOT:
+                        return new InstallSnapshot();
+                    case RESTORE_SNAPSHOT_OP:
+                        return new RestoreSnapshotOp();
+                    case TERMINATE_RAFT_GROUP_OP:
+                        return new TerminateRaftGroupOp();
+                    case APPLY_RAFT_GROUP_MEMBERS_OP:
+                        return new ApplyRaftGroupMembersOp();
+                    case NOP_ENTRY_OP:
+                        return new NopEntryOp();
+
                 }
                 throw new IllegalArgumentException("Undefined type: " + typeId);
             }

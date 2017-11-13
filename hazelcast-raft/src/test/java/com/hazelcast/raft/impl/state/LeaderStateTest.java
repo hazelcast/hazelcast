@@ -1,7 +1,6 @@
 package com.hazelcast.raft.impl.state;
 
 import com.hazelcast.raft.impl.RaftEndpoint;
-import com.hazelcast.raft.impl.state.LeaderState;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,9 +47,9 @@ public class LeaderStateTest {
             assertEquals(lastLogIndex + 1, state.getNextIndex(endpoint));
         }
 
-        Collection<Integer> matchIndices = state.matchIndices();
+        Collection<Long> matchIndices = state.matchIndices();
         assertEquals(remoteEndpoints.size(), matchIndices.size());
-        for (int index : matchIndices) {
+        for (long index : matchIndices) {
             assertEquals(0, index);
         }
     }
@@ -72,20 +71,20 @@ public class LeaderStateTest {
 
     @Test
     public void test_matchIndex() throws Exception {
-        Map<RaftEndpoint, Integer> indices = new HashMap<RaftEndpoint, Integer>();
+        Map<RaftEndpoint, Long> indices = new HashMap<RaftEndpoint, Long>();
         for (RaftEndpoint endpoint : remoteEndpoints) {
-            int index = RandomPicker.getInt(100);
+            long index = RandomPicker.getInt(100);
             state.setMatchIndex(endpoint, index);
             indices.put(endpoint, index);
         }
 
         for (RaftEndpoint endpoint : remoteEndpoints) {
-            int index = indices.get(endpoint);
+            long index = indices.get(endpoint);
             assertEquals(index, state.getMatchIndex(endpoint));
         }
 
-        Collection<Integer> matchIndices = new HashSet<Integer>(state.matchIndices());
-        assertEquals(new HashSet<Integer>(indices.values()), matchIndices);
+        Collection<Long> matchIndices = new HashSet<Long>(state.matchIndices());
+        assertEquals(new HashSet<Long>(indices.values()), matchIndices);
     }
 
 }

@@ -1,32 +1,37 @@
 package com.hazelcast.raft.impl.testing;
 
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.raft.RaftOperation;
+import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.raft.RaftConfig;
+import com.hazelcast.raft.SnapshotAwareService;
 import com.hazelcast.raft.impl.RaftEndpoint;
 import com.hazelcast.raft.impl.RaftIntegration;
-import com.hazelcast.raft.impl.RaftNode;
+import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
+import com.hazelcast.raft.impl.dto.InstallSnapshot;
+import com.hazelcast.raft.impl.dto.PreVoteRequest;
+import com.hazelcast.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
-import com.hazelcast.spi.TaskScheduler;
-import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
+import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
+import com.hazelcast.raft.operation.RaftOperation;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.version.MemberVersion;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.nullValue;
@@ -35,35 +40,43 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * In-memory {@link RaftIntegration} implementation for Raft core testing. Creates a single thread executor
+ * to execute/schedule tasks and operations.
+ * <p>
+ * Additionally provides a mechanism to define custom drop/allow rules for specific message types and endpoints.
  */
 public class LocalRaftIntegration implements RaftIntegration {
 
     private final RaftEndpoint localEndpoint;
-    private final Map<String, Object> services;
-    private final StripedExecutor stripedExecutor;
+    private final RaftConfig raftConfig;
+    private final SnapshotAwareService service;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final ConcurrentMap<RaftEndpoint, RaftNode> nodes = new ConcurrentHashMap<RaftEndpoint, RaftNode>();
+    private final ConcurrentMap<RaftEndpoint, RaftNodeImpl> nodes = new ConcurrentHashMap<RaftEndpoint, RaftNodeImpl>();
     private final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final LoggingServiceImpl loggingService;
 
     private final Set<EndpointDropEntry> endpointDropRules = Collections.newSetFromMap(new ConcurrentHashMap<EndpointDropEntry, Boolean>());
     private final Set<Class> dropAllRules = Collections.newSetFromMap(new ConcurrentHashMap<Class, Boolean>());
 
-    public LocalRaftIntegration(RaftEndpoint localEndpoint, Map<String, Object> services) {
+    public LocalRaftIntegration(RaftEndpoint localEndpoint, RaftConfig raftConfig, SnapshotAwareService service) {
         this.localEndpoint = localEndpoint;
-        this.services = services;
-        this.stripedExecutor = new StripedExecutor(Logger.getLogger("executor"), localEndpoint.getUid(), 1, Integer.MAX_VALUE);
+        this.raftConfig = raftConfig;
+        this.service = service;
+        this.loggingService = new LoggingServiceImpl("dev", "log4j2", BuildInfoProvider.getBuildInfo());
+        loggingService.setThisMember(getThisMember(localEndpoint));
     }
 
-    public void discoverNode(RaftNode node) {
+    private MemberImpl getThisMember(RaftEndpoint localEndpoint) {
+        return new MemberImpl(localEndpoint.getAddress(), MemberVersion.of(Versions.CURRENT_CLUSTER_VERSION.toString()), true, localEndpoint.getUid());
+    }
+
+    public void discoverNode(RaftNodeImpl node) {
         assertNotEquals(localEndpoint, node.getLocalEndpoint());
-        RaftNode old = nodes.putIfAbsent(node.getLocalEndpoint(), node);
+        RaftNodeImpl old = nodes.putIfAbsent(node.getLocalEndpoint(), node);
         assertThat(old, anyOf(nullValue(), sameInstance(node)));
     }
 
-    public boolean removeNode(RaftNode node) {
+    public boolean removeNode(RaftNodeImpl node) {
         assertNotEquals(localEndpoint, node.getLocalEndpoint());
         return nodes.remove(node.getLocalEndpoint(), node);
     }
@@ -73,27 +86,27 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public TaskScheduler getTaskScheduler() {
-        return new DelegatingTaskScheduler(scheduledExecutor, executor);
+    public void execute(Runnable task) {
+        scheduledExecutor.execute(task);
     }
 
     @Override
-    public Executor getExecutor() {
-        return executor;
+    public void schedule(Runnable task, long delay, TimeUnit timeUnit) {
+        scheduledExecutor.schedule(task, delay, timeUnit);
+    }
+
+    @Override
+    public SimpleCompletableFuture newCompletableFuture() {
+        return new SimpleCompletableFuture(scheduledExecutor, loggingService.getLogger(getClass()));
     }
 
     @Override
     public ILogger getLogger(String name) {
-        return Logger.getLogger(name);
+        return loggingService.getLogger(name);
     }
 
     @Override
-    public ILogger getLogger(Class clazz) {
-        return Logger.getLogger(clazz);
-    }
-
-    @Override
-    public boolean isJoined() {
+    public boolean isReady() {
         return true;
     }
 
@@ -103,9 +116,39 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
+    public boolean send(PreVoteRequest request, RaftEndpoint target) {
+        assertNotEquals(localEndpoint, target);
+        RaftNodeImpl node = nodes.get(target);
+        if (node == null) {
+            return false;
+        }
+        if (shouldDrop(request, target)) {
+            return true;
+        }
+
+        node.handlePreVoteRequest(request);
+        return true;
+    }
+
+    @Override
+    public boolean send(PreVoteResponse response, RaftEndpoint target) {
+        assertNotEquals(localEndpoint, target);
+        RaftNodeImpl node = nodes.get(target);
+        if (node == null) {
+            return false;
+        }
+        if (shouldDrop(response, target)) {
+            return true;
+        }
+
+        node.handlePreVoteResponse(response);
+        return true;
+    }
+
+    @Override
     public boolean send(VoteRequest request, RaftEndpoint target) {
         assertNotEquals(localEndpoint, target);
-        RaftNode node = nodes.get(target);
+        RaftNodeImpl node = nodes.get(target);
         if (node == null) {
             return false;
         }
@@ -120,7 +163,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     @Override
     public boolean send(VoteResponse response, RaftEndpoint target) {
         assertNotEquals(localEndpoint, target);
-        RaftNode node = nodes.get(target);
+        RaftNodeImpl node = nodes.get(target);
         if (node == null) {
             return false;
         }
@@ -135,7 +178,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     @Override
     public boolean send(AppendRequest request, RaftEndpoint target) {
         assertNotEquals(localEndpoint, target);
-        RaftNode node = nodes.get(target);
+        RaftNodeImpl node = nodes.get(target);
         if (node == null) {
             return false;
         }
@@ -151,7 +194,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     @Override
     public boolean send(AppendSuccessResponse response, RaftEndpoint target) {
         assertNotEquals(localEndpoint, target);
-        RaftNode node = nodes.get(target);
+        RaftNodeImpl node = nodes.get(target);
         if (node == null) {
             return false;
         }
@@ -166,7 +209,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     @Override
     public boolean send(AppendFailureResponse response, RaftEndpoint target) {
         assertNotEquals(localEndpoint, target);
-        RaftNode node = nodes.get(target);
+        RaftNodeImpl node = nodes.get(target);
         if (node == null) {
             return false;
         }
@@ -178,19 +221,32 @@ public class LocalRaftIntegration implements RaftIntegration {
         return true;
     }
 
+    @Override
+    public boolean send(InstallSnapshot request, RaftEndpoint target) {
+        assertNotEquals(localEndpoint, target);
+        RaftNodeImpl node = nodes.get(target);
+        if (node == null) {
+            return false;
+        }
+        if (shouldDrop(request, target)) {
+            return true;
+        }
+
+        node.handleInstallSnapshot(request);
+        return true;
+    }
+
     private boolean shouldDrop(Object message, RaftEndpoint target) {
         return dropAllRules.contains(message.getClass())
                 || endpointDropRules.contains(new EndpointDropEntry(message.getClass(), target));
     }
 
     @Override
-    public Object runOperation(RaftOperation operation, int commitIndex) {
+    public Object runOperation(RaftOperation operation, long commitIndex) {
         if (operation == null) {
             return null;
         }
-        if (operation.getServiceName() != null) {
-            operation.setService(services.get(operation.getServiceName()));
-        }
+        operation.setService(service);
         operation.setCommitIndex(commitIndex);
         try {
             operation.beforeRun();
@@ -233,22 +289,16 @@ public class LocalRaftIntegration implements RaftIntegration {
         endpointDropRules.clear();
     }
 
-    public <T> T getService(String serviceName) {
-        return (T) services.get(serviceName);
+    public <T extends SnapshotAwareService> T getService() {
+        return (T) service;
     }
 
     void shutdown() {
-        stripedExecutor.shutdown();
         scheduledExecutor.shutdown();
-        executor.shutdown();
     }
 
-    StripedExecutor getStripedExecutor() {
-        return stripedExecutor;
-    }
-
-    boolean isAlive() {
-        return stripedExecutor.isLive();
+    boolean isShutdown() {
+        return scheduledExecutor.isShutdown();
     }
 
     private static class EndpointDropEntry {

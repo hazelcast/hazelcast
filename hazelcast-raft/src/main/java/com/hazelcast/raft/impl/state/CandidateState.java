@@ -6,8 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Mutable state maintained by each candidate during pre-voting & voting phases.
  */
 public class CandidateState {
 
@@ -18,18 +17,33 @@ public class CandidateState {
         this.majority = majority;
     }
 
+    /**
+     * Persists vote for the endpoint during election.
+     * This method is idempotent, multiple votes from the same point are counted only once.
+     *
+     * @return false if endpoint is already voted, true otherwise
+     */
     public boolean grantVote(RaftEndpoint address) {
         return voters.add(address);
     }
 
+    /**
+     * Returns the number of expected majority of the votes.
+     */
     public int majority() {
         return majority;
     }
 
+    /**
+     * Returns current granted number of the votes.
+     */
     public int voteCount() {
         return voters.size();
     }
 
+    /**
+     * Returns true if majority of the votes are granted, false otherwise.
+     */
     public boolean isMajorityGranted() {
         return voteCount() >= majority();
     }

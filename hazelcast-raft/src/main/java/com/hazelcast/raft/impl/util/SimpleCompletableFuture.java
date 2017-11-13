@@ -6,8 +6,10 @@ import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
- * TODO: Javadoc Pending...
+ * A simple {@link AbstractCompletableFuture} implementation that allows completing
+ * via public {@link #setResult(Object)} method.
  *
+ * @param <T> The result type returned by this future
  */
 public class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T> {
 

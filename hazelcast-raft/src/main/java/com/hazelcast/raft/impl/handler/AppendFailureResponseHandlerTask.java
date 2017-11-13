@@ -1,37 +1,37 @@
 package com.hazelcast.raft.impl.handler;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.raft.impl.state.LeaderState;
-import com.hazelcast.raft.impl.RaftNode;
+import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.RaftRole;
-import com.hazelcast.raft.impl.state.RaftState;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.raft.impl.state.LeaderState;
+import com.hazelcast.raft.impl.state.RaftState;
 
-public class AppendFailureResponseHandlerTask implements StripedRunnable {
+/**
+ * Handles {@link AppendFailureResponse} sent by {@link AppendRequestHandlerTask} after an append-entries request
+ * or {@link InstallSnapshotHandlerTask} after an install snapshot request.
+ * <p>
+ * Decrements {@code nextIndex} of the follower by 1 if the response is valid.
+ * <p>
+ * See <i>5.3 Log replication</i> section of <i>In Search of an Understandable Consensus Algorithm</i>
+ * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
+ *
+ * @see com.hazelcast.raft.impl.dto.AppendRequest
+ * @see com.hazelcast.raft.impl.dto.AppendSuccessResponse
+ * @see com.hazelcast.raft.impl.dto.AppendFailureResponse
+ */
+public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTask {
 
-    private final RaftNode raftNode;
     private final AppendFailureResponse resp;
-    private final ILogger logger;
 
-    public AppendFailureResponseHandlerTask(RaftNode raftNode, AppendFailureResponse response) {
-        this.raftNode = raftNode;
+    public AppendFailureResponseHandlerTask(RaftNodeImpl raftNode, AppendFailureResponse response) {
+        super(raftNode);
         this.resp = response;
-        this.logger = raftNode.getLogger(getClass());
     }
 
     @Override
-    public int getKey() {
-        return raftNode.getStripeKey();
-    }
-
-    @Override
-    public void run() {
+    protected void handleResponse() {
         RaftState state = raftNode.state();
-        if (!state.isKnownEndpoint(resp.follower())) {
-            logger.warning(resp + " is ignored since sender is unknown to us");
-            return;
-        }
 
         if (state.role() != RaftRole.LEADER) {
             logger.warning(resp + " is ignored since we are not LEADER.");
@@ -42,7 +42,7 @@ public class AppendFailureResponseHandlerTask implements StripedRunnable {
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
             logger.info("Demoting to FOLLOWER after " + resp + " from current term: " + state.term());
             state.toFollower(resp.term());
-            raftNode.invalidateFuturesFrom(state.commitIndex() + 1);
+            raftNode.printMemberState();
             return;
         }
 
@@ -57,8 +57,8 @@ public class AppendFailureResponseHandlerTask implements StripedRunnable {
 
     private boolean updateNextIndex(RaftState state) {
         LeaderState leaderState = state.leaderState();
-        int nextIndex = leaderState.getNextIndex(resp.follower());
-        int matchIndex = leaderState.getMatchIndex(resp.follower());
+        long nextIndex = leaderState.getNextIndex(resp.follower());
+        long matchIndex = leaderState.getMatchIndex(resp.follower());
 
         if (resp.expectedNextIndex() == nextIndex) {
             // this is the response of the request I have sent for this nextIndex
@@ -70,12 +70,17 @@ public class AppendFailureResponseHandlerTask implements StripedRunnable {
             }
 
             if (logger.isFineEnabled()) {
-                logger.info("Updating next index: " + nextIndex + " for follower: " + resp.follower());
+                logger.fine("Updating next index: " + nextIndex + " for follower: " + resp.follower());
             }
             leaderState.setNextIndex(resp.follower(), nextIndex);
             return true;
         }
 
         return false;
+    }
+
+    @Override
+    protected RaftEndpoint senderEndpoint() {
+        return resp.follower();
     }
 }

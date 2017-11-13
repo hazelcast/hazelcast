@@ -9,8 +9,12 @@ import com.hazelcast.raft.impl.RaftEndpoint;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * Struct for response to VoteRequest RPC.
+ * <p>
+ * See <i>5.2 Leader election</i> section of <i>In Search of an Understandable Consensus Algorithm</i>
+ * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
  *
+ * @see VoteRequest
  */
 public class VoteResponse implements IdentifiedDataSerializable {
 

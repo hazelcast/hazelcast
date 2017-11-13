@@ -539,7 +539,6 @@ public class Node {
         }
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown();

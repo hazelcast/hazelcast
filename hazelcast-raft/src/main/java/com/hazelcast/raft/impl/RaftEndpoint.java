@@ -4,14 +4,30 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.raft.RaftMember;
+import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * {@code RaftEndpoint} represents a member in Raft group.
+ * Each endpoint must have a unique address and id in the group.
  */
 public class RaftEndpoint implements IdentifiedDataSerializable {
+
+    public static List<RaftEndpoint> parseEndpoints(List<RaftMember> members) throws UnknownHostException {
+        List<RaftEndpoint> endpoints = new ArrayList<RaftEndpoint>(members.size());
+        for (RaftMember member : members) {
+            AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(member.getAddress());
+            Address address = new Address(addressHolder.getAddress(), addressHolder.getPort());
+            address.setScopeId(addressHolder.getScopeId());
+            endpoints.add(new RaftEndpoint(member.getId(), address));
+        }
+        return endpoints;
+    }
 
     private String uid;
     private Address address;

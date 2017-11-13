@@ -1,0 +1,2 @@
+com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook
+com.hazelcast.raft.service.atomiclong.AtomicLongDataSerializerHook

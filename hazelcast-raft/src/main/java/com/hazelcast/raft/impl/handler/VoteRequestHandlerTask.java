@@ -1,39 +1,45 @@
 package com.hazelcast.raft.impl.handler;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.raft.impl.RaftEndpoint;
-import com.hazelcast.raft.impl.log.RaftLog;
-import com.hazelcast.raft.impl.RaftNode;
+import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.RaftRole;
-import com.hazelcast.raft.impl.state.RaftState;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.raft.impl.log.RaftLog;
+import com.hazelcast.raft.impl.state.RaftState;
+import com.hazelcast.raft.impl.task.RaftNodeAwareTask;
+import com.hazelcast.util.Clock;
 
 /**
- * TODO: Javadoc Pending...
+ * Handles {@link VoteRequest} sent by a candidate. Responds with a {@link VoteResponse} to the sender.
+ * Leader election is initiated by {@link com.hazelcast.raft.impl.task.LeaderElectionTask}.
+ * <p>
+ * See <i>5.2 Leader election</i> section of <i>In Search of an Understandable Consensus Algorithm</i>
+ * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
  *
+ * @see VoteRequest
+ * @see VoteResponse
+ * @see com.hazelcast.raft.impl.task.LeaderElectionTask
  */
-public class VoteRequestHandlerTask implements StripedRunnable {
-    private final ILogger logger;
-    private RaftNode raftNode;
+public class VoteRequestHandlerTask extends RaftNodeAwareTask implements Runnable {
     private final VoteRequest req;
 
-    public VoteRequestHandlerTask(RaftNode raftNode, VoteRequest req) {
-        this.raftNode = raftNode;
+    public VoteRequestHandlerTask(RaftNodeImpl raftNode, VoteRequest req) {
+        super(raftNode);
         this.req = req;
-        this.logger = raftNode.getLogger(getClass());
     }
 
     @Override
-    public void run() {
+    protected void innerRun() {
         RaftState state = raftNode.state();
-        if (!state.isKnownEndpoint(req.candidate())) {
-            logger.warning("Ignored " + req + " since candidate is unknown to us");
+        RaftEndpoint localEndpoint = raftNode.getLocalEndpoint();
+
+        // Reply false if last AppendEntries call was received less than election timeout ago (leader stickiness)
+        if (raftNode.lastAppendEntriesTimestamp() > Clock.currentTimeMillis() - raftNode.getLeaderElectionTimeoutInMillis()) {
+            logger.info("Rejecting " + req + " since received append entries recently.");
+            raftNode.send(new VoteResponse(localEndpoint, state.term(), false), req.candidate());
             return;
         }
-
-        RaftEndpoint localEndpoint = raftNode.getLocalEndpoint();
 
         // Reply false if term < currentTerm (§5.1)
         if (state.term() > req.term()) {
@@ -51,6 +57,7 @@ public class VoteRequestHandlerTask implements StripedRunnable {
             }
 
             state.toFollower(req.term());
+            raftNode.printMemberState();
         }
 
         if (state.leader() != null && !req.candidate().equals(state.leader())) {
@@ -71,14 +78,14 @@ public class VoteRequestHandlerTask implements StripedRunnable {
         }
 
         RaftLog raftLog = state.log();
-        if (raftLog.lastLogTerm() > req.lastLogTerm()) {
-            logger.info("Rejecting " + req + " since our last log term: " + raftLog.lastLogTerm() + " is greater");
+        if (raftLog.lastLogOrSnapshotTerm() > req.lastLogTerm()) {
+            logger.info("Rejecting " + req + " since our last log term: " + raftLog.lastLogOrSnapshotTerm() + " is greater");
             raftNode.send(new VoteResponse(localEndpoint, req.term(), false), req.candidate());
             return;
         }
 
-        if (raftLog.lastLogTerm() == req.lastLogTerm() && raftLog.lastLogIndex() > req.lastLogIndex()) {
-            logger.info("Rejecting " + req + " since our last log index: " + raftLog.lastLogIndex() + " is greater");
+        if (raftLog.lastLogOrSnapshotTerm() == req.lastLogTerm() && raftLog.lastLogOrSnapshotIndex() > req.lastLogIndex()) {
+            logger.info("Rejecting " + req + " since our last log index: " + raftLog.lastLogOrSnapshotIndex() + " is greater");
             raftNode.send(new VoteResponse(localEndpoint, req.term(), false), req.candidate());
             return;
         }
@@ -87,10 +94,5 @@ public class VoteRequestHandlerTask implements StripedRunnable {
         state.persistVote(req.term(), req.candidate());
 
         raftNode.send(new VoteResponse(localEndpoint, req.term(), true), req.candidate());
-    }
-
-    @Override
-    public int getKey() {
-        return raftNode.getStripeKey();
     }
 }

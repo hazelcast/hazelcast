@@ -3,30 +3,35 @@ package com.hazelcast.raft.impl.dto;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.log.LogEntry;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * Struct for AppendEntries RPC.
+ * <p>
+ * See <i>5.3 Log replication</i> section of <i>In Search of an Understandable Consensus Algorithm</i>
+ * paper by <i>Diego Ongaro</i> and <i>John Ousterhout</i>.
+ * <p>
+ * Invoked by leader to replicate log entries (§5.3); also used as heartbeat (§5.2).
  */
 public class AppendRequest implements IdentifiedDataSerializable {
 
     private RaftEndpoint leader;
     private int term;
     private int prevLogTerm;
-    private int prevLogIndex;
-    private int leaderCommitIndex;
+    private long prevLogIndex;
+    private long leaderCommitIndex;
     private LogEntry[] entries;
 
     public AppendRequest() {
     }
 
-    public AppendRequest(RaftEndpoint leader, int term, int prevLogTerm, int prevLogIndex, int leaderCommitIndex, LogEntry[] entries) {
+    public AppendRequest(RaftEndpoint leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
+            LogEntry[] entries) {
         this.term = term;
         this.leader = leader;
         this.prevLogTerm = prevLogTerm;
@@ -47,11 +52,11 @@ public class AppendRequest implements IdentifiedDataSerializable {
         return prevLogTerm;
     }
 
-    public int prevLogIndex() {
+    public long prevLogIndex() {
         return prevLogIndex;
     }
 
-    public int leaderCommitIndex() {
+    public long leaderCommitIndex() {
         return leaderCommitIndex;
     }
 
@@ -78,8 +83,8 @@ public class AppendRequest implements IdentifiedDataSerializable {
         out.writeInt(term);
         out.writeObject(leader);
         out.writeInt(prevLogTerm);
-        out.writeInt(prevLogIndex);
-        out.writeInt(leaderCommitIndex);
+        out.writeLong(prevLogIndex);
+        out.writeLong(leaderCommitIndex);
 
         out.writeInt(entries.length);
         for (LogEntry entry : entries) {
@@ -92,8 +97,8 @@ public class AppendRequest implements IdentifiedDataSerializable {
         term = in.readInt();
         leader = in.readObject();
         prevLogTerm = in.readInt();
-        prevLogIndex = in.readInt();
-        leaderCommitIndex = in.readInt();
+        prevLogIndex = in.readLong();
+        leaderCommitIndex = in.readLong();
 
         int len = in.readInt();
         entries = new LogEntry[len];
@@ -104,8 +109,9 @@ public class AppendRequest implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "AppendRequest{" + "leader=" + leader + ", term=" + term + ", prevLogTerm=" + prevLogTerm + ", prevLogIndex="
-                + prevLogIndex + ", leaderCommitIndex=" + leaderCommitIndex + ", entries=" + Arrays.toString(entries) + '}';
+        return "AppendRequest{" + "leader=" + leader + ", term=" + term + ", prevLogTerm=" + prevLogTerm
+                + ", prevLogIndex=" + prevLogIndex + ", leaderCommitIndex=" + leaderCommitIndex + ", entries=" + Arrays
+                .toString(entries) + '}';
     }
 
 }
