@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.util.EmptyStatement;
 
+import java.util.Locale;
 import java.util.Properties;
 /**
  * Configuration for Login Module
@@ -60,7 +61,7 @@ public class LoginModuleConfig {
 
         public static LoginModuleUsage get(String v) {
             try {
-                return LoginModuleUsage.valueOf(v.toUpperCase());
+                return LoginModuleUsage.valueOf(v.toUpperCase(Locale.ROOT));
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }
