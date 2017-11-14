@@ -44,6 +44,7 @@ import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -79,6 +80,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+@Repeat(10)
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MembershipUpdateTest extends HazelcastTestSupport {
@@ -294,20 +296,43 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             }
         });
 
-        instances.get(instances.length() - 1).shutdown();
-        for (int i = 0; i < instances.length() - 1; i++) {
-            HazelcastInstance instance = instances.get(i);
-            assertClusterSizeEventually(instances.length() - 1, instance);
+        for (int i = 0; i < instances.length(); i++) {
+            if (getNode(instances.get(i)).isMaster()) {
+                continue;
+            }
+
+            instances.getAndSet(i, null).shutdown();
+            break;
         }
 
-        MemberMap referenceMemberMap = getMemberMap(instances.get(0));
+        for (int i = 0; i < instances.length(); i++) {
+            HazelcastInstance instance = instances.get(i);
+            if (instance != null) {
+                assertClusterSizeEventually(instances.length() - 1, instance);
+            }
+        }
+
+        HazelcastInstance master = null;
+        for (int i = 0; i < instances.length(); i++) {
+            HazelcastInstance instance = instances.get(i);
+            if (instance != null && getNode(instance).isMaster()) {
+                master = instance;
+                break;
+            }
+        }
+
+        assertNotNull(master);
+
+        MemberMap referenceMemberMap = getMemberMap(master);
         // version = number of started members + 1 removal
         assertEquals(instances.length() + 1, referenceMemberMap.getVersion());
 
-        for (int i = 0; i < instances.length() - 1; i++) {
+        for (int i = 0; i < instances.length(); i++) {
             HazelcastInstance instance = instances.get(i);
-            MemberMap memberMap = getMemberMap(instance);
-            assertMemberViewsAreSame(referenceMemberMap, memberMap);
+            if (instance != null) {
+                MemberMap memberMap = getMemberMap(instance);
+                assertMemberViewsAreSame(referenceMemberMap, memberMap);
+            }
         }
     }
 
@@ -335,15 +360,33 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             }
         });
 
-        instances.get(instances.length() - 1).shutdown();
-        instances.set(instances.length() - 1, factory.newHazelcastInstance());
+        for (int i = 0; i < instances.length(); i++) {
+            if (getNode(instances.get(i)).isMaster()) {
+                continue;
+            }
+
+            instances.get(i).shutdown();
+            instances.set(i, factory.newHazelcastInstance());
+            break;
+        }
 
         for (int i = 0; i < instances.length(); i++) {
             HazelcastInstance instance = instances.get(i);
             assertClusterSizeEventually(instances.length(), instance);
         }
 
-        MemberMap referenceMemberMap = getMemberMap(instances.get(0));
+        HazelcastInstance master = null;
+        for (int i = 0; i < instances.length(); i++) {
+            HazelcastInstance instance = instances.get(i);
+            if (getNode(instances.get(i)).isMaster()) {
+                master = instance;
+                break;
+            }
+        }
+
+        assertNotNull(master);
+
+        MemberMap referenceMemberMap = getMemberMap(master);
         // version = number of started members + 1 removal + 1 start
         assertEquals(instances.length() + 2, referenceMemberMap.getVersion());
 

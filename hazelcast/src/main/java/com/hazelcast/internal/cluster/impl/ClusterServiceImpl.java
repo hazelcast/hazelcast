@@ -31,7 +31,6 @@ import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
@@ -69,7 +68,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -78,6 +76,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -241,12 +240,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public MembersView handleMastershipClaim(Address candidateAddress, String candidateUuid) {
-        // verify candidateAddress is not me DONE
-        // verify I am not master DONE
-        // verify candidateAddress is a valid member with its uuid
-        // verify I suspect everyone before the candidateAddress
-        // verify candidateAddress is not suspected.
-
         checkNotNull(candidateAddress);
         checkNotNull(candidateUuid);
         checkFalse(getThisAddress().equals(candidateAddress), "cannot accept my own mastership claim!");
@@ -277,8 +270,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
 
             setMasterAddress(masterCandidate.getAddress());
-            Set<MemberImpl> members = memberMap.tailMemberSet(masterCandidate, true);
-            MembersView response = MembersView.createNew(memberMap.getVersion(), members);
+
+            MembersView response = memberMap.toTailMembersView(masterCandidate, true);
 
             logger.warning("Mastership of " + candidateAddress + " is accepted. Response: " + response);
 
@@ -330,7 +323,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         boolean liteMember = localMember.isLiteMember();
         Map<String, Object> memberAttributes = localMember.getAttributes();
         localMember = new MemberImpl(address, localMember.getVersion(), true, newUuid, memberAttributes,
-                liteMember, node.hazelcastInstance);
+                liteMember, localMember.getMemberListJoinVersion(), node.hazelcastInstance);
         node.loggingService.setThisMember(localMember);
     }
 
@@ -384,7 +377,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
             membershipManager.updateMembers(membersView);
             clusterHeartbeatManager.heartbeat();
-
             setJoined(true);
 
             return true;
@@ -495,14 +487,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
 
         return true;
-    }
-
-    private static Set<MemberInfo> createMemberInfoSet(Collection<MemberImpl> members) {
-        Set<MemberInfo> memberInfos = new HashSet<MemberInfo>();
-        for (MemberImpl member : members) {
-            memberInfos.add(new MemberInfo(member));
-        }
-        return memberInfos;
     }
 
     public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, Object value) {
@@ -899,6 +883,23 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 options, partitionStateVersion, false);
     }
 
+    @Override
+    public int getMemberListJoinVersion() {
+        lock.lock();
+        try {
+            if (!isJoined()) {
+                throw new IllegalStateException("Member list join version is not available when not joined");
+            } else if (getClusterVersion().isLessThan(V3_10)) {
+                String msg = "Member list join version is not available with the cluster version less than 3.10";
+                throw new IllegalStateException(msg);
+            }
+
+            return localMember.getMemberListJoinVersion();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     void addMembersRemovedInNotJoinableState(Collection<MemberImpl> members) {
         membershipManager.addMembersRemovedInNotJoinableState(members);
     }
@@ -1009,7 +1010,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
 
             localMember = new MemberImpl(member.getAddress(), member.getVersion(), true, member.getUuid(),
-                    member.getAttributes(), false, node.hazelcastInstance);
+                    member.getAttributes(), false, member.getMemberListJoinVersion(), node.hazelcastInstance);
         } finally {
             lock.unlock();
         }

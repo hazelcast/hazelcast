@@ -47,7 +47,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.ClusterState.FROZEN;
+import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
+import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -215,165 +217,17 @@ public abstract class AbstractJoiner implements Joiner {
                 + node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
     }
 
-    @SuppressWarnings({"checkstyle:returncount", "checkstyle:npathcomplexity"})
-    protected boolean shouldMerge(SplitBrainJoinMessage joinMessage) {
-        if (logger.isFineEnabled()) {
-            logger.fine("Should merge to: " + joinMessage);
-        }
-
-        if (joinMessage == null) {
-            return false;
-        }
-
-        if (!checkValidSplitBrainJoinMessage(joinMessage)) {
-            return false;
-        }
-
-        if (!checkCompatibleSplitBrainJoinMessage(joinMessage)) {
-            return false;
-        }
-
-        if (!checkMergeTargetIsNotMember(joinMessage)) {
-            return false;
-        }
-
-        if (!checkClusterStateAllowsJoinBeforeMerge(joinMessage)) {
-            return false;
-        }
-
-        if (!checkMembershipIntersectionSetEmpty(joinMessage)) {
-            return false;
-        }
-
-        int targetDataMemberCount = joinMessage.getDataMemberCount();
-        int currentDataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
-
-        if (targetDataMemberCount > currentDataMemberCount) {
-            logger.info("We are merging to " + joinMessage.getAddress()
-                    + ", because their data member count is bigger than ours ["
-                    + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
-            return true;
-        }
-
-        if (targetDataMemberCount < currentDataMemberCount) {
-            logger.info(joinMessage.getAddress() + " should merge to us "
-                    + ", because our data member count is bigger than theirs ["
-                    + (currentDataMemberCount + " > " + targetDataMemberCount) + ']');
-            return false;
-        }
-
-        // targetDataMemberCount == currentDataMemberCount
-        if (shouldMergeTo(node.getThisAddress(), joinMessage.getAddress())) {
-            logger.info("We are merging to " + joinMessage.getAddress()
-                    + ", both have the same data member count: " + currentDataMemberCount);
-            return true;
-        }
-
-        logger.info(joinMessage.getAddress() + " should merge to us "
-                + ", both have the same data member count: " + currentDataMemberCount);
-        return false;
-    }
-
-    private boolean checkValidSplitBrainJoinMessage(SplitBrainJoinMessage joinMessage) {
-        try {
-            if (!clusterJoinManager.validateJoinMessage(joinMessage)) {
-                logger.fine("Cannot process split brain merge message from " + joinMessage.getAddress()
-                        + ", since join-message could not be validated.");
-                return false;
-            }
-        } catch (Exception e) {
-            logger.fine("failure during validating join message", e);
-            return false;
-        }
-        return true;
-    }
-
-    private boolean checkCompatibleSplitBrainJoinMessage(SplitBrainJoinMessage joinMessage) {
-        if (!clusterService.getClusterVersion().equals(joinMessage.getClusterVersion())) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Should not merge to " + joinMessage.getAddress() + " because other cluster version is "
-                        + joinMessage.getClusterVersion() + " while this cluster version is "
-                        + clusterService.getClusterVersion());
-            }
-            return false;
-        }
-        return true;
-    }
-
-    private boolean checkMergeTargetIsNotMember(SplitBrainJoinMessage joinMessage) {
-        if (clusterService.getMember(joinMessage.getAddress()) != null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Should not merge to " + joinMessage.getAddress()
-                        + ", because it is already member of this cluster.");
-            }
-            return false;
-        }
-        return true;
-    }
-
-    private boolean checkClusterStateAllowsJoinBeforeMerge(SplitBrainJoinMessage joinMessage) {
-        ClusterState clusterState = clusterService.getClusterState();
-        if (!clusterState.isJoinAllowed()) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Should not merge to " + joinMessage.getAddress() + ", because this cluster is in "
-                        + clusterState + " state.");
-            }
-            return false;
-        }
-        return true;
-    }
-
-    private boolean checkMembershipIntersectionSetEmpty(SplitBrainJoinMessage joinMessage) {
-        Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
-        Address joinMessageAddress = joinMessage.getAddress();
-        if (targetMemberAddresses.contains(node.getThisAddress())) {
-            // Join request is coming from master of the split and it thinks that I am its member.
-            // This is partial split case and we want to convert it to a full split.
-            // So it should remove me from its cluster.
-            MembersViewMetadata membersViewMetadata = new MembersViewMetadata(joinMessageAddress, joinMessage.getUuid(),
-                    joinMessageAddress, joinMessage.getMemberListVersion());
-            clusterService.sendExplicitSuspicion(membersViewMetadata);
-            logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
-                    + ", because it thinks this-node as its member.");
-            return false;
-        }
-
-        Collection<Address> thisMemberAddresses = clusterService.getMemberAddresses();
-        for (Address address : thisMemberAddresses) {
-            if (targetMemberAddresses.contains(address)) {
-                logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
-                        + ", because it thinks " + address + " as its member. "
-                        + "But " + address + " is member of this cluster.");
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
-     * Determines whether this address should merge to target address and called when two sides are equal on all aspects.
-     * This is a pure function that must produce always the same output when called with the same parameters.
-     * This logic should not be changed, otherwise compatibility will be broken.
-     *
-     * @param thisAddress this address
-     * @param targetAddress target address
-     * @return true if this address should merge to target, false otherwise
+     * Sends a split brain join request to the target address and checks the response to see if this node should merge
+     * to the target address. If this node should be the merging side, the method returns the REQUEST which is sent to the target.
      */
-    private static boolean shouldMergeTo(Address thisAddress, Address targetAddress) {
-        String thisAddressStr = "[" + thisAddress.getHost() + "]:" + thisAddress.getPort();
-        String targetAddressStr = "[" + targetAddress.getHost() + "]:" + targetAddress.getPort();
-
-        if (thisAddressStr.equals(targetAddressStr)) {
-            throw new IllegalArgumentException("Addresses should be different! This: "
-                    + thisAddress + ", Target: " + targetAddress);
-        }
-
-        // Since strings are guaranteed to be different, result will always be non-zero.
-        int result = thisAddressStr.compareTo(targetAddressStr);
-        return result > 0;
+    protected final SplitBrainJoinMessage sendSplitBrainJoinMessageAndCheckResponse(Address target) {
+        SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
+        SplitBrainJoinMessage response = sendSplitBrainJoinMessage(target, request);
+        return (clusterService.getClusterJoinManager().shouldMerge(response) == LOCAL_NODE_SHOULD_MERGE) ? request : null;
     }
 
-    protected SplitBrainJoinMessage sendSplitBrainJoinMessage(Address target) {
+    private SplitBrainJoinMessage sendSplitBrainJoinMessage(Address target, SplitBrainJoinMessage request) {
         if (logger.isFineEnabled()) {
             logger.fine("Sending SplitBrainJoinMessage to " + target);
         }
@@ -397,7 +251,7 @@ public abstract class AbstractJoiner implements Joiner {
 
         NodeEngine nodeEngine = node.nodeEngine;
         Future future = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                new SplitBrainMergeValidationOp(node.createSplitBrainJoinMessage()), target)
+                new SplitBrainMergeValidationOp(request), target)
                 .setTryCount(1).invoke();
         try {
             return (SplitBrainJoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -415,10 +269,10 @@ public abstract class AbstractJoiner implements Joiner {
         tryCount.set(0);
     }
 
-    protected void startClusterMerge(final Address targetAddress) {
+    protected void startClusterMerge(Address targetAddress, int expectedMemberListVersion) {
         ClusterServiceImpl clusterService = node.clusterService;
 
-        if (!prepareClusterState(clusterService)) {
+        if (!prepareClusterState(clusterService, expectedMemberListVersion)) {
             return;
         }
 
@@ -450,7 +304,7 @@ public abstract class AbstractJoiner implements Joiner {
      * @param clusterService the cluster service used for state change
      * @return true if the cluster state was successfully prepared
      */
-    private boolean prepareClusterState(ClusterServiceImpl clusterService) {
+    private boolean prepareClusterState(ClusterServiceImpl clusterService, int expectedMemberListVersion) {
         if (!preCheckClusterState(clusterService)) {
             return false;
         }
@@ -458,21 +312,12 @@ public abstract class AbstractJoiner implements Joiner {
         long until = Clock.currentTimeMillis() + mergeNextRunDelayMs;
         while (Clock.currentTimeMillis() < until) {
             ClusterState clusterState = clusterService.getClusterState();
-            if (!clusterState.isMigrationAllowed() && !clusterState.isJoinAllowed()
-                    && clusterState != ClusterState.IN_TRANSITION) {
-                return true;
+            if (!clusterState.isMigrationAllowed() && !clusterState.isJoinAllowed() && clusterState != IN_TRANSITION) {
+                return (clusterService.getMemberListVersion() == expectedMemberListVersion);
             }
 
-            // If state is IN_TRANSITION, then skip trying to change state.
-            // Otherwise transaction will print noisy warning logs.
-            if (clusterState != ClusterState.IN_TRANSITION) {
-                try {
-                    clusterService.changeClusterState(ClusterState.FROZEN);
-                    return true;
-                } catch (Exception e) {
-                    String error = e.getClass().getName() + ": " + e.getMessage();
-                    logger.warning("While changing cluster state to FROZEN! " + error);
-                }
+            if (tryToChangeClusterState(clusterService, expectedMemberListVersion, clusterState)) {
+                return false;
             }
 
             try {
@@ -487,6 +332,45 @@ public abstract class AbstractJoiner implements Joiner {
 
         logger.warning("Could not change cluster state to FROZEN in time. "
                 + "Postponing merge process until next attempt.");
+        return false;
+    }
+
+    private boolean tryToChangeClusterState(ClusterServiceImpl clusterService, int expectedMemberListVersion,
+                                            ClusterState clusterState) {
+        if (clusterService.getMemberListVersion() != expectedMemberListVersion) {
+            logger.warning("Could not change cluster state to FROZEN because local member list version: "
+                    + clusterService.getMemberListVersion() + " is different than expected member list version: "
+                    + expectedMemberListVersion);
+        }
+
+        boolean changed = false;
+
+        // If state is IN_TRANSITION, then skip trying to change state.
+        // Otherwise transaction will print noisy warning logs.
+        if (clusterState != IN_TRANSITION) {
+            try {
+                clusterService.changeClusterState(FROZEN);
+                changed = true;
+            } catch (Exception e) {
+                String error = e.getClass().getName() + ": " + e.getMessage();
+                logger.warning("While changing cluster state to FROZEN! " + error);
+            }
+        }
+
+        if (changed && clusterService.getMemberListVersion() != expectedMemberListVersion) {
+            try {
+                logger.warning("Reverting cluster state back to " + clusterState + " because member list version: "
+                        + clusterService.getMemberListVersion() + " is different than expected member list version: "
+                        + expectedMemberListVersion);
+                clusterService.changeClusterState(clusterState);
+            } catch (Exception e) {
+                String error = e.getClass().getName() + ": " + e.getMessage();
+                logger.warning("While reverting cluster state to " + clusterState + "! " + error);
+            }
+
+            return true;
+        }
+
         return false;
     }
 

@@ -129,10 +129,10 @@ public class MulticastJoiner extends AbstractJoiner {
                     Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
                 }
 
-                SplitBrainJoinMessage response = sendSplitBrainJoinMessage(targetAddress);
-                if (shouldMerge(response)) {
+                SplitBrainJoinMessage request = sendSplitBrainJoinMessageAndCheckResponse(targetAddress);
+                if (request != null) {
                     logger.warning(node.getThisAddress() + " is merging [multicast] to " + targetAddress);
-                    startClusterMerge(targetAddress);
+                    startClusterMerge(targetAddress, request.getMemberListVersion());
                     return;
                 }
 

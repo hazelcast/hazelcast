@@ -37,6 +37,8 @@ import static java.util.Collections.unmodifiableCollection;
  */
 final class MemberMap {
 
+    static final int SINGLETON_MEMBER_LIST_VERSION = 1;
+
     private final int version;
     private final Map<Address, MemberImpl> addressToMemberMap;
     private final Map<String, MemberImpl> uuidToMemberMap;
@@ -68,7 +70,8 @@ final class MemberMap {
      * @return singleton {@code MemberMap}
      */
     static MemberMap singleton(MemberImpl member) {
-        return new MemberMap(1, singletonMap(member.getAddress(), member), singletonMap(member.getUuid(), member));
+        return new MemberMap(SINGLETON_MEMBER_LIST_VERSION, singletonMap(member.getAddress(), member),
+                singletonMap(member.getUuid(), member));
     }
 
     /**
@@ -146,7 +149,7 @@ final class MemberMap {
             putMember(addressMap, uuidMap, member);
         }
 
-        return new MemberMap(source.version + 1, addressMap, uuidMap);
+        return new MemberMap(source.version + newMembers.length, addressMap, uuidMap);
     }
 
     private static void putMember(Map<Address, MemberImpl> addressMap,
@@ -181,6 +184,18 @@ final class MemberMap {
         return null;
     }
 
+    public int getMemberIndex(MemberImpl member) {
+        int i = 0;
+        for (MemberImpl m : members) {
+            if (m.equals(member)) {
+                return i;
+            }
+            i++;
+        }
+
+        throw new IllegalArgumentException(member + " is not present in " + members);
+    }
+
     boolean contains(Address address) {
         return addressToMemberMap.containsKey(address);
     }
@@ -207,6 +222,10 @@ final class MemberMap {
 
     MembersView toMembersView() {
         return MembersView.createNew(version, members);
+    }
+
+    MembersView toTailMembersView(MemberImpl member, boolean inclusive) {
+        return MembersView.createNew(version, tailMemberSet(member, inclusive));
     }
 
     Set<MemberImpl> tailMemberSet(MemberImpl member, boolean inclusive) {

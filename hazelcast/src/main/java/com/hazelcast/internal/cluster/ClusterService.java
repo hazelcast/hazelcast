@@ -142,4 +142,15 @@ public interface ClusterService extends CoreService, Cluster {
      * @return current version of member list
      */
     int getMemberListVersion();
+
+    /**
+     * Returns the member list join version of the local member instance.
+     * @throws IllegalStateException if the local instance is not joined or the cluster version is below 3.10.
+     * If the cluster is upgraded from 3.9 to 3.10, this method can return {@link MemberImpl#NA_MEMBER_LIST_JOIN_VERSION}
+     * until the local node eventually learns its member list join version from the master node.
+     * The caller can cache the member list join version returned from this method.
+     *
+     * @return the member list join version of the local member instance
+     */
+    int getMemberListJoinVersion();
 }

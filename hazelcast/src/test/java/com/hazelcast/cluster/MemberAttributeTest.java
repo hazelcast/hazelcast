@@ -62,7 +62,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember()) {
+            if (m.equals(h2.getCluster().getLocalMember())) {
                 continue;
             }
             member = m;
@@ -102,7 +102,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember()) {
+            if (m.equals(h2.getCluster().getLocalMember())) {
                 continue;
             }
             member = m;
@@ -130,7 +130,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember()) {
+            if (m.equals(h2.getCluster().getLocalMember())) {
                 continue;
             }
             member = m;
@@ -171,7 +171,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember()) {
+            if (m.equals(h2.getCluster().getLocalMember())) {
                 continue;
             }
             member = m;
@@ -212,7 +212,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember()) {
+            if (m.equals(h2.getCluster().getLocalMember())) {
                 continue;
             }
             member = m;
