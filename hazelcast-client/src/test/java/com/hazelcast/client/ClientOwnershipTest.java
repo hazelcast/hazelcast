@@ -31,8 +31,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -55,6 +58,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         ClientEngineImpl clientEngine = getClientEngineImpl(instance);
 
         assertEquals(instanceUuid, clientEngine.getOwnerUuid(clientUuid));
+        assertClientEndpointExists(clientEngine, clientUuid, true);
     }
 
     @Test
@@ -74,6 +78,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 assertEquals(instanceUuid, clientEngine1.getOwnerUuid(clientUuid));
                 assertEquals(instanceUuid, clientEngine2.getOwnerUuid(clientUuid));
+                assertClientEndpointExists(clientEngine1, clientUuid, true);
+                assertClientEndpointExists(clientEngine2, clientUuid, false);
             }
         });
     }
@@ -93,6 +99,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertEquals(instance2Uuid, clientEngine.getOwnerUuid(clientUuid));
+                assertClientEndpointExists(clientEngine, clientUuid, true);
+
             }
         });
     }
@@ -124,8 +132,20 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertEquals(instance2Uuid, clientEngine.getOwnerUuid(clientUuid));
+                assertClientEndpointExists(clientEngine, clientUuid, true);
             }
         });
+    }
+
+    private void assertClientEndpointExists(ClientEngineImpl clientEngine, String clientUuid, boolean asOwner) {
+        Set<ClientEndpoint> endpoints = clientEngine.getEndpointManager().getEndpoints(clientUuid);
+        assertEquals(1, endpoints.size());
+        ClientEndpoint endpoint = endpoints.iterator().next();
+        if (asOwner) {
+            assertTrue(endpoint.isFirstConnection());
+        } else {
+            assertTrue(!endpoint.isFirstConnection());
+        }
     }
 
     @Test
@@ -155,6 +175,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 assertNull(clientEngine1.getOwnerUuid(clientUuid));
                 assertNull(clientEngine2.getOwnerUuid(clientUuid));
+                assertEquals(0, clientEngine1.getEndpointManager().getEndpoints(clientUuid).size());
+                assertEquals(0, clientEngine2.getEndpointManager().getEndpoints(clientUuid).size());
             }
         });
     }
@@ -187,6 +209,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertEquals(instanceUuid, clientEngine2.getOwnerUuid(clientUuid));
+                assertClientEndpointExists(clientEngine2, clientUuid, true);
             }
         });
     }
@@ -222,6 +245,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 assertNull(clientEngine2.getOwnerUuid(clientUuid));
                 assertNull(clientEngine3.getOwnerUuid(clientUuid));
+                assertEquals(0, clientEngine2.getEndpointManager().getEndpoints(clientUuid).size());
+                assertEquals(0, clientEngine3.getEndpointManager().getEndpoints(clientUuid).size());
             }
         });
     }
