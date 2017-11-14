@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -99,6 +100,56 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
         t.start();
         assertFalse(latch.await(3000, TimeUnit.MILLISECONDS));
+    }
+
+    @Test(timeout = 60000)
+    public void testLock_whenTemporaryLockedByOther() throws InterruptedException {
+        lock.lock();
+
+        Future f = spawn(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+            }
+        });
+
+        sleepSeconds(5);
+
+        lock.unlock();
+
+        assertCompletesEventually(f);
+    }
+
+    @Test(timeout = 60000)
+    public void testLock_whenTemporaryLockedByOthers() throws InterruptedException {
+        lock.lock();
+
+        Future f1 = spawn(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                sleepSeconds(5);
+                lock.unlock();
+            }
+        });
+
+        sleepSeconds(5);
+
+        Future f2 = spawn(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                sleepSeconds(5);
+                lock.unlock();
+            }
+        });
+
+        sleepSeconds(5);
+
+        lock.unlock();
+
+        assertCompletesEventually(f1);
+        assertCompletesEventually(f2);
     }
 
     // ======================== try lock ==============================================

@@ -29,10 +29,10 @@ public class ReduceBackupOperation extends SemaphoreBackupOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         semaphoreContainer.reduce(permitCount);
-        response = true;
+        return true;
     }
 
     @Override

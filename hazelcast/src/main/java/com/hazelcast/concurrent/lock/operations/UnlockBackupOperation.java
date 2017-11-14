@@ -43,17 +43,17 @@ public class UnlockBackupOperation extends AbstractLockOperation implements Back
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        boolean unlocked;
+        boolean response;
         if (force) {
-            unlocked = lockStore.forceUnlock(key);
+            response = lockStore.forceUnlock(key);
         } else {
-            unlocked = lockStore.unlock(key, originalCallerUuid, threadId, getReferenceCallId());
+            response = lockStore.unlock(key, originalCallerUuid, threadId, getReferenceCallId());
         }
 
-        response = unlocked;
         lockStore.pollExpiredAwaitOp(key);
+        return response;
     }
 
     @Override

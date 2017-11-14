@@ -23,8 +23,6 @@ import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.G
 
 public class GetOperation extends AbstractAtomicLongOperation implements ReadonlyOperation {
 
-    private long returnValue;
-
     public GetOperation() {
     }
 
@@ -33,14 +31,9 @@ public class GetOperation extends AbstractAtomicLongOperation implements Readonl
     }
 
     @Override
-    public void run() throws Exception {
+    public Long call() throws Exception {
         AtomicLongContainer container = getLongContainer();
-        returnValue = container.get();
-    }
-
-    @Override
-    public Object getResponse() {
-        return returnValue;
+        return container.get();
     }
 
     @Override

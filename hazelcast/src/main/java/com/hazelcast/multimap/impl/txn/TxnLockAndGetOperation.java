@@ -35,6 +35,8 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.Collection;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
 
     private long ttl;
@@ -53,7 +55,11 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         MultiMapContainer container = getOrCreateContainer();
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
@@ -64,6 +70,7 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         MultiMapResponse multiMapResponse = new MultiMapResponse(collection, getValueCollectionType(container));
         multiMapResponse.setNextRecordId(container.nextId());
         response = multiMapResponse;
+        return response;
     }
 
     @Override
@@ -71,7 +78,6 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         return new LockWaitNotifyKey(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
     }
 
-    @Override
     public boolean shouldWait() {
         return !getOrCreateContainer().canAcquireLock(dataKey, getCallerUuid(), threadId);
     }

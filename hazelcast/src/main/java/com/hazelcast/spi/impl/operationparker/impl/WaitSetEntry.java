@@ -100,7 +100,8 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
     }
 
     public boolean shouldWait() {
-        return blockingOperation.shouldWait();
+        return false;
+        //return blockingOperation.shouldWait();
     }
 
     @Override
@@ -183,6 +184,17 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
     @Override
     public String getServiceName() {
         return op.getServiceName();
+    }
+
+
+    @Override
+    public String toString() {
+        return "WaitSetEntry{"
+                + "blockingOperation=" + blockingOperation
+                + ", expirationTime=" + expirationTime
+                + ", valid=" + valid
+                + ", cancelResponse=" + cancelResponse
+                + '}';
     }
 
     public void onExpire() {

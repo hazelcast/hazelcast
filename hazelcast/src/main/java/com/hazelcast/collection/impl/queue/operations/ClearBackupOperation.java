@@ -43,10 +43,10 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         QueueContainer queueContainer = getContainer();
         queueContainer.clearBackup(itemIdSet);
-        response = true;
+        return true;
     }
 
     @Override

@@ -30,12 +30,11 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-import static java.lang.Boolean.TRUE;
-
 public class UnlockOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation, MutatingOperation {
 
     private boolean force;
     private boolean shouldNotify;
+    private transient boolean unlocked;
 
     public UnlockOperation() {
     }
@@ -56,28 +55,26 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
     }
 
     @Override
-    public void run() throws Exception {
-        if (force) {
-            forceUnlock();
-        } else {
-            unlock();
-        }
+    public Boolean call() throws Exception {
+        System.out.println("Unlock");
+        unlocked = force ? forceUnlock() : unlock();
+        return unlocked;
     }
 
-    protected final void unlock() {
+    protected final boolean unlock() {
         LockStoreImpl lockStore = getLockStore();
         boolean unlocked = lockStore.unlock(key, getCallerUuid(), threadId, getReferenceCallId());
-        response = unlocked;
         if (!unlocked) {
             // we can not check for retry here, hence just throw the exception
             String ownerInfo = lockStore.getOwnerInfo(key);
             throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
         }
+        return true;
     }
 
-    protected final void forceUnlock() {
+    protected final boolean forceUnlock() {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.forceUnlock(key);
+        return lockStore.forceUnlock(key);
     }
 
     @Override
@@ -100,7 +97,7 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
 
     @Override
     public boolean shouldBackup() {
-        return TRUE.equals(response);
+        return unlocked;
     }
 
     @Override

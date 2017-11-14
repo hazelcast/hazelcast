@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 /**
  * Transaction prepare operation for a queue poll, executed on the primary replica.
  * <p>
@@ -43,6 +45,7 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
 
     private long reservedOfferId;
     private String transactionId;
+    private transient QueueItem response;
 
     public TxnReservePollOperation() {
     }
@@ -54,9 +57,14 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         QueueContainer createContainer = getContainer();
         response = createContainer.txnPollReserve(reservedOfferId, transactionId);
+        return response;
     }
 
     @Override
@@ -65,7 +73,6 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
         return queueContainer.getPollWaitNotifyKey();
     }
 
-    @Override
     public boolean shouldWait() {
         final QueueContainer queueContainer = getContainer();
         return getWaitTimeout() != 0 && reservedOfferId == -1 && queueContainer.size() == 0;
@@ -83,8 +90,7 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
 
     @Override
     public Operation getBackupOperation() {
-        final QueueItem item = (QueueItem) response;
-        long itemId = item.getItemId();
+        long itemId = response.getItemId();
         return new TxnReservePollBackupOperation(name, itemId, transactionId);
     }
 

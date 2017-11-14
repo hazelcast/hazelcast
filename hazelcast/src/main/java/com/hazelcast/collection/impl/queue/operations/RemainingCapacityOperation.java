@@ -34,9 +34,9 @@ public class RemainingCapacityOperation extends QueueOperation implements Readon
     }
 
     @Override
-    public void run() {
+    public Integer call() {
         QueueContainer queueContainer = getContainer();
-        response = queueContainer.getConfig().getMaxSize() - queueContainer.size();
+        return queueContainer.getConfig().getMaxSize() - queueContainer.size();
     }
 
     @Override

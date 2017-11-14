@@ -21,7 +21,7 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.AWAIT_OPERATION;
-import static java.lang.Boolean.TRUE;
+import static com.hazelcast.spi.CallStatus.WAIT;
 
 public class AwaitOperation extends AbstractCountDownLatchOperation implements BlockingOperation {
 
@@ -34,12 +34,12 @@ public class AwaitOperation extends AbstractCountDownLatchOperation implements B
     }
 
     @Override
-    public void run() throws Exception {
-    }
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
 
-    @Override
-    public Object getResponse() {
-        return TRUE;
+        return true;
     }
 
     @Override
@@ -47,7 +47,6 @@ public class AwaitOperation extends AbstractCountDownLatchOperation implements B
         return waitNotifyKey();
     }
 
-    @Override
     public boolean shouldWait() {
         CountDownLatchService service = getService();
         return service.shouldWait(name);

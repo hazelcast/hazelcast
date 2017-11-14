@@ -31,6 +31,8 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 /**
  * {@link IMap#flush()} call waits the end of flush by using this operation.
  *
@@ -67,13 +69,11 @@ public class AwaitMapFlushOperation
     }
 
     @Override
-    public void run() {
-        // NOP
-    }
-
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
+    public Object call() {
+        if (shouldWait()) {
+            return WAIT;
+        }
+        return true;
     }
 
     @Override
@@ -81,7 +81,6 @@ public class AwaitMapFlushOperation
         return new MapFlushWaitNotifyKey(name, getPartitionId(), sequence);
     }
 
-    @Override
     public boolean shouldWait() {
         WriteBehindQueue<DelayedEntry> writeBehindQueue = store.getWriteBehindQueue();
         DelayedEntry entry = writeBehindQueue.peek();

@@ -37,8 +37,8 @@ public class GetRemainingLeaseTimeOperation extends AbstractLockOperation implem
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.getRemainingLeaseTime(key);
+        return lockStore.getRemainingLeaseTime(key);
     }
 }

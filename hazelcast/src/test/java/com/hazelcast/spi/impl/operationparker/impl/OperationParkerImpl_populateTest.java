@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.CallsPerMember;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
+import static com.hazelcast.spi.CallStatus.WAIT;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -106,17 +108,13 @@ public class OperationParkerImpl_populateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() throws Exception {
+        public CallStatus call() throws Exception {
+            return WAIT;
         }
 
         @Override
         public WaitNotifyKey getWaitKey() {
             return waitNotifyKey;
-        }
-
-        @Override
-        public boolean shouldWait() {
-            return true;
         }
 
         @Override

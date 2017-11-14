@@ -27,7 +27,7 @@ import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializ
 public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
     private int count;
-    private boolean response;
+    private transient boolean response;
 
     public SetCountOperation() {
     }
@@ -38,13 +38,9 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         CountDownLatchService service = getService();
         response = service.setCount(name, count);
-    }
-
-    @Override
-    public Object getResponse() {
         return response;
     }
 

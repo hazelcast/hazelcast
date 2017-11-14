@@ -38,7 +38,6 @@ public abstract class LockAwareOperation extends MutatingKeyBasedMapOperation im
         super(name, dataKey, dataValue, ttl);
     }
 
-    @Override
     public boolean shouldWait() {
         return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }

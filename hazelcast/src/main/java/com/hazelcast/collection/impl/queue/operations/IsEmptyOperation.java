@@ -34,9 +34,9 @@ public class IsEmptyOperation extends QueueOperation implements ReadonlyOperatio
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() {
         QueueContainer queueContainer = getContainer();
-        response = queueContainer.size() == 0;
+        return queueContainer.size() == 0;
     }
 
     @Override

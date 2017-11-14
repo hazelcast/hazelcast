@@ -22,8 +22,6 @@ import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializ
 
 public class GetCountOperation extends AbstractCountDownLatchOperation {
 
-    private int count;
-
     public GetCountOperation() {
     }
 
@@ -32,14 +30,9 @@ public class GetCountOperation extends AbstractCountDownLatchOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Integer call() throws Exception {
         CountDownLatchService service = getService();
-        count = service.getCount(name);
-    }
-
-    @Override
-    public Object getResponse() {
-        return count;
+        return service.getCount(name);
     }
 
     @Override

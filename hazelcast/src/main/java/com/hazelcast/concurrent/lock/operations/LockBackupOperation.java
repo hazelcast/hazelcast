@@ -41,9 +41,9 @@ public class LockBackupOperation extends AbstractLockOperation implements Backup
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.lock(key, originalCallerUuid, threadId, getReferenceCallId(), leaseTime);
+        return lockStore.lock(key, originalCallerUuid, threadId, getReferenceCallId(), leaseTime);
     }
 
     @Override

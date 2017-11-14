@@ -34,7 +34,9 @@ import java.io.IOException;
 public class LocalLockCleanupOperation extends UnlockOperation implements Notifier, BackupAwareOperation {
 
     private final String uuid;
-
+    //todo: did we change the return type in case of not owner?
+    //then it will return false instead of null
+    private transient boolean response;
     /**
      * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
      * coding conventions.
@@ -68,7 +70,7 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
         final NodeEngine nodeEngine = getNodeEngine();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         IPartition partition = partitionService.getPartition(getPartitionId());
-        return partition.isLocal() && Boolean.TRUE.equals(response);
+        return partition.isLocal() && response;
     }
 
     @Override

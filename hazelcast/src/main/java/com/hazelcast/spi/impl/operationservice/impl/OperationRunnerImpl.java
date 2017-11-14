@@ -39,6 +39,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -64,6 +65,7 @@ import java.util.logging.Level;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.CallStatus.COMPLETE;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -169,7 +171,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         executedOperationsCounter.inc();
 
         boolean publishCurrentTask = publishCurrentTask();
-
         if (publishCurrentTask) {
             currentTask = op;
         }
@@ -187,13 +188,22 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             op.beforeRun();
 
-            if (waitingNeeded(op)) {
-                return;
+            Object response = op.call();
+            CallStatus callStatus = response instanceof CallStatus ? (CallStatus) response : COMPLETE;
+            switch (callStatus) {
+                case COMPLETE:
+                    handleResponse(op, response);
+                    afterRun(op);
+                    break;
+                case WAIT:
+                    nodeEngine.getOperationParker().park((BlockingOperation) op);
+                    break;
+                case OFFLOADED:
+                    // problem: the afterRun isn't called
+                    break;
+                default:
+                    throw new RuntimeException();
             }
-
-            op.run();
-            handleResponse(op);
-            afterRun(op);
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
@@ -245,19 +255,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         quorumService.ensureQuorumPresent(op);
     }
 
-    private boolean waitingNeeded(Operation op) {
-        if (!(op instanceof BlockingOperation)) {
-            return false;
-        }
-
-        BlockingOperation blockingOperation = (BlockingOperation) op;
-        if (blockingOperation.shouldWait()) {
-            nodeEngine.getOperationParker().park(blockingOperation);
-            return true;
-        }
-        return false;
-    }
-
     private boolean timeout(Operation op) {
         if (!operationService.isCallTimedOut(op)) {
             return false;
@@ -267,7 +264,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return true;
     }
 
-    private void handleResponse(Operation op) throws Exception {
+    private void handleResponse(Operation op, Object response) throws Exception {
         boolean returnsResponse = op.returnsResponse();
         int backupAcks = backupHandler.sendBackups(op);
 
@@ -275,12 +272,11 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             return;
         }
 
-        sendResponse(op, backupAcks);
+        sendResponse(op, backupAcks, response);
     }
 
-    private void sendResponse(Operation op, int backupAcks) {
+    private void sendResponse(Operation op, int backupAcks, Object response) {
         try {
-            Object response = op.getResponse();
             if (backupAcks > 0) {
                 response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
             }

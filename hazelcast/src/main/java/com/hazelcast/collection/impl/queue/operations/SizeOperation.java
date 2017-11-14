@@ -34,9 +34,9 @@ public class SizeOperation extends QueueOperation implements ReadonlyOperation {
     }
 
     @Override
-    public void run() {
+    public Integer call() {
         QueueContainer queueContainer = getContainer();
-        response = queueContainer.size();
+        return queueContainer.size();
     }
 
     @Override

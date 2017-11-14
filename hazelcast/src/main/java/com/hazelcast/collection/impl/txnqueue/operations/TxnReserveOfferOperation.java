@@ -28,6 +28,8 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.spi.CallStatus.WAIT;
+
 /**
  * Transaction prepare operation for a queue offer, executed on the primary replica.
  * <p>
@@ -46,6 +48,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     /** The number of items already offered in this transactional queue */
     private int txSize;
     private String transactionId;
+    private transient Long response;
 
     public TxnReserveOfferOperation() {
     }
@@ -64,11 +67,18 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
      * @throws Exception
      */
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         QueueContainer queueContainer = getContainer();
+
         if (queueContainer.hasEnoughCapacity(txSize + 1)) {
             response = queueContainer.txnOfferReserve(transactionId);
         }
+
+        return response;
     }
 
     @Override
@@ -77,7 +87,6 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
         return queueContainer.getOfferWaitNotifyKey();
     }
 
-    @Override
     public boolean shouldWait() {
         QueueContainer queueContainer = getContainer();
         return getWaitTimeout() != 0 && !queueContainer.hasEnoughCapacity(txSize + 1);
@@ -95,7 +104,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnReserveOfferBackupOperation(name, (Long) response, transactionId);
+        return new TxnReserveOfferBackupOperation(name, response, transactionId);
     }
 
     @Override

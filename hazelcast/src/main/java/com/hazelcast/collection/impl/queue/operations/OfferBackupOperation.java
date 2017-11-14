@@ -46,10 +46,10 @@ public final class OfferBackupOperation extends QueueOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         QueueContainer queueContainer = getContainer();
         queueContainer.offerBackup(data, itemId);
-        response = true;
+        return true;
     }
 
     @Override

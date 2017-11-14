@@ -43,10 +43,10 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     @Override
-    public void run() {
+    public Boolean call() {
         QueueContainer queueContainer = getContainer();
         dataMap = queueContainer.clear();
-        response = true;
+        return true;
     }
 
     @Override

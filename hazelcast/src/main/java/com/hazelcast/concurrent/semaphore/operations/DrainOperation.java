@@ -22,6 +22,8 @@ import com.hazelcast.spi.Operation;
 
 public class DrainOperation extends SemaphoreBackupAwareOperation {
 
+    private transient int response;
+
     public DrainOperation() {
     }
 
@@ -30,14 +32,15 @@ public class DrainOperation extends SemaphoreBackupAwareOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Integer call() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         response = semaphoreContainer.drain(getCallerUuid());
+        return response;
     }
 
     @Override
     public boolean shouldBackup() {
-        return !response.equals(0);
+        return response != 0;
     }
 
     @Override

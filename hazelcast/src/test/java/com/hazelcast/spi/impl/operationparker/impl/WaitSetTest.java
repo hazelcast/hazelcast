@@ -214,10 +214,10 @@ public class WaitSetTest {
             return new WaitNotifyKeyImpl(getServiceName(), objectId);
         }
 
-        @Override
-        public boolean shouldWait() {
-            return false;
-        }
+//        @Override
+//        public boolean shouldWait() {
+//            return false;
+//        }
 
         @Override
         public void onWaitExpire() {

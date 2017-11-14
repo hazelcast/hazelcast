@@ -29,7 +29,6 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
 
     private long expect;
     private long update;
-    private boolean returnValue;
 
     public CompareAndSetOperation() {
     }
@@ -41,14 +40,10 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         AtomicLongContainer container = getLongContainer();
-        returnValue = container.compareAndSet(expect, update);
+        boolean returnValue = container.compareAndSet(expect, update);
         shouldBackup = returnValue;
-    }
-
-    @Override
-    public Object getResponse() {
         return returnValue;
     }
 

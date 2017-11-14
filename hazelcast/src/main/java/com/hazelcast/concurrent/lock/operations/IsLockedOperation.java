@@ -41,12 +41,12 @@ public class IsLockedOperation extends AbstractLockOperation implements Readonly
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         if (threadId == ANY_THREAD) {
-            response = lockStore.isLocked(key);
+            return lockStore.isLocked(key);
         } else {
-            response = lockStore.isLockedBy(key, getCallerUuid(), threadId);
+            return lockStore.isLockedBy(key, getCallerUuid(), threadId);
         }
     }
 }

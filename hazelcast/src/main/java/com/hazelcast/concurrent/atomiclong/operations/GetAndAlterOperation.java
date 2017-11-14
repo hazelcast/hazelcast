@@ -31,17 +31,17 @@ public class GetAndAlterOperation extends AbstractAlterOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public Long call() throws Exception {
         AtomicLongContainer container = getLongContainer();
 
         long input = container.get();
-        response = input;
         long output = function.apply(input);
         shouldBackup = input != output;
         if (shouldBackup) {
             backup = output;
             container.set(output);
         }
+        return input;
     }
 
     @Override

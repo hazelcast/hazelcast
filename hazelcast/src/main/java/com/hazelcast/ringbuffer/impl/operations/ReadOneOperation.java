@@ -18,7 +18,6 @@ package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -26,11 +25,11 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_ONE_OPERATION;
+import static com.hazelcast.spi.CallStatus.WAIT;
 
 public class ReadOneOperation extends AbstractRingBufferOperation implements BlockingOperation {
 
     private long sequence;
-    private Data result;
 
     public ReadOneOperation() {
     }
@@ -46,16 +45,19 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
         ringbuffer.checkBlockableReadSequence(sequence);
     }
 
-    @Override
     public boolean shouldWait() {
         RingbufferContainer ringbuffer = getRingBufferContainer();
         return ringbuffer.shouldWait(sequence);
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
+        if (shouldWait()) {
+            return WAIT;
+        }
+
         RingbufferContainer ringbuffer = getRingBufferContainer();
-        result = ringbuffer.readAsData(sequence);
+        return ringbuffer.readAsData(sequence);
     }
 
     @Override
@@ -67,11 +69,6 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
     @Override
     public void onWaitExpire() {
         //todo:
-    }
-
-    @Override
-    public Data getResponse() {
-        return result;
     }
 
     @Override

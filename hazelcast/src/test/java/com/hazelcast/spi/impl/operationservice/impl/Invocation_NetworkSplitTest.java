@@ -27,6 +27,7 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
@@ -48,6 +49,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.spi.CallStatus.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -183,18 +185,14 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     private static class AlwaysBlockingOperation extends Operation implements BlockingOperation {
 
         @Override
-        public void run() throws Exception {
+        public CallStatus call() throws Exception {
+            return WAIT;
         }
 
         @Override
         public WaitNotifyKey getWaitKey() {
             return new AbstractWaitNotifyKey(getServiceName(), "test") {
             };
-        }
-
-        @Override
-        public boolean shouldWait() {
-            return true;
         }
 
         @Override

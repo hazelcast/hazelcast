@@ -41,10 +41,10 @@ public class TxnPollBackupOperation extends QueueOperation implements MutatingOp
     }
 
     @Override
-    public void run() throws Exception {
+    public Boolean call() throws Exception {
         QueueContainer queueContainer = getContainer();
         queueContainer.txnCommitPollBackup(itemId);
-        response = true;
+        return true;
     }
 
     @Override

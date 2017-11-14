@@ -43,11 +43,11 @@ public class BeforeAwaitBackupOperation extends AbstractLockOperation implements
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         lockStore.addAwait(key, conditionId, originalCaller, threadId);
         lockStore.unlock(key, originalCaller, threadId, getReferenceCallId());
-        response = true;
+        return true;
     }
 
     @Override

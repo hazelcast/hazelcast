@@ -37,8 +37,8 @@ public class GetLockCountOperation extends AbstractLockOperation implements Read
     }
 
     @Override
-    public void run() throws Exception {
+    public Object call() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.getLockCount(key);
+        return lockStore.getLockCount(key);
     }
 }
