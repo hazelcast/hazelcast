@@ -223,10 +223,9 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         instance2.shutdown();
 
-        // now the job should detect member shutdown and restart from snapshot
-        Thread.sleep(2000);
-
-        waitForNextSnapshot(snapshotsMap, timeout);
+        // Now the job should detect member shutdown and restart from snapshot.
+        // Let's wait until the next snapshot appears.
+        waitForNextSnapshot(snapshotsMap, (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 10));
         waitForNextSnapshot(snapshotsMap, timeout);
 
         job.join();
@@ -332,12 +331,12 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         }
     }
 
-    private void waitForNextSnapshot(IStreamMap<Long, Object> snapshotsMap, int timeout) {
+    private void waitForNextSnapshot(IStreamMap<Long, Object> snapshotsMap, int timeoutSeconds) {
         SnapshotRecord maxRecord = findMaxRecord(snapshotsMap);
         assertNotNull("no snapshot found", maxRecord);
         // wait until there is at least one more snapshot
         assertTrueEventually(() -> assertTrue("No more snapshots produced after restart",
-                findMaxRecord(snapshotsMap).snapshotId() > maxRecord.snapshotId()), timeout);
+                findMaxRecord(snapshotsMap).snapshotId() > maxRecord.snapshotId()), timeoutSeconds);
     }
 
     private SnapshotRecord findMaxRecord(IStreamMap<Long, Object> snapshotsMap) {

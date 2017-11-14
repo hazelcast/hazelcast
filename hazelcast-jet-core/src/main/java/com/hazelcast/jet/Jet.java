@@ -19,7 +19,9 @@ package com.hazelcast.jet;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -38,7 +40,11 @@ import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
  */
 public final class Jet {
 
-    private static final String INTERNAL_JET_MAPS = "__jet.*";
+    /**
+     * Prefix of all Hazelcast internal objects used by Jet (such as job
+     * metadata, snapshots etc.)
+     */
+    public static final String INTERNAL_JET_OBJECTS_PREFIX = "__jet.";
 
     private Jet() {
     }
@@ -89,15 +95,19 @@ public final class Jet {
     }
 
     static void configureJetService(JetConfig jetConfig) {
+        if (!(jetConfig.getHazelcastConfig().getConfigPatternMatcher() instanceof MatchingPointConfigPatternMatcher)) {
+            throw new UnsupportedOperationException("Custom config pattern matcher is not supported in Jet");
+        }
+
         jetConfig.getHazelcastConfig().getServicesConfig()
                  .addServiceConfig(new ServiceConfig().setEnabled(true)
                                                       .setName(JetService.SERVICE_NAME)
                                                       .setClassName(JetService.class.getName())
                                                       .setConfigObject(jetConfig));
 
-        jetConfig.getHazelcastConfig().getMapConfig(INTERNAL_JET_MAPS)
+        jetConfig.getHazelcastConfig().addMapConfig(new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + "*")
                  .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
                  .setStatisticsEnabled(false)
-                 .setMergePolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
+                 .setMergePolicy(IgnoreMergingEntryMapMergePolicy.class.getName()));
     }
 }
