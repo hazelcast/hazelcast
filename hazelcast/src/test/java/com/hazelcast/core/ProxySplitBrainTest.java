@@ -32,17 +32,17 @@ public class ProxySplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        HazelcastInstance isolatedInstance = firstBrain[0];
+        HazelcastInstance isolatedInstance = secondBrain[0];
         isolatedInstance.getLock("isolatedLock");
         assertDistributedObjectCountEventually(1, isolatedInstance);
 
-        for (HazelcastInstance hz : secondBrain) {
+        for (HazelcastInstance hz : firstBrain) {
             String name = generateKeyOwnedBy(hz);
             hz.getLock(name);
         }
 
-        for (HazelcastInstance hz : secondBrain) {
-            int expectedCount = secondBrain.length;
+        for (HazelcastInstance hz : firstBrain) {
+            int expectedCount = firstBrain.length;
             assertDistributedObjectCountEventually(expectedCount, hz);
         }
     }

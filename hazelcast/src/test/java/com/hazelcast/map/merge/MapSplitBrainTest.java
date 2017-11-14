@@ -68,6 +68,12 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private String testMapName;
 
     @Override
+    protected int[] brains() {
+        // first half merges into second half
+        return new int[]{1, 2};
+    }
+
+    @Override
     protected Config config() {
         Config config = super.config();
         config.getMapConfig(TEST_MAPS_PREFIX + "*")
