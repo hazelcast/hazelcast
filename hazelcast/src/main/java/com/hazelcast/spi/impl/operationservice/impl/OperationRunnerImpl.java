@@ -43,6 +43,7 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -193,7 +194,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             op.run();
             handleResponse(op);
-            afterRun(op);
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
@@ -268,14 +268,21 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void handleResponse(Operation op) throws Exception {
-        boolean returnsResponse = op.returnsResponse();
-        int backupAcks = backupHandler.sendBackups(op);
-
-        if (!returnsResponse) {
-            return;
+        switch (op.runStatus()) {
+             case COMPLETED:
+                int backupAcks = backupHandler.sendBackups(op);
+                sendResponse(op, backupAcks);
+                afterRun(op);
+                break;
+            case VOID:
+                afterRun(op);
+                break;
+            case OFFLOADED:
+                afterRun(op);
+                break;
+            default:
+                throw new IllegalStateException();
         }
-
-        sendResponse(op, backupAcks);
     }
 
     private void sendResponse(Operation op, int backupAcks) {

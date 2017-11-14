@@ -36,6 +36,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.RunStatus.COMPLETED;
+import static com.hazelcast.spi.RunStatus.VOID;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 
@@ -112,6 +114,14 @@ public abstract class Operation implements DataSerializable {
      */
     public boolean returnsResponse() {
         return true;
+    }
+
+    public RunStatus runStatus() {
+        if (returnsResponse()) {
+            return COMPLETED;
+        } else {
+            return VOID;
+        }
     }
 
     public Object getResponse() {
