@@ -425,9 +425,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             return null;
         }
         ClientConnection connection = (ClientConnection) getActiveConnection(ownerConnectionAddress);
-        if (connection == null) {
-            return null;
-        }
         return connection;
     }
 
