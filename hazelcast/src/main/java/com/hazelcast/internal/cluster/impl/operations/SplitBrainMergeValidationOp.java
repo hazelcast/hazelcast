@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
+
 /**
  * Validate whether clusters may merge to recover from a split brain, based on configuration & cluster version.
  */
@@ -78,7 +80,9 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
                     // the cluster, the user would be forced to upgrade the member to 3.9.0 codebase version.
                     // The implicit change of cluster version ("sneaky upgrade") and the change in membership would be a
                     // surprise to users and may cause unexpected issues.
-                    if (service.getClusterVersion().equals(request.getClusterVersion())) {
+                    if (service.getClusterVersion().equals(request.getClusterVersion())
+                            && (service.getClusterJoinManager().shouldMerge(request) == REMOTE_NODE_SHOULD_MERGE)
+                            && service.getMembershipManager().verifySplitBrainMergeMemberListVersion(request)) {
                         response = node.createSplitBrainJoinMessage();
                     } else {
                         logger.info("Join check from " + getCallerAddress() + " failed validation due to incompatible version,"

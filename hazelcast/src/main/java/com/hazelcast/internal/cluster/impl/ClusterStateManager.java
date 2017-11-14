@@ -312,6 +312,7 @@ public class ClusterStateManager {
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility
                 doSetClusterVersion((Version) stateChange.getNewState());
+                node.getClusterService().getMembershipManager().scheduleMemberListVersionIncrement();
             } else {
                 throw new IllegalArgumentException("Illegal ClusterStateChange of type " + stateChange.getType() + ".");
             }

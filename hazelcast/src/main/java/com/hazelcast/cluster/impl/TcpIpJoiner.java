@@ -514,11 +514,11 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
         for (Address address : possibleAddresses) {
-            SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
-            if (shouldMerge(response)) {
+            SplitBrainJoinMessage request = sendSplitBrainJoinMessageAndCheckResponse(address);
+            if (request != null) {
                 logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
                 setTargetAddress(address);
-                startClusterMerge(address);
+                startClusterMerge(address, request.getMemberListVersion());
                 return;
             }
         }
