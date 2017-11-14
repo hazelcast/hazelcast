@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
@@ -29,6 +30,8 @@ import com.hazelcast.transaction.impl.xa.XATransaction;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 public class PutRemoteTransactionBackupOperation extends AbstractXAOperation implements BackupOperation {
 
@@ -63,8 +66,8 @@ public class PutRemoteTransactionBackupOperation extends AbstractXAOperation imp
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

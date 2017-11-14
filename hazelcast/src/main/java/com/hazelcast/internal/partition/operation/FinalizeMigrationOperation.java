@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -34,6 +35,8 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * Invoked locally on the source or destination of the migration to finalize the migration.
@@ -216,8 +219,8 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

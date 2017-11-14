@@ -4,6 +4,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -14,6 +15,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -46,8 +49,8 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return false;
+        public RunStatus runStatus() {
+            return NO_RESPONSE;
         }
     }
 }

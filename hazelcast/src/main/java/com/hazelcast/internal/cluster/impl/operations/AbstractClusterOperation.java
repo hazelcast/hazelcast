@@ -19,12 +19,15 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 abstract class AbstractClusterOperation extends Operation implements JoinOperation {
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

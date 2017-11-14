@@ -35,6 +35,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.PreJoinAwareService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -65,6 +66,7 @@ import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstan
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
@@ -873,8 +875,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return false;
+        public RunStatus runStatus() {
+            return NO_RESPONSE;
         }
 
         @Override

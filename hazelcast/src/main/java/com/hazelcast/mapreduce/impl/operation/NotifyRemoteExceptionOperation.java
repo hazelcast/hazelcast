@@ -21,8 +21,11 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * This operation is used to inform the job owner of a remote exception
@@ -41,8 +44,8 @@ public class NotifyRemoteExceptionOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

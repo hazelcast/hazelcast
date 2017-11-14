@@ -12,6 +12,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -24,11 +25,13 @@ import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.ops4j.pax.runner.Run;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
@@ -212,11 +215,6 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         }
 
         @Override
-        public boolean returnsResponse() {
-            return true;
-        }
-
-        @Override
         public boolean shouldBackup() {
             return true;
         }
@@ -257,8 +255,8 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         }
 
         @Override
-        public boolean returnsResponse() {
-            return false;
+        public RunStatus runStatus() {
+            return NO_RESPONSE;
         }
 
     }
@@ -271,11 +269,6 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         public void run() throws Exception {
             Address address = getNodeEngine().getThisAddress();
             getNodeEngine().getHazelcastInstance().getUserContext().put(LAST_INVOCATION_ADDRESS, address);
-        }
-
-        @Override
-        public boolean returnsResponse() {
-            return true;
         }
 
         @Override

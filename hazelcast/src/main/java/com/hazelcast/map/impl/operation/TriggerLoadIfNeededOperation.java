@@ -19,6 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.RunStatus;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 /**
  * Triggers key loading on member with {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER}
@@ -49,8 +52,8 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
         return isLoaded;
     }
 
-    public boolean returnsResponse() {
-        return true;
+    public RunStatus runStatus() {
+        return HAS_RESPONSE;
     }
 
     @Override

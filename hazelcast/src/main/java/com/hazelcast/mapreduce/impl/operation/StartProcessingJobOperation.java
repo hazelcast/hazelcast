@@ -28,11 +28,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * This operation is used to start the actual processing after all node prepared to execute the map reduce job
@@ -59,8 +62,8 @@ public class StartProcessingJobOperation<K>
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

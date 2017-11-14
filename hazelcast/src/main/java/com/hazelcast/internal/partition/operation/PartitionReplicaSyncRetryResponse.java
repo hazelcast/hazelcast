@@ -28,12 +28,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * The response to a {@link PartitionReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
@@ -71,8 +74,8 @@ public class PartitionReplicaSyncRetryResponse
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

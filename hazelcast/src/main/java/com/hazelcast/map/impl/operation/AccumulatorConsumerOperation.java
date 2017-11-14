@@ -34,12 +34,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
@@ -91,8 +93,8 @@ public class AccumulatorConsumerOperation extends Operation implements Partition
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     private void publishAccumulator(EventPublisherAccumulatorProcessor processor,

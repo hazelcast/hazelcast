@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
@@ -31,6 +32,8 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 public class PostJoinProxyOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -70,8 +73,8 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

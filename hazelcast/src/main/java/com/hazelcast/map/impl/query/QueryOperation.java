@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -36,6 +37,8 @@ import java.util.List;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 /**
@@ -126,7 +129,7 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     @Override
     public void onExecutionFailure(Throwable e) {
         if (isNativeInMemoryFormat()) {
-            // This is required since if the returnsResponse() method returns false there won't be any response sent
+            // This is required since if the runStatus() method returns false there won't be any response sent
             // to the invoking party - this means that the operation won't be retried if the exception is instanceof
             // HazelcastRetryableException
             sendResponse(e);
@@ -136,8 +139,8 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return !isNativeInMemoryFormat();
+    public RunStatus runStatus() {
+        return !isNativeInMemoryFormat() ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

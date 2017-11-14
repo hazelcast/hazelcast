@@ -25,6 +25,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 public class ClientReAuthOperation
         extends AbstractClientOperation
@@ -85,8 +87,8 @@ public class ClientReAuthOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return Boolean.TRUE;
+    public RunStatus runStatus() {
+        return HAS_RESPONSE;
     }
 
     @Override

@@ -34,6 +34,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -51,6 +52,7 @@ import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.spi.RunStatus.OFFLOADED;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
@@ -370,7 +372,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     @Override
     public void onExecutionFailure(Throwable e) {
         if (offloading) {
-            // This is required since if the returnsResponse() method returns false there won't be any response sent
+            // This is required since if the runStatus() method returns false there won't be any response sent
             // to the invoking party - this means that the operation won't be retried if the exception is instanceof
             // HazelcastRetryableException
             sendResponse(e);
@@ -380,13 +382,13 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     }
 
     @Override
-    public boolean returnsResponse() {
+    public RunStatus runStatus() {
         if (offloading) {
             // This has to be false, since the operation uses the deferred-response mechanism.
             // This method returns false, but the response will be send later on using the response handler
-            return false;
+            return OFFLOADED;
         } else {
-            return super.returnsResponse();
+            return super.runStatus();
         }
     }
 
@@ -437,26 +439,17 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     @Override
     public Object getResponse() {
-        if (offloading) {
-            return null;
-        }
         return response;
     }
 
     @Override
     public Operation getBackupOperation() {
-        if (offloading) {
-            return null;
-        }
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
-        if (offloading) {
-            return false;
-        }
         return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 

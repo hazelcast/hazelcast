@@ -28,12 +28,14 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
 import java.util.Collection;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 
 // Runs locally when the node becomes owner of a partition
@@ -64,8 +66,8 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

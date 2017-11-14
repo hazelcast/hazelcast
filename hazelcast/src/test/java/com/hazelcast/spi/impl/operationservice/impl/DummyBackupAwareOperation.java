@@ -20,10 +20,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 public class DummyBackupAwareOperation extends Operation implements BackupAwareOperation {
 
@@ -42,8 +46,8 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
     }
 
     @Override
-    public boolean returnsResponse() {
-        return returnsResponse;
+    public RunStatus runStatus() {
+        return returnsResponse ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

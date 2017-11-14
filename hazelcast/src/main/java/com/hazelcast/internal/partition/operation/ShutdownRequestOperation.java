@@ -24,6 +24,9 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RunStatus;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 public class ShutdownRequestOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
@@ -54,8 +57,8 @@ public class ShutdownRequestOperation extends AbstractPartitionOperation impleme
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

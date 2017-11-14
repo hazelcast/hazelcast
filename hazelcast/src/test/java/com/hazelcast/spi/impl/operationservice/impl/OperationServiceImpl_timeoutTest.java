@@ -32,6 +32,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -46,6 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -162,9 +164,9 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
+        public RunStatus runStatus() {
             // required for operation timeout
-            return false;
+            return NO_RESPONSE;
         }
 
         @Override

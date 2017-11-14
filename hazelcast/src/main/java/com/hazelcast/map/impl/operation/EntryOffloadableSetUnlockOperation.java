@@ -27,11 +27,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 /**
  * Set & Unlock processing for the EntryOperation
@@ -93,9 +95,9 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     }
 
     @Override
-    public boolean returnsResponse() {
+    public RunStatus runStatus() {
         // this has to be true, otherwise the calling side won't be notified about the exception thrown by this operation
-        return true;
+        return HAS_RESPONSE;
     }
 
     @Override

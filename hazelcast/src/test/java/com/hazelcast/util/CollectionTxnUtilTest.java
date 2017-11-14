@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -166,8 +168,8 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return false;
+        public RunStatus runStatus() {
+            return NO_RESPONSE;
         }
 
         @Override

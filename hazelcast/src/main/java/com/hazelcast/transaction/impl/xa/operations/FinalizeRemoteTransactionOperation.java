@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.transaction.impl.TransactionDataSerializerHook;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -31,6 +32,9 @@ import javax.transaction.xa.XAException;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 public class FinalizeRemoteTransactionOperation extends AbstractXAOperation implements BackupAwareOperation {
 
@@ -99,8 +103,8 @@ public class FinalizeRemoteTransactionOperation extends AbstractXAOperation impl
     }
 
     @Override
-    public boolean returnsResponse() {
-        return returnsResponse;
+    public RunStatus runStatus() {
+        return returnsResponse ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

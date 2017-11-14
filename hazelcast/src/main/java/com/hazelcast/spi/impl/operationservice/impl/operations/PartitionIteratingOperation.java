@@ -26,6 +26,7 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 
 /**
@@ -79,9 +81,9 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
-    public boolean returnsResponse() {
+    public RunStatus runStatus() {
         // since this call is non blocking, we don't have a response. The response is send when the actual operations complete.
-        return false;
+        return NO_RESPONSE;
     }
 
     @Override

@@ -19,6 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.RunStatus;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 public class IsPartitionLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
@@ -42,8 +45,8 @@ public class IsPartitionLoadedOperation extends MapOperation implements Partitio
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public RunStatus runStatus() {
+        return HAS_RESPONSE;
     }
 
     @Override

@@ -26,12 +26,16 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
 
@@ -56,7 +60,9 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
         return MigrationParticipant.SOURCE;
     }
 
-    /** Verifies that the local master is equal to the migration master. */
+    /**
+     * Verifies that the local master is equal to the migration master.
+     */
     final void verifyMasterOnMigrationSource() {
         NodeEngine nodeEngine = getNodeEngine();
         Address masterAddress = nodeEngine.getMasterAddress();
@@ -70,7 +76,9 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
         }
     }
 
-    /** Verifies that this node is the owner of the partition. */
+    /**
+     * Verifies that this node is the owner of the partition.
+     */
     final void verifySource(Address thisAddress, InternalPartition partition) {
         Address owner = partition.getOwnerOrNull();
         if (owner == null) {
@@ -83,7 +91,9 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
         }
     }
 
-    /** Verifies that the destination is a cluster member. */
+    /**
+     * Verifies that the destination is a cluster member.
+     */
     final void verifyExistingTarget(NodeEngine nodeEngine, Address destination) {
         Member target = nodeEngine.getClusterService().getMember(destination);
         if (target == null) {
@@ -130,8 +140,8 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return returnResponse;
+    public RunStatus runStatus() {
+        return returnResponse ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

@@ -24,9 +24,12 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 public class MergeClustersOp extends AbstractClusterOperation {
 
@@ -66,8 +69,8 @@ public class MergeClustersOp extends AbstractClusterOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public RunStatus runStatus() {
+        return HAS_RESPONSE;
     }
 
     @Override

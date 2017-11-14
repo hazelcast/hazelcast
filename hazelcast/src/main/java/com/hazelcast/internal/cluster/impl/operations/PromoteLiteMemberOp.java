@@ -21,6 +21,9 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.RunStatus;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 /**
  * Promotes caller lite member to a normal member. Should be executed on only master node.
@@ -45,8 +48,8 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public RunStatus runStatus() {
+        return HAS_RESPONSE;
     }
 
     @Override

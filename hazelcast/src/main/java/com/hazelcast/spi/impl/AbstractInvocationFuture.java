@@ -53,7 +53,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
 @SuppressFBWarnings(value = "DLS_DEAD_STORE_OF_CLASS_LITERAL", justification = "Recommended way to prevent classloading bug")
 public abstract class AbstractInvocationFuture<V> implements InternalCompletableFuture<V> {
 
-    static final Object VOID = "VOID";
+    static final Object VOID = "NO_RESPONSE";
 
     // reduce the risk of rare disastrous classloading in first call to
     // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
@@ -282,7 +282,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
      *
      * @param waiter   the waiter
      * @param executor the {@link Executor} to use in case of an {@link ExecutionCallback}.
-     * @return VOID if the registration was a success, anything else but void is the response.
+     * @return NO_RESPONSE if the registration was a success, anything else but void is the response.
      */
     private Object registerWaiter(Object waiter, Executor executor) {
         WaitNode waitNode = null;

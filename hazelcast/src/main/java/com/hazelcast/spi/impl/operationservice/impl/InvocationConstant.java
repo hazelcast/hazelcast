@@ -40,7 +40,7 @@ final class InvocationConstant {
     /**
      * Indicates that the Invocation has no response yet.
      */
-    static final Object VOID = new InvocationConstant("VOID");
+    static final Object VOID = new InvocationConstant("NO_RESPONSE");
 
     private String toString;
 

@@ -27,6 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
@@ -110,8 +112,8 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
     }
 
     @Override
-    public final boolean returnsResponse() {
-        return returnResponse;
+    public final RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     protected void readInternalImpl(ObjectDataInput in) throws IOException {

@@ -40,7 +40,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
     private static final AtomicReferenceFieldUpdater<ClientDelegatingFuture, Object> DECODED_RESPONSE =
             AtomicReferenceFieldUpdater.newUpdater(ClientDelegatingFuture.class, Object.class, "decodedResponse");
-    private static final Object VOID = "VOID";
+    private static final Object VOID = "NO_RESPONSE";
     private final ClientInvocationFuture future;
     private final SerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;

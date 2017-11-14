@@ -43,7 +43,6 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -67,6 +66,7 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
@@ -269,12 +269,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private void handleResponse(Operation op) throws Exception {
         switch (op.runStatus()) {
-             case COMPLETED:
+            case HAS_RESPONSE:
                 int backupAcks = backupHandler.sendBackups(op);
                 sendResponse(op, backupAcks);
                 afterRun(op);
                 break;
-            case VOID:
+            case NO_RESPONSE:
                 afterRun(op);
                 break;
             case OFFLOADED:
@@ -362,7 +362,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             return;
         }
 
-        // a response is send regardless of the Operation.returnsResponse method because some operation do want to send
+        // a response is send regardless of the Operation.runStatus method because some operation do want to send
         // back a response, but they didn't want to send it yet but they ran into some kind of error. If on the receiving
         // side no invocation is waiting, the response is ignored.
         sendResponseAfterOperationError(operation, e);
@@ -442,7 +442,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private void setOperationResponseHandler(Operation op) {
         OperationResponseHandler handler = outboundResponseHandler;
         if (op.getCallId() == 0) {
-            if (op.returnsResponse()) {
+            if (op.runStatus() == HAS_RESPONSE) {
                 throw new HazelcastException(
                         "Operation " + op + " wants to return a response, but doesn't have a call ID");
             }

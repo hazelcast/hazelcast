@@ -22,6 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.impl.MembershipUpdateTest.StaticMemberNodeContext;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -171,8 +173,8 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return false;
+        public RunStatus runStatus() {
+            return NO_RESPONSE;
         }
     }
 }

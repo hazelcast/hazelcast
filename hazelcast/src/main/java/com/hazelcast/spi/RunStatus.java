@@ -16,17 +16,20 @@
 
 package com.hazelcast.spi;
 
+/**
+ *
+ */
 public enum RunStatus {
 
     /**
      *
      */
-    VOID,
+    NO_RESPONSE,
 
     /**
      *
      */
-    COMPLETED,
+    HAS_RESPONSE,
 
     /**
      *

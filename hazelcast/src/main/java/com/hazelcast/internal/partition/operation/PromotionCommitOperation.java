@@ -31,6 +31,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -40,6 +41,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * Used for committing a promotion on destination. Sent by the master to update the partition table on destination and
@@ -65,7 +69,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     }
 
     public PromotionCommitOperation(PartitionRuntimeState partitionState, Collection<MigrationInfo> promotions,
-            String expectedMemberUuid) {
+                                    String expectedMemberUuid) {
         Preconditions.checkNotNull(promotions);
         this.partitionState = partitionState;
         this.promotions = promotions;
@@ -90,7 +94,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         Address callerAddress = getCallerAddress();
         if (!callerAddress.equals(masterAddress)) {
             throw new IllegalStateException("Caller is not master node! Caller: " + callerAddress
-                + ", Master: " + masterAddress);
+                    + ", Master: " + masterAddress);
         }
     }
 
@@ -137,7 +141,9 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
     }
 
-    /** Processes the sent partition state and sends {@link FinalizePromotionOperation} for all promotions. */
+    /**
+     * Processes the sent partition state and sends {@link FinalizePromotionOperation} for all promotions.
+     */
     private void finalizePromotion() {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
@@ -194,15 +200,17 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
     }
 
-    /** Reruns this operation with {@link #beforeStateCompleted} set to {@code true}. */
+    /**
+     * Reruns this operation with {@link #beforeStateCompleted} set to {@code true}.
+     */
     private void onBeforePromotionsComplete() {
         beforeStateCompleted = true;
         getNodeEngine().getOperationService().execute(this);
     }
 
     @Override
-    public boolean returnsResponse() {
-        return beforeStateCompleted;
+    public RunStatus runStatus() {
+        return beforeStateCompleted ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

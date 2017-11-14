@@ -25,14 +25,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 import static java.lang.Math.min;
 
 /**
@@ -96,7 +97,7 @@ final class OperationBackupHandler {
         int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
 
         // TODO: This could cause a problem with back pressure
-        if (!op.returnsResponse()) {
+        if (op.runStatus() != HAS_RESPONSE) {
             asyncBackups += syncBackups;
             syncBackups = 0;
         }

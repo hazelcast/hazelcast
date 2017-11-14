@@ -25,6 +25,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,6 +41,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
@@ -331,8 +334,8 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return returnsResponse;
+        public RunStatus runStatus() {
+            return returnsResponse ? HAS_RESPONSE : NO_RESPONSE;
         }
 
         @Override

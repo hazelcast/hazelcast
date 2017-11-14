@@ -20,8 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * An operation that doesn't return a response.
@@ -46,8 +49,8 @@ class VoidOperation extends Operation implements PartitionAwareOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

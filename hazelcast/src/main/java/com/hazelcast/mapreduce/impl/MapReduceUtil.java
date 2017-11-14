@@ -35,6 +35,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -49,6 +50,7 @@ import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.PROCESSED;
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 /**
  * This utility class contains a few basic operations that are needed in multiple places
@@ -221,7 +223,7 @@ public final class MapReduceUtil {
 
         ClusterService cs = nodeEngine.getClusterService();
         OperationService os = nodeEngine.getOperationService();
-        boolean returnsResponse = operation.returnsResponse();
+        boolean returnsResponse = operation.runStatus() == HAS_RESPONSE;
 
         try {
             if (cs.getThisAddress().equals(address)) {

@@ -21,12 +21,15 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 public class PostJoinClientOperation extends AbstractClientOperation {
 
@@ -66,8 +69,8 @@ public class PostJoinClientOperation extends AbstractClientOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

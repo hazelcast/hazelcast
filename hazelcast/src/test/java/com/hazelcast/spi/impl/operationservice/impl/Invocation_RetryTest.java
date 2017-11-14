@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -49,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
@@ -223,8 +225,8 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return false;
+        public RunStatus runStatus() {
+            return NO_RESPONSE;
         }
     }
 

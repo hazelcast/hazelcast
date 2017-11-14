@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -35,6 +36,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 // should not be an urgent operation. required to be in order with backup operations on target node
 public final class PartitionBackupReplicaAntiEntropyOperation
@@ -112,8 +115,8 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return returnResponse;
+    public RunStatus runStatus() {
+        return returnResponse ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

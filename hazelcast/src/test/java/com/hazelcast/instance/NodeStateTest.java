@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,6 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl_asyncInvokeOnPartitionTest.InvocationEntryProcessor.latch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -138,8 +140,8 @@ public class NodeStateTest extends HazelcastTestSupport {
                     }
 
                     @Override
-                    public boolean returnsResponse() {
-                        return false;
+                    public RunStatus runStatus() {
+                        return NO_RESPONSE;
                     }
                 };
 
@@ -178,8 +180,8 @@ public class NodeStateTest extends HazelcastTestSupport {
                     }
 
                     @Override
-                    public boolean returnsResponse() {
-                        return false;
+                    public RunStatus runStatus() {
+                        return NO_RESPONSE;
                     }
                 };
 

@@ -36,8 +36,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.spi.RunStatus.COMPLETED;
-import static com.hazelcast.spi.RunStatus.VOID;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 
@@ -112,16 +111,8 @@ public abstract class Operation implements DataSerializable {
      * <p>
      * In other words, {@code true} is for synchronous operation and {@code false} is for asynchronous one.
      */
-    public boolean returnsResponse() {
-        return true;
-    }
-
     public RunStatus runStatus() {
-        if (returnsResponse()) {
-            return COMPLETED;
-        } else {
-            return VOID;
-        }
+        return HAS_RESPONSE;
     }
 
     public Object getResponse() {
@@ -522,7 +513,7 @@ public abstract class Operation implements DataSerializable {
         if (e instanceof SilentException) {
             logger.finest(e.getMessage(), e);
         } else if (e instanceof RetryableException) {
-            final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
+            final Level level = runStatus() == RunStatus.NO_RESPONSE ? Level.FINEST : Level.WARNING;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getClass().getName() + ": " + e.getMessage());
             }

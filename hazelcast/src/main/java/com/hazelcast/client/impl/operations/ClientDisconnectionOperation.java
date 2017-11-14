@@ -23,12 +23,15 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 public class ClientDisconnectionOperation extends AbstractClientOperation implements UrgentSystemOperation {
 
@@ -66,8 +69,8 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

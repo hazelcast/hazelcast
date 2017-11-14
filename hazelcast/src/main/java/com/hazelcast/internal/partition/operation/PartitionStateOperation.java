@@ -26,8 +26,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * Sent from the master to publish or sync the partition table state to all cluster members.
@@ -70,8 +74,8 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return sync;
+    public RunStatus runStatus() {
+        return sync ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

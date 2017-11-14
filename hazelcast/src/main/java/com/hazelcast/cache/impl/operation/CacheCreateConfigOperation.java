@@ -26,12 +26,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
  * Used to create cluster wide cache configuration.
@@ -123,7 +126,7 @@ public class CacheCreateConfigOperation
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        // Execution failed so we should enable `returnsResponse` flag to prevent waiting anymore
+        // Execution failed so we should enable `runStatus` flag to prevent waiting anymore
         returnsResponse = true;
         super.onExecutionFailure(e);
     }
@@ -152,8 +155,8 @@ public class CacheCreateConfigOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return returnsResponse;
+    public RunStatus runStatus() {
+        return NO_RESPONSE;
     }
 
     @Override

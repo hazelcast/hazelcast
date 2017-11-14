@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.RunStatus;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulators;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 
 /**
  * Reads all available items from the accumulator of the partition and resets it.
@@ -70,8 +72,8 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public RunStatus runStatus() {
+        return HAS_RESPONSE;
     }
 
     @Override
