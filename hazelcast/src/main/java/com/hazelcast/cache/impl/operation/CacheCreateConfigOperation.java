@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 
 /**
@@ -156,7 +157,7 @@ public class CacheCreateConfigOperation
 
     @Override
     public RunStatus runStatus() {
-        return NO_RESPONSE;
+        return returnsResponse ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     @Override

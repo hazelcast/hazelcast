@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
+
 public class OnJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable {
 
     private Collection<Registration> registrations;
@@ -56,7 +58,7 @@ public class OnJoinRegistrationOperation extends Operation implements Identified
 
     @Override
     public RunStatus runStatus() {
-        return RunStatus.NO_RESPONSE;
+        return NO_RESPONSE;
     }
 
     @Override

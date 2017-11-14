@@ -35,16 +35,23 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 import static com.hazelcast.spi.RunStatus.NO_RESPONSE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
 public class MembersUpdateOp extends AbstractClusterOperation implements Versioned {
-    /** The master cluster clock time. */
+    /**
+     * The master cluster clock time.
+     */
     long masterTime = Clock.currentTimeMillis();
-    /** The updated member info collection. */
+    /**
+     * The updated member info collection.
+     */
     private List<MemberInfo> memberInfos;
-    /** The UUID of the receiving member. */
+    /**
+     * The UUID of the receiving member.
+     */
     private String targetUuid;
     private boolean returnResponse;
     private PartitionRuntimeState partitionRuntimeState;
@@ -113,7 +120,7 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
 
     @Override
     public final RunStatus runStatus() {
-        return NO_RESPONSE;
+        return returnResponse ? HAS_RESPONSE : NO_RESPONSE;
     }
 
     protected void readInternalImpl(ObjectDataInput in) throws IOException {

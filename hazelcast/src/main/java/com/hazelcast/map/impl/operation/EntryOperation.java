@@ -52,6 +52,7 @@ import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.spi.RunStatus.HAS_RESPONSE;
 import static com.hazelcast.spi.RunStatus.OFFLOADED;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
@@ -138,7 +139,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     private EntryProcessor entryProcessor;
 
-    private transient boolean offloading;
+    private transient boolean offload;
 
     // EntryOperation
     private transient Object response;
@@ -173,7 +174,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     @Override
     public void run() {
-        if (offloading) {
+        if (offload) {
             runOffloaded();
         } else {
             runVanilla();
@@ -371,7 +372,9 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (offloading) {
+        // todo: a response is always send.
+
+        if (offload) {
             // This is required since if the runStatus() method returns false there won't be any response sent
             // to the invoking party - this means that the operation won't be retried if the exception is instanceof
             // HazelcastRetryableException
@@ -383,13 +386,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     @Override
     public RunStatus runStatus() {
-        if (offloading) {
-            // This has to be false, since the operation uses the deferred-response mechanism.
-            // This method returns false, but the response will be send later on using the response handler
-            return OFFLOADED;
-        } else {
-            return super.runStatus();
-        }
+        return offload ? OFFLOADED : HAS_RESPONSE;
     }
 
     private void runVanilla() {
@@ -408,17 +405,17 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     public boolean shouldWait() {
         // optimisation for ReadOnly processors -> they will not wait for the lock
         if (entryProcessor instanceof ReadOnly) {
-            offloading = isOffloadingRequested(entryProcessor);
+            offload = isOffloadingRequested(entryProcessor);
             return false;
         }
         // mutating offloading -> only if key not locked, since it uses locking too (but on reentrant one)
         if (!recordStore.isLocked(dataKey) && isOffloadingRequested(entryProcessor)) {
-            offloading = true;
+            offload = true;
             return false;
         }
         //at this point we cannot offload. the entry is locked or the EP does not support offloading
         //if the entry is locked by us then we can still run the EP on the partition thread
-        offloading = false;
+        offload = false;
         return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 

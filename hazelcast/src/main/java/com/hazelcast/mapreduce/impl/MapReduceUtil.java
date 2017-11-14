@@ -35,7 +35,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.RunStatus;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -188,8 +187,8 @@ public final class MapReduceUtil {
                     }
                 } else {
                     InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME,
-                                                                                    operation,
-                                                                                    member.getAddress());
+                            operation,
+                            member.getAddress());
                     final InternalCompletableFuture<V> future = ib.invoke();
                     futures.add(future);
                 }
