@@ -104,6 +104,18 @@ public class ServiceEndpointResolverTest {
     }
 
     @Test
+    public void resolveWithNamespaceAndNodeInNamespaceWithNoSubsets() {
+        Endpoints discoveryNode = createEndpoints(1);
+        discoveryNode.setSubsets(null);
+        nodesInNamespace.getItems().add(discoveryNode);
+
+        ServiceEndpointResolver sut = new ServiceEndpointResolver(LOGGER, SERVICE_NAME, null, null, NAMESPACE, KUBERNETES_MASTER_URL, API_TOKEN);
+        List<DiscoveryNode> nodes = sut.resolve();
+
+        assertEquals(0, nodes.size());
+    }
+
+    @Test
     public void resolveWithServiceLabelAndNodeInNamespace() {
         nodesInNamespace.getItems().add(createEndpoints(1));
 
