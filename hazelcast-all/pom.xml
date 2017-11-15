@@ -89,7 +89,7 @@
                             <transformers>
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
-                                    <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
+                                    <mainClass>com.hazelcast.core.server.StartServer</mainClass>
                                     <overrideInstructions>
                                         <Import-Package>
                                             sun.misc;resolution:=optional,
