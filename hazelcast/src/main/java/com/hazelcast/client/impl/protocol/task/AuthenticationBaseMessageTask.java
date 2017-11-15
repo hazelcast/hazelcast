@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
@@ -95,6 +96,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
 
     @Override
     protected ClientEndpointImpl getEndpoint() {
+        ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
+        if (endpoint != null) {
+            return (ClientEndpointImpl) endpoint;
+        }
         return new ClientEndpointImpl(clientEngine, nodeEngine, connection);
     }
 
