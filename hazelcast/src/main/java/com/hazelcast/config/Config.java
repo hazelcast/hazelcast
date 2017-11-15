@@ -484,23 +484,6 @@ public class Config {
     }
 
     /**
-     * Returns the cache config with the given name or {@code null} if there is none.
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     *
-     * @param name name of the cache config
-     * @return the cache configuration or {@code null} if none was found
-     * @throws ConfigurationException if ambiguous configurations are found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public CacheSimpleConfig findCacheConfigOrNull(String name) {
-        name = getBaseName(name);
-        return lookupByPattern(configPatternMatcher, cacheConfigs, name);
-    }
-
-    /**
      * Returns a read-only {@link CacheSimpleConfig} configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
