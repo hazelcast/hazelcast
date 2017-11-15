@@ -141,7 +141,7 @@ public final class AggregateOperationBuilder<A> {
         }
 
         /**
-         * Registers the {@code combine} primitive.
+         * Registers the {@code deduct} primitive.
          */
         @Nonnull
         public Arity1<T0, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
