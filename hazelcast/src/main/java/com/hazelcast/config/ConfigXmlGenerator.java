@@ -49,6 +49,7 @@ import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 /**
  * The ConfigXmlGenerator is responsible for transforming a {@link Config} to a Hazelcast XML string.
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public class ConfigXmlGenerator {
 
     protected static final String MASK_FOR_SESITIVE_DATA = "****";
