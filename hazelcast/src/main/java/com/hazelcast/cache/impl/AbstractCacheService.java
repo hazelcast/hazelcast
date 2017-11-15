@@ -401,7 +401,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         if (simpleName == null) {
             return null;
         }
-        CacheSimpleConfig cacheSimpleConfig = nodeEngine.getConfig().findCacheConfig(simpleName);
+        CacheSimpleConfig cacheSimpleConfig = nodeEngine.getConfig().findCacheConfigOrNull(simpleName);
         if (cacheSimpleConfig == null) {
             return null;
         }

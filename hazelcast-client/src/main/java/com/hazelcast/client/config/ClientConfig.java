@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -91,9 +92,9 @@ public class ClientConfig {
 
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
-    private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
+    private final Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
-    private Map<String, ClientReliableTopicConfig> reliableTopicConfigMap
+    private final Map<String, ClientReliableTopicConfig> reliableTopicConfigMap
             = new ConcurrentHashMap<String, ClientReliableTopicConfig>();
 
     private Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs;
@@ -102,7 +103,7 @@ public class ClientConfig {
 
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
-    private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
+    private final List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
     private ManagedContext managedContext;
 
@@ -321,7 +322,11 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setNearCacheConfigMap(Map<String, NearCacheConfig> nearCacheConfigMap) {
-        this.nearCacheConfigMap = nearCacheConfigMap;
+        this.nearCacheConfigMap.clear();
+        this.nearCacheConfigMap.putAll(nearCacheConfigMap);
+        for (Entry<String, NearCacheConfig> entry : this.nearCacheConfigMap.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -635,7 +640,8 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setProxyFactoryConfigs(List<ProxyFactoryConfig> proxyFactoryConfigs) {
-        this.proxyFactoryConfigs = proxyFactoryConfigs;
+        this.proxyFactoryConfigs.clear();
+        this.proxyFactoryConfigs.addAll(proxyFactoryConfigs);
         return this;
     }
 
