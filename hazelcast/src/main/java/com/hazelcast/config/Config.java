@@ -356,7 +356,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      * For non-default configurations and on-heap maps, it will also
      * initialise the the near-cache eviction if not previously set.
@@ -407,7 +407,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addMapConfig(MapConfig)}.
      * <p>
@@ -505,7 +505,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the cardinality estimator config
@@ -536,7 +536,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addCacheConfig(CacheSimpleConfig)}.
      * <p>
@@ -617,7 +617,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the queue config
@@ -648,7 +648,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addQueueConfig(QueueConfig)}.
      * <p>
@@ -729,7 +729,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the lock config
@@ -760,7 +760,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addLockConfig(LockConfig)}.
      * <p>
@@ -841,7 +841,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the list config
@@ -872,7 +872,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addListConfig(ListConfig)}.
      * <p>
@@ -953,7 +953,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the set config
@@ -984,7 +984,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addSetConfig(SetConfig)}.
      * <p>
@@ -1065,7 +1065,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the multimap config
@@ -1096,7 +1096,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addMultiMapConfig(MultiMapConfig)}.
      * <p>
@@ -1177,7 +1177,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the replicated map config
@@ -1208,7 +1208,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addReplicatedMapConfig(ReplicatedMapConfig)}.
@@ -1290,7 +1290,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the ringbuffer config
@@ -1321,7 +1321,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addRingBufferConfig(RingbufferConfig)}.
@@ -1401,7 +1401,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the topic config
@@ -1432,7 +1432,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addTopicConfig(TopicConfig)}.
      * <p>
@@ -1484,7 +1484,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the reliable topic config
@@ -1515,7 +1515,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addReliableTopicConfig(ReliableTopicConfig)}.
@@ -1622,7 +1622,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the executor config
@@ -1647,7 +1647,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the durable executor config
@@ -1672,7 +1672,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the scheduled executor config
@@ -1698,7 +1698,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the cardinality estimator config
@@ -1729,7 +1729,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addExecutorConfig(ExecutorConfig)}.
      * <p>
@@ -1774,7 +1774,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addDurableExecutorConfig(DurableExecutorConfig)}.
@@ -1820,7 +1820,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addScheduledExecutorConfig(ScheduledExecutorConfig)}.
@@ -1866,7 +1866,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addCardinalityEstimatorConfig(CardinalityEstimatorConfig)}.
@@ -2073,7 +2073,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the semaphore config
@@ -2104,7 +2104,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addSemaphoreConfig(SemaphoreConfig)}.
@@ -2243,7 +2243,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the job tracker config
@@ -2274,7 +2274,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addJobTrackerConfig(JobTrackerConfig)}.
@@ -2372,7 +2372,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addQuorumConfig(QuorumConfig)}.
@@ -2413,7 +2413,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the split-brain protection config
@@ -2574,7 +2574,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the map event journal config
@@ -2600,7 +2600,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the cache event journal config
@@ -2633,7 +2633,7 @@ public class Config {
      * <p>
      * If there is no default config as well, it will create one and disable
      * the event journal by default.
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addEventJournalConfig(EventJournalConfig)}.
@@ -2679,7 +2679,7 @@ public class Config {
      * <p>
      * If there is no default config as well, it will create one and disable
      * the event journal by default.
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addEventJournalConfig(EventJournalConfig)}.
