@@ -24,29 +24,21 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
+
+import static com.hazelcast.spi.CallStatus.OFFLOADED;
 
 abstract class AbstractCallableTaskOperation extends Operation implements IdentifiedDataSerializable {
 
     protected String name;
     protected String uuid;
-    protected transient Callable callable;
     private Data callableData;
-
-    // transient.
-    // We are cheating a bit here. The idea is the following. An AbstractCallableTaskOperation is always going to be send to a
-    // partition, but the operation doesn't send a response directly and therefor when a WrongTargetException is thronw (e.g.
-    // partition has moved) the operation is not retried. To prevent this from happening, we say that we return a response until
-    // the before-run method is called. Then we know we are going to be offloaded to a different thread and we are not returning
-    // a response immediately. So then we switch to 'returnsResponse = false'.
-    private boolean returnsResponse = true;
 
     public AbstractCallableTaskOperation() {
     }
@@ -58,12 +50,17 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
     }
 
     @Override
-    public final void beforeRun() throws Exception {
-        returnsResponse = false;
+    public final CallStatus call() {
+        Callable callable = loadCallable();
+        DistributedExecutorService service = getService();
+        service.execute(name, uuid, callable, this);
+        return OFFLOADED;
+    }
 
-        callable = getCallable();
+    private Callable loadCallable() {
         ManagedContext managedContext = getManagedContext();
 
+        Callable callable = getNodeEngine().toObject(callableData);
         if (callable instanceof RunnableAdapter) {
             RunnableAdapter adapter = (RunnableAdapter) callable;
             Runnable runnable = (Runnable) managedContext.initialize(adapter.getRunnable());
@@ -71,36 +68,13 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
         } else {
             callable = (Callable) managedContext.initialize(callable);
         }
-    }
-
-    /**
-     * since this operation handles responses in an async way, we need to handle serialization exceptions too
-     * @return
-     */
-    private Callable getCallable() {
-        try {
-            return getNodeEngine().toObject(callableData);
-        } catch (HazelcastSerializationException e) {
-            sendResponse(e);
-            throw ExceptionUtil.rethrow(e);
-        }
+        return callable;
     }
 
     private ManagedContext getManagedContext() {
         HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
         SerializationService serializationService = hazelcastInstance.getSerializationService();
         return serializationService.getManagedContext();
-    }
-
-    @Override
-    public final void run() throws Exception {
-        DistributedExecutorService service = getService();
-        service.execute(name, uuid, callable, this);
-    }
-
-    @Override
-    public final boolean returnsResponse() {
-        return returnsResponse;
     }
 
     @Override
