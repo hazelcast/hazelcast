@@ -61,9 +61,8 @@ import static java.lang.System.getenv;
  */
 public final class PhoneHome {
 
-    static final int CONNECTION_TIMEOUT_MILLIS = 30000;
-
     private static final int TIMEOUT = 1000;
+
     private static final int A_INTERVAL = 5;
     private static final int B_INTERVAL = 10;
     private static final int C_INTERVAL = 20;
@@ -74,7 +73,8 @@ public final class PhoneHome {
     private static final int H_INTERVAL = 300;
     private static final int J_INTERVAL = 600;
 
-    private static final String BASE_PHONE_HOME_URL = "http://127.0.0.1:8080/ping";
+    private static final String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
+    private static final int CONNECTION_TIMEOUT_MILLIS = 30000;
     private static final String FALSE = "false";
 
     public PhoneHome() {
@@ -243,7 +243,6 @@ public final class PhoneHome {
 
     private void addManCenterInfo(ExecutorService executor, Future<MCResponse> response,
                                   int clusterSize, PhoneHomeParameterCreator parameterCreator) {
-
         MCResponse mcResponse = null;
         try {
             mcResponse = response.get();
@@ -310,6 +309,7 @@ public final class PhoneHome {
     }
 
     private static class MCRequest implements Callable<MCResponse> {
+
         private Node hazelcastNode;
 
         public MCRequest(Node hazelcastNode) {

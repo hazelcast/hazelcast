@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
