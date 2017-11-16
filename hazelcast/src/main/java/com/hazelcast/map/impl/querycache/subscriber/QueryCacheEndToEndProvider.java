@@ -17,12 +17,15 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.querycache.subscriber.NullQueryCache.NULL_QUERY_CACHE;
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * Provides construction of whole {@link com.hazelcast.map.QueryCache QueryCache}
@@ -30,85 +33,80 @@ import static com.hazelcast.map.impl.querycache.subscriber.NullQueryCache.NULL_Q
  */
 public class QueryCacheEndToEndProvider<K, V> {
 
-    private static final int MUTEX_COUNT = 16;
-    private static final int MASK = MUTEX_COUNT - 1;
+    private final ContextMutexFactory mutexFactory;
+    private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> mapNameToQueryCaches;
+    private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> ctor
+            = new ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>>() {
+        @Override
+        public ConcurrentMap<String, InternalQueryCache<K, V>> createNew(String arg) {
+            return new ConcurrentHashMap<String, InternalQueryCache<K, V>>();
+        }
+    };
 
-    private final Object[] mutexes;
-    private final Map<String, Map<String, InternalQueryCache<K, V>>> mapNameToQueryCaches;
-
-    public QueryCacheEndToEndProvider() {
-        mutexes = createMutexes();
-        mapNameToQueryCaches = new HashMap<String, Map<String, InternalQueryCache<K, V>>>();
+    public QueryCacheEndToEndProvider(ContextMutexFactory mutexFactory) {
+        this.mutexFactory = mutexFactory;
+        this.mapNameToQueryCaches = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
     }
 
     public InternalQueryCache<K, V> getOrCreateQueryCache(String mapName, String cacheId,
                                                           ConstructorFunction<String, InternalQueryCache<K, V>> constructor) {
-        synchronized (getMutex(mapName)) {
-            Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
-            if (cacheIdToQueryCache == null) {
-                cacheIdToQueryCache = new ConcurrentHashMap<String, InternalQueryCache<K, V>>();
-                mapNameToQueryCaches.put(mapName, cacheIdToQueryCache);
-            }
-
-            InternalQueryCache<K, V> queryCache = cacheIdToQueryCache.get(cacheId);
-            if (queryCache == null) {
-                queryCache = constructor.createNew(cacheId);
-                if (queryCache == NULL_QUERY_CACHE) {
-                    queryCache = null;
-                } else {
-                    cacheIdToQueryCache.put(cacheId, queryCache);
+        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        try {
+            synchronized (mutex) {
+                ConcurrentMap<String, InternalQueryCache<K, V>> cacheIdToQueryCache
+                        = getOrPutIfAbsent(mapNameToQueryCaches, mapName, ctor);
+                InternalQueryCache<K, V> queryCache = cacheIdToQueryCache.get(cacheId);
+                if (queryCache == null) {
+                    queryCache = constructor.createNew(cacheId);
+                    if (queryCache == NULL_QUERY_CACHE) {
+                        queryCache = null;
+                    } else {
+                        cacheIdToQueryCache.put(cacheId, queryCache);
+                    }
                 }
+                return queryCache;
             }
-
-            return queryCache;
+        } finally {
+            closeResource(mutex);
         }
     }
 
     public void removeSingleQueryCache(String mapName, String cacheId) {
-        synchronized (getMutex(mapName)) {
-            Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
-            if (cacheIdToQueryCache != null) {
-                cacheIdToQueryCache.remove(cacheId);
+        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        try {
+            synchronized (mutex) {
+                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
+                if (cacheIdToQueryCache != null) {
+                    cacheIdToQueryCache.remove(cacheId);
+                }
             }
+        } finally {
+            closeResource(mutex);
         }
     }
 
     public void destroyAllQueryCaches(String mapName) {
-        synchronized (getMutex(mapName)) {
-            Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.remove(mapName);
-            if (cacheIdToQueryCache != null) {
-                for (InternalQueryCache<K, V> queryCache : cacheIdToQueryCache.values()) {
-                    queryCache.destroy();
+        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        try {
+            synchronized (mutex) {
+                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.remove(mapName);
+                if (cacheIdToQueryCache != null) {
+                    for (InternalQueryCache<K, V> queryCache : cacheIdToQueryCache.values()) {
+                        queryCache.destroy();
+                    }
                 }
             }
+        } finally {
+            closeResource(mutex);
         }
     }
 
     // only used in tests
     public int getQueryCacheCount(String mapName) {
-        synchronized (getMutex(mapName)) {
-            Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
-            if (cacheIdToQueryCache == null) {
-                return 0;
-            }
-            return cacheIdToQueryCache.size();
+        Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
+        if (cacheIdToQueryCache == null) {
+            return 0;
         }
-    }
-
-    private Object[] createMutexes() {
-        Object[] mutexes = new Object[MUTEX_COUNT];
-        for (int i = 0; i < MUTEX_COUNT; i++) {
-            mutexes[i] = new Object();
-        }
-        return mutexes;
-    }
-
-    private Object getMutex(String name) {
-        int hashCode = name.hashCode();
-        if (hashCode == Integer.MIN_VALUE) {
-            hashCode = 0;
-        }
-        hashCode = Math.abs(hashCode);
-        return mutexes[hashCode & MASK];
+        return cacheIdToQueryCache.size();
     }
 }

@@ -20,7 +20,6 @@ import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.spi.EventFilter;
 
-
 /**
  * Event service abstraction to allow different type of implementations
  * on query cache subscriber and query cache publisher sides. Runs locally on query-cache
@@ -35,7 +34,7 @@ public interface QueryCacheEventService<E> {
      * Publishes query-cache events locally.
      *
      * @param mapName  underlying map name of query cache
-     * @param cacheId  id of the query cache
+     * @param cacheId  ID of the query cache
      * @param event    event to publish
      * @param orderKey use same order key for events which are required to be ordered
      */
@@ -45,27 +44,28 @@ public interface QueryCacheEventService<E> {
      * Adds the listener to listen underlying IMap on all nodes.
      *
      * @param mapName         underlying map name of query cache
-     * @param cacheId         id of the query cache
+     * @param cacheId         ID of the query cache
      * @param listenerAdapter listener adapter for the query-cache
      * @return ID of registered event listener
      */
-    String listenPublisher(String mapName, String cacheId, ListenerAdapter listenerAdapter);
+    String addPublisherListener(String mapName, String cacheId, ListenerAdapter listenerAdapter);
 
     /**
      * Removes listener from underlying IMap
      *
      * @param mapName    underlying map name which query cache listens
+     * @param cacheId    ID of the query cache
      * @param listenerId ID of registered listener
      * @return {@code true} if listener is de-registered, {@code false} otherwise
      */
-    boolean removePublisherListener(String mapName, String listenerId);
+    boolean removePublisherListener(String mapName, String cacheId, String listenerId);
 
     /**
      * Adds a user-defined listener to a query-cache. This listener is registered as a local listener
      * on subscriber side.
      *
      * @param mapName  underlying IMap name of query-cache
-     * @param cacheId  id of the query-cache
+     * @param cacheId  ID of the query-cache
      * @param listener listener for receiving events
      * @return ID of registered event listener
      */
@@ -76,7 +76,7 @@ public interface QueryCacheEventService<E> {
      * on subscriber side.
      *
      * @param mapName  underlying IMap name of query-cache
-     * @param cacheId  id of the query-cache
+     * @param cacheId  ID of the query-cache
      * @param listener listener for receiving events
      * @param filter   used to filter events
      * @return ID of registered event listener
@@ -86,18 +86,27 @@ public interface QueryCacheEventService<E> {
     /**
      * Removes listener from this event service.
      *
-     * @param mapName underlying IMap name of query-cache
-     * @param cacheId id of the query cache
-     * @param id      ID of listener
+     * @param mapName    underlying IMap name of query-cache
+     * @param cacheId    ID of the query cache
+     * @param listenerId registration ID of listener
      * @return {@code true} if listener is removed successfully, {@code false} otherwise
      */
-    boolean removeListener(String mapName, String cacheId, String id);
+    boolean removeListener(String mapName, String cacheId, String listenerId);
 
     /**
-     * Returns {@code true} if this query-cache has at least one registered listener otherwise returns {@code false}.
+     * Removes all user defined listeners associated to supplied {@code cacheId}
      *
      * @param mapName underlying IMap name of query-cache
-     * @param cacheId id of the query-cache
+     * @param cacheId ID of the query cache
+     */
+    void removeAllListeners(String mapName, String cacheId);
+
+    /**
+     * Returns {@code true} if this query-cache has at least one registered user defined listener
+     * otherwise returns {@code false}.
+     *
+     * @param mapName underlying IMap name of query-cache
+     * @param cacheId ID of the query-cache
      * @return {@code true} if this query-cache has at least one registered listener otherwise returns {@code false}
      */
     boolean hasListener(String mapName, String cacheId);

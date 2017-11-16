@@ -53,9 +53,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final String cacheId;
     protected final String cacheName;
     protected final IMap delegate;
+    protected final Indexes indexes;
     protected final QueryCacheContext context;
     protected final QueryCacheRecordStore recordStore;
-    protected final Indexes indexes;
     protected final InternalSerializationService serializationService;
     protected final PartitioningStrategy partitioningStrategy;
 
