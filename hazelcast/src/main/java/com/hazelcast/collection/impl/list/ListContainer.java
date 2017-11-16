@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 public class ListContainer extends CollectionContainer {
 
     private static final int INITIAL_CAPACITY = 1000;
@@ -130,7 +132,7 @@ public class ListContainer extends CollectionContainer {
 
     public Map<Long, Data> addAll(int index, List<Data> valueList) {
         final int size = valueList.size();
-        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        final Map<Long, Data> map = createHashMap(size);
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
@@ -178,7 +180,7 @@ public class ListContainer extends CollectionContainer {
     protected Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemList != null && !itemList.isEmpty()) {
-                itemMap = new HashMap<Long, CollectionItem>(itemList.size());
+                itemMap = createHashMap(itemList.size());
                 for (CollectionItem item : itemList) {
                     itemMap.put(item.getItemId(), item);
                 }

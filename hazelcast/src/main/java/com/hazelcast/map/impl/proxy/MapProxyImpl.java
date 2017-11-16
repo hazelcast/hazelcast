@@ -80,7 +80,6 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -100,6 +99,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -718,7 +718,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         if (keys.isEmpty()) {
             return emptyMap();
         }
-        Set<Data> dataKeys = new HashSet<Data>(keys.size());
+        Set<Data> dataKeys = createHashSet(keys.size());
         return executeOnKeysInternal(keys, dataKeys, entryProcessor);
     }
 

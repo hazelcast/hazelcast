@@ -53,7 +53,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -66,6 +65,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Provides important services via methods for the the Queue
@@ -338,7 +339,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public Map<String, LocalQueueStats> getStats() {
-        Map<String, LocalQueueStats> queueStats = MapUtil.createHashMap(containerMap.size());
+        Map<String, LocalQueueStats> queueStats = createHashMap(containerMap.size());
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             LocalQueueStats queueStat = createLocalQueueStats(name);

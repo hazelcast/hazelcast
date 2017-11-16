@@ -36,10 +36,12 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import javax.cache.CacheException;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Loads all entries of the keys to partition record store {@link com.hazelcast.cache.impl.ICacheRecordStore}.
@@ -96,7 +98,7 @@ public class CacheLoadAllOperation
             Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
             int loadedKeyCount = keysLoaded.size();
             if (loadedKeyCount > 0) {
-                backupRecords = new HashMap<Data, CacheRecord>(loadedKeyCount);
+                backupRecords = createHashMap(loadedKeyCount);
                 for (Data key : keysLoaded) {
                     CacheRecord record = cache.getRecord(key);
                     // Loaded keys may have been evicted, then record will be null.
@@ -176,7 +178,7 @@ public class CacheLoadAllOperation
         replaceExistingValues = in.readBoolean();
         if (in.readBoolean()) {
             int size = in.readInt();
-            keys = new HashSet<Data>(size);
+            keys = createHashSet(size);
             for (int i = 0; i < size; i++) {
                 keys.add(in.readData());
             }

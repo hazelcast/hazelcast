@@ -24,9 +24,10 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * In Predicate
@@ -56,7 +57,7 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         }
         Set<Comparable> set = convertedInValues;
         if (set == null) {
-            set = new HashSet<Comparable>(values.length);
+            set = createHashSet(values.length);
             for (Comparable value : values) {
                 set.add(convert(entry, attributeValue, value));
             }

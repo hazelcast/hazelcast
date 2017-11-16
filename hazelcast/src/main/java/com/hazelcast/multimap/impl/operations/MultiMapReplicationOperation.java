@@ -29,11 +29,12 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public class MultiMapReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -81,19 +82,19 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        int mapSize = in.readInt();
-        map = new HashMap<String, Map>(mapSize);
+        final int mapSize = in.readInt();
+        map = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             int collectionSize = in.readInt();
-            Map<Data, MultiMapValue> collections = new HashMap<Data, MultiMapValue>();
+            Map<Data, MultiMapValue> collections = createHashMap(collectionSize);
             for (int j = 0; j < collectionSize; j++) {
                 Data key = in.readData();
                 int collSize = in.readInt();
                 String collectionType = in.readUTF();
                 Collection<MultiMapRecord> coll;
                 if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())) {
-                    coll = new HashSet<MultiMapRecord>();
+                    coll = createHashSet(collSize);
                 } else {
                     coll = new LinkedList<MultiMapRecord>();
                 }

@@ -23,9 +23,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ScheduledExecutorPartition extends AbstractScheduledExecutorContainerHolder {
 
@@ -55,8 +56,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
     }
 
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
-        Map<String, Map<String, ScheduledTaskDescriptor>> map =
-                new HashMap<String, Map<String, ScheduledTaskDescriptor>>();
+        Map<String, Map<String, ScheduledTaskDescriptor>> map = createHashMap(containers.size());
 
         if (logger.isFinestEnabled()) {
             logger.finest("[Partition: " + partitionId + "] "

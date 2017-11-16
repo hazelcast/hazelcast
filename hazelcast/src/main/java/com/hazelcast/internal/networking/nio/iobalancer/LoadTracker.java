@@ -21,7 +21,6 @@ import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ItemCounter;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,6 +28,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -66,7 +66,7 @@ class LoadTracker {
         this.ioThreads = new NioThread[ioThreads.length];
         System.arraycopy(ioThreads, 0, this.ioThreads, 0, ioThreads.length);
 
-        this.selectorToHandlers = new HashMap<NioThread, Set<MigratableHandler>>();
+        this.selectorToHandlers = createHashMap(ioThreads.length);
         for (NioThread selector : ioThreads) {
             selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
         }

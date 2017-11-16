@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 /**
  * <p>Internal Set wrapper of {@link CacheEventData} items used during publishing and dispatching events.</p>
  *
@@ -111,7 +113,7 @@ public class CacheEventSet
         eventType = CacheEventType.getByType(in.readInt());
         completionId = in.readInt();
         final int size = in.readInt();
-        events = new HashSet<CacheEventData>(size);
+        events = createHashSet(size);
         for (int i = 0; i < size; i++) {
             CacheEventData ced = in.readObject();
             events.add(ced);

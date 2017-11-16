@@ -37,7 +37,6 @@ import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -47,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createLinkedHashSet;
 
 /**
  * <p>
@@ -266,7 +266,7 @@ public abstract class AbstractHazelcastCacheManager
         if (isClosed()) {
             names = Collections.emptySet();
         } else {
-            names = new LinkedHashSet<String>();
+            names = createLinkedHashSet(caches.size());
             for (Map.Entry<String, ICacheInternal<?, ?>> entry : caches.entrySet()) {
                 String nameWithPrefix = entry.getKey();
                 int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();

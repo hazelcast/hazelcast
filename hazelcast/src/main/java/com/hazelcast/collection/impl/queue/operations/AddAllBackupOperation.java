@@ -25,8 +25,9 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Provides backup functionality for {@link AddAllOperation}
@@ -70,7 +71,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataMap = new HashMap<Long, Data>(size);
+        dataMap = createHashMap(size);
         for (int i = 0; i < size; i++) {
             long itemId = in.readLong();
             Data value = in.readData();

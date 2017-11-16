@@ -34,7 +34,6 @@ import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -43,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
@@ -57,8 +57,9 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
     @Override
     public Runnable prepareMergeRunnable() {
         long now = Clock.currentTimeMillis();
+
         Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer, Collection<Record>>(mapContainers.size());
+        Map<MapContainer, Collection<Record>> recordMap = createHashMap(mapContainers.size());
         ILogger logger = nodeEngine.getLogger(getClass());
         IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionCount = partitionService.getPartitionCount();

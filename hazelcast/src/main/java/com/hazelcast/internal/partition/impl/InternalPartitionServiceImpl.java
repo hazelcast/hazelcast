@@ -72,7 +72,6 @@ import com.hazelcast.version.Version;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -92,6 +91,7 @@ import java.util.logging.Level;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -954,7 +954,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         int dataMembersSize = dataMembers.size();
         int partitionsPerMember = (dataMembersSize > 0 ? (int) ceil((float) partitionCount / dataMembersSize) : 0);
 
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(dataMembersSize);
+        Map<Address, List<Integer>> memberPartitions = createHashMap(dataMembersSize);
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address owner = getPartitionOwnerOrWait(partitionId);
 

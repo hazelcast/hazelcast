@@ -31,6 +31,7 @@ import java.util.Map;
 
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class MemberInfo implements IdentifiedDataSerializable {
 
@@ -106,7 +107,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         liteMember = in.readBoolean();
         int size = in.readInt();
         if (size > 0) {
-            attributes = new HashMap<String, Object>();
+            attributes = createHashMap(size);
         }
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();

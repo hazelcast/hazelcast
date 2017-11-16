@@ -32,13 +32,13 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Handles split-brain functionality for cache.
@@ -59,7 +59,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
     @Override
     public Runnable prepareMergeRunnable() {
-        final Map<String, Map<Data, CacheRecord>> recordMap = new HashMap<String, Map<Data, CacheRecord>>(configs.size());
+        final Map<String, Map<Data, CacheRecord>> recordMap = createHashMap(configs.size());
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
@@ -77,7 +77,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                     String cacheName = cacheRecordStore.getName();
                     Map<Data, CacheRecord> records = recordMap.get(cacheName);
                     if (records == null) {
-                        records = new HashMap<Data, CacheRecord>(cacheRecordStore.size());
+                        records = createHashMap(cacheRecordStore.size());
                         recordMap.put(cacheName, records);
                     }
                     for (Map.Entry<Data, CacheRecord> cacheRecordEntry : cacheRecordStore.getReadOnlyRecords().entrySet()) {

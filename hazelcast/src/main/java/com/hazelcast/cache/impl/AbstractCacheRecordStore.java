@@ -71,6 +71,9 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedE
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
+import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
@@ -283,7 +286,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             statistics.increaseCacheEvictions(1);
         }
         return evicted;
-}
+    }
 
     protected Data toData(Object obj) {
         if (obj instanceof Data) {
@@ -846,7 +849,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
     protected void deleteAllCacheEntry(Set<Data> keys) {
         if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {
-            Map<Object, Data> keysToDelete = new HashMap<Object, Data>();
+            Map<Object, Data> keysToDelete = createHashMap(keys.size());
             for (Data key : keys) {
                 Object localKeyObj = dataToValue(key);
                 keysToDelete.put(localKeyObj, key);
@@ -871,7 +874,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected Map<Data, Object> loadAllCacheEntry(Set<Data> keys) {
         if (cacheLoader != null) {
-            Map<Object, Data> keysToLoad = new HashMap<Object, Data>();
+            Map<Object, Data> keysToLoad = createHashMap(keys.size());
             for (Data key : keys) {
                 Object localKeyObj = dataToValue(key);
                 keysToLoad.put(localKeyObj, key);
@@ -886,7 +889,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     throw (CacheLoaderException) e;
                 }
             }
-            Map<Data, Object> result = new HashMap<Data, Object>();
+            Map<Data, Object> result = createHashMap(keysToLoad.size());
             for (Map.Entry<Object, Data> entry : keysToLoad.entrySet()) {
                 Object keyObj = entry.getKey();
                 Object valueObject = loaded.get(keyObj);
@@ -1406,11 +1409,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues) {
-        Set<Data> keysLoaded = new HashSet<Data>();
         Map<Data, Object> loaded = loadAllCacheEntry(keys);
         if (loaded == null || loaded.isEmpty()) {
-            return keysLoaded;
+            return emptySet();
         }
+        Set<Data> keysLoaded = createHashSet(loaded.size());
         if (replaceExistingValues) {
             for (Map.Entry<Data, Object> entry : loaded.entrySet()) {
                 Data key = entry.getKey();

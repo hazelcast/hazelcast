@@ -35,6 +35,7 @@ import java.util.Set;
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Request for executing scripts on the nodes from Management Center.
@@ -120,8 +121,9 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         script = getString(json, "script", "");
         engine = getString(json, "engine", "");
-        targets = new HashSet<String>();
-        for (JsonValue target : getArray(json, "targets", new JsonArray())) {
+        final JsonArray array = getArray(json, "targets", new JsonArray());
+        targets = createHashSet(array.size());
+        for (JsonValue target : array) {
             targets.add(target.asString());
         }
         targetAllMembers = getBoolean(json, "targetAllMembers", false);

@@ -19,9 +19,9 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
@@ -29,8 +29,10 @@ import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
 
 final class WaitersInfo implements IdentifiedDataSerializable {
 
+    private static final int INITIAL_WAITER_SIZE = 2;
+
     private String conditionId;
-    private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(2);
+    private Set<ConditionWaiter> waiters = SetUtil.createHashSet(INITIAL_WAITER_SIZE);
 
     public WaitersInfo() {
     }

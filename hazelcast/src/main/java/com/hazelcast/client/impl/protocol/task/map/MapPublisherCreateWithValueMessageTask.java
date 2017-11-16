@@ -39,13 +39,13 @@ import com.hazelcast.util.ExceptionUtil;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -89,7 +89,7 @@ public class MapPublisherCreateWithValueMessageTask
     }
 
     private Set<Map.Entry<Data, Data>> getQueryResults(List<Future> futures) {
-        HashMap<Data, Data> results = new HashMap<Data, Data>(futures.size());
+        Map<Data, Data> results = createHashMap(futures.size());
         for (Future future : futures) {
             Object result = null;
             try {

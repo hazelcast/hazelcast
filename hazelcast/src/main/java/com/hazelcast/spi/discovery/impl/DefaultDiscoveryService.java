@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 public class DefaultDiscoveryService
         implements DiscoveryService {
 
@@ -198,7 +200,7 @@ public class DefaultDiscoveryService
         }
 
         Map<String, Comparable> properties = config.getProperties();
-        Map<String, Comparable> mappedProperties = new HashMap<String, Comparable>();
+        Map<String, Comparable> mappedProperties = createHashMap(propertyDefinitions.size());
 
         for (PropertyDefinition propertyDefinition : propertyDefinitions) {
             String propertyKey = propertyDefinition.key();

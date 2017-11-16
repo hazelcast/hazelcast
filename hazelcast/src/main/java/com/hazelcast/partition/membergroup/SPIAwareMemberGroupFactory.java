@@ -26,10 +26,10 @@ import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * SPIAwareMemberGroupFactory is responsible for providing custom MemberGroups
@@ -49,7 +49,7 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
-        Set<MemberGroup> memberGroups = new HashSet<MemberGroup>();
+        Set<MemberGroup> memberGroups = createHashSet(allMembers.size());
 
         for (Member member : allMembers) {
             try {

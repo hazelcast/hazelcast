@@ -26,10 +26,11 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
@@ -222,7 +223,7 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        Map<K, V> result = new HashMap<K, V>(keys.size());
+        Map<K, V> result = createHashMap(keys.size());
         for (K key : keys) {
             result.put(key, map.get(key));
         }

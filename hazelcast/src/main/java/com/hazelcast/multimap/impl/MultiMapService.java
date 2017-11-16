@@ -64,6 +64,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
         EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats> {
 
@@ -255,7 +257,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         }
 
         int replicaIndex = event.getReplicaIndex();
-        Map<String, Map> map = new HashMap<String, Map>(namespaces.size());
+        Map<String, Map> map = createHashMap(namespaces.size());
 
         for (ServiceNamespace namespace : namespaces) {
             assert isKnownServiceNamespace(namespace) : namespace + " is not a MultiMapService namespace!";

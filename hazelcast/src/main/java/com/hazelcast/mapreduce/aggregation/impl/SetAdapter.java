@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 /**
  * A simple adapter class to serialize values of a {@link java.util.Set} using
  * Hazelcast serialization support.
@@ -59,7 +61,7 @@ public class SetAdapter<E>
             throws IOException {
 
         int size = in.readInt();
-        Set<E> set = new HashSet<E>(size);
+        Set<E> set = createHashSet(size);
         for (int i = 0; i < size; i++) {
             set.add((E) in.readObject());
         }

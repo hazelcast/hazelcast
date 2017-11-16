@@ -25,8 +25,9 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorPartition;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ReplicationOperation
         extends AbstractSchedulerOperation {
@@ -73,12 +74,11 @@ public class ReplicationOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        map = new HashMap<String, Map<String, ScheduledTaskDescriptor>>(size);
+        map = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             int subSize = in.readInt();
-            Map<String, ScheduledTaskDescriptor> subMap =
-                    new HashMap<String, ScheduledTaskDescriptor>(subSize);
+            Map<String, ScheduledTaskDescriptor> subMap = createHashMap(subSize);
             map.put(key, subMap);
             for (int k = 0; k < subSize; k++) {
                 subMap.put(in.readUTF(), (ScheduledTaskDescriptor) in.readObject());

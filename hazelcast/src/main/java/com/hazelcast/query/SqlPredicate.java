@@ -119,7 +119,7 @@ public class SqlPredicate
 
     private Predicate createPredicate(String sql) {
         String paramSql = sql;
-        Map<String, String> mapPhrases = new HashMap<String, String>(1);
+        Map<String, String> mapPhrases = new HashMap<String, String>();
         int apoIndex = getApostropheIndex(paramSql, 0);
         if (apoIndex != -1) {
             int phraseId = 0;

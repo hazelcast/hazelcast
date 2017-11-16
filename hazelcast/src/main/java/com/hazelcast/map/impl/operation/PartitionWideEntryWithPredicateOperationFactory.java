@@ -46,6 +46,7 @@ import java.util.Set;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
+import static com.hazelcast.util.MapUtil.createInt2ObjectHashMap;
 import static com.hazelcast.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.util.collection.InflatableSet.newBuilder;
 import static java.util.Collections.emptySet;
@@ -154,7 +155,10 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
             return Collections.emptyMap();
         }
 
-        Map<Integer, List<Data>> partitionToKeys = new Int2ObjectHashMap<List<Data>>();
+        final int roughSize = Math.min(partitionService.getPartitionCount(), keys.size());
+
+        //using the type of Int2ObjectHashMap allows the get and put operations to avoid auto-boxing
+        final Int2ObjectHashMap<List<Data>> partitionToKeys = createInt2ObjectHashMap(roughSize);
         for (Data key : keys) {
             int partitionId = partitionService.getPartitionId(key);
             List<Data> keyList = partitionToKeys.get(partitionId);
