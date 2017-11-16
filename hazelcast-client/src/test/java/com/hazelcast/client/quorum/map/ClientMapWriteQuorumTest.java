@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.quorum;
+package com.hazelcast.client.quorum.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.MapConfig;
@@ -48,7 +48,7 @@ import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
+public class ClientMapWriteQuorumTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME_PREFIX = "quorum";
 
@@ -74,7 +74,7 @@ public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
         quorumConfig.setName(QUORUM_ID);
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);
-        quorumConfig.setType(QuorumType.READ_WRITE);
+        quorumConfig.setType(QuorumType.WRITE);
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
         factory = new TestHazelcastFactory();
@@ -84,11 +84,11 @@ public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
     }
 
     private static void initializeClients() {
-        c1 = factory.newHazelcastClient(getClientConfig(cluster.h1));
-        c2 = factory.newHazelcastClient(getClientConfig(cluster.h2));
-        c3 = factory.newHazelcastClient(getClientConfig(cluster.h3));
-        c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
-        c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
+        c1 = factory.newHazelcastClient(getClientConfig(cluster.instance[0]));
+        c2 = factory.newHazelcastClient(getClientConfig(cluster.instance[1]));
+        c3 = factory.newHazelcastClient(getClientConfig(cluster.instance[2]));
+        c4 = factory.newHazelcastClient(getClientConfig(cluster.instance[3]));
+        c5 = factory.newHazelcastClient(getClientConfig(cluster.instance[4]));
     }
 
     private static void verifyClients() {
@@ -175,52 +175,6 @@ public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
         HashMap<Object, Object> map = new HashMap<Object, Object>();
         map.put("foo", "bar");
         map4.putAll(map);
-    }
-
-    @Test
-    public void testGetOperationSuccessfulWhenQuorumSizeMet() {
-        map1.get("foo");
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        map4.get("foo");
-    }
-
-    @Test
-    public void testGetAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> future = map1.getAsync("foo");
-        future.get();
-    }
-
-    @Test(expected = ExecutionException.class)
-    public void testGetAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> future = map4.getAsync("foo");
-        future.get();
-    }
-
-    @Test
-    public void testGetAllOperationSuccessfulWhenQuorumSizeMet() {
-        HashSet<Object> keys = new HashSet<Object>();
-        keys.add("foo");
-        map1.getAll(keys);
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testGetAllOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        HashSet<Object> keys = new HashSet<Object>();
-        keys.add("foo");
-        map4.getAll(keys);
-    }
-
-    @Test
-    public void testGetEntryViewOperationSuccessfulWhenQuorumSizeMet() {
-        map1.getEntryView("foo");
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testGetEntryViewOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        map4.getEntryView("foo");
     }
 
     @Test
@@ -346,56 +300,6 @@ public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testContainsKeyOperationSuccessfulWhenQuorumSizeMet() {
-        map1.containsKey("foo");
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testContainsKeyOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        map4.containsKey("foo");
-    }
-
-    @Test
-    public void testContainsValueOperationSuccessfulWhenQuorumSizeMet() {
-        map1.containsValue("foo");
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testContainsValueOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        map4.containsValue("foo");
-    }
-
-    @Test
-    public void testKeySetOperationSuccessfulWhenQuorumSizeMet() {
-        map1.keySet();
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testKeySetOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        map4.keySet();
-    }
-
-    @Test
-    public void testValuesOperationSuccessfulWhenQuorumSizeMet() {
-        map1.values();
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testValuesOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        map4.values();
-    }
-
-    @Test
-    public void testEntrySetOperationSuccessfulWhenQuorumSizeMet() {
-        map1.entrySet();
-    }
-
-    @Test(expected = QuorumException.class)
-    public void testEntrySetOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        map4.entrySet();
-    }
-
-    @Test
     public void testAddIndexOperationSuccessfulWhenQuorumSizeMet() {
         map1.addIndex("foo", false);
     }
@@ -460,7 +364,7 @@ public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSubmitToKeyOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testSubmmtToKeyOperationSuccessfulWhenQuorumSizeMet() throws Exception {
         Future future = map1.submitToKey("foo", new TestLoggingEntryProcessor());
         future.get();
     }

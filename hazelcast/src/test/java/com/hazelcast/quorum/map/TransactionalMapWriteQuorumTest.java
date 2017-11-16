@@ -91,7 +91,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxPutThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.put("foo", "bar");
@@ -100,7 +100,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxGetForUpdateThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.getForUpdate("foo");
@@ -109,7 +109,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxRemoveThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.remove("foo");
@@ -118,7 +118,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxRemoveValueThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.remove("foo", "bar");
@@ -127,7 +127,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxDeleteThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.delete("foo");
@@ -136,7 +136,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxSetThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.set("foo", "bar");
@@ -145,7 +145,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxPutWithTTLThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.put("foo", "bar", 10, TimeUnit.SECONDS);
@@ -154,7 +154,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxPutIfAbsentThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.putIfAbsent("foo", "bar");
@@ -163,7 +163,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxReplaceThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.replace("foo", "bar");
@@ -172,7 +172,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxReplaceExpectedValueThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.replace("foo", "bar", "baz");

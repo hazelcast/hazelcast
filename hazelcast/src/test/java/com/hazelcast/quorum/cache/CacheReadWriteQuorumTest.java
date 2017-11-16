@@ -82,11 +82,11 @@ public class CacheReadWriteQuorumTest extends HazelcastTestSupport {
 
         PartitionedCluster cluster = new PartitionedCluster(new TestHazelcastInstanceFactory())
                 .partitionFiveMembersThreeAndTwo(cacheConfig, quorumConfig);
-        cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(cluster.h1);
-        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(cluster.h2);
-        cachingProvider3 = HazelcastServerCachingProvider.createCachingProvider(cluster.h3);
-        cachingProvider4 = HazelcastServerCachingProvider.createCachingProvider(cluster.h4);
-        cachingProvider5 = HazelcastServerCachingProvider.createCachingProvider(cluster.h5);
+        cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(cluster.instance[0]);
+        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(cluster.instance[1]);
+        cachingProvider3 = HazelcastServerCachingProvider.createCachingProvider(cluster.instance[2]);
+        cachingProvider4 = HazelcastServerCachingProvider.createCachingProvider(cluster.instance[3]);
+        cachingProvider5 = HazelcastServerCachingProvider.createCachingProvider(cluster.instance[4]);
     }
 
     @Before

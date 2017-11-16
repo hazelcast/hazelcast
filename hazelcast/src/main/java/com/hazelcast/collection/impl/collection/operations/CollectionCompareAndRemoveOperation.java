@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Map;
@@ -30,7 +31,7 @@ import java.util.Set;
 
 import static com.hazelcast.util.SetUtil.createHashSet;
 
-public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation {
+public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     private boolean retain;
     private Set<Data> valueSet;

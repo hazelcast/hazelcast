@@ -92,7 +92,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxGetThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.get("foo");
@@ -101,7 +101,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxSizeThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.size();
@@ -110,7 +110,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxContainsKeyThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.containsKey("foo");
@@ -119,7 +119,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxIsEmptyThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.isEmpty();
@@ -128,7 +128,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxKeySetThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.keySet();
@@ -137,7 +137,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxKeySetWithPredicateThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.keySet(TruePredicate.INSTANCE);
@@ -146,7 +146,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxValuesThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.values();
@@ -155,7 +155,7 @@ public class TransactionalMapReadQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxValuesWithPredicateThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
         map.values(TruePredicate.INSTANCE);

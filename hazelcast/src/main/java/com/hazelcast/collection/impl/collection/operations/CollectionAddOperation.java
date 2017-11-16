@@ -23,10 +23,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class CollectionAddOperation extends CollectionBackupAwareOperation {
+public class CollectionAddOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     protected Data value;
     protected long itemId = -1;
