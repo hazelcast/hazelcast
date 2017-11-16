@@ -492,12 +492,11 @@ public class Config {
      * with the name {@code default}.
      *
      * @param name name of the cardinality estimator config
-     * @return the cardinality estimator configuration
+     * @return the cache configuration
      * @throws ConfigurationException if ambiguous configurations are found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
-     * @see EvictionConfig#setSize(int)
      */
     public CacheSimpleConfig findCacheConfig(String name) {
         name = getBaseName(name);
@@ -506,6 +505,23 @@ public class Config {
             return config.getAsReadOnly();
         }
         return getCacheConfig("default").getAsReadOnly();
+    }
+
+    /**
+     * Returns the cache config with the given name or {@code null} if there is none.
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     *
+     * @param name name of the cache config
+     * @return the cache configuration or {@code null} if none was found
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public CacheSimpleConfig findCacheConfigOrNull(String name) {
+        name = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, cacheConfigs, name);
     }
 
     /**
