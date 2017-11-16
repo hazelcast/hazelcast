@@ -16,14 +16,23 @@
 
 package com.hazelcast.client.map.querycache;
 
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
+import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEventService;
+import com.hazelcast.client.impl.querycache.subscriber.QueryCacheToListenerMapper;
 import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.accumulator.DefaultAccumulatorInfoSupplier;
 import com.hazelcast.map.impl.querycache.publisher.MapListenerRegistry;
 import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
@@ -34,6 +43,7 @@ import com.hazelcast.map.impl.querycache.publisher.QueryCacheListenerRegistry;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheFactory;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -48,18 +58,26 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
+
+    private static final int STRESS_TEST_RUN_SECONDS = 3;
+    private static final int STRESS_TEST_THREAD_COUNT = 4;
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -69,7 +87,141 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_internal_query_caches_upon_map_destroy() throws Exception {
+    public void stress_user_listener_removal_upon_query_cache_destroy() throws InterruptedException {
+        final String[] mapNames = new String[]{"mapA", "mapB", "mapC", "mapD"};
+
+        Config config = getConfig();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        HazelcastInstance node3 = factory.newHazelcastInstance(config);
+
+        final HazelcastInstance client = factory.newHazelcastClient();
+
+        final AtomicBoolean stop = new AtomicBoolean(false);
+        ArrayList<Thread> threads = new ArrayList<Thread>();
+        for (int i = 0; i < STRESS_TEST_THREAD_COUNT; i++) {
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    while (!stop.get()) {
+                        String name = mapNames[getInt(0, 4)];
+                        final IMap<Integer, Integer> map = client.getMap(name);
+                        int key = getInt(0, Integer.MAX_VALUE);
+                        map.put(key, 1);
+                        QueryCache queryCache = map.getQueryCache(name, TruePredicate.INSTANCE, true);
+                        queryCache.get(key);
+
+                        queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+                            @Override
+                            public void entryAdded(EntryEvent<Integer, Integer> event) {
+
+                            }
+                        }, true);
+
+                        queryCache.destroy();
+                        map.destroy();
+                    }
+                }
+            };
+            threads.add(thread);
+        }
+
+        for (Thread thread : threads) {
+            thread.start();
+        }
+
+        sleepSeconds(STRESS_TEST_RUN_SECONDS);
+        stop.set(true);
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        assertNoUserListenerLeft(node1);
+        assertNoUserListenerLeft(node2);
+        assertNoUserListenerLeft(node3);
+
+        for (String mapName : mapNames) {
+            // this is to ensure no user added listener is left on this client side query-cache
+            assertNoUserListenerLeft(mapName, client);
+        }
+
+        Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
+        for (HazelcastInstance instance : instances) {
+            // this is to ensure no publisher side resource is left on server side event service
+            assertServerSideEventServiceCleared(instance);
+        }
+    }
+
+    @Test
+    public void event_service_is_empty_after_queryCache_destroy() {
+        String mapName = "test";
+
+        HazelcastInstance node1 = factory.newHazelcastInstance();
+        HazelcastInstance node2 = factory.newHazelcastInstance();
+
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        IMap<Integer, Integer> map = client.getMap(mapName);
+        QueryCache queryCache = map.getQueryCache(mapName, TruePredicate.INSTANCE, true);
+
+        queryCache.destroy();
+
+        assertNoUserListenerLeft(node1);
+        assertNoUserListenerLeft(node2);
+    }
+
+    @Test
+    public void event_service_is_empty_after_queryCache_concurrent_destroy() throws InterruptedException {
+        final HazelcastInstance node1 = factory.newHazelcastInstance();
+        HazelcastInstance node2 = factory.newHazelcastInstance();
+
+        String mapName = "test";
+        HazelcastInstance client = factory.newHazelcastClient();
+        final IMap<Integer, Integer> map = client.getMap(mapName);
+        populateMap(map);
+
+        final AtomicBoolean stop = new AtomicBoolean(false);
+        ArrayList<Thread> threads = new ArrayList<Thread>();
+        for (int i = 0; i < STRESS_TEST_THREAD_COUNT; i++) {
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    while (!stop.get()) {
+                        QueryCache queryCache = map.getQueryCache("a", TruePredicate.INSTANCE, true);
+
+                        queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+                            @Override
+                            public void entryAdded(EntryEvent<Integer, Integer> event) {
+
+                            }
+                        }, true);
+
+                        queryCache.destroy();
+                    }
+                }
+            };
+            threads.add(thread);
+        }
+
+        for (Thread thread : threads) {
+            thread.start();
+        }
+
+        sleepSeconds(STRESS_TEST_RUN_SECONDS);
+        stop.set(true);
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        assertNoUserListenerLeft(node1);
+        assertNoUserListenerLeft(node2);
+        assertNoUserListenerLeft(mapName, client);
+    }
+
+    @Test
+    public void removes_internal_query_caches_upon_map_destroy() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
 
@@ -99,26 +251,30 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         final HazelcastInstance client = factory.newHazelcastClient();
         final String mapName = "test";
 
-        ExecutorService pool = Executors.newFixedThreadPool(5);
+        ExecutorService pool = Executors.newFixedThreadPool(STRESS_TEST_THREAD_COUNT);
+        final AtomicBoolean stop = new AtomicBoolean(false);
 
         for (int i = 0; i < 1000; i++) {
             Runnable runnable = new Runnable() {
                 public void run() {
-                    IMap<Integer, Integer> map = client.getMap(mapName);
-                    ;
-                    try {
-                        populateMap(map);
-                        for (int j = 0; j < 10; j++) {
-                            map.getQueryCache(j + "-test-QC", TruePredicate.INSTANCE, true);
+                    while (!stop.get()) {
+                        IMap<Integer, Integer> map = client.getMap(mapName);
+                        try {
+                            populateMap(map);
+                            for (int j = 0; j < 10; j++) {
+                                map.getQueryCache(j + "-test-QC", TruePredicate.INSTANCE, true);
+                            }
+                        } finally {
+                            map.destroy();
                         }
-                    } finally {
-                        map.destroy();
                     }
-
                 }
             };
             pool.submit(runnable);
         }
+
+        sleepSeconds(STRESS_TEST_RUN_SECONDS);
+        stop.set(true);
 
         pool.shutdown();
         pool.awaitTermination(120, TimeUnit.SECONDS);
@@ -129,14 +285,14 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, provider.getQueryCacheCount(mapName));
             }
         });
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, queryCacheFactory.getQueryCacheCount());
             }
         });
@@ -201,5 +357,39 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         return queryCacheContext.getPublisherContext();
+    }
+
+    private static void assertNoUserListenerLeft(HazelcastInstance node) {
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+        EventServiceImpl eventServiceImpl = (EventServiceImpl) nodeEngineImpl.getEventService();
+        EventServiceSegment segment = eventServiceImpl.getSegment(MapService.SERVICE_NAME, false);
+        ConcurrentMap registrationIdMap = segment.getRegistrationIdMap();
+
+        assertTrue(registrationIdMap.toString(), registrationIdMap.isEmpty());
+    }
+
+    private static void assertServerSideEventServiceCleared(HazelcastInstance node) {
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+        EventServiceImpl eventServiceImpl = (EventServiceImpl) nodeEngineImpl.getEventService();
+        EventServiceSegment segment = eventServiceImpl.getSegment(MapService.SERVICE_NAME, false);
+        ConcurrentMap registrationIdMap = segment.getRegistrationIdMap();
+
+        assertTrue(registrationIdMap.toString(), registrationIdMap.isEmpty());
+    }
+
+    private static void assertNoUserListenerLeft(String mapName, HazelcastInstance client) {
+        ProxyManager proxyManager = ((HazelcastClientProxy) client).client.getProxyManager();
+        ClientContext context = proxyManager.getContext();
+        ClientQueryCacheContext queryCacheContext = context.getQueryCacheContext();
+        SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
+        QueryCacheEventService eventService = subscriberContext.getEventService();
+
+        assertFalse(hasAnyListenerRegistered(eventService, mapName));
+    }
+
+    private static boolean hasAnyListenerRegistered(QueryCacheEventService eventService, String mapName) {
+        ConcurrentMap<String, QueryCacheToListenerMapper> registrations = ((ClientQueryCacheEventService) eventService).getRegistrations();
+        QueryCacheToListenerMapper queryCacheToListenerMapper = registrations.get(mapName);
+        return queryCacheToListenerMapper != null && queryCacheToListenerMapper.hasAnyQueryCacheRegistered();
     }
 }

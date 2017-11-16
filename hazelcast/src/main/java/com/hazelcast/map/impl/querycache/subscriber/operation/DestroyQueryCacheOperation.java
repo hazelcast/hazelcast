@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
@@ -27,9 +28,12 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.QueryCacheListenerRegistry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+
+import static com.hazelcast.map.impl.querycache.ListenerRegistrationHelper.generateListenerName;
 
 /**
  * This operation removes all {@code QueryCache} resources on a node.
@@ -53,6 +57,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
             deregisterLocalIMapListener();
             removeAccumulatorInfo();
             removePublisherAccumulators();
+            removeAllListeners();
             result = true;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -84,7 +89,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
             return;
         }
         String listenerId = listenerRegistry.remove(cacheId);
-        mapService.getMapServiceContext().removeEventListener(cacheId, listenerId);
+        mapService.getMapServiceContext().removeEventListener(name, listenerId);
     }
 
     private void removeAccumulatorInfo() {
@@ -101,6 +106,11 @@ public class DestroyQueryCacheOperation extends MapOperation {
             return;
         }
         publisherRegistry.remove(cacheId);
+    }
+
+    private void removeAllListeners() {
+        EventService eventService = getNodeEngine().getEventService();
+        eventService.deregisterAllListeners(MapService.SERVICE_NAME, generateListenerName(name, cacheId));
     }
 
     private PublisherContext getPublisherContext() {
