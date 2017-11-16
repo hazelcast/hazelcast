@@ -21,10 +21,11 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.util.Map;
 
-public class CollectionClearOperation extends CollectionBackupAwareOperation {
+public class CollectionClearOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     private Map<Long, Data> itemIdMap;
 

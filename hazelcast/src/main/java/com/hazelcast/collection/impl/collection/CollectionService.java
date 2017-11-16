@@ -32,6 +32,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -44,7 +45,8 @@ import java.util.Properties;
 import java.util.Set;
 
 public abstract class CollectionService implements ManagedService, RemoteService,
-        EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
+        EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService,
+        QuorumAwareService {
 
     protected final NodeEngine nodeEngine;
 

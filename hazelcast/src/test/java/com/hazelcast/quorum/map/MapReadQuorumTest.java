@@ -71,11 +71,11 @@ public class MapReadQuorumTest {
     @Before
     public void setUp() {
         String mapName = randomMapName(MAP_NAME_PREFIX);
-        map1 = cluster.h1.getMap(mapName);
-        map2 = cluster.h2.getMap(mapName);
-        map3 = cluster.h3.getMap(mapName);
-        map4 = cluster.h4.getMap(mapName);
-        map5 = cluster.h5.getMap(mapName);
+        map1 = cluster.instance[0].getMap(mapName);
+        map2 = cluster.instance[1].getMap(mapName);
+        map3 = cluster.instance[2].getMap(mapName);
+        map4 = cluster.instance[3].getMap(mapName);
+        map5 = cluster.instance[4].getMap(mapName);
     }
 
     @AfterClass

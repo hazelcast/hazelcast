@@ -73,7 +73,7 @@ public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxPollThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.poll();
@@ -82,7 +82,7 @@ public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxTakeThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.take();
@@ -91,7 +91,7 @@ public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxPeekThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.peek();
@@ -100,7 +100,7 @@ public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
 
     @Test(expected = TransactionException.class)
     public void testTxOfferThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.instance[3].newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.offer("");

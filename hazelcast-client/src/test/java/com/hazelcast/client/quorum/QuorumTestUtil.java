@@ -17,6 +17,7 @@
 package com.hazelcast.client.quorum;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 
@@ -25,6 +26,10 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 public class QuorumTestUtil {
 
     private QuorumTestUtil() {
+    }
+
+    public static HazelcastInstance createClient(TestHazelcastFactory factory, HazelcastInstance instance) {
+        return factory.newHazelcastClient(getClientConfig(instance));
     }
 
     public static ClientConfig getClientConfig(HazelcastInstance instance) {

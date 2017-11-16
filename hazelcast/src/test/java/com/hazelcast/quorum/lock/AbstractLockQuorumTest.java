@@ -57,11 +57,11 @@ public abstract class AbstractLockQuorumTest {
         cluster = new PartitionedCluster(new TestHazelcastInstanceFactory());
         cluster.createFiveMemberCluster(lockConfig, quorumConfig);
 
-        l1 = getLock(cluster.h1);
-        l2 = getLock(cluster.h2);
-        l3 = getLock(cluster.h3);
-        l4 = getLock(cluster.h4);
-        l5 = getLock(cluster.h5);
+        l1 = getLock(cluster.instance[0]);
+        l2 = getLock(cluster.instance[1]);
+        l3 = getLock(cluster.instance[2]);
+        l4 = getLock(cluster.instance[3]);
+        l5 = getLock(cluster.instance[4]);
     }
 
     protected static ILock getLock(HazelcastInstance instance) {

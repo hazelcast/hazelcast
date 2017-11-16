@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +37,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
  * @param <T> Type of Collection such as List, Set
  */
 public abstract class CollectionConfig<T extends CollectionConfig>
-        implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default maximum size for the Configuration.
@@ -57,6 +59,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     private int maxSize = DEFAULT_MAX_SIZE;
     private boolean statisticsEnabled = true;
 
+    private String quorumName;
+
     protected CollectionConfig() {
     }
 
@@ -67,6 +71,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
         this.statisticsEnabled = config.statisticsEnabled;
+        this.quorumName = config.quorumName;
     }
 
 
@@ -221,6 +226,26 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         getItemListenerConfigs().add(itemListenerConfig);
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public T setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return (T) this;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -234,6 +259,9 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
         out.writeBoolean(statisticsEnabled);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -244,6 +272,9 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
         statisticsEnabled = in.readBoolean();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @Override
@@ -272,6 +303,9 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         return getItemListenerConfigs().equals(that.getItemListenerConfigs());
     }
 
@@ -283,6 +317,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         result = 31 * result + asyncBackupCount;
         result = 31 * result + getMaxSize();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -291,6 +326,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      */
     protected String fieldsToString() {
         return "name='" + name + "', listenerConfigs=" + listenerConfigs + ", backupCount=" + backupCount
-                + ", asyncBackupCount=" + asyncBackupCount + ", maxSize=" + maxSize + ", statisticsEnabled=" + statisticsEnabled;
+                + ", asyncBackupCount=" + asyncBackupCount + ", maxSize=" + maxSize + ", statisticsEnabled=" + statisticsEnabled
+                + ", quorumName=" + quorumName;
     }
 }
