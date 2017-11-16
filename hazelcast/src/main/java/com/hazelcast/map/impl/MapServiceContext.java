@@ -180,8 +180,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     QueryCacheContext getQueryCacheContext();
 
-    String addListenerAdapter(String cacheName, ListenerAdapter listenerAdaptor);
-
     String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
 
     String addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);

@@ -140,6 +140,11 @@ public class EventServiceSegment<S> {
         return registrationIdMap;
     }
 
+    // this method is only used for testing purposes
+    public ConcurrentMap<String, Collection<Registration>> getRegistrations() {
+        return registrations;
+    }
+
     /**
      * Adds a registration for the {@code topic} and notifies the listener and service of the listener
      * registration. Returns if the registration was added. The registration might not be added

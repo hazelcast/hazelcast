@@ -39,6 +39,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
+import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.MapUtil;
 
@@ -52,6 +53,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.TRUE;
@@ -175,12 +179,19 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public void destroy() {
-        boolean destroyed = destroyLocalResources();
-        if (!destroyed) {
-            return;
-        }
+        removeAccumulatorInfo();
+        removeSubscriberRegistry();
+        removeInternalQueryCache();
 
-        destroyRemoteResources();
+        ContextMutexFactory.Mutex mutex = context.getLifecycleMutexFactory().mutexFor(mapName);
+        try {
+            synchronized (mutex) {
+                destroyRemoteResources();
+                removeAllUserDefinedListeners();
+            }
+        } finally {
+            closeResource(mutex);
+        }
     }
 
     private void destroyRemoteResources() {
@@ -189,17 +200,21 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         if (invokerWrapper instanceof NodeInvokerWrapper) {
-            subscriberContext.getEventService().removePublisherListener(mapName, publisherListenerId);
+            subscriberContext.getEventService().removePublisherListener(mapName, cacheId, publisherListenerId);
 
             Collection<Member> memberList = context.getMemberList();
+            List<Future> futures = new ArrayList<Future>(memberList.size());
+
             for (Member member : memberList) {
                 Address address = member.getAddress();
                 Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheId);
-                invokerWrapper.invokeOnTarget(removePublisher, address);
+                Future future = invokerWrapper.invokeOnTarget(removePublisher, address);
+                futures.add(future);
             }
+            waitWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);
         } else {
             try {
-                subscriberContext.getEventService().removePublisherListener(mapName, publisherListenerId);
+                subscriberContext.getEventService().removePublisherListener(mapName, cacheId, publisherListenerId);
             } finally {
                 Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheId);
                 invokerWrapper.invoke(removePublisher);
@@ -207,10 +222,13 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         }
     }
 
-    private boolean destroyLocalResources() {
-        removeAccumulatorInfo();
-        removeSubscriberRegistry();
-        return removeInternalQueryCache();
+    /**
+     * Removes listeners which are registered by users to query-cache via {@link com.hazelcast.map.QueryCache#addEntryListener}
+     * These listeners are called user defined listeners to distinguish them from listeners which are required for internal
+     * implementation of query-cache. User defined listeners are local to query-caches.
+     */
+    private void removeAllUserDefinedListeners() {
+        context.getQueryCacheEventService().removeAllListeners(mapName, cacheId);
     }
 
     private boolean removeSubscriberRegistry() {
@@ -475,6 +493,10 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public String toString() {
-        return recordStore.toString();
+        return "DefaultQueryCache{"
+                + "mapName='" + mapName + '\''
+                + ", cacheId='" + cacheId + '\''
+                + ", cacheName='" + cacheName + '\''
+                + '}';
     }
 }
