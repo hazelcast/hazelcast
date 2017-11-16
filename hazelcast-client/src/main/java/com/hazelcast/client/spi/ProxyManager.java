@@ -290,25 +290,26 @@ public final class ProxyManager {
         if (proxyFuture != null) {
             return proxyFuture.get();
         }
-        final ClientProxyFactory factory = proxyFactories.get(service);
+        ClientProxyFactory factory = proxyFactories.get(service);
         if (factory == null) {
             throw new ClientServiceNotFoundException("No factory registered for service: " + service);
         }
-        final ClientProxy clientProxy = createClientProxy(id, factory);
         proxyFuture = new ClientProxyFuture();
-        final ClientProxyFuture current = proxies.putIfAbsent(ns, proxyFuture);
+        ClientProxyFuture current = proxies.putIfAbsent(ns, proxyFuture);
         if (current != null) {
             return current.get();
         }
+
         try {
+            ClientProxy clientProxy = createClientProxy(id, factory);
             initializeWithRetry(clientProxy);
+            proxyFuture.set(clientProxy);
+            return clientProxy;
         } catch (Throwable e) {
             proxies.remove(ns);
             proxyFuture.set(e);
             throw rethrow(e);
         }
-        proxyFuture.set(clientProxy);
-        return clientProxy;
     }
 
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
