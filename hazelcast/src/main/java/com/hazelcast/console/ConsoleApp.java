@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.memory.MemoryUnit.BYTES;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -725,7 +726,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         if (args.length > 3) {
             start = Integer.parseInt(args[3]);
         }
-        Map<String, byte[]> theMap = new HashMap<String, byte[]>(count);
+        Map<String, byte[]> theMap = createHashMap(count);
         for (int i = 0; i < count; i++) {
             theMap.put("key" + (start + i), value);
         }

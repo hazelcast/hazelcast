@@ -35,8 +35,9 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
@@ -131,7 +132,7 @@ public class CachePutAllBackupOperation
         final boolean recordNotNull = in.readBoolean();
         if (recordNotNull) {
             int size = in.readInt();
-            cacheRecords = new HashMap<Data, CacheRecord>(size);
+            cacheRecords = createHashMap(size);
             for (int i = 0; i < size; i++) {
                 final Data key = in.readData();
                 final CacheRecord record = in.readObject();

@@ -24,8 +24,9 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * This class triggers backup method for items' ID.
@@ -67,7 +68,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        keySet = new HashSet<Long>(size);
+        keySet = createHashSet(size);
         for (int i = 0; i < size; i++) {
             keySet.add(in.readLong());
         }

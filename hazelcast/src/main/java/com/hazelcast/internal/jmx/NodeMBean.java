@@ -20,9 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Management bean for {@link com.hazelcast.instance.Node}
@@ -35,7 +36,7 @@ public class NodeMBean extends HazelcastMBean<Node> {
     public NodeMBean(HazelcastInstance hazelcastInstance, Node node, ManagementService service) {
         super(node, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.Node"));
         properties.put("name", quote("node" + node.address));
         properties.put("instance", quote(hazelcastInstance.getName()));

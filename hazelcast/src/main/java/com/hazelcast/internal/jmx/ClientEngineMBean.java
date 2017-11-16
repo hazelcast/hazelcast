@@ -19,9 +19,10 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.HazelcastInstance;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Management bean for {@link com.hazelcast.client.ClientEngine}
@@ -29,10 +30,13 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.ClientEngine")
 public class ClientEngineMBean extends HazelcastMBean<ClientEngine> {
 
+    private static final int PROPERTY_COUNT = 3;
+
     public ClientEngineMBean(HazelcastInstance hazelcastInstance, ClientEngine clientEngine, ManagementService service) {
         super(clientEngine, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        //no need to create HashTable here, as the setObjectName method creates a copy of the given properties
+        final Map<String, String> properties = createHashMap(PROPERTY_COUNT);
         properties.put("type", quote("HazelcastInstance.ClientEngine"));
         properties.put("name", quote(hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

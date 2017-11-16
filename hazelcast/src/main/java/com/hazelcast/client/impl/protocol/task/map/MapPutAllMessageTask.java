@@ -29,8 +29,9 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class MapPutAllMessageTask
         extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {
@@ -78,7 +79,7 @@ public class MapPutAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        HashMap<Data, Data> map = new HashMap<Data, Data>();
+        Map<Data, Data> map = createHashMap(parameters.entries.size());
         for (Map.Entry<Data, Data> entry : parameters.entries) {
             map.put(entry.getKey(), entry.getValue());
         }

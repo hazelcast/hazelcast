@@ -28,10 +28,10 @@ import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public class IndexImpl implements Index {
 
@@ -99,7 +99,7 @@ public class IndexImpl implements Index {
             return getRecords(values[0]);
         } else {
             if (converter != null) {
-                Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
+                Set<Comparable> convertedValues = createHashSet(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }

@@ -30,8 +30,9 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ReplicatedMapPutAllMessageTask
         extends AbstractAllPartitionsMessageTask<ReplicatedMapPutAllCodec.RequestParameters> {
@@ -88,7 +89,7 @@ public class ReplicatedMapPutAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        final HashMap map = new HashMap();
+        final Map map = createHashMap(parameters.entries.size());
         for (Map.Entry entry : parameters.entries) {
             map.put(entry.getKey(), entry.getValue());
         }

@@ -46,8 +46,9 @@ import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicProxy;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 
 /**
  * A helper class which contains various types of {@link HazelcastMBean} factory methods and metadata.
@@ -55,7 +56,7 @@ import java.util.concurrent.ConcurrentMap;
 final class MBeans {
 
     private static final ConcurrentMap<String, MBeanFactory> MBEAN_FACTORY_TYPES_REGISTRY
-            = new ConcurrentHashMap<String, MBeanFactory>(MBeanFactory.values().length);
+            = createConcurrentHashMap(MBeanFactory.values().length);
 
     static {
         MBeanFactory[] mBeanFactories = MBeanFactory.values();

@@ -24,8 +24,9 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * This class stores items' ID when DrainOperation run.
@@ -73,7 +74,7 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
         super.readInternal(in);
         if (in.readBoolean()) {
             int size = in.readInt();
-            itemIdSet = new HashSet<Long>(size);
+            itemIdSet = createHashSet(size);
             for (int i = 0; i < size; i++) {
                 itemIdSet.add(in.readLong());
             }

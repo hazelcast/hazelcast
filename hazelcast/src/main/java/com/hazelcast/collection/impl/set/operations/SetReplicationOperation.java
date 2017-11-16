@@ -23,8 +23,9 @@ import com.hazelcast.collection.impl.set.SetContainer;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SetReplicationOperation extends CollectionReplicationOperation {
 
@@ -38,7 +39,7 @@ public class SetReplicationOperation extends CollectionReplicationOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, CollectionContainer>(mapSize);
+        migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             SetContainer container = new SetContainer();

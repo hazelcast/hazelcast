@@ -23,13 +23,13 @@ import com.hazelcast.collection.impl.collection.operations.CollectionContainsOpe
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.HashSet;
+
+import static java.util.Collections.singleton;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -44,9 +44,7 @@ public class ListContainsMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        HashSet<Data> values = new HashSet<Data>(1);
-        values.add(parameters.value);
-        return new CollectionContainsOperation(parameters.name, values);
+        return new CollectionContainsOperation(parameters.name, singleton(parameters.value));
     }
 
     @Override

@@ -23,10 +23,10 @@ import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.internal.management.JsonSerializable;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -122,7 +122,7 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable {
         remainingDataLoadTimeMillis = root.getLong("remainingDataLoadTimeMillis", -1);
 
         JsonArray memberStatuses = (JsonArray) root.get("memberHotRestartStatuses");
-        memberHotRestartStatusMap = new HashMap<String, MemberHotRestartStatus>(memberStatuses.size());
+        memberHotRestartStatusMap = createHashMap(memberStatuses.size());
         for (JsonValue value : memberStatuses) {
             JsonObject memberStatus = (JsonObject) value;
             String member = memberStatus.getString("member", "<unknown>");

@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 /**
  * Gets all keys from the cache.
  * <p>{@link com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory} creates this operation.</p>
@@ -39,7 +41,7 @@ public class CacheGetAllOperation
         extends PartitionWideCacheOperation
         implements ReadonlyOperation {
 
-    private Set<Data> keys = new HashSet<Data>();
+    private Set<Data> keys;
     private ExpiryPolicy expiryPolicy;
 
     public CacheGetAllOperation(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
@@ -49,6 +51,7 @@ public class CacheGetAllOperation
     }
 
     public CacheGetAllOperation() {
+        keys = new HashSet<Data>();
     }
 
     public void run() {
@@ -102,6 +105,7 @@ public class CacheGetAllOperation
         expiryPolicy = in.readObject();
         int size = in.readInt();
         if (size > -1) {
+            keys = createHashSet(size);
             for (int i = 0; i < size; i++) {
                 Data key = in.readData();
                 keys.add(key);

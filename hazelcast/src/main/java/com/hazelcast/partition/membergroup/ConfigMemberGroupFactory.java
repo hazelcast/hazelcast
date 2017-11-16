@@ -24,17 +24,18 @@ import com.hazelcast.util.AddressUtil;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 
 public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     private final Map<Integer, MemberGroupConfig> memberGroupConfigMap;
 
     public ConfigMemberGroupFactory(Collection<MemberGroupConfig> memberGroupConfigs) {
-        this.memberGroupConfigMap = new LinkedHashMap<Integer, MemberGroupConfig>();
+        this.memberGroupConfigMap = createLinkedHashMap(memberGroupConfigs.size());
         int key = 0;
         for (MemberGroupConfig groupConfig : memberGroupConfigs) {
             memberGroupConfigMap.put(key++, groupConfig);

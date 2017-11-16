@@ -28,6 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableCollection;
 
@@ -92,8 +93,8 @@ final class MemberMap {
      * @return a new {@code MemberMap}
      */
     static MemberMap createNew(int version, MemberImpl... members) {
-        Map<Address, MemberImpl> addressMap = new LinkedHashMap<Address, MemberImpl>();
-        Map<String, MemberImpl> uuidMap = new LinkedHashMap<String, MemberImpl>();
+        Map<Address, MemberImpl> addressMap = createLinkedHashMap(members.length);
+        Map<String, MemberImpl> uuidMap = createLinkedHashMap(members.length);
 
         for (MemberImpl member : members) {
             putMember(addressMap, uuidMap, member);

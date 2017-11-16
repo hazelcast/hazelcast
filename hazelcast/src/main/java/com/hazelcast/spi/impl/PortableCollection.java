@@ -26,8 +26,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public final class PortableCollection implements Portable {
 
@@ -78,7 +79,7 @@ public final class PortableCollection implements Portable {
         if (list) {
             collection = new ArrayList<Data>(size);
         } else {
-            collection = new HashSet<Data>(size);
+            collection = createHashSet(size);
         }
         final ObjectDataInput in = reader.getRawDataInput();
         for (int i = 0; i < size; i++) {

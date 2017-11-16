@@ -19,7 +19,6 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -41,7 +40,6 @@ import com.hazelcast.util.function.Supplier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +53,8 @@ import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorS
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.MapUtil.createHashMapAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount"})
@@ -243,7 +243,7 @@ public class ScheduledExecutorServiceProxy
         initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
-        Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
+        Map<Member, IScheduledFuture<V>> futures = createHashMap(members.size());
         for (Member member : members) {
             TaskDefinition<V> definition = new TaskDefinition<V>(
                     TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
@@ -266,7 +266,7 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
+        Map<Member, IScheduledFuture<?>> futures = createHashMapAdapter(members.size());
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);

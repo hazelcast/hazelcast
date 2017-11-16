@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations
@@ -232,7 +233,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             }
         }
         int propSize = in.readInt();
-        properties = new HashMap<String, String>(propSize);
+        properties = createHashMap(propSize);
         for (int k = 0; k < propSize; k++) {
             String key = in.readUTF();
             String value = in.readUTF();

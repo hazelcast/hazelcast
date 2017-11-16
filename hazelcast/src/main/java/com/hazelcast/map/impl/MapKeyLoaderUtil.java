@@ -24,7 +24,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.UnmodifiableIterator;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public final class MapKeyLoaderUtil {
@@ -114,7 +114,7 @@ public final class MapKeyLoaderUtil {
      * @return the grouped entries by entry key
      */
     private static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries, int maxBatch) {
-        Map<Integer, List<Data>> batch = new HashMap<Integer, List<Data>>();
+        Map<Integer, List<Data>> batch = createHashMap(maxBatch);
         while (entries.hasNext()) {
             Entry<Integer, Data> e = entries.next();
             List<Data> partitionKeys = CollectionUtil.addToValueList(batch, e.getKey(), e.getValue());

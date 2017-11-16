@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public class ObjectMultiMapProxy<K, V>
         extends MultiMapProxySupport
@@ -360,7 +361,7 @@ public class ObjectMultiMapProxy<K, V>
 
     private Set<K> toObjectSet(Set<Data> dataSet) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Set<K> keySet = new HashSet<K>(dataSet.size());
+        Set<K> keySet = createHashSet(dataSet.size());
         for (Data dataKey : dataSet) {
             keySet.add((K) nodeEngine.toObject(dataKey));
         }

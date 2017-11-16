@@ -47,7 +47,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -77,6 +76,7 @@ import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.D
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.EnumSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
 
@@ -189,7 +189,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
-        final Map<Integer, ClassDefinition> classDefMap = new HashMap<Integer, ClassDefinition>(classDefinitions.size());
+        final Map<Integer, ClassDefinition> classDefMap = createHashMap(classDefinitions.size());
         for (ClassDefinition cd : classDefinitions) {
             if (classDefMap.containsKey(cd.getClassId())) {
                 throw new HazelcastSerializationException("Duplicate registration found for class-id[" + cd.getClassId() + "]!");

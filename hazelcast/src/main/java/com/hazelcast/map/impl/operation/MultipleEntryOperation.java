@@ -32,10 +32,10 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 
 public class MultipleEntryOperation extends MapOperation
@@ -119,7 +119,7 @@ public class MultipleEntryOperation extends MapOperation
         super.readInternal(in);
         entryProcessor = in.readObject();
         int size = in.readInt();
-        keys = new HashSet<Data>(size);
+        keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             keys.add(key);

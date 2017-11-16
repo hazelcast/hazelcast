@@ -25,12 +25,13 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 /**
- *  Operation to execute script on the node.
+ * Operation to execute script on the node.
  */
 public class ScriptExecutorOperation extends AbstractManagementOperation {
 
@@ -97,7 +98,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
         script = in.readUTF();
         int size = in.readInt();
         if (size > 0) {
-            bindings = new HashMap<String, Object>(size);
+            bindings = createHashMap(size);
             for (int i = 0; i < size; i++) {
                 String key = in.readUTF();
                 Object value = in.readObject();

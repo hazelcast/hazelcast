@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 public final class ClassNameFilterParser {
 
     private static final String[] BUILTIN_BLACKLIST_PREFIXES = {
@@ -55,13 +57,14 @@ public final class ClassNameFilterParser {
     }
 
     private static Set<String> parsePrefixes(String prefixes) {
-        Set<String> blacklistSet = new HashSet<String>();
         if (prefixes == null) {
-            return blacklistSet;
+            return new HashSet<String>();
         }
 
         prefixes = prefixes.trim();
         String[] prefixArray = prefixes.split(",");
+
+        Set<String> blacklistSet = createHashSet(prefixArray.length + BUILTIN_BLACKLIST_PREFIXES.length);
         for (String prefix : prefixArray) {
             blacklistSet.add(prefix.trim());
         }

@@ -31,7 +31,6 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -42,6 +41,7 @@ import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_STORE;
 import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.readNamespaceCompatibly;
 import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.writeNamespaceCompatibly;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore, Versioned {
 
@@ -231,7 +231,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public Set<Data> getLockedKeys() {
-        Set<Data> keySet = new HashSet<Data>(locks.size());
+        Set<Data> keySet = createHashSet(locks.size());
         for (Map.Entry<Data, LockResourceImpl> entry : locks.entrySet()) {
             Data key = entry.getKey();
             LockResource lock = entry.getValue();
