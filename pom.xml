@@ -313,6 +313,7 @@
 
     <profiles>
         <profile>
+            <!-- used by the PR builder -->
             <id>parallelTest</id>
             <build>
                 <plugins>
@@ -340,6 +341,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
+                                        -Dlog4j.configurationFile=log4j2-info.xml
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -377,6 +379,7 @@
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
+                                        -Dlog4j.configurationFile=log4j2-info.xml
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
