@@ -1018,12 +1018,7 @@ public class MembershipManager {
             throw new IllegalStateException("Cannot increment member list version since mastership claim is in progress!");
         }
 
-        if (!clusterService.getClusterVersion().isEqualTo(V3_10)) {
-            throw new IllegalStateException("Cannot increment member list version for cluster version: "
-                    + clusterService.getClusterVersion());
-        }
-
-        return true;
+        return clusterService.getClusterVersion().isEqualTo(V3_10);
     }
 
     public boolean verifySplitBrainMergeMemberListVersion(SplitBrainJoinMessage joinMessage) {
