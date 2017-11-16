@@ -16,7 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -87,8 +86,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("osv"), osMxBean.getVersion());
         assertEquals(parameters.get("jvmn"), runtimeMxBean.getVmName());
         assertEquals(parameters.get("jvmv"), System.getProperty("java.version"));
-        assertEquals(parameters.get("mcver"), "");
-        assertEquals(parameters.get("mclicense"), "");
+        assertEquals(parameters.get("mcver"), "MC_NOT_CONFIGURED");
+        assertEquals(parameters.get("mclicense"), "MC_NOT_CONFIGURED");
     }
 
     @Test
