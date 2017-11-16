@@ -101,11 +101,12 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
             return false;
         }
 
-        Collection<ListenerInfo> infos = queryCacheToListenerMapper.getListenerInfos(cacheId);
-        if (infos.isEmpty()) {
-            return false;
-        }
-        return true;
+        return queryCacheToListenerMapper.hasListener(cacheId);
+    }
+
+    // used for testing purposes
+    public ConcurrentMap<String, QueryCacheToListenerMapper> getRegistrations() {
+        return registrations;
     }
 
     @Override
@@ -133,14 +134,14 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public String listenPublisher(String mapName, String cacheId, ListenerAdapter adapter) {
+    public String addPublisherListener(String mapName, String cacheId, ListenerAdapter adapter) {
         final String listenerName = generateListenerName(mapName, cacheId);
         EventHandler handler = new QueryCacheHandler(adapter);
         return listenerService.registerListener(createPublisherListenerCodec(listenerName), handler);
     }
 
     @Override
-    public boolean removePublisherListener(String mapName, String listenerId) {
+    public boolean removePublisherListener(String mapName, String cacheId, String listenerId) {
         return listenerService.deregisterListener(listenerId);
     }
 
@@ -186,13 +187,24 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public boolean removeListener(String mapName, String cacheId, String id) {
+    public boolean removeListener(String mapName, String cacheId, String listenerId) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
-        checkHasText(id, "id");
+        checkHasText(listenerId, "listenerId");
 
         QueryCacheToListenerMapper queryCacheToListenerMapper = getOrPutIfAbsent(registrations, mapName, REGISTRY_CONSTRUCTOR);
-        return queryCacheToListenerMapper.removeListener(cacheId, id);
+        return queryCacheToListenerMapper.removeListener(cacheId, listenerId);
+    }
+
+    @Override
+    public void removeAllListeners(String mapName, String cacheId) {
+        checkHasText(mapName, "mapName");
+        checkHasText(cacheId, "cacheId");
+
+        QueryCacheToListenerMapper queryCacheToListenerMap = registrations.get(mapName);
+        if (queryCacheToListenerMap != null) {
+            queryCacheToListenerMap.removeAllListeners(cacheId);
+        }
     }
 
     /**

@@ -63,7 +63,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     public final void createSubscriberAccumulator(AccumulatorInfo info) {
         QueryCacheEventService eventService = context.getQueryCacheEventService();
         ListenerAdapter listener = new SubscriberListener(context, info);
-        publisherListenerId = eventService.listenPublisher(info.getMapName(), info.getCacheId(), listener);
+        publisherListenerId = eventService.addPublisherListener(info.getMapName(), info.getCacheId(), listener);
     }
 
     /**

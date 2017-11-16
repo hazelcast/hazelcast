@@ -39,6 +39,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,11 +55,12 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 public class NodeQueryCacheContext implements QueryCacheContext {
 
     private final NodeEngine nodeEngine;
+    private final InvokerWrapper invokerWrapper;
     private final MapServiceContext mapServiceContext;
+    private final QueryCacheScheduler queryCacheScheduler;
     private final QueryCacheEventService queryCacheEventService;
     private final QueryCacheConfigurator queryCacheConfigurator;
-    private final QueryCacheScheduler queryCacheScheduler;
-    private final InvokerWrapper invokerWrapper;
+    private final ContextMutexFactory lifecycleMutexFactory = new ContextMutexFactory();
 
     // these fields are not final for testing purposes
     private PublisherContext publisherContext;
@@ -68,7 +70,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.mapServiceContext = mapServiceContext;
         this.queryCacheScheduler = new NodeQueryCacheScheduler(mapServiceContext);
-        this.queryCacheEventService = new NodeQueryCacheEventService(mapServiceContext);
+        this.queryCacheEventService = new NodeQueryCacheEventService(mapServiceContext, lifecycleMutexFactory);
         this.queryCacheConfigurator = new NodeQueryCacheConfigurator(nodeEngine.getConfig(),
                 nodeEngine.getConfigClassLoader(), queryCacheEventService);
         this.invokerWrapper = new NodeInvokerWrapper(nodeEngine.getOperationService());
@@ -168,11 +170,21 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         return mapServiceContext.toObject(obj);
     }
 
-    private String registerLocalIMapListener(String name) {
+    @Override
+    public ContextMutexFactory getLifecycleMutexFactory() {
+        return lifecycleMutexFactory;
+    }
+
+    private String registerLocalIMapListener(final String name) {
         return mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
             @Override
             public void onEvent(IMapEvent event) {
                 // NOP
+            }
+
+            @Override
+            public String toString() {
+                return "Local IMap listener for the map '" + name + "'";
             }
         }, name);
     }
@@ -183,5 +195,5 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         public String apply(String name) {
             return registerLocalIMapListener(name);
         }
-    };
+    }
 }
