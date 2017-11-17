@@ -55,7 +55,7 @@ public class ClientReAuthOperation
         ClientEngineImpl engine = getService();
         String memberUuid = getCallerUuid();
         if (!engine.trySetLastAuthenticationCorrelationId(clientUuid, authCorrelationId)) {
-            String message = "Server already processed a newer authentication from client with uuid " + clientUuid
+            String message = "Server already processed a newer authentication from client with UUID " + clientUuid
                     + ". Not applying requested ownership change to " + memberUuid;
             getLogger().info(message);
             throw new AuthenticationException(message);

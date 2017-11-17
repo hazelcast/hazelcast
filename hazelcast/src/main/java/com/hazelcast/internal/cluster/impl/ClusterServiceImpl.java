@@ -315,11 +315,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void resetLocalMemberUuid() {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
-        assert !isJoined() : "Cannot reset local member uuid when joined.";
+        assert !isJoined() : "Cannot reset local member UUID when joined.";
 
         Address address = getThisAddress();
         String newUuid = UuidUtil.createMemberUuid(address);
-        logger.warning("Resetting local member uuid. Previous: " + localMember.getUuid() + ", new: " + newUuid);
+        logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
         boolean liteMember = localMember.isLiteMember();
         Map<String, Object> memberAttributes = localMember.getAttributes();
         localMember = new MemberImpl(address, localMember.getVersion(), true, newUuid, memberAttributes,

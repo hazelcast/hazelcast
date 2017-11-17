@@ -116,12 +116,12 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (localMember.getAddress().equals(migrationInfo.getSource())) {
             if (!localMember.getUuid().equals(migrationInfo.getSourceUuid())) {
                 throw new IllegalStateException(localMember
-                        + " is the migration source but has a different uuid! Migration: " + migrationInfo);
+                        + " is the migration source but has a different UUID! Migration: " + migrationInfo);
             }
         } else if (localMember.getAddress().equals(migrationInfo.getDestination())) {
             if (!localMember.getUuid().equals(migrationInfo.getDestinationUuid())) {
                 throw new IllegalStateException(localMember
-                        + " is the migration destination but has a different uuid! Migration: " + migrationInfo);
+                        + " is the migration destination but has a different UUID! Migration: " + migrationInfo);
             }
         }
     }

@@ -104,7 +104,7 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
     final void checkLocalMemberUuid() {
         ClusterServiceImpl clusterService = getService();
         if (!clusterService.getThisUuid().equals(targetUuid)) {
-            String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + clusterService.getThisUuid();
+            String msg = "target UUID " + targetUuid + " is different than this node's UUID " + clusterService.getThisUuid();
             throw new IllegalStateException(msg);
         }
     }

@@ -203,8 +203,8 @@ public class ClusterHeartbeatManager {
                     return;
                 }
 
-                logger.warning("Local uuid mismatch on received heartbeat. local uuid: " + clusterService.getThisUuid()
-                        + " received uuid: " + receiverUuid + " with " + senderMembersViewMetadata);
+                logger.warning("Local UUID mismatch on received heartbeat. local UUID: " + clusterService.getThisUuid()
+                        + " received UUID: " + receiverUuid + " with " + senderMembersViewMetadata);
             }
 
             onInvalidHeartbeat(senderMembersViewMetadata);

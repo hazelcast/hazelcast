@@ -262,7 +262,7 @@ public class MembershipManager {
                 assert !(member.localMember() && member.equals(clusterService.getLocalMember()))
                         : "Local " + member + " cannot be replaced with " + memberInfo;
 
-                // uuid changed: means member has gone and come back with a new uuid
+                // UUID changed: means member has gone and come back with a new uuid
                 removedMembers.add(member);
             }
 
@@ -1092,7 +1092,7 @@ public class MembershipManager {
 
                 MemberImpl localMember = clusterService.getLocalMember();
                 if (!newMembersView.containsMember(localMember.getAddress(), localMember.getUuid())) {
-                    // local member uuid is changed because of force start or split brain merge...
+                    // local member UUID is changed because of force start or split brain merge...
                     logger.fine("Ignoring decided members view after mastership claim: " + newMembersView
                             + ", because current local member: " + localMember + " not in decided members view.");
                     return;

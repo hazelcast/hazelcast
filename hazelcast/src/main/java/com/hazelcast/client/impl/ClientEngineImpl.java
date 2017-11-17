@@ -539,7 +539,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
-
         int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
         int numberOfJavaClients = 0;
@@ -560,7 +559,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (endpoints == null) {
                     continue;
                 }
-                //Merge connected clients according to their uuid.
+                //Merge connected clients according to their UUID
                 for (Map.Entry<String, ClientType> entry : endpoints.entrySet()) {
                     clientsMap.put(entry.getKey(), entry.getValue());
                 }

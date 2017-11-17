@@ -314,8 +314,8 @@ public class ClusterJoinManager {
 
             if (removedMember != null && !target.equals(removedMember.getAddress())) {
 
-                logger.warning("Uuid " + uuid + " was being used by " + removedMember
-                        + " before. " + target + " is not allowed to join with a uuid which belongs to"
+                logger.warning("UUID " + uuid + " was being used by " + removedMember
+                        + " before. " + target + " is not allowed to join with a UUID which belongs to"
                         + " a known passive member.");
 
                 return true;
@@ -444,8 +444,8 @@ public class ClusterJoinManager {
             }
         } else if (!existing.getUuid().equals(memberInfo.getUuid())) {
             logger.warning("Received a new join request from " + memberInfo.getAddress()
-                    + " with a new uuid " + memberInfo.getUuid()
-                    + ". Previous uuid was " + existing.getUuid());
+                    + " with a new UUID " + memberInfo.getUuid()
+                    + ". Previous UUID was " + existing.getUuid());
         }
         if (now >= timeToStartJoin) {
             startJoin();

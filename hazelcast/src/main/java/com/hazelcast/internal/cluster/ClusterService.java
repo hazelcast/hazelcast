@@ -43,7 +43,7 @@ public interface ClusterService extends CoreService, Cluster {
     /**
      * Gets the member with the given UUID.
      *
-     * @param uuid the UUID of the member
+     * @param UUID the UUID of the member
      * @return the found member, or {@code null} if not found (if the UUID is {@code null}, {@code null} is returned)
      */
     MemberImpl getMember(String uuid);

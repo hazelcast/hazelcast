@@ -18,18 +18,15 @@ package com.hazelcast.spi;
 
 /**
  * A interface that can be implemented by a SPI Service so that it can be notified about client disconnects.
- * <p/>
+ * <p>
  * This is useful if a service needs to cleanup resources when a client leaves, e.g. release locks.
- *
- * @author mdogan 5/6/13
  */
 public interface ClientAwareService {
 
     /**
      * Invoked when a client disconnects from a member.
      *
-     * @param clientUuid the Uuid of the client that disconnected from a member
+     * @param clientUuid the UUID of the client that disconnected from a member
      */
     void clientDisconnected(String clientUuid);
-
 }

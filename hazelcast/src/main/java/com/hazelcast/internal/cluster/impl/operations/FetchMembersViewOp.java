@@ -52,8 +52,8 @@ public class FetchMembersViewOp extends AbstractClusterOperation implements Join
         ClusterServiceImpl service = getService();
         String thisUuid = service.getLocalMember().getUuid();
         if (!targetUuid.equals(thisUuid)) {
-            throw new IllegalStateException("Rejecting mastership claim, since target uuid[" + targetUuid
-                    + "] is not matching local member uuid[" + thisUuid + "].");
+            throw new IllegalStateException("Rejecting mastership claim, since target UUID[" + targetUuid
+                    + "] is not matching local member UUID[" + thisUuid + "].");
         }
         membersView = service.handleMastershipClaim(getCallerAddress(), getCallerUuid());
     }

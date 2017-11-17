@@ -604,7 +604,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     public String addNearCacheInvalidationListener(InvalidationListener listener) {
-        // local member uuid may change after a split-brain merge
+        // local member UUID may change after a split-brain merge
         String localMemberUuid = getNodeEngine().getClusterService().getLocalMember().getUuid();
         EventFilter eventFilter = new UuidFilter(localMemberUuid);
         return mapServiceContext.addEventListener(listener, eventFilter, name);

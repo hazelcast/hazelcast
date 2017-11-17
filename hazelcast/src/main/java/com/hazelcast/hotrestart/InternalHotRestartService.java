@@ -49,15 +49,15 @@ public interface InternalHotRestartService {
      * If returns true, it means that the given member is not allowed to join to the cluster.
      *
      * @param memberAddress address of the member to check
-     * @param memberUuid    uuid of the member to check
+     * @param memberUuid    UUID of the member to check
      * @return true if the member has been excluded on cluster start.
      */
     boolean isMemberExcluded(Address memberAddress, String memberUuid);
 
     /**
-     * Returns uuids of the members that have been excluded during the cluster start.
+     * Returns UUIDs of the members that have been excluded during the cluster start.
      *
-     * @return uuids of the members that have been excluded during the cluster start
+     * @return UUIDs of the members that have been excluded during the cluster start
      */
     Set<String> getExcludedMemberUuids();
 
@@ -69,10 +69,10 @@ public interface InternalHotRestartService {
     void notifyExcludedMember(Address memberAddress);
 
     /**
-     * Handles the uuid set of excluded members only if this member is also excluded, and triggers the member force start process.
+     * Handles the UUID set of excluded members only if this member is also excluded, and triggers the member force start process.
      *
      * @param sender              the member that has sent the excluded members set
-     * @param excludedMemberUuids uuids of the members that have been excluded during the cluster start
+     * @param excludedMemberUuids UUIDs of the members that have been excluded during the cluster start
      */
     void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids);
 
@@ -83,7 +83,7 @@ public interface InternalHotRestartService {
     ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus();
 
     /**
-     * Resets local hot restart data and gets a new uuid, if the local node hasn't completed the start process and
+     * Resets local hot restart data and gets a new UUID, if the local node hasn't completed the start process and
      * it is excluded in cluster start.
      */
     void resetHotRestartData();

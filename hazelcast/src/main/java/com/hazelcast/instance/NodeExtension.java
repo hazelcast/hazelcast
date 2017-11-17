@@ -234,7 +234,7 @@ public interface NodeExtension {
     /**
      * Creates a UUID for local member
      * @param address address of local member
-     * @return new uuid
+     * @return new UUID
      */
     String createMemberUuid(Address address);
 

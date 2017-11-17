@@ -34,7 +34,7 @@ import static java.util.Collections.unmodifiableCollection;
 
 /**
  * A special, immutable {@link MemberImpl} map type,
- * that allows querying members using address or uuid.
+ * that allows querying members using address or UUID.
  */
 final class MemberMap {
 
@@ -163,7 +163,7 @@ final class MemberMap {
 
         current = uuidMap.put(member.getUuid(), member);
         if (current != null) {
-            throw new IllegalArgumentException("Replacing existing member with uuid: " + member);
+            throw new IllegalArgumentException("Replacing existing member with UUID: " + member);
         }
     }
 

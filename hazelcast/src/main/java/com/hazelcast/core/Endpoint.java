@@ -28,9 +28,9 @@ import java.net.SocketAddress;
 public interface Endpoint {
 
     /**
-     * Returns the unique uuid for this endpoint.
+     * Returns the unique UUID for this endpoint.
      *
-     * @return the unique uuid for this endpoint
+     * @return the unique UUID for this endpoint
      */
     String getUuid();
 

@@ -136,7 +136,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     private void prepareAndSendResponse(AuthenticationStatus authenticationStatus) {
         boolean isNotMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
         if (isNotMember) {
-            logger.warning("Member having uuid " + principal.getOwnerUuid()
+            logger.warning("Member having UUID " + principal.getOwnerUuid()
                     + " is not part of the cluster. Client Authentication rejected.");
             authenticationStatus = AuthenticationStatus.CREDENTIALS_FAILED;
         }

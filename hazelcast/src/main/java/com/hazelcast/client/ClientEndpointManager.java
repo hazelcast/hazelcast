@@ -49,7 +49,7 @@ public interface ClientEndpointManager {
     /**
      * Gets all the endpoints for a given client.
      *
-     * @param clientUuid the uuid of the client
+     * @param clientUuid the UUID of the client
      * @return a set of all the endpoints for the client. If no endpoints are found, an empty set is returned.
      * @throws java.lang.NullPointerException if clientUuid is null.
      */
@@ -75,8 +75,8 @@ public interface ClientEndpointManager {
      * If the endpoint already is registered, the call is ignored.
      *
      * @param endpoint the endpoint to register.
-     * @throws java.lang.NullPointerException if endpoint is null.
      * @return false if an endpoint is already registered
+     * @throws java.lang.NullPointerException if endpoint is null.
      */
     boolean registerEndpoint(ClientEndpoint endpoint);
 

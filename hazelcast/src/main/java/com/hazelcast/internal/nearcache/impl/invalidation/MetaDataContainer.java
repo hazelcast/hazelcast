@@ -55,7 +55,7 @@ public final class MetaDataContainer {
     private volatile long missedSequenceCount;
 
     /**
-     * Uuid of the source partition that generates invalidation events
+     * UUID of the source partition that generates invalidation events
      */
     private volatile UUID uuid;
 
