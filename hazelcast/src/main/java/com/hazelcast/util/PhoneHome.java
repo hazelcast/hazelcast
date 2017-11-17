@@ -271,8 +271,8 @@ public final class PhoneHome {
                 parameterCreator.addParam("mcver", "MC_CONN_ERR_" + responseCode);
             }
         } else {
-            parameterCreator.addParam("mclicense", "NO_MC_LICENSE");
-            parameterCreator.addParam("mcver", "NO_MC_VERSION");
+            parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
+            parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
         }
     }
 
