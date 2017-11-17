@@ -21,13 +21,14 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Utility class for Sets
+ * Utility class for Sets.
  */
 public final class SetUtil {
 
     private static final float HASHSET_DEFAULT_LOAD_FACTOR = 0.75f;
 
-    private SetUtil() { }
+    private SetUtil() {
+    }
 
     /**
      * Utility method that creates an {@link java.util.HashSet} with its initialCapacity calculated
