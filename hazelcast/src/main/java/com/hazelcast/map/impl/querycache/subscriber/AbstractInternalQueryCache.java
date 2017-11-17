@@ -60,7 +60,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final PartitioningStrategy partitioningStrategy;
 
     /**
-     * Id of registered listener on publisher side.
+     * ID of registered listener on publisher side.
      */
     protected String publisherListenerId;
 

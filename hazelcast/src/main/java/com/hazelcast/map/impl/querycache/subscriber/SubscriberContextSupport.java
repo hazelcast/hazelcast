@@ -26,11 +26,11 @@ public interface SubscriberContextSupport {
     /**
      * Creates recovery operation for event loss cases.
      *
-     * @param mapName     map name.
-     * @param cacheId     id of cache.
-     * @param sequence    sequence to be set.
+     * @param mapName     map name
+     * @param cacheId     ID of cache
+     * @param sequence    sequence to be set
      * @param partitionId partitions ID of broken sequence
-     * @return operation or request according to context.
+     * @return operation or request according to context
      * @see QueryCache#tryRecover()
      */
     Object createRecoveryOperation(String mapName, String cacheId, long sequence, int partitionId);
@@ -46,9 +46,9 @@ public interface SubscriberContextSupport {
     /**
      * Creates recovery operation for event loss cases.
      *
-     * @param mapName map name.
-     * @param cacheId id of cache.
-     * @return operation or request according to context.
+     * @param mapName map name
+     * @param cacheId ID of cache
+     * @return operation or request according to context
      * @see QueryCache#tryRecover()
      */
     Object createDestroyQueryCacheOperation(String mapName, String cacheId);

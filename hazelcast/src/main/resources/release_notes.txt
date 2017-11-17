@@ -100,7 +100,7 @@ The following are the other improvements performed to solve the enhancement issu
 - Dynamic configuration tasks should be non-blocking. [#10813]
 - Hazelcast declares commons-logging (OSGi) as a required dependency, but it is not required. [#10770]
 - Comparing Version.UNKNOWN with other versions results in strange results. [#10755]
-- Multiple threads from Spring boot application are able to acquire lock on the same document id ( String ). [#10754]
+- Multiple threads from Spring boot application are able to acquire lock on the same document ID ( String ). [#10754]
 - The system property hazelcast.cache.invalidation.batchfrequency.seconds does not work for IMap. [#10743]
 - The method isEnterprise() for BuildInfoProvider does not work in Hazelcast 3.7.x. [#10740]
 - Infinite loop trying to initialize Cache configuration when deserialization fails. [#10728]

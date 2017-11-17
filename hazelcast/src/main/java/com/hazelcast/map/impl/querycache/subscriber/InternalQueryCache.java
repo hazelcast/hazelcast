@@ -44,7 +44,7 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
     void setPublisherListenerId(String publisherListenerId);
 
     /**
-     * @return internally used id for this query cache.
+     * @return internally used ID for this query cache
      */
     String getCacheId();
 }

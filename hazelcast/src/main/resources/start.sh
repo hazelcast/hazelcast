@@ -50,7 +50,7 @@ echo "########################################"
 
 PID=$(cat "${PID_FILE}");
 if [ -z "${PID}" ]; then
-    echo "Process id for hazelcast instance is written to location: {$PID_FILE}"
+    echo "Process ID for hazelcast instance is written to location: {$PID_FILE}"
     $RUN_JAVA -server $JAVA_OPTS com.hazelcast.core.server.StartServer &
     echo $! > ${PID_FILE}
 else
