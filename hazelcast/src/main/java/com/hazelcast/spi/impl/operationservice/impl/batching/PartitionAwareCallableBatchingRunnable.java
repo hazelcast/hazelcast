@@ -108,7 +108,7 @@ public class PartitionAwareCallableBatchingRunnable implements Runnable {
                 break;
             }
             PartitionAwareCallable task = factory.create();
-            if (partition.isLocal()) {
+            if (partition.isLocal() && !partition.isMigrating()) {
                 try {
                     results.add(task.call(currentPartitionId));
                 } catch (Exception ex) {
