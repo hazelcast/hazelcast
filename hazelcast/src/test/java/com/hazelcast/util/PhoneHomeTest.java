@@ -67,7 +67,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("version"), "test_version");
         assertEquals(parameters.get("m"), node1.getLocalMember().getUuid());
         assertEquals(parameters.get("e"), "false");
-        assertEquals(parameters.get("l"), "NULL");
+        assertEquals(parameters.get("l"), "");
         assertEquals(parameters.get("p"), "source");
         assertEquals(parameters.get("crsz"), "A");
         assertEquals(parameters.get("cssz"), "A");
