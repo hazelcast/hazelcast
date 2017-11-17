@@ -19,39 +19,52 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.nio.Address;
+import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
-    protected final MapServiceContext mapServiceContext;
-    protected final NodeEngine nodeEngine;
+    private final int partitionCount;
+    private final ILogger logger;
+    private final NodeEngine nodeEngine;
+    private final OperationService operationService;
+    private final IPartitionService partitionService;
+    private final MapServiceContext mapServiceContext;
+    private final MergePolicyProvider mergePolicyProvider;
 
     MapSplitBrainHandlerService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.logger = nodeEngine.getLogger(getClass());
+        this.partitionService = nodeEngine.getPartitionService();
+        this.partitionCount = partitionService.getPartitionCount();
+        this.mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
+        this.operationService = nodeEngine.getOperationService();
     }
 
     @Override
@@ -60,10 +73,6 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
         Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
         Map<MapContainer, Collection<Record>> recordMap = createHashMap(mapContainers.size());
-        ILogger logger = nodeEngine.getLogger(getClass());
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        int partitionCount = partitionService.getPartitionCount();
-        Address thisAddress = nodeEngine.getClusterService().getThisAddress();
 
         for (MapContainer mapContainer : mapContainers.values()) {
             if (NATIVE.equals(mapContainer.getMapConfig().getInMemoryFormat())) {
@@ -72,52 +81,60 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 continue;
             }
 
-            for (int i = 0; i < partitionCount; i++) {
-                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(i);
+            MapMergePolicy mergePolicy = getMapMergePolicy(mapContainer);
+            boolean mergePartitionData = !(mergePolicy instanceof IgnoreMergingEntryMapMergePolicy);
+
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
                 //noinspection unchecked
                 RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapContainer.getName());
-
                 // add your owned entries to the map so they will be merged
-                if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
-                    MapMergePolicy mergePolicy = getMapMergePolicy(mapContainer);
-                    if (!(mergePolicy instanceof IgnoreMergingEntryMapMergePolicy)) {
-                        Collection<Record> records = recordMap.get(mapContainer);
-                        if (records == null) {
-                            records = new ArrayList<Record>();
-                            recordMap.put(mapContainer, records);
-                        }
-                        Iterator<Record> iterator = recordStore.iterator(now, false);
-                        while (iterator.hasNext()) {
-                            records.add(iterator.next());
-                        }
+                if (mergePartitionData && isLocalPartition(partitionId)) {
+                    Collection<Record> records = recordMap.get(mapContainer);
+                    if (records == null) {
+                        records = new LinkedList<Record>();
+                        recordMap.put(mapContainer, records);
+                    }
+                    Iterator<Record> iterator = recordStore.iterator(now, false);
+                    while (iterator.hasNext()) {
+                        records.add(iterator.next());
                     }
                 }
                 // clear all records either owned or backup
                 recordStore.reset();
-                mapContainer.getIndexes(i).clearIndexes();
+                mapContainer.getIndexes(partitionId).clearIndexes();
             }
         }
         return new Merger(recordMap);
     }
 
+    /**
+     * @see IPartition#isLocal()
+     */
+    private boolean isLocalPartition(int partitionId) {
+        IPartition partition = partitionService.getPartition(partitionId, false);
+        return partition.isLocal();
+    }
+
     private MapMergePolicy getMapMergePolicy(MapContainer mapContainer) {
         String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
-        return mapServiceContext.getMergePolicyProvider().getMergePolicy(mergePolicyName);
+        return mergePolicyProvider.getMergePolicy(mergePolicyName);
     }
 
     private class Merger implements Runnable {
 
         private static final int TIMEOUT_FACTOR = 500;
 
+        private final ILogger logger;
         private final Map<MapContainer, Collection<Record>> recordMap;
 
         Merger(Map<MapContainer, Collection<Record>> recordMap) {
             this.recordMap = recordMap;
+            this.logger = nodeEngine.getLogger(MapSplitBrainHandlerService.class);
         }
 
         @Override
         public void run() {
-            final ILogger logger = nodeEngine.getLogger(MapSplitBrainHandlerService.class);
             final Semaphore semaphore = new Semaphore(0);
 
             ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
@@ -139,23 +156,18 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 Collection<Record> recordList = recordMapEntry.getValue();
 
                 String mapName = mapContainer.getName();
-
-                // TODO: number of records may be high
-                // TODO: below can be optimized a many records can be sent in a single invocation
                 MapMergePolicy mergePolicy = getMapMergePolicy(mapContainer);
-
                 MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
                 for (Record record : recordList) {
                     recordCount++;
-                    EntryView<Data, Data> entryView = EntryViews.createSimpleEntryView(record.getKey(),
-                            mapServiceContext.toData(record.getValue()), record);
+                    Data key = record.getKey();
+                    Data value = mapServiceContext.toData(record.getValue());
+                    EntryView<Data, Data> entryView = createSimpleEntryView(key, value, record);
 
-                    MapOperation operation = operationProvider.createMergeOperation(mapName, record.getKey(), entryView,
-                            mergePolicy, false);
+                    Operation operation = operationProvider.createMergeOperation(mapName, key, entryView, mergePolicy, false);
                     try {
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
-                        nodeEngine.getOperationService()
-                                .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                        int partitionId = partitionService.getPartitionId(key);
+                        operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId)
                                 .andThen(mergeCallback);
                     } catch (Throwable t) {
                         throw rethrow(t);
