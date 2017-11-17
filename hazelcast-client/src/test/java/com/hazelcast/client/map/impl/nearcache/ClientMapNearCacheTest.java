@@ -110,7 +110,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             nodeMap.put(i, i);
         }
 
-        // 3. add client with near cache
+        // 3. add client with Near Cache
         NearCacheConfig nearCacheConfig = newNearCacheConfig()
                 .setInvalidateOnChange(true)
                 .setName(mapName);
@@ -120,13 +120,13 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        // 4. populate client near cache
+        // 4. populate client Near Cache
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
             assertNotNull(clientMap.get(i));
         }
 
-        // 5. assert number of entries in client near cache
+        // 5. assert number of entries in client Near Cache
         assertEquals(mapSize, ((NearCachedClientMapProxy) clientMap).getNearCache().size());
     }
 
@@ -1127,7 +1127,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near-cache should be empty", nearCache.get(i));
+                    assertNull("Near Cache should be empty", nearCache.get(i));
                 }
             }
         });
@@ -1156,7 +1156,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near-cache should be empty", nearCache.get(i));
+                    assertNull("Near Cache should be empty", nearCache.get(i));
                 }
             }
         });

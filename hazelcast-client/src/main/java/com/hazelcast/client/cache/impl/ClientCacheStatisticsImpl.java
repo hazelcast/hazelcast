@@ -48,7 +48,7 @@ public class ClientCacheStatisticsImpl extends CacheStatisticsImpl {
     @Override
     public NearCacheStats getNearCacheStatistics() {
         if (nearCacheStats == null) {
-            throw new UnsupportedOperationException("Near-cache is not enabled.");
+            throw new UnsupportedOperationException("Near Cache is not enabled.");
 
         }
         return nearCacheStats;

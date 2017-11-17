@@ -438,7 +438,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     private void initInvalidationMetaData(R record, K key, Data keyData) {
         if (staleReadDetector == ALWAYS_FRESH) {
-            // means invalidation event creation is disabled for this near cache.
+            // means invalidation event creation is disabled for this Near Cache
             return;
         }
 

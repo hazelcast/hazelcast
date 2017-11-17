@@ -359,7 +359,7 @@ public class Config {
      * If there is config found by the name, it will return the configuration
      * with the name {@code default}.
      * For non-default configurations and on-heap maps, it will also
-     * initialise the the near-cache eviction if not previously set.
+     * initialise the the Near Cache eviction if not previously set.
      *
      * @param name name of the map config
      * @return the map configuration
