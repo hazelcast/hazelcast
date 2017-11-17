@@ -16,7 +16,11 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.proxy.txn.TransactionContextProxy;
@@ -24,6 +28,7 @@ import com.hazelcast.client.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -31,14 +36,15 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import javax.transaction.xa.Xid;
+import java.io.IOException;
 import java.util.Set;
+
+import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.util.StringUtil.timeToString;
 
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
 
-    private static final int RETRY_COUNT = 20;
-
-    final HazelcastClientInstanceImpl client;
-
+    private final HazelcastClientInstanceImpl client;
     private final LoadBalancer loadBalancer;
 
     public ClientTransactionManagerServiceImpl(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
@@ -106,23 +112,60 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     public ClientConnection connect() throws Exception {
-        Exception lastError = null;
-        int count = 0;
-        while (count < RETRY_COUNT) {
+        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
+        long startTimeMillis = System.currentTimeMillis();
+        long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
+        ClientConfig clientConfig = client.getClientConfig();
+        boolean smartRouting = clientConfig.getNetworkConfig().isSmartRouting();
+
+        while (client.getLifecycleService().isRunning()) {
             try {
-                final Address randomAddress = getRandomAddress();
-                return (ClientConnection) client.getConnectionManager().getOrConnect(randomAddress);
+                if (smartRouting) {
+                    return tryConnectSmart();
+                } else {
+                    return tryConnectUnisocket();
+                }
             } catch (Exception e) {
-                lastError = e;
+                if (e instanceof HazelcastClientOfflineException) {
+                    throw e;
+                }
+                if (System.currentTimeMillis() - startTimeMillis > invocationTimeoutMillis) {
+                    throw newOperationTimeoutException(e, invocationTimeoutMillis, startTimeMillis);
+                }
             }
-            count++;
+            Thread.sleep(invocationService.getInvocationRetryPauseMillis());
         }
-        throw lastError;
+        throw new HazelcastClientNotActiveException("Client is shutdown");
     }
 
-    private Address getRandomAddress() {
-        Member member = loadBalancer.next();
-        if (member == null) {
+    private Exception newOperationTimeoutException(Throwable e, long invocationTimeoutMillis, long startTimeMillis) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Creating transaction context timed out because exception occurred after client invocation timeout ");
+        sb.append(invocationTimeoutMillis).append(" ms. ");
+        sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
+        sb.append("Start time: ").append(timeToString(startTimeMillis)).append(". ");
+        sb.append("Total elapsed time: ").append(currentTimeMillis() - startTimeMillis).append(" ms. ");
+        String msg = sb.toString();
+        return new OperationTimeoutException(msg, e);
+    }
+
+    private ClientConnection tryConnectUnisocket() throws IOException {
+        ClientConnection connection = client.getConnectionManager().getOwnerConnection();
+
+        if (connection != null) {
+            return connection;
+        }
+        return throwException(false);
+    }
+
+    private ClientConnection throwException(boolean smartRouting) {
+        ClientConfig clientConfig = client.getClientConfig();
+        ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
+        ClientConnectionStrategyConfig.ReconnectMode reconnectMode = connectionStrategyConfig.getReconnectMode();
+        if (reconnectMode.equals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)) {
+            throw new HazelcastClientOfflineException("Hazelcast client is offline");
+        }
+        if (smartRouting) {
             Set<Member> members = client.getCluster().getMembers();
             String msg;
             if (members.isEmpty()) {
@@ -133,6 +176,23 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
             }
             throw new IllegalStateException(msg);
         }
+        throw new IllegalStateException("No active connection is found");
+    }
+
+    private ClientConnection tryConnectSmart() throws IOException {
+        Address address = getRandomAddress();
+        if (address == null) {
+            throwException(true);
+        }
+        return (ClientConnection) client.getConnectionManager().getOrConnect(address);
+    }
+
+    private Address getRandomAddress() {
+        Member member = loadBalancer.next();
+        if (member == null) {
+            return null;
+        }
         return member.getAddress();
     }
+
 }
