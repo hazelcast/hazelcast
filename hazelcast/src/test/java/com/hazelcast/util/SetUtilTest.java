@@ -37,7 +37,7 @@ public class SetUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() {
-        assertUtilityConstructor(BitSetUtils.class);
+        assertUtilityConstructor(SetUtil.class);
     }
 
     @Test
