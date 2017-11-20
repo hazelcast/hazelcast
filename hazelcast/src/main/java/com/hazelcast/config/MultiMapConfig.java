@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -126,7 +127,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
      * @return the collection type for the values of this MultiMap
      */
     public ValueCollectionType getValueCollectionType() {
-        return ValueCollectionType.valueOf(valueCollectionType.toUpperCase());
+        return ValueCollectionType.valueOf(valueCollectionType.toUpperCase(StringUtil.LOCALE_INTERNAL));
     }
 
     /**

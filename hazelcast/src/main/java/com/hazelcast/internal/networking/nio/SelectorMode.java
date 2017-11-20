@@ -18,6 +18,8 @@ package com.hazelcast.internal.networking.nio;
 
 import static java.lang.String.format;
 
+import com.hazelcast.util.StringUtil;
+
 /**
  * Controls the mode in which IO and acceptor thread selectors will be operating
  */
@@ -35,7 +37,7 @@ public enum SelectorMode {
     }
 
     public static String getConfiguredString() {
-        return System.getProperty("hazelcast.io.selectorMode", SELECT_STRING).trim().toLowerCase();
+        return System.getProperty("hazelcast.io.selectorMode", SELECT_STRING).trim().toLowerCase(StringUtil.LOCALE_INTERNAL);
     }
 
     public static SelectorMode fromString(String value) {

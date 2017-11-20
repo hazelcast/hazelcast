@@ -24,6 +24,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.StringUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.InputStream;
@@ -172,7 +173,7 @@ public class MapWordCountAggregationBenchmark extends HazelcastTestSupport {
             StringTokenizer tokenizer = new StringTokenizer(value);
 
             while (tokenizer.hasMoreTokens()) {
-                String word = cleanWord(tokenizer.nextToken()).toLowerCase();
+                String word = cleanWord(tokenizer.nextToken()).toLowerCase(StringUtil.LOCALE_INTERNAL);
 
                 MutableInt count = result.get(word);
                 if (count == null) {

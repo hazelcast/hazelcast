@@ -22,6 +22,7 @@ import com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure
 import com.hazelcast.query.impl.predicates.AbstractPredicate;
 import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -123,7 +124,7 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
      */
     protected static String parametrize(String expression, AbstractExtractionTest.Multivalue mv) {
         if (expression != null && !expression.contains("__")) {
-            return expression.replaceAll("_", "_" + mv.name().toLowerCase());
+            return expression.replaceAll("_", "_" + mv.name().toLowerCase(StringUtil.LOCALE_INTERNAL));
         }
         return expression;
     }

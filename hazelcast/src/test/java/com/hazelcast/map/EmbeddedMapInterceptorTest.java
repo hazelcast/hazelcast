@@ -25,6 +25,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.StringUtil;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -128,9 +130,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         IMap<Object, Object> map2 = h2.getMap(mapName);
         String key = generateKeyOwnedBy(h1);
         map1.put(key, key);
-        assertEquals(key.toUpperCase() + "-foo", map1.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
-        assertEquals(key.toUpperCase() + "-foo", map2.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map2.get(key));
     }
 
     @Test
@@ -142,9 +144,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         IMap<Object, Object> map2 = h2.getMap(mapName);
         String key = generateKeyOwnedBy(h1);
         map1.putIfAbsent(key, key);
-        assertEquals(key.toUpperCase() + "-foo", map1.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
-        assertEquals(key.toUpperCase() + "-foo", map2.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map2.get(key));
     }
 
     @Test
@@ -156,9 +158,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         IMap<Object, Object> map2 = h2.getMap(mapName);
         String key = generateKeyOwnedBy(h1);
         map1.putTransient(key, key, 1, TimeUnit.MINUTES);
-        assertEquals(key.toUpperCase() + "-foo", map1.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
-        assertEquals(key.toUpperCase() + "-foo", map2.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map2.get(key));
     }
 
     @Test
@@ -171,9 +173,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         String key = generateKeyOwnedBy(h1);
         map1.put(key, key);
         map1.replace(key, key);
-        assertEquals(key.toUpperCase() + "-foo", map1.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
-        assertEquals(key.toUpperCase() + "-foo", map2.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map2.get(key));
     }
 
     @Test
@@ -186,9 +188,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         String key = generateKeyOwnedBy(h1);
         map1.put(key, key);
         map1.replace(key, key, key);
-        assertEquals(key.toUpperCase() + "-foo", map1.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
-        assertEquals(key.toUpperCase() + "-foo", map2.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map2.get(key));
     }
 
     @Test
@@ -200,9 +202,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         IMap<Object, Object> map2 = h2.getMap(mapName);
         String key = generateKeyOwnedBy(h1);
         map1.set(key, key);
-        assertEquals(key.toUpperCase() + "-foo", map1.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
-        assertEquals(key.toUpperCase() + "-foo", map2.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map2.get(key));
     }
 
     @Test
@@ -214,9 +216,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         IMap<Object, Object> map2 = h2.getMap(mapName);
         String key = generateKeyOwnedBy(h1);
         map1.tryPut(key, key, 5, TimeUnit.SECONDS);
-        assertEquals(key.toUpperCase() + "-foo", map1.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
-        assertEquals(key.toUpperCase() + "-foo", map2.get(key));
+        assertEquals(key.toUpperCase(StringUtil.LOCALE_INTERNAL) + "-foo", map2.get(key));
     }
 
 
@@ -236,7 +238,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
-            return newValue.toString().toUpperCase();
+            return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
         }
 
         @Override

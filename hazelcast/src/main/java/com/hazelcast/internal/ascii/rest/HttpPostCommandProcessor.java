@@ -33,6 +33,7 @@ import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -125,9 +126,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 ClusterState state = ClusterState.valueOf(upperCaseInternal(stateParam));
                 if (!state.equals(clusterService.getClusterState())) {
                     clusterService.changeClusterState(state);
-                    res = response(ResponseType.SUCCESS, "state", state.toString().toLowerCase());
+                    res = response(ResponseType.SUCCESS, "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
                 } else {
-                    res = response(ResponseType.FAIL, "state", state.toString().toLowerCase());
+                    res = response(ResponseType.FAIL, "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
                 }
             }
         } catch (Throwable throwable) {
@@ -539,7 +540,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
         @Override
         public String toString() {
-            return super.toString().toLowerCase();
+            return super.toString().toLowerCase(StringUtil.LOCALE_INTERNAL);
         }
     }
 

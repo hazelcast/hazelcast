@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -257,6 +258,6 @@ public abstract class AbstractHazelcastCachingProvider
             }
         }
 
-        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase()));
+        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase(StringUtil.LOCALE_INTERNAL)));
     }
 }

@@ -68,6 +68,7 @@ import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -498,7 +499,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     private void handleEcho(String command) {
-        if (!Thread.currentThread().getName().toLowerCase().contains("main")) {
+        String threadName = lowerCaseInternal(Thread.currentThread().getName());
+        if (!threadName.contains("main")) {
             println(" [" + Thread.currentThread().getName() + "] " + command);
         } else {
             println(command);
@@ -1085,13 +1087,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     protected void handleContains(String[] args) {
         String iteratorStr = args[0];
-        boolean key = false;
-        boolean value = false;
-        if (iteratorStr.toLowerCase().endsWith("key")) {
-            key = true;
-        } else if (iteratorStr.toLowerCase().endsWith("value")) {
-            value = true;
-        }
+        boolean key = lowerCaseInternal(iteratorStr).endsWith("key");
         String data = args[1];
         boolean result = false;
         if (iteratorStr.startsWith("s.")) {

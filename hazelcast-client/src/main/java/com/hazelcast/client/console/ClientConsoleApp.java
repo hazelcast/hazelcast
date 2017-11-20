@@ -42,6 +42,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
 import com.hazelcast.util.Clock;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
@@ -67,6 +68,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
 
 
@@ -527,7 +529,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void handleEcho(String command) {
-        if (!Thread.currentThread().getName().toLowerCase().contains("main")) {
+        String threadName = lowerCaseInternal(Thread.currentThread().getName());
+        if (!threadName.contains("main")) {
             println(" [" + Thread.currentThread().getName() + "] " + command);
         } else {
             println(command);
@@ -1104,13 +1107,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     protected void handleContains(String[] args) {
         String iteratorStr = args[0];
-        boolean key = false;
-        boolean value = false;
-        if (iteratorStr.toLowerCase().endsWith("key")) {
-            key = true;
-        } else if (iteratorStr.toLowerCase().endsWith("value")) {
-            value = true;
-        }
+        boolean key = lowerCaseInternal(iteratorStr).endsWith("key");
         String data = args[1];
         boolean result = false;
         if (iteratorStr.startsWith("s.")) {
