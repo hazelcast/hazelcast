@@ -21,11 +21,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class ContainsValueOperation extends AbstractSerializableOperation {
+public class ContainsValueOperation extends AbstractSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private Data value;
