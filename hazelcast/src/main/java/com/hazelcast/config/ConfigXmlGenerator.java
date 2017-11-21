@@ -586,6 +586,7 @@ public class ConfigXmlGenerator {
         for (MapConfig m : mapConfigs) {
             String cacheDeserializedVal = m.getCacheDeserializedValues() != null
                     ? m.getCacheDeserializedValues().name().replaceAll("_", "-") : null;
+            MergePolicyConfig mergePolicyConfig = m.getMergePolicyConfig();
             gen.open("map", "name", m.getName())
                     .node("in-memory-format", m.getInMemoryFormat())
                     .node("statistics-enabled", m.isStatisticsEnabled())
@@ -599,7 +600,7 @@ public class ConfigXmlGenerator {
                     .node("max-size", m.getMaxSizeConfig().getSize(), "policy", m.getMaxSizeConfig().getMaxSizePolicy())
                     .node("eviction-percentage", m.getEvictionPercentage())
                     .node("min-eviction-check-millis", m.getMinEvictionCheckMillis())
-                    .node("merge-policy", m.getMergePolicy())
+                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .node("quorum-ref", m.getQuorumName())
                     .node("read-backup-data", m.isReadBackupData());
 

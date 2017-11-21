@@ -697,7 +697,7 @@ class ConfigCompatibilityChecker {
                     || (Math.min(maxSize1, maxSize2) == 0 && Math.max(maxSize1, maxSize2) == Integer.MAX_VALUE))
                     && nullSafeEqual(c1.getEvictionPercentage(), c2.getEvictionPercentage())
                     && nullSafeEqual(c1.getMinEvictionCheckMillis(), c2.getMinEvictionCheckMillis())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isReadBackupData(), c2.isReadBackupData())
                     && ConfigCompatibilityChecker.isCompatible(c1.getHotRestartConfig(), c2.getHotRestartConfig())
                     && isCompatible(c1.getMapStoreConfig(), c2.getMapStoreConfig())

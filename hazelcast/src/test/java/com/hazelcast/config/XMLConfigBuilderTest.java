@@ -632,16 +632,20 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <eviction-policy>NONE</eviction-policy>  "
                 + "    <max-size policy=\"per_partition\">0</max-size>"
                 + "    <eviction-percentage>25</eviction-percentage>"
-                + "    <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>"
+                + "    <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
 
-        assertTrue(mapConfig.getInMemoryFormat().equals(InMemoryFormat.BINARY));
-        assertTrue(mapConfig.getEvictionPolicy().equals(EvictionPolicy.NONE));
-        assertTrue(mapConfig.getMaxSizeConfig().getMaxSizePolicy().equals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION));
+        assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
+        assertEquals(EvictionPolicy.NONE, mapConfig.getEvictionPolicy());
+        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
+
+        MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test

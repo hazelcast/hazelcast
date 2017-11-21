@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.map.impl.operation.MergeOperation;
+import com.hazelcast.map.impl.operation.LegacyMergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
@@ -106,7 +106,7 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         Data valueData = serializationService.toData(mergedValue);
         EntryView<Data, Data> entryView = createSimpleEntryView(keyData, valueData, Mockito.mock(Record.class));
 
-        MergeOperation mergeOperation = new MergeOperation(mapName, entryView, new PassThroughMergePolicy(), false);
+        LegacyMergeOperation mergeOperation = new LegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         Future<Object> future = operationService.invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
         future.get();

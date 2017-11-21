@@ -351,23 +351,24 @@
         <min-eviction-check-millis>200</min-eviction-check-millis>
 
         <!--
-            While recovering from split-brain (network partitioning),
-            map entries in the small cluster will merge into the bigger cluster
-            based on the policy set here. When an entry merge into the
-            cluster, there might an existing entry with the same key already.
-            Values of these entries might be different for that same key.
-            Which value should be set for the key? Conflict is resolved by
-            the policy set here. Default policy is PutIfAbsentMapMergePolicy
+            While recovering from split-brain (network partitioning), data structure entries in the small cluster
+            merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
+            an entry with the same key (or value) might already exist in the cluster.
+            The merge policy resolves these conflicts with different out-of-the-box or custom strategies.
+            The out-of-the-box merge polices can be references by their simple class name.
+            For custom merge policies you have to provide a fully qualified class name.
 
-            There are built-in merge policies such as
-            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
-            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
-            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
-            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
-
+            The out-of-the-box policies are:
+             * DiscardMergePolicy: the entry from the smaller cluster will be discarded.
+             * HigherHitsMergePolicy: the entry with the higher number of hits wins.
+             * LatestAccessMergePolicy: the entry with the latest access wins.
+             * LatestUpdateMergePolicy: the entry with the latest update wins.
+             * PassThroughMergePolicy: the entry from the smaller cluster wins.
+             * PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the cluster.
+             * The default policy is: PutIfAbsentMergePolicy
             Beware that `merge-policy` is not supported for NATIVE in-memory format.
         -->
-        <merge-policy>com.hazelcast.map.merge.HigherHitsMapMergePolicy</merge-policy>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
 
         <read-backup-data>true</read-backup-data>
 
@@ -454,7 +455,6 @@
                 </indexes>
             </query-cache>
         </query-caches>
-
     </map>
 
     <multimap name="default">

@@ -329,7 +329,6 @@
                     min-eviction-check-millis="1000"
                     read-backup-data="true"
                     eviction-policy="NONE"
-                    merge-policy="PUT_IF_ABSENT"
                     in-memory-format="BINARY">
                 <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"
                               initial-mode="EAGER" write-batch-size="10"/>
@@ -345,6 +344,7 @@
                     <hz:attribute name="weight" extractor="com.car.WeightExtractor"/>
                 </hz:attributes>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
                 <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}"/>
             </hz:map>
             <hz:map name="testMap2"
@@ -353,8 +353,7 @@
                     max-size-policy="PER_NODE"
                     eviction-percentage="30"
                     read-backup-data="true"
-                    eviction-policy="NONE"
-                    merge-policy="PUT_IF_ABSENT">
+                    eviction-policy="NONE">
                 <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"
                               initial-mode="LAZY"/>
                 <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
@@ -389,8 +388,7 @@
                     max-size-policy="PER_NODE"
                     eviction-percentage="30"
                     read-backup-data="true"
-                    eviction-policy="NONE"
-                    merge-policy="PUT_IF_ABSENT">
+                    eviction-policy="NONE">
                 <hz:map-store enabled="true" factory-class-name="com.hazelcast.spring.DummyStoreFactory"
                               write-delay-seconds="0">
                     <hz:properties>
@@ -404,8 +402,7 @@
                     max-size="0"
                     eviction-percentage="30"
                     read-backup-data="true"
-                    eviction-policy="NONE"
-                    merge-policy="PUT_IF_ABSENT">
+                    eviction-policy="NONE">
                 <hz:map-store enabled="true" factory-implementation="dummyMapStoreFactory" write-delay-seconds="0"/>
             </hz:map>
             <hz:map name="map-with-query-cache">
@@ -436,8 +433,7 @@
                     time-to-live-seconds="1"
                     max-size="10"
                     eviction-percentage="50"
-                    eviction-policy="LRU"
-                    merge-policy="LATEST_UPDATE"/>
+                    eviction-policy="LRU"/>
 
             <hz:map name="mapWithOptimizedQueries" optimize-queries="true"/>
             <hz:map name="mapWithNotOptimizedQueries" optimize-queries="false"/>
