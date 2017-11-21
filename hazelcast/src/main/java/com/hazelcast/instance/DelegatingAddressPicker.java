@@ -60,7 +60,7 @@ public class DelegatingAddressPicker implements AddressPicker {
     public void pickAddress() throws Exception {
         try {
             bindAddress = memberAddressProvider.getBindAddress();
-            logger.info("Using bind address: " + publicAddress);
+            logger.info("Using bind address: " + bindAddress);
 
             publicAddress = memberAddressProvider.getPublicAddress();
             validatePublicAddress(publicAddress);
