@@ -22,10 +22,11 @@ import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class ListIndexOfOperation extends CollectionOperation {
+public class ListIndexOfOperation extends CollectionOperation implements ReadonlyOperation {
 
     private boolean last;
     private Data value;

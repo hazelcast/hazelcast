@@ -23,6 +23,7 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.io.IOException;
 /**
  * Used to retrieve the response of an execution with the given sequence
  */
-public class RetrieveResultOperation extends AbstractDurableExecutorOperation implements BlockingOperation {
+public class RetrieveResultOperation extends AbstractDurableExecutorOperation implements BlockingOperation, ReadonlyOperation {
 
     private int sequence;
 

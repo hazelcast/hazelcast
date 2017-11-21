@@ -21,12 +21,13 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CollectionContainsOperation extends CollectionOperation {
+public class CollectionContainsOperation extends CollectionOperation implements ReadonlyOperation {
 
     private Set<Data> valueSet;
 
