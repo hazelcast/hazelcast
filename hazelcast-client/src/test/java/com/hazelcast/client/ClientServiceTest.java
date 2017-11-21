@@ -501,7 +501,7 @@ public class ClientServiceTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientListener_withShuttingDownOwnerMember() {
+    public void testClientListener_withShuttingDownOwnerMember() throws InterruptedException {
         Config config = new Config();
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger atomicInteger = new AtomicInteger();
@@ -514,6 +514,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
             @Override
             public void clientDisconnected(Client client) {
+                atomicInteger.incrementAndGet();
             }
         });
 
@@ -522,6 +523,7 @@ public class ClientServiceTest extends ClientTestSupport {
         //first member is owner connection
         hazelcastFactory.newHazelcastClient();
 
+        config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
         hazelcastFactory.newHazelcastInstance(config);
         //make sure connected to second one before proceeding
         assertOpenEventually(latch);
