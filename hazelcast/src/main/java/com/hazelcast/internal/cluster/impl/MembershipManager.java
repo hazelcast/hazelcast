@@ -250,11 +250,7 @@ public class MembershipManager {
             MemberImpl member = currentMemberMap.getMember(address);
 
             if (member != null && member.getUuid().equals(memberInfo.getUuid())) {
-                if (member.isLiteMember() && !memberInfo.isLiteMember()) {
-                    // lite member promoted
-                    logger.info(member + " is promoted to normal member.");
-                    member = createMember(memberInfo);
-                }
+                member = createNewMemberImplIfChanged(memberInfo, member);
                 members[memberIndex++] = member;
                 continue;
             }
@@ -267,7 +263,7 @@ public class MembershipManager {
                 removedMembers.add(member);
             }
 
-            member = createMember(memberInfo);
+            member = createMember(memberInfo, memberInfo.getAttributes());
             addedMembers.add(member);
 
             long now = clusterService.getClusterTime();
@@ -300,15 +296,28 @@ public class MembershipManager {
         clusterService.printMemberList();
     }
 
-    private MemberImpl createMember(MemberInfo memberInfo) {
+    private MemberImpl createNewMemberImplIfChanged(MemberInfo newMemberInfo, MemberImpl member) {
+        if (member.isLiteMember() && !newMemberInfo.isLiteMember()) {
+            // lite member promoted
+            logger.info(member + " is promoted to normal member.");
+            if (member.localMember()) {
+                member = clusterService.promoteAndGetLocalMember();
+            } else {
+                member = createMember(newMemberInfo, member.getAttributes());
+            }
+        }
+        return member;
+    }
+
+    private MemberImpl createMember(MemberInfo memberInfo, Map<String, Object> attributes) {
         Address address = memberInfo.getAddress();
         Address thisAddress = node.getThisAddress();
         String ipV6ScopeId = thisAddress.getScopeId();
         address.setScopeId(ipV6ScopeId);
         boolean localMember = thisAddress.equals(address);
 
-        return new MemberImpl(address, memberInfo.getVersion(), localMember, memberInfo.getUuid(),
-                memberInfo.getAttributes(), memberInfo.isLiteMember(), node.hazelcastInstance);
+        return new MemberImpl(address, memberInfo.getVersion(), localMember, memberInfo.getUuid(), attributes,
+                memberInfo.isLiteMember(), node.hazelcastInstance);
     }
 
     void setMembers(MemberMap memberMap) {
@@ -864,8 +873,12 @@ public class MembershipManager {
             MemberImpl[] members = memberMap.getMembers().toArray(new MemberImpl[0]);
             for (int i = 0; i < members.length; i++) {
                 if (member.equals(members[i])) {
-                    member = new MemberImpl(member.getAddress(), member.getVersion(), member.localMember(),
-                            member.getUuid(), member.getAttributes(), false, node.hazelcastInstance);
+                    if (member.localMember()) {
+                        member = clusterService.promoteAndGetLocalMember();
+                    } else {
+                        member = new MemberImpl(member.getAddress(), member.getVersion(), member.localMember(), member.getUuid(),
+                                member.getAttributes(), false, node.hazelcastInstance);
+                    }
                     members[i] = member;
                     break;
                 }
