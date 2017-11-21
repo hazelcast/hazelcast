@@ -73,6 +73,9 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     public void park(BlockingOperation op) {
+        if (isParked(op)) {
+            return;
+        }
         long timeout = op.getWaitTimeout();
         WaitSetEntry entry = new WaitSetEntry(queue, op);
         entry.setNodeEngine(nodeEngine);
@@ -80,6 +83,18 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {
             delayQueue.offer(entry);
         }
+    }
+
+    /**
+     * Returns {@code true} if the operation is parked in this wait set
+     */
+    private boolean isParked(BlockingOperation op) {
+        for (WaitSetEntry entry : queue) {
+            if (entry.op.equals(op)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Runs in operation thread, we can assume that
