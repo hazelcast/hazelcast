@@ -46,11 +46,11 @@ import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
@@ -61,12 +61,15 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V3_8;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.FutureUtil.waitForever;
 import static java.lang.Boolean.getBoolean;
+import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements PreJoinAwareService,
@@ -558,12 +561,14 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
         @Override
         public void run() {
-            OperationService operationService = nodeEngine.getOperationService();
-            BinaryOperationFactory operationFactory = new BinaryOperationFactory(replicationOperation, nodeEngine);
             try {
-                // intentionally targeting partitions and not members to avoid races
-                // it has generates extra load, but it's worth it.
-                operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
+                Future<Object> future = invokeOnStableClusterSerial(nodeEngine, new Supplier<Operation>() {
+                    @Override
+                    public Operation get() {
+                        return replicationOperation;
+                    }
+                }, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+                waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
             } catch (Exception e) {
                 throw new HazelcastException("Error while merging configurations", e);
             }
