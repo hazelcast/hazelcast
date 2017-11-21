@@ -436,7 +436,7 @@ public class ClusterStateManager {
         }
     }
 
-    String stateToString() {
+    public String stateToString() {
         return "ClusterState{state=" + state + ", lock=" + stateLockRef.get() + '}';
     }
 
