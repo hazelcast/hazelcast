@@ -348,7 +348,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            IPartition partition = nodeEngine.getPartitionService().getPartition(i);
+            IPartition partition = nodeEngine.getPartitionService().getPartition(i, false);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name);
             if (multiMapContainer == null) {

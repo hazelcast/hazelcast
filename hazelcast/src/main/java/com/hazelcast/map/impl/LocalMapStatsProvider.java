@@ -101,14 +101,12 @@ public class LocalMapStatsProvider {
 
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
         for (PartitionContainer partitionContainer : partitionContainers) {
-            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
             Collection<RecordStore> allRecordStores = partitionContainer.getAllRecordStores();
-
             for (RecordStore recordStore : allRecordStores) {
                 if (!isStatsCalculationEnabledFor(recordStore)) {
                     continue;
                 }
-
+                IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId(), false);
                 if (partition.isLocal()) {
                     addPrimaryStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
                 } else {
@@ -116,7 +114,6 @@ public class LocalMapStatsProvider {
                 }
             }
         }
-
 
         // reuse same HashMap to return calculated LocalMapStats.
         for (Object object : statsPerMap.entrySet()) {
