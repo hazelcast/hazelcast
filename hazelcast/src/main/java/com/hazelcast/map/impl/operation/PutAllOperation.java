@@ -43,7 +43,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 /**
  * Inserts the {@link MapEntries} for a single partition to the local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
- * <p/>
+ * <p>
  * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
  */
 public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
