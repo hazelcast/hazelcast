@@ -356,7 +356,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      * For non-default configurations and on-heap maps, it will also
      * initialise the the Near Cache eviction if not previously set.
@@ -370,8 +370,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public MapConfig findMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, baseName);
+        name = getBaseName(name);
+        MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
             initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
             return config.getAsReadOnly();
@@ -392,8 +392,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public MapConfig getMapConfigOrNull(String name) {
-        String baseName = getBaseName(name);
-        return lookupByPattern(configPatternMatcher, mapConfigs, baseName);
+        name = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, mapConfigs, name);
     }
 
     /**
@@ -407,7 +407,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addMapConfig(MapConfig)}.
      * <p>
@@ -424,8 +424,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public MapConfig getMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, baseName);
+        name = getBaseName(name);
+        MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
             return config;
         }
@@ -484,6 +484,30 @@ public class Config {
     }
 
     /**
+     * Returns a read-only {@link CacheSimpleConfig} configuration for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the cardinality estimator config
+     * @return the cache configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public CacheSimpleConfig findCacheConfig(String name) {
+        name = getBaseName(name);
+        final CacheSimpleConfig config = lookupByPattern(configPatternMatcher, cacheConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getCacheConfig("default").getAsReadOnly();
+    }
+
+    /**
      * Returns the cache config with the given name or {@code null} if there is none.
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
@@ -495,7 +519,7 @@ public class Config {
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
-    public CacheSimpleConfig findCacheConfig(String name) {
+    public CacheSimpleConfig findCacheConfigOrNull(String name) {
         name = getBaseName(name);
         return lookupByPattern(configPatternMatcher, cacheConfigs, name);
     }
@@ -511,7 +535,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addCacheConfig(CacheSimpleConfig)}.
      * <p>
@@ -528,8 +552,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public CacheSimpleConfig getCacheConfig(String name) {
-        String baseName = getBaseName(name);
-        CacheSimpleConfig config = lookupByPattern(configPatternMatcher, cacheConfigs, baseName);
+        name = getBaseName(name);
+        CacheSimpleConfig config = lookupByPattern(configPatternMatcher, cacheConfigs, name);
         if (config != null) {
             return config;
         }
@@ -592,7 +616,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the queue config
@@ -604,8 +628,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public QueueConfig findQueueConfig(String name) {
-        String baseName = getBaseName(name);
-        QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, baseName);
+        name = getBaseName(name);
+        QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -623,7 +647,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addQueueConfig(QueueConfig)}.
      * <p>
@@ -640,8 +664,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public QueueConfig getQueueConfig(String name) {
-        String baseName = getBaseName(name);
-        QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, baseName);
+        name = getBaseName(name);
+        QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, name);
         if (config != null) {
             return config;
         }
@@ -704,7 +728,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the lock config
@@ -716,8 +740,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public LockConfig findLockConfig(String name) {
-        final String baseName = getBaseName(name);
-        final LockConfig config = lookupByPattern(configPatternMatcher, lockConfigs, baseName);
+        name = getBaseName(name);
+        final LockConfig config = lookupByPattern(configPatternMatcher, lockConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -735,7 +759,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addLockConfig(LockConfig)}.
      * <p>
@@ -752,8 +776,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public LockConfig getLockConfig(String name) {
-        final String baseName = getBaseName(name);
-        LockConfig config = lookupByPattern(configPatternMatcher, lockConfigs, baseName);
+        name = getBaseName(name);
+        LockConfig config = lookupByPattern(configPatternMatcher, lockConfigs, name);
         if (config != null) {
             return config;
         }
@@ -816,7 +840,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the list config
@@ -828,8 +852,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public ListConfig findListConfig(String name) {
-        String baseName = getBaseName(name);
-        ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, baseName);
+        name = getBaseName(name);
+        ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -847,7 +871,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addListConfig(ListConfig)}.
      * <p>
@@ -864,8 +888,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public ListConfig getListConfig(String name) {
-        String baseName = getBaseName(name);
-        ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, baseName);
+        name = getBaseName(name);
+        ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, name);
         if (config != null) {
             return config;
         }
@@ -928,7 +952,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the set config
@@ -940,8 +964,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public SetConfig findSetConfig(String name) {
-        String baseName = getBaseName(name);
-        SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, baseName);
+        name = getBaseName(name);
+        SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -959,7 +983,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addSetConfig(SetConfig)}.
      * <p>
@@ -976,8 +1000,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public SetConfig getSetConfig(String name) {
-        String baseName = getBaseName(name);
-        SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, baseName);
+        name = getBaseName(name);
+        SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1040,7 +1064,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the multimap config
@@ -1052,8 +1076,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public MultiMapConfig findMultiMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, baseName);
+        name = getBaseName(name);
+        MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1071,7 +1095,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addMultiMapConfig(MultiMapConfig)}.
      * <p>
@@ -1088,8 +1112,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public MultiMapConfig getMultiMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, baseName);
+        name = getBaseName(name);
+        MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1152,7 +1176,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the replicated map config
@@ -1164,6 +1188,7 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
+        name = getBaseName(name);
         ReplicatedMapConfig config = lookupByPattern(configPatternMatcher, replicatedMapConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
@@ -1182,7 +1207,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addReplicatedMapConfig(ReplicatedMapConfig)}.
@@ -1200,6 +1225,7 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
+        name = getBaseName(name);
         ReplicatedMapConfig config = lookupByPattern(configPatternMatcher, replicatedMapConfigs, name);
         if (config != null) {
             return config;
@@ -1263,7 +1289,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the ringbuffer config
@@ -1275,8 +1301,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public RingbufferConfig findRingbufferConfig(String name) {
-        String baseName = getBaseName(name);
-        RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, baseName);
+        name = getBaseName(name);
+        RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1294,7 +1320,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addRingBufferConfig(RingbufferConfig)}.
@@ -1312,8 +1338,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public RingbufferConfig getRingbufferConfig(String name) {
-        String baseName = getBaseName(name);
-        RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, baseName);
+        name = getBaseName(name);
+        RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1374,7 +1400,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the topic config
@@ -1386,8 +1412,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public TopicConfig findTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, baseName);
+        name = getBaseName(name);
+        TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1405,7 +1431,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addTopicConfig(TopicConfig)}.
      * <p>
@@ -1422,8 +1448,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public TopicConfig getTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, baseName);
+        name = getBaseName(name);
+        TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1457,7 +1483,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the reliable topic config
@@ -1469,8 +1495,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public ReliableTopicConfig findReliableTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, baseName);
+        name = getBaseName(name);
+        ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1488,7 +1514,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addReliableTopicConfig(ReliableTopicConfig)}.
@@ -1506,8 +1532,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public ReliableTopicConfig getReliableTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, baseName);
+        name = getBaseName(name);
+        ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1595,7 +1621,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the executor config
@@ -1607,8 +1633,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public ExecutorConfig findExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, baseName);
+        name = getBaseName(name);
+        ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1620,7 +1646,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the durable executor config
@@ -1632,8 +1658,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public DurableExecutorConfig findDurableExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, baseName);
+        name = getBaseName(name);
+        DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1645,7 +1671,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the scheduled executor config
@@ -1657,8 +1683,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public ScheduledExecutorConfig findScheduledExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, baseName);
+        name = getBaseName(name);
+        ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1671,7 +1697,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the cardinality estimator config
@@ -1683,8 +1709,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
-        String baseName = getBaseName(name);
-        CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, baseName);
+        name = getBaseName(name);
+        CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -1702,7 +1728,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking {@link #addExecutorConfig(ExecutorConfig)}.
      * <p>
@@ -1719,8 +1745,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public ExecutorConfig getExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, baseName);
+        name = getBaseName(name);
+        ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1747,7 +1773,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addDurableExecutorConfig(DurableExecutorConfig)}.
@@ -1765,8 +1791,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public DurableExecutorConfig getDurableExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, baseName);
+        name = getBaseName(name);
+        DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1793,7 +1819,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addScheduledExecutorConfig(ScheduledExecutorConfig)}.
@@ -1811,8 +1837,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public ScheduledExecutorConfig getScheduledExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, baseName);
+        name = getBaseName(name);
+        ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name);
         if (config != null) {
             return config;
         }
@@ -1839,7 +1865,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addCardinalityEstimatorConfig(CardinalityEstimatorConfig)}.
@@ -1857,8 +1883,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public CardinalityEstimatorConfig getCardinalityEstimatorConfig(String name) {
-        String baseName = getBaseName(name);
-        CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, baseName);
+        name = getBaseName(name);
+        CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name);
         if (config != null) {
             return config;
         }
@@ -2046,7 +2072,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the semaphore config
@@ -2058,8 +2084,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public SemaphoreConfig findSemaphoreConfig(String name) {
-        String baseName = getBaseName(name);
-        SemaphoreConfig config = lookupByPattern(configPatternMatcher, semaphoreConfigs, baseName);
+        name = getBaseName(name);
+        SemaphoreConfig config = lookupByPattern(configPatternMatcher, semaphoreConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -2077,7 +2103,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addSemaphoreConfig(SemaphoreConfig)}.
@@ -2095,8 +2121,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
-        String baseName = getBaseName(name);
-        SemaphoreConfig config = lookupByPattern(configPatternMatcher, semaphoreConfigs, baseName);
+        name = getBaseName(name);
+        SemaphoreConfig config = lookupByPattern(configPatternMatcher, semaphoreConfigs, name);
         if (config != null) {
             return config;
         }
@@ -2204,6 +2230,9 @@ public class Config {
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
         this.wanReplicationConfigs.clear();
         this.wanReplicationConfigs.putAll(wanReplicationConfigs);
+        for (final Entry<String, WanReplicationConfig> entry : this.wanReplicationConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -2213,7 +2242,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the job tracker config
@@ -2225,12 +2254,12 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public JobTrackerConfig findJobTrackerConfig(String name) {
-        String baseName = getBaseName(name);
-        JobTrackerConfig config = lookupByPattern(configPatternMatcher, jobTrackerConfigs, baseName);
+        name = getBaseName(name);
+        JobTrackerConfig config = lookupByPattern(configPatternMatcher, jobTrackerConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
-        return getJobTrackerConfig(name);
+        return getJobTrackerConfig("default").getAsReadOnly();
     }
 
     /**
@@ -2244,7 +2273,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addJobTrackerConfig(JobTrackerConfig)}.
@@ -2262,8 +2291,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public JobTrackerConfig getJobTrackerConfig(String name) {
-        String baseName = getBaseName(name);
-        JobTrackerConfig config = lookupByPattern(configPatternMatcher, jobTrackerConfigs, baseName);
+        name = getBaseName(name);
+        JobTrackerConfig config = lookupByPattern(configPatternMatcher, jobTrackerConfigs, name);
         if (config != null) {
             return config;
         }
@@ -2342,7 +2371,7 @@ public class Config {
      * {@code "default"} configuration and add it to the configuration
      * collection.
      * <p>
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addQuorumConfig(QuorumConfig)}.
@@ -2360,8 +2389,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public QuorumConfig getQuorumConfig(String name) {
-        String baseName = getBaseName(name);
-        QuorumConfig config = lookupByPattern(configPatternMatcher, quorumConfigs, baseName);
+        name = getBaseName(name);
+        QuorumConfig config = lookupByPattern(configPatternMatcher, quorumConfigs, name);
         if (config != null) {
             return config;
         }
@@ -2383,7 +2412,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the split-brain protection config
@@ -2395,8 +2424,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public QuorumConfig findQuorumConfig(String name) {
-        String baseName = getBaseName(name);
-        QuorumConfig config = lookupByPattern(configPatternMatcher, quorumConfigs, baseName);
+        name = getBaseName(name);
+        QuorumConfig config = lookupByPattern(configPatternMatcher, quorumConfigs, name);
         if (config != null) {
             return config;
         }
@@ -2544,7 +2573,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the map event journal config
@@ -2556,8 +2585,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public EventJournalConfig findMapEventJournalConfig(String name) {
-        final String baseName = getBaseName(name);
-        final EventJournalConfig config = lookupByPattern(configPatternMatcher, mapEventJournalConfigs, baseName);
+        name = getBaseName(name);
+        final EventJournalConfig config = lookupByPattern(configPatternMatcher, mapEventJournalConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -2570,7 +2599,7 @@ public class Config {
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
-     * If there is config found by the name, it will return the configuration
+     * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
      * @param name name of the cache event journal config
@@ -2582,8 +2611,8 @@ public class Config {
      * @see EvictionConfig#setSize(int)
      */
     public EventJournalConfig findCacheEventJournalConfig(String name) {
-        final String baseName = getBaseName(name);
-        final EventJournalConfig config = lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, baseName);
+        name = getBaseName(name);
+        final EventJournalConfig config = lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, name);
         if (config != null) {
             return config.getAsReadOnly();
         }
@@ -2603,7 +2632,7 @@ public class Config {
      * <p>
      * If there is no default config as well, it will create one and disable
      * the event journal by default.
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addEventJournalConfig(EventJournalConfig)}.
@@ -2621,8 +2650,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public EventJournalConfig getMapEventJournalConfig(String name) {
-        final String baseName = getBaseName(name);
-        EventJournalConfig config = lookupByPattern(configPatternMatcher, mapEventJournalConfigs, baseName);
+        name = getBaseName(name);
+        EventJournalConfig config = lookupByPattern(configPatternMatcher, mapEventJournalConfigs, name);
         if (config != null) {
             return config;
         }
@@ -2649,7 +2678,7 @@ public class Config {
      * <p>
      * If there is no default config as well, it will create one and disable
      * the event journal by default.
-     * This method is intended to be easily and fluently create and add
+     * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
      * {@link #addEventJournalConfig(EventJournalConfig)}.
@@ -2667,8 +2696,8 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public EventJournalConfig getCacheEventJournalConfig(String name) {
-        final String baseName = getBaseName(name);
-        EventJournalConfig config = lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, baseName);
+        name = getBaseName(name);
+        EventJournalConfig config = lookupByPattern(configPatternMatcher, cacheEventJournalConfigs, name);
         if (config != null) {
             return config;
         }
@@ -2702,13 +2731,13 @@ public class Config {
         final String mapName = eventJournalConfig.getMapName();
         final String cacheName = eventJournalConfig.getCacheName();
         if (StringUtil.isNullOrEmpty(mapName) && StringUtil.isNullOrEmpty(cacheName)) {
-            throw new IllegalArgumentException("Event journal config should have non-empty map name and/or cache name");
+            throw new IllegalArgumentException("Event journal config should have either map name or cache name non-empty");
         }
         if (!StringUtil.isNullOrEmpty(mapName)) {
-            mapEventJournalConfigs.put(eventJournalConfig.getMapName(), eventJournalConfig);
+            mapEventJournalConfigs.put(mapName, eventJournalConfig);
         }
         if (!StringUtil.isNullOrEmpty(cacheName)) {
-            cacheEventJournalConfigs.put(eventJournalConfig.getCacheName(), eventJournalConfig);
+            cacheEventJournalConfigs.put(cacheName, eventJournalConfig);
         }
         return this;
     }

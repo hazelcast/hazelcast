@@ -244,6 +244,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public CacheSimpleConfig findCacheConfig(String name) {
+        return getCacheConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public CacheSimpleConfig findCacheConfigOrNull(String name) {
         //intentional: as of Hazelcast 3.x we do not use default for JCache!
         CacheSimpleConfig cacheConfig = getCacheConfigInternal(name, null);
         if (cacheConfig == null) {

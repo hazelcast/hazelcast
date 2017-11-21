@@ -32,7 +32,7 @@ public class DynamicConfigurationAwareConfigTest {
                 continue;
             }
 
-            //all other public method should be overriden by the dynamic config aware decorator
+            //all other public method should be overridden by the dynamic config aware decorator
             if (!isMethodDeclaredByClass(method, DynamicConfigurationAwareConfig.class)) {
                 Class<?> declaringClass = method.getDeclaringClass();
                 fail("Method " + method + " is declared by " + declaringClass + " whilst it should be" +
