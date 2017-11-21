@@ -17,9 +17,10 @@
 package com.hazelcast.cardinality.impl.operations;
 
 import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
+import com.hazelcast.spi.ReadonlyOperation;
 
 public class EstimateOperation
-        extends AbstractCardinalityEstimatorOperation {
+        extends AbstractCardinalityEstimatorOperation implements ReadonlyOperation {
 
     private long estimate;
 

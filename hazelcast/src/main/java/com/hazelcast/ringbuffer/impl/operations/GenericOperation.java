@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
@@ -28,7 +29,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.GENERIC
  * Ring buffer operations which don't need to send any parameters and which can be determined by only sending the operation
  * type which is a byte of information. Typically these are read operations and/or getters.
  */
-public class GenericOperation extends AbstractRingBufferOperation {
+public class GenericOperation extends AbstractRingBufferOperation implements ReadonlyOperation {
 
     public static final byte OPERATION_SIZE = 0;
     public static final byte OPERATION_TAIL = 1;

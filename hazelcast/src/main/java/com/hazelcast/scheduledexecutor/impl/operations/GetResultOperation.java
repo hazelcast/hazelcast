@@ -23,6 +23,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorWaitNotifyKey;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 public class GetResultOperation<V>
-        extends AbstractSchedulerOperation implements BlockingOperation {
+        extends AbstractSchedulerOperation implements BlockingOperation, ReadonlyOperation {
 
     private String taskName;
 
