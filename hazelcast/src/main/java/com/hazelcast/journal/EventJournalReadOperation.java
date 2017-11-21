@@ -27,6 +27,7 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.version.Version;
 
@@ -48,7 +49,7 @@ import java.io.IOException;
  * @since 3.9
  */
 public abstract class EventJournalReadOperation<T, J> extends Operation
-        implements IdentifiedDataSerializable, PartitionAwareOperation, BlockingOperation {
+        implements IdentifiedDataSerializable, PartitionAwareOperation, BlockingOperation, ReadonlyOperation {
     protected String name;
     protected int minSize;
     protected int maxSize;

@@ -19,8 +19,9 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class KeySetOperation extends MultiMapOperation {
+public class KeySetOperation extends MultiMapOperation implements ReadonlyOperation {
 
     public KeySetOperation() {
     }
