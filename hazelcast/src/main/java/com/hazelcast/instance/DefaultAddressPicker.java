@@ -28,6 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.CollectionUtil;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -334,15 +335,19 @@ class DefaultAddressPicker implements AddressPicker {
     private AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         boolean preferIPv4Stack = preferIPv4Stack();
+        boolean matchInterfaceDefinition = CollectionUtil.isNotEmpty(interfaces);
         while (networkInterfaces.hasMoreElements()) {
             NetworkInterface ni = networkInterfaces.nextElement();
+            if (!matchInterfaceDefinition && skipInterface(ni)) {
+                continue;
+            }
             Enumeration<InetAddress> e = ni.getInetAddresses();
             while (e.hasMoreElements()) {
                 InetAddress inetAddress = e.nextElement();
                 if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
                     continue;
                 }
-                if (interfaces != null && !interfaces.isEmpty()) {
+                if (matchInterfaceDefinition) {
                     AddressDefinition address = match(inetAddress, interfaces);
                     if (address != null) {
                         return address;
@@ -353,6 +358,19 @@ class DefaultAddressPicker implements AddressPicker {
             }
         }
         return null;
+    }
+
+    /**
+     * Checks given network interface and returns true when it should not be used for picking address. Reasons for skipping are
+     * the interface is: down, virtual or loopback.
+     */
+    private boolean skipInterface(NetworkInterface ni) throws SocketException {
+        boolean skipInterface = !ni.isUp() || ni.isVirtual() || ni.isLoopback();
+        if (skipInterface && logger.isFineEnabled()) {
+            logger.fine("Skipping NetworkInterface '" + ni.getName() + "': isUp=" + ni.isUp() + ", isVirtual=" + ni.isVirtual()
+                    + ", isLoopback=" + ni.isLoopback());
+        }
+        return skipInterface;
     }
 
     private AddressDefinition match(InetAddress address, Collection<InterfaceDefinition> interfaces) {
