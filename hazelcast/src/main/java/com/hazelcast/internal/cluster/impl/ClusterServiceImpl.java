@@ -492,15 +492,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, Object value) {
         lock.lock();
         try {
-            for (MemberImpl member : membershipManager.getMembers()) {
-                if (member.getUuid().equals(uuid)) {
-                    if (!member.equals(getLocalMember())) {
-                        member.updateAttribute(operationType, key, value);
-                    }
-                    sendMemberAttributeEvent(member, operationType, key, value);
-                    break;
-                }
+            MemberImpl member = membershipManager.getMember(uuid);
+            if (!member.equals(getLocalMember())) {
+                member.updateAttribute(operationType, key, value);
             }
+            sendMemberAttributeEvent(member, operationType, key, value);
         } finally {
             lock.unlock();
         }
@@ -1008,12 +1004,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 throw new IllegalStateException("Cannot promote to data member! Previous master was: " + master.getAddress()
                     + ", Current master is: " + getMasterAddress());
             }
-
-            localMember = new MemberImpl(member.getAddress(), member.getVersion(), true, member.getUuid(),
-                    member.getAttributes(), false, member.getMemberListJoinVersion(), node.hazelcastInstance);
         } finally {
             lock.unlock();
         }
+    }
+
+    MemberImpl promoteAndGetLocalMember() {
+        MemberImpl member = getLocalMember();
+        assert member.isLiteMember() : "Local member is not lite member!";
+        assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
+
+        localMember = new MemberImpl(member.getAddress(), member.getVersion(), true, member.getUuid(),
+                member.getAttributes(), false, member.getMemberListJoinVersion(), node.hazelcastInstance);
+        node.loggingService.setThisMember(localMember);
+        return localMember;
     }
 
     @Override

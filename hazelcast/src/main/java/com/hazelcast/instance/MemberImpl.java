@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -236,7 +237,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         try {
             for (Member member : nodeEngine.getClusterService().getMembers()) {
                 if (!member.localMember()) {
-                    os.send(operation, member.getAddress());
+                    os.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
                 } else {
                     os.execute(operation);
                 }

@@ -266,7 +266,7 @@ public class MembershipManager {
                 removedMembers.add(member);
             }
 
-            member = createMember(memberInfo);
+            member = createMember(memberInfo, memberInfo.getAttributes());
             addedMembers.add(member);
 
             long now = clusterService.getClusterTime();
@@ -284,7 +284,6 @@ public class MembershipManager {
         }
 
         setMembers(MemberMap.createNew(membersView.getVersion(), members));
-        setLocalMemberListJoinVersion(membersView.getMember(node.getThisAddress()).getMemberListJoinVersion());
 
         for (MemberImpl member : removedMembers) {
             handleMemberRemove(memberMapRef.get(), member);
@@ -303,26 +302,35 @@ public class MembershipManager {
         if (member.isLiteMember() && !newMemberInfo.isLiteMember()) {
             // lite member promoted
             logger.info(member + " is promoted to normal member.");
-            member = createMember(newMemberInfo);
+            if (member.localMember()) {
+                member = clusterService.promoteAndGetLocalMember();
+            } else {
+                member = createMember(newMemberInfo, member.getAttributes());
+            }
         } else if (member.getMemberListJoinVersion() != newMemberInfo.getMemberListJoinVersion()) {
             if (member.getMemberListJoinVersion() != NA_MEMBER_LIST_JOIN_VERSION) {
                 logger.fine("Member list join version of " + member + " is changed to "
                         + newMemberInfo.getMemberListJoinVersion() + " from " + member.getMemberListJoinVersion());
             }
-            member = createMember(newMemberInfo);
+            if (member.localMember()) {
+                setLocalMemberListJoinVersion(newMemberInfo.getMemberListJoinVersion());
+                member = clusterService.getLocalMember();
+            } else {
+                member = createMember(newMemberInfo, member.getAttributes());
+            }
         }
 
         return member;
     }
 
-    private MemberImpl createMember(MemberInfo memberInfo) {
+    private MemberImpl createMember(MemberInfo memberInfo, Map<String, Object> attributes) {
         Address address = memberInfo.getAddress();
         Address thisAddress = node.getThisAddress();
         String ipV6ScopeId = thisAddress.getScopeId();
         address.setScopeId(ipV6ScopeId);
         boolean localMember = thisAddress.equals(address);
 
-        return new MemberImpl(address, memberInfo.getVersion(), localMember, memberInfo.getUuid(), memberInfo.getAttributes(),
+        return new MemberImpl(address, memberInfo.getVersion(), localMember, memberInfo.getUuid(), attributes,
                 memberInfo.isLiteMember(), memberInfo.getMemberListJoinVersion(), node.hazelcastInstance);
     }
 
@@ -926,9 +934,12 @@ public class MembershipManager {
             MemberImpl[] members = memberMap.getMembers().toArray(new MemberImpl[0]);
             for (int i = 0; i < members.length; i++) {
                 if (member.equals(members[i])) {
-                    member = new MemberImpl(member.getAddress(), member.getVersion(), member.localMember(), member.getUuid(),
-                            member.getAttributes(), false, members[i].getMemberListJoinVersion(),
-                            node.hazelcastInstance);
+                    if (member.localMember()) {
+                        member = clusterService.promoteAndGetLocalMember();
+                    } else {
+                        member = new MemberImpl(member.getAddress(), member.getVersion(), member.localMember(), member.getUuid(),
+                                member.getAttributes(), false, members[i].getMemberListJoinVersion(), node.hazelcastInstance);
+                    }
                     members[i] = member;
                     break;
                 }
