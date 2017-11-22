@@ -34,6 +34,21 @@ import static com.hazelcast.internal.cluster.Versions.V3_9;
  */
 public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
 
+    public enum SplitBrainMergeCheckResult {
+        /**
+         * Denotes that the two endpoints of the SplitBrainJoinMessage cannot merge to each other
+         */
+        CANNOT_MERGE,
+        /**
+         * Denotes that the local node should merge to the other endpoint of the SplitBrainJoinMessage
+         */
+        LOCAL_NODE_SHOULD_MERGE,
+        /**
+         * Denotes that the remote node that sent the SplitBrainJoinMessage should merge
+         */
+        REMOTE_NODE_SHOULD_MERGE
+    }
+
     private Version clusterVersion;
 
     private int memberListVersion;
