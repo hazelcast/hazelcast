@@ -31,6 +31,21 @@ import java.util.Collection;
  */
 public class SplitBrainJoinMessage extends JoinMessage {
 
+    public enum SplitBrainMergeCheckResult {
+        /**
+         * Denotes that the two endpoints of the SplitBrainJoinMessage cannot merge to each other
+         */
+        CANNOT_MERGE,
+        /**
+         * Denotes that the local node should merge to the other endpoint of the SplitBrainJoinMessage
+         */
+        LOCAL_NODE_SHOULD_MERGE,
+        /**
+         * Denotes that the remote node that sent the SplitBrainJoinMessage should merge
+         */
+        REMOTE_NODE_SHOULD_MERGE
+    }
+
     protected Version clusterVersion;
 
     public SplitBrainJoinMessage() {
