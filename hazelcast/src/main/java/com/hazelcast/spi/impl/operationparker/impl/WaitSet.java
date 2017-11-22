@@ -44,7 +44,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
 
     private static final long TIMEOUT_UPPER_BOUND = 1500;
 
-    protected final Queue<WaitSetEntry> queue = new ConcurrentLinkedQueue<WaitSetEntry>();
+    private final Queue<WaitSetEntry> queue = new ConcurrentLinkedQueue<WaitSetEntry>();
     private final ILogger logger;
     private final NodeEngine nodeEngine;
     private final Map<WaitNotifyKey, WaitSet> waitSetMap;
