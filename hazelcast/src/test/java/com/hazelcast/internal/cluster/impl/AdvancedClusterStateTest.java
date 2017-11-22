@@ -152,7 +152,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void changeClusterState_shouldFail_whenStateIsAlreadyLocked() throws Exception {
+    public void changeClusterState_shouldFail_whenStateIsAlreadyLocked() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances();
 
@@ -364,7 +364,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void clusterState_shouldBeTheSame_finally_onAllNodes() throws Exception {
+    public void clusterState_shouldBeTheSame_finally_onAllNodes() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances();
 
@@ -399,8 +399,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final InternalPartition partition = getNode(hz2).getPartitionService().getPartition(partitionId);
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(owner, partition.getOwnerOrNull());
             }
         }, 3);
@@ -612,7 +611,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(future.isDone());
             }
         });

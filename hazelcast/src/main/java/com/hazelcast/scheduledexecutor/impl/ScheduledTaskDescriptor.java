@@ -150,8 +150,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         }
     }
 
-    boolean cancel(boolean mayInterrupt)
-            throws ExecutionException, InterruptedException {
+    boolean cancel(boolean mayInterrupt) {
         if (!resultRef.compareAndSet(null, new ScheduledTaskResult(true)) || future == null) {
             return false;
         }
@@ -168,15 +167,13 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         return future.getDelay(unit);
     }
 
-    boolean isCancelled()
-            throws ExecutionException, InterruptedException {
+    boolean isCancelled() {
         ScheduledTaskResult result = resultRef.get();
         boolean wasCancelled = result != null && result.wasCancelled();
         return wasCancelled || (future != null && future.isCancelled());
     }
 
-    boolean isDone()
-            throws ExecutionException, InterruptedException {
+    boolean isDone() {
         boolean wasDone = resultRef.get() != null;
         return wasDone || (future != null && future.isDone());
     }

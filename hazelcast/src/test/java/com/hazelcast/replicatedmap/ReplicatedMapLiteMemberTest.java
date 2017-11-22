@@ -53,14 +53,14 @@ public class ReplicatedMapLiteMemberTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(instance2.getReplicatedMap("default").containsKey("key"));
             }
         });
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 ReplicatedMapService service = getReplicatedMapService(lite);
                 assertEquals(0, service.getAllReplicatedRecordStores("default").size());
             }

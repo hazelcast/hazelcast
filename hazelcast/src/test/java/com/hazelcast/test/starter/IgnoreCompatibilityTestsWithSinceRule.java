@@ -49,7 +49,7 @@ public class IgnoreCompatibilityTestsWithSinceRule implements TestRule {
             if (currentCodebaseVersion.isLessThan(testSinceVersion)) {
                 return new Statement() {
                     @Override
-                    public void evaluate() throws Throwable {
+                    public void evaluate() {
                         LOGGER.finest(format("Ignoring `%s` because it is meant for execution since %s while "
                                         + "current version is %s"
                                 , description.getClassName(), testSinceVersion, currentCodebaseVersion));

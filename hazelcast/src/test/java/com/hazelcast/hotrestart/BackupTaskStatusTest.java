@@ -49,7 +49,7 @@ public class BackupTaskStatusTest {
     }
 
     @Test
-    public void testGetProgress() throws Exception {
+    public void testGetProgress() {
         assertEquals(1.0f, new BackupTaskStatus(BackupTaskState.SUCCESS, 10, 10).getProgress(), 0.1);
         assertEquals(0.5f, new BackupTaskStatus(BackupTaskState.SUCCESS, 5, 10).getProgress(), 0.1);
         assertEquals(0.0f, new BackupTaskStatus(BackupTaskState.SUCCESS, 0, 10).getProgress(), 0.1);

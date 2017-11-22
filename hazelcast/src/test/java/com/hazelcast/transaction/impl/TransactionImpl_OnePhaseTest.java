@@ -73,7 +73,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
     // ====================== requiresPrepare ===============================
 
     @Test
-    public void requiresPrepare() throws Exception {
+    public void requiresPrepare() {
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();
 
@@ -83,7 +83,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
     // ====================== prepare ===============================
 
     @Test(expected = TransactionNotActiveException.class)
-    public void prepare_whenNotActive() throws Exception {
+    public void prepare_whenNotActive() {
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();
         tx.rollback();
@@ -103,7 +103,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
     }
 
     @Test(expected = TransactionException.class)
-    public void commit_ThrowsExceptionDuringCommit() throws Exception {
+    public void commit_ThrowsExceptionDuringCommit() {
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();
         tx.add(new MockTransactionLogRecord().failCommit());
@@ -113,7 +113,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
     // ====================== rollback ===============================
 
     @Test
-    public void rollback_whenEmpty() throws Exception {
+    public void rollback_whenEmpty() {
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();
         tx.rollback();
@@ -122,7 +122,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void rollback_whenNotActive() throws Exception {
+    public void rollback_whenNotActive() {
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();
         tx.rollback();

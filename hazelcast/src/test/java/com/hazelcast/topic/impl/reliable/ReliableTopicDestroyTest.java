@@ -69,7 +69,7 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
         // it should not receive any events.
         assertTrueDelayed5sec(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, listener.objects.size());
             }
         });
@@ -82,7 +82,7 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final String name = topic.ringbuffer.getName();
                 final Map<ObjectNamespace, RingbufferContainer> partitionContainers =
                         ringbufferService.getContainers().get(ringbufferService.getRingbufferPartitionId(name));

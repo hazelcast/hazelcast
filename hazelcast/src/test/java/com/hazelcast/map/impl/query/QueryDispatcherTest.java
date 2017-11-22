@@ -75,12 +75,12 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_localMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_localMembers() {
         dispatchFullQueryOnQueryThread(Target.LOCAL_NODE);
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_allMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_allMembers() {
         dispatchFullQueryOnQueryThread(Target.ALL_NODES);
     }
 
@@ -98,7 +98,7 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() throws ExecutionException, InterruptedException {
+    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
                 .iterationType(IterationType.ENTRY).build();
         Future<Result> future = queryDispatcher

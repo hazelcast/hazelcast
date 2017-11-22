@@ -191,8 +191,7 @@ public class PartitionedCluster {
     private void assertQuorumIsPresentEventually(final HazelcastInstance instance, final String quorumId) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(instance.getQuorumService().getQuorum(quorumId).isPresent());
             }
         });
@@ -201,8 +200,7 @@ public class PartitionedCluster {
     private void assertQuorumIsAbsentEventually(final HazelcastInstance instance, final String quorumId) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertFalse(instance.getQuorumService().getQuorum(quorumId).isPresent());
             }
         });

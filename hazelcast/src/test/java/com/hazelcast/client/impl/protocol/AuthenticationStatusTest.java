@@ -30,20 +30,20 @@ import static org.junit.Assert.assertEquals;
 public class AuthenticationStatusTest {
 
     @Test
-    public void testGetId() throws Exception {
+    public void testGetId() {
         assertEquals(0, AuthenticationStatus.AUTHENTICATED.getId());
         assertEquals(1, AuthenticationStatus.CREDENTIALS_FAILED.getId());
         assertEquals(2, AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH.getId());
     }
 
     @Test
-    public void testGetById() throws Exception {
+    public void testGetById() {
         AuthenticationStatus status = AuthenticationStatus.getById(AuthenticationStatus.AUTHENTICATED.getId());
         assertEquals(AuthenticationStatus.AUTHENTICATED, status);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGetById_invalidId() throws Exception {
+    public void testGetById_invalidId() {
         AuthenticationStatus.getById(-1);
     }
 }

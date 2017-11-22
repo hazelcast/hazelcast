@@ -173,7 +173,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     // ===================== shutdown ============================
 
     @Test
-    public void shutdown_thenAllInvocationsAborted() throws ExecutionException, InterruptedException {
+    public void shutdown_thenAllInvocationsAborted() {
         Invocation invocation = newInvocation(new DummyBackupAwareOperation());
         invocationRegistry.register(invocation);
         long callId = invocation.op.getCallId();

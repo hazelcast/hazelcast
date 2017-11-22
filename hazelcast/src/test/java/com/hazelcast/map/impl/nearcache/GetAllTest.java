@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 public class GetAllTest extends HazelcastTestSupport {
 
     @Test
-    public void ensure_supplied_number_of_keys_are_in_near_cache() throws Exception {
+    public void ensure_supplied_number_of_keys_are_in_near_cache() {
         final int entryCount = 100000;
         final String mapName = "test";
 

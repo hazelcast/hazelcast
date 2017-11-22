@@ -90,7 +90,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 //now we verify that the memberAdded method is called twice.
                 verify(membershipListener, times(2)).memberAdded(any(MembershipEvent.class));
             }
@@ -158,7 +158,7 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMembershipListenerSequentialInvocation() throws Exception {
+    public void testMembershipListenerSequentialInvocation() {
 
         final int nodeCount = 10;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);

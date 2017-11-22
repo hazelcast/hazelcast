@@ -151,7 +151,7 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void beforeRun() throws Exception {
+        public void beforeRun() {
             beforeCalled = true;
         }
 
@@ -161,7 +161,7 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void afterRun() throws Exception {
+        public void afterRun() {
             afterCalled = true;
         }
 

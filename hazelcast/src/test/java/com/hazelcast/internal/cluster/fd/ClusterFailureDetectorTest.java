@@ -77,13 +77,13 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void member_isNotAlive_whenNoHeartbeat() throws Exception {
+    public void member_isNotAlive_whenNoHeartbeat() {
         Member member = newMember(5000);
         assertFalse(failureDetector.isAlive(member, Clock.currentTimeMillis()));
     }
 
     @Test
-    public void member_isAlive_whenHeartbeat() throws Exception {
+    public void member_isAlive_whenHeartbeat() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -91,7 +91,7 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void member_isAlive_beforeHeartbeatTimeout() throws Exception {
+    public void member_isAlive_beforeHeartbeatTimeout() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -99,7 +99,7 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void member_isNotAlive_afterHeartbeatTimeout() throws Exception {
+    public void member_isNotAlive_afterHeartbeatTimeout() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -109,14 +109,14 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void lastHeartbeat_whenNoHeartbeat() throws Exception {
+    public void lastHeartbeat_whenNoHeartbeat() {
         Member member = newMember(5000);
         long lastHeartbeat = failureDetector.lastHeartbeat(member);
         assertEquals(0L, lastHeartbeat);
     }
 
     @Test
-    public void lastHeartbeat() throws Exception {
+    public void lastHeartbeat() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -126,7 +126,7 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void suspicionLevel_whenNoHeartbeat() throws Exception {
+    public void suspicionLevel_whenNoHeartbeat() {
         Member member = newMember(5000);
         double suspicionLevel = failureDetector.suspicionLevel(member, Clock.currentTimeMillis());
 
@@ -135,7 +135,7 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void suspicionLevel_whenHeartbeat() throws Exception {
+    public void suspicionLevel_whenHeartbeat() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -145,7 +145,7 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void suspicionLevel_beforeHeartbeatTimeout() throws Exception {
+    public void suspicionLevel_beforeHeartbeatTimeout() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -157,7 +157,7 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void suspicionLevel_afterHeartbeatTimeout() throws Exception {
+    public void suspicionLevel_afterHeartbeatTimeout() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -179,14 +179,14 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void remove_whenNoHeartbeat() throws Exception {
+    public void remove_whenNoHeartbeat() {
         Member member = newMember(5000);
         failureDetector.remove(member);
         assertFalse(failureDetector.isAlive(member, Clock.currentTimeMillis()));
     }
 
     @Test
-    public void remove_afterHeartbeat() throws Exception {
+    public void remove_afterHeartbeat() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);
@@ -196,14 +196,14 @@ public class ClusterFailureDetectorTest {
     }
 
     @Test
-    public void reset_whenNoHeartbeat() throws Exception {
+    public void reset_whenNoHeartbeat() {
         Member member = newMember(5000);
         failureDetector.reset();
         assertFalse(failureDetector.isAlive(member, Clock.currentTimeMillis()));
     }
 
     @Test
-    public void reset_afterHeartbeat() throws Exception {
+    public void reset_afterHeartbeat() {
         Member member = newMember(5000);
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(member, timestamp);

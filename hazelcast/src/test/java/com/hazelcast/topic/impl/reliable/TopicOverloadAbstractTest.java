@@ -138,7 +138,7 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(f.isDone());
                 assertEquals(tail, ringbuffer.tailSequence());
                 assertEquals(head, ringbuffer.headSequence());

@@ -32,7 +32,7 @@ public class MancenterServlet extends HttpServlet {
     private volatile String clusterName = "";
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (req.getPathInfo().contains("memberStateCheck")) {
             if (memberState != null) {
                 resp.getWriter().write(memberState.toJson().toString());
@@ -48,7 +48,7 @@ public class MancenterServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         BufferedReader br = req.getReader();
         StringBuilder sb = new StringBuilder();
         String str;

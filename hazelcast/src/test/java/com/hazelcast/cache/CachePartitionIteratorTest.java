@@ -77,14 +77,14 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         CacheProxy<Integer, Integer> cache = getCacheProxy();
         Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator(10, 1, prefetchValues);
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -96,7 +96,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -109,7 +109,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -124,7 +124,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
         String value = randomString();
         int count = 1000;

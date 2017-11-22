@@ -60,13 +60,13 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAddListener_whenListenerNull() throws InterruptedException {
+    public void testAddListener_whenListenerNull() {
         final MultiMap<String, String> mm = createHazelcastInstance().getMultiMap(randomString());
         mm.addEntryListener(null, true);
     }
 
     @Test
-    public void testRemoveListener() throws InterruptedException {
+    public void testRemoveListener() {
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
         MyEntryListener listener = new CountDownValueNotNullListener(1);
         final String id = mm.addEntryListener(listener, true);
@@ -74,13 +74,13 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveListener_whenNotExist() throws InterruptedException {
+    public void testRemoveListener_whenNotExist() {
         final MultiMap<String, String> mm = createHazelcastInstance().getMultiMap(randomString());
         assertFalse(mm.removeEntryListener("NOT_THERE"));
     }
 
     @Test
-    public void testListenerEntryAddEvent() throws InterruptedException {
+    public void testListenerEntryAddEvent() {
         final int maxKeys = 12;
         final int maxItems = 3;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -97,7 +97,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerEntryAddEvent_whenValueNotIncluded() throws InterruptedException {
+    public void testListenerEntryAddEvent_whenValueNotIncluded() {
         final int maxKeys = 21;
         final int maxItems = 3;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -114,7 +114,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerEntryRemoveEvent() throws InterruptedException {
+    public void testListenerEntryRemoveEvent() {
         final int maxKeys = 25;
         final int maxItems = 3;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -132,7 +132,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerEntryRemoveEvent_whenValueNotIncluded() throws InterruptedException {
+    public void testListenerEntryRemoveEvent_whenValueNotIncluded() {
         final int maxKeys = 31;
         final int maxItems = 3;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -150,7 +150,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerOnKeyEntryAddEvent() throws InterruptedException {
+    public void testListenerOnKeyEntryAddEvent() {
         final Object key = "key";
         final int maxItems = 42;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -166,7 +166,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerOnKeyEntryAddEvent_whenValueNotIncluded() throws InterruptedException {
+    public void testListenerOnKeyEntryAddEvent_whenValueNotIncluded() {
         final Object key = "key";
         final int maxItems = 72;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -182,7 +182,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerOnKeyEntryRemoveEvent() throws InterruptedException {
+    public void testListenerOnKeyEntryRemoveEvent() {
         final Object key = "key";
         final int maxItems = 88;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -199,7 +199,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerOnKeyEntryRemoveEvent_whenValueNotIncluded() throws InterruptedException {
+    public void testListenerOnKeyEntryRemoveEvent_whenValueNotIncluded() {
         final Object key = "key";
         final int maxItems = 62;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -216,7 +216,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerOnKeyEntryRemove_WithOneRemove() throws InterruptedException {
+    public void testListenerOnKeyEntryRemove_WithOneRemove() {
         final Object key = "key";
         final int maxItems = 98;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -233,7 +233,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListenerOnKeyEntryRemove_WithOneRemoveWhenValueNotIncluded() throws InterruptedException {
+    public void testListenerOnKeyEntryRemove_WithOneRemoveWhenValueNotIncluded() {
         final Object key = "key";
         final int maxItems = 56;
         final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
@@ -481,7 +481,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListeners() throws Exception {
+    public void testListeners() {
         int count = 4;
         String name = randomMapName();
         Config config = new Config();
@@ -517,7 +517,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         multiMap.put("key8", "val8");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertContainsAll(multiMap.localKeySet(), keys);
             }
         });
@@ -526,7 +526,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         }
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertContainsAll(multiMap.localKeySet(), keys);
             }
         });

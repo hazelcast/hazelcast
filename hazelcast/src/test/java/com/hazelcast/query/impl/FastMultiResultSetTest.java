@@ -41,34 +41,34 @@ public class FastMultiResultSetTest {
     private FastMultiResultSet result = new FastMultiResultSet();
 
     @Test
-    public void testAddResultSet_empty() throws Exception {
+    public void testAddResultSet_empty() {
         assertThat(result.size(), is(0));
     }
 
     @Test
-    public void testContains_empty() throws Exception {
+    public void testContains_empty() {
         assertThat(result.contains(entry(data())), is(false));
     }
 
     @Test
-    public void testIterator_empty() throws Exception {
+    public void testIterator_empty() {
         assertThat(result.iterator().hasNext(), is(false));
     }
 
     @Test
-    public void testSize_empty() throws Exception {
+    public void testSize_empty() {
         assertThat(result.isEmpty(), is(true));
     }
 
     @Test
-    public void testAddResultSet_notEmpty() throws Exception {
+    public void testAddResultSet_notEmpty() {
         addEntry(entry(data()));
 
         assertThat(result.size(), is(1));
     }
 
     @Test
-    public void testContains_notEmpty() throws Exception {
+    public void testContains_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
@@ -76,7 +76,7 @@ public class FastMultiResultSetTest {
     }
 
     @Test
-    public void testIterator_notEmpty() throws Exception {
+    public void testIterator_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
@@ -85,7 +85,7 @@ public class FastMultiResultSetTest {
     }
 
     @Test
-    public void testIterator_notEmpty_iteratorReused() throws Exception {
+    public void testIterator_notEmpty_iteratorReused() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
@@ -95,22 +95,22 @@ public class FastMultiResultSetTest {
     }
 
     @Test
-    public void testIterator_empty_next() throws Exception {
+    public void testIterator_empty_next() {
         assertNull(result.iterator().next());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testIterator_empty_remove() throws Exception {
+    public void testIterator_empty_remove() {
         result.iterator().remove();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testIterator_addUnsopperted() throws Exception {
+    public void testIterator_addUnsopperted() {
         result.add(mock(QueryableEntry.class));
     }
 
     @Test
-    public void testSize_notEmpty() throws Exception {
+    public void testSize_notEmpty() {
         addEntry(entry(data()));
 
         assertThat(result.isEmpty(), is(false));

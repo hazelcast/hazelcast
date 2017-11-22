@@ -200,7 +200,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         return retryCall(new RetryTask<DelayedEntry>() {
 
             @Override
-            public boolean run() throws Exception {
+            public boolean run() {
                 callBeforeStoreListeners(entry);
                 final Object key = toObject(entry.getKey());
                 final Object value = toObject(entry.getValue());

@@ -40,30 +40,30 @@ public class DistributedObjectFutureTest {
     private DistributedObjectFuture future = new DistributedObjectFuture();
 
     @Test
-    public void isSet_returnsFalse_whenNotSet() throws Exception {
+    public void isSet_returnsFalse_whenNotSet() {
         assertFalse(future.isSetAndInitialized());
     }
 
     @Test
-    public void isSet_returnsTrue_whenSet() throws Exception {
+    public void isSet_returnsTrue_whenSet() {
         future.set(object, true);
         assertTrue(future.isSetAndInitialized());
     }
 
     @Test
-    public void isSet_returnsFalse_whenSetUninitialized() throws Exception {
+    public void isSet_returnsFalse_whenSetUninitialized() {
         future.set(object, false);
         assertFalse(future.isSetAndInitialized());
     }
 
     @Test
-    public void isSet_returnsTrue_whenErrorSet() throws Exception {
+    public void isSet_returnsTrue_whenErrorSet() {
         future.setError(new Throwable());
         assertTrue(future.isSetAndInitialized());
     }
 
     @Test
-    public void get_returnsObject_whenObjectSet() throws Exception {
+    public void get_returnsObject_whenObjectSet() {
         future.set(object, true);
         assertSame(object, future.get());
 
@@ -72,7 +72,7 @@ public class DistributedObjectFutureTest {
     }
 
     @Test
-    public void get_returnsInitializedObject_whenUninitializedObjectSet() throws Exception {
+    public void get_returnsInitializedObject_whenUninitializedObjectSet() {
         future.set(object, false);
         assertSame(object, future.get());
 
@@ -81,7 +81,7 @@ public class DistributedObjectFutureTest {
     }
 
     @Test
-    public void get_throwsGivenException_whenUncheckedExceptionSet() throws Exception {
+    public void get_throwsGivenException_whenUncheckedExceptionSet() {
         Throwable error = new RuntimeException();
         future.setError(error);
 
@@ -93,7 +93,7 @@ public class DistributedObjectFutureTest {
     }
 
     @Test
-    public void get_throwsWrappedException_whenCheckedExceptionSet() throws Exception {
+    public void get_throwsWrappedException_whenCheckedExceptionSet() {
         Throwable error = new Throwable();
         future.setError(error);
 

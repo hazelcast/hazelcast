@@ -79,7 +79,7 @@ public class MapConfigTest {
     }
 
     @Test
-    public void testMinEvictionCheckMillis() throws Exception {
+    public void testMinEvictionCheckMillis() {
         assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
     }
 

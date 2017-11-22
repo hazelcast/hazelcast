@@ -85,7 +85,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         // partitions may be empty if the node has joined and didn't get any partitions yet
         // a generic operation may already execute on it.
         if (partitions.length == 0) {

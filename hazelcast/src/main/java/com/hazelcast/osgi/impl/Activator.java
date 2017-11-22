@@ -56,8 +56,7 @@ public class Activator
     }
 
     @Override
-    public void stop(BundleContext context)
-            throws Exception {
+    public void stop(BundleContext context) {
         assert hazelcastOSGiService != null : "Hazelcast OSGI service should not be null while stopping!";
 
         hazelcastOSGiService.deactivate();

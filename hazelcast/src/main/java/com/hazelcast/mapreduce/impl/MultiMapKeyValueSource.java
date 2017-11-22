@@ -93,8 +93,7 @@ public class MultiMapKeyValueSource<K, V>
     }
 
     @Override
-    public void close()
-            throws IOException {
+    public void close() {
     }
 
     @Override

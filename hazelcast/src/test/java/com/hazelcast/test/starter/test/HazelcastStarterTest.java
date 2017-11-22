@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class HazelcastStarterTest {
 
     @Test
-    public void testMember() throws InterruptedException {
+    public void testMember() {
         HazelcastInstance alwaysRunningMember = HazelcastStarter.newHazelcastInstance("3.7", false);
 
         for (int i = 1; i < 6; i++) {
@@ -31,7 +31,7 @@ public class HazelcastStarterTest {
     }
 
     @Test
-    public void testMemberWithConfig() throws InterruptedException {
+    public void testMemberWithConfig() {
         Config config = new Config();
         config.setInstanceName("test-name");
 

@@ -62,7 +62,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClone() throws InterruptedException, CloneNotSupportedException {
+    public void testClone() throws CloneNotSupportedException {
         TimedMemberState cloned = timedMemberState.clone();
 
         assertNotNull(cloned);
@@ -78,7 +78,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialization() throws InterruptedException, CloneNotSupportedException {
+    public void testSerialization() {
         JsonObject serialized = timedMemberState.toJson();
         TimedMemberState deserialized = new TimedMemberState();
         deserialized.fromJson(serialized);

@@ -56,7 +56,7 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 DummyResponsePacketHandler responsePacketHandler
                         = (DummyResponsePacketHandler) OperationExecutorImpl_HandlePacketTest.this.responsePacketHandler;
                 responsePacketHandler.packets.contains(packet);
@@ -76,7 +76,7 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 OperationRunner[] partitionHandlers = executor.getPartitionOperationRunners();
                 DummyOperationRunner handler = (DummyOperationRunner) partitionHandlers[operation.getPartitionId()];
                 assertContains(handler.packets, packet);
@@ -95,7 +95,7 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 OperationRunner[] genericHandlers = executor.getGenericOperationRunners();
                 boolean found = false;
                 for (OperationRunner h : genericHandlers) {

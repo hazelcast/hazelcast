@@ -72,91 +72,91 @@ public class LazyEntryViewFromRecordTest {
     }
 
     @Test
-    public void test_getKey() throws Exception {
+    public void test_getKey() {
         assertEquals(key, view.getKey());
     }
 
     @Test
-    public void test_getValue() throws Exception {
+    public void test_getValue() {
         assertEquals(value, view.getValue());
     }
 
     @Test
-    public void test_getCost() throws Exception {
+    public void test_getCost() {
         assertEquals(ENTRY_VIEW_COST_IN_BYTES, view.getCost());
     }
 
     @Test
-    public void test_getCreationTime() throws Exception {
+    public void test_getCreationTime() {
         assertEquals(0, view.getCreationTime());
     }
 
     @Test
-    public void test_getExpirationTime() throws Exception {
+    public void test_getExpirationTime() {
         assertEquals(0, view.getExpirationTime());
     }
 
     @Test
-    public void test_getHits() throws Exception {
+    public void test_getHits() {
         assertEquals(0, view.getHits());
     }
 
     @Test
-    public void test_getLastAccessTime() throws Exception {
+    public void test_getLastAccessTime() {
         assertEquals(0, view.getLastAccessTime());
     }
 
     @Test
-    public void test_getLastStoredTime() throws Exception {
+    public void test_getLastStoredTime() {
         assertEquals(0, view.getLastStoredTime());
     }
 
     @Test
-    public void test_getLastUpdateTime() throws Exception {
+    public void test_getLastUpdateTime() {
         assertEquals(0, view.getLastUpdateTime());
     }
 
     @Test
-    public void test_getVersion() throws Exception {
+    public void test_getVersion() {
         assertEquals(0, view.getVersion());
     }
 
     @Test
-    public void test_getTtl() throws Exception {
+    public void test_getTtl() {
         assertEquals(0, view.getTtl());
     }
 
     @Test
-    public void test_getRecord() throws Exception {
+    public void test_getRecord() {
         assertEquals(recordInstance, ((LazyEntryViewFromRecord) view).getRecord());
     }
 
     @Test
-    public void test_equals() throws Exception {
+    public void test_equals() {
         EntryView entryView = createDefaultEntryView();
 
         assertTrue(view.equals(entryView) && entryView.equals(view));
     }
 
     @Test
-    public void test_equals_whenSameReference() throws Exception {
+    public void test_equals_whenSameReference() {
         assertTrue(view.equals(view));
     }
 
     @Test
-    public void test_equals_whenSuppliedObjectIsNotEntryView() throws Exception {
+    public void test_equals_whenSuppliedObjectIsNotEntryView() {
         assertFalse(view.equals(this));
     }
 
     @Test
-    public void test_hashCode() throws Exception {
+    public void test_hashCode() {
         EntryView entryView = createDefaultEntryView();
 
         assertEquals(entryView.hashCode(), view.hashCode());
     }
 
     @Test
-    public void test_toString() throws Exception {
+    public void test_toString() {
         String expected = "EntryView{key=" + view.getKey()
                 + ", value=" + view.getValue()
                 + ", cost=" + view.getCost()

@@ -59,7 +59,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(BEAN.getLoadedClassCount(), gauge.read(), 100);
             }
         });
@@ -71,7 +71,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(BEAN.getTotalLoadedClassCount(), gauge.read(), 100);
             }
         });
@@ -83,7 +83,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(BEAN.getUnloadedClassCount(), gauge.read(), 100);
             }
         });

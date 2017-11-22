@@ -60,7 +60,7 @@ public class ZuluExcludeRule implements MethodRule {
         }
 
         @Override
-        public void evaluate() throws Throwable {
+        public void evaluate() {
             String className = method.getMethod().getDeclaringClass().getName();
             String methodName = method.getName();
 

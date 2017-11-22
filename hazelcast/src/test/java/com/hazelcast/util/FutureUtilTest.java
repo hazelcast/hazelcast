@@ -56,7 +56,7 @@ import static org.junit.Assert.assertTrue;
 public class FutureUtilTest extends HazelcastTestSupport {
 
     @Test
-    public void test_waitWithDeadline_first_wait_second_finished() throws Exception {
+    public void test_waitWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -69,7 +69,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_waitWithDeadline_first_finished_second_wait() throws Exception {
+    public void test_waitWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -82,7 +82,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_returnWithDeadline_first_wait_second_finished() throws Exception {
+    public void test_returnWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -100,7 +100,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_returnWithDeadline_first_finished_second_wait() throws Exception {
+    public void test_returnWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -118,7 +118,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test(expected = TimeoutException.class)
-    public void test_returnWithDeadline_timeout_exception() throws Exception {
+    public void test_returnWithDeadline_timeout_exception() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -140,7 +140,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_waitWithDeadline_failing_second() throws Throwable {
+    public void test_waitWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -159,7 +159,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_returnWithDeadline_failing_second() throws Throwable {
+    public void test_returnWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -178,7 +178,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test(expected = TransactionTimedOutException.class)
-    public void testTransactionTimedOutExceptionHandler() throws Exception {
+    public void testTransactionTimedOutExceptionHandler() {
         final ExceptionHandler exceptionHandler = FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
         final Throwable throwable = new TimeoutException();
 
@@ -274,8 +274,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Integer call()
-                throws Exception {
+        public Integer call() {
             if (waitLock.compareAndSet(true, false)) {
                 try {
                     Thread.sleep(2000);
@@ -297,8 +296,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Integer call()
-                throws Exception {
+        public Integer call() {
             if (waitLock.compareAndSet(true, false)) {
                 try {
                     Thread.sleep(1000);
@@ -330,8 +328,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public V get(long timeout, TimeUnit unit) throws InterruptedException,
-                ExecutionException, TimeoutException {
+        public V get(long timeout, TimeUnit unit) {
             return null;
         }
 

@@ -61,7 +61,7 @@ public final class OfferOperation extends QueueBackupAwareOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (Boolean.TRUE.equals(response)) {
             stats.incrementOffers();

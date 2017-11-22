@@ -126,7 +126,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Iterator<Invocation> invocations = operationService.invocationRegistry.iterator();
                 assertFalse(invocations.hasNext());
             }
@@ -219,7 +219,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     public static class NonResponsiveOperation extends Operation {
 
         @Override
-        public void run() throws InterruptedException {
+        public void run() {
         }
 
         @Override

@@ -57,7 +57,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void throws_exception_whenPredicateNull() throws Exception {
+    public void throws_exception_whenPredicateNull() {
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("predicate cannot be null");
 
@@ -66,7 +66,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_all_entries_whenPredicateTrue() throws Exception {
+    public void removes_all_entries_whenPredicateTrue() {
         IMap<Integer, Integer> map = member.getMap("test");
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);
@@ -78,7 +78,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_no_entries_whenPredicateFalse() throws Exception {
+    public void removes_no_entries_whenPredicateFalse() {
         IMap<Integer, Integer> map = member.getMap("test");
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);
@@ -90,7 +90,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_odd_keys_whenPredicateOdd() throws Exception {
+    public void removes_odd_keys_whenPredicateOdd() {
         IMap<Integer, Integer> map = member.getMap("test");
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);

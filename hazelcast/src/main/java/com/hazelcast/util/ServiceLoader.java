@@ -72,8 +72,7 @@ public final class ServiceLoader {
         return new NewInstanceIterator<T>(classIterator);
     }
 
-    public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader)
-            throws Exception {
+    public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader) {
         Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
         return new ClassIterator<T>(serviceDefinitions, expectedType);
     }

@@ -91,7 +91,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOneAfterTail() throws Exception {
+    public void whenOneAfterTail() {
         ringbuffer.add("tail");
 
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 1, 1, 1, null);
@@ -106,7 +106,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void whenTooFarAfterTail() throws Exception {
+    public void whenTooFarAfterTail() {
         ringbuffer.add("tail");
 
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 2, 1, 1, null);
@@ -117,7 +117,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOneAfterTailAndBufferEmpty() throws Exception {
+    public void whenOneAfterTailAndBufferEmpty() {
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence() + 1, 1, 1, null);
         op.setNodeEngine(nodeEngine);
 
@@ -131,7 +131,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = StaleSequenceException.class)
-    public void whenOnTailAndBufferEmpty() throws Exception {
+    public void whenOnTailAndBufferEmpty() {
         ReadManyOperation op = getReadManyOperation(ringbuffer.tailSequence(), 1, 1, null);
         op.setNodeEngine(nodeEngine);
 
@@ -182,7 +182,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = StaleSequenceException.class)
-    public void whenBeforeHead() throws Exception {
+    public void whenBeforeHead() {
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
@@ -197,7 +197,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMinimumNumberOfItemsNotAvailable() throws Exception {
+    public void whenMinimumNumberOfItemsNotAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
         op.setNodeEngine(nodeEngine);
@@ -223,7 +223,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenBelowMinimumAvailable() throws Exception {
+    public void whenBelowMinimumAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
         op.setNodeEngine(nodeEngine);
@@ -242,7 +242,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMinimumNumberOfItemsAvailable() throws Exception {
+    public void whenMinimumNumberOfItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 3, 3, null);
         op.setNodeEngine(nodeEngine);
@@ -257,7 +257,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenEnoughItemsAvailable() throws Exception {
+    public void whenEnoughItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         ReadManyOperation op = getReadManyOperation(startSequence, 1, 3, null);
         op.setNodeEngine(nodeEngine);
@@ -277,7 +277,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenEnoughItemsAvailableAndReturnPortable() throws Exception {
+    public void whenEnoughItemsAvailableAndReturnPortable() {
         long startSequence = ringbuffer.tailSequence() + 1;
         final ReadManyOperation<String> op = new ReadManyOperation<String>(ringbuffer.getName(), startSequence, 1, 3, null, true);
         op.setPartitionId(ringbufferService.getRingbufferPartitionId(ringbuffer.getName()));
@@ -304,7 +304,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenFilterProvidedAndNoItemsAvailable() throws Exception {
+    public void whenFilterProvidedAndNoItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
 
         IFunction<String, Boolean> filter = new IFunction<String, Boolean>() {
@@ -361,7 +361,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenFilterProvidedAndAllItemsAvailable() throws Exception {
+    public void whenFilterProvidedAndAllItemsAvailable() {
         long startSequence = ringbuffer.tailSequence() + 1;
 
         IFunction<String, Boolean> filter = new IFunction<String, Boolean>() {

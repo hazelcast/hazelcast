@@ -43,7 +43,7 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         LockStoreImpl lockStore = getLockStore();
         int lockVersion = lockStore.getVersion(key);
         ILogger logger = getLogger();

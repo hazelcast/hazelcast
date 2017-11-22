@@ -60,33 +60,33 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testIsLocal_whenOwnedByThis() throws Exception {
+    public void testIsLocal_whenOwnedByThis() {
         replicaAddresses[0] = thisAddress;
         partition.setInitialReplicaAddresses(replicaAddresses);
         assertTrue(partition.isLocal());
     }
 
     @Test
-    public void testIsLocal_whenNOTOwnedByThis() throws Exception {
+    public void testIsLocal_whenNOTOwnedByThis() {
         replicaAddresses[0] = newAddress(6000);
         partition.setInitialReplicaAddresses(replicaAddresses);
         assertFalse(partition.isLocal());
     }
 
     @Test
-    public void testGetOwnerOrNull_whenOwnerExists() throws Exception {
+    public void testGetOwnerOrNull_whenOwnerExists() {
         replicaAddresses[0] = thisAddress;
         partition.setInitialReplicaAddresses(replicaAddresses);
         assertEquals(thisAddress, partition.getOwnerOrNull());
     }
 
     @Test
-    public void testGetOwnerOrNull_whenOwnerNOTExists() throws Exception {
+    public void testGetOwnerOrNull_whenOwnerNOTExists() {
         assertNull(partition.getOwnerOrNull());
     }
 
     @Test
-    public void testGetReplicaAddress() throws Exception {
+    public void testGetReplicaAddress() {
         replicaAddresses[0] = thisAddress;
         partition.setInitialReplicaAddresses(replicaAddresses);
 
@@ -97,7 +97,7 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testSetInitialReplicaAddresses() throws Exception {
+    public void testSetInitialReplicaAddresses() {
         for (int i = 0; i < replicaAddresses.length; i++) {
             replicaAddresses[i] = newAddress(5000 + i);
         }
@@ -109,21 +109,21 @@ public class InternalPartitionImplTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testSetInitialReplicaAddresses_multipleTimes() throws Exception {
+    public void testSetInitialReplicaAddresses_multipleTimes() {
         replicaAddresses[0] = thisAddress;
         partition.setInitialReplicaAddresses(replicaAddresses);
         partition.setInitialReplicaAddresses(replicaAddresses);
     }
 
     @Test
-    public void testSetInitialReplicaAddresses_ListenerShouldNOTBeCalled() throws Exception {
+    public void testSetInitialReplicaAddresses_ListenerShouldNOTBeCalled() {
         replicaAddresses[0] = thisAddress;
         partition.setInitialReplicaAddresses(replicaAddresses);
         assertEquals(0, partitionListener.eventCount);
     }
 
     @Test
-    public void testSetReplicaAddresses() throws Exception {
+    public void testSetReplicaAddresses() {
         for (int i = 0; i < replicaAddresses.length; i++) {
             replicaAddresses[i] = newAddress(5000 + i);
         }
@@ -135,21 +135,21 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testSetReplicaAddresses_afterInitialSet() throws Exception {
+    public void testSetReplicaAddresses_afterInitialSet() {
         replicaAddresses[0] = thisAddress;
         partition.setInitialReplicaAddresses(replicaAddresses);
         partition.setReplicaAddresses(replicaAddresses);
     }
 
     @Test
-    public void testSetReplicaAddresses_multipleTimes() throws Exception {
+    public void testSetReplicaAddresses_multipleTimes() {
         replicaAddresses[0] = thisAddress;
         partition.setReplicaAddresses(replicaAddresses);
         partition.setReplicaAddresses(replicaAddresses);
     }
 
     @Test
-    public void testSetReplicaAddresses_ListenerShouldBeCalled() throws Exception {
+    public void testSetReplicaAddresses_ListenerShouldBeCalled() {
         replicaAddresses[0] = thisAddress;
         replicaAddresses[1] = newAddress(5001);
         partition.setReplicaAddresses(replicaAddresses);
@@ -157,7 +157,7 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testListenerShouldNOTBeCalled_whenReplicaRemainsSame() throws Exception {
+    public void testListenerShouldNOTBeCalled_whenReplicaRemainsSame() {
         replicaAddresses[0] = thisAddress;
         partition.setReplicaAddresses(replicaAddresses);
         partitionListener.reset();
@@ -167,7 +167,7 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testIsOwnerOrBackup() throws Exception {
+    public void testIsOwnerOrBackup() {
         replicaAddresses[0] = thisAddress;
         Address otherAddress = newAddress(5001);
         replicaAddresses[1] = otherAddress;
@@ -179,7 +179,7 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testGetReplicaIndex() throws Exception {
+    public void testGetReplicaIndex() {
         replicaAddresses[0] = thisAddress;
         Address otherAddress = newAddress(5001);
         replicaAddresses[1] = otherAddress;
@@ -191,7 +191,7 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testReset() throws Exception {
+    public void testReset() {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             replicaAddresses[i] = newAddress(5000 + i);
         }

@@ -68,7 +68,7 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 AtomicReferenceArray<HazelcastInstance> members = bounceMemberRule.getMembers();
                 AtomicReferenceArray<HazelcastInstance> testDrivers = bounceMemberRule.getTestDrivers();
 

@@ -50,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
-    public void testHitsGenerated() throws Exception {
+    public void testHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -61,7 +61,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAndHitsGenerated() throws Exception {
+    public void testPutAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -73,7 +73,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAsync() throws Exception {
+    public void testPutAsync() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.putAsync(i, i);
@@ -81,15 +81,14 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final LocalMapStats localMapStats = map.getLocalMapStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(100, localMapStats.getPutOperationCount());
             }
         });
     }
 
     @Test
-    public void testGetAndHitsGenerated() throws Exception {
+    public void testGetAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -101,7 +100,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAllGenerated() throws Exception {
+    public void testPutAllGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             Map<Integer, Integer> putMap = new HashMap<Integer, Integer>(2);
@@ -114,7 +113,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAllGenerated() throws Exception {
+    public void testGetAllGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 200; i++) {
             map.put(i, i);
@@ -139,8 +138,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final LocalMapStats localMapStats = map.getLocalMapStats();
                 assertEquals(100, localMapStats.getGetOperationCount());
                 assertEquals(100, localMapStats.getHits());
@@ -149,7 +147,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testRemove() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -160,7 +158,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveAsync() throws Exception {
+    public void testRemoveAsync() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -169,15 +167,14 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final LocalMapStats localMapStats = map.getLocalMapStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(100, localMapStats.getRemoveOperationCount());
             }
         });
     }
 
     @Test
-    public void testHitsGenerated_updatedConcurrently() throws Exception {
+    public void testHitsGenerated_updatedConcurrently() {
         final IMap<Integer, Integer> map = getMap();
         final int actionCount = 100;
         for (int i = 0; i < actionCount; i++) {
@@ -200,8 +197,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertEquals(actionCount, initialHits);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(actionCount * 2, localMapStats.getHits());
             }
         });
@@ -227,7 +223,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
+    public void testLastAccessTime_updatedConcurrently() {
         final long startTime = Clock.currentTimeMillis();
         final IMap<String, String> map = getMap();
 
@@ -250,15 +246,14 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertTrue(lastUpdateTime >= startTime);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(localMapStats.getLastUpdateTime() > lastUpdateTime);
             }
         });
     }
 
     @Test
-    public void testEvictAll() throws Exception {
+    public void testEvictAll() {
         IMap<String, String> map = getMap();
         map.put("key", "value");
         map.evictAll();
@@ -269,7 +264,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHits_whenMultipleNodes() throws InterruptedException {
+    public void testHits_whenMultipleNodes() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(getConfig());
         MultiMap<Object, Object> multiMap0 = instances[0].getMultiMap("testHits_whenMultipleNodes");
@@ -307,14 +302,14 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final LocalMapStats localMapStats = iMap.getLocalMapStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(5000, localMapStats.getPutOperationCount());
             }
         });
     }
 
     @Test
-    public void testLocalMapStats_withMemberGroups() throws Exception {
+    public void testLocalMapStats_withMemberGroups() {
         final String mapName = randomMapName();
         final String[] firstMemberGroup = {"127.0.0.1", "127.0.0.2"};
         final String[] secondMemberGroup = {"127.0.0.3"};
@@ -337,7 +332,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                                         final Collection<HazelcastInstance> nodes) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long backup = 0;
                 for (HazelcastInstance node : nodes) {
                     final IMap<Object, Object> map = node.getMap(mapName);

@@ -73,7 +73,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void multipleShutdowns_Allowed() throws InterruptedException {
+    public void multipleShutdowns_Allowed() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
         Node node = getNode(hz);
@@ -129,7 +129,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void shouldReject_NormalOperationExecution_whilePassive() throws Exception {
         InvocationTask task = new InvocationTask() {
             @Override
-            public void invoke(NodeEngine nodeEngine) throws Exception {
+            public void invoke(NodeEngine nodeEngine) {
                 final CountDownLatch latch = new CountDownLatch(1);
                 Operation op = new DummyOperation() {
                     @Override
@@ -169,11 +169,11 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void shouldAllow_AllowedOperationExecution_whilePassive() throws Exception {
         InvocationTask task = new InvocationTask() {
             @Override
-            public void invoke(NodeEngine nodeEngine) throws Exception {
+            public void invoke(NodeEngine nodeEngine) {
                 final CountDownLatch latch = new CountDownLatch(1);
                 Operation op = new DummyAllowedDuringPassiveStateOperation() {
                     @Override
-                    public void afterRun() throws Exception {
+                    public void afterRun() {
                         latch.countDown();
                     }
 
@@ -191,7 +191,7 @@ public class NodeStateTest extends HazelcastTestSupport {
         testInvocation_whilePassive(task);
     }
 
-    private void testInvocation_whilePassive(InvocationTask invocationTask) throws Exception {
+    private void testInvocation_whilePassive(InvocationTask invocationTask) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance hz = factory.newHazelcastInstance();
         final Node node = getNode(hz);

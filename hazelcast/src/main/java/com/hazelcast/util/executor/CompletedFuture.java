@@ -59,7 +59,7 @@ public final class CompletedFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
         return get();
     }
 

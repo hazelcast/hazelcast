@@ -165,7 +165,7 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < mapSize; i++) {
                     Integer valueSeenFromMember = memberMap.get(i);
                     Integer valueSeenFromNearCachedSide = nearCachedMap.get(i);

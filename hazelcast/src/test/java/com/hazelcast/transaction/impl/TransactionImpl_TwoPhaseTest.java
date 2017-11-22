@@ -72,7 +72,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     // =================== begin ==================================================
 
     @Test
-    public void begin_whenBeginThrowsException() throws Exception {
+    public void begin_whenBeginThrowsException() {
         RuntimeException expectedException = new RuntimeException("example exception");
         when(txManagerService.pickBackupLogAddresses(anyInt())).thenThrow(expectedException);
 
@@ -113,7 +113,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
         assertRequiresPrepare(2, true);
     }
 
-    public void assertRequiresPrepare(int recordCount, boolean expected) throws Exception {
+    public void assertRequiresPrepare(int recordCount, boolean expected) {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();
@@ -129,7 +129,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     // =================== prepare ==================================================
 
     @Test(expected = TransactionException.class)
-    public void prepare_whenThrowsExceptionDuringPrepare() throws Exception {
+    public void prepare_whenThrowsExceptionDuringPrepare() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();
@@ -175,7 +175,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void commit_whenThrowsExceptionDuringCommit() throws Exception {
+    public void commit_whenThrowsExceptionDuringCommit() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         tx.begin();

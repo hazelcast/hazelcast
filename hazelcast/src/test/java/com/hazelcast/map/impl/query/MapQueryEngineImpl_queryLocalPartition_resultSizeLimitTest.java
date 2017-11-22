@@ -68,7 +68,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     }
 
     @Test
-    public void checkResultSize_limitNotExceeded() throws Exception {
+    public void checkResultSize_limitNotExceeded() {
         fillPartition(limit - 1);
 
         Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
@@ -78,7 +78,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     }
 
     @Test
-    public void checkResultSize_limitNotEquals() throws Exception {
+    public void checkResultSize_limitNotEquals() {
         fillPartition(limit);
 
         Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();
@@ -89,7 +89,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
 
     @Ignore
     @Test(expected = QueryResultSizeExceededException.class)
-    public void checkResultSize_limitExceeded() throws Exception {
+    public void checkResultSize_limitExceeded() {
         fillPartition(limit + 1);
 
         Query query = Query.of().mapName(map.getName()).predicate(TruePredicate.INSTANCE).iterationType(ENTRY).build();

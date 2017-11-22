@@ -245,8 +245,7 @@ public class MapSumAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testSum(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testSum(T[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
@@ -259,8 +258,7 @@ public class MapSumAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testSumWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testSumWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);

@@ -207,7 +207,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void handle(Packet packet) {
         assert packet.getPacketType() == Packet.Type.BIND;
 
         BindMessage bind = ioService.getSerializationService().toObject(packet);

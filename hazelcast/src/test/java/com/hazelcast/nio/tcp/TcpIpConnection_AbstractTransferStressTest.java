@@ -121,7 +121,7 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
         long start = System.currentTimeMillis();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 logger.info("writer total frames pending   : " + totalFramesPending(connection));
                 logger.info("writer last write time millis : " + connection.getChannel().lastWriteTimeMillis());
 

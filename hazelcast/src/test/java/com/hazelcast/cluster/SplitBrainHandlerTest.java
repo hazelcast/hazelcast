@@ -73,7 +73,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -87,7 +87,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         testClusterMerge(false);
     }
 
-    private void testClusterMerge(boolean multicast) throws Exception {
+    private void testClusterMerge(boolean multicast) {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
@@ -132,7 +132,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClusterShouldNotMergeDifferentGroupName() throws Exception {
+    public void testClusterShouldNotMergeDifferentGroupName() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
@@ -434,7 +434,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         testClusterMerge_when_split_not_detected_by_master(false);
     }
 
-    private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled) throws InterruptedException {
+    private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled) {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
@@ -580,8 +580,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertClusterSize(2, hz1, hz2);
                 assertClusterSize(1, hz3);
             }
@@ -620,8 +619,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertClusterSize(2, hz1, hz2);
                 assertClusterSize(1, hz3);
             }
@@ -646,7 +644,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
-    public void testClusterMerge_when_split_not_detected_by_slave() throws InterruptedException {
+    public void testClusterMerge_when_split_not_detected_by_slave() {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
@@ -705,7 +703,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
-    public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() throws InterruptedException {
+    public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);

@@ -76,7 +76,7 @@ final class OperationBackupHandler {
         return backupAcks;
     }
 
-    int sendBackups0(BackupAwareOperation backupAwareOp) throws Exception {
+    int sendBackups0(BackupAwareOperation backupAwareOp) {
         int requestedSyncBackups = requestedSyncBackups(backupAwareOp);
         int requestedAsyncBackups = requestedAsyncBackups(backupAwareOp);
         int requestedTotalBackups = requestedTotalBackups(backupAwareOp);

@@ -87,7 +87,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     protected abstract IterationType getIterationType();
 
     @Override
-    protected final Object call() throws Exception {
+    protected final Object call() {
         Collection<AccumulatedResults> result = new LinkedList<AccumulatedResults>();
         try {
             Predicate predicate = getPredicate();
@@ -192,8 +192,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     }
 
     @SuppressWarnings("unchecked")
-    private BitSet collectResults(Collection<AccumulatedResults> result, List<Future> futures, int partitionCount)
-            throws InterruptedException, ExecutionException {
+    private BitSet collectResults(Collection<AccumulatedResults> result, List<Future> futures, int partitionCount) {
         BitSet finishedPartitions = new BitSet(partitionCount);
         for (Future future : futures) {
             try {

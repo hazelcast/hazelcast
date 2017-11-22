@@ -33,8 +33,7 @@ public final class CreateAllowedDuringPassiveStateTxBackupLogOperation
     }
 
     @Override
-    public void run()
-            throws Exception {
+    public void run() {
         TransactionManagerServiceImpl txManagerService = getService();
         txManagerService.createAllowedDuringPassiveStateBackupLog(getCallerUuid(), getTxnId());
     }

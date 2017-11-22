@@ -47,8 +47,7 @@ public class SamplingRunListener extends RunListener {
     private static final ILogger LOGGER = Logger.getLogger(SamplingRunListener.class);
 
     @Override
-    public void testRunFinished(Result result)
-            throws Exception {
+    public void testRunFinished(Result result) {
         FileOutputStream serializedSamplesOutput = null;
         FileWriter indexOutput = null;
         try {

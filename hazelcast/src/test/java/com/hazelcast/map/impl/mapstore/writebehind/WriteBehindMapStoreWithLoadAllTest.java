@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
 
     @Test
-    public void testWriteBehind_loadAll() throws Exception {
+    public void testWriteBehind_loadAll() {
         final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
         final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
@@ -67,7 +67,7 @@ public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
     private void assertFinalValueEquals(final int expected, final int actual) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expected, actual);
             }
         }, 5);

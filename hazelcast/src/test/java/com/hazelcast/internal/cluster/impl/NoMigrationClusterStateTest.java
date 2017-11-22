@@ -72,7 +72,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
             final InternalPartitionService partitionService = node.getPartitionService();
 
             @Override
-            public void run() throws Exception {
+            public void run() {
                 List<Integer> memberPartitions = partitionService.getMemberPartitions(node.getThisAddress());
                 assertThat(memberPartitions, empty());
                 service.assertNoReplication();
@@ -150,7 +150,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 InternalPartition[] partitions = partitionService.getInternalPartitions();
                 for (InternalPartition partition : partitions) {
                     for (int i = 0; i < replicaCount; i++) {
@@ -178,7 +178,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 service.assertNoReplication();
             }
         }, 10);
@@ -217,7 +217,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 service.assertNoReplication();
             }
         }, 10);

@@ -255,8 +255,7 @@ public class MapAvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testAvg(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testAvg(T[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
@@ -269,8 +268,7 @@ public class MapAvgAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testAvgWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testAvgWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);

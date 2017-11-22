@@ -485,7 +485,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
 //    @Repeat(100)
-    public void testStatsIssue2039() throws Exception {
+    public void testStatsIssue2039() {
         Config config = new Config();
         String name = "testStatsIssue2039";
         config.addDurableExecutorConfig(new DurableExecutorConfig(name).setPoolSize(1).setCapacity(1));

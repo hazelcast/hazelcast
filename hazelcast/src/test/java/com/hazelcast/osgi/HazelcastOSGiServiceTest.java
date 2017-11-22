@@ -280,7 +280,7 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void newInstanceRegisteredAsServiceWhenRegistrationIsNotDisabled() throws BundleException {
+    public void newInstanceRegisteredAsServiceWhenRegistrationIsNotDisabled() {
         HazelcastInternalOSGiService service = getService();
 
         service.newHazelcastInstance();

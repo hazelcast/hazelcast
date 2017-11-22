@@ -97,7 +97,7 @@ public class CacheDestroyTest extends CacheTestSupport {
     }
 
     @Test
-    public void test_cacheDestroyOperation() throws ExecutionException, InterruptedException {
+    public void test_cacheDestroyOperation() {
         final String CACHE_NAME = "MyCache";
         final String FULL_CACHE_NAME = HazelcastCacheManager.CACHE_MANAGER_PREFIX + CACHE_NAME;
 
@@ -122,7 +122,7 @@ public class CacheDestroyTest extends CacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cacheService1.getCacheConfig(FULL_CACHE_NAME));
                 assertNull(cacheService2.getCacheConfig(FULL_CACHE_NAME));
             }
@@ -154,16 +154,14 @@ public class CacheDestroyTest extends CacheTestSupport {
         // Make sure that at least 1 invalidation event has been received
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(counter.get() >= 1);
             }
         }, 2);
         // Make sure that no more than INSTNACE_COUNT events are received ever
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(counter.get() <= INSTANCE_COUNT);
             }
         }, 3);

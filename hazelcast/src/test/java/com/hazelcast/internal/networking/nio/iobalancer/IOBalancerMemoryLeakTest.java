@@ -47,7 +47,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -67,7 +67,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         final IOBalancer ioBalancer = getIoBalancer(connectionManager);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int inHandlerSize = ioBalancer.getInLoadTracker().getHandlers().size();
                 int outHandlerSize = ioBalancer.getOutLoadTracker().getHandlers().size();
                 assertEquals(0, inHandlerSize);
@@ -77,7 +77,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMemoryLeak_with_SocketConnections() throws IOException {
+    public void testMemoryLeak_with_SocketConnections() {
         Config config = new Config();
         config.getGroupConfig().setName(randomName());
         config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
@@ -114,7 +114,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         final IOBalancer ioBalancer = getIoBalancer(connectionManager);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
                 LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
                 int inHandlerSize = inLoadTracker.getHandlers().size();

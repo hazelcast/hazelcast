@@ -57,7 +57,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPhoneHomeParameters() throws Exception {
+    public void testPhoneHomeParameters() {
         Node node1 = TestUtil.getNode(hz1);
         PhoneHome phoneHome = new PhoneHome();
         sleepAtLeastMillis(1);
@@ -90,7 +90,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConvertToLetter() throws Exception {
+    public void testConvertToLetter() {
 
         PhoneHome phoneHome = new PhoneHome();
         assertEquals("A", phoneHome.convertToLetter(4));

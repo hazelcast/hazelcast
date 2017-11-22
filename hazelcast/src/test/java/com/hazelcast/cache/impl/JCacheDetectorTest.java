@@ -58,7 +58,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withCorrectVersion() throws Exception {
+    public void testIsJCacheAvailable_withCorrectVersion() {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(true);
 
@@ -67,7 +67,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withCorrectVersion_withLogger() throws Exception {
+    public void testIsJCacheAvailable_withCorrectVersion_withLogger() {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(true);
 
@@ -75,14 +75,14 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIsJCacheAvailable_notFound() throws Exception {
+    public void testIsJCacheAvailable_notFound() {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(false);
         assertFalse(isJCacheAvailable(classLoader));
     }
 
     @Test
-    public void testIsJCacheAvailable_notFound_withLogger() throws Exception {
+    public void testIsJCacheAvailable_notFound_withLogger() {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(false);
         assertFalse(isJCacheAvailable(classLoader, logger));
@@ -90,7 +90,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withWrongJCacheVersion() throws Exception {
+    public void testIsJCacheAvailable_withWrongJCacheVersion() {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(true)
                 .thenReturn(false);
@@ -100,7 +100,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testIsJCacheAvailable_withWrongJCacheVersion_withLogger() throws Exception {
+    public void testIsJCacheAvailable_withWrongJCacheVersion_withLogger() {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(true)
                 .thenReturn(false);

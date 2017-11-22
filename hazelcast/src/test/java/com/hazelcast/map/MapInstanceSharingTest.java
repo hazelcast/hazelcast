@@ -50,7 +50,7 @@ public class MapInstanceSharingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invocationToLocalMember() throws ExecutionException, InterruptedException {
+    public void invocationToLocalMember() {
         String localKey = generateKeyOwnedBy(local);
         IMap<String, DummyObject> map = local.getMap(UUID.randomUUID().toString());
 
@@ -68,7 +68,7 @@ public class MapInstanceSharingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
+    public void invocationToRemoteMember() {
         String remoteKey = generateKeyOwnedBy(remote);
         IMap<String, DummyObject> map = local.getMap(UUID.randomUUID().toString());
 

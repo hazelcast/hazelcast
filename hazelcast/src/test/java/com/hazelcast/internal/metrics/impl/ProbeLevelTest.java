@@ -65,7 +65,7 @@ public class ProbeLevelTest extends HazelcastTestSupport {
 
         metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
             @Override
-            public long get(ProbeLevelTest source) throws Exception {
+            public long get(ProbeLevelTest source) {
                 return 10;
             }
         });
@@ -79,7 +79,7 @@ public class ProbeLevelTest extends HazelcastTestSupport {
 
         metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
             @Override
-            public long get(ProbeLevelTest source) throws Exception {
+            public long get(ProbeLevelTest source) {
                 return 10;
             }
         });

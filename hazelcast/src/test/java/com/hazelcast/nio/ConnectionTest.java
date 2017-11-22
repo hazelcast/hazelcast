@@ -188,10 +188,10 @@ public class ConnectionTest extends HazelcastTestSupport {
                         public void init(Properties properties) {
                         }
 
-                        public void onAccept(Socket acceptedSocket) throws IOException {
+                        public void onAccept(Socket acceptedSocket) {
                         }
 
-                        public void onConnect(Socket connectedSocket) throws IOException {
+                        public void onConnect(Socket connectedSocket) {
                         }
                     }));
         }

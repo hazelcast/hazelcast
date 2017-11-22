@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetectorAbstractTest {
 
     @Test
-    public void testSlowEntryProcessor() throws InterruptedException {
+    public void testSlowEntryProcessor() {
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
@@ -63,7 +63,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
     }
 
     @Test
-    public void testMultipleSlowEntryProcessorClasses() throws InterruptedException {
+    public void testMultipleSlowEntryProcessorClasses() {
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 

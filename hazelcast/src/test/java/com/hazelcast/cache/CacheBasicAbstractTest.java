@@ -121,7 +121,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.putAsync(key, "value2");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("value2", cache.get(key));
             }
         });
@@ -170,7 +170,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.putIfAbsentAsync(key, randomString(), expiryPolicy);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
@@ -227,7 +227,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key, "value1", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
@@ -236,7 +236,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.putAsync(key, "value1", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
@@ -247,7 +247,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals("value2", value);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
@@ -259,7 +259,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(cache.get(key));
             }
         });
@@ -550,8 +550,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key, value);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, listener.created.get());
             }
         });
@@ -561,8 +560,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, listener.removed.get());
             }
         });
@@ -589,7 +587,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key1, value1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.created.get());
             }
         });
@@ -599,7 +597,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key2, value2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, listener.created.get());
             }
         });
@@ -610,7 +608,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.removeAll(keys);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, listener.removed.get());
             }
         });

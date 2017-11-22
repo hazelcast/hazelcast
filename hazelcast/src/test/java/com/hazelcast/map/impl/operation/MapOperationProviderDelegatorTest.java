@@ -54,7 +54,7 @@ public class MapOperationProviderDelegatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDelegator() throws Exception {
+    public void testDelegator() {
         Method[] methods = MapOperationProviderDelegator.class.getDeclaredMethods();
 
         // invoke all methods of MapOperationProviderDelegator

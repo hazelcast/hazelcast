@@ -182,7 +182,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    public void test(StressThreadFactory stressThreadFactory) throws Exception {
+    public void test(StressThreadFactory stressThreadFactory) {
         StressThread stressThread = stressThreadFactory.create();
 
         stressThread.start();
@@ -195,7 +195,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("the number of completed calls doesn't match the number of expected calls",
                         globalOperationCount.get(), completedCall.get());
             }

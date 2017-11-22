@@ -86,7 +86,7 @@ public class CacheBackupTest extends HazelcastTestSupport {
             } else {
                 assertTrueEventually(new AssertTask() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         checkSavedRecordOnBackup(KEY, VALUE, cacheName, keyPartitionId, serializationService, cacheService);
                     }
                 });

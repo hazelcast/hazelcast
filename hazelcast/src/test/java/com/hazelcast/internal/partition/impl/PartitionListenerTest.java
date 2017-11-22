@@ -59,7 +59,7 @@ public class PartitionListenerTest extends HazelcastTestSupport {
     private void assertPartitionEventsEventually(final int expectedEventCount, final AtomicInteger count) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expectedEventCount, count.get());
             }
         });
@@ -82,7 +82,7 @@ public class PartitionListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int currentCount = count.get();
                 assertTrue("Expecting events equal or greater than partition-count! Count: " + currentCount,
                         currentCount >= partitionCount);
@@ -108,7 +108,7 @@ public class PartitionListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int currentCount = count.get();
                 assertTrue("Expecting events equal or greater than partition-count! Count: " + currentCount,
                         currentCount >= partitionCount);

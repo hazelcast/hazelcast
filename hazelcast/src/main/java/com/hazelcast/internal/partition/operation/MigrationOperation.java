@@ -86,7 +86,7 @@ public class MigrationOperation extends BaseMigrationDestinationOperation {
     }
 
     /** Notifies services that migration started, invokes all sent migration tasks and updates the replica versions. */
-    private void doRun() throws Exception {
+    private void doRun() {
         if (migrationInfo.startProcessing()) {
             try {
                 if (firstFragment) {

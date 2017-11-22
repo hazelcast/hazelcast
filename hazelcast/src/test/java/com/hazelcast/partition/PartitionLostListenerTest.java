@@ -135,8 +135,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<PartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
 
@@ -166,8 +165,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<PartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
             }
@@ -207,8 +205,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
     private void assertEventEventually(final EventCollectingPartitionLostListener listener, final IPartitionLostEvent internalEvent) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<PartitionLostEvent> events = listener.getEvents();
                 assertEquals(1, events.size());
 

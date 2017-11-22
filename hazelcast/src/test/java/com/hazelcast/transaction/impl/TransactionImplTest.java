@@ -65,20 +65,20 @@ public class TransactionImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getTimeoutMillis() throws Exception {
+    public void getTimeoutMillis() {
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         assertEquals(options.getTimeoutMillis(), tx.getTimeoutMillis());
     }
 
     @Test
-    public void testToString() throws Exception {
+    public void testToString() {
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
         assertEquals(format("Transaction{txnId='%s', state=%s, txType=%s, timeoutMillis=%s}",
                 tx.getTxnId(), tx.getState(), options.getTransactionType(), options.getTimeoutMillis()), tx.toString());
     }
 
     @Test
-    public void getOwnerUUID() throws Exception {
+    public void getOwnerUUID() {
         String ownerUUID = "dummy-uuid";
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, ownerUUID);
         assertEquals(ownerUUID, tx.getOwnerUuid());

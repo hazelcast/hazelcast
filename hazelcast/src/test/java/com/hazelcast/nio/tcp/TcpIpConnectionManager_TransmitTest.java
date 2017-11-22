@@ -52,7 +52,7 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
 
         ioServiceB.packetHandler = new PacketHandler() {
             @Override
-            public void handle(Packet packet) throws Exception {
+            public void handle(Packet packet) {
                 packetsB.add(packet);
             }
         };
@@ -127,7 +127,7 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertContains(packetsB, packet);
             }
         });
@@ -144,7 +144,7 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertContains(packetsB, packet);
             }
         });

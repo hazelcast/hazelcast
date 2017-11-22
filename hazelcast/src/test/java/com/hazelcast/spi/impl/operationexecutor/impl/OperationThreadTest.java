@@ -63,7 +63,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(oldCount + 1, OutOfMemoryErrorDispatcher.getOutOfMemoryErrorCount());
             }
         });
@@ -150,7 +150,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, executor.getPriorityQueueSize());
             }
         });

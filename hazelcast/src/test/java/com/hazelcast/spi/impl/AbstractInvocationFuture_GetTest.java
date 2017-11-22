@@ -92,7 +92,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotSame(VOID, future.getState());
             }
         });
@@ -122,7 +122,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotSame(VOID, future.getState());
             }
         });
@@ -154,7 +154,7 @@ public class AbstractInvocationFuture_GetTest extends AbstractInvocationFuture_A
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotSame(VOID, future.getState());
             }
         });

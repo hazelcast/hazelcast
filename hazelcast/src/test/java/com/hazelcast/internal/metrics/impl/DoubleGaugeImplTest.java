@@ -98,7 +98,7 @@ public class DoubleGaugeImplTest {
         metricsRegistry.register(this, "foo", MANDATORY,
                 new LongProbeFunction() {
                     @Override
-                    public long get(Object o) throws Exception {
+                    public long get(Object o) {
                         return 10;
                     }
                 });

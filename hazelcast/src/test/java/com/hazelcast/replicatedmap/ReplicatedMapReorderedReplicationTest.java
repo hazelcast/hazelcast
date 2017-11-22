@@ -118,7 +118,7 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long version = stores[0].getVersion();
 
                 for (ReplicatedRecordStore store : stores) {

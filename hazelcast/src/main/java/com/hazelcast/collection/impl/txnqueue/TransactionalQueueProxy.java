@@ -48,7 +48,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean offer(E e, long timeout, TimeUnit unit) {
         checkNotNull(e, "Offered item should not be null.");
         checkNotNull(unit, "TimeUnit should not be null.");
 
@@ -74,7 +74,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
     }
 
     @Override
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public E poll(long timeout, TimeUnit unit) {
         checkNotNull(unit, "TimeUnit should not be null.");
 
         checkTransactionState();
@@ -94,7 +94,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
     }
 
     @Override
-    public E peek(long timeout, TimeUnit unit) throws InterruptedException {
+    public E peek(long timeout, TimeUnit unit) {
         checkNotNull(unit, "TimeUnit should not be null.");
 
         checkTransactionState();

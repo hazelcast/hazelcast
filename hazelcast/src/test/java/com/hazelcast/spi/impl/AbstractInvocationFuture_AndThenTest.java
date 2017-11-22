@@ -92,7 +92,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(callback).onResponse(value);
             }
         });
@@ -110,7 +110,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(callback).onResponse(value);
             }
         });
@@ -129,14 +129,14 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(callback).onFailure(ex);
             }
         });
     }
 
     @Test
-    public void whenMultipleCallbacks() throws ExecutionException, InterruptedException {
+    public void whenMultipleCallbacks() {
         List<ExecutionCallback> callbacks = new LinkedList<ExecutionCallback>();
         for (int k = 0; k < 10; k++) {
             ExecutionCallback callback = mock(ExecutionCallback.class);
@@ -163,7 +163,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(callback).onFailure(ex);
             }
         });

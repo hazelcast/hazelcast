@@ -100,11 +100,11 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
-    public void closeInbound() throws IOException {
+    public void closeInbound() {
     }
 
     @Override
-    public void closeOutbound() throws IOException {
+    public void closeOutbound() {
     }
 
     @Override

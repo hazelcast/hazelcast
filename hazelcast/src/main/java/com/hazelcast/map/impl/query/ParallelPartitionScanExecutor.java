@@ -110,7 +110,7 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         }
 
         @Override
-        public Collection<QueryableEntry> call() throws Exception {
+        public Collection<QueryableEntry> call() {
             return partitionScanRunner.run(name, predicate, partition);
         }
     }

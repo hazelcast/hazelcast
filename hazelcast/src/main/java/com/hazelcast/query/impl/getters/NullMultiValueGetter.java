@@ -40,7 +40,7 @@ public final class NullMultiValueGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj) throws Exception {
+    Object getValue(Object obj) {
         return NULL_MULTIVALUE_RESULT;
     }
 

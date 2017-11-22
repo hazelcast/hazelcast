@@ -46,7 +46,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     };
 
     @Test
-    public void testNoMandatoryDependencyDeclared() throws IOException, InterruptedException {
+    public void testNoMandatoryDependencyDeclared() throws IOException {
         Manifest manifest = getHazelcastManifest();
         String packages = manifest.getMainAttributes().getValue("Import-Package");
 

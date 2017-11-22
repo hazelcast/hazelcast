@@ -159,7 +159,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
                 public void run() {
                     assertTrueEventually(new AssertTask() {
                         @Override
-                        public void run() throws Exception {
+                        public void run() {
                             assertTrue(expected.size() <= map.get(id).size());
                         }
                     });

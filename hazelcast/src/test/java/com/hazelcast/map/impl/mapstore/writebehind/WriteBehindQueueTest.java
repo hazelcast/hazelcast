@@ -152,7 +152,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet_onCoalescedWBQ_whenCount_smallerThanQueueSize() throws Exception {
+    public void testGet_onCoalescedWBQ_whenCount_smallerThanQueueSize() {
         int queueSize = 100;
         int fetchNumberOfEntries = 10;
         WriteBehindQueue<DelayedEntry> wbq = createWBQ();
@@ -161,7 +161,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet_onBoundedWBQ_whenCount_smallerThanQueueSize() throws Exception {
+    public void testGet_onBoundedWBQ_whenCount_smallerThanQueueSize() {
         int queueSize = 100;
         int fetchNumberOfEntries = 10;
         WriteBehindQueue<DelayedEntry> wbq = createBoundedWBQ();
@@ -170,7 +170,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet_onCoalescedWBQ_whenCount_higherThanQueueSize() throws Exception {
+    public void testGet_onCoalescedWBQ_whenCount_higherThanQueueSize() {
         int queueSize = 100;
         int fetchNumberOfEntries = 10000;
         WriteBehindQueue<DelayedEntry> wbq = createWBQ();
@@ -179,7 +179,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet_onBoundedWBQ_whenCount_higherThanQueueSize() throws Exception {
+    public void testGet_onBoundedWBQ_whenCount_higherThanQueueSize() {
         int queueSize = 100;
         int fetchNumberOfEntries = 10000;
         WriteBehindQueue<DelayedEntry> wbq = createBoundedWBQ();

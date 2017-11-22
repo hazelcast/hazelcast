@@ -92,7 +92,7 @@ public class NodeQueryCacheContextTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(task.executed);
                 assertTrue(repetitionTask.counter.get() > 1);
             }

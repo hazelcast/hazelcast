@@ -119,7 +119,7 @@ public abstract class CountDownLatchAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 15000)
-    public void testAwait() throws InterruptedException {
+    public void testAwait() {
         latch.trySetCount(1);
         TestThread thread = new TestThread() {
             public void doRun() {

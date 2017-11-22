@@ -55,7 +55,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenCallCancel_thenCancelled() throws Exception {
+    public void whenCallCancel_thenCancelled() {
         // Given
         ICompletableFuture future = invoke();
 
@@ -69,7 +69,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenCancelled_thenCantCancelAgain() throws Exception {
+    public void whenCancelled_thenCantCancelAgain() {
         // Given
         ICompletableFuture future = invoke();
 
@@ -96,7 +96,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     private InternalCompletableFuture invoke() {
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 sleepMillis(1000);
             }
 

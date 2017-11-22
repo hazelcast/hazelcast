@@ -129,8 +129,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<MapPartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
 
@@ -152,8 +151,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
                                               final IPartitionLostEvent internalEvent) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<MapPartitionLostEvent> events = listener.getEvents();
                 assertEquals(1, events.size());
                 MapPartitionLostEvent event = events.get(0);

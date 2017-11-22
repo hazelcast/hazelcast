@@ -44,14 +44,14 @@ import static org.junit.Assert.assertNotSame;
 public class PartitionTableViewTest {
 
     @Test
-    public void test_getVersion() throws Exception {
+    public void test_getVersion() {
         int version = RandomPicker.getInt(1000);
         PartitionTableView table = new PartitionTableView(new Address[10][MAX_REPLICA_COUNT], version);
         assertEquals(version, table.getVersion());
     }
 
     @Test
-    public void test_getLength() throws Exception {
+    public void test_getLength() {
         int len = RandomPicker.getInt(100);
         PartitionTableView table = new PartitionTableView(new Address[len][MAX_REPLICA_COUNT], 0);
         assertEquals(len, table.getLength());
@@ -84,7 +84,7 @@ public class PartitionTableViewTest {
     }
 
     @Test
-    public void test_getAddresses_withNullAddress() throws Exception {
+    public void test_getAddresses_withNullAddress() {
         Address[][] addresses = new Address[100][MAX_REPLICA_COUNT];
         PartitionTableView table = new PartitionTableView(addresses, 0);
 

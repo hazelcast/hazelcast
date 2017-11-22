@@ -167,7 +167,7 @@ public class PublisherCreateOperation extends MapOperation {
     /**
      * Replay the events on returned result-set which are generated during `runInitialQuery` call.
      */
-    private void replayEventsOnResultSet(final QueryResult queryResult) throws Exception {
+    private void replayEventsOnResultSet(final QueryResult queryResult) {
         Collection<Object> resultCollection = readAccumulators();
         for (Object result : resultCollection) {
             if (result == null) {

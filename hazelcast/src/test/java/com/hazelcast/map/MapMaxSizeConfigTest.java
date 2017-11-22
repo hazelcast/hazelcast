@@ -35,14 +35,14 @@ import static org.junit.Assert.assertEquals;
 public class MapMaxSizeConfigTest extends HazelcastTestSupport {
 
     @Test
-    public void setMaxSize_withConstructor_toZero() throws Exception {
+    public void setMaxSize_withConstructor_toZero() {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig(0, MaxSizeConfig.MaxSizePolicy.PER_NODE);
 
         assertEquals(Integer.MAX_VALUE, maxSizeConfig.getSize());
     }
 
     @Test
-    public void setMaxSize_withSetter_toZero() throws Exception {
+    public void setMaxSize_withSetter_toZero() {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(0);
 
@@ -50,14 +50,14 @@ public class MapMaxSizeConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void setMaxSize_withConstructor_toNegative() throws Exception {
+    public void setMaxSize_withConstructor_toNegative() {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig(-2131, MaxSizeConfig.MaxSizePolicy.PER_NODE);
 
         assertEquals(Integer.MAX_VALUE, maxSizeConfig.getSize());
     }
 
     @Test
-    public void setMaxSize_withSetter_toNegative() throws Exception {
+    public void setMaxSize_withSetter_toNegative() {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(-2131);
 
@@ -65,7 +65,7 @@ public class MapMaxSizeConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void setMaxSize_withConstructor_toPositive() throws Exception {
+    public void setMaxSize_withConstructor_toPositive() {
         final int expectedMaxSize = 123456;
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig(expectedMaxSize, MaxSizeConfig.MaxSizePolicy.PER_NODE);
 
@@ -73,7 +73,7 @@ public class MapMaxSizeConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void setMaxSize_withSetter_toPositive() throws Exception {
+    public void setMaxSize_withSetter_toPositive() {
         final int expectedMaxSize = 123456;
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(expectedMaxSize);

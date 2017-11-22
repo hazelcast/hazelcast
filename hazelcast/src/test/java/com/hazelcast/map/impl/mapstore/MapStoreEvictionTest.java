@@ -66,7 +66,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 2 * MINUTE)
-    public void testLoadsAll_whenEvictionDisabled() throws Exception {
+    public void testLoadsAll_whenEvictionDisabled() {
         final String mapName = randomMapName();
         Config cfg = newConfig(mapName, false, EAGER);
 
@@ -87,7 +87,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 2 * MINUTE)
-    public void testLoadsLessThanMaxSize_whenEvictionEnabled() throws Exception {
+    public void testLoadsLessThanMaxSize_whenEvictionEnabled() {
         final String mapName = randomMapName();
         Config cfg = newConfig(mapName, true, EAGER);
 
@@ -99,7 +99,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 2 * MINUTE)
-    public void testLoadsLessThanMaxSize_AfterContainsKey_whenEvictionEnabled() throws Exception {
+    public void testLoadsLessThanMaxSize_AfterContainsKey_whenEvictionEnabled() {
         final String mapName = randomMapName();
         Config cfg = newConfig(mapName, true, EAGER);
 
@@ -113,7 +113,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 2 * MINUTE)
-    public void testLoadsLessThanMaxSize_AfterGet_whenEvictionEnabled() throws Exception {
+    public void testLoadsLessThanMaxSize_AfterGet_whenEvictionEnabled() {
         final String mapName = randomMapName();
         Config cfg = newConfig(mapName, true, EAGER);
 
@@ -127,7 +127,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 2 * MINUTE)
-    public void testLoadsLessThanMaxSize_whenEvictionEnabledAndReloaded() throws Exception {
+    public void testLoadsLessThanMaxSize_whenEvictionEnabledAndReloaded() {
         final String mapName = randomMapName();
         Config cfg = newConfig(mapName, true, EAGER);
 
@@ -145,7 +145,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     private void assertLoaderIsClosedEventually() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(loader.isLoadAllKeysClosed());
             }
         });

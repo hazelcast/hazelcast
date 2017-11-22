@@ -29,7 +29,7 @@ class StaticAddressPicker implements AddressPicker {
         this.thisAddress = thisAddress;
     }
 
-    public void pickAddress() throws Exception {
+    public void pickAddress() {
     }
 
     public Address getBindAddress() {

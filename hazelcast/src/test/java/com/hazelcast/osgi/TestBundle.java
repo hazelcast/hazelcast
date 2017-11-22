@@ -98,7 +98,7 @@ public class TestBundle implements Bundle {
     }
 
     @Override
-    public synchronized void start() throws BundleException {
+    public synchronized void start() {
         int currentState = state;
         if (state == RESOLVED) {
             try {
@@ -113,7 +113,7 @@ public class TestBundle implements Bundle {
     }
 
     @Override
-    public synchronized void stop() throws BundleException {
+    public synchronized void stop() {
         int currentState = state;
         if (state == ACTIVE) {
             try {
@@ -133,27 +133,27 @@ public class TestBundle implements Bundle {
     }
 
     @Override
-    public void start(int options) throws BundleException {
+    public void start(int options) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void stop(int options) throws BundleException {
+    public void stop(int options) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void update(InputStream input) throws BundleException {
+    public void update(InputStream input) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void update() throws BundleException {
+    public void update() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void uninstall() throws BundleException {
+    public void uninstall() {
         throw new UnsupportedOperationException();
     }
 

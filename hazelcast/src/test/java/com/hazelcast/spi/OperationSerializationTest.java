@@ -52,7 +52,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_partitionId() throws IOException {
+    public void test_partitionId() {
         test_partitionId(0, false);
         test_partitionId(100, false);
         test_partitionId(-1, false);
@@ -72,7 +72,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_replicaIndex() throws IOException {
+    public void test_replicaIndex() {
         test_replicaIndex(0, false);
         test_replicaIndex(1, true);
         test_replicaIndex(3, true);
@@ -89,7 +89,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_callTimeout() throws IOException {
+    public void test_callTimeout() {
         test_callTimeout(0, false);
         test_callTimeout(100, false);
         test_callTimeout(-1, false);

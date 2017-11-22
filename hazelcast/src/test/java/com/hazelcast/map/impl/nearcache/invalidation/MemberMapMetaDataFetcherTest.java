@@ -59,7 +59,7 @@ public class MemberMapMetaDataFetcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void fetches_sequence_and_uuid() throws Exception {
+    public void fetches_sequence_and_uuid() {
         String mapName = "test";
         int partition = 1;
         long givenSequence = getInt(1, Integer.MAX_VALUE);

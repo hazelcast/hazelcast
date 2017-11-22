@@ -70,7 +70,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(3, cache.size());
             }
         });
@@ -91,7 +91,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(3, cache.size());
             }
         });

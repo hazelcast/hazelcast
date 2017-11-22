@@ -62,7 +62,7 @@ public class CustomSerializationTest {
         testSerializer(ByteOrder.nativeOrder(), true);
     }
 
-    private void testSerializer(ByteOrder order, boolean allowUnsafe) throws Exception {
+    private void testSerializer(ByteOrder order, boolean allowUnsafe) {
         SerializationConfig config = new SerializationConfig();
         config.setAllowUnsafe(allowUnsafe).setByteOrder(order).setUseNativeByteOrder(false);
         SerializerConfig sc = new SerializerConfig()
@@ -196,7 +196,7 @@ public class CustomSerializationTest {
         }
 
         @Override
-        public Foo read(ObjectDataInput in) throws IOException {
+        public Foo read(ObjectDataInput in) {
             final InputStream inputStream = (InputStream) in;
             XMLDecoder decoder = new XMLDecoder(inputStream);
             return (Foo) decoder.readObject();

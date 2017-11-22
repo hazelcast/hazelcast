@@ -92,8 +92,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         assertEquals(HttpURLConnection.HTTP_OK, communicator.shutdownCluster("dev", "dev-pass"));
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertFalse(instance1.getLifecycleService().isRunning());
                 assertFalse(instance2.getLifecycleService().isRunning());
             }

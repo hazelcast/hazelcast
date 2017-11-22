@@ -49,7 +49,7 @@ public class ThreadDumpRequestTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testThreadDumpRequest() throws Exception {
+    public void testThreadDumpRequest() {
         ThreadDumpRequest request = new ThreadDumpRequest(false);
 
         JsonObject jsonObject = new JsonObject();
@@ -61,7 +61,7 @@ public class ThreadDumpRequestTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testThreadDumpRequest_withDeadlocks() throws Exception {
+    public void testThreadDumpRequest_withDeadlocks() {
         ThreadDumpRequest request = new ThreadDumpRequest(true);
 
         JsonObject jsonObject = new JsonObject();

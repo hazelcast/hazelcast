@@ -52,7 +52,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         testHitsAndLastAccessTimeIsSetToAnyValueAfterStartTime(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testHitsAndLastAccessTimeIsSetToAnyValueAfterStartTime(Config config) throws Exception {
+    private void testHitsAndLastAccessTimeIsSetToAnyValueAfterStartTime(Config config) {
         final long startTime = Clock.currentTimeMillis();
 
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);

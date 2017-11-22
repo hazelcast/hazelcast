@@ -45,7 +45,7 @@ public final class ClassDataFinderOperation extends Operation implements UrgentS
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         UserCodeDeploymentService service = getService();
         response = service.getClassDataOrNull(className);
     }

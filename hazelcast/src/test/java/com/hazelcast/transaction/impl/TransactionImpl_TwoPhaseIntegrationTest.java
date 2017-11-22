@@ -203,7 +203,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
         // it can take some time because the transaction doesn't sync on purging the backups.
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNoBackupLogOnRemote(tx);
             }
         });
@@ -284,7 +284,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
         // it can take some time because the transaction doesn't sync on purging the backups.
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNoBackupLogOnRemote(tx);
             }
         });
@@ -330,8 +330,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertFalse(remoteTxService.txBackupLogs.containsKey(tx.getTxnId()));
             }
         });

@@ -77,7 +77,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     @Test
     @Category(SlowTest.class)
-    public void no_remaining_task_after_cancel() throws Exception {
+    public void no_remaining_task_after_cancel() {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
 
         for (int i = 0; i < 1000; i++) {
@@ -96,15 +96,14 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(0, workQueue.size());
             }
         });
     }
 
     @Test
-    public void no_remaining_task_after_cancel_long_delayed_tasks() throws Exception {
+    public void no_remaining_task_after_cancel_long_delayed_tasks() {
         executor = new LoggingScheduledExecutor(logger, 1, factory, true);
 
         for (int i = 0; i < 1000; i++) {
@@ -123,8 +122,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(0, workQueue.size());
             }
         });
@@ -148,7 +146,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(RuntimeException.class, logger.getThrowable());
 
                 String message = logger.getMessage();

@@ -42,7 +42,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
 
         Future joinFuture = spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return future.join();
             }
         });
@@ -58,7 +58,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
 
         Future joinFuture = spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return future.join();
             }
         });
@@ -79,7 +79,7 @@ public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture
 
         Future joinFuture = spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return future.join();
             }
         });

@@ -48,7 +48,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -132,8 +132,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
                                                final MulticastJoiner[] joiners) {
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (int i = 0; i < instances.length; i++) {
                     // a master can have at most (clusterSize-1) split brain join messages
                     if (getNode(instances[i]).isMaster()) {

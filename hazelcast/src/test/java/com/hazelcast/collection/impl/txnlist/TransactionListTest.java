@@ -55,7 +55,7 @@ public class TransactionListTest extends HazelcastTestSupport {
 
         Future<Integer> f = spawn(new Callable<Integer>() {
             @Override
-            public Integer call() throws Exception {
+            public Integer call() {
                 IList<Object> set = instance.getList(name);
                 while (!set.remove("item-1")) {
                 }
@@ -177,7 +177,7 @@ public class TransactionListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMigrationSerializationNotFails_whenTransactionsAreUsed() throws Exception {
+    public void testMigrationSerializationNotFails_whenTransactionsAreUsed() {
         Config config = new Config();
         config.setProperty("hazelcast.partition.count", "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -234,14 +234,14 @@ public class TransactionListTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, list2.size());
             }
         });
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, list2.size());
             }
         }, 3);

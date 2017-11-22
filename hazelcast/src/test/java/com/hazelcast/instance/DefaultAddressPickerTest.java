@@ -57,7 +57,7 @@ public class DefaultAddressPickerTest {
     private String localAddressValue;
 
     @Before
-    public void setup() throws UnknownHostException {
+    public void setup() {
         properties = new HazelcastProperties(config);
 
         InetAddress publicAddress = null;

@@ -83,7 +83,7 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expected, cache.size());
             }
         });

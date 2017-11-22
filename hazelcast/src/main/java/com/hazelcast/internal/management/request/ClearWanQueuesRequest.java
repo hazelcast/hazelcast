@@ -49,7 +49,7 @@ public class ClearWanQueuesRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         ClearWanQueuesOperation operation = new ClearWanQueuesOperation(schemeName, publisherName);
         Object operationResult = mcs.callOnThis(operation);
         JsonObject result = new JsonObject();

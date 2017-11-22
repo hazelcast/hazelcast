@@ -35,7 +35,7 @@ public class ExecutorServiceCancelOnAddressMessageTask
     }
 
     @Override
-    protected InvocationBuilder createInvocationBuilder() throws UnknownHostException {
+    protected InvocationBuilder createInvocationBuilder() {
         final InternalOperationService operationService = nodeEngine.getOperationService();
         final String serviceName = DistributedExecutorService.SERVICE_NAME;
         CancellationOperation op = new CancellationOperation(parameters.uuid, parameters.interrupt);

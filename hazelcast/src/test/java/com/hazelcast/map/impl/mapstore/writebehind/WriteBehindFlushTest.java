@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 public class WriteBehindFlushTest extends HazelcastTestSupport {
 
     @Test
-    public void testWriteBehindQueues_flushed_onNodeShutdown() throws Exception {
+    public void testWriteBehindQueues_flushed_onNodeShutdown() {
         int nodeCount = 3;
         String mapName = randomName();
 
@@ -70,7 +70,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < 1000; i++) {
                     assertEquals(i, mapStore.store.get(i));
                 }
@@ -79,7 +79,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehindQueues_emptied_onBackupNodes() throws Exception {
+    public void testWriteBehindQueues_emptied_onBackupNodes() {
         int nodeCount = 3;
         String mapName = randomName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
@@ -107,7 +107,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFlush_shouldNotCause_concurrentStoreOperation() throws Exception {
+    public void testFlush_shouldNotCause_concurrentStoreOperation() {
         int blockStoreOperationSeconds = 5;
         TemporaryBlockerMapStore store = new TemporaryBlockerMapStore(blockStoreOperationSeconds);
 
@@ -130,7 +130,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehindQueues_flushed_uponEviction() throws Exception {
+    public void testWriteBehindQueues_flushed_uponEviction() {
         int nodeCount = 3;
         String mapName = randomName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
@@ -156,7 +156,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1000, mapStore.countStore.get());
             }
         });
@@ -179,7 +179,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     public static void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (HazelcastInstance instance : nodes) {
                     assertEquals(0, writeBehindQueueSize(instance, mapName));
                 }

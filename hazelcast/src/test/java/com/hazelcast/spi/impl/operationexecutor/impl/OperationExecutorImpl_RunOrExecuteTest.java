@@ -75,7 +75,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertSame(task.getResult(), executingThread.get());
             }
         });
@@ -100,7 +100,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertSame(task.getResult(), executingThread.get());
             }
         });
@@ -123,7 +123,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(GenericOperationThread.class, executingThread.get());
             }
         });
@@ -142,7 +142,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(PartitionOperationThread.class, executingThread.get());
             }
         });
@@ -169,7 +169,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(PartitionOperationThread.class, executingThread.get());
             }
         });
@@ -193,7 +193,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertSame(task.getResult(), executingThread.get());
             }
         });
@@ -217,7 +217,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(PartitionOperationThread.class, executingThread.get());
                 assertNotSame(task.getResult(), executingThread.get());
             }
@@ -241,7 +241,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(PartitionOperationThread.class, executingThread.get());
             }
         });

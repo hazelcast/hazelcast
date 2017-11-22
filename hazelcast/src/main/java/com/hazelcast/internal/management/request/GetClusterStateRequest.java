@@ -31,7 +31,7 @@ public class GetClusterStateRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         ClusterState clusterState = mcs.getHazelcastInstance().getCluster().getClusterState();
         JsonObject result = new JsonObject();
         result.add("result", clusterState.toString());

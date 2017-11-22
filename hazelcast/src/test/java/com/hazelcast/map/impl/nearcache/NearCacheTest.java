@@ -118,7 +118,7 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (HazelcastInstance instance : instances) {
                     NearCache nearCache = getNearCache(mapName, instance);
                     int size = nearCache.size();
@@ -220,7 +220,7 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 // assert that the Near Cache doesn't return any cached values
                 for (int i = 0; i < size; i++) {
                     assertNull(map1.get(i));
@@ -851,7 +851,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void multiple_get_on_non_existing_key_generates_one_miss() throws Exception {
+    public void multiple_get_on_non_existing_key_generates_one_miss() {
         String mapName = "test";
 
         Config config = getConfig();
@@ -873,7 +873,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void smoke_near_cache_population() throws Exception {
+    public void smoke_near_cache_population() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         String mapName = "test";
         int mapSize = 1000;

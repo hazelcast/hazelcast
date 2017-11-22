@@ -167,7 +167,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
                     final AtomicBoolean throwException = new AtomicBoolean(false);
 
                     @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                    public Object answer(InvocationOnMock invocation) {
                         if (throwException.compareAndSet(false, true)) {
                             throw new ExpectedRuntimeException();
                         }
@@ -199,7 +199,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
                 doAnswer(new Answer() {
                     @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                    public Object answer(InvocationOnMock invocation) {
                         node.hazelcastInstance.shutdown();
                         return null;
                     }

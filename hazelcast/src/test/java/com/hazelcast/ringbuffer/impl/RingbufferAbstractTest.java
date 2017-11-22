@@ -174,7 +174,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void size_whenSomeItemsAdded() throws Exception {
+    public void size_whenSomeItemsAdded() {
         // we are adding some items, but we don't go beyond the capacity
         // most of the testing already is done in the RingbufferContainerTest
 
@@ -281,7 +281,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
 
     @Test(expected = NullPointerException.class)
-    public void add_whenNullItem() throws Exception {
+    public void add_whenNullItem() {
         ringbuffer.add(null);
     }
 
@@ -365,7 +365,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void addAllAsync_whenEmpty() throws Exception {
+    public void addAllAsync_whenEmpty() {
         ringbuffer.addAllAsync(new LinkedList<String>(), OVERWRITE);
     }
 
@@ -514,7 +514,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         // then we check if the future is not going to complete.
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(f.isDone());
             }
         }, 2);
@@ -562,7 +562,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     // ==================== asyncReadOrWait ==============================
 
     @Test
-    public void readManyAsync_whenReadingBeyondTail() throws ExecutionException, InterruptedException {
+    public void readManyAsync_whenReadingBeyondTail() throws InterruptedException {
         ringbuffer.add("1");
         ringbuffer.add("2");
 
@@ -582,7 +582,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(f.isDone());
             }
         }, 5);
@@ -603,7 +603,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(f.isDone());
             }
         }, 5);
@@ -612,7 +612,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(f.isDone());
             }
         }, 5);
@@ -772,14 +772,14 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void readManyAsync_whenMaxCountTooHigh() throws Exception {
+    public void readManyAsync_whenMaxCountTooHigh() {
         ringbuffer.readManyAsync(0, 1, RingbufferProxy.MAX_BATCH_SIZE, null);
     }
 
     // ===================== destroy ==========================
 
     @Test
-    public void destroy() throws Exception {
+    public void destroy() {
         ringbuffer.add("1");
         ringbuffer.destroy();
 
@@ -789,7 +789,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
-    public void destroy_whenBlockedThreads_thenDistributedObjectDestroyedException() throws Exception {
+    public void destroy_whenBlockedThreads_thenDistributedObjectDestroyedException() {
         spawn(new Runnable() {
             @Override
             public void run() {

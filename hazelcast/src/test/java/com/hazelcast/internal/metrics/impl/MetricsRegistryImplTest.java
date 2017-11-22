@@ -52,7 +52,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
         metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
                 new LongProbeFunction() {
                     @Override
-                    public long get(Object obj) throws Exception {
+                    public long get(Object obj) {
                         return 1;
                     }
                 });
@@ -99,7 +99,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
             metricsRegistry.register(this, name, ProbeLevel.MANDATORY,
                     new LongProbeFunction() {
                         @Override
-                        public long get(Object obj) throws Exception {
+                        public long get(Object obj) {
                             return 0;
                         }
                     });

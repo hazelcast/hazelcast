@@ -270,9 +270,7 @@ public class HazelcastProxyFactory {
         return ProxyPolicy.JDK_PROXY;
     }
 
-    private static Object construct(Class<?> klass, Object delegate)
-            throws IllegalAccessException, InstantiationException, ClassNotFoundException,
-            NoSuchMethodException, InvocationTargetException {
+    private static Object construct(Class<?> klass, Object delegate) {
 
         ConstructorFunction<Object, Object> constructorFunction = CONSTRUCTORS.applyIfAbsent(klass,
                 new IFunction<Class<?>, ConstructorFunction<Object, Object>>() {

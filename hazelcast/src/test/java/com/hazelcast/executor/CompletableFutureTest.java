@@ -72,7 +72,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void preregisterCallback() throws Exception {
+    public void preregisterCallback() {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
         f.andThen(storeTaskResponseToReference(reference1));
 
@@ -83,7 +83,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void preregisterTwoCallbacks() throws Exception {
+    public void preregisterTwoCallbacks() {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
         f.andThen(storeTaskResponseToReference(reference1));
         f.andThen(storeTaskResponseToReference(reference2));
@@ -96,7 +96,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void preregisterTwoCallbacks_taskThrowsException() throws Exception {
+    public void preregisterTwoCallbacks_taskThrowsException() {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
         f.andThen(storeTaskResponseToReference(reference1));
         f.andThen(storeTaskResponseToReference(reference2));
@@ -109,7 +109,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     // https://github.com/hazelcast/hazelcast/issues/6020
-    public void postregisterCallback() throws Exception {
+    public void postregisterCallback() {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
         releaseAwaitingTask();
         assertTaskFinishedEventually(f);
@@ -121,7 +121,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void postregisterTwoCallbacks() throws Exception {
+    public void postregisterTwoCallbacks() {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
         releaseAwaitingTask();
         assertTaskFinishedEventually(f);
@@ -135,7 +135,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void postregisterTwoCallbacks_taskThrowsException() throws Exception {
+    public void postregisterTwoCallbacks_taskThrowsException() {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
         releaseAwaitingTask();
         assertTaskFinishedEventually(f);
@@ -183,7 +183,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void singleCancellation_beforeDone_succeeds() throws Exception {
+    public void singleCancellation_beforeDone_succeeds() {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
 
@@ -193,7 +193,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void doubleCancellation_beforeDone_firstSucceeds_secondFails() throws Exception {
+    public void doubleCancellation_beforeDone_firstSucceeds_secondFails() {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution(); // but never released to execute logic
 
@@ -340,8 +340,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     private void assertTaskFinishedEventually(final ICompletableFuture future) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(future.isDone());
             }
         });

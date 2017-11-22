@@ -78,7 +78,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         return returnWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);
     }
 
-    private void madePublishable(String mapName, String cacheId) throws Exception {
+    private void madePublishable(String mapName, String cacheId) {
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
 
         Collection<Member> memberList = context.getMemberList();

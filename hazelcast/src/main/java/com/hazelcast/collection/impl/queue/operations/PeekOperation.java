@@ -43,7 +43,7 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
     }

@@ -90,7 +90,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenValidSelectionKey_thenHandlerCalled() throws Exception {
+    public void whenValidSelectionKey_thenHandlerCalled() {
         startThread();
 
         SelectionKey selectionKey = mock(SelectionKey.class);
@@ -110,7 +110,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenInvalidSelectionKey_thenHandlerOnFailureCalledWithCancelledKeyException() throws Exception {
+    public void whenInvalidSelectionKey_thenHandlerOnFailureCalledWithCancelledKeyException() {
         startThread();
 
         SelectionKey selectionKey = mock(SelectionKey.class);
@@ -120,7 +120,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(handler).onFailure(isA(CancelledKeyException.class));
             }
         });
@@ -140,7 +140,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(handler).onFailure(isA(ExpectedRuntimeException.class));
             }
         });
@@ -164,7 +164,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(thread.isAlive());
             }
         });
@@ -272,7 +272,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int select() throws IOException {
+        public int select() {
             // not needed for the time being.
             throw new UnsupportedOperationException();
         }
@@ -284,7 +284,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
         }
     }
 

@@ -341,7 +341,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         if (context.nearCacheConfig.isInvalidateOnChange() && context.invalidationListener != null && minInvalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     long invalidationCount = context.invalidationListener.getInvalidationCount();
                     assertTrue(format("Expected between %d and %d Near Cache invalidations, but found %d (%s)",
                             minInvalidations, maxInvalidations, invalidationCount, context.stats),
@@ -376,7 +376,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         if (listener != null && invalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
                             invalidations, listener.getInvalidationCount(), stats);
                 }

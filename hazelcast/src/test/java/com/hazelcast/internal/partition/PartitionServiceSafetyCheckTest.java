@@ -145,7 +145,7 @@ public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSup
 
         assertTrueFiveSeconds(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(isAllInSafeState(instances));
 
                 for (HazelcastInstance instance : instances) {

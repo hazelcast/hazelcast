@@ -61,7 +61,7 @@ public class HashSlotArray16byteKeyNoValueTest {
     }
 
     @Test
-    public void testPut() throws Exception {
+    public void testPut() {
         final long key1 = randomKey();
         final long key2 = randomKey();
         final long valueAddress = hsa.ensure(key1, key2);
@@ -72,7 +72,7 @@ public class HashSlotArray16byteKeyNoValueTest {
     }
 
     @Test
-    public void testGet() throws Exception {
+    public void testGet() {
         final long key1 = randomKey();
         final long key2 = randomKey();
         final long valueAddress = hsa.ensure(key1, key2);
@@ -82,7 +82,7 @@ public class HashSlotArray16byteKeyNoValueTest {
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testRemove() {
         final long key1 = randomKey();
         final long key2 = randomKey();
         hsa.ensure(key1, key2);
@@ -92,7 +92,7 @@ public class HashSlotArray16byteKeyNoValueTest {
     }
 
     @Test
-    public void testSize() throws Exception {
+    public void testSize() {
         final long key1 = randomKey();
         final long key2 = randomKey();
 
@@ -104,7 +104,7 @@ public class HashSlotArray16byteKeyNoValueTest {
     }
 
     @Test
-    public void testClear() throws Exception {
+    public void testClear() {
         final long key1 = randomKey();
         final long key2 = randomKey();
 
@@ -166,28 +166,28 @@ public class HashSlotArray16byteKeyNoValueTest {
 
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
-    public void testPut_whenDisposed() throws Exception {
+    public void testPut_whenDisposed() {
         hsa.dispose();
         hsa.ensure(1, 1);
     }
 
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
-    public void testGet_whenDisposed() throws Exception {
+    public void testGet_whenDisposed() {
         hsa.dispose();
         hsa.get(1, 1);
     }
 
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
-    public void testRemove_whenDisposed() throws Exception {
+    public void testRemove_whenDisposed() {
         hsa.dispose();
         hsa.remove(1, 1);
     }
 
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
-    public void testClear_whenDisposed() throws Exception {
+    public void testClear_whenDisposed() {
         hsa.dispose();
         hsa.clear();
     }

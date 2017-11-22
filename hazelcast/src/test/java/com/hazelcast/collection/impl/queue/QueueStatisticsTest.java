@@ -67,7 +67,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         final LocalQueueStats stats = queue.getLocalQueueStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(30, stats.getOfferOperationCount());
             }
         });
@@ -87,7 +87,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         final LocalQueueStats stats = queue.getLocalQueueStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(10, stats.getRejectedOfferOperationCount());
             }
         });
@@ -113,7 +113,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         final LocalQueueStats stats = queue.getLocalQueueStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(30, stats.getPollOperationCount());
             }
         });
@@ -130,7 +130,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         final LocalQueueStats stats = queue.getLocalQueueStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(10, stats.getEmptyPollOperationCount());
             }
         });
@@ -150,7 +150,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         final LocalQueueStats stats = queue.getLocalQueueStats();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(3, stats.getOtherOperationsCount());
             }
         });
@@ -188,7 +188,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         assertOpenEventually(listener.removedLatch);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(60, stats.getEventOperationCount());
             }
         });

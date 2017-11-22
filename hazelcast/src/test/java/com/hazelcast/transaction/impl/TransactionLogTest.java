@@ -104,7 +104,7 @@ public class TransactionLogTest {
     }
 
     @Test
-    public void prepare_partitionSpecificRecord() throws Exception {
+    public void prepare_partitionSpecificRecord() {
         OperationService operationService = mock(OperationService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getOperationService()).thenReturn(operationService);
@@ -124,7 +124,7 @@ public class TransactionLogTest {
     }
 
     @Test
-    public void rollback_partitionSpecificRecord() throws Exception {
+    public void rollback_partitionSpecificRecord() {
         OperationService operationService = mock(OperationService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getOperationService()).thenReturn(operationService);
@@ -144,7 +144,7 @@ public class TransactionLogTest {
     }
 
     @Test
-    public void commit_partitionSpecificRecord() throws Exception {
+    public void commit_partitionSpecificRecord() {
         OperationService operationService = mock(OperationService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getOperationService()).thenReturn(operationService);

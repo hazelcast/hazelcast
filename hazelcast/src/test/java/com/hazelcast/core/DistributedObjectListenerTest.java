@@ -46,7 +46,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         map.destroy();
         AssertTask task = new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Assert.assertEquals(1, EventCountListener.createdCount.get());
                 Assert.assertEquals(1, EventCountListener.destroyedCount.get());
                 Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();

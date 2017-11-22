@@ -107,7 +107,7 @@ class TestBundleContext implements BundleContext {
     }
 
     @Override
-    public ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException {
+    public ServiceReference[] getServiceReferences(String clazz, String filter) {
         // we simply ignore filter since we don't use filer in our tests
         synchronized (mutex) {
             List<ServiceReference> serviceReferences = serviceReferenceMap.get(clazz);
@@ -119,7 +119,7 @@ class TestBundleContext implements BundleContext {
     }
 
     @Override
-    public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException {
+    public ServiceReference[] getAllServiceReferences(String clazz, String filter) {
         // we simply ignore filter since we don't use filer in our tests
         synchronized (mutex) {
             List<ServiceReference> serviceReferences = serviceReferenceMap.get(clazz);
@@ -201,17 +201,17 @@ class TestBundleContext implements BundleContext {
     }
 
     @Override
-    public Bundle installBundle(String location, InputStream input) throws BundleException {
+    public Bundle installBundle(String location, InputStream input) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Bundle installBundle(String location) throws BundleException {
+    public Bundle installBundle(String location) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void addServiceListener(ServiceListener listener, String filter) throws InvalidSyntaxException {
+    public void addServiceListener(ServiceListener listener, String filter) {
         throw new UnsupportedOperationException();
     }
 
@@ -251,7 +251,7 @@ class TestBundleContext implements BundleContext {
     }
 
     @Override
-    public Filter createFilter(String filter) throws InvalidSyntaxException {
+    public Filter createFilter(String filter) {
         throw new UnsupportedOperationException();
     }
 }

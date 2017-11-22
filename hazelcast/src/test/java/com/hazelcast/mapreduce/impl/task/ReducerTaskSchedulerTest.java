@@ -65,7 +65,7 @@ public class ReducerTaskSchedulerTest extends HazelcastTestSupport {
         assertTrueEventually(
                 new AssertTask() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         assertEquals(1, task.getExecutionCount());
                     }
                 }
@@ -82,7 +82,7 @@ public class ReducerTaskSchedulerTest extends HazelcastTestSupport {
         assertTrueEventually(
                 new AssertTask() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         assertEquals(2, task.getExecutionCount());
                     }
                 }
@@ -101,7 +101,7 @@ public class ReducerTaskSchedulerTest extends HazelcastTestSupport {
         assertTrueEventually(
                 new AssertTask() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         assertEquals(2, task.getExecutionCount());
                     }
                 }

@@ -25,7 +25,7 @@ final class ThisGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj) throws Exception {
+    Object getValue(Object obj) {
         return obj;
     }
 

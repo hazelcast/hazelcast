@@ -117,7 +117,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         }
 
         @Override
-        public Aggregator call() throws Exception {
+        public Aggregator call() {
             try {
                 for (QueryableEntry entry : entries) {
                     aggregator.accumulate(entry);

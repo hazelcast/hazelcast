@@ -65,8 +65,7 @@ public class CachePutBackupOperation
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
+    public void runInternal() {
         ICacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
         cache.putRecord(key, cacheRecord);
@@ -74,7 +73,7 @@ public class CachePutBackupOperation
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
+    public void afterRunInternal() {
         if (!wanOriginated && cache.isWanReplicationEnabled()) {
             CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
                     getNodeEngine().getSerializationService().toData(cacheRecord.getValue()), cacheRecord);

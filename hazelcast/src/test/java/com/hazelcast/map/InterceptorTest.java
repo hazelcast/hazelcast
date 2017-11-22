@@ -51,7 +51,7 @@ import static org.junit.Assert.assertNull;
 public class InterceptorTest extends HazelcastTestSupport {
 
     @Test
-    public void testMapInterceptor() throws InterruptedException {
+    public void testMapInterceptor() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -99,7 +99,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapInterceptorOnNewMember() throws InterruptedException {
+    public void testMapInterceptorOnNewMember() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -118,7 +118,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAll_withGetInterceptor() throws InterruptedException {
+    public void testGetAll_withGetInterceptor() {
         HazelcastInstance instance1 = createHazelcastInstance(getConfig());
         IMap<Integer, String> map = instance1.getMap(randomString());
         map.addInterceptor(new SimpleInterceptor());

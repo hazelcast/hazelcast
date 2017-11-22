@@ -75,17 +75,17 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
-    public int read() throws EOFException {
+    public int read() {
         return (pos < size) ? (data[pos++] & 0xff) : -1;
     }
 
     @Override
-    public int read(int position) throws EOFException {
+    public int read(int position) {
         return (position < size) ? (data[position] & 0xff) : -1;
     }
 
     @Override
-    public final int read(byte[] b, int off, int len) throws EOFException {
+    public final int read(byte[] b, int off, int len) {
         if (b == null) {
             throw new NullPointerException();
         } else if (off < 0 || len < 0 || len > b.length - off) {
@@ -286,7 +286,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Deprecated
-    public final String readLine() throws EOFException {
+    public final String readLine() {
         throw new UnsupportedOperationException();
     }
 
@@ -566,13 +566,12 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
-    public final Object readObject() throws EOFException {
+    public final Object readObject() {
         return service.readObject(this);
     }
 
     @Override
-    public <T> T readObject(Class aClass)
-            throws IOException {
+    public <T> T readObject(Class aClass) {
         return service.readObject(this, aClass);
     }
 

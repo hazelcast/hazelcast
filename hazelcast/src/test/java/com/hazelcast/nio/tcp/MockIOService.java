@@ -186,11 +186,11 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public void configureSocket(Socket socket) throws SocketException {
+    public void configureSocket(Socket socket) {
     }
 
     @Override
-    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+    public void interceptSocket(Socket socket, boolean onAccept) {
     }
 
     @Override

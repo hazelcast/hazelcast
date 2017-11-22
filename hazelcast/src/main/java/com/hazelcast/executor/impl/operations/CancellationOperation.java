@@ -45,7 +45,7 @@ public final class CancellationOperation extends Operation implements Identified
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         DistributedExecutorService service = getService();
         response = service.cancel(uuid, interrupt);
     }

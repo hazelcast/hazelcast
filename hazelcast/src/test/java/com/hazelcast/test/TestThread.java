@@ -64,7 +64,7 @@ public abstract class TestThread extends Thread {
     public void assertTerminates() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(format("Thread %s is still alive", getName()), isAlive());
             }
         });

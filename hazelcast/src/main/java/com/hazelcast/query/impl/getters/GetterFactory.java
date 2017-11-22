@@ -133,7 +133,7 @@ public final class GetterFactory {
         return new ThisGetter(parent, object);
     }
 
-    private static Class<?> getCollectionType(Collection collection) throws Exception {
+    private static Class<?> getCollectionType(Collection collection) {
         if (collection == null || collection.isEmpty()) {
             return null;
         }

@@ -177,7 +177,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_metadata_discovery_on_node_startup() throws Exception {
+    public void test_metadata_discovery_on_node_startup() {
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
@@ -218,7 +218,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testParsing() throws Exception {
+    public void testParsing() {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
@@ -334,7 +334,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_AbstractDiscoveryStrategy_getOrDefault() throws Exception {
+    public void test_AbstractDiscoveryStrategy_getOrDefault() {
         PropertyDefinition value = new SimplePropertyDefinition("value", PropertyTypeConverter.INTEGER);
 
         Map<String, Comparable> properties = Collections.emptyMap();

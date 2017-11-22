@@ -45,7 +45,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
 
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 executingThread.set(Thread.currentThread());
             }
         };
@@ -53,7 +53,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(PartitionOperationThread.class, executingThread.get());
             }
         });
@@ -67,7 +67,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
 
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 executingThread.set(Thread.currentThread());
             }
         };
@@ -75,7 +75,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(GenericOperationThread.class, executingThread.get());
             }
         });

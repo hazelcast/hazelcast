@@ -37,11 +37,11 @@ public final class TrueEventFilter implements EventFilter, IdentifiedDataSeriali
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
     }
 
     @Override

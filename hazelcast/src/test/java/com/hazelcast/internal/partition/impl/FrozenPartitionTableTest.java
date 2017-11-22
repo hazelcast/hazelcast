@@ -81,8 +81,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
             final HazelcastInstance hz = instance;
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertPartitionTablesSame(partitionTable, getPartitionTable(hz));
                 }
             });

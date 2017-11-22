@@ -51,7 +51,7 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHitsGenerated_newNode() throws Exception {
+    public void testHitsGenerated_newNode() {
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
@@ -62,7 +62,7 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long hits2 = trial.getLocalMapStats().getHits();
                 long hits1 = map.getLocalMapStats().getHits();
 
@@ -72,7 +72,7 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHitsGenerated_nodeCrash() throws Exception {
+    public void testHitsGenerated_nodeCrash() {
 
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
@@ -86,7 +86,7 @@ public class LocalMapStatsTest_WhenMigration extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long hits = map.getLocalMapStats().getHits();
                 assertEquals(100, hits);
             }

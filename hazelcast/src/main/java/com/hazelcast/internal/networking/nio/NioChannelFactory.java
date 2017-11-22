@@ -24,7 +24,7 @@ import java.nio.channels.SocketChannel;
 public class NioChannelFactory implements ChannelFactory {
 
     @Override
-    public Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) throws Exception {
+    public Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) {
         return new NioChannel(channel, clientMode);
     }
 }

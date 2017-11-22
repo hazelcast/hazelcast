@@ -73,17 +73,17 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
-    public final void writeBoolean(final boolean v) throws IOException {
+    public final void writeBoolean(final boolean v) {
         write(v ? 1 : 0);
     }
 
     @Override
-    public final void writeBoolean(int position, final boolean v) throws IOException {
+    public final void writeBoolean(int position, final boolean v) {
         write(position, v ? 1 : 0);
     }
 
     @Override
-    public final void writeByte(final int v) throws IOException {
+    public final void writeByte(final int v) {
         write(v);
     }
 
@@ -95,12 +95,12 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
-    public final void writeByte(int position, final int v) throws IOException {
+    public final void writeByte(int position, final int v) {
         write(position, v);
     }
 
     @Override
-    public final void writeBytes(final String s) throws IOException {
+    public final void writeBytes(final String s) {
         final int len = s.length();
         ensureAvailable(len);
         for (int i = 0; i < len; i++) {
@@ -366,7 +366,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
-    public void writeObject(Object object) throws IOException {
+    public void writeObject(Object object) {
         service.writeObject(this, object);
     }
 

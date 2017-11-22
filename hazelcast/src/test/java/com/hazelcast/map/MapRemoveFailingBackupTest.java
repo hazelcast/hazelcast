@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
 public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
 
     @Test
-    public void testMapRemoveFailingBackupShouldNotLeadToStaleDataWhenReadBackupIsEnabled() throws Exception {
+    public void testMapRemoveFailingBackupShouldNotLeadToStaleDataWhenReadBackupIsEnabled() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final String mapName = randomMapName();
         final String key = "2";
@@ -92,7 +92,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         mock1.remove(key);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(map1.get(key));
                 assertNull(map2.get(key));
             }

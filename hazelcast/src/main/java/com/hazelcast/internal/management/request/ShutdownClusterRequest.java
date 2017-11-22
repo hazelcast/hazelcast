@@ -31,7 +31,7 @@ public class ShutdownClusterRequest implements AsyncConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         String resultString = "SUCCESS";
         try {
             mcs.getHazelcastInstance().getCluster().shutdown();

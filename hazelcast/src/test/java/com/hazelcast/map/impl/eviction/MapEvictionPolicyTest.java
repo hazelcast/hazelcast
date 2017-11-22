@@ -50,7 +50,7 @@ public class MapEvictionPolicyTest extends HazelcastTestSupport {
     private final String mapName = "default";
 
     @Test
-    public void testMapEvictionPolicy() throws Exception {
+    public void testMapEvictionPolicy() {
         int sampleCount = SAMPLE_COUNT;
 
         Config config = getConfig();

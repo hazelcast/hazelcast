@@ -72,7 +72,7 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
         test(10, new BackoffIdleStrategy(100, 1000, 1000, MILLISECONDS.toNanos(1)));
     }
 
-    public void test(int producerCount, IdleStrategy idleStrategy) throws Exception {
+    public void test(int producerCount, IdleStrategy idleStrategy) {
         MPSCQueue<Item> queue = new MPSCQueue<Item>(idleStrategy);
         ConsumerThread consumers = new ConsumerThread(queue, producerCount);
         queue.setConsumerThread(consumers);

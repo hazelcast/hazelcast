@@ -89,7 +89,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOneAfterTail() throws Exception {
+    public void whenOneAfterTail() {
         ringbuffer.add("tail");
 
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence() + 1);
@@ -100,7 +100,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void whenTooFarAfterTail() throws Exception {
+    public void whenTooFarAfterTail() {
         ringbuffer.add("tail");
 
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence() + 2);
@@ -110,7 +110,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenOneAfterTailAndBufferEmpty() throws Exception {
+    public void whenOneAfterTailAndBufferEmpty() {
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence() + 1);
 
         // since there is an item, we don't need to wait
@@ -119,7 +119,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = StaleSequenceException.class)
-    public void whenOnTailAndBufferEmpty() throws Exception {
+    public void whenOnTailAndBufferEmpty() {
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence());
 
         // since there is an item, we don't need to wait
@@ -161,7 +161,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = StaleSequenceException.class)
-    public void whenBeforeHead() throws Exception {
+    public void whenBeforeHead() {
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");

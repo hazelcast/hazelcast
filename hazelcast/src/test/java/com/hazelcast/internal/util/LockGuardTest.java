@@ -47,19 +47,19 @@ public class LockGuardTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAllowsLock_nullTransactionId() throws Exception {
+    public void testAllowsLock_nullTransactionId() {
         LockGuard stateLock = LockGuard.NOT_LOCKED;
         stateLock.allowsLock(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAllowsUnlock_nullTransactionId() throws Exception {
+    public void testAllowsUnlock_nullTransactionId() {
         LockGuard stateLock = LockGuard.NOT_LOCKED;
         stateLock.allowsUnlock(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testConstructor_nullEndpoint() throws Exception {
+    public void testConstructor_nullEndpoint() {
         new LockGuard(null, "txn", 1000);
     }
 
@@ -76,7 +76,7 @@ public class LockGuardTest {
     }
 
     @Test
-    public void testAllowsLock_success() throws Exception {
+    public void testAllowsLock_success() {
         LockGuard stateLock = LockGuard.NOT_LOCKED;
         assertTrue(stateLock.allowsLock("txn"));
     }
@@ -111,7 +111,7 @@ public class LockGuardTest {
         final LockGuard finalStateLock = stateLock;
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(finalStateLock.isLeaseExpired());
             }
         });

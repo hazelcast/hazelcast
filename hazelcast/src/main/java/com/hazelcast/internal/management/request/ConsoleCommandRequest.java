@@ -36,7 +36,7 @@ public class ConsoleCommandRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         ConsoleCommandHandler handler = mcs.getCommandHandler();
         JsonObject result = new JsonObject();
         try {

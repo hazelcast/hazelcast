@@ -132,7 +132,7 @@ public class ClusterStateManagerTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_lockClusterState_nullInitiator() throws Exception {
+    public void test_lockClusterState_nullInitiator() {
         clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), null, TXN, 1000, 0);
     }
 
@@ -198,12 +198,12 @@ public class ClusterStateManagerTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_unlockClusterState_nullTransactionId() throws Exception {
+    public void test_unlockClusterState_nullTransactionId() {
         clusterStateManager.rollbackClusterState(null);
     }
 
     @Test
-    public void test_unlockClusterState_fail_whenNotLocked() throws Exception {
+    public void test_unlockClusterState_fail_whenNotLocked() {
         assertFalse(clusterStateManager.rollbackClusterState(TXN));
     }
 
@@ -256,7 +256,7 @@ public class ClusterStateManagerTest {
         clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), newAddress(), TXN, 1, 0);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final LockGuard stateLock = clusterStateManager.getStateLock();
                 assertFalse(stateLock.isLocked());
                 assertEquals(ACTIVE, clusterStateManager.getState());

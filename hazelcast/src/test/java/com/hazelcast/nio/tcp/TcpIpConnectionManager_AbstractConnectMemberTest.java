@@ -48,7 +48,7 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
     // ================== getOrConnect ======================================================
 
     @Test
-    public void getOrConnect_whenNotConnected_thenEventuallyConnectionAvailable() throws UnknownHostException {
+    public void getOrConnect_whenNotConnected_thenEventuallyConnectionAvailable() {
         startAllConnectionManagers();
 
         Connection c = connManagerA.getOrConnect(addressB);
@@ -61,7 +61,7 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
     }
 
     @Test
-    public void getOrConnect_whenAlreadyConnectedSameConnectionReturned() throws UnknownHostException {
+    public void getOrConnect_whenAlreadyConnectedSameConnectionReturned() {
         startAllConnectionManagers();
 
         Connection c1 = connect(connManagerA, addressB);
@@ -73,7 +73,7 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
     // ================== destroy ======================================================
 
     @Test
-    public void destroyConnection_whenActive() throws Exception {
+    public void destroyConnection_whenActive() {
         startAllConnectionManagers();
 
         final TcpIpConnection connAB = connect(connManagerA, addressB);
@@ -84,14 +84,14 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
         assertIsDestroyed(connAB);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertIsDestroyed(connBA);
             }
         });
     }
 
     @Test
-    public void destroyConnection_whenAlreadyDestroyed_thenCallIgnored() throws Exception {
+    public void destroyConnection_whenAlreadyDestroyed_thenCallIgnored() {
         startAllConnectionManagers();
 
         connManagerA.getOrConnect(addressB);
@@ -116,7 +116,7 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
     // ================== connection ======================================================
 
     @Test
-    public void connect() throws UnknownHostException {
+    public void connect() {
         startAllConnectionManagers();
 
         TcpIpConnection connAB = connect(connManagerA, addressB);

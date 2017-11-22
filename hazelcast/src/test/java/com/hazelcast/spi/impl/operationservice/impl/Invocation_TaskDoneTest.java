@@ -58,14 +58,14 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
         // Then
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(cb.done);
             }
         });
     }
 
     @Test
-    public void when_invocationFutureCanceled_thenCallbackRunsEventually() throws InterruptedException {
+    public void when_invocationFutureCanceled_thenCallbackRunsEventually() {
         // Given
         final LatchAwaitOperation latchAwaitOp = new LatchAwaitOperation();
         final DoneCallback cb = new DoneCallback();
@@ -83,7 +83,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
         latchAwaitOp.latch.countDown();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(cb.done);
             }
         });

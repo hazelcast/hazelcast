@@ -75,7 +75,7 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
     public void statsCalculated() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 statsCalculated(inMemoryFormat);
             }
         });

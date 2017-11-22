@@ -42,12 +42,12 @@ public final class IgnoreMergingEntryMapMergePolicy implements MapMergePolicy, I
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
         throw new UnsupportedOperationException();
     }
 

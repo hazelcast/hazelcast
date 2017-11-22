@@ -146,7 +146,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
     private void assertDetectHeartbeatTimeoutEventually(final Invocation invocation, final Invocation.HeartbeatTimeout yes) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(yes, invocation.detectTimeout(SECONDS.toMillis(1)));
             }
         });

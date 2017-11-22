@@ -107,7 +107,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         });
     }
 
-    private int availablePort() throws IOException {
+    private int availablePort() {
         while (true) {
             int port = (int) (65536 * Math.random());
             try {

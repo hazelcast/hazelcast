@@ -50,7 +50,7 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
     private HazelcastXAResource xaResource, secondXaResource;
     private Xid xid;
 
-    private static Xid createXid() throws InterruptedException {
+    private static Xid createXid() {
         return new XID(randomString(), "test");
     }
 
@@ -111,7 +111,7 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         xaResource.commit(xid, false);
     }
 
-    private void performRollbackWithXa(XAResource xaResource) throws XAException {
+    private void performRollbackWithXa(XAResource xaResource) {
         try {
             xaResource.rollback(xid);
         } catch (XAException xaerr) {

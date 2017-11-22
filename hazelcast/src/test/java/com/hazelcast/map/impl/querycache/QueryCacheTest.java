@@ -80,7 +80,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    public void testQueryCache_whenInitialPopulation_disabled() throws Exception {
+    public void testQueryCache_whenInitialPopulation_disabled() {
         boolean enableInitialPopulation = false;
         int numberOfElementsToBePutToIMap = 1000;
         int expectedSizeOfQueryCache = 0;
@@ -119,19 +119,19 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, queryCache.size());
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("Count of add events wrong!", 9, countAddEvent.get());
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get());
             }
         });
@@ -264,7 +264,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
                                                        final QueryCache queryCache) {
         AssertTask task = new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 function.apply(null);
                 assertEquals(expected, queryCache.size());
             }
@@ -276,7 +276,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     private static void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expected, cache.size());
             }
         });

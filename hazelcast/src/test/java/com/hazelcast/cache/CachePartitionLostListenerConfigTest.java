@@ -77,7 +77,7 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection<EventRegistration> registrations = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
                 assertFalse(registrations.isEmpty());
             }

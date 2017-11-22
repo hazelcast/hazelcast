@@ -114,7 +114,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void testEntrySet_whenIncludeValueFalse() throws Exception {
+    public void testEntrySet_whenIncludeValueFalse() {
         int count = 111;
         String cacheName = randomString();
 
@@ -206,7 +206,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
                                             final QueryCache<Integer, Employee> cache) {
         AssertTask task = new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int size = cache.size();
                 Set<Integer> keySet = cache.keySet(predicate);
                 assertEquals("cache size = " + size, expectedSize, keySet.size());
@@ -220,7 +220,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
                                               final QueryCache<Integer, Employee> cache) {
         AssertTask task = new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int size = cache.size();
                 Set<Map.Entry<Integer, Employee>> entries = cache.entrySet(predicate);
                 assertEquals("cache size = " + size, expectedSize, entries.size());
@@ -234,7 +234,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
                                             final QueryCache<Integer, Employee> cache) {
         AssertTask task = new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int size = cache.size();
                 Collection<Employee> values = cache.values(predicate);
                 assertEquals("cache size = " + size, expectedSize, values.size());

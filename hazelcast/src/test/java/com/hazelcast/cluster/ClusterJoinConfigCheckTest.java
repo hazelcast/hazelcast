@@ -46,7 +46,7 @@ public class ClusterJoinConfigCheckTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         Hazelcast.shutdownAll();
     }
 

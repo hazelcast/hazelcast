@@ -28,7 +28,7 @@ import static org.junit.Assert.fail;
 
 public class AbstractJoinTest extends HazelcastTestSupport {
 
-    protected void testJoin(Config config) throws Exception {
+    protected void testJoin(Config config) {
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -108,7 +108,7 @@ public class AbstractJoinTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertClusterSize(1, hz1);
                 assertClusterSize(1, hz2);
             }

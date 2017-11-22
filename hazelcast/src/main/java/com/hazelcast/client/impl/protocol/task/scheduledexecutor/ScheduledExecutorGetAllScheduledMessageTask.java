@@ -50,8 +50,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     }
 
     @Override
-    protected void processMessage()
-            throws Throwable {
+    protected void processMessage() {
         Map<Member, List<ScheduledTaskHandler>> scheduledTasks = new LinkedHashMap<Member, List<ScheduledTaskHandler>>();
         retrieveAllMemberOwnedScheduled(scheduledTasks);
         retrieveAllPartitionOwnedScheduled(scheduledTasks);

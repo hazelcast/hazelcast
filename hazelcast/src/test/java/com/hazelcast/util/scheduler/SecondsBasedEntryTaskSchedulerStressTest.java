@@ -95,7 +95,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         final long numberOfExpectedEvents = NUMBER_OF_THREADS * NUMBER_OF_EVENTS_PER_THREAD;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(numberOfExpectedEvents, processor.getNumberOfEvents());
             }
         });
@@ -139,7 +139,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(latestValues.size(), processor.values.size());
 
                 for (int key = 0; key < numberOfKeys; key++) {

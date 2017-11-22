@@ -90,24 +90,24 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     @Test
-    public void getName() throws Exception {
+    public void getName() {
         ManagedExecutorService executor = newManagedExecutorService();
         assertEquals(NAME, executor.getName());
     }
 
     @Test
-    public void getMaximumPoolSize() throws Exception {
+    public void getMaximumPoolSize() {
         int maxPoolSize = 123;
         assertEquals(maxPoolSize, newManagedExecutorService(maxPoolSize, 1).getMaximumPoolSize());
     }
 
     @Test
-    public void getPoolSize_whenNoTasksSubmitted() throws Exception {
+    public void getPoolSize_whenNoTasksSubmitted() {
         assertEquals(0, newManagedExecutorService().getPoolSize());
     }
 
     @Test
-    public void getPoolSize_whenTaskSubmitted() throws Exception {
+    public void getPoolSize_whenTaskSubmitted() {
         int maxPoolSize = 3;
         ManagedExecutorService executorService = newManagedExecutorService(maxPoolSize, 100);
 
@@ -133,12 +133,12 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     @Test
-    public void getQueueSize_whenNoTasksSubmitted() throws Exception {
+    public void getQueueSize_whenNoTasksSubmitted() {
         assertEquals(0, newManagedExecutorService().getQueueSize());
     }
 
     @Test
-    public void getQueueSize_whenTaskSubmitted() throws Exception {
+    public void getQueueSize_whenTaskSubmitted() {
         int queueSize = 10;
         ManagedExecutorService executorService = newManagedExecutorService(1, queueSize);
 
@@ -153,13 +153,13 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     @Test
-    public void getRemainingQueueCapacity_whenNoTasksSubmitted() throws Exception {
+    public void getRemainingQueueCapacity_whenNoTasksSubmitted() {
         int queueSize = 123;
         assertEquals(queueSize, newManagedExecutorService(1, queueSize).getRemainingQueueCapacity());
     }
 
     @Test
-    public void getRemainingQueueCapacity_whenTaskSubmitted() throws Exception {
+    public void getRemainingQueueCapacity_whenTaskSubmitted() {
         int queueSize = 10;
         ManagedExecutorService executorService = newManagedExecutorService(1, queueSize);
 
@@ -173,12 +173,12 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     @Test
-    public void getCompletedTaskCount_whenNoTasksSubmitted() throws Exception {
+    public void getCompletedTaskCount_whenNoTasksSubmitted() {
         assertEquals(0, newManagedExecutorService().getCompletedTaskCount());
     }
 
     @Test
-    public void getCompletedTaskCount_whenTasksSubmitted() throws Exception {
+    public void getCompletedTaskCount_whenTasksSubmitted() {
         final int taskCount = 10;
         final ManagedExecutorService executorService = newManagedExecutorService();
 
@@ -188,14 +188,14 @@ public class CachedExecutorServiceDelegateTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(taskCount, executorService.getCompletedTaskCount());
             }
         });
     }
 
     @Test
-    public void execute() throws Exception {
+    public void execute() {
         final int taskCount = 10;
         ManagedExecutorService executorService = newManagedExecutorService(1, taskCount);
 
@@ -213,7 +213,7 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     @Test(expected = RejectedExecutionException.class)
-    public void execute_rejected_whenShutdown() throws Exception {
+    public void execute_rejected_whenShutdown() {
         ManagedExecutorService executorService = newManagedExecutorService();
         executorService.shutdown();
 
@@ -247,7 +247,7 @@ public class CachedExecutorServiceDelegateTest {
         for (int i = 0; i < taskCount; i++) {
             futures[i] = executorService.submit(new Callable() {
                 @Override
-                public Object call() throws Exception {
+                public Object call() {
                     return result;
                 }
             });
@@ -285,7 +285,7 @@ public class CachedExecutorServiceDelegateTest {
         ManagedExecutorService executorService = newManagedExecutorService();
         Future<Object> future = executorService.submit(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
                 return null;
             }
@@ -304,7 +304,7 @@ public class CachedExecutorServiceDelegateTest {
 
             Future<Object> future = executorService.submit(new Callable<Object>() {
                 @Override
-                public Object call() throws Exception {
+                public Object call() {
                     return null;
                 }
             });
@@ -322,26 +322,26 @@ public class CachedExecutorServiceDelegateTest {
         }
     }
 
-    public void isShutdown_whenRunning() throws Exception {
+    public void isShutdown_whenRunning() {
         assertFalse(newManagedExecutorService().isShutdown());
     }
 
     @Test
-    public void isShutdown() throws Exception {
+    public void isShutdown() {
         ManagedExecutorService executorService = newManagedExecutorService();
         executorService.shutdown();
         assertTrue(executorService.isShutdown());
     }
 
     @Test
-    public void isTerminated() throws Exception {
+    public void isTerminated() {
         ManagedExecutorService executorService = newManagedExecutorService();
         executorService.shutdown();
         assertTrue(executorService.isTerminated());
     }
 
     @Test
-    public void isTerminated_whenRunning() throws Exception {
+    public void isTerminated_whenRunning() {
         assertFalse(newManagedExecutorService().isTerminated());
     }
 
@@ -354,7 +354,7 @@ public class CachedExecutorServiceDelegateTest {
     public void invokeAll() throws Exception {
         newManagedExecutorService().invokeAll(Collections.singleton(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return null;
             }
         }));
@@ -364,7 +364,7 @@ public class CachedExecutorServiceDelegateTest {
     public void invokeAll_withTimeout() throws Exception {
         newManagedExecutorService().invokeAll(Collections.singleton(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return null;
             }
         }), 1, TimeUnit.SECONDS);
@@ -374,7 +374,7 @@ public class CachedExecutorServiceDelegateTest {
     public void invokeAny() throws Exception {
         newManagedExecutorService().invokeAny(Collections.singleton(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return null;
             }
         }));
@@ -384,7 +384,7 @@ public class CachedExecutorServiceDelegateTest {
     public void invokeAny_withTimeout() throws Exception {
         newManagedExecutorService().invokeAny(Collections.singleton(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return null;
             }
         }), 1, TimeUnit.SECONDS);

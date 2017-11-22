@@ -50,13 +50,13 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
     }
 
     @Test
-    public void testPartitionData_withoutAntiEntropy() throws InterruptedException {
+    public void testPartitionData_withoutAntiEntropy() {
         startInstancesAndFillPartitions(false);
         assertSizeAndDataEventually(true);
     }
 
     @Test
-    public void testPartitionData_withAntiEntropy() throws InterruptedException {
+    public void testPartitionData_withAntiEntropy() {
         startInstancesAndFillPartitions(true);
         assertSizeAndDataEventually(false);
     }

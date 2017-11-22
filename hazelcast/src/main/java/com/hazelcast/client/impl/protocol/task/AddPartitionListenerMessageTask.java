@@ -43,7 +43,7 @@ public class AddPartitionListenerMessageTask
         service.registerPartitionListener(endpoint, clientMessage.getCorrelationId());
         endpoint.addDestroyAction(UuidUtil.newUnsecureUUID().toString(), new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 service.deregisterPartitionListener(endpoint);
                 return Boolean.TRUE;
             }

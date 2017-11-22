@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public class ConditionAdvancedTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
-    public void testInterruptionDuringWaiting() throws InterruptedException {
+    public void testInterruptionDuringWaiting() {
         Config config = new Config();
         // the system should wait at most 5000 ms in order to determine the operation status
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "5000");
@@ -144,7 +144,7 @@ public class ConditionAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000, expected = HazelcastInstanceNotActiveException.class)
-    public void testShutDownNode_whenOtherWaitingOnConditionAwait() throws InterruptedException {
+    public void testShutDownNode_whenOtherWaitingOnConditionAwait() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         nodeFactory.newHazelcastInstance();

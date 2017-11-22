@@ -35,52 +35,52 @@ import static org.junit.Assert.assertTrue;
 public class NullQueryCacheTest extends HazelcastTestSupport {
 
     @Test
-    public void testGet() throws Exception {
+    public void testGet() {
         assertNull(NULL_QUERY_CACHE.get(1));
     }
 
     @Test
-    public void testContainsKey() throws Exception {
+    public void testContainsKey() {
         assertFalse(NULL_QUERY_CACHE.containsKey(1));
     }
 
     @Test
-    public void testContainsValue() throws Exception {
+    public void testContainsValue() {
         assertFalse(NULL_QUERY_CACHE.containsValue(1));
     }
 
     @Test
-    public void testIsEmpty() throws Exception {
+    public void testIsEmpty() {
         assertTrue(NULL_QUERY_CACHE.isEmpty());
     }
 
     @Test
-    public void testSize() throws Exception {
+    public void testSize() {
         assertEquals(0, NULL_QUERY_CACHE.size());
     }
 
     @Test
-    public void testGetAll() throws Exception {
+    public void testGetAll() {
         assertNull(NULL_QUERY_CACHE.getAll(null));
     }
 
     @Test
-    public void testKeySet() throws Exception {
+    public void testKeySet() {
         assertNull(NULL_QUERY_CACHE.keySet());
     }
 
     @Test
-    public void testEntrySet() throws Exception {
+    public void testEntrySet() {
         assertNull(NULL_QUERY_CACHE.entrySet());
     }
 
     @Test
-    public void testValues() throws Exception {
+    public void testValues() {
         assertNull(NULL_QUERY_CACHE.values());
     }
 
     @Test
-    public void testGetName() throws Exception {
+    public void testGetName() {
         assertNull(NULL_QUERY_CACHE.getName());
     }
 }

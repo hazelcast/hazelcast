@@ -54,7 +54,7 @@ public class LoadTrackerTest {
     }
 
     @Test
-    public void testUpdateImbalance() throws Exception {
+    public void testUpdateImbalance() {
         MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
         when(selector1Handler1.getLoad()).thenReturn(0L)
                 .thenReturn(100L);
@@ -91,7 +91,7 @@ public class LoadTrackerTest {
 
     // there is no point in selecting a selector with a single handler as source.
     @Test
-    public void testUpdateImbalance_notUsingSingleHandlerSelectorAsSource() throws Exception {
+    public void testUpdateImbalance_notUsingSingleHandlerSelectorAsSource() {
         MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
         // the first selector has a handler with a large number of events
         when(selector1Handler1.getLoad()).thenReturn(10000L);

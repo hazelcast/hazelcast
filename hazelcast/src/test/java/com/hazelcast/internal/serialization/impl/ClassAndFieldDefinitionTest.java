@@ -52,7 +52,7 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testClassDef_getter_setter() throws Exception {
+    public void testClassDef_getter_setter() {
         ClassDefinitionImpl cd = (ClassDefinitionImpl) new ClassDefinitionBuilder(1, 2, portableVersion).build();
         cd.setVersionIfNotSet(3);
         cd.setVersionIfNotSet(5);
@@ -64,7 +64,7 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testClassDef_getField_properIndex() throws Exception {
+    public void testClassDef_getField_properIndex() {
         for (int i = 0; i < classDefinition.getFieldCount(); i++) {
             FieldDefinition field = classDefinition.getField(i);
             assertNotNull(field);
@@ -72,7 +72,7 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testClassDef_hasField() throws Exception {
+    public void testClassDef_hasField() {
         for (int i = 0; i < classDefinition.getFieldCount(); i++) {
             String fieldName = fieldNames[i];
             boolean hasField = classDefinition.hasField(fieldName);
@@ -81,7 +81,7 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testClassDef_getFieldType() throws Exception {
+    public void testClassDef_getFieldType() {
         for (String fieldName : fieldNames) {
             FieldType fieldType = classDefinition.getFieldType(fieldName);
             assertNotNull(fieldType);
@@ -89,7 +89,7 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testClassDef_getFieldClassId() throws Exception {
+    public void testClassDef_getFieldClassId() {
         for (String fieldName : fieldNames) {
             int classId = classDefinition.getFieldClassId(fieldName);
             assertEquals(0, classId);
@@ -97,27 +97,27 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testClassDef_getFieldClassId_invalidField() throws Exception {
+    public void testClassDef_getFieldClassId_invalidField() {
         classDefinition.getFieldClassId("The Invalid Field");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testClassDef_getFieldType_invalidField() throws Exception {
+    public void testClassDef_getFieldType_invalidField() {
         classDefinition.getFieldType("The Invalid Field");
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testClassDef_getField_negativeIndex() throws Exception {
+    public void testClassDef_getField_negativeIndex() {
         classDefinition.getField(-1);
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testClassDef_getField_HigherThenSizeIndex() throws Exception {
+    public void testClassDef_getField_HigherThenSizeIndex() {
         classDefinition.getField(classDefinition.getFieldCount());
     }
 
     @Test
-    public void testClassDef_equal_hashCode() throws Exception {
+    public void testClassDef_equal_hashCode() {
         ClassDefinitionImpl cdEmpty1 = (ClassDefinitionImpl) new ClassDefinitionBuilder(1, 2, 3).build();
         ClassDefinitionImpl cdEmpty2 = (ClassDefinitionImpl) new ClassDefinitionBuilder(1, 2, 3).build();
         ClassDefinitionImpl cd1 = (ClassDefinitionImpl) new ClassDefinitionBuilder(1, 2, 5).build();
@@ -139,12 +139,12 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testClassDef_toString() throws Exception {
+    public void testClassDef_toString() {
         assertNotNull(classDefinition.toString());
     }
 
     @Test
-    public void testFieldDef_getter_setter() throws Exception {
+    public void testFieldDef_getter_setter() {
         FieldDefinition field0 = classDefinition.getField(0);
         FieldDefinition field = classDefinition.getField("f1");
 
@@ -176,7 +176,7 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testFieldDef_equal_hashCode() throws Exception {
+    public void testFieldDef_equal_hashCode() {
         FieldDefinitionImpl fd0 = new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN, portableVersion);
         FieldDefinitionImpl fd0_1 = new FieldDefinitionImpl(0, "name", FieldType.INT, portableVersion);
         FieldDefinitionImpl fd1 = new FieldDefinitionImpl(1, "name", FieldType.BOOLEAN, portableVersion);
@@ -192,7 +192,7 @@ public class ClassAndFieldDefinitionTest {
     }
 
     @Test
-    public void testFieldDef_toString() throws Exception {
+    public void testFieldDef_toString() {
         assertNotNull(new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN, portableVersion).toString());
     }
 }

@@ -83,7 +83,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void singleAttributeQuery_predicates() throws Exception {
+    public void singleAttributeQuery_predicates() {
         // GIVEN
         map.put(1, new Body("body1", new Limb("hand")));
         map.put(2, new Body("body2", new Limb("leg")));
@@ -101,7 +101,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void singleAttributeQuery_distributedSql() throws Exception {
+    public void singleAttributeQuery_distributedSql() {
         // GIVEN
         map.put(1, new Body("body1", new Limb("hand")));
         map.put(2, new Body("body2", new Limb("leg")));
@@ -117,7 +117,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void nestedAttributeQuery_predicates() throws Exception {
+    public void nestedAttributeQuery_predicates() {
         // GIVEN
         map.put(1, new Body("body1", new Limb("hand")));
         map.put(2, new Body("body2", new Limb("leg")));
@@ -135,7 +135,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void nestedAttributeQuery_customPredicates_entryProcessor() throws Exception {
+    public void nestedAttributeQuery_customPredicates_entryProcessor() {
         // GIVEN
         map.put(1, new Body("body1", new Limb("hand")));
         map.put(2, new Body("body2", new Limb("leg")));
@@ -181,7 +181,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void nestedAttributeQuery_distributedSql() throws Exception {
+    public void nestedAttributeQuery_distributedSql() {
         // GIVEN
         map.put(1, new Body("body1", new Limb("hand")));
         map.put(2, new Body("body2", new Limb("leg")));

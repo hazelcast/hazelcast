@@ -443,7 +443,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCopyFailsWhenSourceCannotBeListed() throws IOException {
+    public void testCopyFailsWhenSourceCannotBeListed() {
         final File source = mock(File.class);
         when(source.exists()).thenReturn(true);
         when(source.isDirectory()).thenReturn(true);
@@ -501,7 +501,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCopyRecursiveDirectory() throws IOException {
+    public void testCopyRecursiveDirectory() {
         final File dir = new File("dir");
         final File subdir = new File(dir, "subdir");
         final File f1 = new File(dir, "f1");
@@ -562,12 +562,12 @@ public class IOUtilTest extends HazelcastTestSupport {
         deleteQuietly(file);
     }
 
-    private static File createDirectory(String dirName) throws IOException {
+    private static File createDirectory(String dirName) {
         File dir = new File(dirName);
         return createDirectory(dir);
     }
 
-    private static File createDirectory(File parent, String dirName) throws IOException {
+    private static File createDirectory(File parent, String dirName) {
         File dir = new File(parent, dirName);
         return createDirectory(dir);
     }

@@ -58,7 +58,7 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
     }
 
     @Override
-    public final void beforeRun() throws Exception {
+    public final void beforeRun() {
         returnsResponse = false;
 
         callable = getCallable();
@@ -93,7 +93,7 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
     }
 
     @Override
-    public final void run() throws Exception {
+    public final void run() {
         DistributedExecutorService service = getService();
         service.execute(name, uuid, callable, this);
     }

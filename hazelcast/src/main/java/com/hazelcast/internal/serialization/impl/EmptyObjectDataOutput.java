@@ -26,103 +26,103 @@ import java.nio.ByteOrder;
 final class EmptyObjectDataOutput extends VersionedObjectDataOutput implements ObjectDataOutput {
 
     @Override
-    public void writeObject(Object object) throws IOException {
+    public void writeObject(Object object) {
     }
 
     @Override
-    public void writeData(Data data) throws IOException {
+    public void writeData(Data data) {
     }
 
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
     }
 
     @Override
-    public void write(byte[] b) throws IOException {
+    public void write(byte[] b) {
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) {
     }
 
     @Override
-    public void writeBoolean(boolean v) throws IOException {
+    public void writeBoolean(boolean v) {
     }
 
     @Override
-    public void writeByte(int v) throws IOException {
+    public void writeByte(int v) {
     }
 
     @Override
-    public void writeShort(int v) throws IOException {
+    public void writeShort(int v) {
     }
 
     @Override
-    public void writeChar(int v) throws IOException {
+    public void writeChar(int v) {
     }
 
     @Override
-    public void writeInt(int v) throws IOException {
+    public void writeInt(int v) {
     }
 
     @Override
-    public void writeLong(long v) throws IOException {
+    public void writeLong(long v) {
     }
 
     @Override
-    public void writeFloat(float v) throws IOException {
+    public void writeFloat(float v) {
     }
 
     @Override
-    public void writeDouble(double v) throws IOException {
+    public void writeDouble(double v) {
     }
 
     @Override
-    public void writeBytes(String s) throws IOException {
+    public void writeBytes(String s) {
     }
 
     @Override
-    public void writeChars(String s) throws IOException {
+    public void writeChars(String s) {
     }
 
     @Override
-    public void writeUTF(String s) throws IOException {
+    public void writeUTF(String s) {
     }
 
     @Override
-    public void writeByteArray(byte[] value) throws IOException {
+    public void writeByteArray(byte[] value) {
     }
 
     @Override
-    public void writeBooleanArray(boolean[] booleans) throws IOException {
+    public void writeBooleanArray(boolean[] booleans) {
     }
 
     @Override
-    public void writeCharArray(char[] chars) throws IOException {
+    public void writeCharArray(char[] chars) {
     }
 
     @Override
-    public void writeIntArray(int[] ints) throws IOException {
+    public void writeIntArray(int[] ints) {
     }
 
     @Override
-    public void writeLongArray(long[] longs) throws IOException {
+    public void writeLongArray(long[] longs) {
     }
 
     @Override
-    public void writeDoubleArray(double[] values) throws IOException {
+    public void writeDoubleArray(double[] values) {
     }
 
     @Override
-    public void writeFloatArray(float[] values) throws IOException {
+    public void writeFloatArray(float[] values) {
     }
 
     @Override
-    public void writeShortArray(short[] values) throws IOException {
+    public void writeShortArray(short[] values) {
     }
 
     @Override
-    public void writeUTFArray(String[] values) throws IOException {
+    public void writeUTFArray(String[] values) {
     }
 
     @Override
@@ -135,7 +135,7 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput implements O
         throw new UnsupportedOperationException();
     }
 
-    public void close() throws IOException {
+    public void close() {
     }
 
     @Override

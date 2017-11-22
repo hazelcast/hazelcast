@@ -75,7 +75,7 @@ public class OperationExecutorImpl_GetOperationRunnerTest extends OperationExecu
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 boolean found = false;
                 OperationRunner foundHandler = op.getResponse();
                 for (OperationRunner h : executor.getGenericOperationRunners()) {

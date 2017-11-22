@@ -255,7 +255,7 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                                        ExpiryPolicy expiryPolicy) throws Exception {
+                                                        ExpiryPolicy expiryPolicy) {
         List<Future> futures = new ArrayList<Future>(entriesPerPartition.length);
         for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];

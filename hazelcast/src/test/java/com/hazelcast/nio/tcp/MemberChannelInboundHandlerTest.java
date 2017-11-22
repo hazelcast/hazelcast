@@ -129,7 +129,7 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
         private List<Packet> packets = new LinkedList<Packet>();
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void handle(Packet packet) {
             packets.add(packet);
         }
     }

@@ -26,7 +26,7 @@ public class PromoteMemberRequest implements AsyncConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         JsonObject result = new JsonObject();
 
         try {

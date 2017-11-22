@@ -492,7 +492,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     void assertBackupEventually(final HazelcastInstance instance, final String mapName, final Object key, Object expected) {
         assertEqualsEventually(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return readFromMapBackup(instance, mapName, key);
             }
         }, expected);
@@ -521,7 +521,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         // verified EPs not out-of-order, and not at the same time
         assertEqualsEventually(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return map.get(key);
             }
         }, expectedValue);
@@ -632,7 +632,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         // verified EPs not out-of-order, and not at the same time
         assertEqualsEventually(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 return map.get(key);
             }
         }, expectedValue);

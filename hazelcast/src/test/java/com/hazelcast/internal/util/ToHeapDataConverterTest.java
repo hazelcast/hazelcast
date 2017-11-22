@@ -39,13 +39,13 @@ public class ToHeapDataConverterTest {
     }
 
     @Test
-    public void toHeapData() throws Exception {
+    public void toHeapData() {
         Data data = ToHeapDataConverter.toHeapData(new AnotherDataImpl());
         assertInstanceOf(HeapData.class, data);
     }
 
     @Test
-    public void whenNull() throws Exception {
+    public void whenNull() {
         Data data = ToHeapDataConverter.toHeapData(null);
         assertNull(data);
     }

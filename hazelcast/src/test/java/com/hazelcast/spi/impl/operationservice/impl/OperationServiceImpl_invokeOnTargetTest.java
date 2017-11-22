@@ -77,7 +77,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
     }
 
     @Test
-    public void whenNonExistingTarget() throws UnknownHostException {
+    public void whenNonExistingTarget() {
         Address remoteAddress = getAddress(remote);
         remote.shutdown();
 

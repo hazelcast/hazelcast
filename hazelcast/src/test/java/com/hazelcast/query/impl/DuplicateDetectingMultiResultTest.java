@@ -39,34 +39,34 @@ public class DuplicateDetectingMultiResultTest {
     private DuplicateDetectingMultiResult result = new DuplicateDetectingMultiResult();
 
     @Test
-    public void testAddResultSet_empty() throws Exception {
+    public void testAddResultSet_empty() {
         assertThat(result.size(), is(0));
     }
 
     @Test
-    public void testContains_empty() throws Exception {
+    public void testContains_empty() {
         assertThat(result.contains(entry(data())), is(false));
     }
 
     @Test
-    public void testIterator_empty() throws Exception {
+    public void testIterator_empty() {
         assertThat(result.iterator().hasNext(), is(false));
     }
 
     @Test
-    public void testSize_empty() throws Exception {
+    public void testSize_empty() {
         assertThat(result.isEmpty(), is(true));
     }
 
     @Test
-    public void testAddResultSet_notEmpty() throws Exception {
+    public void testAddResultSet_notEmpty() {
         addEntry(entry(data()));
 
         assertThat(result.size(), is(1));
     }
 
     @Test
-    public void testContains_notEmpty() throws Exception {
+    public void testContains_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
@@ -74,7 +74,7 @@ public class DuplicateDetectingMultiResultTest {
     }
 
     @Test
-    public void testIterator_notEmpty() throws Exception {
+    public void testIterator_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
@@ -83,14 +83,14 @@ public class DuplicateDetectingMultiResultTest {
     }
 
     @Test
-    public void testSize_notEmpty() throws Exception {
+    public void testSize_notEmpty() {
         addEntry(entry(data()));
 
         assertThat(result.isEmpty(), is(false));
     }
 
     @Test
-    public void testAddResultSet_duplicate() throws Exception {
+    public void testAddResultSet_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);
@@ -99,7 +99,7 @@ public class DuplicateDetectingMultiResultTest {
     }
 
     @Test
-    public void testContains_duplicate() throws Exception {
+    public void testContains_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);
@@ -108,7 +108,7 @@ public class DuplicateDetectingMultiResultTest {
     }
 
     @Test
-    public void testIterator_duplicate() throws Exception {
+    public void testIterator_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);
@@ -118,7 +118,7 @@ public class DuplicateDetectingMultiResultTest {
     }
 
     @Test
-    public void testSize_duplicate() throws Exception {
+    public void testSize_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);

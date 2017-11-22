@@ -64,7 +64,7 @@ public class ParallelPartitionScanExecutorTest {
     }
 
     @Test
-    public void execute_success() throws Exception {
+    public void execute_success() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
@@ -74,7 +74,7 @@ public class ParallelPartitionScanExecutorTest {
     }
 
     @Test
-    public void execute_fail() throws Exception {
+    public void execute_fail() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
@@ -86,7 +86,7 @@ public class ParallelPartitionScanExecutorTest {
     }
 
     @Test
-    public void execute_fail_retryable() throws Exception {
+    public void execute_fail_retryable() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);

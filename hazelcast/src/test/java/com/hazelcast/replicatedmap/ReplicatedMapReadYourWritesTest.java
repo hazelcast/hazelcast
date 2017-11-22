@@ -53,7 +53,7 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(count, map1.size());
                 assertEquals(count, map2.size());
             }

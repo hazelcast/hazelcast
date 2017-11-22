@@ -42,7 +42,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -139,7 +139,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatibleGroups() throws Exception {
+    public void test_whenIncompatibleGroups() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -160,8 +160,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenSameGroupNamesButDifferentPassword()
-            throws Exception {
+    public void test_whenSameGroupNamesButDifferentPassword() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -186,7 +185,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatiblePartitionGroups() throws Exception {
+    public void test_whenIncompatiblePartitionGroups() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -208,7 +207,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatibleJoiners() throws Exception {
+    public void test_whenIncompatibleJoiners() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");

@@ -123,7 +123,7 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         // assert that each member owns entriesPerPartition entries of the map and that all backups have been written
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int totalBackups = 0;
                 for (int i = 0; i < INSTANCE_COUNT; i++) {
                     IMap map = instances[i].getMap(mapName);

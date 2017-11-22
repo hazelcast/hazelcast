@@ -65,7 +65,7 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int runningOperationCount = executor.getRunningOperationCount();
                 System.out.println("runningOperationCount:" + runningOperationCount);
                 assertEquals(3, runningOperationCount);
@@ -120,7 +120,7 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
         final int expectedCount = count;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expectedCount, executor.getQueueSize());
             }
         });

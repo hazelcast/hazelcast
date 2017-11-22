@@ -43,7 +43,7 @@ import static org.junit.Assert.assertNull;
 public class MemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
-    public void testConfigAttributes() throws Exception {
+    public void testConfigAttributes() {
         Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
@@ -90,7 +90,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testPresharedAttributes() throws Exception {
+    public void testPresharedAttributes() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
@@ -118,7 +118,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testAddAttributes() throws Exception {
+    public void testAddAttributes() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
@@ -159,7 +159,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testChangeAttributes() throws Exception {
+    public void testChangeAttributes() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
@@ -200,7 +200,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testRemoveAttributes() throws Exception {
+    public void testRemoveAttributes() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
@@ -240,7 +240,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testCommandLineAttributes() throws Exception {
+    public void testCommandLineAttributes() {
         System.setProperty("hazelcast.member.attribute.Test-2", "1234");
         System.setProperty("hazelcast.member.attribute.Test-3", "12345");
         System.setProperty("hazelcast.member.attribute.Test-4", "123456");

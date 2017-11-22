@@ -226,12 +226,12 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) {
         throw new UnsupportedOperationException();
     }
 

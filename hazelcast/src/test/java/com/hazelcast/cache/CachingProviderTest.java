@@ -81,7 +81,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenDefaultURI_instanceNameAsProperty_thenThatInstanceIsUsed() throws URISyntaxException {
+    public void whenDefaultURI_instanceNameAsProperty_thenThatInstanceIsUsed() {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 null, null, propertiesByInstanceName(INSTANCE_2_NAME));
         assertCacheManagerInstance(cacheManager, instance2);
@@ -95,7 +95,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenDefaultURI_inexistentInstanceNameAsProperty_thenStartsOtherInstance() throws URISyntaxException {
+    public void whenDefaultURI_inexistentInstanceNameAsProperty_thenStartsOtherInstance() {
         cachingProvider.getCacheManager(null, null, propertiesByInstanceName("instance-does-not-exist"));
         assertInstanceStarted("instance-does-not-exist");
     }
@@ -107,7 +107,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenDefaultURI_noInstanceName_thenUseDefaultHazelcastInstance() throws URISyntaxException {
+    public void whenDefaultURI_noInstanceName_thenUseDefaultHazelcastInstance() {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager();
         assertCacheManagerInstance(cacheManager, instance1);
     }
@@ -188,7 +188,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenInstanceItselfAsProperty_andDefaultURI_thenInstanceItselfIsUsed() throws URISyntaxException {
+    public void whenInstanceItselfAsProperty_andDefaultURI_thenInstanceItselfIsUsed() {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 null, null, propertiesByInstanceItself(instance3));
         assertCacheManagerInstance(cacheManager, instance3);

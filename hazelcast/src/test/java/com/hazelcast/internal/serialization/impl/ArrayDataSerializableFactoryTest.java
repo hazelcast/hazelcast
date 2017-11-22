@@ -43,7 +43,7 @@ import static org.mockito.Mockito.verify;
 public class ArrayDataSerializableFactoryTest {
 
     @Test
-    public void testCreate() throws Exception {
+    public void testCreate() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructorFunctions = new ConstructorFunction[1];
 
         constructorFunctions[0] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -61,7 +61,7 @@ public class ArrayDataSerializableFactoryTest {
     }
 
     @Test
-    public void testCreateWithoutVersion() throws Exception {
+    public void testCreateWithoutVersion() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructorFunctions = new ConstructorFunction[1];
         VersionAwareConstructorFunction function = mock(VersionAwareConstructorFunction.class);
         constructorFunctions[0] = function;
@@ -74,7 +74,7 @@ public class ArrayDataSerializableFactoryTest {
     }
 
     @Test
-    public void testCreateWithVersion() throws Exception {
+    public void testCreateWithVersion() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructorFunctions = new ConstructorFunction[1];
         VersionAwareConstructorFunction function = mock(VersionAwareConstructorFunction.class);
         constructorFunctions[0] = function;

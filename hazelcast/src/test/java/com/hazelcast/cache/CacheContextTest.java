@@ -104,14 +104,14 @@ public class CacheContextTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(cacheService1.getCacheContext(CACHE_NAME_WITH_PREFIX));
             }
         });
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(cacheService2.getCacheContext(CACHE_NAME_WITH_PREFIX));
             }
         });
@@ -121,13 +121,13 @@ public class CacheContextTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, cacheContext1.getCacheEntryListenerCount());
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, cacheContext2.getCacheEntryListenerCount());
             }
         });
@@ -148,13 +148,13 @@ public class CacheContextTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, cacheContext1.getCacheEntryListenerCount());
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, cacheContext2.getCacheEntryListenerCount());
             }
         });

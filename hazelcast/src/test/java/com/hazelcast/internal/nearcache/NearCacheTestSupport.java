@@ -224,7 +224,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         // expiration will be called eventually
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(managedNearCacheRecordStore.doExpirationCalled);
             }
         });

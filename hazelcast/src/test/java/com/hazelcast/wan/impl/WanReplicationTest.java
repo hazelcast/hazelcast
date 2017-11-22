@@ -252,7 +252,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         final Queue<WanReplicationEvent> eventQueue2 = impl2.eventQueue;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size());
             }
         });

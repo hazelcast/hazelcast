@@ -614,7 +614,7 @@ public class MapKeyLoader {
         }
 
         @Override
-        public Boolean get(long timeout, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+        public Boolean get(long timeout, TimeUnit timeUnit) {
             if (isDone()) {
                 return getResult();
             }

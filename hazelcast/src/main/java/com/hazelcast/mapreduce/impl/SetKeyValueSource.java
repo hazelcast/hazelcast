@@ -123,8 +123,7 @@ public class SetKeyValueSource<V>
     }
 
     @Override
-    public void close()
-            throws IOException {
+    public void close() {
         iterator = null;
         nextElement = null;
     }

@@ -91,7 +91,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Assert.assertFalse(multiMap.isLocked(key));
             }
         }, 30);

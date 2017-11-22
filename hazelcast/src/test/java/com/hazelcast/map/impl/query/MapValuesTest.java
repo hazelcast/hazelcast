@@ -120,7 +120,7 @@ public class MapValuesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerializationServiceNullClassLoaderProblem() throws Exception {
+    public void testSerializationServiceNullClassLoaderProblem() {
         // if the classloader is null the following call throws NullPointerException
         map.values(new InstanceOfPredicate(SampleTestObjects.PortableEmployee.class));
     }

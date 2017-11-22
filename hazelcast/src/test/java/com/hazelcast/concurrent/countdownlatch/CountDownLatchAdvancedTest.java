@@ -65,7 +65,7 @@ public class CountDownLatchAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAwait_whenInstanceShutdown_thenHazelcastInstanceNotActiveException() throws InterruptedException {
+    public void testAwait_whenInstanceShutdown_thenHazelcastInstanceNotActiveException() {
         HazelcastInstance instance = createHazelcastInstance();
         final ICountDownLatch latch = instance.getCountDownLatch(randomString());
         latch.trySetCount(10);

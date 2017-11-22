@@ -54,12 +54,12 @@ public final class ConstantSerializers {
         }
 
         @Override
-        public Object read(final ObjectDataInput in) throws IOException {
+        public Object read(final ObjectDataInput in) {
             return null;
         }
 
         @Override
-        public void write(final ObjectDataOutput out, final Object obj) throws IOException {
+        public void write(final ObjectDataOutput out, final Object obj) {
         }
     }
 
@@ -233,12 +233,12 @@ public final class ConstantSerializers {
         }
 
         @Override
-        public byte[] write(byte[] object) throws IOException {
+        public byte[] write(byte[] object) {
             return object;
         }
 
         @Override
-        public byte[] read(byte[] buffer) throws IOException {
+        public byte[] read(byte[] buffer) {
             return buffer;
         }
 

@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 public class MapEvictAllTest extends HazelcastTestSupport {
 
     @Test
-    public void testEvictAll_firesEvent() throws Exception {
+    public void testEvictAll_firesEvent() {
         final CountDownLatch countDownLatch = new CountDownLatch(1000);
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = instance.getMap(randomMapName());
@@ -62,7 +62,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictAll_preserveLockedKeys() throws Exception {
+    public void testEvictAll_preserveLockedKeys() {
         int numberOfEntries = 1000;
         int numberOfLockedKeys = 123;
         int expectedNumberOfEvictedKeys = numberOfEntries - numberOfLockedKeys;
@@ -93,7 +93,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictAll_onBackup() throws Exception {
+    public void testEvictAll_onBackup() {
         int numberOfEntries = 10000;
         String mapName = randomMapName();
         final CountDownLatch countDownLatch = new CountDownLatch(numberOfEntries);
@@ -121,13 +121,13 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         assertEquals(0, countDownLatch.getCount());
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, map1.getLocalMapStats().getHeapCost());
             }
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, map2.getLocalMapStats().getHeapCost());
             }
         });

@@ -349,7 +349,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     LockSupport.parkNanos(10000);
                 }
             };
@@ -367,7 +367,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public void run() throws Exception {
+                public void run() {
                 }
             };
         }

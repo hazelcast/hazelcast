@@ -72,7 +72,7 @@ public class StreamSerializerAdapterTest {
     }
 
     @Test
-    public void testAdaptorEqualAndHashCode() throws Exception {
+    public void testAdaptorEqualAndHashCode() {
         StreamSerializerAdapter theOther = new StreamSerializerAdapter(mockSerializationService, serializer);
         StreamSerializerAdapter theEmptyOne = new StreamSerializerAdapter(mockSerializationService, null);
 
@@ -88,7 +88,7 @@ public class StreamSerializerAdapterTest {
     }
 
     @Test
-    public void testString() throws Exception {
+    public void testString() {
         assertNotNull(adapter.toString());
     }
 }

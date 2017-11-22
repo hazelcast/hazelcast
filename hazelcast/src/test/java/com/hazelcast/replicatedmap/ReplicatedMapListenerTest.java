@@ -61,7 +61,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.addCount.get());
                 assertEquals(3, listener.keys.peek());
             }
@@ -76,7 +76,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(1, 1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.addCount.get());
             }
         });
@@ -91,7 +91,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(1, 2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.updateCount.get());
             }
         });
@@ -106,7 +106,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         sleepAtLeastSeconds(2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.evictCount.get());
             }
         });
@@ -121,7 +121,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.remove(1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.removeCount.get());
             }
         });
@@ -136,7 +136,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.clear();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.mapClearCount.get());
             }
         });
@@ -151,7 +151,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(2, 2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.keys.size());
                 assertEquals(1, listener.keys.peek());
                 assertEquals(1, listener.addCount.get());
@@ -168,7 +168,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(2, 2);
         assertTrueFiveSeconds(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, listener.addCount.get());
             }
         });
@@ -184,7 +184,7 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
         replicatedMap.put(2, 2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.keys.size());
                 assertEquals(2, listener.keys.peek());
                 assertEquals(1, listener.addCount.get());

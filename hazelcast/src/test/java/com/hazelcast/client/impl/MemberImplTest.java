@@ -75,7 +75,7 @@ public class MemberImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConstructor_withAttributes() throws Exception {
+    public void testConstructor_withAttributes() {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("stringKey", "value");
         attributes.put("booleanKeyTrue", true);

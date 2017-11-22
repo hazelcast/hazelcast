@@ -257,7 +257,7 @@ public class BitsTest {
     }
 
     @Test
-    public void testSetBitByte() throws Exception {
+    public void testSetBitByte() {
         byte b = 110;
         b = Bits.setBit(b, 0);
         assertEquals(111, b);
@@ -267,7 +267,7 @@ public class BitsTest {
     }
 
     @Test
-    public void testClearBitByte() throws Exception {
+    public void testClearBitByte() {
         byte b = 111;
         b = Bits.clearBit(b, 0);
         assertEquals(110, b);
@@ -278,14 +278,14 @@ public class BitsTest {
     }
 
     @Test
-    public void testInvertBitByte() throws Exception {
+    public void testInvertBitByte() {
         byte b = -111;
         b = Bits.invertBit(b, 7);
         assertTrue(b > 0);
     }
 
     @Test
-    public void testSetBitInteger() throws Exception {
+    public void testSetBitInteger() {
         int b = 110;
         b = Bits.setBit(b, 0);
         assertEquals(111, b);
@@ -295,7 +295,7 @@ public class BitsTest {
     }
 
     @Test
-    public void testClearBitInteger() throws Exception {
+    public void testClearBitInteger() {
         int b = 111;
         b = Bits.clearBit(b, 0);
         assertEquals(110, b);
@@ -306,14 +306,14 @@ public class BitsTest {
     }
 
     @Test
-    public void testInvertBitInteger() throws Exception {
+    public void testInvertBitInteger() {
         int b = -111111;
         b = Bits.invertBit(b, 31);
         assertTrue(b > 0);
     }
 
     @Test
-    public void testIsBitSet() throws Exception {
+    public void testIsBitSet() {
         assertFalse(Bits.isBitSet(123, 31));
         assertTrue(Bits.isBitSet(-123, 31));
         assertFalse(Bits.isBitSet(222, 0));
@@ -321,7 +321,7 @@ public class BitsTest {
     }
 
     @Test
-    public void testCombineToInt() throws Exception {
+    public void testCombineToInt() {
         short x = (short) random.nextInt();
         short y = (short) random.nextInt();
 
@@ -331,7 +331,7 @@ public class BitsTest {
     }
 
     @Test
-    public void testCombineToLong() throws Exception {
+    public void testCombineToLong() {
         int x = random.nextInt();
         int y = random.nextInt();
 

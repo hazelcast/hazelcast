@@ -117,7 +117,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void shouldBeSafe_whenKnownReplicaOwnerPresent_whileNotActive() throws UnknownHostException {
+    public void shouldBeSafe_whenKnownReplicaOwnerPresent_whileNotActive() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -191,7 +191,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         latch.countDown();
         assertEqualsEventually(new Callable<PartitionServiceState>() {
             @Override
-            public PartitionServiceState call() throws Exception {
+            public PartitionServiceState call() {
                 return replicaStateChecker.getPartitionServiceState();
             }
         }, PartitionServiceState.SAFE);
@@ -234,7 +234,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(PartitionServiceState.SAFE, replicaStateChecker1.getPartitionServiceState());
                 assertEquals(PartitionServiceState.SAFE, replicaStateChecker2.getPartitionServiceState());
             }

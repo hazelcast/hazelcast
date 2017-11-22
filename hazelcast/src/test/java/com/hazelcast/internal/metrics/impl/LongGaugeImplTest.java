@@ -76,7 +76,7 @@ public class LongGaugeImplTest {
         metricsRegistry.register(this, "foo", MANDATORY,
                 new DoubleProbeFunction<LongGaugeImplTest>() {
                     @Override
-                    public double get(LongGaugeImplTest source) throws Exception {
+                    public double get(LongGaugeImplTest source) {
                         return 10;
                     }
                 });
@@ -93,7 +93,7 @@ public class LongGaugeImplTest {
         metricsRegistry.register(this, "foo", MANDATORY,
                 new LongProbeFunction() {
                     @Override
-                    public long get(Object o) throws Exception {
+                    public long get(Object o) {
                         return 10;
                     }
                 });
@@ -142,7 +142,7 @@ public class LongGaugeImplTest {
         metricsRegistry.register(this, "foo", MANDATORY,
                 new LongProbeFunction() {
                     @Override
-                    public long get(Object o) throws Exception {
+                    public long get(Object o) {
                         return 10;
                     }
                 });
@@ -154,7 +154,7 @@ public class LongGaugeImplTest {
         metricsRegistry.register(this, "foo", MANDATORY,
                 new LongProbeFunction() {
                     @Override
-                    public long get(Object o) throws Exception {
+                    public long get(Object o) {
                         return 11;
                     }
                 });

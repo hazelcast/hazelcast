@@ -32,7 +32,7 @@ public class FactoryIdHelperTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testPropWithValidNumber() throws Exception {
+    public void testPropWithValidNumber() {
         String key = "hazelcast.test.prop";
         System.setProperty(key, "1");
         int factoryId = FactoryIdHelper.getFactoryId(key, 10);
@@ -43,7 +43,7 @@ public class FactoryIdHelperTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPropWithInValidNumber() throws Exception {
+    public void testPropWithInValidNumber() {
         String key = "hazelcast.test.prop";
         System.setProperty(key, "NaN");
         int factoryId = FactoryIdHelper.getFactoryId(key, 10);
@@ -52,7 +52,7 @@ public class FactoryIdHelperTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPropWithNullNumber() throws Exception {
+    public void testPropWithNullNumber() {
         String key = "hazelcast.test.prop";
         System.clearProperty(key);
         int factoryId = FactoryIdHelper.getFactoryId(key, 10);
