@@ -19,6 +19,7 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
 
@@ -152,9 +153,10 @@ class MockJoiner extends AbstractJoiner {
         possibleAddresses.remove(node.getThisAddress());
         possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
         for (Address address : possibleAddresses) {
-            SplitBrainJoinMessage  response = sendSplitBrainJoinMessage(address);
-            if (shouldMerge(response)) {
+            SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
+            if (shouldMerge(response) == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
                 startClusterMerge(address);
+                return;
             }
         }
     }
