@@ -40,7 +40,7 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
     final Queue<WaitSetEntry> queue;
     final Operation op;
     final BlockingOperation blockingOperation;
-    final long expirationTime;
+    final long expirationTimeMs;
     volatile boolean valid = true;
     volatile Object cancelResponse;
 
@@ -48,12 +48,12 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
         this.op = (Operation) blockingOperation;
         this.blockingOperation = blockingOperation;
         this.queue = queue;
-        this.expirationTime = getExpirationTime(blockingOperation);
+        this.expirationTimeMs = getExpirationTimeMs(blockingOperation);
 
         setPartitionId(op.getPartitionId());
     }
 
-    private long getExpirationTime(BlockingOperation blockingOperation) {
+    private long getExpirationTimeMs(BlockingOperation blockingOperation) {
         long waitTimeout = blockingOperation.getWaitTimeout();
         if (waitTimeout < 0) {
             return -1;
@@ -82,7 +82,7 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
     }
 
     public boolean isExpired() {
-        return expirationTime > 0 && Clock.currentTimeMillis() >= expirationTime;
+        return expirationTimeMs > 0 && Clock.currentTimeMillis() >= expirationTimeMs;
     }
 
     public boolean isCancelled() {
@@ -105,7 +105,7 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(expirationTime - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        return unit.convert(expirationTimeMs - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -198,7 +198,7 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
         super.toString(sb);
 
         sb.append(", op=").append(op);
-        sb.append(", expirationTime=").append(expirationTime);
+        sb.append(", expirationTimeMs=").append(expirationTimeMs);
         sb.append(", valid=").append(valid);
     }
 }
