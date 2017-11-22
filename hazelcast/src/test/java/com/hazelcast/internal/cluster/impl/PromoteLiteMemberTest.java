@@ -58,6 +58,7 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
@@ -320,6 +321,54 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
             fail("Promotion should fail!");
         } catch (ExecutionException e) {
             assertInstanceOf(IllegalStateException.class, e.getCause());
+        }
+    }
+
+    @Test
+    public void masterMemberAttributes_arePreserved_afterPromotion() throws Exception {
+        memberAttributes_arePreserved_afterPromotion(true);
+    }
+
+    @Test
+    public void normalMemberAttributes_arePreserved_afterPromotion() throws Exception {
+        memberAttributes_arePreserved_afterPromotion(false);
+    }
+
+    private void memberAttributes_arePreserved_afterPromotion(boolean isMaster) throws Exception {
+        final String attribute1 = "attr1";
+        final String attribute2 = "attr2";
+        final String attributeValue = "value";
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        instances[0] = factory.newHazelcastInstance(new Config().setLiteMember(isMaster));
+        instances[1] = factory.newHazelcastInstance(new Config().setLiteMember(!isMaster));
+
+        HazelcastInstance hz = instances[isMaster ? 0 : 1];
+
+        // Get local member and SET attribute BEFORE promotion
+        Member localMember = hz.getCluster().getLocalMember();
+        localMember.setStringAttribute(attribute1, attributeValue);
+        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
+
+        // Promote local Lite member
+        hz.getCluster().promoteLocalLiteMember();
+
+        // Get local member and SET attribute AFTER promotion
+        localMember = hz.getCluster().getLocalMember();
+        localMember.setStringAttribute(attribute2, attributeValue);
+
+        // Check attributes from localMember
+        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
+        assertEquals(attributeValue, localMember.getStringAttribute(attribute2));
+
+        // Check attributes from member list
+        for (Member member : hz.getCluster().getMembers()) {
+            if (member.localMember()) {
+                assertEquals(attributeValue, member.getStringAttribute(attribute1));
+                assertEquals(attributeValue, member.getStringAttribute(attribute2));
+                break;
+            }
         }
     }
 
