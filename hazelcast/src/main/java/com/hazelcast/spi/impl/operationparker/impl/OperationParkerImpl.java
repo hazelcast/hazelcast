@@ -90,11 +90,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    private void invalidate(WaitSetEntry entry) throws Exception {
-        nodeEngine.getOperationService().execute(entry);
-    }
-
-    // Runs in operation thread, we can assume that
+     // Runs in operation thread, we can assume that
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     @Override
@@ -254,6 +250,10 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                 }
             }
             return false;
+        }
+
+        private void invalidate(WaitSetEntry entry) {
+            nodeEngine.getOperationService().execute(entry);
         }
     }
 }
