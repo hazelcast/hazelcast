@@ -316,8 +316,24 @@ public abstract class AbstractJoiner implements Joiner {
                 return (clusterService.getMemberListVersion() == expectedMemberListVersion);
             }
 
-            if (tryToChangeClusterState(clusterService, expectedMemberListVersion, clusterState)) {
+            if (clusterService.getMemberListVersion() != expectedMemberListVersion) {
+                logger.warning("Could not change cluster state to FROZEN because local member list version: "
+                        + clusterService.getMemberListVersion() + " is different than expected member list version: "
+                        + expectedMemberListVersion);
                 return false;
+            }
+
+            // If state is IN_TRANSITION, then skip trying to change state.
+            // Otherwise transaction will print noisy warning logs.
+            if (clusterState != IN_TRANSITION) {
+                try {
+                    clusterService.changeClusterState(FROZEN);
+
+                    return verifyMemberListVersionAfterStateChange(clusterService, clusterState, expectedMemberListVersion);
+                } catch (Exception e) {
+                    String error = e.getClass().getName() + ": " + e.getMessage();
+                    logger.warning("While changing cluster state to FROZEN! " + error);
+                }
             }
 
             try {
@@ -330,34 +346,13 @@ public abstract class AbstractJoiner implements Joiner {
             }
         }
 
-        logger.warning("Could not change cluster state to FROZEN in time. "
-                + "Postponing merge process until next attempt.");
+        logger.warning("Could not change cluster state to FROZEN in time. Postponing merge process until next attempt.");
         return false;
     }
 
-    private boolean tryToChangeClusterState(ClusterServiceImpl clusterService, int expectedMemberListVersion,
-                                            ClusterState clusterState) {
+    private boolean verifyMemberListVersionAfterStateChange(ClusterServiceImpl clusterService, ClusterState clusterState,
+                                                            int expectedMemberListVersion) {
         if (clusterService.getMemberListVersion() != expectedMemberListVersion) {
-            logger.warning("Could not change cluster state to FROZEN because local member list version: "
-                    + clusterService.getMemberListVersion() + " is different than expected member list version: "
-                    + expectedMemberListVersion);
-        }
-
-        boolean changed = false;
-
-        // If state is IN_TRANSITION, then skip trying to change state.
-        // Otherwise transaction will print noisy warning logs.
-        if (clusterState != IN_TRANSITION) {
-            try {
-                clusterService.changeClusterState(FROZEN);
-                changed = true;
-            } catch (Exception e) {
-                String error = e.getClass().getName() + ": " + e.getMessage();
-                logger.warning("While changing cluster state to FROZEN! " + error);
-            }
-        }
-
-        if (changed && clusterService.getMemberListVersion() != expectedMemberListVersion) {
             try {
                 logger.warning("Reverting cluster state back to " + clusterState + " because member list version: "
                         + clusterService.getMemberListVersion() + " is different than expected member list version: "
@@ -368,18 +363,18 @@ public abstract class AbstractJoiner implements Joiner {
                 logger.warning("While reverting cluster state to " + clusterState + "! " + error);
             }
 
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     /**
      * Returns true if the current cluster state allows join; either
      * {@link ClusterState#ACTIVE} or {@link ClusterState#NO_MIGRATION}.
      */
-    private boolean preCheckClusterState(final ClusterService clusterService) {
-        final ClusterState initialState = clusterService.getClusterState();
+    private boolean preCheckClusterState(ClusterService clusterService) {
+        ClusterState initialState = clusterService.getClusterState();
         if (!initialState.isJoinAllowed()) {
             logger.warning("Could not prepare cluster state since it has been changed to " + initialState);
             return false;
@@ -389,7 +384,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected Address getTargetAddress() {
-        final Address target = targetAddress;
+        Address target = targetAddress;
         targetAddress = null;
         return target;
     }
