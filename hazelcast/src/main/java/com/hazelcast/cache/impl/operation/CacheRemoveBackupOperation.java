@@ -47,13 +47,12 @@ public class CacheRemoveBackupOperation
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
+    public void runInternal() {
         cache.removeRecord(key);
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
+    public void afterRunInternal() {
         if (!wanOriginated && cache.isWanReplicationEnabled()) {
             wanEventPublisher.publishWanReplicationRemoveBackup(name, key);
         }

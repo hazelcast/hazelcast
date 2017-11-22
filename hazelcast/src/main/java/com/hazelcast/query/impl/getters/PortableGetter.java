@@ -49,7 +49,7 @@ final class PortableGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj) throws Exception {
+    Object getValue(Object obj) {
         throw new IllegalArgumentException("Path agnostic value extraction unsupported");
     }
 

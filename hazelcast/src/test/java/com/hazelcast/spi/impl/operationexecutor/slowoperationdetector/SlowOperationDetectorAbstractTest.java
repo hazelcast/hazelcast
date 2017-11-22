@@ -107,7 +107,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
                                                                                                final int expected) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
                 assertNumberOfSlowOperationLogs(logs, expected);
             }

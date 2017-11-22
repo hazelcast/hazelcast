@@ -94,7 +94,7 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
         testPacketWriteRead(portablePerson);
     }
 
-    private void testPacketWriteRead(Object originalObject) throws IOException {
+    private void testPacketWriteRead(Object originalObject) {
         InternalSerializationService ss = createSerializationServiceBuilder().build();
         byte[] originalPayload = ss.toBytes(originalObject);
 

@@ -96,7 +96,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    public void test(RingbufferConfig ringbufferConfig) throws Exception {
+    public void test(RingbufferConfig ringbufferConfig) {
         Config config = new Config();
         config.addRingBufferConfig(ringbufferConfig);
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);

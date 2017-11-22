@@ -29,7 +29,7 @@ public class AbstractLocalOperationTest {
 
     private AbstractLocalOperation operation = new AbstractLocalOperation() {
         @Override
-        public void run() throws Exception {
+        public void run() {
         }
     };
 

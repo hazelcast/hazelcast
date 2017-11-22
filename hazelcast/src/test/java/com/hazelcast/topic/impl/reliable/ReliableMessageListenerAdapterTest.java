@@ -72,7 +72,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         topic.publish("item");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(singletonList("item"), listener.messages);
             }
         });

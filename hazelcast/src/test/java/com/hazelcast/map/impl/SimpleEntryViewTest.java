@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 public class SimpleEntryViewTest extends HazelcastTestSupport {
 
     @Test
-    public void test_toString() throws Exception {
+    public void test_toString() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap map = instance.getMap("test");
         map.put(1, 1);

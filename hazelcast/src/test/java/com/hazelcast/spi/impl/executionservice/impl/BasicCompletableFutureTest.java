@@ -150,7 +150,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_successfully_callbacksNeverRun() throws Exception {
+    public void completeDelegate_successfully_callbacksNeverRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
@@ -160,7 +160,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_withException_callbacksNeverRun() throws Exception {
+    public void completeDelegate_withException_callbacksNeverRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
@@ -171,7 +171,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_successfully_callbackAfterGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
+    public void completeDelegate_successfully_callbackAfterGet_invokeIsDoneOnOuter_callbacksRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
@@ -197,7 +197,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_successfully_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
+    public void completeDelegate_successfully_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
@@ -223,7 +223,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_withException_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
+    public void completeDelegate_withException_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
@@ -237,7 +237,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_withException_callbackBeforeGet_invokeGetOnOuter_callbacksNeverReached() throws Exception {
+    public void completeDelegate_withException_callbackBeforeGet_invokeGetOnOuter_callbacksNeverReached() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
@@ -259,7 +259,7 @@ public class BasicCompletableFutureTest {
     private <V> FutureTask<V> future(final V result) {
         return new FutureTask<V>(new Callable<V>() {
             @Override
-            public V call() throws Exception {
+            public V call() {
                 if (delegateThrowException) {
                     throw new RuntimeException("Exception in execution");
                 }

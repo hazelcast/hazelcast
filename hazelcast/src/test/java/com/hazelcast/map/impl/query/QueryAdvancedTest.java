@@ -104,7 +104,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testQueryWithTTL() throws Exception {
+    public void testQueryWithTTL() {
         Config config = getConfig();
         String mapName = "default";
         config.getMapConfig(mapName).setTimeToLiveSeconds(5);
@@ -151,7 +151,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTwoNodesWithPartialIndexes() throws Exception {
+    public void testTwoNodesWithPartialIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -197,7 +197,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTwoNodesWithIndexes() throws Exception {
+    public void testTwoNodesWithIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -481,7 +481,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         final IMap map = instance.getMap(name);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection values = map.values(new SqlPredicate("active = true"));
                 assertEquals(size, values.size());
             }

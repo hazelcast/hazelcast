@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
 
     @Test
-    public void testAllUpdatesReflectedToMapStore() throws Exception {
+    public void testAllUpdatesReflectedToMapStore() {
         int nodeCount = 3;
         final MapStoreWithCounter<Integer, String> mapStore = new MapStoreWithCounter<Integer, String>();
         TestMapUsingMapStoreBuilder<Integer, String> builder = TestMapUsingMapStoreBuilder.<Integer, String>create()
@@ -60,7 +60,7 @@ public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int storeCount = mapStore.countStore.get();
                 final int deleteCount = mapStore.countDelete.get();
 

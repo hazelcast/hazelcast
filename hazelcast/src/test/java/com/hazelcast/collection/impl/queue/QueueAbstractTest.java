@@ -66,7 +66,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     // ================ offer ==============================
 
     @Test
-    public void testOffer() throws Exception {
+    public void testOffer() {
         int count = 100;
         for (int i = 0; i < count; i++) {
             queue.offer("item" + i);
@@ -138,7 +138,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testPollWithTimeout() throws Exception {
+    public void testPollWithTimeout() {
         PollThread pollThread = new PollThread(queue);
         pollThread.start();
         queue.offer("offer");

@@ -54,7 +54,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     @Override
-    public void writeChar(final int v) throws IOException {
+    public void writeChar(final int v) {
         ensureAvailable(CHAR_SIZE_IN_BYTES);
         MEM.putChar(buffer, ARRAY_BYTE_BASE_OFFSET + pos, (char) v);
         pos += CHAR_SIZE_IN_BYTES;
@@ -67,7 +67,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     @Override
-    public void writeDouble(final double v) throws IOException {
+    public void writeDouble(final double v) {
         ensureAvailable(DOUBLE_SIZE_IN_BYTES);
         MEM.putDouble(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += DOUBLE_SIZE_IN_BYTES;
@@ -80,7 +80,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     @Override
-    public void writeFloat(final float v) throws IOException {
+    public void writeFloat(final float v) {
         ensureAvailable(FLOAT_SIZE_IN_BYTES);
         MEM.putFloat(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += FLOAT_SIZE_IN_BYTES;
@@ -93,7 +93,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     @Override
-    public void writeInt(final int v) throws IOException {
+    public void writeInt(final int v) {
         ensureAvailable(INT_SIZE_IN_BYTES);
         MEM.putInt(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += INT_SIZE_IN_BYTES;
@@ -124,7 +124,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     @Override
-    public void writeLong(final long v) throws IOException {
+    public void writeLong(final long v) {
         ensureAvailable(LONG_SIZE_IN_BYTES);
         MEM.putLong(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += LONG_SIZE_IN_BYTES;
@@ -155,7 +155,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     @Override
-    public void writeShort(final int v) throws IOException {
+    public void writeShort(final int v) {
         ensureAvailable(SHORT_SIZE_IN_BYTES);
         MEM.putShort(buffer, ARRAY_BYTE_BASE_OFFSET + pos, (short) v);
         pos += SHORT_SIZE_IN_BYTES;

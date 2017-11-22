@@ -138,7 +138,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
-    private void handleGetClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleGetClusterState(HttpPostCommand command) {
         String res;
         try {
             Node node = textCommandService.getNode();
@@ -181,7 +181,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
-    private void handleForceStart(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleForceStart(HttpPostCommand command) {
         String res;
         try {
             Node node = textCommandService.getNode();
@@ -198,7 +198,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
-    private void handlePartialStart(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handlePartialStart(HttpPostCommand command) {
         String res;
         try {
             Node node = textCommandService.getNode();
@@ -215,7 +215,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
-    private void handleHotRestartBackup(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleHotRestartBackup(HttpPostCommand command) {
         String res;
         try {
             if (checkCredentials(command)) {
@@ -231,7 +231,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
-    private void handleHotRestartBackupInterrupt(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleHotRestartBackupInterrupt(HttpPostCommand command) {
         String res;
         try {
             if (checkCredentials(command)) {
@@ -247,7 +247,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
-    private void handleClusterShutdown(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleClusterShutdown(HttpPostCommand command) {
         String res;
         try {
             Node node = textCommandService.getNode();
@@ -267,7 +267,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
-    private void handleListNodes(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleListNodes(HttpPostCommand command) {
         String res;
         try {
             Node node = textCommandService.getNode();
@@ -289,7 +289,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         sendResponse(command, res);
     }
 
-    private void handleShutdownNode(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleShutdownNode(HttpPostCommand command) {
         String res;
         try {
             Node node = textCommandService.getNode();

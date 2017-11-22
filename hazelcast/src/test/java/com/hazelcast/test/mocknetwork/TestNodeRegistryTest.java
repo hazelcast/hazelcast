@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 public class TestNodeRegistryTest extends HazelcastTestSupport {
 
     @Test
-    public void testTerminate_clearsNodeReferences() throws Exception {
+    public void testTerminate_clearsNodeReferences() {
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
 

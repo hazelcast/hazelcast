@@ -88,7 +88,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         int partitionId = getPartitionId();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
@@ -162,7 +162,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         if (validationFailure != null || !sync || getCallId() == 0 || originalCaller == null) {
             return;
         }

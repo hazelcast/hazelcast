@@ -123,16 +123,14 @@ public class PartitionLostListenerStressTest
         if (shouldExpectPartitionLostEvents) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertLostPartitions(log, listener, survivingPartitions, partitionTables);
                 }
             });
         } else {
             assertTrueAllTheTime(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertTrue(listener.getEvents().isEmpty());
                 }
             }, 1);

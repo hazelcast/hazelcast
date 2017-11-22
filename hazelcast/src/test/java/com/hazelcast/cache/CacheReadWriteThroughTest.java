@@ -106,7 +106,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_getAll_readThrough() throws Exception {
+    public void test_getAll_readThrough() {
         final String cacheName = randomName();
 
         CacheManager cacheManager = cachingProvider.getCacheManager();
@@ -130,7 +130,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         assertEquals(100, loaded.size());
     }
 
-    private void loadAll_readThrough(boolean throwError) throws Exception {
+    private void loadAll_readThrough(boolean throwError) {
         final String cacheName = randomName();
 
         CacheManager cacheManager = cachingProvider.getCacheManager();

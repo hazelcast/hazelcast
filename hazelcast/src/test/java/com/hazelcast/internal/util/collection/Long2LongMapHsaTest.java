@@ -93,7 +93,7 @@ public class Long2LongMapHsaTest {
     }
 
     @Test
-    public void testPutAll() throws Exception {
+    public void testPutAll() {
         int count = 100;
         Long2LongMap entries = new Long2LongMapHsa(count, memMgr);
 
@@ -112,7 +112,7 @@ public class Long2LongMapHsaTest {
     }
 
     @Test
-    public void testReplace() throws Exception {
+    public void testReplace() {
         long key = newKey();
         long value = newValue();
 
@@ -192,7 +192,7 @@ public class Long2LongMapHsaTest {
     }
 
     @Test
-    public void testContainsKey_fail() throws Exception {
+    public void testContainsKey_fail() {
         long key = newKey();
         assertFalseKV(map.containsKey(key), key, 0);
     }

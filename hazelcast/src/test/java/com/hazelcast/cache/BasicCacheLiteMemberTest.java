@@ -85,14 +85,12 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
-    public void testCacheCreation()
-            throws InterruptedException {
+    public void testCacheCreation() {
         testCacheCreation(instanceCachingProvider, liteCachingProvider);
     }
 
     @Test
-    public void testCacheCreationFromLiteMember()
-            throws InterruptedException {
+    public void testCacheCreationFromLiteMember() {
         testCacheCreation(liteCachingProvider, instanceCachingProvider);
     }
 
@@ -109,8 +107,7 @@ public class BasicCacheLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 CacheManager cm2 = providerToValidate.getCacheManager();
                 assertNotNull(cm2.getCache(cacheName));
             }
@@ -118,8 +115,7 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
-    public void testPut()
-            throws InterruptedException {
+    public void testPut() {
         CacheManager cacheManager = liteCachingProvider.getCacheManager();
 
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
@@ -133,8 +129,7 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
-    public void testCompletion()
-            throws InterruptedException {
+    public void testCompletion() {
 
         CacheManager cacheManager = liteCachingProvider.getCacheManager();
 
@@ -153,8 +148,7 @@ public class BasicCacheLiteMemberTest
         instanceCache.put(key1, value1);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, listener.created.get());
             }
         });
@@ -163,8 +157,7 @@ public class BasicCacheLiteMemberTest
         instanceCache.put(key2, value2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(2, listener.created.get());
             }
         });
@@ -173,8 +166,7 @@ public class BasicCacheLiteMemberTest
         instanceCache.remove(key2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(2, listener.removed.get());
             }
         });
@@ -191,8 +183,7 @@ public class BasicCacheLiteMemberTest
         cacheManager.destroyCache("c1");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 try {
                     c2.get("key");
                     fail("get should throw IllegalStateException");
@@ -215,8 +206,7 @@ public class BasicCacheLiteMemberTest
         cacheManager.close();
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 c2.get("key");
             }
         }, 10);

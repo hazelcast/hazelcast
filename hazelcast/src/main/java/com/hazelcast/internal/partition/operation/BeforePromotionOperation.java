@@ -49,7 +49,7 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun() {
         sendMigrationEvent(STARTED);
 
         InternalPartitionServiceImpl service = getService();
@@ -58,7 +58,7 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("Running before promotion for " + getPartitionMigrationEvent());
@@ -75,7 +75,7 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         if (beforePromotionsCallback != null) {
             beforePromotionsCallback.run();
         }

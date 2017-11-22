@@ -58,7 +58,7 @@ public final class TestNodeRegistry {
             assertFalse(address + " is already registered", node.isRunning());
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(address + " should be SHUT_DOWN", NodeState.SHUT_DOWN, node.getState());
                 }
             });

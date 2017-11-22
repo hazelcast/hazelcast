@@ -59,7 +59,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoads_whenMapLazyAndCheckingSize() throws Exception {
+    public void testLoads_whenMapLazyAndCheckingSize() {
         Config cfg = newConfig(mapName, LAZY);
 
         IMap<Object, Object> map = getMap(mapName, cfg);
@@ -68,7 +68,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoadsAll_whenMapCreatedInEager() throws Exception {
+    public void testLoadsAll_whenMapCreatedInEager() {
         Config cfg = newConfig(mapName, EAGER);
 
         IMap<Object, Object> map = getMap(mapName, cfg);
@@ -77,7 +77,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoadsNothing_whenMapCreatedLazy() throws Exception {
+    public void testLoadsNothing_whenMapCreatedLazy() {
         Config cfg = newConfig(mapName, InitialLoadMode.LAZY);
 
         getMap(mapName, cfg);
@@ -86,7 +86,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoadsMap_whenLazyAndValueRetrieved() throws Exception {
+    public void testLoadsMap_whenLazyAndValueRetrieved() {
         Config cfg = newConfig(mapName, InitialLoadMode.LAZY);
 
         IMap<Object, Object> map = getMap(mapName, cfg);
@@ -96,7 +96,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoadsAll_whenLazyModeAndLoadAll() throws Exception {
+    public void testLoadsAll_whenLazyModeAndLoadAll() {
         Config cfg = newConfig(mapName, LAZY);
 
         IMap<Object, Object> map = getMap(mapName, cfg);
@@ -107,7 +107,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testDoesNotLoadAgain_whenLoadedAndNodeAdded() throws Exception {
+    public void testDoesNotLoadAgain_whenLoadedAndNodeAdded() {
         Config cfg = newConfig(mapName, EAGER);
 
         IMap<Object, Object> map = getMap(mapName, cfg);
@@ -118,7 +118,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testDoesNotLoadAgain_whenLoadedLazyAndNodeAdded() throws Exception {
+    public void testDoesNotLoadAgain_whenLoadedLazyAndNodeAdded() {
         Config cfg = newConfig(mapName, LAZY);
 
         IMap<Object, Object> map = getMap(mapName, cfg);
@@ -130,7 +130,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoadAgain_whenLoadedAllCalledMultipleTimes() throws Exception {
+    public void testLoadAgain_whenLoadedAllCalledMultipleTimes() {
         Config cfg = newConfig(mapName, LAZY);
 
         IMap<Object, Object> map = getMap(mapName, cfg);
@@ -143,7 +143,7 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testLoadsOnce_whenSizeCheckedTwice() throws Exception {
+    public void testLoadsOnce_whenSizeCheckedTwice() {
 
         mapLoader = new CountingMapLoader(MAP_STORE_ENTRY_COUNT, true);
         Config cfg = newConfig(mapName, LAZY);

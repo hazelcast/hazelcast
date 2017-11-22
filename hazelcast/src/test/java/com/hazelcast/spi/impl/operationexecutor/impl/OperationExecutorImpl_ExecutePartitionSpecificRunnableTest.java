@@ -58,7 +58,7 @@ public class OperationExecutorImpl_ExecutePartitionSpecificRunnableTest extends 
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(PartitionOperationThread.class, executingThead.get());
             }
         });
@@ -85,7 +85,7 @@ public class OperationExecutorImpl_ExecutePartitionSpecificRunnableTest extends 
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertInstanceOf(GenericOperationThread.class, executingThead.get());
             }
         });

@@ -59,7 +59,7 @@ public class XACollectTransactionsMessageTask
     }
 
     @Override
-    protected Object reduce(Map<Member, Object> map) throws Throwable {
+    protected Object reduce(Map<Member, Object> map) {
         List<Data> list = new ArrayList<Data>();
         for (Object o : map.values()) {
             SerializableList xidSet = (SerializableList) o;

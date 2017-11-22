@@ -89,7 +89,7 @@ public class DateHelperTest {
     }
 
     @Test
-    public void testSqlDateFailsForInvalidDate() throws Exception {
+    public void testSqlDateFailsForInvalidDate() {
         // Given
         String invalidDate = "Trust me, I am a date";
 
@@ -172,7 +172,7 @@ public class DateHelperTest {
     }
 
     @Test
-    public void testTimestampFailsForInvalidValue() throws Exception {
+    public void testTimestampFailsForInvalidValue() {
         // Given
         String invalidTimestamp = "Quid temporem est";
 
@@ -245,7 +245,7 @@ public class DateHelperTest {
     }
 
     @Test
-    public void testTimeFailsForInvalidValue() throws Exception {
+    public void testTimeFailsForInvalidValue() {
         // Given
         String invalidTime = "Time is now";
 

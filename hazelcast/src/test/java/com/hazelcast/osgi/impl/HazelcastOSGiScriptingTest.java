@@ -46,7 +46,7 @@ public abstract class HazelcastOSGiScriptingTest extends HazelcastTestSupport {
             } else {
                 return new Statement() {
                     @Override
-                    public void evaluate() throws Throwable {
+                    public void evaluate() {
                         System.out.println("Ignoring test since scripting is not available!");
                     }
                 };

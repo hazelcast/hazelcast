@@ -215,7 +215,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
         }
     }

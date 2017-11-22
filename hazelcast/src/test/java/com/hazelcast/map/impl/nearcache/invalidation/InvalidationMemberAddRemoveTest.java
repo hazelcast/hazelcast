@@ -143,7 +143,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < KEY_COUNT; i++) {
                     Integer valueSeenFromMember = memberMap.get(i);
                     Integer valueSeenFromClient = nearCachedMap.get(i);

@@ -113,7 +113,7 @@ public class SemaphoreAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 300000)
-    public void testMutex() throws InterruptedException {
+    public void testMutex() {
         final String semaphoreName = randomString();
         final int threadCount = 2;
         final HazelcastInstance[] instances = createHazelcastInstanceFactory(threadCount).newInstances();

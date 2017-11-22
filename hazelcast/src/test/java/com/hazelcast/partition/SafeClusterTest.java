@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
-    public void isClusterSafe() throws Exception {
+    public void isClusterSafe() {
         final HazelcastInstance node = createHazelcastInstance();
         final boolean safe = node.getPartitionService().isClusterSafe();
 
@@ -49,7 +49,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isClusterSafe_multiNode() throws Exception {
+    public void isClusterSafe_multiNode() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
@@ -61,7 +61,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isLocalMemberSafe() throws Exception {
+    public void isLocalMemberSafe() {
         final HazelcastInstance node = createHazelcastInstance();
         final boolean safe = node.getPartitionService().isLocalMemberSafe();
 
@@ -69,7 +69,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isLocalMemberSafe_multiNode() throws Exception {
+    public void isLocalMemberSafe_multiNode() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
@@ -81,7 +81,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isMemberSafe_localMember() throws Exception {
+    public void isMemberSafe_localMember() {
         final HazelcastInstance node = createHazelcastInstance();
         final Member localMember = node.getCluster().getLocalMember();
         final boolean safe = node.getPartitionService().isMemberSafe(localMember);
@@ -90,7 +90,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_forceLocalMemberToBeSafe() throws Exception {
+    public void test_forceLocalMemberToBeSafe() {
         final HazelcastInstance node = createHazelcastInstance();
         final boolean safe = node.getPartitionService().forceLocalMemberToBeSafe(5, TimeUnit.SECONDS);
 

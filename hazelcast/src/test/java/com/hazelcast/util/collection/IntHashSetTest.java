@@ -49,7 +49,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
     private final IntHashSet set = new IntHashSet(1000, -1);
 
     @Test
-    public void initiallyContainsNoElements() throws Exception {
+    public void initiallyContainsNoElements() {
         for (int i = 0; i < 10000; i++) {
             assertNotContains(set, i);
         }

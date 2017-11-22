@@ -32,7 +32,7 @@ public class TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport implements Te
                 && !AlignmentUtil.isUnalignedAccessAllowed()) {
             return new Statement() {
                 @Override
-                public void evaluate() throws Throwable {
+                public void evaluate() {
                     LOGGER.finest("Ignoring `" + description.getClassName()
                             + "` because unaligned memory access is not supported in this platform");
                 }

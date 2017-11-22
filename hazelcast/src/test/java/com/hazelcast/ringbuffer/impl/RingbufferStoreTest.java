@@ -288,7 +288,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastException.class)
-    public void testRingbufferStore_addThrowsException() throws InterruptedException {
+    public void testRingbufferStore_addThrowsException() {
         final String ringbufferName = randomString();
         final RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setStoreImplementation(new ExceptionThrowingRingbufferStore())
@@ -314,7 +314,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastException.class)
-    public void testRingbufferStore_getLargestSequenceThrowsException() throws Exception {
+    public void testRingbufferStore_getLargestSequenceThrowsException() {
         final String ringbufferName = randomString();
         final RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setStoreImplementation(new ExceptionThrowingRingbufferStore(true))

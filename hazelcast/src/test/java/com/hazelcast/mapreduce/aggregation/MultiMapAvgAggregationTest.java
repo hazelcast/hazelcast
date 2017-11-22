@@ -255,8 +255,7 @@ public class MultiMapAvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testAvg(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testAvg(T[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         MultiMap<String, T> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -269,8 +268,7 @@ public class MultiMapAvgAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testAvgWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testAvgWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         MultiMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMultiMap(mapName);

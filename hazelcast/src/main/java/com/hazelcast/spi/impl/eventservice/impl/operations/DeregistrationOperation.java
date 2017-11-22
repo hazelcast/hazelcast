@@ -39,7 +39,7 @@ public class DeregistrationOperation extends AbstractRegistrationOperation {
     }
 
     @Override
-    protected void runInternal() throws Exception {
+    protected void runInternal() {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
         EventServiceSegment segment = eventService.getSegment(getServiceName(), false);
         if (segment != null) {

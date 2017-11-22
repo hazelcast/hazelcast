@@ -48,7 +48,7 @@ public class EmptyObjectDataOutputTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testToByteArray() throws IOException {
+    public void testToByteArray() {
         out.toByteArray();
     }
 

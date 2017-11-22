@@ -85,7 +85,7 @@ public class LockLeaseMemberBounceTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (Driver driver : drivers) {
                     driver.doAssert();
                 }

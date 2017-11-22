@@ -87,7 +87,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     @Ignore("now will execute partition number of times")
-    public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() throws Exception {
+    public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() {
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Object, Object> map = instance.getMap("map");
         map.addIndex("name", false);

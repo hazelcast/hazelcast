@@ -118,7 +118,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_reconciliation_does_not_cause_premature_removal() throws Exception {
+    public void test_reconciliation_does_not_cause_premature_removal() {
         int total = 100;
         for (int i = 0; i < total; i++) {
             serverMap.put(i, i);

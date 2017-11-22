@@ -97,7 +97,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return executor.isInvocationAllowed(genericOperation, false);
             }
         });
@@ -116,7 +116,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return executor.isInvocationAllowed(genericOperation, true);
             }
         });
@@ -222,7 +222,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return executor.isInvocationAllowed(operation, false);
             }
         });
@@ -241,7 +241,7 @@ public class OperationExecutorImpl_IsInvocationAllowedTest extends OperationExec
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return executor.isInvocationAllowed(operation, true);
             }
         });

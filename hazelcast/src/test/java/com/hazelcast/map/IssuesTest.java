@@ -140,13 +140,13 @@ public class IssuesTest extends HazelcastTestSupport {
         imap.put(1, 1);
         assertEqualsEventually(new Callable<Integer>() {
             @Override
-            public Integer call() throws Exception {
+            public Integer call() {
                 return eventsWithValues.size();
             }
         }, 1);
         assertEqualsEventually(new Callable<Integer>() {
             @Override
-            public Integer call() throws Exception {
+            public Integer call() {
                 return eventsWithoutValues.size();
             }
         }, 1);
@@ -195,10 +195,10 @@ public class IssuesTest extends HazelcastTestSupport {
         globalSerializerConfig.setOverrideJavaSerialization(false);
         config.getSerializationConfig().setGlobalSerializerConfig(globalSerializerConfig
                 .setImplementation(new StreamSerializer() {
-                    public void write(ObjectDataOutput out, Object object) throws IOException {
+                    public void write(ObjectDataOutput out, Object object) {
                     }
 
-                    public Object read(ObjectDataInput in) throws IOException {
+                    public Object read(ObjectDataInput in) {
                         return new DummyValue();
                     }
 

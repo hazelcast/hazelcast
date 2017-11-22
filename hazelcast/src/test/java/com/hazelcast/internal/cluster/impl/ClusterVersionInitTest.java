@@ -53,8 +53,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         setupInstance(config);
         assertEqualsEventually(new Callable<Version>() {
             @Override
-            public Version call()
-                    throws Exception {
+            public Version call() {
                 return cluster.getClusterVersion();
             }
         }, codebaseVersion.asVersion());
@@ -69,8 +68,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         setupInstance(config);
         assertEqualsEventually(new Callable<Version>() {
             @Override
-            public Version call()
-                    throws Exception {
+            public Version call() {
                 return cluster.getClusterVersion();
             }
         }, codebaseVersion.asVersion());
@@ -85,8 +83,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         setupInstance(config);
         assertEqualsEventually(new Callable<Version>() {
             @Override
-            public Version call()
-                    throws Exception {
+            public Version call() {
                 return cluster.getClusterVersion();
             }
         }, codebaseVersion.asVersion());
@@ -103,8 +100,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
 
         assertEqualsEventually(new Callable<Version>() {
             @Override
-            public Version call()
-                    throws Exception {
+            public Version call() {
                 return joinerCluster.getClusterVersion();
             }
         }, codebaseVersion.asVersion());
@@ -124,8 +120,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
 
         assertEqualsEventually(new Callable<Version>() {
             @Override
-            public Version call()
-                    throws Exception {
+            public Version call() {
                 return joinerCluster.getClusterVersion();
             }
         }, codebaseVersion.asVersion());

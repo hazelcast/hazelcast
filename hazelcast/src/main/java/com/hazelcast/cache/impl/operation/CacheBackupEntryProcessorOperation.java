@@ -61,13 +61,12 @@ public class CacheBackupEntryProcessorOperation
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
+    public void runInternal() {
         cache.invoke(key, entryProcessor, arguments, IGNORE_COMPLETION);
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
+    public void afterRunInternal() {
         if (cache.isWanReplicationEnabled()) {
             CacheRecord record = cache.getRecord(key);
             if (record != null) {

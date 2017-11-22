@@ -41,7 +41,7 @@ public class PartitionAwareCallableBatchingRunnableTest extends HazelcastTestSup
     }
 
     @Test
-    public void test_whenRunningOnPartitionThread() throws IllegalAccessException, ExecutionException, InterruptedException {
+    public void test_whenRunningOnPartitionThread() throws ExecutionException, InterruptedException {
         HazelcastInstance hz = createHazelcastInstance();
         PartitionAwareCallableBatchingRunnable runnable = new PartitionAwareCallableBatchingRunnable(
                 getNodeEngineImpl(hz), new TestPartitionAwareCallableFactory());

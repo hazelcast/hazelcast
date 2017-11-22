@@ -833,7 +833,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @param item the item for which the data is being set
      * @throws Exception if there is any exception. For example, when calling methods on the queue store
      */
-    private void load(QueueItem item) throws Exception {
+    private void load(QueueItem item) {
         int bulkLoad = store.getBulkLoad();
         bulkLoad = Math.min(getItemQueue().size(), bulkLoad);
         if (bulkLoad == 1) {

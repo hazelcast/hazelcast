@@ -70,7 +70,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun() {
         int syncReplicaIndex = getReplicaIndex();
         if (syncReplicaIndex < 1 || syncReplicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Replica index " + syncReplicaIndex
@@ -130,7 +130,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
     }
 
     /** Checks if we can continue with the replication or not. Can send a retry or empty response to the replica in some cases */
-    private boolean preCheckReplicaSync(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex) throws IOException {
+    private boolean preCheckReplicaSync(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex) {
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
@@ -184,8 +184,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
         operationService.send(syncResponse, target);
     }
 
-    private PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns)
-            throws IOException {
+    private PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
 
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();

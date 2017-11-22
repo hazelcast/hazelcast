@@ -378,7 +378,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownMember_whenClusterNotActive(boolean shutdownMaster, boolean initializePartitions,
-                                                     ClusterState state) throws Exception {
+                                                     ClusterState state) {
 
         Config config = new Config();
         HazelcastInstance master = factory.newHazelcastInstance(config);
@@ -412,7 +412,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         shutdownMemberAndCluster(true);
     }
 
-    private void shutdownMemberAndCluster(boolean initializePartitions) throws Exception {
+    private void shutdownMemberAndCluster(boolean initializePartitions) {
         Config config = new Config();
         HazelcastInstance master = factory.newHazelcastInstance(config);
         HazelcastInstance[] slaves = factory.newInstances(config, 3);

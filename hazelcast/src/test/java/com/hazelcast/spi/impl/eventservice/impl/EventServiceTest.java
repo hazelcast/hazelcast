@@ -57,7 +57,7 @@ public class EventServiceTest extends HazelcastTestSupport {
 
         Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
             @Override
-            public HazelcastInstance call() throws Exception {
+            public HazelcastInstance call() {
                 return factory.newHazelcastInstance(newConfigWithDummyService());
             }
         });
@@ -97,7 +97,7 @@ public class EventServiceTest extends HazelcastTestSupport {
 
         Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
             @Override
-            public HazelcastInstance call() throws Exception {
+            public HazelcastInstance call() {
                 return factory.newHazelcastInstance(newConfigWithDummyService());
             }
         });

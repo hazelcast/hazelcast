@@ -112,8 +112,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<CachePartitionLostEvent> events = listener.getEvents();
 
                 assertEquals(1, events.size());
@@ -162,8 +161,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final List<CachePartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
                 for (CachePartitionLostEvent event : events) {

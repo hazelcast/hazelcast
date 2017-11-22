@@ -69,8 +69,7 @@ public class ExecutorServiceLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final IMap<Object, Object> results = lite1.getMap(name);
                 assertEquals(1, results.size());
                 final boolean executedOnLite1 = results.containsKey(lite1.getCluster().getLocalMember());
@@ -94,8 +93,7 @@ public class ExecutorServiceLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final IMap<Object, Object> results = lite1.getMap(name);
                 assertEquals(2, results.size());
                 assertTrue(results.containsKey(lite1.getCluster().getLocalMember()));
@@ -182,8 +180,7 @@ public class ExecutorServiceLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final Map<Member, Object> results = callback.getResults();
 
                 assertNotNull(results);

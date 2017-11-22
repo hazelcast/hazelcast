@@ -129,7 +129,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = TransactionNotActiveException.class)
-    public void testTxnMultimapOuterTransaction() throws Throwable {
+    public void testTxnMultimapOuterTransaction() {
         final HazelcastInstance h1 = createHazelcastInstance();
 
         final TransactionContext transactionContext = h1.newTransactionContext();
@@ -141,7 +141,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListener() throws InterruptedException {
+    public void testListener() {
         String mapName = "mm";
         long key = 1L;
         String value = "value";
@@ -177,8 +177,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(2, listener.getAddedCount());
                 assertEquals(2, listener.getRemovedCount());
             }
@@ -207,7 +206,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue1276Lock() throws InterruptedException {
+    public void testIssue1276Lock() {
         Long key = 1L;
         Long value = 1L;
         String mapName = "myMultimap";

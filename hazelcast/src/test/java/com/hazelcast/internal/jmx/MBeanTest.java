@@ -55,7 +55,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAtomicLong() throws Exception {
+    public void testAtomicLong() {
         IAtomicLong atomicLong = holder.getHz().getAtomicLong("atomiclong");
         atomicLong.incrementAndGet();
 
@@ -63,7 +63,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAtomicReference() throws Exception {
+    public void testAtomicReference() {
         IAtomicReference<String> atomicReference = holder.getHz().getAtomicReference("atomicreference");
         atomicReference.set(null);
 
@@ -71,7 +71,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSemaphore() throws Exception {
+    public void testSemaphore() {
         ISemaphore semaphore = holder.getHz().getSemaphore("semaphore");
         semaphore.availablePermits();
 
@@ -79,12 +79,12 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConnection() throws Exception {
+    public void testConnection() {
         holder.assertMBeanExistEventually("HazelcastInstance.ConnectionManager", holder.getHz().getName());
     }
 
     @Test
-    public void testCountDownLatch() throws Exception {
+    public void testCountDownLatch() {
         ICountDownLatch countDownLatch = holder.getHz().getCountDownLatch("semaphore");
         countDownLatch.getCount();
 
@@ -92,7 +92,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMap() throws Exception {
+    public void testMap() {
         IMap map = holder.getHz().getMap("map");
         map.size();
 
@@ -100,7 +100,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMultiMap() throws Exception {
+    public void testMultiMap() {
         MultiMap map = holder.getHz().getMultiMap("multimap");
         map.size();
 
@@ -108,7 +108,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTopic() throws Exception {
+    public void testTopic() {
         ITopic<String> topic = holder.getHz().getTopic("topic");
         topic.publish("foo");
 
@@ -116,7 +116,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testList() throws Exception {
+    public void testList() {
         IList list = holder.getHz().getList("list");
         list.size();
 
@@ -124,7 +124,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSet() throws Exception {
+    public void testSet() {
         ISet set = holder.getHz().getSet("set");
         set.size();
 
@@ -132,7 +132,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueue() throws Exception {
+    public void testQueue() {
         IQueue queue = holder.getHz().getQueue("queue");
         queue.size();
 
@@ -148,7 +148,7 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReplicatedMap() throws Exception {
+    public void testReplicatedMap() {
         String replicatedMapName = randomString();
         ReplicatedMap replicatedMap = holder.getHz().getReplicatedMap(replicatedMapName);
         replicatedMap.size();

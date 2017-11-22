@@ -124,8 +124,7 @@ public class ListKeyValueSource<V>
     }
 
     @Override
-    public void close()
-            throws IOException {
+    public void close() {
         iterator = null;
         nextElement = null;
     }

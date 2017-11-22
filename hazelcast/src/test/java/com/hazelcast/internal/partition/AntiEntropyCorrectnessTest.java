@@ -55,7 +55,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
     }
 
     @Test
-    public void testPartitionData() throws InterruptedException {
+    public void testPartitionData() {
         HazelcastInstance[] instances = factory.newInstances(getConfig(true, true), nodeCount);
         for (HazelcastInstance instance : instances) {
             setBackupPacketDropFilter(instance, BACKUP_BLOCK_RATIO);

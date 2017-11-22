@@ -233,7 +233,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
     }
 
     @Test
-    public void testContains() throws Exception {
+    public void testContains() {
         final HazelcastInstance instance = createHazelcastInstance();
         instance.getConfig().addMultiMapConfig(new MultiMapConfig()
                 .setName("testContains")

@@ -127,8 +127,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     }
 
     public final void processMapping(int partitionId, DefaultContext<KeyOut, ValueOut> context,
-                                     KeyValueSource<KeyIn, ValueIn> keyValueSource, boolean partitionProcessor)
-            throws Exception {
+                                     KeyValueSource<KeyIn, ValueIn> keyValueSource, boolean partitionProcessor) {
 
         context.setPartitionId(partitionId);
         context.setSerializationService((InternalSerializationService) serializationService);

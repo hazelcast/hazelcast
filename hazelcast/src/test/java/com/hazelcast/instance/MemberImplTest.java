@@ -93,7 +93,7 @@ public class MemberImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConstructor_withHazelcastInstance() throws Exception {
+    public void testConstructor_withHazelcastInstance() {
         MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid2342", null, false,
                 NA_MEMBER_LIST_JOIN_VERSION, hazelcastInstance);
 
@@ -103,7 +103,7 @@ public class MemberImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConstructor_withAttributes() throws Exception {
+    public void testConstructor_withAttributes() {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("key1", "value");
         attributes.put("key2", 12345);
@@ -128,7 +128,7 @@ public class MemberImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSetHazelcastInstance() throws Exception {
+    public void testSetHazelcastInstance() {
         MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true);
         assertNull(member.getLogger());
 

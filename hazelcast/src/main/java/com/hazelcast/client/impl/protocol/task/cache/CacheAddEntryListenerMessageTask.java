@@ -62,7 +62,7 @@ public class CacheAddEntryListenerMessageTask
                 service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener, parameters.localOnly);
         endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return service.deregisterListener(parameters.name, registrationId);
             }
         });

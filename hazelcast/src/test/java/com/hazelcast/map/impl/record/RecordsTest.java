@@ -114,7 +114,7 @@ public class RecordsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void applyRecordInfo() throws Exception {
+    public void applyRecordInfo() {
         long now = Clock.currentTimeMillis();
         RecordInfo recordInfo = newRecordInfo(now);
 
@@ -132,7 +132,7 @@ public class RecordsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void buildRecordInfo() throws Exception {
+    public void buildRecordInfo() {
         long now = Clock.currentTimeMillis();
 
         Record record = newRecord(now);

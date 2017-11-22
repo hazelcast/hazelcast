@@ -75,7 +75,7 @@ public class MorphingPortableReaderTest {
     }
 
     @After
-    public void after() throws Exception {
+    public void after() {
         service1.dispose();
         service2.dispose();
     }

@@ -109,7 +109,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         return in;
     }
 
-    final void end() throws IOException {
+    final void end() {
         in.position(finalPosition);
     }
 

@@ -175,7 +175,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void removeUnsupported() throws IOException {
+    public void removeUnsupported() {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, null, asList(new TruePredicate()));
 

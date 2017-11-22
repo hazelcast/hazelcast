@@ -82,7 +82,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
-    public void test_getPartitionOwnerOrWait_throwsException_afterNodeShutdown() throws Exception {
+    public void test_getPartitionOwnerOrWait_throwsException_afterNodeShutdown() {
         instance.shutdown();
         partitionService.getPartitionOwnerOrWait(0);
     }

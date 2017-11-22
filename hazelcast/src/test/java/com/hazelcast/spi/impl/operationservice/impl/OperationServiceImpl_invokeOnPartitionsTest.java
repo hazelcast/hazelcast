@@ -90,7 +90,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
                 private int response;
 
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     response = getPartitionId() * 2;
                 }
 
@@ -120,7 +120,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
                 private int response;
 
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     sleepSeconds(5);
                     response = getPartitionId() * 2;
                 }

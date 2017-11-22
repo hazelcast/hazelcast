@@ -64,7 +64,7 @@ public class ShutdownClusterRequestTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(lifecycleService.isRunning());
             }
         });

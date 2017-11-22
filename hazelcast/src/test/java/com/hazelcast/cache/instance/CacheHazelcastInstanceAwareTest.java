@@ -211,7 +211,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
         assertEqualsEventually(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id);
             }
         }, Boolean.TRUE);
@@ -219,8 +219,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         if (!ClassLoaderUtil.isClassAvailable(null,"com.hazelcast.client.HazelcastClient")) {
             assertEqualsEventually(new Callable<Boolean>() {
                 @Override
-                public Boolean call()
-                        throws Exception {
+                public Boolean call() {
                     return NODE_INJECTION_RESULT_MAP.get(id);
                 }
             }, Boolean.TRUE);

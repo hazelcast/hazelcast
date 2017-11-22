@@ -91,7 +91,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
 
         AssertTask task = new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(9, queryCache.size());
             }
         };

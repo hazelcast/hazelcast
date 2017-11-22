@@ -59,7 +59,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
 
     @BeforeClass
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         Hazelcast.shutdownAll();
     }
 

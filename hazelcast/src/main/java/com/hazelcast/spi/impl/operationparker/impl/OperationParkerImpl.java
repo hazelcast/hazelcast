@@ -90,7 +90,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    private void invalidate(WaitSetEntry entry) throws Exception {
+    private void invalidate(WaitSetEntry entry) {
         nodeEngine.getOperationService().execute(entry);
     }
 

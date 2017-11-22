@@ -41,7 +41,7 @@ public class ClientMessageChannelInboundHandler extends ChannelInboundHandlerWit
     }
 
     @Override
-    public void onRead(ByteBuffer src) throws Exception {
+    public void onRead(ByteBuffer src) {
         int messagesCreated = 0;
         while (src.hasRemaining()) {
             final boolean complete = message.readFrom(src);

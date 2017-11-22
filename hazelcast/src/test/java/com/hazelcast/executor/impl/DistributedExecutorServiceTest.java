@@ -95,8 +95,7 @@ public class DistributedExecutorServiceTest extends HazelcastTestSupport {
         executorService.shutdown();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(executorService.isShutdown());
             }
         });

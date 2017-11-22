@@ -135,7 +135,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         // wait till the thread is registered.
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotSame(VOID, future.getState());
             }
         });
@@ -147,7 +147,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
     }
 
     @Test
-    public void whenTimeout() throws ExecutionException, InterruptedException {
+    public void whenTimeout() throws InterruptedException {
         Future getFuture = spawn(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
@@ -186,7 +186,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotSame(VOID, future.getState());
             }
         });
@@ -218,7 +218,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotSame(VOID, future.getState());
             }
         });

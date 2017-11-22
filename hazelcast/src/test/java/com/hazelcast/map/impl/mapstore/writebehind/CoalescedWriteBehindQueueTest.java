@@ -42,21 +42,21 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     private CoalescedWriteBehindQueue queue = new CoalescedWriteBehindQueue();
 
     @Test
-    public void test_addFirst() throws Exception {
+    public void test_addFirst() {
         queue.addFirst(Collections.<DelayedEntry>singletonList(newEntry(1)));
 
         assertEquals(1, queue.size());
     }
 
     @Test
-    public void test_addLast() throws Exception {
+    public void test_addLast() {
         queue.addLast(newEntry(1));
 
         assertEquals(1, queue.size());
     }
 
     @Test
-    public void test_removeFirstOccurrence() throws Exception {
+    public void test_removeFirstOccurrence() {
         DelayedEntry<Data, Object> entry = newEntry(1);
         queue.addLast(entry);
         queue.removeFirstOccurrence(entry);
@@ -65,7 +65,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_contains() throws Exception {
+    public void test_contains() {
         DelayedEntry<Data, Object> entry = newEntry(1);
         queue.addLast(entry);
 
@@ -73,7 +73,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_size() throws Exception {
+    public void test_size() {
         DelayedEntry<Data, Object> entry = newEntry(1);
         queue.addLast(entry);
         queue.addLast(entry);
@@ -83,7 +83,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_clear() throws Exception {
+    public void test_clear() {
         DelayedEntry<Data, Object> entry = newEntry(1);
         queue.addLast(entry);
 

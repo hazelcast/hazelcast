@@ -198,7 +198,7 @@ public class DelegatingFutureTest {
         }
 
         @Override
-        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
             return get();
         }
 

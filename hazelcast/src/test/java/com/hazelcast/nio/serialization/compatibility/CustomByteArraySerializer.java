@@ -29,7 +29,7 @@ public class CustomByteArraySerializer implements ByteArraySerializer<CustomByte
     }
 
     @Override
-    public byte[] write(CustomByteArraySerializable object) throws IOException {
+    public byte[] write(CustomByteArraySerializable object) {
         byte[] bytes = new byte[10];
         ByteBuffer wrap = ByteBuffer.wrap(bytes);
         wrap.putInt(object.i);
@@ -38,7 +38,7 @@ public class CustomByteArraySerializer implements ByteArraySerializer<CustomByte
     }
 
     @Override
-    public CustomByteArraySerializable read(byte[] buffer) throws IOException {
+    public CustomByteArraySerializable read(byte[] buffer) {
         ByteBuffer wrap = ByteBuffer.wrap(buffer);
         return new CustomByteArraySerializable(wrap.getInt(), wrap.getFloat());
     }

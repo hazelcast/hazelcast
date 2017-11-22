@@ -71,7 +71,7 @@ public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap(mapName);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertMapSize("map1", first, map1);
                 assertMapSize("map2", first, map2);
             }
@@ -82,7 +82,7 @@ public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
         final ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap(mapName);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertMapSize("map1", second, map1);
                 assertMapSize("map2", second, map2);
                 assertMapSize("map3", second, map3);
@@ -94,7 +94,7 @@ public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
         final ReplicatedMap<Integer, Integer> map4 = instance4.getReplicatedMap(mapName);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertMapSize("map1", third, map1);
                 assertMapSize("map2", third, map2);
                 assertMapSize("map3", third, map3);

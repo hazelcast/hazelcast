@@ -91,8 +91,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
                     InternalPartitionService partitionService = getPartitionService(instances[0]);
                     InternalPartition partition = partitionService.getPartition(partitionId);
@@ -342,8 +341,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(partitionService.syncPartitionRuntimeState());
             }
         });
@@ -381,8 +379,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         partitionService.getMigrationManager().scheduleMigration(migration);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
                     InternalPartitionImpl partition = getPartition(instance, migration.getPartitionId());
                     assertEquals(partition.getReplicaAddress(migration.getDestinationNewReplicaIndex()),

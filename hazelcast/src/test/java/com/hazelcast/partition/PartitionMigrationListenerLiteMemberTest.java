@@ -39,8 +39,7 @@ public class PartitionMigrationListenerLiteMemberTest
         extends HazelcastTestSupport {
 
     @Test
-    public void testMigrationListenerOnLiteMember()
-            throws Exception {
+    public void testMigrationListenerOnLiteMember() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         factory.newHazelcastInstance();
 
@@ -55,8 +54,7 @@ public class PartitionMigrationListenerLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(listener.started.get());
                 assertTrue(listener.completed.get());
             }

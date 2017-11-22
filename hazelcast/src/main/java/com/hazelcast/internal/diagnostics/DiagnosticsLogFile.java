@@ -95,7 +95,7 @@ final class DiagnosticsLogFile {
         }
     }
 
-    private void renderStaticPlugins() throws IOException {
+    private void renderStaticPlugins() {
         for (DiagnosticsPlugin plugin : diagnostics.staticTasks.get()) {
             renderPlugin(plugin);
         }

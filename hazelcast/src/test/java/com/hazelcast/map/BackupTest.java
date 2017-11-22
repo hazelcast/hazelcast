@@ -51,7 +51,7 @@ public class BackupTest extends HazelcastTestSupport {
     private final String mapName = randomMapName();
 
     @Test
-    public void testNodeStartAndGracefulShutdown_inSequence() throws Exception {
+    public void testNodeStartAndGracefulShutdown_inSequence() {
         int size = 10000;
         int nodeCount = 4;
 
@@ -75,7 +75,7 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGracefulShutdown() throws Exception {
+    public void testGracefulShutdown() {
         final int nodeCount = 6;
         final int size = 10000;
         Config config = getConfig();
@@ -154,8 +154,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
     }
 
-    private void checkMapSizes(final int expectedSize, final int backupCount, List<HazelcastInstance> instances)
-            throws InterruptedException {
+    private void checkMapSizes(final int expectedSize, final int backupCount, List<HazelcastInstance> instances) {
 
         final int nodeCount = instances.size();
         if (nodeCount == 0) {
@@ -174,7 +173,7 @@ public class BackupTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long ownedSize = getTotalOwnedEntryCount(maps);
                 assertEquals("Missing owned entries, node-count: " + nodeCount, expectedSize, ownedSize);
 
@@ -239,7 +238,7 @@ public class BackupTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long totalOwned = 0L;
                 long totalBackup = 0L;
                 for (int i = 0; i < instances.length(); i++) {

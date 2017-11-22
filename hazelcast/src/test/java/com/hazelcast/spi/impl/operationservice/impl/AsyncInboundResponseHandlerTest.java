@@ -61,7 +61,7 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenNoProblemPacket() throws Exception {
+    public void whenNoProblemPacket() {
         final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)))
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE);
@@ -99,7 +99,7 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenShutdown() throws InterruptedException {
+    public void whenShutdown() {
         asyncHandler.shutdown();
 
         // we need to wait for the responseThread to die first.
@@ -113,7 +113,7 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
 
         assertTrueFiveSeconds(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verifyZeroInteractions(responsePacketHandler);
             }
         });

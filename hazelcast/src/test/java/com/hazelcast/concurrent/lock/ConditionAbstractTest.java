@@ -89,7 +89,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testMultipleConditionsForSameLock() throws InterruptedException {
+    public void testMultipleConditionsForSameLock() {
         ILock lock = callerInstance.getLock(newName());
         ICondition condition0 = lock.newCondition(newName());
         ICondition condition1 = lock.newCondition(newName());
@@ -106,7 +106,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testSignalAll() throws InterruptedException {
+    public void testSignalAll() {
         ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition(newName());
 
@@ -121,7 +121,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testSignalAll_whenMultipleConditions() throws InterruptedException {
+    public void testSignalAll_whenMultipleConditions() {
         ILock lock = callerInstance.getLock(newName());
         ICondition condition0 = lock.newCondition(newName());
         ICondition condition1 = lock.newCondition(newName());
@@ -137,7 +137,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testSameConditionRetrievedMultipleTimesForSameLock() throws InterruptedException {
+    public void testSameConditionRetrievedMultipleTimesForSameLock() {
         ILock lock = callerInstance.getLock(newName());
         String name = newName();
         ICondition condition0 = lock.newCondition(name);
@@ -166,7 +166,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testConditionsWithSameNameButDifferentLocksAreIndependent() throws InterruptedException {
+    public void testConditionsWithSameNameButDifferentLocksAreIndependent() {
         String name = newName();
         ILock lock0 = callerInstance.getLock(newName());
         ICondition condition0 = lock0.newCondition(name);
@@ -322,7 +322,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAwaitExpiration_whenLockIsNotAcquired() throws InterruptedException {
+    public void testAwaitExpiration_whenLockIsNotAcquired() {
         String lockName = newName();
         String conditionName = newName();
         final ILock lock = callerInstance.getLock(lockName);
@@ -351,7 +351,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(awaitCount, expires.get());
             }
         });
@@ -392,7 +392,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(awaitCount, expires.get());
             }
         });
@@ -400,7 +400,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
 
     //if there are multiple waiters, then only 1 waiter should be notified.
     @Test(timeout = 60000)
-    public void testSignalWithMultipleWaiters() throws InterruptedException {
+    public void testSignalWithMultipleWaiters() {
         ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition(newName());
         CountDownLatch allAwaited = new CountDownLatch(3);
@@ -598,7 +598,7 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
                                                   int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 if (lock.isLocked() != locked) {
                     throw new AssertionError("Lock state has not been met. " + message);
                 }

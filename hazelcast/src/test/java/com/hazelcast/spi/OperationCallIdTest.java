@@ -49,14 +49,14 @@ public class OperationCallIdTest {
     }
 
     @Test
-    public void when_setCallIdInitial_thenActive() throws Exception {
+    public void when_setCallIdInitial_thenActive() {
         op.setCallId(1);
         assertEquals(1, op.getCallId());
         assertTrue(op.isActive());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void when_setZeroCallId_thenFail() throws Exception {
+    public void when_setZeroCallId_thenFail() {
         op.setCallId(0);
     }
 

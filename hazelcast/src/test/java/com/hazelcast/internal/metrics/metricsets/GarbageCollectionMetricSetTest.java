@@ -56,7 +56,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.minorCount");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 gcStats.run();
                 assertEquals(gcStats.minorCount, gauge.read(), 1);
             }
@@ -64,11 +64,11 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void minorTime() throws InterruptedException {
+    public void minorTime() {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.minorTime");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 gcStats.run();
                 assertEquals(gcStats.minorTime, gauge.read(), SECONDS.toMillis(1));
             }
@@ -80,7 +80,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.majorCount");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 gcStats.run();
                 assertEquals(gcStats.majorCount, gauge.read(), 1);
             }
@@ -92,7 +92,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.majorTime");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 gcStats.run();
                 assertEquals(gcStats.majorTime, gauge.read(), SECONDS.toMillis(1));
             }
@@ -105,7 +105,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.unknownCount");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 gcStats.run();
                 assertEquals(gcStats.unknownCount, gauge.read(), 1);
             }
@@ -117,7 +117,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.unknownTime");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 gcStats.run();
                 assertEquals(gcStats.unknownTime, gauge.read(), SECONDS.toMillis(1));
             }

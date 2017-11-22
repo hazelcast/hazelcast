@@ -80,7 +80,7 @@ public class ReplicatedMapAntiEntropyTest extends ReplicatedMapAbstractTest {
         assertEquals(value, map1.get(key));
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(value, map2.get(key));
                 assertEquals(value, map3.get(key));
             }

@@ -87,7 +87,7 @@ public class ObjectDataInputStreamNonFinalMethodsTest {
     }
 
     @Test
-    public void testMark() throws Exception {
+    public void testMark() {
         int someInput = new Random().nextInt();
         in.mark(someInput);
         verify(dataInputSpy).mark(someInput);
@@ -100,7 +100,7 @@ public class ObjectDataInputStreamNonFinalMethodsTest {
     }
 
     @Test
-    public void testMarkSupported() throws Exception {
+    public void testMarkSupported() {
         in.markSupported();
         verify(dataInputSpy).markSupported();
     }

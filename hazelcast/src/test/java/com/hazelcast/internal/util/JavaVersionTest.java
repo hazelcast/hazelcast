@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 public class JavaVersionTest extends HazelcastTestSupport {
 
     @Test
-    public void parseVersion() throws Exception {
+    public void parseVersion() {
         assertEquals(UNKNOWN, JavaVersion.parseVersion("foo"));
         assertEquals(JAVA_1_6, JavaVersion.parseVersion("1.6"));
         assertEquals(JAVA_1_7, JavaVersion.parseVersion("1.7"));

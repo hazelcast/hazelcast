@@ -289,8 +289,7 @@ public class MapMinAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testMin(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testMin(T[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
@@ -303,8 +302,7 @@ public class MapMinAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testMinWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testMinWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);

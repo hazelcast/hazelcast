@@ -131,7 +131,7 @@ public class MapLockTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testLockTTL_whenZeroTimeout() throws Exception {
+    public void testLockTTL_whenZeroTimeout() {
         final IMap<String, String> mm = getMap();
         final String key = "Key";
         mm.lock(key, 0, TimeUnit.SECONDS);
@@ -195,7 +195,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Category(NightlyTest.class)
     @Test
-    public void testLockEvictionWithMigration() throws Exception {
+    public void testLockEvictionWithMigration() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final Config config = getConfig();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -224,7 +224,7 @@ public class MapLockTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalMonitorStateException.class)
-    public void testLockOwnership() throws Exception {
+    public void testLockOwnership() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = getConfig();
         String name = randomString();
@@ -240,7 +240,7 @@ public class MapLockTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAbsentKeyIsLocked() throws Exception {
+    public void testAbsentKeyIsLocked() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
         final String name = randomString();
@@ -367,7 +367,7 @@ public class MapLockTest extends HazelcastTestSupport {
         map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(map.isLocked(key));
             }
         }, 30);

@@ -50,7 +50,7 @@ public class AtomicReferenceInstanceSharingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invocationToLocalMember() throws ExecutionException, InterruptedException {
+    public void invocationToLocalMember() {
         String localKey = generateKeyOwnedBy(local);
         IAtomicReference<DummyObject> ref = local.getAtomicReference(localKey);
 
@@ -71,7 +71,7 @@ public class AtomicReferenceInstanceSharingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
+    public void invocationToRemoteMember() {
         String localKey = generateKeyOwnedBy(remote);
         IAtomicReference<DummyObject> ref = local.getAtomicReference(localKey);
 

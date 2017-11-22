@@ -42,8 +42,7 @@ public class MultiMapBaseAggregationTest
         extends AbstractAggregationTest {
 
     @Test
-    public void testCountAggregation()
-            throws Exception {
+    public void testCountAggregation() {
 
         String mapName = randomMapName();
         MultiMap<String, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -66,8 +65,7 @@ public class MultiMapBaseAggregationTest
     }
 
     @Test
-    public void testKeyPredicateAggregation()
-            throws Exception {
+    public void testKeyPredicateAggregation() {
 
         String mapName = randomMapName();
         MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -91,8 +89,7 @@ public class MultiMapBaseAggregationTest
     }
 
     @Test
-    public void testKeyPredicateAndExtractionAggregation()
-            throws Exception {
+    public void testKeyPredicateAndExtractionAggregation() {
 
         String mapName = randomMapName();
         MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -117,8 +114,7 @@ public class MultiMapBaseAggregationTest
     }
 
     @Test
-    public void testPredicateAggregation()
-            throws Exception {
+    public void testPredicateAggregation() {
 
         String mapName = randomMapName();
         MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -146,8 +142,7 @@ public class MultiMapBaseAggregationTest
     }
 
     @Test
-    public void testPredicateAggregation_customExtraction()
-            throws Exception {
+    public void testPredicateAggregation_customExtraction() {
 
         String mapName = randomMapName();
         MultiMap<Integer, Person> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -173,8 +168,7 @@ public class MultiMapBaseAggregationTest
     }
 
     @Test
-    public void testCustomPredicateAggregation()
-            throws Exception {
+    public void testCustomPredicateAggregation() {
 
         String mapName = randomMapName();
         MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -198,8 +192,7 @@ public class MultiMapBaseAggregationTest
     }
 
     @Test
-    public void testPredicateAndExtractionAggregation()
-            throws Exception {
+    public void testPredicateAndExtractionAggregation() {
 
         String mapName = randomMapName();
         MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -224,8 +217,7 @@ public class MultiMapBaseAggregationTest
     }
 
     @Test
-    public void testDistinctValuesAggregation()
-            throws Exception {
+    public void testDistinctValuesAggregation() {
 
         final String[] probes = {"Dog", "Food", "Champion", "Hazelcast", "Security", "Integer", "Random", "System"};
         Set<String> expectation = new HashSet<String>(Arrays.asList(probes));

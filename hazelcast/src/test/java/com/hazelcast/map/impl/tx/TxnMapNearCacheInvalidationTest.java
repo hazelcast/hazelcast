@@ -76,7 +76,7 @@ public class TxnMapNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void txn_map_contains_newly_put_key_even_it_is_null_cached_after_addition() throws Exception {
+    public void txn_map_contains_newly_put_key_even_it_is_null_cached_after_addition() {
         final String mapName = "test";
         final int key = 1;
 
@@ -170,7 +170,7 @@ public class TxnMapNearCacheInvalidationTest extends HazelcastTestSupport {
         txn_invalidates_near_cache(CONTAINS_KEY);
     }
 
-    private void txn_invalidates_near_cache(InvalidatorTxnOp invalidatorTxnTask) throws Exception {
+    private void txn_invalidates_near_cache(InvalidatorTxnOp invalidatorTxnTask) {
         final String mapName = "test";
         final int numberOfEntries = 1000;
 

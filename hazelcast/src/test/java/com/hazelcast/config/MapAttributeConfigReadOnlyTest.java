@@ -32,12 +32,12 @@ public class MapAttributeConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setNameOfReadOnlyMapAttributeConfigShouldFail() throws Exception {
+    public void setNameOfReadOnlyMapAttributeConfigShouldFail() {
         getReadOnlyConfig().setName("extractedName");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setExtractorOfReadOnlyMapAttributeConfigShouldFail() throws Exception {
+    public void setExtractorOfReadOnlyMapAttributeConfigShouldFail() {
         getReadOnlyConfig().setExtractor("com.test.Extractor");
     }
 }

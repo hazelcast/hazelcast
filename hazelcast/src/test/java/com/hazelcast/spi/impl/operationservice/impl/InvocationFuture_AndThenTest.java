@@ -91,7 +91,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(callback, times(1)).onResponse(isNull());
             }
         });

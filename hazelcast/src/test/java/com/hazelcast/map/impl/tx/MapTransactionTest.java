@@ -131,7 +131,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         Future<Object> future = spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 IMap<Object, Object> map = instance.getMap("map");
                 return map.get("key");
             }
@@ -240,7 +240,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnBackupDies() throws TransactionException, InterruptedException {
+    public void testTxnBackupDies() throws TransactionException {
         Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -412,7 +412,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(map2.get("1"));
             }
         });
@@ -605,7 +605,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     // ========================= remove =====================
 
     @Test
-    public void testRemoveIfSame() throws ExecutionException, InterruptedException {
+    public void testRemoveIfSame() {
         HazelcastInstance instance = createHazelcastInstance();
 
         TransactionContext context = instance.newTransactionContext(options);
@@ -1016,7 +1016,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRollbackMap() throws Throwable {
+    public void testRollbackMap() {
         Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -1043,7 +1043,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test(expected = TransactionNotActiveException.class)
-    public void testTxnMapOuterTransaction() throws Throwable {
+    public void testTxnMapOuterTransaction() {
         Config config = getConfig();
         final HazelcastInstance h1 = createHazelcastInstance(config);
 
@@ -1057,7 +1057,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testKeySet_whenPortableKeysetAndValuesWithPredicates() throws Exception {
+    public void testKeySet_whenPortableKeysetAndValuesWithPredicates() {
         final String mapName = randomString();
         final Config config = getConfig();
         config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
@@ -1245,7 +1245,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testUpdatesInTxnFiresUpdateEventWithNonNullOldValue() throws Exception {
+    public void testUpdatesInTxnFiresUpdateEventWithNonNullOldValue() {
         Config config = getConfig();
         final String mapName = randomMapName();
         final HazelcastInstance node = createHazelcastInstance(config);
@@ -1271,7 +1271,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void transactionalMap_shouldNotHaveNegativeSize() throws Exception {
+    public void transactionalMap_shouldNotHaveNegativeSize() {
         Config config = getConfig();
         HazelcastInstance instance = createHazelcastInstance(config);
         instance.executeTransaction(new TransactionalTask<Object>() {

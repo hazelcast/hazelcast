@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 public class NodeStateImplTest {
 
     @Test
-    public void toJson() throws Exception {
+    public void toJson() {
         ClusterState clusterState = ClusterState.ACTIVE;
         com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
         Version clusterVersion = Version.of("3.8");

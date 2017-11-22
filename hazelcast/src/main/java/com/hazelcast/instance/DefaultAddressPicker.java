@@ -213,7 +213,7 @@ class DefaultAddressPicker implements AddressPicker {
         return pickMatchingAddress(null);
     }
 
-    private Collection<InterfaceDefinition> getInterfaces() throws UnknownHostException {
+    private Collection<InterfaceDefinition> getInterfaces() {
         NetworkConfig networkConfig = config.getNetworkConfig();
         // address -> domain
         Map<String, String> addressDomainMap;

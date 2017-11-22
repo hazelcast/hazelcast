@@ -56,7 +56,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         InternalSerializationService serializationService = mcs.getHazelcastInstance().getSerializationService();
         HazelcastInstanceCacheManager cacheManager = mcs.getHazelcastInstance().getCacheManager();
         ICache<Object, Object> cache = cacheManager.getCache(cacheName);

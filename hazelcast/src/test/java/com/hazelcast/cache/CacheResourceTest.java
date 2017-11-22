@@ -70,7 +70,7 @@ public class CacheResourceTest
     }
 
     @Test
-    public void testCloseableCacheLoader() throws InterruptedException {
+    public void testCloseableCacheLoader() {
         CachingProvider provider =
                 HazelcastServerCachingProvider.createCachingProvider(factory.newHazelcastInstance());
 
@@ -120,14 +120,14 @@ public class CacheResourceTest
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
         }
 
     }
 
     @Test
-    public void testCloseableCacheWriter() throws InterruptedException {
+    public void testCloseableCacheWriter() {
         CachingProvider provider =
                 HazelcastServerCachingProvider.createCachingProvider(factory.newHazelcastInstance());
 
@@ -189,7 +189,7 @@ public class CacheResourceTest
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
         }
 
@@ -229,7 +229,7 @@ public class CacheResourceTest
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
         }
 

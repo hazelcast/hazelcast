@@ -79,7 +79,7 @@ public final class PutBackupOperation extends MutatingKeyBasedMapOperation imple
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         if (recordInfo != null) {
             evict(dataKey);
         }

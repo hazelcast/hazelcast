@@ -60,7 +60,7 @@ public class AntiEntropyCleanupTest extends HazelcastTestSupport {
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
                         for (ServiceNamespace namespace : replicaVersionManager.getNamespaces(partitionId)) {
                             assertFalse(namespace.getServiceName().equals(MapService.SERVICE_NAME));

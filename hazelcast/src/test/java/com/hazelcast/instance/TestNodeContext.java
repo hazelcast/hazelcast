@@ -90,7 +90,7 @@ public class TestNodeContext implements NodeContext {
         }
 
         @Override
-        public void pickAddress() throws Exception {
+        public void pickAddress() {
         }
 
         @Override

@@ -89,7 +89,7 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Integer currentValue = queryCache.get(key);
                 assertEquals(mergingValue, (Object) currentValue);
             }
@@ -135,7 +135,7 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, queryCache.size());
             }
         });

@@ -144,7 +144,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     for (int i = 0; i < partitionService.getPartitionCount(); i++) {
                         assertEquals(getNode(master).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
                     }
@@ -213,7 +213,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 try {
                     final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
                     partitionService.getPartitionOwnerOrWait(0);
@@ -238,7 +238,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 try {
                     final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
                     partitionService.getPartitionOwnerOrWait(0);
@@ -456,7 +456,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
     private void assertMemberGroupsSizeEventually(final HazelcastInstance instance, final int memberGroupSize) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
                 assertEquals(memberGroupSize, partitionService.getMemberGroupsSize());
             }
@@ -519,7 +519,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
     private void assertMaxBackupCountEventually(final HazelcastInstance instance, final int maxBackupCount) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
                 assertEquals(maxBackupCount, partitionService.getMaxAllowedBackupCount());
             }

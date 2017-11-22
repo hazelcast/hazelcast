@@ -37,7 +37,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         IPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();

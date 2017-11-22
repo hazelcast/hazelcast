@@ -98,7 +98,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     }
 
     @Test
-    public void invokeOnPartition_outerLocal_innerSameInstance_callsDifferentPartition_mappedToSameThread() throws Exception {
+    public void invokeOnPartition_outerLocal_innerSameInstance_callsDifferentPartition_mappedToSameThread() {
         Config config = new Config();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "2");
         config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");

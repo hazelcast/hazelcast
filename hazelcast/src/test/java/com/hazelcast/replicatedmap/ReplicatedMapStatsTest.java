@@ -132,7 +132,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         assertEquals(actionCount, initialHits);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(actionCount * 2, stats.getHits());
             }
         });
@@ -172,7 +172,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         assertTrue(lastAccessTime >= startTime);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(stats.getLastAccessTime() >= lastAccessTime);
             }
         });
@@ -218,7 +218,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         assertTrue(lastUpdateTime >= startTime);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(stats.getLastUpdateTime() >= lastUpdateTime);
             }
         });
@@ -236,7 +236,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(100, stats.getPutOperationCount());
             }
         });

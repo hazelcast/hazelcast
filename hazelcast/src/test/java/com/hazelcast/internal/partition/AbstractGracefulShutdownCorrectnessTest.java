@@ -111,7 +111,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
     }
 
     @Test(timeout = 6000 * 10 * 10)
-    public void testPartitionData_whenNodesStartedShutdown_whileOperationsOngoing() throws InterruptedException {
+    public void testPartitionData_whenNodesStartedShutdown_whileOperationsOngoing() {
         final Config config = getConfig(true, false);
 
         Future future = spawn(new Runnable() {

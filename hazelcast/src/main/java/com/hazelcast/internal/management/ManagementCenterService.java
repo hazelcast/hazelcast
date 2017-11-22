@@ -368,7 +368,7 @@ public class ManagementCenterService {
             }
         }
 
-        private void sendState() throws InterruptedException, MalformedURLException {
+        private void sendState() throws MalformedURLException {
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;

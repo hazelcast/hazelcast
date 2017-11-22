@@ -289,8 +289,7 @@ public class MultiMapMaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testMax(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testMax(T[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         MultiMap<String, T> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
@@ -303,8 +302,7 @@ public class MultiMapMaxAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testMaxWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
+    private <T, R> R testMaxWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) {
 
         String mapName = randomMapName();
         MultiMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMultiMap(mapName);

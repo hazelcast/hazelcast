@@ -41,7 +41,7 @@ public final class BroadcastTxRollbackOperation extends AbstractTxOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Collection<TransactionalService> services = nodeEngine.getServices(TransactionalService.class);
         for (TransactionalService service : services) {

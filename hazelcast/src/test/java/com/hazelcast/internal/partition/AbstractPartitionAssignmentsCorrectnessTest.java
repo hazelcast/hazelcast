@@ -81,7 +81,7 @@ public abstract class AbstractPartitionAssignmentsCorrectnessTest extends Partit
     static void assertPartitionAssignmentsEventually(final TestHazelcastInstanceFactory factory) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertPartitionAssignments(factory);
             }
         });

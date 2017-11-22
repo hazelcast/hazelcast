@@ -72,7 +72,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    public void test(RingbufferConfig ringbufferConfig) throws Exception {
+    public void test(RingbufferConfig ringbufferConfig) {
         Config config = new Config();
         config.addRingBufferConfig(ringbufferConfig);
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
@@ -122,7 +122,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void doRun() throws Throwable {
+        public void doRun() {
             long prev = System.currentTimeMillis();
             while (!stop.get()) {
                 ringbuffer.add(produced);

@@ -52,7 +52,7 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
     }
 
     @Override
-    public V call() throws Exception {
+    public V call() {
         task.run();
         return null;
     }

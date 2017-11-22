@@ -55,7 +55,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedStringValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedStringValue_thenConvertToBigInteger() {
         String stringValue = "3141593";
         Comparable expectedBigIntValue = new BigInteger(stringValue);
 
@@ -68,7 +68,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedDoubleValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedDoubleValue_thenConvertToBigInteger() {
         Double doubleValue = 3.141593;
         Comparable expectedBigIntValue = BigInteger.valueOf(doubleValue.longValue());
 
@@ -81,7 +81,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedFloatValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedFloatValue_thenConvertToBigInteger() {
         Float doubleValue = 3.141593F;
         Comparable expectedBigIntValue = BigInteger.valueOf(3);
 
@@ -94,7 +94,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedLongValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedLongValue_thenConvertToBigInteger() {
         Long longValue = 3141593L;
         Comparable expectedBigIntValue = BigInteger.valueOf(longValue.longValue());
 
@@ -107,7 +107,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedIntegerValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedIntegerValue_thenConvertToBigInteger() {
         Integer integerValue = 3141593;
         Comparable expectedBigIntValue = BigInteger.valueOf(integerValue.longValue());
 
@@ -120,7 +120,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedBigDecimalValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedBigDecimalValue_thenConvertToBigInteger() {
         BigDecimal value = BigDecimal.valueOf(4.9999);
         Comparable expectedBigIntValue = BigInteger.valueOf(value.longValue());
 
@@ -133,7 +133,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedHugeBigDecimalValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedHugeBigDecimalValue_thenConvertToBigInteger() {
         BigDecimal value = BigDecimal.ONE.add(
                 BigDecimal.valueOf(Long.MAX_VALUE));
         Comparable expectedBigIntValue = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
@@ -147,7 +147,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedBigIntegerValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedBigIntegerValue_thenConvertToBigInteger() {
         BigInteger value = BigInteger.ONE;
         Comparable expectedBigIntValue = BigInteger.valueOf(value.longValue());
 
@@ -160,7 +160,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedBooleanValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedBooleanValue_thenConvertToBigInteger() {
         Boolean value = Boolean.TRUE;
         Comparable trueAsNumber = BigInteger.ONE; // Boolean TRUE means non-zero value, i.e. 1, FALSE means 0
 
@@ -173,7 +173,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigIntegerConvert_whenPassedNullValue_thenConvertToBigInteger() throws Exception {
+    public void testBigIntegerConvert_whenPassedNullValue_thenConvertToBigInteger() {
         Comparable value = "NotANumber";
         thrown.expect(NumberFormatException.class);
         thrown.expectMessage(startsWith("For input string: "));
@@ -182,7 +182,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedStringValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedStringValue_thenConvertToBigDecimal() {
         String stringValue = "3141593";
         Comparable expectedDecimal = new BigDecimal(stringValue);
 
@@ -195,7 +195,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedDoubleValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedDoubleValue_thenConvertToBigDecimal() {
         Double doubleValue = 3.141593;
         Comparable expectedDecimal = new BigDecimal(doubleValue);
 
@@ -208,7 +208,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedFloatValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedFloatValue_thenConvertToBigDecimal() {
         Float floatValue = 3.141593F;
         Comparable expectedDecimal = new BigDecimal(floatValue);
 
@@ -221,7 +221,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedLongValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedLongValue_thenConvertToBigDecimal() {
         Long longValue = 3141593L;
         Comparable expectedDecimal = BigDecimal.valueOf(longValue.longValue());
 
@@ -234,7 +234,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedIntegerValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedIntegerValue_thenConvertToBigDecimal() {
         Integer integerValue = 3141593;
         Comparable expectedDecimal = new BigDecimal(integerValue.toString());
 
@@ -247,7 +247,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedHugeBigIntegerValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedHugeBigIntegerValue_thenConvertToBigDecimal() {
         BigInteger value = BigInteger.ONE.add(
                 BigInteger.valueOf(Long.MAX_VALUE));
         Comparable expectedDecimal = BigDecimal.valueOf(Long.MAX_VALUE).add(BigDecimal.ONE);
@@ -261,7 +261,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedBigIntegerValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedBigIntegerValue_thenConvertToBigDecimal() {
         BigInteger value = BigInteger.ONE;
         Comparable expectedDecimal = BigDecimal.valueOf(value.longValue());
 
@@ -274,7 +274,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedBooleanValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedBooleanValue_thenConvertToBigDecimal() {
         Boolean value = Boolean.TRUE;
         Comparable trueAsDecimal = BigDecimal.ONE; // Boolean TRUE means non-zero value, i.e. 1, FALSE means 0
 
@@ -287,7 +287,7 @@ public class TypeConverterTest {
     }
 
     @Test
-    public void testBigDecimalConvert_whenPassedNullValue_thenConvertToBigDecimal() throws Exception {
+    public void testBigDecimalConvert_whenPassedNullValue_thenConvertToBigDecimal() {
         Comparable value = "NotANumber";
         thrown.expect(NumberFormatException.class);
 

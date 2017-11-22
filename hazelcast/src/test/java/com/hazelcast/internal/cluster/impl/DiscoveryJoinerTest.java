@@ -70,7 +70,7 @@ public class DiscoveryJoinerTest {
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_public_address() throws Exception {
+    public void test_DiscoveryJoiner_returns_public_address() {
         DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, true);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
@@ -78,7 +78,7 @@ public class DiscoveryJoinerTest {
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_private_address() throws Exception {
+    public void test_DiscoveryJoiner_returns_private_address() {
         DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();

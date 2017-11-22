@@ -31,38 +31,38 @@ import static org.junit.Assert.assertEquals;
 public class StringUtilTest extends HazelcastTestSupport {
 
     @Test
-    public void getterIntoProperty_whenNull_returnNull() throws Exception {
+    public void getterIntoProperty_whenNull_returnNull() {
         assertEquals("", StringUtil.getterIntoProperty(""));
     }
 
     @Test
-    public void getterIntoProperty_whenEmpty_returnEmptyString() throws Exception {
+    public void getterIntoProperty_whenEmpty_returnEmptyString() {
         assertEquals("", StringUtil.getterIntoProperty(""));
     }
 
     @Test
-    public void getterIntoProperty_whenGet_returnUnchanged() throws Exception {
+    public void getterIntoProperty_whenGet_returnUnchanged() {
         assertEquals("get", StringUtil.getterIntoProperty("get"));
     }
 
     @Test
-    public void getterIntoProperty_whenGetFoo_returnFoo() throws Exception {
+    public void getterIntoProperty_whenGetFoo_returnFoo() {
         assertEquals("foo", StringUtil.getterIntoProperty("getFoo"));
     }
 
     @Test
-    public void getterIntoProperty_whenGetF_returnF() throws Exception {
+    public void getterIntoProperty_whenGetF_returnF() {
         assertEquals("f", StringUtil.getterIntoProperty("getF"));
     }
 
 
     @Test
-    public void getterIntoProperty_whenGetNumber_returnNumber() throws Exception {
+    public void getterIntoProperty_whenGetNumber_returnNumber() {
         assertEquals("8", StringUtil.getterIntoProperty("get8"));
     }
 
     @Test
-    public void getterIntoProperty_whenPropertyIsLowerCase_DoNotChange() throws Exception {
+    public void getterIntoProperty_whenPropertyIsLowerCase_DoNotChange() {
         assertEquals("getfoo", StringUtil.getterIntoProperty("getfoo"));
     }
 }

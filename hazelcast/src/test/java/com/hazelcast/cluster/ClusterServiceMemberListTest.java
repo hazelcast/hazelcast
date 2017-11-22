@@ -73,8 +73,7 @@ public class ClusterServiceMemberListTest
     public void testGetMembersWithMemberSelector() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 verifyMembersFromLiteMember(liteInstance);
                 verifyMembersFromDataMember(dataInstance);
                 verifyMembersFromDataMember(dataInstance2);
@@ -86,8 +85,7 @@ public class ClusterServiceMemberListTest
     public void testSizeWithMemberSelector() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 verifySizeFromLiteMember(liteInstance);
                 verifySizeFromDataMember(dataInstance);
                 verifySizeFromDataMember(dataInstance2);

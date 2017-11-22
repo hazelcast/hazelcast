@@ -309,7 +309,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         lock.lock(1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(lock.isLocked());
             }
         }, 20);
@@ -344,7 +344,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(lock.isLocked());
             }
         }, 30);
@@ -375,18 +375,18 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         assertTrue(lock.isLocked());
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(lock.isLocked());
             }
         });
     }
 
     @Test
-    public void testLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
+    public void testLockLeaseTime_lockIsReleasedEventually() {
         lock.lock(1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(lock.isLocked());
             }
         }, 30);
@@ -400,7 +400,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(lock.isLocked());
             }
         }, 5);
@@ -441,7 +441,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(lock.isLocked());
             }
         }, 30);
@@ -530,7 +530,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse("Lock should have been unlocked by destroy.", lock.isLocked());
             }
         });
@@ -550,14 +550,14 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse("Lock should have been unlocked by destroy.", lock.isLocked());
             }
         });
     }
 
     @Test
-    public void testLockCount() throws Exception {
+    public void testLockCount() {
         lock.lock();
         assertEquals(1, lock.getLockCount());
         assertTrue(lock.tryLock());

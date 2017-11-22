@@ -83,7 +83,7 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void handle(Packet packet) {
         byte[] bytes = packet.toByteArray();
         int typeId = Bits.readInt(bytes, OFFSET_TYPE_ID, useBigEndian);
         long callId = Bits.readLong(bytes, OFFSET_CALL_ID, useBigEndian);

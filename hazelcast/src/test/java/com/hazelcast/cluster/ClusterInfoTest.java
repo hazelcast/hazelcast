@@ -55,14 +55,14 @@ public class ClusterInfoTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_start_time_single_node_cluster() throws Exception {
+    public void test_start_time_single_node_cluster() {
         HazelcastInstance h1 = factory.newHazelcastInstance();
         Node node1 = TestUtil.getNode(h1);
         assertNotEquals(Long.MIN_VALUE, node1.getClusterService().getClusterClock().getClusterStartTime());
     }
 
     @Test
-    public void all_nodes_should_have_the_same_cluster_start_time_and_cluster_id() throws Exception {
+    public void all_nodes_should_have_the_same_cluster_start_time_and_cluster_id() {
         HazelcastInstance h1 = factory.newHazelcastInstance();
         HazelcastInstance h2 = factory.newHazelcastInstance();
         HazelcastInstance h3 = factory.newHazelcastInstance();

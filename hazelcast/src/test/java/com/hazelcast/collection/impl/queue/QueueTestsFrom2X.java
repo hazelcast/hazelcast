@@ -189,7 +189,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     }
 
     @Test
-    public void issue370() throws Exception {
+    public void issue370() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance h1 = factory.newHazelcastInstance(getConfig());
         final HazelcastInstance h2 = factory.newHazelcastInstance(getConfig());

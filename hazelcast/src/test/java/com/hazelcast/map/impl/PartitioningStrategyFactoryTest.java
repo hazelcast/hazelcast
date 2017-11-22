@@ -139,8 +139,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertFalse("Key should have been removed from cache", partitioningStrategyFactory.cache.containsKey(mapName));
             }
         }, 20);

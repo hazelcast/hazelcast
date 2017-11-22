@@ -59,14 +59,14 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void formClusterWithTwoMembersTest() throws InterruptedException {
+    public void formClusterWithTwoMembersTest() {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
         assertClusterSizeEventually(2, instance);
     }
 
     @Test(expected = ValidationException.class)
-    public void invalidPortPropertyTest() throws InterruptedException {
+    public void invalidPortPropertyTest() {
         String xmlFileName = "hazelcast-multicast-plugin-invalid-port.xml";
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
         config = new XmlConfigBuilder(xmlResource).build();

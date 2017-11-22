@@ -61,12 +61,12 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun() {
         logger = getLogger();
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         if (logger.isFinestEnabled()) {
             logger.finest("Running finalize promotion for " + getPartitionMigrationEvent() + ", result: " + success);
         }
@@ -80,7 +80,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public void afterRun() {
         InternalPartitionServiceImpl service = getService();
         PartitionStateManager partitionStateManager = service.getPartitionStateManager();
         partitionStateManager.clearMigratingFlag(getPartitionId());

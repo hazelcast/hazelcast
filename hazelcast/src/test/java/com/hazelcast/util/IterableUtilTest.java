@@ -38,7 +38,7 @@ public class IterableUtilTest {
     private List<Integer> numbers = asList(1, 2, 3);
 
     @Test
-    public void testElementsConverted_whenIterableMapped() throws Exception {
+    public void testElementsConverted_whenIterableMapped() {
 
         Iterable<String> strings = IterableUtil.map(numbers, new IFunction<Integer, String>() {
             @Override
@@ -54,7 +54,7 @@ public class IterableUtilTest {
     }
 
     @Test
-    public void testUpToNElement_whenIteratorLimited() throws Exception {
+    public void testUpToNElement_whenIteratorLimited() {
         Iterator<Integer> limitedIterator = IterableUtil.limit(numbers.iterator(), 2);
 
         assertEquals(Integer.valueOf(1), limitedIterator.next());
@@ -63,7 +63,7 @@ public class IterableUtilTest {
     }
 
     @Test
-    public void testIterableIsEmpty_whenNullUsed() throws Exception {
+    public void testIterableIsEmpty_whenNullUsed() {
         assertEquals(emptyList(), IterableUtil.nullToEmpty(null));
         assertEquals(numbers, IterableUtil.nullToEmpty(numbers));
     }

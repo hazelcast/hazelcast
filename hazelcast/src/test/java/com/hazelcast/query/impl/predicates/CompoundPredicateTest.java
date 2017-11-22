@@ -44,8 +44,7 @@ import static org.junit.Assert.fail;
 public class CompoundPredicateTest {
 
     @Parameterized.Parameters(name = "{0}")
-    public static Collection<Class<? extends CompoundPredicate>> getCompoundPredicateImplementations()
-            throws ClassNotFoundException {
+    public static Collection<Class<? extends CompoundPredicate>> getCompoundPredicateImplementations() {
         // locate all classes which implement CompoundPredicate and exercise them
         return REFLECTIONS.getSubTypesOf(CompoundPredicate.class);
     }

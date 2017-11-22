@@ -72,7 +72,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         }
     }
 
-    private void scan() throws Exception {
+    private void scan() {
         ManagedDescription descAnn = getClass().getAnnotation(ManagedDescription.class);
         if (descAnn != null) {
             description = descAnn.value();
@@ -103,7 +103,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
 
     @Override
     public Object getAttribute(String attribute)
-            throws AttributeNotFoundException, MBeanException, ReflectionException {
+            throws ReflectionException {
         if (attribute == null || attribute.length() == 0) {
             throw new NullPointerException("Invalid null attribute requested");
         }
@@ -124,8 +124,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     }
 
     @Override
-    public void setAttribute(Attribute attribute)
-            throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
+    public void setAttribute(Attribute attribute) {
         throw new UnsupportedOperationException();
     }
 
@@ -149,7 +148,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
 
     @Override
     public Object invoke(String actionName, Object[] params, String[] signature)
-            throws MBeanException, ReflectionException {
+            throws ReflectionException {
         if (actionName == null || actionName.isEmpty()) {
             throw new IllegalArgumentException("Empty actionName");
         }
@@ -214,7 +213,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     }
 
     @Override
-    public ObjectName preRegister(MBeanServer server, ObjectName name) throws Exception {
+    public ObjectName preRegister(MBeanServer server, ObjectName name) {
         try {
             scan();
         } catch (Exception e) {
@@ -228,7 +227,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     }
 
     @Override
-    public void preDeregister() throws Exception {
+    public void preDeregister() {
     }
 
     @Override

@@ -87,7 +87,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(36, queryCache.size());
             }
         });
@@ -138,7 +138,7 @@ public class QueryCacheGuaranteesTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(43, queryCache.size());
             }
         });

@@ -90,7 +90,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTTL_entryShouldNotBeReachableAfterTTL() throws Exception {
+    public void testTTL_entryShouldNotBeReachableAfterTTL() {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 1, TimeUnit.SECONDS);
@@ -100,7 +100,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTTL_zeroIsInfinity() throws Exception {
+    public void testTTL_zeroIsInfinity() {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 2, TimeUnit.SECONDS);
@@ -114,7 +114,7 @@ public class EvictionTest extends HazelcastTestSupport {
      * We are defining TTL as time being passed since creation time of an entry.
      */
     @Test
-    public void testTTL_appliedFromLastUpdate() throws Exception {
+    public void testTTL_appliedFromLastUpdate() {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 1, TimeUnit.SECONDS);
@@ -126,7 +126,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetEntryView_withTTL() throws Exception {
+    public void testGetEntryView_withTTL() {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value", 1, TimeUnit.SECONDS);
@@ -138,7 +138,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue455ZeroTTLShouldPreventEviction() throws InterruptedException {
+    public void testIssue455ZeroTTLShouldPreventEviction() {
         Config config = getConfig();
         config.getGroupConfig().setName("testIssue455ZeroTTLShouldPreventEviction");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -154,7 +154,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue585ZeroTTLShouldPreventEvictionWithSet() throws InterruptedException {
+    public void testIssue585ZeroTTLShouldPreventEvictionWithSet() {
         Config config = getConfig();
         config.getGroupConfig().setName("testIssue585ZeroTTLShouldPreventEvictionWithSet");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -170,7 +170,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue585SetWithoutTTL() throws InterruptedException {
+    public void testIssue585SetWithoutTTL() {
         final IMap<String, String> map = createSimpleMap();
 
         final String key = "key";
@@ -182,14 +182,14 @@ public class EvictionTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull("Key should be expired after 1 seconds", map.get(key));
             }
         });
     }
 
     @Test
-    public void testIssue304EvictionDespitePut() throws InterruptedException {
+    public void testIssue304EvictionDespitePut() {
         Config config = getConfig();
         config.getGroupConfig().setName("testIssue304EvictionDespitePut");
         MapConfig mapConfig = config.getMapConfig("testIssue304EvictionDespitePut");
@@ -275,7 +275,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictionSpeedTestPerPartition() throws InterruptedException {
+    public void testEvictionSpeedTestPerPartition() {
         final int k = 2;
         final int size = 100;
         final CountDownLatch latch = new CountDownLatch(k);
@@ -334,7 +334,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictionPerPartition() throws InterruptedException {
+    public void testEvictionPerPartition() {
         final int k = 2;
         final int size = 10;
         final String mapName = "testEvictionPerPartition";
@@ -474,7 +474,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapRecordEviction() throws InterruptedException {
+    public void testMapRecordEviction() {
         final String mapName = randomMapName();
         final int size = 100;
         final AtomicInteger entryEvictedEventCount = new AtomicInteger(0);
@@ -497,14 +497,14 @@ public class EvictionTest extends HazelcastTestSupport {
         assertSizeEventually(0, map, 300);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(size, entryEvictedEventCount.get());
             }
         }, 300);
     }
 
     @Test
-    public void testMapRecordIdleEviction() throws InterruptedException {
+    public void testMapRecordIdleEviction() {
         final String mapName = randomMapName("testMapRecordIdleEviction");
         final int maxIdleSeconds = 1;
         final int size = 100;
@@ -541,7 +541,7 @@ public class EvictionTest extends HazelcastTestSupport {
         latch.await(10, TimeUnit.SECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(map.get(2));
                 assertEquals(2, map.get(1));
             }
@@ -599,7 +599,7 @@ public class EvictionTest extends HazelcastTestSupport {
      */
     @Test
     @Category(NightlyTest.class)
-    public void testMapPutTTLWithListener() throws InterruptedException {
+    public void testMapPutTTLWithListener() {
         final int putCount = 100;
         final CountDownLatch latch = new CountDownLatch(putCount);
         IMap<Integer, Integer> map = createSimpleMap();
@@ -624,7 +624,7 @@ public class EvictionTest extends HazelcastTestSupport {
      * Test for issue 614
      */
     @Test
-    public void testContainsKeyShouldDelayEviction() throws InterruptedException {
+    public void testContainsKeyShouldDelayEviction() {
         String mapName = randomMapName();
         final int waitSeconds = 2;
 
@@ -656,7 +656,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue1085EvictionBackup() throws InterruptedException {
+    public void testIssue1085EvictionBackup() {
         final String mapName = randomMapName();
         int entryCount = 10;
         Config config = getConfig();
@@ -686,7 +686,7 @@ public class EvictionTest extends HazelcastTestSupport {
     private void assertHeapCostsZeroEventually(final String mapName, final HazelcastInstance... nodes) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (HazelcastInstance node : nodes) {
                     final long heapCostOfNode = node.getMap(mapName).getLocalMapStats().getHeapCost();
                     assertEquals(0L, heapCostOfNode);
@@ -700,7 +700,7 @@ public class EvictionTest extends HazelcastTestSupport {
      * Eviction event is fired for an object already removed
      */
     @Test
-    public void testEvictionAfterRemove() throws InterruptedException {
+    public void testEvictionAfterRemove() {
         IMap<Object, Object> map = createSimpleMap();
         final AtomicInteger count = new AtomicInteger(0);
         map.addEntryListener(new EntryAdapter<Object, Object>() {
@@ -715,7 +715,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expected, count.get());
             }
         });
@@ -759,20 +759,20 @@ public class EvictionTest extends HazelcastTestSupport {
      * Eviction event is fired for an object already removed
      */
     @Test
-    public void testEvictionForNanosTTL() throws InterruptedException {
+    public void testEvictionForNanosTTL() {
         final IMap<String, String> map = createSimpleMap();
         map.put("foo", "bar", 1, TimeUnit.NANOSECONDS);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(map.get("foo"));
             }
         }, 30);
     }
 
     @Test
-    public void testOnExpiredKeys_getAll() throws Exception {
+    public void testOnExpiredKeys_getAll() {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Set<Integer> keys = Collections.singleton(1);
         final Map<Integer, Integer> all = map.getAll(keys);
@@ -781,7 +781,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOnExpiredKeys_values() throws Exception {
+    public void testOnExpiredKeys_values() {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Collection<Integer> values = map.values();
 
@@ -789,7 +789,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOnExpiredKeys_keySet() throws Exception {
+    public void testOnExpiredKeys_keySet() {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Set<Integer> keySet = map.keySet();
 
@@ -797,7 +797,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOnExpiredKeys_entrySet() throws Exception {
+    public void testOnExpiredKeys_entrySet() {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Set<Map.Entry<Integer, Integer>> entries = map.entrySet();
 
@@ -805,7 +805,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_get_expiration_from_EntryView() throws Exception {
+    public void test_get_expiration_from_EntryView() {
         final long now = Clock.currentTimeMillis();
         IMap<Integer, Integer> map = createSimpleMap();
         map.put(1, 1, 100, TimeUnit.SECONDS);
@@ -826,7 +826,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     @Category(NightlyTest.class)
-    public void testNumberOfEventsFired_withMaxIdleSeconds_whenReadBackupDataEnabled() throws Exception {
+    public void testNumberOfEventsFired_withMaxIdleSeconds_whenReadBackupDataEnabled() {
         final int maxIdleSeconds = 1;
         final int numberOfEntriesToBeAdded = 1000;
 
@@ -880,7 +880,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     @Category(NightlyTest.class)
-    public void testBackupExpirationDelay_onPromotedReplica() throws Exception {
+    public void testBackupExpirationDelay_onPromotedReplica() {
         final int numberOfItemsToBeAdded = 1000;
 
         // node count should be at least 2 since we are testing a scenario on backups.
@@ -915,7 +915,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExpiration_onReplicatedPartition() throws Exception {
+    public void testExpiration_onReplicatedPartition() {
         final CountDownLatch evictedEntryCounterLatch = new CountDownLatch(1);
         String mapName = randomMapName();
         Config config = getConfig();
@@ -948,7 +948,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     @Category(NightlyTest.class)
-    public void testExpiration_onBackupPartitions_whenPuttingWithTTL() throws Exception {
+    public void testExpiration_onBackupPartitions_whenPuttingWithTTL() {
         String mapName = randomMapName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] nodes = factory.newInstances(getConfig());
@@ -975,7 +975,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAll_doesNotShiftLastUpdateTimeOfEntry() throws Exception {
+    public void testGetAll_doesNotShiftLastUpdateTimeOfEntry() {
         IMap<Integer, Integer> map = createSimpleMap();
 
         int key = 1;
@@ -995,7 +995,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRandomEvictionPolicyWorks() throws Exception {
+    public void testRandomEvictionPolicyWorks() {
         Config config = getConfig();
         int maxSize = 300;
         config.getMapConfig("test").setEvictionPolicy(RANDOM).getMaxSizeConfig().setSize(maxSize).setMaxSizePolicy(PER_NODE);
@@ -1013,7 +1013,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLastAddedKey_notEvicted() throws Exception {
+    public void testLastAddedKey_notEvicted() {
         Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         config.getMapConfig("test").setEvictionPolicy(LFU).getMaxSizeConfig().setSize(1).setMaxSizePolicy(PER_PARTITION);
@@ -1035,7 +1035,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final Integer expected = 1;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("Eviction impl. cannot evict latest added key 2", expected, evictedKey.get());
             }
         });
@@ -1080,7 +1080,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final Integer expected = 1;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("Eviction impl. should evict latest added key when heap based max-size-policy is used",
                         expected, evictedKey.get());
             }

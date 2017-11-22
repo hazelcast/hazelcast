@@ -31,7 +31,7 @@ public final class NullGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj) throws Exception {
+    Object getValue(Object obj) {
         return null;
     }
 

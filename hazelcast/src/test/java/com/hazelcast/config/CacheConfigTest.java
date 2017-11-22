@@ -586,7 +586,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(cacheService2.getCacheConfig(fullCacheName));
             }
         });

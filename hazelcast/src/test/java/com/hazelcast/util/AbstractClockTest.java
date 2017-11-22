@@ -138,7 +138,7 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
         final Cluster cluster = hz.getCluster();
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("Cluster should be stable when system clock changes!", expected, cluster.getMembers().size());
             }
         }, JUMP_AFTER_SECONDS * 2);

@@ -51,7 +51,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertContains(listener.objects, "item1");
             }
         });
@@ -66,7 +66,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(asList("item1", "item2", "item3"), listener.objects);
                 assertEquals(asList(0L, 1L, 2L), listener.sequences);
             }

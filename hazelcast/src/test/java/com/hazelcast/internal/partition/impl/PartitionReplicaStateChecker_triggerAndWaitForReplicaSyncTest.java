@@ -75,7 +75,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
         partitionStateManager = mock(PartitionStateManager.class);
         when(partitionStateManager.getPartitions()).thenAnswer(new Answer<InternalPartition[]>() {
             @Override
-            public InternalPartition[] answer(InvocationOnMock invocationOnMock) throws Throwable {
+            public InternalPartition[] answer(InvocationOnMock invocationOnMock) {
                 InternalPartition[] partitionsArray = new InternalPartition[partitions.size()];
                 return partitions.toArray(partitionsArray);
             }
@@ -136,7 +136,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
     }
 
     @Test
-    public void whenCheckAndTriggerReplicaSync() throws Exception {
+    public void whenCheckAndTriggerReplicaSync() {
         configureNeedsReplicaStateCheckResponseOnEachSecondCall();
 
         InternalPartition partition = new DummyInternalPartition(new Address[]{null}, 1);
@@ -178,7 +178,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
         private boolean state = true;
 
         @Override
-        public Boolean answer(InvocationOnMock invocationOnMock) throws Throwable {
+        public Boolean answer(InvocationOnMock invocationOnMock) {
             state = !state;
             return state;
         }

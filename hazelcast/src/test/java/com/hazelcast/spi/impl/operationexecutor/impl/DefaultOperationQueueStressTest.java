@@ -68,7 +68,7 @@ public class DefaultOperationQueueStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void doRun() throws Throwable {
+        public void doRun() {
             Random random = new Random();
             while (!stop.get()) {
                 if (random.nextInt(5) == 0) {

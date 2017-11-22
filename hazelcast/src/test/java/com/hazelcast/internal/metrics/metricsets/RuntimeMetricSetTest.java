@@ -61,7 +61,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(runtime.freeMemory(), gauge.read(), TEN_MB);
             }
         });
@@ -72,7 +72,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.totalMemory");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(runtime.totalMemory(), gauge.read(), TEN_MB);
             }
         });
@@ -84,7 +84,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(runtime.maxMemory(), gauge.read(), TEN_MB);
             }
         });
@@ -96,7 +96,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 double expected = runtime.totalMemory() - runtime.freeMemory();
                 assertEquals(expected, gauge.read(), TEN_MB);
             }
@@ -114,7 +114,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.uptime");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 double expected = ManagementFactory.getRuntimeMXBean().getUptime();
                 assertEquals(expected, gauge.read(), TimeUnit.MINUTES.toMillis(1));
             }

@@ -75,7 +75,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 boolean contains = genericOperationHandler.operations.contains(genericOperation);
                 assertTrue("operation is not found in the generic operation handler", contains);
             }
@@ -101,7 +101,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
                 assertContains(handler.operations, genericOperation);
             }
@@ -117,7 +117,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 try {
                     executor.run(genericOperation);
                     return Boolean.FALSE;
@@ -209,7 +209,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
         assertEqualsEventually(task, Boolean.TRUE);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
                 assertContains(handler.operations, partitionOperation);
             }
@@ -224,7 +224,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 try {
                     executor.run(partitionOperation);
                     return Boolean.FALSE;

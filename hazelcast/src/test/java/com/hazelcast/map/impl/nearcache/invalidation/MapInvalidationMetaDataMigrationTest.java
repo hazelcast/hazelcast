@@ -222,7 +222,7 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
     private void assertInvalidationCountEventually(final String mapName, final int expectedInvalidationCount, final HazelcastInstance instance) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long invalidationCount = calculateNumberOfInvalidationsSoFar(mapName, instance);
                 assertEquals(expectedInvalidationCount, invalidationCount);
             }

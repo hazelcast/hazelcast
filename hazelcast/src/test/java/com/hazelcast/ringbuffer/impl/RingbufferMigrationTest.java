@@ -46,7 +46,7 @@ public class RingbufferMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() {
         final String ringbufferName = "ringbuffer";
         final Config config = new Config()
                 .addRingBufferConfig(new RingbufferConfig(ringbufferName).setTimeToLiveSeconds(0));

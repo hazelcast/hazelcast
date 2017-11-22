@@ -113,8 +113,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     final HazelcastInstanceCacheManager hazelcastCacheManager;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
-    protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
-            throws Exception {
+    protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) {
         this.name = name;
         this.lifecycleService = new LifecycleServiceImpl(this);
 

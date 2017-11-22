@@ -95,7 +95,7 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
         }
     }
 
-    private void createTestEnvironment(boolean loopbackMode) throws Exception {
+    private void createTestEnvironment(boolean loopbackMode) {
         Config config = new Config();
         config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();

@@ -43,17 +43,17 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void returns_null_when_supplied_factory_null() throws Exception {
+    public void returns_null_when_supplied_factory_null() {
         assertNull(extractPartitionAware(null));
     }
 
     @Test
-    public void returns_null_when_supplied_factory_is_not_partition_aware() throws Exception {
+    public void returns_null_when_supplied_factory_is_not_partition_aware() {
         assertNull(extractPartitionAware(new RawOpFactory()));
     }
 
     @Test
-    public void returns_partition_aware_factory_when_supplied_factory_is_partition_aware() throws Exception {
+    public void returns_partition_aware_factory_when_supplied_factory_is_partition_aware() {
         PartitionAwareOpFactory factory = new PartitionAwareOpFactory();
         PartitionAwareOperationFactory extractedFactory = extractPartitionAware(factory);
 

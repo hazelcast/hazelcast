@@ -99,7 +99,7 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return executor.isRunAllowed(genericOperation);
             }
         });
@@ -186,7 +186,7 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 return executor.isRunAllowed(operation);
             }
         });

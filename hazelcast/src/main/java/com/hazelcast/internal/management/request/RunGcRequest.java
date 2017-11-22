@@ -35,7 +35,7 @@ public class RunGcRequest implements ConsoleRequest {
 
     @Override
     @SuppressFBWarnings(value = "DM_GC", justification = "Explicit GC is the point of this class")
-    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         System.gc();
         root.add("result", new JsonObject());
     }

@@ -38,7 +38,7 @@ public class TcpIpConnectionManager_ConnectionListenerTest extends TcpIpConnecti
     }
 
     @Test
-    public void whenConnectionAdded() throws Exception {
+    public void whenConnectionAdded() {
         startAllConnectionManagers();
 
         final ConnectionListener listener = mock(ConnectionListener.class);
@@ -48,14 +48,14 @@ public class TcpIpConnectionManager_ConnectionListenerTest extends TcpIpConnecti
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 listener.connectionAdded(c);
             }
         });
     }
 
     @Test
-    public void whenConnectionDestroyed() throws Exception {
+    public void whenConnectionDestroyed() {
         startAllConnectionManagers();
 
 
@@ -67,7 +67,7 @@ public class TcpIpConnectionManager_ConnectionListenerTest extends TcpIpConnecti
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 listener.connectionRemoved(c);
             }
         });

@@ -60,12 +60,12 @@ public class TestSerializerHook implements SerializerHook {
         }
 
         @Override
-        public void write(ObjectDataOutput out, SampleIdentifiedDataSerializable object) throws IOException {
+        public void write(ObjectDataOutput out, SampleIdentifiedDataSerializable object) {
 
         }
 
         @Override
-        public SampleIdentifiedDataSerializable read(ObjectDataInput in) throws IOException {
+        public SampleIdentifiedDataSerializable read(ObjectDataInput in) {
             return null;
         }
     }
@@ -96,12 +96,12 @@ public class TestSerializerHook implements SerializerHook {
         }
 
         @Override
-        public void write(ObjectDataOutput out, Object object) throws IOException {
+        public void write(ObjectDataOutput out, Object object) {
 
         }
 
         @Override
-        public Object read(ObjectDataInput in) throws IOException {
+        public Object read(ObjectDataInput in) {
             return null;
         }
     }

@@ -74,7 +74,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void future_notExecuted_notDoneNotCancelled() throws Exception {
+    public void future_notExecuted_notDoneNotCancelled() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
 
         assertFalse("New future should not be done", future.isDone());
@@ -82,7 +82,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void future_notExecuted_callbackRegistered_notDoneNotCancelled() throws Exception {
+    public void future_notExecuted_callbackRegistered_notDoneNotCancelled() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
         future.andThen(mock(ExecutionCallback.class));
 
@@ -91,17 +91,17 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void future_ordinaryResultSet_doneNotCancelled() throws Exception {
+    public void future_ordinaryResultSet_doneNotCancelled() {
         future_resultSet_doneNotCancelled(RESULT);
     }
 
     @Test
-    public void future_nullResultSet_doneNotCancelled() throws Exception {
+    public void future_nullResultSet_doneNotCancelled() {
         future_resultSet_doneNotCancelled(null);
     }
 
     @Test
-    public void future_exceptionResultSet_doneNotCancelled() throws Exception {
+    public void future_exceptionResultSet_doneNotCancelled() {
         future_resultSet_doneNotCancelled(EXCEPTION);
     }
 
@@ -114,7 +114,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void future_resultNotSet_cancelled() throws Exception {
+    public void future_resultNotSet_cancelled() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
         boolean cancelled = future.cancel(false);
 
@@ -124,7 +124,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void future_resultSetAndCancelled() throws Exception {
+    public void future_resultSetAndCancelled() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
         future.setResult(RESULT);
         boolean cancelled = future.cancel(false);
@@ -135,7 +135,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void future_cancelledAndResultSet() throws Exception {
+    public void future_cancelledAndResultSet() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
         boolean cancelled = future.cancel(false);
         future.setResult(RESULT);
@@ -285,17 +285,17 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void setResult_ordinaryResultSet_futureDone() throws Exception {
+    public void setResult_ordinaryResultSet_futureDone() {
         setResult_resultSet_futureDone(RESULT);
     }
 
     @Test
-    public void setResult_exceptionResultSet_futureDone() throws Exception {
+    public void setResult_exceptionResultSet_futureDone() {
         setResult_resultSet_futureDone(EXCEPTION);
     }
 
     @Test
-    public void setResult_nullResultSet_futureDone() throws Exception {
+    public void setResult_nullResultSet_futureDone() {
         setResult_resultSet_futureDone(null);
     }
 
@@ -344,7 +344,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 if (result instanceof Throwable) {
                     verify(callback1).onFailure((Throwable) result);
                 } else {
@@ -354,7 +354,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         });
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 if (result instanceof Throwable) {
                     verify(callback2).onFailure((Throwable) result);
                 } else {
@@ -365,7 +365,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getResult_whenInitialState() throws Exception {
+    public void getResult_whenInitialState() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
 
         Object result = future.getResult();
@@ -374,7 +374,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getResult_whenPendingCallback() throws Exception {
+    public void getResult_whenPendingCallback() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
         future.andThen(mock(ExecutionCallback.class));
 
@@ -384,7 +384,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getResult_whenNullResult() throws Exception {
+    public void getResult_whenNullResult() {
         TestFutureImpl future = new TestFutureImpl(nodeEngine, logger);
         future.setResult(null);
 
@@ -466,7 +466,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
         assertSame(result, future.get());
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(callback).onResponse(result);
             }
         });

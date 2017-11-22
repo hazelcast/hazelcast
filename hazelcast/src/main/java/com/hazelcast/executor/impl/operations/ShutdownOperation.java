@@ -36,7 +36,7 @@ public final class ShutdownOperation extends AbstractNamedOperation implements I
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         DistributedExecutorService service = getService();
         service.shutdownExecutor(getName());
     }

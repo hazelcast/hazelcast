@@ -121,7 +121,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
     }
 
     @Override
-    public void end(Xid xid, int flags) throws XAException {
+    public void end(Xid xid, int flags) {
         long threadId = currentThreadId();
         TransactionContext threadContext = threadContextMap.remove(threadId);
         if (threadContext == null && logger.isFinestEnabled()) {
@@ -277,12 +277,12 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
     }
 
     @Override
-    public int getTransactionTimeout() throws XAException {
+    public int getTransactionTimeout() {
         return timeoutInSeconds.get();
     }
 
     @Override
-    public boolean setTransactionTimeout(int seconds) throws XAException {
+    public boolean setTransactionTimeout(int seconds) {
         timeoutInSeconds.set(seconds == 0 ? DEFAULT_TIMEOUT_SECONDS : seconds);
         return true;
     }

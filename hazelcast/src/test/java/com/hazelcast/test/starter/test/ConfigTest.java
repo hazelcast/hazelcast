@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 public class ConfigTest {
 
     @Test
-    public void configCloneTest() throws Exception {
+    public void configCloneTest() {
         Config thisConfig = new Config();
         thisConfig.setInstanceName("TheAssignedName");
         thisConfig.addMapConfig(new MapConfig("myMap"));

@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNull;
 public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
 
     @Test
-    public void testRemovedEntry_shouldNotBeReached_afterMigration() throws Exception {
+    public void testRemovedEntry_shouldNotBeReached_afterMigration() {
         String mapName = randomMapName();
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
         MapStoreTest.SimpleMapStore<Integer, Integer> store

@@ -70,7 +70,7 @@ public class ReliableTopicMBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAttributesAndOperations() throws Exception {
+    public void testAttributesAndOperations() {
         reliableTopic.publish("test");
         assertTrueEventually(new AssertTask() {
             @Override

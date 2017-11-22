@@ -54,7 +54,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
 
     @BeforeClass
     @AfterClass
-    public static void cleanup() throws Exception {
+    public static void cleanup() {
         backupCompletedMap.clear();
     }
 
@@ -213,7 +213,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         assertEquals(expectedResult, result);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Integer completed = backupCompletedMap.get(backupAwareOp.backupKey);
                 if (completed == null) {
                     completed = 0;

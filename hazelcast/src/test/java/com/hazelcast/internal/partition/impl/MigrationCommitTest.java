@@ -171,8 +171,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(listener3.rollback);
             }
         });
@@ -254,8 +253,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(sourceListener.commit);
             }
         });
@@ -384,8 +382,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(masterListener.failed);
             }
         });
@@ -423,7 +420,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(masterListener.commit);
                 assertTrue(migrationManager.getCompletedMigrationsCopy().isEmpty());
             }
@@ -457,7 +454,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
                 boolean found = false;
                 for (MigrationInfo migrationInfo : partitionService.getMigrationManager().getCompletedMigrationsCopy()) {
@@ -472,8 +469,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
                 assertFalse(partitionService.getMigrationManager().getCompletedMigrationsCopy().isEmpty());
             }

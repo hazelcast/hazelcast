@@ -43,26 +43,26 @@ public class VersionTest {
     private Version V3_0 = of(3, 0);
 
     @Test
-    public void getValue() throws Exception {
+    public void getValue() {
         assertEquals(3, V3_0.getMajor());
         assertEquals(0, V3_0.getMinor());
     }
 
     @Test
-    public void isEqualTo() throws Exception {
+    public void isEqualTo() {
         assertTrue(V3_0.isEqualTo(of(3, 0)));
         assertFalse(V3_0.isEqualTo(of(4, 0)));
     }
 
     @Test
-    public void isGreaterThan() throws Exception {
+    public void isGreaterThan() {
         assertTrue(V3_0.isGreaterThan(of(2, 0)));
         assertFalse(V3_0.isGreaterThan(of(3, 0)));
         assertFalse(V3_0.isGreaterThan(of(4, 0)));
     }
 
     @Test
-    public void isUnknownOrGreaterThan() throws Exception {
+    public void isUnknownOrGreaterThan() {
         assertTrue(V3_0.isUnknownOrGreaterThan(of(2, 0)));
         assertFalse(V3_0.isUnknownOrGreaterThan(of(3, 0)));
         assertFalse(V3_0.isUnknownOrGreaterThan(of(4, 0)));
@@ -70,7 +70,7 @@ public class VersionTest {
     }
 
     @Test
-    public void isGreaterOrEqual() throws Exception {
+    public void isGreaterOrEqual() {
         assertTrue(V3_0.isGreaterOrEqual(of(2, 0)));
         assertTrue(V3_0.isGreaterOrEqual(of(3, 0)));
         assertTrue(V3_0.isGreaterOrEqual(of(3, 0)));
@@ -78,7 +78,7 @@ public class VersionTest {
     }
 
     @Test
-    public void isUnknownGreaterOrEqual() throws Exception {
+    public void isUnknownGreaterOrEqual() {
         assertTrue(V3_0.isUnknownOrGreaterOrEqual(of(2, 0)));
         assertTrue(V3_0.isUnknownOrGreaterOrEqual(of(3, 0)));
         assertTrue(V3_0.isUnknownOrGreaterOrEqual(of(3, 0)));
@@ -87,7 +87,7 @@ public class VersionTest {
     }
 
     @Test
-    public void isLessThan() throws Exception {
+    public void isLessThan() {
         assertFalse(V3_0.isLessThan(of(2, 0)));
         assertFalse(V3_0.isLessThan(of(3, 0)));
         assertTrue(V3_0.isLessThan(of(3, 1)));
@@ -96,7 +96,7 @@ public class VersionTest {
     }
 
     @Test
-    public void isUnknownOrLessThan() throws Exception {
+    public void isUnknownOrLessThan() {
         assertFalse(V3_0.isUnknownOrLessThan(of(2, 0)));
         assertFalse(V3_0.isUnknownOrLessThan(of(3, 0)));
         assertTrue(V3_0.isUnknownOrLessThan(of(3, 1)));
@@ -106,14 +106,14 @@ public class VersionTest {
     }
 
     @Test
-    public void isLessOrEqual() throws Exception {
+    public void isLessOrEqual() {
         assertFalse(V3_0.isLessOrEqual(of(2, 0)));
         assertTrue(V3_0.isLessOrEqual(of(3, 0)));
         assertTrue(V3_0.isLessOrEqual(of(4, 0)));
     }
 
     @Test
-    public void isUnknownLessOrEqual() throws Exception {
+    public void isUnknownLessOrEqual() {
         assertFalse(V3_0.isUnknownOrLessOrEqual(of(2, 0)));
         assertTrue(V3_0.isUnknownOrLessOrEqual(of(3, 0)));
         assertTrue(V3_0.isUnknownOrLessOrEqual(of(4, 0)));
@@ -121,7 +121,7 @@ public class VersionTest {
     }
 
     @Test
-    public void isBetween() throws Exception {
+    public void isBetween() {
         assertFalse(V3_0.isBetween(of(0, 0), of(1, 0)));
         assertFalse(V3_0.isBetween(of(4, 0), of(5, 0)));
 
@@ -132,14 +132,14 @@ public class VersionTest {
     }
 
     @Test
-    public void isUnknown() throws Exception {
+    public void isUnknown() {
         assertTrue(Version.UNKNOWN.isUnknown());
         assertTrue(Version.of(UNKNOWN_VERSION, UNKNOWN_VERSION).isUnknown());
         assertTrue(Version.of(0, 0).isUnknown());
     }
 
     @Test
-    public void equals() throws Exception {
+    public void equals() {
         assertEquals(Version.UNKNOWN, Version.UNKNOWN);
         assertEquals(Version.of(3, 0), Version.of(3, 0));
 
@@ -150,7 +150,7 @@ public class VersionTest {
     }
 
     @Test
-    public void compareTo() throws Exception {
+    public void compareTo() {
         assertEquals(0, Version.of(3, 9).compareTo(Version.of(3, 9)));
         assertThat(Version.of(3, 10).compareTo(Version.of(3, 9)), greaterThan(0));
         assertThat(Version.of(4, 0).compareTo(Version.of(3, 9)), greaterThan(0));
@@ -159,7 +159,7 @@ public class VersionTest {
     }
 
     @Test
-    public void hashCodeTest() throws Exception {
+    public void hashCodeTest() {
         assertEquals(Version.UNKNOWN.hashCode(), Version.UNKNOWN.hashCode());
 
         assertTrue(Version.UNKNOWN.hashCode() != Version.of(4, 0).hashCode());
@@ -172,7 +172,7 @@ public class VersionTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void ofMalformed() throws Exception {
+    public void ofMalformed() {
         Version.of("3,9");
     }
 
@@ -186,7 +186,7 @@ public class VersionTest {
     }
 
     @Test
-    public void toStringTest() throws Exception {
+    public void toStringTest() {
         assertEquals("3.8", Version.of(3, 8).toString());
     }
 

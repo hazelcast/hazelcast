@@ -32,7 +32,7 @@ public class ClientMessageHandlerImpl implements ClientMessageChannelInboundHand
     private final Connection connection;
     private final ClientEngine clientEngine;
 
-    public ClientMessageHandlerImpl(Connection connection, ClientEngine clientEngine) throws IOException {
+    public ClientMessageHandlerImpl(Connection connection, ClientEngine clientEngine) {
         this.connection = connection;
         this.clientEngine = clientEngine;
     }

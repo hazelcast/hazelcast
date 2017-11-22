@@ -76,12 +76,10 @@ public class PartitionLostListenerRegistrationTest
     private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final int expectedSize) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrueEventually(new AssertTask() {
                     @Override
-                    public void run()
-                            throws Exception {
+                    public void run() {
                         final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
                         assertEquals(expectedSize, eventService.getRegistrations(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC).size());
                     }

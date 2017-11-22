@@ -48,7 +48,7 @@ public class ObjectDataOutputStreamTest {
     private InternalSerializationService serializationService;
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
         serializationService = defaultSerializationServiceBuilder.setVersion(InternalSerializationService.VERSION_1).build();
 
@@ -118,7 +118,7 @@ public class ObjectDataOutputStreamTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testToByteArray() throws Exception {
+    public void testToByteArray() {
         dataOutputStream.toByteArray();
     }
 
@@ -135,7 +135,7 @@ public class ObjectDataOutputStreamTest {
     }
 
     @Test
-    public void testGetByteOrder() throws Exception {
+    public void testGetByteOrder() {
         ByteOrder byteOrderActual = dataOutputStream.getByteOrder();
         assertEquals(serializationService.getByteOrder(), byteOrderActual);
     }

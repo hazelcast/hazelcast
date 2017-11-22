@@ -73,7 +73,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test(expected = NullPointerException.class)
     @SuppressWarnings("ConstantConditions")
-    public void submitNullTask_expectFailure() throws Exception {
+    public void submitNullTask_expectFailure() {
         executor.submit((Callable<?>) null);
     }
 
@@ -96,7 +96,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void executionCallback_notifiedOnSuccess() throws Exception {
+    public void executionCallback_notifiedOnSuccess() {
         final CountDownLatch latch = new CountDownLatch(1);
         Callable<String> task = new BasicTestCallable();
         ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
@@ -112,7 +112,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void executionCallback_notifiedOnFailure() throws Exception {
+    public void executionCallback_notifiedOnFailure() {
         final CountDownLatch latch = new CountDownLatch(1);
         FailingTestTask task = new FailingTestTask();
         ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
@@ -291,7 +291,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
      * Shutdown-related method behaviour when the cluster is running
      */
     @Test
-    public void shutdownBehaviour() throws Exception {
+    public void shutdownBehaviour() {
         // fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());
@@ -349,8 +349,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 LocalExecutorStats stats = executor.getLocalExecutorStats();
                 assertEquals(iterations + 1, stats.getStartedTaskCount());
                 assertEquals(iterations, stats.getCompletedTaskCount());

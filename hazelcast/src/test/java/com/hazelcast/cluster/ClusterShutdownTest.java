@@ -122,8 +122,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         for (final Node node : nodes) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertEquals(NodeState.SHUT_DOWN, node.getState());
                 }
             });

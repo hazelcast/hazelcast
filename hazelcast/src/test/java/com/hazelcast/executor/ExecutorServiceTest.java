@@ -899,7 +899,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         // the ExecutorService on the second instance should be shutdown via a ShutdownOperation
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(es2.isTerminated());
             }
         });

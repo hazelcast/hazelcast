@@ -79,7 +79,7 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(startMillis + SECONDS.toMillis(5) < invocationMonitor.getLastMemberHeartbeatMillis(localAddress));
             }
         });
@@ -91,7 +91,7 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(startMillis + SECONDS.toMillis(5) < invocationMonitor.getLastMemberHeartbeatMillis(remoteAddress));
             }
         });
@@ -106,7 +106,7 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, invocationMonitor.getLastMemberHeartbeatMillis(remoteAddress));
             }
         });

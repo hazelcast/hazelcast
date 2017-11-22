@@ -47,12 +47,12 @@ public class RecordInfoTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void storeTime_and_expirationTime_is_not_available_on_deserialized_when_not_set() throws Exception {
+    public void storeTime_and_expirationTime_is_not_available_on_deserialized_when_not_set() {
         set_storeTime_and_expirationTime(NOT_AVAILABLE);
     }
 
     @Test
-    public void storeTime_and_expirationTime_is_available_on_deserialized_when_set() throws Exception {
+    public void storeTime_and_expirationTime_is_available_on_deserialized_when_set() {
         set_storeTime_and_expirationTime(currentTimeMillis());
     }
 

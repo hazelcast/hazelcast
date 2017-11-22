@@ -56,11 +56,11 @@ public final class NonFragmentedServiceNamespace implements ServiceNamespace, Id
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
     }
 
     @Override

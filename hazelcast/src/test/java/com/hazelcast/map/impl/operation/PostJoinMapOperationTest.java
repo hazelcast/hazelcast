@@ -202,7 +202,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
     // This test is meant to verify that a query will be executed *with an index* on the joining node
     // See also QueryIndexMigrationTest, which tests that results are as expected.
     @Test
-    public void testPostJoinMapOperation_mapWithIndex() throws InterruptedException {
+    public void testPostJoinMapOperation_mapWithIndex() {
         TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
 
         // given: a map with index on a single-node HazelcastInstance
@@ -227,7 +227,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         // eventually index should be created after join
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate(invocationCounter));
                 assertEquals("isIndexed should have located an index", 1, invocationCounter.get());
                 assertEquals("index should return 1 match", 1, personsWithAgePredicate.size());

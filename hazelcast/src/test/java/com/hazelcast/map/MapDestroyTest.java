@@ -79,7 +79,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
     private void assertAllPartitionContainersAreEmptyEventually(final HazelcastInstance instance) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertAllPartitionContainersAreEmpty(instance);
             }
         });

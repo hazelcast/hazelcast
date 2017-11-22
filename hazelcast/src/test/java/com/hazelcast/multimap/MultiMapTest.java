@@ -124,7 +124,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutGetRemoveWhileCollectionTypeSet() throws InterruptedException {
+    public void testPutGetRemoveWhileCollectionTypeSet() {
         Config config = new Config();
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
@@ -202,7 +202,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsKey_whenNullKey() throws InterruptedException {
+    public void testContainsKey_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -210,7 +210,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsValue_whenNullKey() throws InterruptedException {
+    public void testContainsValue_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -218,7 +218,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsEntry_whenNullKey() throws InterruptedException {
+    public void testContainsEntry_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -226,7 +226,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsEntry_whenNullValue() throws InterruptedException {
+    public void testContainsEntry_whenNullValue() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -234,7 +234,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutGetRemoveWhileCollectionTypeList() throws InterruptedException {
+    public void testPutGetRemoveWhileCollectionTypeList() {
         Config config = new Config();
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);

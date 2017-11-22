@@ -169,7 +169,7 @@ public class PortableTest {
     }
 
     @Test
-    public void testClassDefinitionConfigWithErrors() throws Exception {
+    public void testClassDefinitionConfigWithErrors() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
@@ -192,7 +192,7 @@ public class PortableTest {
     }
 
     @Test
-    public void testClassDefinitionConfig() throws Exception {
+    public void testClassDefinitionConfig() {
         int portableVersion = 1;
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());

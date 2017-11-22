@@ -59,7 +59,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(MX_BEAN.getThreadCount(), gauge.read(), 10);
             }
         });
@@ -71,7 +71,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(MX_BEAN.getPeakThreadCount(), gauge.read(), 10);
             }
         });
@@ -83,7 +83,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(MX_BEAN.getDaemonThreadCount(), gauge.read(), 10);
             }
         });
@@ -95,7 +95,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(MX_BEAN.getTotalStartedThreadCount(), gauge.read(), 10);
             }
         });

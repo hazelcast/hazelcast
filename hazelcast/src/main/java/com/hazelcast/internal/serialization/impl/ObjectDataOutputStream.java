@@ -247,7 +247,7 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput implements
     }
 
     @Override
-    public void writeObject(Object object) throws IOException {
+    public void writeObject(Object object) {
         serializationService.writeObject(this, object);
     }
 

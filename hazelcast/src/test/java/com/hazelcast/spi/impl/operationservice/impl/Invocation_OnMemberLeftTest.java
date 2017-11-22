@@ -156,7 +156,7 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
     private void assertUnresponsiveOperationStarted() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(remote.getUserContext().get(UnresponsiveTargetOperation.COMPLETION_FLAG));
             }
         });

@@ -53,8 +53,7 @@ public class MigrationQueueTest {
     }
 
     @Test
-    public void test_migrateTaskCount_decremented_afterTaskCompleted()
-            throws InterruptedException {
+    public void test_migrateTaskCount_decremented_afterTaskCompleted() {
         final MigrationRunnable task = mock(MigrationRunnable.class);
 
         migrationQueue.add(task);

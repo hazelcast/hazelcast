@@ -173,7 +173,7 @@ public class SpinningChannelWriter extends AbstractHandler {
      * @return true if initialization was a success, false if insufficient data is available.
      * @throws IOException
      */
-    private boolean init() throws IOException {
+    private boolean init() {
         InitResult<ChannelOutboundHandler> init = initializer.initOutbound(channel);
         if (init == null) {
             // we can't initialize the outbound-handler yet since insufficient data is available.

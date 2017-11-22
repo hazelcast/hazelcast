@@ -76,7 +76,7 @@ public class QueryCacheCoalescingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(100, cache.size());
             }
         });

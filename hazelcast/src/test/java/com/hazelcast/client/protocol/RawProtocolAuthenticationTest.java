@@ -93,7 +93,7 @@ public class RawProtocolAuthenticationTest {
 
     @Test
     public void testAuthenticateWithUsernameAndPassword()
-            throws IOException, InterruptedException {
+            throws IOException {
 
         final ByteBuffer initData = ByteBuffer.wrap("CB2".getBytes());
         channel.write(initData);
@@ -125,7 +125,7 @@ public class RawProtocolAuthenticationTest {
 
     @Test
     public void testAuthenticateWithUsernameAndPassword_with_Invalid_Credentials()
-            throws IOException, InterruptedException {
+            throws IOException {
 
         final ByteBuffer initData = ByteBuffer.wrap("CB2".getBytes());
         channel.write(initData);
@@ -158,7 +158,7 @@ public class RawProtocolAuthenticationTest {
 
     @Test
     public void testAuthenticateWithUsernameAndPassword_with_Invalid_SerializationVersion()
-            throws IOException, InterruptedException {
+            throws IOException {
 
         final ByteBuffer initData = ByteBuffer.wrap("CB2".getBytes());
         channel.write(initData);
@@ -191,7 +191,7 @@ public class RawProtocolAuthenticationTest {
 
     @Test
     public void testAuthenticateWithUsernameAndPassword_with_Invalid_MessageSize()
-            throws IOException, InterruptedException {
+            throws IOException {
 
         final ByteBuffer initData = ByteBuffer.wrap("CB2".getBytes());
         channel.write(initData);

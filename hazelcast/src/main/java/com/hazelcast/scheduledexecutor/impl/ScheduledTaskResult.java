@@ -63,8 +63,7 @@ public class ScheduledTaskResult
         return cancelled;
     }
 
-    void checkErroneousState()
-            throws ExecutionException {
+    void checkErroneousState() {
 
         if (wasCancelled()) {
             throw new CancellationException();

@@ -104,7 +104,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    public void testQueryDuringAndAfterMigration() throws Exception {
+    public void testQueryDuringAndAfterMigration() {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(getTestConfig());
         int count = 500;
         IMap<String, Employee> map = instance.getMap("employees");
@@ -117,7 +117,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         final IMap<String, Employee> employees = instance.getMap("employees");
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
                 for (Employee employee : values) {
                     assertTrue(employee.isActive());
@@ -128,7 +128,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
+    public void testQueryDuringAndAfterMigrationWithIndex() {
         Config config = getTestConfig();
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
 
@@ -146,7 +146,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         final IMap<String, Employee> employees = instance.getMap("employees");
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
                 for (Employee employee : values) {
                     assertTrue(employee.isActive() && employee.getName().startsWith("joe15"));
@@ -157,7 +157,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryWithIndexesWhileMigrating() throws Exception {
+    public void testQueryWithIndexesWhileMigrating() {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(getTestConfig());
         IMap<String, Employee> map = instance.getMap("employees");
         map.addIndex("age", true);

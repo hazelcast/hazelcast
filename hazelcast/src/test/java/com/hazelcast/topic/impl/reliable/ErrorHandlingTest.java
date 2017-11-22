@@ -62,7 +62,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.objects.size());
                 assertTrue(topic.runnersMap.isEmpty());
             }
@@ -73,7 +73,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
         // we need to make sure we don't receive item 2 since the listener is terminated
         assertTrueFiveSeconds(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.objects.size());
             }
         });
@@ -89,7 +89,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.objects.size());
                 assertTrue(topic.runnersMap.isEmpty());
             }
@@ -100,7 +100,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
         // we need to make sure we don't receive item 2 since the listener is terminated
         assertTrueFiveSeconds(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.objects.size());
             }
         });
@@ -116,7 +116,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.objects.size());
                 assertFalse(topic.runnersMap.isEmpty());
             }
@@ -126,7 +126,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, listener.objects.size());
                 assertFalse(topic.runnersMap.isEmpty());
             }

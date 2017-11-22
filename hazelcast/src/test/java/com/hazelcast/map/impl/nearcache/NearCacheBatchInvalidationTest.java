@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
     @Test
-    public void testBatchInvalidationRemovesEntries() throws Exception {
+    public void testBatchInvalidationRemovesEntries() {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
@@ -87,7 +87,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
                 NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
                 assertEquals(0, nearCache1.size() + nearCache2.size());
@@ -96,7 +96,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHigherBatchSize_shouldNotCauseAnyInvalidation_onRemoteNode() throws Exception {
+    public void testHigherBatchSize_shouldNotCauseAnyInvalidation_onRemoteNode() {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
         configureBatching(config, true, Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -144,7 +144,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapClear_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
+    public void testMapClear_shouldClearNearCaches_onOwnerAndBackupNodes() {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
@@ -178,7 +178,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
                 NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
                 assertEquals(0, nearCache1.size() + nearCache2.size());
@@ -187,7 +187,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
+    public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
@@ -221,7 +221,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
                 NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
                 assertEquals(0, nearCache1.size() + nearCache2.size());

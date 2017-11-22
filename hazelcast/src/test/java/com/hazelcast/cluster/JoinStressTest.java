@@ -82,7 +82,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = TEN_MINUTES_IN_MILLIS)
-    public void testJoinCompletesCorrectlyWhenMultipleNodesStartedParallel() throws Exception {
+    public void testJoinCompletesCorrectlyWhenMultipleNodesStartedParallel() {
         int count = 10;
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
         final HazelcastInstance[] instances = new HazelcastInstance[count];
@@ -211,8 +211,7 @@ public class JoinStressTest extends HazelcastTestSupport {
             final int shouldBeClusterSize = groups.get(groupName).get();
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertEquals(groupName + ": ", shouldBeClusterSize, clusterSize);
                 }
             });

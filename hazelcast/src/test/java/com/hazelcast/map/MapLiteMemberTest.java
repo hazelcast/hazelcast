@@ -101,8 +101,7 @@ public class MapLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, listener.key);
                 assertEquals(2, listener.value);
             }

@@ -48,7 +48,7 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void testReadOperationFailsWhenStaleReadDisabledDuringMigration()
-            throws ExecutionException, InterruptedException {
+            throws InterruptedException {
         final Config config = new Config();
         config.setProperty(GroupProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION.getName(), "true");
 

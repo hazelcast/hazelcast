@@ -50,7 +50,7 @@ public class NodeShutdownEventsTest {
      * to be fired locally.
      */
     @Test
-    public void testNodeShutdown_firesLifecycleEvents_afterJoinFailure() throws Exception {
+    public void testNodeShutdown_firesLifecycleEvents_afterJoinFailure() {
         // Only expecting SHUTTING_DOWN & SHUTDOWN events so latch count should be 2.
         final CountDownLatch shutdownEventCount = new CountDownLatch(2);
 

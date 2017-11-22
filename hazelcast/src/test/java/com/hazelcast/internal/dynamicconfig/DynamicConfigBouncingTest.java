@@ -66,7 +66,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void doNotThrowExceptionWhenMemberIsGone() throws Exception {
+    public void doNotThrowExceptionWhenMemberIsGone() {
         Runnable[] methods = new Runnable[1];
         final String mapName = randomMapName();
         final HazelcastInstance testDriver = bounceMemberRule.getNextTestDriver();

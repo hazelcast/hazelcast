@@ -293,18 +293,18 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     @Override
-    public void put(E e) throws InterruptedException {
+    public void put(E e) {
         offer(e);
     }
 
     @Override
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean offer(E e, long timeout, TimeUnit unit) {
         add(e);
         return true;
     }
 
     @Override
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public E poll(long timeout, TimeUnit unit) {
         throw new UnsupportedOperationException();
     }
 

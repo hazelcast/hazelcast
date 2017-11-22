@@ -108,7 +108,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 ReplicatedMap<Object, Object> mapTest = h1.getReplicatedMap(mapName);
                 for (Map.Entry<Object, Object> entry : expectedValues.entrySet()) {
                     assertEquals(entry.getValue(), mapTest.get(entry.getKey()));

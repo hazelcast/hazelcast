@@ -127,7 +127,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < instances.length(); i++) {
                     HazelcastInstance instance = instances.get(i);
                     assertNotNull(instance);
@@ -148,7 +148,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void parallel_member_join_whenPostJoinOperationPresent() throws InterruptedException {
+    public void parallel_member_join_whenPostJoinOperationPresent() {
         CountDownLatch latch = new CountDownLatch(1);
 
         final Config config = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
@@ -170,7 +170,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < instances.length(); i++) {
                     HazelcastInstance instance = instances.get(i);
                     assertNotNull(instance);
@@ -181,7 +181,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void parallel_member_join_whenPreJoinOperationPresent() throws InterruptedException {
+    public void parallel_member_join_whenPreJoinOperationPresent() {
         CountDownLatch latch = new CountDownLatch(1);
         PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
         final Config config = getConfigWithService(service, PreJoinAwareServiceImpl.SERVICE_NAME);
@@ -202,7 +202,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < instances.length(); i++) {
                     HazelcastInstance instance = instances.get(i);
                     assertNotNull(instance);
@@ -284,7 +284,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < instances.length(); i++) {
                     HazelcastInstance instance = instances.get(i);
                     assertNotNull(instance);
@@ -348,7 +348,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < instances.length(); i++) {
                     HazelcastInstance instance = instances.get(i);
                     assertNotNull(instance);
@@ -645,7 +645,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz2));
             }
         });

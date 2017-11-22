@@ -85,7 +85,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(backupOperationFailure.get());
             }
         });

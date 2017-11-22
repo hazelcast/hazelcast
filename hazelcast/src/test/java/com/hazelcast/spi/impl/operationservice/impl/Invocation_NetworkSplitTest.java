@@ -67,7 +67,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         testWaitingInvocations_whenNodeSplitFromCluster(action);
     }
 
-    private void testWaitingInvocations_whenNodeSplitFromCluster(SplitAction splitAction) throws Exception {
+    private void testWaitingInvocations_whenNodeSplitFromCluster(SplitAction splitAction) {
         Config config = createConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -122,7 +122,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         testWaitNotifyService_whenNodeSplitFromCluster(action);
     }
 
-    private void testWaitNotifyService_whenNodeSplitFromCluster(SplitAction action) throws Exception {
+    private void testWaitNotifyService_whenNodeSplitFromCluster(SplitAction action) {
         Config config = createConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -143,7 +143,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         final OperationParkerImpl waitNotifyService3 = (OperationParkerImpl) node3.getNodeEngine().getOperationParker();
         assertEqualsEventually(new Callable<Integer>() {
             @Override
-            public Integer call() throws Exception {
+            public Integer call() {
                 return waitNotifyService3.getTotalParkedOperationCount();
             }
         }, 1);
@@ -156,7 +156,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Assert.assertEquals(0, node1.partitionService.getMigrationQueueSize());
             }
         });
@@ -229,7 +229,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(2, node1.getClusterService().getSize());
                     assertEquals(2, node2.getClusterService().getSize());
                     assertEquals(1, node3.getClusterService().getSize());
@@ -248,7 +248,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
             suspectMember(node1, node3);
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(2, node1.getClusterService().getSize());
                     assertEquals(2, node2.getClusterService().getSize());
                     assertEquals(1, node3.getClusterService().getSize());

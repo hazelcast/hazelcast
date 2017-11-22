@@ -33,7 +33,7 @@ public class TestIgnoreRuleAccordingToUnsafeAvailability implements TestRule {
         } else {
             return new Statement() {
                 @Override
-                public void evaluate() throws Throwable {
+                public void evaluate() {
                     LOGGER.finest("Ignoring `" + description.getClassName() + "` because Unsafe is not available");
                 }
             };

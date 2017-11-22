@@ -45,7 +45,7 @@ public class BatchNearCacheInvalidationTest extends HazelcastTestSupport {
     InternalSerializationService ss = getSerializationService(node);
 
     @Test
-    public void equals_itself_after_deserialization() throws Exception {
+    public void equals_itself_after_deserialization() {
         Data key = ss.toData("key");
         String mapName = "mapName";
         String sourceUuid = "sourceUuid";

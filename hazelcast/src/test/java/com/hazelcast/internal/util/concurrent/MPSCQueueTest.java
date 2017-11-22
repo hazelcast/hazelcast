@@ -57,7 +57,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     // ============== poll ==========================================
 
     @Test
-    public void poll() throws InterruptedException {
+    public void poll() {
         queue.setConsumerThread(Thread.currentThread());
 
         queue.offer("1");
@@ -257,7 +257,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void offer_noTimeout() throws InterruptedException {
+    public void offer_noTimeout() {
         assertTrue(queue.offer("item1"));
         assertTrue(queue.offer("item2"));
         assertTrue(queue.offer("item3"));

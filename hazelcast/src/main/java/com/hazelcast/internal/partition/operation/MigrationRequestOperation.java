@@ -119,7 +119,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
      * Invokes the {@link MigrationOperation} on the migration destination.
      */
     private void invokeMigrationOperation(Address destination, ReplicaFragmentMigrationState migrationState,
-                                          boolean firstFragment) throws IOException {
+                                          boolean firstFragment) {
 
         boolean lastFragment = !fragmentedMigrationEnabled || !namespacesContext.hasNext();
         Operation operation = new MigrationOperation(migrationInfo, partitionStateVersion, migrationState,

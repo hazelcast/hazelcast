@@ -534,7 +534,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
     }
 
-    private void handleWanReplication(Node node) throws Exception {
+    private void handleWanReplication(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
 
@@ -1154,7 +1154,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     //CHECKSTYLE:OFF
-    private void handleMap(Node parentNode) throws Exception {
+    private void handleMap(Node parentNode) {
         String name = getAttribute(parentNode, "name");
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
@@ -1297,7 +1297,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         return hotRestartConfig;
     }
 
-    private void handleCache(Node node) throws Exception {
+    private void handleCache(Node node) {
         String name = getAttribute(node, "name");
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(name);
@@ -1947,7 +1947,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.addRingBufferConfig(rbConfig);
     }
 
-    private void handleListeners(Node node) throws Exception {
+    private void handleListeners(Node node) {
         for (Node child : childElements(node)) {
             if ("listener".equals(cleanNodeName(child))) {
                 String listenerClass = getTextContent(child);
@@ -2051,7 +2051,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
     }
 
-    private void handleSecurityInterceptors(Node node) throws Exception {
+    private void handleSecurityInterceptors(Node node) {
         SecurityConfig cfg = config.getSecurityConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -2095,7 +2095,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
     }
 
-    private void handleCredentialsFactory(Node node) throws Exception {
+    private void handleCredentialsFactory(Node node) {
         NamedNodeMap attrs = node.getAttributes();
         Node classNameNode = attrs.getNamedItem("class-name");
         String className = getTextContent(classNameNode);
@@ -2126,7 +2126,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
     }
 
-    private LoginModuleConfig handleLoginModule(Node node) throws Exception {
+    private LoginModuleConfig handleLoginModule(Node node) {
         NamedNodeMap attrs = node.getAttributes();
         Node classNameNode = attrs.getNamedItem("class-name");
         String className = getTextContent(classNameNode);
@@ -2144,7 +2144,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         return moduleConfig;
     }
 
-    private void handlePermissionPolicy(Node node) throws Exception {
+    private void handlePermissionPolicy(Node node) {
         NamedNodeMap attrs = node.getAttributes();
         Node classNameNode = attrs.getNamedItem("class-name");
         String className = getTextContent(classNameNode);
@@ -2230,7 +2230,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
     }
 
-    private void handleSecurityPermissionEndpoints(Node node, PermissionConfig permConfig) throws Exception {
+    private void handleSecurityPermissionEndpoints(Node node, PermissionConfig permConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("endpoint".equals(nodeName)) {
@@ -2239,7 +2239,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
     }
 
-    private void handleSecurityPermissionActions(Node node, PermissionConfig permConfig) throws Exception {
+    private void handleSecurityPermissionActions(Node node, PermissionConfig permConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("action".equals(nodeName)) {

@@ -274,7 +274,7 @@ public class QueryResultSizeLimiterTest {
         }
 
         @Override
-        public Integer answer(InvocationOnMock invocation) throws Throwable {
+        public Integer answer(InvocationOnMock invocation) {
             if (iterator.hasNext()) {
                 lastValue = iterator.next();
             }

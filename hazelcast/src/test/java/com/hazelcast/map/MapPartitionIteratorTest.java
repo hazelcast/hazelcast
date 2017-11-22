@@ -59,7 +59,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void test_next_Throws_Exception_On_EmptyPartition() throws Exception {
+    public void test_next_Throws_Exception_On_EmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -68,7 +68,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void test_remove_Throws_Exception_When_Called_Without_Next() throws Exception {
+    public void test_remove_Throws_Exception_When_Called_Without_Next() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -77,7 +77,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Remove() throws Exception {
+    public void test_Remove() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -92,7 +92,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -101,7 +101,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -114,7 +114,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -128,7 +128,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -144,7 +144,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -162,7 +162,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
 
     @Test
     @Ignore
-    public void test_DoesNotReturn_DuplicateEntry_When_Rehashing_Happens() throws Exception {
+    public void test_DoesNotReturn_DuplicateEntry_When_Rehashing_Happens() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
         HashSet<String> readKeys = new HashSet<String>();
@@ -178,7 +178,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
 
     @Test
     @Ignore
-    public void test_DoesNotReturn_DuplicateEntry_When_Migration_Happens() throws Exception {
+    public void test_DoesNotReturn_DuplicateEntry_When_Migration_Happens() {
         Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();

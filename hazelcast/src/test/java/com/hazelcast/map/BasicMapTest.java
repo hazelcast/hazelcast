@@ -714,7 +714,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         // lock the key
         spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 map.lock(key);
                 return null;
             }
@@ -735,7 +735,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         Future<Object> future = spawn(new Callable<Object>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 try {
                     assertFalse("tryPut() on a locked key should fail!",
                             map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));

@@ -61,7 +61,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void migrationCommitEvents_shouldBeEqual_onSource_and_onDestination() throws Exception {
+    public void migrationCommitEvents_shouldBeEqual_onSource_and_onDestination() {
         Config config = new Config();
         final MigrationEventCounterService counter = new MigrationEventCounterService();
         ServiceConfig serviceConfig = new ServiceConfig()
@@ -76,7 +76,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
             final InternalPartitionService partitionService = getNode(hz).getPartitionService();
 
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, partitionService.getMigrationQueueSize());
                 final int source = counter.sourceCommits.get();
                 final int destination = counter.destinationCommits.get();
@@ -92,7 +92,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void partitionIsMigratingFlag_shouldBeSet_until_serviceCommitRollback_isCompleted() throws Exception {
+    public void partitionIsMigratingFlag_shouldBeSet_until_serviceCommitRollback_isCompleted() {
         FailingOperationResponseHandler responseHandler = new FailingOperationResponseHandler();
         HazelcastInstance hz = factory.newHazelcastInstance(newConfig(responseHandler));
         warmUpPartitions(hz);

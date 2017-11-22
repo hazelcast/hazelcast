@@ -49,7 +49,7 @@ public final class SimulateLoadTask implements Callable, Serializable, Hazelcast
     }
 
     @Override
-    public Object call() throws Exception {
+    public Object call() {
         try {
             Thread.sleep(delay * ONE_THOUSAND);
         } catch (InterruptedException e) {

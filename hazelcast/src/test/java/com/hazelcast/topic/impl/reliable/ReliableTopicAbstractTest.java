@@ -103,7 +103,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         // it should not receive any events
         assertTrueDelayed5sec(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, listener.objects.size());
             }
         });
@@ -130,7 +130,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         // it should not receive any events
         assertTrueDelayed5sec(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, listener.objects.size());
             }
         });
@@ -139,7 +139,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     // ============================================
 
     @Test
-    public void publishSingle() throws InterruptedException {
+    public void publishSingle() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
         final String msg = "foobar";
@@ -147,28 +147,28 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertContains(listener.objects, msg);
             }
         });
     }
 
     @Test
-    public void publishNull() throws InterruptedException {
+    public void publishNull() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
         topic.publish(null);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertContains(listener.objects, null);
             }
         });
     }
 
     @Test
-    public void publishMultiple() throws InterruptedException {
+    public void publishMultiple() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
@@ -183,7 +183,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(items, Arrays.asList(listener.objects.toArray()));
             }
         });
@@ -200,7 +200,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, listener.messages.size());
                 Message<String> message = listener.messages.get(0);
 
@@ -238,7 +238,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(asList("4", "5", "6"), Arrays.asList(listener.objects.toArray()));
             }
         });
@@ -262,7 +262,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         assertEquals(messageCount, localTopicStats.getPublishOperationCount());
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(messageCount, localTopicStats.getReceiveOperationCount());
             }
         });

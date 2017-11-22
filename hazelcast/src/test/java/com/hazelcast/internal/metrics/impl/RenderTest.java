@@ -59,7 +59,7 @@ public class RenderTest {
         metricsRegistry.register(this, name, ProbeLevel.INFO,
                 new LongProbeFunction<RenderTest>() {
                     @Override
-                    public long get(RenderTest source) throws Exception {
+                    public long get(RenderTest source) {
                         return value;
                     }
                 });
@@ -70,7 +70,7 @@ public class RenderTest {
         metricsRegistry.register(this, name, ProbeLevel.INFO,
                 new DoubleProbeFunction<RenderTest>() {
                     @Override
-                    public double get(RenderTest source) throws Exception {
+                    public double get(RenderTest source) {
                         return value;
                     }
                 });
@@ -118,7 +118,7 @@ public class RenderTest {
         metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
                 new LongProbeFunction<RenderTest>() {
                     @Override
-                    public long get(RenderTest source) throws Exception {
+                    public long get(RenderTest source) {
                         throw ex;
                     }
                 });

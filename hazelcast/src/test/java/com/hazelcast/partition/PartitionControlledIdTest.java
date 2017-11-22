@@ -80,7 +80,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     private static HazelcastInstance[] instances;
 
     @BeforeClass
-    public static void startHazelcastInstances() throws Exception {
+    public static void startHazelcastInstances() {
         Config config = new Config();
         PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         config.getMapConfig("default")
@@ -119,7 +119,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLock() throws Exception {
+    public void testLock() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -138,7 +138,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSemaphore() throws Exception {
+    public void testSemaphore() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -152,7 +152,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRingbuffer() throws Exception {
+    public void testRingbuffer() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -169,7 +169,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIdGenerator() throws Exception {
+    public void testIdGenerator() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -183,7 +183,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAtomicLong() throws Exception {
+    public void testAtomicLong() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -197,7 +197,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueue() throws Exception {
+    public void testQueue() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -211,7 +211,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testList() throws Exception {
+    public void testList() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -225,7 +225,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSet() throws Exception {
+    public void testSet() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
@@ -239,7 +239,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCountDownLatch() throws Exception {
+    public void testCountDownLatch() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 

@@ -221,7 +221,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
     private void assertInvocationDeregisteredEventually(final long callId) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(invocationRegistry.get(callId));
             }
         });

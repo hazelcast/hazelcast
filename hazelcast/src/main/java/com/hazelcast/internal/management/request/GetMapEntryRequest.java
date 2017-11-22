@@ -47,7 +47,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         IMap map = mcs.getHazelcastInstance().getMap(mapName);
         JsonObject result = new JsonObject();
         EntryView entry = null;

@@ -161,7 +161,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         final MetricsRegistry registry = getNode(hz).nodeEngine.getMetricsRegistry();
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final StringProbeRenderer renderer = new StringProbeRenderer(prefix);
                 registry.render(renderer);
                 assertTrue(!renderer.probes.isEmpty());

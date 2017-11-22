@@ -43,7 +43,7 @@ import static org.junit.Assert.assertNull;
 public class MapMetaDataGeneratorTest extends HazelcastTestSupport {
 
     @Test
-    public void destroying_map_removes_related_metadata_when_near_cache_exists() throws Exception {
+    public void destroying_map_removes_related_metadata_when_near_cache_exists() {
         final String mapName = "test";
 
         Config config = getConfig();
@@ -57,7 +57,7 @@ public class MapMetaDataGeneratorTest extends HazelcastTestSupport {
         final MetaDataGenerator metaDataGenerator = getMetaDataGenerator(member);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNotNull(metaDataGenerator.getSequenceGenerators().get(mapName));
             }
         });
@@ -68,7 +68,7 @@ public class MapMetaDataGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void destroying_map_removes_related_metadata_when_near_cache_not_exists() throws Exception {
+    public void destroying_map_removes_related_metadata_when_near_cache_not_exists() {
         final String mapName = "test";
         final HazelcastInstance member = createHazelcastInstance(getConfig());
 
@@ -78,7 +78,7 @@ public class MapMetaDataGeneratorTest extends HazelcastTestSupport {
         final MetaDataGenerator metaDataGenerator = getMetaDataGenerator(member);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(metaDataGenerator.getSequenceGenerators().get(mapName));
             }
         });

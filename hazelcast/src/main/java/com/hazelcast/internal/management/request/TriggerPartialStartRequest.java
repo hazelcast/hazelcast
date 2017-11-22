@@ -42,7 +42,7 @@ public class TriggerPartialStartRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         Node node = mcs.getHazelcastInstance().node;
         final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
         final boolean done = hotRestartService.triggerPartialStart();

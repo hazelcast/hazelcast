@@ -183,7 +183,7 @@ public class CyclicBufferTest {
     }
 
     @Test
-    public void test_size() throws Exception {
+    public void test_size() {
         int maxCapacity = nextPowerOfTwo(10);
         CyclicBuffer<TestSequenced> buffer = new DefaultCyclicBuffer<TestSequenced>(maxCapacity);
 

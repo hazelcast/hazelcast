@@ -87,7 +87,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         final Object response = "someresponse";
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
 
@@ -111,7 +111,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
 
@@ -135,7 +135,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
         };
@@ -152,7 +152,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     public void runOperation_whenRunThrowsException() {
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 throw new ExpectedRuntimeException();
             }
         };
@@ -170,7 +170,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         DummyWaitingOperation op = new DummyWaitingOperation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
         };
@@ -188,7 +188,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         Operation op = new Operation() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 counter.incrementAndGet();
             }
         };

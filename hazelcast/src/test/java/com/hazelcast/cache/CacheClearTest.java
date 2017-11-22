@@ -207,8 +207,7 @@ public class CacheClearTest extends CacheTestSupport {
         // Make sure that one event is received
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, counter.get());
             }
         }, 5);
@@ -216,8 +215,7 @@ public class CacheClearTest extends CacheTestSupport {
         // Make sure that the callback is not called for a while
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertTrue(counter.get() <= 1);
             }
         }, 3);

@@ -72,7 +72,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -83,7 +83,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnLocalPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnLocalPartitions() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -94,7 +94,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_key() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_key() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -105,7 +105,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_value() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_value() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(VALUE).build();
 
@@ -116,7 +116,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnGivenPartition() throws ExecutionException, InterruptedException {
+    public void runQueryOnGivenPartition() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(ENTRY).build();
 

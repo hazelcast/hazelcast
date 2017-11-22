@@ -51,7 +51,7 @@ import static org.mockito.Mockito.verify;
 public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     @Test
-    public void testMigrationListenerCalledOnlyOnceWhenMigrationHappens() throws Exception {
+    public void testMigrationListenerCalledOnlyOnceWhenMigrationHappens() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = new Config();
         // even partition count to make migration count deterministic
@@ -76,7 +76,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int startedTotal = getTotal(migrationListener.migrationStarted);
                 int completedTotal = getTotal(migrationListener.migrationCompleted);
 

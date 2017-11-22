@@ -45,7 +45,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -91,7 +91,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenDifferentGroupNames() throws Exception {
+    public void test_whenDifferentGroupNames() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -112,7 +112,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenIncompatiblePartitionGroups() throws Exception {
+    public void test_whenIncompatiblePartitionGroups() {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
@@ -137,7 +137,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
      * Test for issue #247
      */
     @Test
-    public void test_issue247() throws Exception {
+    public void test_issue247() {
         Config c1 = new Config();
         c1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         c1.getNetworkConfig().setPort(5701).setPortAutoIncrement(false);

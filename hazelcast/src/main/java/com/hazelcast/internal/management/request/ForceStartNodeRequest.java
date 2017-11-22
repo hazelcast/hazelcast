@@ -42,7 +42,7 @@ public class ForceStartNodeRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         String resultString;
         HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
         try {

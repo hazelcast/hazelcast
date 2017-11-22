@@ -148,8 +148,7 @@ public class CacheStatsTest extends CacheTestSupport {
 
         assertEqualsEventually(new Callable<Long>() {
             @Override
-            public Long call()
-                    throws Exception {
+            public Long call() {
                 return stats.getCachePuts();
             }
         }, ENTRY_COUNT);
@@ -208,8 +207,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
         assertEqualsEventually(new Callable<Long>() {
             @Override
-            public Long call()
-                    throws Exception {
+            public Long call() {
                 return stats.getCacheGets();
             }
         }, 2 * ENTRY_COUNT);
@@ -273,8 +271,7 @@ public class CacheStatsTest extends CacheTestSupport {
 
         assertEqualsEventually(new Callable<Long>() {
             @Override
-            public Long call()
-                    throws Exception {
+            public Long call() {
                 return stats.getCacheRemovals();
             }
         }, ENTRY_COUNT);
@@ -349,8 +346,7 @@ public class CacheStatsTest extends CacheTestSupport {
 
         assertEqualsEventually(new Callable<Long>() {
             @Override
-            public Long call()
-                    throws Exception {
+            public Long call() {
                 return stats.getCacheHits();
             }
         }, ENTRY_COUNT);
@@ -413,8 +409,7 @@ public class CacheStatsTest extends CacheTestSupport {
 
         assertEqualsEventually(new Callable<Long>() {
             @Override
-            public Long call()
-                    throws Exception {
+            public Long call() {
                 return stats.getCacheMisses();
             }
         }, GET_COUNT - ENTRY_COUNT);
@@ -628,7 +623,7 @@ public class CacheStatsTest extends CacheTestSupport {
     private void assertOwnedEntryCount(final int expectedEntryCount, final CacheStatistics... statsList) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expectedEntryCount, getOwnedEntryCount(statsList));
             }
         });

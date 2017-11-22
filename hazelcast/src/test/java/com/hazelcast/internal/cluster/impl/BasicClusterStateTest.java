@@ -396,8 +396,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(1, getNodeEngineImpl(other).getProxyService().getProxyCount());
             }
         });
@@ -445,7 +444,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(hz1.getUserContext().containsKey(BackupOperation.EXECUTION_DONE));
             }
         });
@@ -461,8 +460,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final String serviceName, final String topic, final int size) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
 
                 final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
                 final Collection<EventRegistration> registrations =

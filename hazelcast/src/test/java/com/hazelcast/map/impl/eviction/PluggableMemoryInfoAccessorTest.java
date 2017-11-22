@@ -64,7 +64,7 @@ public class PluggableMemoryInfoAccessorTest extends HazelcastTestSupport {
      * Used {@link ZeroMemoryInfoAccessor} to evict every put, map should not contain any entry after this test run.
      */
     @Test
-    public void testPluggedMemoryInfoAccessorUsed() throws Exception {
+    public void testPluggedMemoryInfoAccessorUsed() {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
         maxSizeConfig.setSize(50);

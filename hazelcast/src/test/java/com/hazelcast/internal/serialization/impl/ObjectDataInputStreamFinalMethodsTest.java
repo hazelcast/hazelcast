@@ -335,13 +335,13 @@ public class ObjectDataInputStreamFinalMethodsTest {
     }
 
     @Test
-    public void testGetClassLoader() throws Exception {
+    public void testGetClassLoader() {
         in.getClassLoader();
         verify(mockSerializationService).getClassLoader();
     }
 
     @Test
-    public void testGetByteOrder() throws Exception {
+    public void testGetByteOrder() {
         ByteOrder byteOrderActual = in.getByteOrder();
         assertEquals(byteOrder, byteOrderActual);
     }

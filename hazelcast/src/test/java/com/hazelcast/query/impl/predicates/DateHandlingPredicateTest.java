@@ -62,7 +62,7 @@ public class DateHandlingPredicateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dateValueInPredicate() throws Exception {
+    public void dateValueInPredicate() {
 
         // date vs. date
         assertThat(
@@ -85,7 +85,7 @@ public class DateHandlingPredicateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void sqlDateValueInPredicate() throws Exception {
+    public void sqlDateValueInPredicate() {
 
         // sqlDate vs. date
         assertThat(
@@ -108,7 +108,7 @@ public class DateHandlingPredicateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void sqlTimestampValueInPredicate() throws Exception {
+    public void sqlTimestampValueInPredicate() {
 
         // sqlTimestamp vs. date
         assertThat(

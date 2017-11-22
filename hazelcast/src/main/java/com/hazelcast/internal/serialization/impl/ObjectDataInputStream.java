@@ -329,7 +329,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
     }
 
     @Override
-    public Object readObject() throws IOException {
+    public Object readObject() {
         return serializationService.readObject(this);
     }
 
@@ -341,7 +341,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
     }
 
     @Override
-    public Object readObject(Class aClass) throws IOException {
+    public Object readObject(Class aClass) {
         return serializationService.readObject(this, aClass);
     }
 

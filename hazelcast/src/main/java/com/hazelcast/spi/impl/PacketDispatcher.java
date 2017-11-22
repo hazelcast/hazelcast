@@ -54,7 +54,7 @@ public final class PacketDispatcher implements PacketHandler {
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void handle(Packet packet) {
         try {
             switch (packet.getPacketType()) {
                 case OPERATION:

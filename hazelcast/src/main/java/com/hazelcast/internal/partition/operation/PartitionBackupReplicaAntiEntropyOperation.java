@@ -54,7 +54,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         if (!isNodeStartCompleted()) {
             response = false;
             return;

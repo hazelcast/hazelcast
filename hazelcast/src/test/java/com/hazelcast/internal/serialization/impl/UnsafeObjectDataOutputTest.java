@@ -47,13 +47,13 @@ public class UnsafeObjectDataOutputTest {
     private UnsafeObjectDataOutput out;
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         mockSerializationService = mock(InternalSerializationService.class);
         out = new UnsafeObjectDataOutput(100, mockSerializationService);
     }
 
     @After
-    public void after() throws Exception {
+    public void after() {
         out.close();
     }
 
@@ -254,7 +254,7 @@ public class UnsafeObjectDataOutputTest {
     }
 
     @Test
-    public void testToString() throws Exception {
+    public void testToString() {
         assertNotNull(out.toString());
     }
 } 

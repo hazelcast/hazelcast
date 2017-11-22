@@ -48,7 +48,7 @@ public class CallerRunsPartitionScanExecutorTest {
     public ExpectedException expected = ExpectedException.none();
 
     @Test
-    public void execute_success() throws Exception {
+    public void execute_success() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
@@ -58,7 +58,7 @@ public class CallerRunsPartitionScanExecutorTest {
     }
 
     @Test
-    public void execute_fail() throws Exception {
+    public void execute_fail() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
@@ -70,7 +70,7 @@ public class CallerRunsPartitionScanExecutorTest {
     }
 
     @Test
-    public void execute_fail_retryable() throws Exception {
+    public void execute_fail_retryable() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);

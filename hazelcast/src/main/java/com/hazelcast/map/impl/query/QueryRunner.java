@@ -214,8 +214,7 @@ public class QueryRunner {
     }
 
     protected Collection<QueryableEntry> runUsingPartitionScanSafely(String name, Predicate predicate,
-                                                                     Collection<Integer> partitions, int migrationStamp)
-            throws InterruptedException, ExecutionException {
+                                                                     Collection<Integer> partitions, int migrationStamp) {
 
         if (!validateMigrationStamp(migrationStamp)) {
             return null;

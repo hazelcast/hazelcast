@@ -62,7 +62,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testCancel_submitRandom() throws Exception {
+    public void testCancel_submitRandom() {
         IExecutorService executorService = localHz.getExecutorService(randomString());
         Future<Boolean> future = executorService.submit(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName));
         awaitTaskStart();
@@ -75,7 +75,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     public void awaitTaskStart() {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, taskStartedLatch.getCount());
             }
         });
@@ -112,7 +112,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         testGetValueAfterCancel_submitToMember(localHz, remoteHz.getCluster().getLocalMember());
     }
 
-    private void testCancel_submitToMember(HazelcastInstance instance, Member member) throws Exception {
+    private void testCancel_submitToMember(HazelcastInstance instance, Member member) {
         IExecutorService executorService = instance.getExecutorService(randomString());
         Future<Boolean> future = executorService.submitToMember(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), member);
         awaitTaskStart();
@@ -130,7 +130,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testCancel_submitToKeyOwner() throws ExecutionException, InterruptedException {
+    public void testCancel_submitToKeyOwner() {
         IExecutorService executorService = localHz.getExecutorService(randomString());
         Future<Boolean> future = executorService.submitToKeyOwner(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), randomString());
         awaitTaskStart();
@@ -166,7 +166,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         }
 
         @Override
-        public Boolean call() throws InterruptedException {
+        public Boolean call() {
             hz.getCountDownLatch(taskStartedLatchName).countDown();
 
             sleepAtLeastSeconds((int) sleepSeconds);

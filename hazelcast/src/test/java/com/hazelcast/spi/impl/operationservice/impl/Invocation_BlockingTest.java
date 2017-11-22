@@ -180,7 +180,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(future.isDone());
             }
         });
@@ -223,7 +223,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 verify(callback).onResponse(Boolean.FALSE);
             }
         });
@@ -270,7 +270,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     private void assertFailsEventuallyWithOperationTimeoutException(final ExecutionCallback callback) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
                 verify(callback).onFailure(argument.capture());
 
@@ -319,7 +319,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         for (int k = 0; k < 10; k++) {
             futures.add(spawn(new Callable() {
                 @Override
-                public Object call() throws Exception {
+                public Object call() {
                     return future.join();
                 }
             }));
@@ -347,7 +347,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
      * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutExcepyion
      */
     @Test
-    public void async_whenMultipleAndThenOnSameFuture() throws Exception {
+    public void async_whenMultipleAndThenOnSameFuture() {
         int callTimeout = 5000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
 

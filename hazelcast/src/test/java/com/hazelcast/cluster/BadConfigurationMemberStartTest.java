@@ -37,12 +37,12 @@ public class BadConfigurationMemberStartTest {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         Hazelcast.shutdownAll();
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testMulticastAndTcpEnabled() throws Exception {
+    public void testMulticastAndTcpEnabled() {
         Config config = new Config();
 
         NetworkConfig networkConfig = config.getNetworkConfig();

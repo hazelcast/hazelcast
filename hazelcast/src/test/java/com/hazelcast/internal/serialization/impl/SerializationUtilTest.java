@@ -35,27 +35,27 @@ import java.io.IOException;
 public class SerializationUtilTest {
 
     @Test
-    public void testIsNullData() throws Exception {
+    public void testIsNullData() {
         Assert.assertTrue(SerializationUtil.isNullData(new HeapData()));
     }
 
     @Test(expected = Error.class)
-    public void testHandleException_OOME() throws Exception {
+    public void testHandleException_OOME() {
         SerializationUtil.handleException(new OutOfMemoryError());
     }
 
     @Test(expected = Error.class)
-    public void testHandleException_otherError() throws Exception {
+    public void testHandleException_otherError() {
         SerializationUtil.handleException(new UnknownError());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCreateSerializerAdapter_invalidSerializer() throws Exception {
+    public void testCreateSerializerAdapter_invalidSerializer() {
         SerializationUtil.createSerializerAdapter(new InvalidSerializer(), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGetPortableVersion_negativeVersion() throws Exception {
+    public void testGetPortableVersion_negativeVersion() {
         SerializationUtil.getPortableVersion(new DummyVersionedPortable(), 1);
     }
 

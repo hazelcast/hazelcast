@@ -41,7 +41,7 @@ public class AJavaExternalizable implements Externalizable {
     }
 
     @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    public void readExternal(ObjectInput in) throws IOException {
         i = in.readInt();
         f = in.readFloat();
     }

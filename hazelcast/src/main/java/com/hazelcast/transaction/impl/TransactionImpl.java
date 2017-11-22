@@ -334,7 +334,7 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+    private void replicateTxnLog() {
         if (skipBackupLogReplication()) {
             return;
         }
