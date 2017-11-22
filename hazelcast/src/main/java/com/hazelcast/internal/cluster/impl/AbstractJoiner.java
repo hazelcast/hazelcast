@@ -24,6 +24,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.logging.ILogger;
@@ -215,34 +216,38 @@ public abstract class AbstractJoiner implements Joiner {
                 + node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
     }
 
+    /**
+     * Checks split-brain join response and returns the merge check result whether or not this node should
+     * join to the target.
+     */
     @SuppressWarnings({"checkstyle:returncount", "checkstyle:npathcomplexity"})
-    protected boolean shouldMerge(SplitBrainJoinMessage joinMessage) {
+    protected SplitBrainMergeCheckResult shouldMerge(SplitBrainJoinMessage joinMessage) {
         if (logger.isFineEnabled()) {
             logger.fine("Should merge to: " + joinMessage);
         }
 
         if (joinMessage == null) {
-            return false;
+            return SplitBrainMergeCheckResult.CANNOT_MERGE;
         }
 
         if (!checkValidSplitBrainJoinMessage(joinMessage)) {
-            return false;
+            return SplitBrainMergeCheckResult.CANNOT_MERGE;
         }
 
         if (!checkCompatibleSplitBrainJoinMessage(joinMessage)) {
-            return false;
+            return SplitBrainMergeCheckResult.CANNOT_MERGE;
         }
 
         if (!checkMergeTargetIsNotMember(joinMessage)) {
-            return false;
+            return SplitBrainMergeCheckResult.CANNOT_MERGE;
         }
 
         if (!checkClusterStateAllowsJoinBeforeMerge(joinMessage)) {
-            return false;
+            return SplitBrainMergeCheckResult.CANNOT_MERGE;
         }
 
         if (!checkMembershipIntersectionSetEmpty(joinMessage)) {
-            return false;
+            return SplitBrainMergeCheckResult.CANNOT_MERGE;
         }
 
         int targetDataMemberCount = joinMessage.getDataMemberCount();
@@ -252,26 +257,26 @@ public abstract class AbstractJoiner implements Joiner {
             logger.info("We are merging to " + joinMessage.getAddress()
                     + ", because their data member count is bigger than ours ["
                     + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
-            return true;
+            return SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
         }
 
         if (targetDataMemberCount < currentDataMemberCount) {
             logger.info(joinMessage.getAddress() + " should merge to us "
                     + ", because our data member count is bigger than theirs ["
                     + (currentDataMemberCount + " > " + targetDataMemberCount) + ']');
-            return false;
+            return SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
         }
 
         // targetDataMemberCount == currentDataMemberCount
         if (shouldMergeTo(node.getThisAddress(), joinMessage.getAddress())) {
             logger.info("We are merging to " + joinMessage.getAddress()
                     + ", both have the same data member count: " + currentDataMemberCount);
-            return true;
+            return SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
         }
 
         logger.info(joinMessage.getAddress() + " should merge to us "
                 + ", both have the same data member count: " + currentDataMemberCount);
-        return false;
+        return SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
     }
 
     private boolean checkValidSplitBrainJoinMessage(SplitBrainJoinMessage joinMessage) {

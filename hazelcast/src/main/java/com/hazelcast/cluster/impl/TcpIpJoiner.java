@@ -24,6 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -515,7 +516,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         for (Address address : possibleAddresses) {
             SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
-            if (shouldMerge(response)) {
+            if (shouldMerge(response) == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
                 logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
                 setTargetAddress(address);
                 startClusterMerge(address);

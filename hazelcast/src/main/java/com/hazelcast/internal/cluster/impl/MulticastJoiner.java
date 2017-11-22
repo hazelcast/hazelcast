@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
@@ -130,14 +131,17 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
 
                 SplitBrainJoinMessage response = sendSplitBrainJoinMessage(targetAddress);
-                if (shouldMerge(response)) {
+                SplitBrainMergeCheckResult result = shouldMerge(response);
+                if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
                     logger.warning(node.getThisAddress() + " is merging [multicast] to " + targetAddress);
                     startClusterMerge(targetAddress);
                     return;
                 }
 
-                // other side should join to us. broadcast a new SplitBrainJoinMessage.
-                node.multicastService.send(node.createSplitBrainJoinMessage());
+                if (result == SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE) {
+                    // other side should join to us. broadcast a new SplitBrainJoinMessage.
+                    node.multicastService.send(node.createSplitBrainJoinMessage());
+                }
             }
         } catch (InterruptedException e) {
             logger.fine(e);
