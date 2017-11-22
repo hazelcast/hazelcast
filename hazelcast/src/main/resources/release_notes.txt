@@ -1,6 +1,6 @@
 
 
-In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.9 release.
+In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.9.x release.
 
 The numbers in the square brackets refer to the issue number in Hazelcast’s GitHub repository. You can reach
 to the full descriptions of the issues at https://github.com/hazelcast/hazelcast/issues/<issue number>.
@@ -53,6 +53,32 @@ The following are the other improvements performed to solve the enhancement issu
 
 
 3. Fixes
+
+*3.9.1 Fixes*
+
+- Dynamic config added on lite member not found after split-brain healing. [#11815]
+- Client Transactions does not respect unisocket behavior. [#11802]
+- Incorrect null log message in Delegating Address Picker Contribution-Welcome. [#11783] 
+- Excessive EntryEventType[] allocations. [#11777]
+- Hazelcast Client fails to connect the cluster if the first cluster member is down. [#11735]
+- Enqueued item gets lost when the client stops and reconnects sooner than hazelcast.client.endpoint.remove.delay.seconds. [#11700]
+- Node Initialization order is wrong. [#11681]
+- QueryCache on an IMap that is subsequently destroyed and recreated doesn't work. [#11666]
+- DefaultQueryCache::getAll doesn't check for null values. [#11665]
+- "Could not retrieve ringbuffer service to destroy event journal" on shutdown. [#11662]
+- Defining ManCenter in config causes PartitonMigration even though there is no data. [#11598]
+- Weird split-brain like issue with Hazelcast 3.8.4. [#11533]
+- Consider logging new HTTP connections with DEBUG or lower level. [#11196]
+- HashSet and HashMaps initialized to too small size. [#9445]
+
+Coverity Fixes:
+
+- Dereference null return value - ClientConnectionManagerImpl.encodeAuthenticationRequest(). [#11767]
+- Using invalid iterator - SmartClientListenerService.deregisterListenerInternal(String). [#11760]
+- Resource leak in client's ProxyManager. [#11751]
+
+
+*3.9 Fixes**
 
 - Members cannot join to 3.9 cluster when using cache with a key/value type that is only resolvable from the user code deployment repository. [#11505]
 - Hazelcast listeners may fail to be registered to a new joined member. This is caused by a race condition between PostJoinOperations and the member doing the listener registration. [#11490]
