@@ -61,6 +61,7 @@ The following are the other improvements performed to solve the enhancement issu
 - Incorrect null log message in Delegating Address Picker Contribution-Welcome. [#11783] 
 - Excessive EntryEventType[] allocations. [#11777]
 - Hazelcast Client fails to connect the cluster if the first cluster member is down. [#11735]
+- After promoting a member (HazelcastInstance.getCluster ().promoteLocalLiteMember ()), the instance of the member retrieved by getMembers() is not updated. [#11720]
 - Enqueued item gets lost when the client stops and reconnects sooner than hazelcast.client.endpoint.remove.delay.seconds. [#11700]
 - Node Initialization order is wrong. [#11681]
 - QueryCache on an IMap that is subsequently destroyed and recreated doesn't work. [#11666]
