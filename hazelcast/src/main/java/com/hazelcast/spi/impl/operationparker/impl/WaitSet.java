@@ -82,9 +82,9 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
-    // Runs in operation thread, we can assume that
-    // here we have an implicit lock for specific WaitNotifyKey.
-    // see javadoc
+    // Runs in partition-thread, and therefor we can assume we have exclusive access to the WaitNotifyKey
+    // (since each WaitNotifyKey is mapped to a single partition). So a park will not be concurrently
+    // executed with an unpark for the same key.
     public void unpark(Notifier notifier, WaitNotifyKey key) {
         WaitSetEntry entry = queue.peek();
         while (entry != null) {

@@ -35,6 +35,11 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
+/**
+ * A simple container for a {@link BlockingOperation} that is added to the {@link WaitSet}.
+ *
+ * Each WaitSetEntry is put in a delay queue (part of the {@link OperationParkerImpl}) based on its expiration time.
+ */
 class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
 
     final Queue<WaitSetEntry> queue;
