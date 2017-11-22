@@ -24,6 +24,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.logging.ILogger;
@@ -49,7 +50,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
-import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -219,14 +219,17 @@ public abstract class AbstractJoiner implements Joiner {
 
     /**
      * Sends a split brain join request to the target address and checks the response to see if this node should merge
-     * to the target address. If this node should be the merging side, the method returns the REQUEST which is sent to the target.
+     * to the target address.
      */
-    protected final SplitBrainJoinMessage sendSplitBrainJoinMessageAndCheckResponse(Address target) {
-        SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
+    protected final SplitBrainMergeCheckResult sendSplitBrainJoinMessageAndCheckResponse(Address target,
+            SplitBrainJoinMessage request) {
         SplitBrainJoinMessage response = sendSplitBrainJoinMessage(target, request);
-        return (clusterService.getClusterJoinManager().shouldMerge(response) == LOCAL_NODE_SHOULD_MERGE) ? request : null;
+        return clusterService.getClusterJoinManager().shouldMerge(response);
     }
 
+    /**
+     * Sends a split brain join request to the target address and returns the response.
+     */
     private SplitBrainJoinMessage sendSplitBrainJoinMessage(Address target, SplitBrainJoinMessage request) {
         if (logger.isFineEnabled()) {
             logger.fine("Sending SplitBrainJoinMessage to " + target);
