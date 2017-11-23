@@ -168,6 +168,7 @@
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <includes>
+                    <include>**/*.so</include>
                     <include>**/*.license</include>
                     <include>**/*.key</include>
                     <include>**/*.ftl</include>
