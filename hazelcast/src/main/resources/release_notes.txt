@@ -56,6 +56,7 @@ The following are the other improvements performed to solve the enhancement issu
 
 *3.9.1 Fixes*
 
+- MulticastJoiner may cause OOME because of the self-amplification in SplitBrainJoinMessage sending. [#11836]
 - Dynamic config added on lite member not found after split-brain healing. [#11815]
 - Client Transactions does not respect unisocket behavior. [#11802]
 - Incorrect null log message in Delegating Address Picker Contribution-Welcome. [#11783] 
