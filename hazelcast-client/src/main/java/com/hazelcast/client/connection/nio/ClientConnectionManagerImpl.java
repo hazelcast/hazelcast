@@ -762,16 +762,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         @Override
         public void run() {
-            ClientConnection connection = activeConnections.get(target);
-            if (connection == null) {
-                try {
-                    connection = createSocketConnection(addressTranslator.translate(target));
-                } catch (Exception e) {
-                    logger.finest(e);
-                    callback.onFailure(e);
-                    connectionsInProgress.remove(target);
-                    return;
-                }
+            ClientConnection connection;
+            try {
+                connection = getConnection(target);
+            } catch (Exception e) {
+                logger.finest(e);
+                callback.onFailure(e);
+                connectionsInProgress.remove(target);
+                return;
             }
 
             try {
@@ -781,6 +779,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
+        }
+
+        private ClientConnection getConnection(Address target) throws IOException {
+            ClientConnection connection = activeConnections.get(target);
+            if (connection != null) {
+                return connection;
+            }
+            Address address = addressTranslator.translate(target);
+            if (address == null) {
+                throw new NullPointerException("Address Translator " + addressTranslator.getClass()
+                        + " could not translate address " + target);
+            }
+            return createSocketConnection(address);
         }
     }
 
