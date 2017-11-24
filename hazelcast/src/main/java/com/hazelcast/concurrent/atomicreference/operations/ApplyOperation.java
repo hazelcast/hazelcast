@@ -17,7 +17,6 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,6 +24,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.APPLY;
 
 public class ApplyOperation extends AbstractAtomicReferenceOperation {
 
@@ -43,9 +44,9 @@ public class ApplyOperation extends AbstractAtomicReferenceOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
+        AtomicReferenceContainer container = getReferenceContainer();
 
-        Object input = nodeEngine.toObject(atomicReferenceContainer.get());
+        Object input = nodeEngine.toObject(container.get());
         //noinspection unchecked
         Object output = f.apply(input);
         returnValue = nodeEngine.toData(output);
@@ -58,7 +59,7 @@ public class ApplyOperation extends AbstractAtomicReferenceOperation {
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.APPLY;
+        return APPLY;
     }
 
     @Override

@@ -17,13 +17,14 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.SET;
 
 public class SetOperation extends AtomicReferenceBackupAwareOperation {
 
@@ -39,8 +40,8 @@ public class SetOperation extends AtomicReferenceBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
-        atomicReferenceContainer.set(newValue);
+        AtomicReferenceContainer container = getReferenceContainer();
+        container.set(newValue);
     }
 
     @Override
@@ -50,7 +51,7 @@ public class SetOperation extends AtomicReferenceBackupAwareOperation {
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.SET;
+        return SET;
     }
 
     @Override
