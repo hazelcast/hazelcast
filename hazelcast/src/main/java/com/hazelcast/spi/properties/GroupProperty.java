@@ -441,10 +441,10 @@ public final class GroupProperty {
      * Ping timeout in milliseconds. This cannot be more than the interval value. Should always be smaller.
      */
     public static final HazelcastProperty ICMP_TIMEOUT
-            = new HazelcastProperty("hazelcast.icmp.timeout", 500, MILLISECONDS);
+            = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
 
     /**
-     * Interval between ping attempts in milliseconds.
+     * Interval between ping attempts in milliseconds. Default and min allowed, 1 second.
      */
     public static final HazelcastProperty ICMP_INTERVAL
             = new HazelcastProperty("hazelcast.icmp.interval", 1000, MILLISECONDS);
@@ -457,6 +457,7 @@ public final class GroupProperty {
 
     /**
      * Ping TTL, the maximum number of hops the packets should go through or 0 for the default.
+     * Zero in this case means unlimited hops.
      */
     public static final HazelcastProperty ICMP_TTL
             = new HazelcastProperty("hazelcast.icmp.ttl", 0);
