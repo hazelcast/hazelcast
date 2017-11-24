@@ -275,6 +275,10 @@
     </hz:client>
 
     <hz:client id="client10-flakeIdGenerator" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
         <hz:flake-id-generator name="gen1" prefetchCount="3" prefetchValidity="3000"/>
     </hz:client>
 

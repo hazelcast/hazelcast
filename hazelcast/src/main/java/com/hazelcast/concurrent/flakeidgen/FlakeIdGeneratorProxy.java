@@ -29,14 +29,15 @@ public class FlakeIdGeneratorProxy
         implements FlakeIdGenerator {
 
     static final int BITS_TIMESTAMP = 42;
-    private static final int BITS_SEQUENCE = 6;
-    private static final int BITS_NODE_ID = 16;
 
     /**
      * 1.1.2017 0:00 GMT will be MIN_VALUE in the 42-bit signed integer
-     * TODO [vilo]: maybe use later date based on real release date
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
+
+    private static final int BITS_SEQUENCE = 6;
+    private static final int BITS_NODE_ID = 16;
 
     private final int nodeId;
     private final String name;
@@ -60,8 +61,8 @@ public class FlakeIdGeneratorProxy
         // several times until the error is thrown to the caller.
         if ((nodeId & -1 << BITS_NODE_ID) != 0) {
             this.nodeId = -1;
-            logger.severe("Node ID is out of range (" +nodeId + "), this member won't be able to generate IDs. " +
-                    "Cluster restart is recommended.");
+            logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
+                    + "Cluster restart is recommended.");
         } else {
             this.nodeId = nodeId;
         }
@@ -85,7 +86,8 @@ public class FlakeIdGeneratorProxy
         now -= EPOCH_START;
         assert now >= -(1L << BITS_TIMESTAMP - 1) && now < (1L << BITS_TIMESTAMP - 1)  : "Current time out of allowed range";
         now <<= BITS_SEQUENCE;
-        long oldGeneratedValue, base;
+        long oldGeneratedValue;
+        long base;
         do {
             oldGeneratedValue = generatedValue.get();
             base = Math.max(now, oldGeneratedValue);

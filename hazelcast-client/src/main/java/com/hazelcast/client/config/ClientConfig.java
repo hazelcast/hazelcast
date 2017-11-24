@@ -117,7 +117,8 @@ public class ClientConfig {
 
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
 
-    private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap = new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
+    private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
+            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
@@ -808,7 +809,8 @@ public class ClientConfig {
     public QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName) {
         Map<String, Map<String, QueryCacheConfig>> allQueryCacheConfig = getQueryCacheConfigs();
 
-        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(configPatternMatcher, allQueryCacheConfig, mapName);
+        Map<String, QueryCacheConfig> queryCacheConfigsForMap =
+                lookupByPattern(configPatternMatcher, allQueryCacheConfig, mapName);
         if (queryCacheConfigsForMap == null) {
             queryCacheConfigsForMap = new HashMap<String, QueryCacheConfig>();
             allQueryCacheConfig.put(mapName, queryCacheConfigsForMap);

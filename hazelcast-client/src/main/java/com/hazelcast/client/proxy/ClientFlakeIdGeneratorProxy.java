@@ -51,7 +51,10 @@ import static java.util.Collections.newSetFromMap;
  */
 public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdGenerator {
 
-    private static int NUM_ATTEMPTS = 5;
+    private static final int DEFAULT_NUM_ATTEMPTS = 5;
+
+    // this should be final, but is not due to tests
+    private static int numAttempts = DEFAULT_NUM_ATTEMPTS;
 
     private static final ClientMessageDecoder NEW_ID_BATCH_DECODER = new ClientMessageDecoder() {
         @Override
@@ -100,14 +103,15 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
     public IdBatch newIdBatch(int batchSize) {
         // go to a member for a batch of IDs
         Throwable error = null;
-        for (int iteration = 0; iteration < NUM_ATTEMPTS; iteration++) {
+        for (int iteration = 0; iteration < numAttempts; iteration++) {
             Member member = getRandomMember();
             try {
                 return newIdBatchAsync(batchSize, member.getAddress()).join();
             } catch (Throwable e) {
                 if (e instanceof FlakeIdNodeIdOverflowException) {
                     overflowedMembers.add(member.getUuid());
-                    iteration--; // don't count this attempt
+                    // don't count this attempt
+                    iteration--;
                 }
                 randomMember = null;
                 error = e;
@@ -121,7 +125,8 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
         return invokeOnMemberAsync(request, address, NEW_ID_BATCH_DECODER);
     }
 
-    private <T> InternalCompletableFuture<T> invokeOnMemberAsync(ClientMessage msg, Address address, ClientMessageDecoder decoder) {
+    private <T> InternalCompletableFuture<T> invokeOnMemberAsync(ClientMessage msg, Address address,
+                                                                 ClientMessageDecoder decoder) {
         ClientInvocationFuture future = new ClientInvocation(getClient(), msg, getName(), address).invoke();
         return new ClientDelegatingFuture<T>(future, getSerializationService(), decoder);
     }
@@ -222,7 +227,7 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
     /**
      * Only for test, value is not properly synchronized.
      */
-    public static void setNumAttempts(int newNumRetries) {
-        NUM_ATTEMPTS = newNumRetries;
+    public static void setNumAttempts(int newNumAttempts) {
+        numAttempts = newNumAttempts;
     }
 }

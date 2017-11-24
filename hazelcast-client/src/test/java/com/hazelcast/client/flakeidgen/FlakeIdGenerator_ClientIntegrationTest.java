@@ -74,13 +74,14 @@ public class FlakeIdGenerator_ClientIntegrationTest {
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
         assertTrue("This test assumes default validity be larger than 3000 by a good margin",
-                FlakeIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY > 5000);
+                FlakeIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY >= 5000);
         // this should take a batch of 3 IDs from the member and store it in the auto-batcher
         long id1 = generator.newId();
         // this should take another batch, independent from the stored one
         IdBatch batch = generator.newIdBatch(5);
         // the batch start should be out of range for the auto-batch created for id1
-        assertTrue(batch.base() > id1 + myBatchSize * batch.increment());
+        assertTrue("id1=" + id1 + ", batch.base=" + batch.base() + ", batch.increment=" + batch.increment(),
+                batch.base() >= id1 + myBatchSize * batch.increment());
         // this should take second ID from auto-created batch. It should be next to id1
         long id2 = generator.newId();
         assertEquals(id1 + batch.increment(), id2);

@@ -16,9 +16,21 @@
 
 package com.hazelcast.client.config;
 
+/**
+ * The {@code FlakeIdGeneratorConfig} contains the configuration for the client
+ * regarding {@link com.hazelcast.core.HazelcastInstance#getFlakeIdGenerator(String)
+ * Flake ID Generator}.
+ */
 public class FlakeIdGeneratorConfig {
 
+    /**
+     * Default value for {@link #getPrefetchCount()}.
+     */
     public static final int DEFAULT_PREFETCH_COUNT = 100;
+
+    /**
+     * Default value for {@link #getPrefetchValidity()}.
+     */
     public static final long DEFAULT_PREFETCH_VALIDITY = 10000;
 
     private String name;
@@ -120,10 +132,10 @@ public class FlakeIdGeneratorConfig {
 
     @Override
     public String toString() {
-        return "FlakeIdGeneratorConfig{" +
-                "name='" + name + '\'' +
-                ", prefetchCount=" + prefetchCount +
-                ", prefetchValidity=" + prefetchValidity +
-                '}';
+        return "FlakeIdGeneratorConfig{"
+                + "name='" + name + '\''
+                + ", prefetchCount=" + prefetchCount
+                + ", prefetchValidity=" + prefetchValidity
+                + '}';
     }
 }

@@ -92,16 +92,14 @@ public class FlakeIdGeneratorProxyTest {
     @Test
     public void when_nodeIdTooLarge_then_fail() {
         FlakeIdGeneratorProxy gen = createGenerator(65536);
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("NodeID overflow, this member cannot generate IDs");
+        exception.expect(FlakeIdNodeIdOverflowException.class);
         gen.newId();
     }
 
     @Test
     public void when_nodeIdTooSmall_then_fail() {
         FlakeIdGeneratorProxy gen = createGenerator(-1);
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("NodeID overflow, this member cannot generate IDs");
+        exception.expect(FlakeIdNodeIdOverflowException.class);
         gen.newId();
     }
 
