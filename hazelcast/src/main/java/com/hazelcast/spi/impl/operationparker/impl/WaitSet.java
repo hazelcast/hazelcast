@@ -129,7 +129,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         Iterator<WaitSetEntry> it = queue.iterator();
         int partitionId = migrationInfo.getPartitionId();
         while (it.hasNext()) {
-            if (Thread.interrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
                 return;
             }
             WaitSetEntry entry = it.next();
