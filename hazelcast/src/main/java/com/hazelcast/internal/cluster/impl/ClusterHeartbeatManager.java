@@ -56,6 +56,7 @@ import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * ClusterHeartbeatManager manages the heartbeat sending and receiving
@@ -72,6 +73,7 @@ public class ClusterHeartbeatManager {
     private static final long CLOCK_JUMP_THRESHOLD = MINUTES.toMillis(2);
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
     private static final int MAX_PING_RETRY_COUNT = 5;
+    private static final long MIN_ICMP_INTERVAL_MILLIS = SECONDS.toMillis(1);
 
     private final ILogger logger;
     private final Lock clusterServiceLock;
@@ -124,6 +126,11 @@ public class ClusterHeartbeatManager {
                     + "this is not allowed.");
         }
 
+        if (icmpIntervalMillis < MIN_ICMP_INTERVAL_MILLIS) {
+            throw new IllegalStateException("ICMP interval is set to a value less than the min allowed, "
+                    + MIN_ICMP_INTERVAL_MILLIS + "ms");
+        }
+
         boolean icmpEchoFailFast = hazelcastProperties.getBoolean(GroupProperty.ICMP_ECHO_FAIL_FAST);
         if (icmpParallelMode) {
             if (icmpEchoFailFast) {
@@ -131,7 +138,8 @@ public class ClusterHeartbeatManager {
 
                 if (!ICMPHelper.isRawSocketPermitted()) {
                     throw new IllegalStateException("ICMP failure-detector can't be used in this environment. "
-                            + "Check Hazelcast Documentation for supported platforms and actions to enable this capability.");
+                            + "Check Hazelcast Documentation Chapter on the Ping Failure Detector for supported platforms "
+                            + "and how to enable this capability for your operating system");
                 }
                 logger.info("ICMP failure-detector is supported, enabling.");
             }

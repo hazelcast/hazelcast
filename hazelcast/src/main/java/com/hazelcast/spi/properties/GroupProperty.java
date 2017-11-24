@@ -446,23 +446,23 @@ public final class GroupProperty {
      * Run ICMP detection in parallel with the Heartbeat failure detector.
      */
     public static final HazelcastProperty ICMP_PARALLEL_MODE
-            = new HazelcastProperty("hazelcast.icmp.parallel.mode", false);
+            = new HazelcastProperty("hazelcast.icmp.parallel.mode", true);
 
     /**
      * Enforce ICMP Echo Request mode for ping-detector. If OS is not supported,
      * or not configured correctly as per reference-manual, hazelcast will fail to start.
      */
     public static final HazelcastProperty ICMP_ECHO_FAIL_FAST
-            = new HazelcastProperty("hazelcast.icmp.echo.fail.fast.on.startup", false);
+            = new HazelcastProperty("hazelcast.icmp.echo.fail.fast.on.startup", true);
 
     /**
      * Ping timeout in milliseconds. This cannot be more than the interval value. Should always be smaller.
      */
     public static final HazelcastProperty ICMP_TIMEOUT
-            = new HazelcastProperty("hazelcast.icmp.timeout", 500, MILLISECONDS);
+            = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
 
     /**
-     * Interval between ping attempts in milliseconds.
+     * Interval between ping attempts in milliseconds. Default and min allowed, 1 second.
      */
     public static final HazelcastProperty ICMP_INTERVAL
             = new HazelcastProperty("hazelcast.icmp.interval", 1000, MILLISECONDS);
@@ -475,6 +475,7 @@ public final class GroupProperty {
 
     /**
      * Ping TTL, the maximum number of hops the packets should go through or 0 for the default.
+     * Zero in this case means unlimited hops.
      */
     public static final HazelcastProperty ICMP_TTL
             = new HazelcastProperty("hazelcast.icmp.ttl", 0);
