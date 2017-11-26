@@ -30,10 +30,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,13 +46,29 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService,
-        ClientAwareService {
+        ClientAwareService, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:semaphoreService";
 
+    private static final Object NULL_OBJECT = new Object();
+
     private final ConcurrentMap<String, SemaphoreContainer> containers = new ConcurrentHashMap<String, SemaphoreContainer>();
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            SemaphoreConfig semaphoreConfig = nodeEngine.getConfig().findSemaphoreConfig(name);
+            String quorumName = semaphoreConfig.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     private final ConstructorFunction<String, SemaphoreContainer> containerConstructor
             = new ConstructorFunction<String, SemaphoreContainer>() {
@@ -192,4 +210,12 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     public void clientDisconnected(String clientUuid) {
         onOwnerDisconnected(clientUuid);
     }
+
+    @Override
+    public String getQuorumName(final String name) {
+        // we use caching here because semaphore operations are often and we should avoid lock config lookup
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
 }

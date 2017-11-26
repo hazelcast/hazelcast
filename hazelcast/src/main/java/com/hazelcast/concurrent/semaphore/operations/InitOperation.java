@@ -19,10 +19,11 @@ package com.hazelcast.concurrent.semaphore.operations;
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import static java.lang.Boolean.TRUE;
 
-public class InitOperation extends SemaphoreBackupAwareOperation {
+public class InitOperation extends SemaphoreBackupAwareOperation implements MutatingOperation {
 
     public InitOperation() {
     }
