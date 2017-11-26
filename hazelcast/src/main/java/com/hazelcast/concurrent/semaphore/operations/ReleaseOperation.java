@@ -22,8 +22,9 @@ import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ReleaseOperation extends SemaphoreBackupAwareOperation implements Notifier {
+public class ReleaseOperation extends SemaphoreBackupAwareOperation implements Notifier, MutatingOperation {
 
     public ReleaseOperation() {
     }

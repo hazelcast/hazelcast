@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -30,7 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ISemaphore}.
  */
-public class SemaphoreConfig implements IdentifiedDataSerializable {
+public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default synchronous backup count.
@@ -46,6 +48,8 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private transient SemaphoreConfigReadOnly readOnly;
+
+    private String quorumName;
 
     /**
      * Creates a default configured {@link SemaphoreConfig}.
@@ -65,6 +69,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         this.initialPermits = config.getInitialPermits();
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
+        this.quorumName = config.getQuorumName();
     }
 
     /**
@@ -186,6 +191,15 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         return asyncBackupCount + backupCount;
     }
 
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    public SemaphoreConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "SemaphoreConfig{"
@@ -193,6 +207,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
                 + ", initialPermits=" + initialPermits
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
+                + ", quorumName=" + quorumName
                 + '}';
     }
 
@@ -212,6 +227,9 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         out.writeInt(initialPermits);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -220,6 +238,9 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         initialPermits = in.readInt();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -243,6 +264,9 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         return name != null ? name.equals(that.name) : that.name == null;
     }
 
@@ -252,6 +276,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         result = 31 * result + initialPermits;
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 }

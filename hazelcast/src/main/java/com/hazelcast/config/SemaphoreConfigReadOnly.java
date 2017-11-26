@@ -46,4 +46,9 @@ public class SemaphoreConfigReadOnly extends SemaphoreConfig {
     public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
         throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
     }
+
+    @Override
+    public SemaphoreConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+    }
 }

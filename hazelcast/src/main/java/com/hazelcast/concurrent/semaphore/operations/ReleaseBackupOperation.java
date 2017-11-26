@@ -18,8 +18,9 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ReleaseBackupOperation extends SemaphoreBackupOperation {
+public class ReleaseBackupOperation extends SemaphoreBackupOperation implements MutatingOperation {
 
     public ReleaseBackupOperation() {
     }
