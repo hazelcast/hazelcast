@@ -60,7 +60,6 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.SHUTDOWN_REQUEST;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
-import static com.hazelcast.jet.core.TestUtil.getJetService;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.EXECUTE_OP;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_OP;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;

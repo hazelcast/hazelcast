@@ -77,11 +77,22 @@ public class TestProcessors {
         public static volatile CountDownLatch executionStarted;
         public static volatile CountDownLatch proceedLatch;
 
+        // how long time to wait during calls to complete()
+        private final long timeoutMillis;
+
+        public StuckProcessor() {
+            this(1);
+        }
+
+        public StuckProcessor(long timeoutMillis) {
+            this.timeoutMillis = timeoutMillis;
+        }
+
         @Override
         public boolean complete() {
             executionStarted.countDown();
             try {
-                return proceedLatch.await(1, TimeUnit.MILLISECONDS);
+                return proceedLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 return false;
             }

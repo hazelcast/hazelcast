@@ -298,7 +298,7 @@ public class ProcessorTaskletTest_Blocking {
         }
         final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
                 mock(SnapshotContext.class), new MockOutboundCollector(10));
-        t.init(jobFuture);
+        t.init();
         return t;
     }
 

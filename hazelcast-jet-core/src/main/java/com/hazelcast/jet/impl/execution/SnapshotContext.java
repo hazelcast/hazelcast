@@ -147,7 +147,7 @@ public class SnapshotContext {
             // member is already done with the job and master didn't know it yet - we are immediately done.
             return completedVoidFuture();
         }
-        CompletableFuture res = future = new CompletableFuture<>();
+        CompletableFuture<Void> res = future = new CompletableFuture<>();
         if (newNumRemainingTasklets == 0) {
             handleSnapshotDone();
         }

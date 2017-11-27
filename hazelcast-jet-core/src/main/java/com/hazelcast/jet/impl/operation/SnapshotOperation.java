@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,20 +46,20 @@ public class SnapshotOperation extends AsyncExecutionOperation {
     @Override
     protected void doRun() throws Exception {
         JetService service = getService();
-        service.getJobExecutionService()
-               .beginSnapshot(getCallerAddress(), jobId, executionId, snapshotId)
-               .thenAccept(r -> {
-                   logFine(getLogger(),
-                           "Snapshot %s for job %s finished successfully on member",
-                           snapshotId, idToString(jobId));
-                   doSendResponse(null);
-               })
-               .exceptionally(e -> {
-                   getLogger().warning(String.format("Snapshot %d for job %s finished with error on member",
-                           snapshotId, idToString(jobId)), e);
-                   doSendResponse(new JetException("Exception during snapshot", e));
-                   return null;
-               });
+        ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
+                getCallerAddress(), jobId, executionId, this
+        );
+        ctx.beginSnapshot(snapshotId).thenAccept(r -> {
+            logFine(getLogger(),
+                    "Snapshot %s for job %s finished successfully on member",
+                    snapshotId, idToString(jobId));
+            doSendResponse(null);
+        }).exceptionally(e -> {
+            getLogger().warning(String.format("Snapshot %d for job %s finished with error on member",
+                    snapshotId, idToString(jobId)), e);
+            doSendResponse(new JetException("Exception during snapshot: " + e, e));
+            return null;
+        });
 
     }
 

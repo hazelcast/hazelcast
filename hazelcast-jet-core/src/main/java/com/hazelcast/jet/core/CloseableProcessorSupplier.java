@@ -29,8 +29,12 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 
 /**
- * A {@link ProcessorSupplier} which closes created processor instances
- * when the job is complete.
+ * A {@link ProcessorSupplier} which closes created processor instances when
+ * the job is complete. Class is useful to close external resources such as
+ * connections or files.
+ * <p>
+ * The {@code close()} method is called after all other calls on any local
+ * processor have returned.
  *
  * @param <E> Processor type
  */
@@ -45,7 +49,6 @@ public class CloseableProcessorSupplier<E extends Processor & Closeable> impleme
 
     /**
      * @param simpleSupplier Supplier to create processor instances.
-     *                       Parameter is the local processor index.
      */
     public CloseableProcessorSupplier(DistributedSupplier<E> simpleSupplier) {
         this(count -> IntStream.range(0, count)
@@ -55,6 +58,7 @@ public class CloseableProcessorSupplier<E extends Processor & Closeable> impleme
 
     /**
      * @param supplier Supplier to create processor instances.
+     *                 Parameter is the number of processors that should be in the collection.
      */
     public CloseableProcessorSupplier(DistributedIntFunction<Collection<E>>  supplier) {
         this.supplier = supplier;

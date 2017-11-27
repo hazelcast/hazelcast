@@ -27,10 +27,9 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.operation.ExecuteOperation;
-import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -39,10 +38,8 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -97,7 +94,7 @@ public class JobExecutionService {
     public void reset(String reason, Supplier<RuntimeException> exceptionSupplier) {
         executionContexts.values().forEach(exeCtx -> {
             String message = String.format("Completing %s locally. Reason: %s",
-                    jobAndExecutionId(exeCtx.getJobId(), exeCtx.getExecutionId()),
+                    jobAndExecutionId(exeCtx.jobId(), exeCtx.executionId()),
                     reason);
             cancelAndComplete(exeCtx, message, exceptionSupplier.get());
         });
@@ -108,27 +105,30 @@ public class JobExecutionService {
      * job participant
      */
     void onMemberLeave(Address address) {
-        executionContexts.values()
-                         .stream()
-                         .filter(exeCtx -> exeCtx.isCoordinatorOrParticipating(address))
-                         .forEach(exeCtx -> {
-                             String message = String.format("Completing %s locally. Reason: %s left the cluster",
-                                     jobAndExecutionId(exeCtx.getJobId(), exeCtx.getExecutionId()),
-                                     address);
-                             cancelAndComplete(exeCtx, message, new TopologyChangedException("Topology has been changed"));
-                         });
+        executionContexts.values().stream()
+             .filter(exeCtx -> exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address))
+             .forEach(exeCtx -> {
+                 String message = String.format("Completing %s locally. Reason: Coordinator %s left the cluster",
+                         jobAndExecutionId(exeCtx.jobId(), exeCtx.executionId()),
+                         address);
+                 cancelAndComplete(exeCtx, message, new TopologyChangedException("Topology has been changed."));
+             });
     }
 
+    /**
+     * Cancel job execution and complete execution without waiting for coordinator
+     * to send CompleteOperation.
+     */
     private void cancelAndComplete(ExecutionContext exeCtx, String message, Throwable t) {
         try {
-            exeCtx.cancel().whenComplete(withTryCatch(logger, (r, e) -> {
-                long executionId = exeCtx.getExecutionId();
+            exeCtx.cancelExecution().whenComplete(withTryCatch(logger, (r, e) -> {
+                long executionId = exeCtx.executionId();
                 logger.fine(message);
                 completeExecution(executionId, t);
             }));
         } catch (Throwable e) {
             logger.severe(String.format("Local cancellation of %s failed",
-                    jobAndExecutionId(exeCtx.getJobId(), exeCtx.getExecutionId())), e);
+                    jobAndExecutionId(exeCtx.jobId(), exeCtx.executionId())), e);
         }
     }
 
@@ -147,7 +147,7 @@ public class JobExecutionService {
      *     init execution is retried.
      * </li></ul>
      */
-    void initExecution(
+    public void initExecution(
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
@@ -160,16 +160,16 @@ public class JobExecutionService {
             if (current != null) {
                 throw new IllegalStateException(String.format(
                         "Execution context for %s for coordinator %s already exists for coordinator %s",
-                        jobAndExecutionId(jobId, executionId), coordinator, current.getCoordinator()));
+                        jobAndExecutionId(jobId, executionId), coordinator, current.coordinator()));
             }
 
             executionContexts.values().stream()
-                             .filter(e -> e.getJobId() == jobId)
+                             .filter(e -> e.jobId() == jobId)
                              .forEach(e -> logger.fine(String.format(
                                      "Execution context for %s for coordinator %s already exists"
                                              + " with local execution %s for coordinator %s",
-                                     jobAndExecutionId(jobId, executionId), coordinator, idToString(e.getJobId()),
-                                     e.getCoordinator())));
+                                     jobAndExecutionId(jobId, executionId), coordinator, idToString(e.jobId()),
+                                     e.coordinator())));
 
             throw new RetryableHazelcastException();
         }
@@ -244,29 +244,16 @@ public class JobExecutionService {
         }
     }
 
-    /**
-     * Starts execution of the job if the coordinator is verified
-     * as the accepted master and the correct initiator.
-     */
-    public CompletionStage<Void> execute(Address coordinator, long jobId, long executionId,
-                                         Consumer<CompletionStage<Void>> doneCallback) {
-        ExecutionContext executionContext = verifyAndGetExecutionContext(coordinator, jobId, executionId,
-                ExecuteOperation.class.getSimpleName());
-
-        logger.info("Start execution of " + jobAndExecutionId(jobId, executionId) + " from coordinator " + coordinator);
-
-        return executionContext.execute(doneCallback);
-    }
-
-    private ExecutionContext verifyAndGetExecutionContext(Address coordinator, long jobId, long executionId,
-                                                          String operationName) {
+    public ExecutionContext assertExecutionContext(Address coordinator, long jobId, long executionId,
+                                                   Operation callerOp) {
         Address masterAddress = nodeEngine.getMasterAddress();
         if (!coordinator.equals(masterAddress)) {
             failIfNotRunning();
 
             throw new IllegalStateException(String.format(
                     "Coordinator %s cannot do '%s' for %s: it is not the master, the master is %s",
-                    coordinator, operationName, jobAndExecutionId(jobId, executionId), masterAddress));
+                    coordinator, callerOp.getClass().getSimpleName(),
+                    jobAndExecutionId(jobId, executionId), masterAddress));
         }
 
         failIfNotRunning();
@@ -275,12 +262,12 @@ public class JobExecutionService {
         if (executionContext == null) {
             throw new TopologyChangedException(String.format(
                     "%s not found for coordinator %s for '%s'",
-                    jobAndExecutionId(jobId, executionId), coordinator, operationName));
-        } else if (!executionContext.verify(coordinator, jobId)) {
+                    jobAndExecutionId(jobId, executionId), coordinator, callerOp.getClass().getSimpleName()));
+        } else if (!(executionContext.coordinator().equals(coordinator) && executionContext.jobId() == jobId)) {
             throw new IllegalStateException(String.format(
                     "%s, originally from coordinator %s, cannot do '%s' by coordinator %s and execution %s",
-                    jobAndExecutionId(jobId, executionContext.getExecutionId()), executionContext.getCoordinator(),
-                    operationName, coordinator, idToString(executionId)));
+                    jobAndExecutionId(jobId, executionContext.executionId()), executionContext.coordinator(),
+                    callerOp.getClass().getSimpleName(), coordinator, idToString(executionId)));
         }
 
         return executionContext;
@@ -289,25 +276,18 @@ public class JobExecutionService {
     /**
      * Completes and cleans up execution of the given job
      */
-    void completeExecution(long executionId, Throwable error) {
+    public void completeExecution(long executionId, Throwable error) {
         ExecutionContext executionContext = executionContexts.remove(executionId);
         if (executionContext != null) {
             try {
-                executionContext.complete(error);
+                executionContext.completeExecution(error);
             } finally {
-                classLoaders.remove(executionContext.getJobId());
-                executionContextJobIds.remove(executionContext.getJobId());
-                logger.fine("Completed execution of " + jobAndExecutionId(executionContext.getJobId(), executionId));
+                classLoaders.remove(executionContext.jobId());
+                executionContextJobIds.remove(executionContext.jobId());
+                logger.fine("Completed execution of " + jobAndExecutionId(executionContext.jobId(), executionId));
             }
         } else {
             logger.fine("Execution " + idToString(executionId) + " not found for completion");
         }
-    }
-
-    public CompletionStage<Void> beginSnapshot(Address coordinator, long jobId, long executionId, long snapshotId) {
-        ExecutionContext executionContext = verifyAndGetExecutionContext(coordinator, jobId, executionId,
-                SnapshotOperation.class.getSimpleName());
-
-        return executionContext.beginSnapshot(snapshotId);
     }
 }

@@ -161,7 +161,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
             }
 
             assertTrueEventually(() -> {
-                assertTrue(list.size() >= messageCount * 4);
+                assertTrue("Not all messages were received", list.size() >= messageCount * 4);
                 for (int i = 0; i < 2 * messageCount; i++) {
                     assertTrue(list.contains(createEntry(i)));
                     assertTrue(list.contains(createEntry(i - messageCount)));

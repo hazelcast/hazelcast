@@ -23,10 +23,10 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
@@ -50,8 +50,6 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class JetService
@@ -149,17 +147,6 @@ public class JetService
         jobExecutionService.initExecution(
                 jobId, executionId, coordinator, coordinatorMemberListVersion, participants, plan
         );
-    }
-
-    public CompletionStage<Void> execute(
-            Address coordinator, long jobId, long executionId,
-            Consumer<CompletionStage<Void>> doneCallback
-    ) {
-        return jobExecutionService.execute(coordinator, jobId, executionId, doneCallback);
-    }
-
-    public void completeExecution(long executionId, Throwable error) {
-        jobExecutionService.completeExecution(executionId, error);
     }
 
     public JobStatus getJobStatus(long jobId) {

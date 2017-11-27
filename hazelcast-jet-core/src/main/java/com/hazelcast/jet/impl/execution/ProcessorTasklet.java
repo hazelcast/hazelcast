@@ -35,7 +35,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE;
@@ -114,7 +113,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     @Override
-    public void init(CompletableFuture<Void> jobFuture) {
+    public void init() {
         processor.init(outbox, context);
     }
 

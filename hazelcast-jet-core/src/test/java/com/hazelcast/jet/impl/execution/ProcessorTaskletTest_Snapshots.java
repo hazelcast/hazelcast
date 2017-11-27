@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
-import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.core.test.TestOutbox.MockData;
 import com.hazelcast.jet.core.test.TestOutbox.MockSerializationService;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -200,7 +199,7 @@ public class ProcessorTaskletTest_Snapshots {
         snapshotContext.initTaskletCount(1, 0);
         final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
                 snapshotContext, snapshotCollector);
-        t.init(new CompletableFuture<>());
+        t.init();
         return t;
     }
 

@@ -16,15 +16,19 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.Node;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.stream.IStreamCache;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -91,30 +95,48 @@ public class JetTestSupport extends HazelcastTestSupport {
     }
 
     public static void assertTrueEventually(UncheckedRunnable runnable) {
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                runnable.run();
-            }
-        });
+        HazelcastTestSupport.assertTrueEventually(assertTask(runnable));
     }
 
     public static void assertTrueEventually(UncheckedRunnable runnable, long timeoutSeconds) {
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                runnable.run();
-            }
-        }, timeoutSeconds);
+        HazelcastTestSupport.assertTrueEventually(assertTask(runnable), timeoutSeconds);
     }
 
     public static void assertTrueAllTheTime(UncheckedRunnable runnable, long durationSeconds) {
-        HazelcastTestSupport.assertTrueAllTheTime(new AssertTask() {
+        HazelcastTestSupport.assertTrueAllTheTime(assertTask(runnable), durationSeconds);
+    }
+
+    public static void assertTrueFiveSeconds(UncheckedRunnable runnable) {
+        HazelcastTestSupport.assertTrueFiveSeconds(assertTask(runnable));
+    }
+
+    public static JetService getJetService(JetInstance jetInstance) {
+        return getNodeEngineImpl(jetInstance).getService(JetService.SERVICE_NAME);
+    }
+
+    public static HazelcastInstance hz(JetInstance instance) {
+        return instance.getHazelcastInstance();
+    }
+
+    public static Address getAddress(JetInstance instance) {
+        return getAddress(hz(instance));
+    }
+
+    public static Node getNode(JetInstance instance) {
+        return getNode(hz(instance));
+    }
+
+    public static NodeEngineImpl getNodeEngineImpl(JetInstance instance) {
+        return getNodeEngineImpl(hz(instance));
+    }
+
+    private static AssertTask assertTask(UncheckedRunnable runnable) {
+        return new AssertTask() {
             @Override
             public void run() throws Exception {
                 runnable.run();
             }
-        }, durationSeconds);
+        };
     }
 
     public Address nextAddress() {

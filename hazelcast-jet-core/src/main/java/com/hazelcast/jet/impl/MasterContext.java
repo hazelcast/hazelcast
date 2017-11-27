@@ -81,6 +81,10 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Data pertaining to single job on master member. There's one instance per job,
+ * shared between multiple executions.
+ */
 public class MasterContext {
 
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
@@ -562,8 +566,8 @@ public class MasterContext {
 
         boolean cancelOnFailure = (cancellationFuture != null);
 
-        // if cancelOnFailure is true, we should cancel invocations when the future is cancelled, or any invocation fail
-
+        // if cancelOnFailure is true, we should cancel invocations when the future is cancelled or any
+        // of the invocations fails
         if (cancelOnFailure) {
             cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
                 if (e instanceof CancellationException) {

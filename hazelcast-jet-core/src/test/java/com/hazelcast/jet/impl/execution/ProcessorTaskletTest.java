@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -256,7 +255,7 @@ public class ProcessorTaskletTest {
 
         final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
                 mock(SnapshotContext.class), new MockOutboundCollector(10));
-        t.init(new CompletableFuture<>());
+        t.init();
         return t;
     }
 

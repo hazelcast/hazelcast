@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -28,12 +26,10 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -43,7 +39,6 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -61,7 +56,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.CancellationException;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -78,8 +72,10 @@ import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
@@ -111,9 +107,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
-        JetInstance[] instances = factory.newMembers(config, 2);
-        instance1 = instances[0];
-        instance2 = instances[1];
+        instance1 = factory.newMember(config);
+        instance2 = factory.newMember(config);
     }
 
     @After
@@ -282,53 +277,84 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         /*
         Design of this test
 
-        The DAG is "source -> sink". Source completes immediately on slave member and is infinite on master.
-        Edge between source and sink is distributed. This situation will cause that after the source completes on
-        slave, the sink on slave will only have remote source. This will allow that we can receive the
-        barrier from remote master before slave even starts the snapshot. This is the very purpose of this
-        test. To ensure that this happens, we postpone handling of SnapshotOperation on slave.
-         */
-        boolean i1IsMaster = ((ClusterServiceImpl) instance1.getHazelcastInstance().getCluster()).isMaster();
-        JetInstance masterInstance = i1IsMaster ? instance1 : instance2;
-        JetInstance slaveInstance = i1IsMaster ? instance2 : instance1;
+        The DAG is "source -> sink". Source completes immediately on  non-coordinator (worker)
+        and is infinite on coordinator. Edge between source and sink is distributed. This
+        situation will cause that after the source completes on member, the sink on worker
+        will only have the remote source. This will allow that we can receive the barrier
+        from remote coordinator before worker even starts the snapshot. This is the very
+        purpose of this test. To ensure that this happens, we postpone handling of SnapshotOperation
+        on the worker.
+        */
 
-        JetService jetService = ((HazelcastInstanceImpl) slaveInstance.getHazelcastInstance())
-                .node.nodeEngine.getService(JetService.SERVICE_NAME);
-        PacketFiltersUtil.delayOperationsFrom(masterInstance.getHazelcastInstance(),
-                JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.SNAPSHOT_OP));
+        // instance1 is always coordinator
+        delayOperationsFrom(
+                hz(instance1), JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.SNAPSHOT_OP)
+        );
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", new NonBalancedSource(
-                slaveInstance.getHazelcastInstance().getCluster().getLocalMember().getAddress().toString()));
-        Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP());
+        Vertex source = dag.newVertex("source", new NonBalancedSource(getAddress(instance2).toString()));
+        Vertex sink = dag.newVertex("sink", writeListP("sink"));
         dag.edge(between(source, sink).distributed());
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(500);
-        Job job = masterInstance.newJob(dag, config);
+        Job job = instance1.newJob(dag, config);
 
-        IStreamMap<Long, Long> randomIdsMap = masterInstance.getMap(JobRepository.RANDOM_IDS_MAP_NAME);
-        long executionId = randomIdsMap.entrySet().stream()
-                    .filter(e -> e.getValue().equals(job.getJobId()) && !e.getValue().equals(e.getKey()))
-                    .mapToLong(Entry::getKey)
-                    .findAny()
-                    .orElseThrow(() -> new AssertionError("ExecutionId not found"));
-        ExecutionContext executionContext = null;
-        // spin until the executionContext is available on the slave member
-        while (executionContext == null) {
-            executionContext = jetService.getJobExecutionService().getExecutionContext(executionId);
-        }
-        SnapshotContext ssContext = executionContext.getSnapshotContext();
+        SnapshotContext ssContext = getSnapshotContext(job);
         assertTrueEventually(() -> assertTrue("numRemainingTasklets was not negative, the tested scenario did not happen",
                 ssContext.getNumRemainingTasklets().get() < 0), 3);
+    }
 
-        Thread.sleep(3000);
-        job.cancel();
-        try {
-            job.getFuture().get();
-        } catch (CancellationException expected) {
+    @Test
+    public void when_snapshotStartedBeforeExecution_then_firstSnapshotIsSuccessful() throws Exception {
+        // instance1 is always coordinator
+        // delay ExecuteOperation so that snapshot is started before execution is started on the worker member
+        delayOperationsFrom(
+                hz(instance1), JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.EXECUTE_OP)
+        );
+
+        DAG dag = new DAG();
+        SequencesInPartitionsMetaSupplier pms = new SequencesInPartitionsMetaSupplier(3, 100);
+
+        Vertex source = dag.newVertex("source", throttle(pms, 10)).localParallelism(1);
+        Vertex sink = dag.newVertex("sink", writeListP("sink"));
+
+        dag.edge(between(source, sink).distributed());
+
+        JobConfig config = new JobConfig();
+        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        config.setSnapshotIntervalMillis(250);
+        Job job = instance1.newJob(dag, config);
+
+        // the first snapshot should succeed
+        assertTrueEventually(() -> {
+            IStreamMap<Long, SnapshotRecord> records = getSnapshotsMap(job);
+            SnapshotRecord record = records.get(0L);
+            assertNotNull("no record found for snapshot 0", record);
+            assertTrue("snapshot was not successful", record.isSuccessful());
+        }, 5);
+    }
+
+    private IStreamMap<Long, SnapshotRecord> getSnapshotsMap(Job job) {
+        SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
+        return snapshotRepository.getSnapshotMap(job.getJobId());
+    }
+
+    private SnapshotContext getSnapshotContext(Job job) {
+        IStreamMap<Long, Long> randomIdsMap = instance1.getMap(JobRepository.RANDOM_IDS_MAP_NAME);
+        long executionId = randomIdsMap.entrySet().stream()
+                                       .filter(e -> e.getValue().equals(job.getJobId())
+                                               && !e.getValue().equals(e.getKey()))
+                                       .mapToLong(Entry::getKey)
+                                       .findAny()
+                                       .orElseThrow(() -> new AssertionError("ExecutionId not found"));
+        ExecutionContext executionContext = null;
+        // spin until the executionContext is available on the worker
+        while (executionContext == null) {
+            executionContext = getJetService(instance2).getJobExecutionService().getExecutionContext(executionId);
         }
+        return executionContext.snapshotContext();
     }
 
     private void waitForNextSnapshot(IStreamMap<Long, Object> snapshotsMap, int timeoutSeconds) {

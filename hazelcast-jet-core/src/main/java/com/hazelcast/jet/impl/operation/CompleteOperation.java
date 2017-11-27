@@ -60,7 +60,7 @@ public class CompleteOperation extends Operation implements IdentifiedDataSerial
                     + idToString(executionId) + " because it is not master. Master is: " + masterAddress);
         }
 
-        service.completeExecution(executionId, error);
+        service.getJobExecutionService().completeExecution(executionId, error);
     }
 
     @Override

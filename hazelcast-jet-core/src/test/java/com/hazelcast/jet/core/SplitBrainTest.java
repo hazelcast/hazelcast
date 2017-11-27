@@ -43,7 +43,6 @@ import java.util.function.Consumer;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RESTARTING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
-import static com.hazelcast.jet.core.TestUtil.getJetService;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

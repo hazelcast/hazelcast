@@ -51,12 +51,12 @@ import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
-import static com.hazelcast.jet.core.TestUtil.getJetService;
 import static com.hazelcast.jet.impl.execution.SnapshotContext.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static org.junit.Assert.assertEquals;
@@ -227,7 +227,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     }
 
     @Test
-    public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() {
+    public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() throws Exception {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, NODE_COUNT)));
 
@@ -245,20 +245,20 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         long jobId = 0;
         long executionId = 1;
 
-        jetService.initExecution(jobId, executionId, localAddress, memberListVersion,
-                new HashSet<>(membersView.getMembers()), executionPlan);
+        Set<MemberInfo> participants = new HashSet<>(membersView.getMembers());
+        jetService.getJobExecutionService().initExecution(
+                jobId, executionId, localAddress, memberListVersion, participants, executionPlan
+        );
 
         ExecutionContext executionContext = jetService.getJobExecutionService().getExecutionContext(executionId);
-        executionContext.cancel();
+        executionContext.cancelExecution();
 
         // When
-        final AtomicReference<Object> result = new AtomicReference<>();
-
-        executionContext.execute(stage ->
-                stage.whenComplete((aVoid, throwable) -> result.compareAndSet(null, throwable)));
+        CompletableFuture<Void> future = executionContext.beginExecution();
 
         // Then
-        assertTrue(result.get() instanceof CancellationException);
+        expectedException.expect(CancellationException.class);
+        future.join();
     }
 
     @Test
@@ -291,6 +291,33 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         assertJobSucceeded(job);
     }
 
+    @Test
+    public void when_jobCancelled_then_psCompleteNotCalledBeforeTaskletsDone() throws Throwable {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(() ->
+                new StuckProcessor(10_000), NODE_COUNT)
+        ));
+
+        // When
+        Job job = instance.newJob(dag);
+
+        assertOpenEventually(StuckProcessor.executionStarted);
+
+        // Then
+        job.cancel();
+
+        assertTrueFiveSeconds(() -> {
+            assertEquals(JobStatus.RUNNING, job.getJobStatus());
+            assertEquals("PS.complete called before execution finished", 0, MockPS.completeCount.get());
+        });
+
+        StuckProcessor.proceedLatch.countDown();
+
+        expectedException.expect(CancellationException.class);
+        job.join();
+
+        assertEquals("PS.complete not called after execution finished", NODE_COUNT, MockPS.completeCount.get());
+    }
 
     private void assertPmsCompleted() {
         assertTrue("initCalled", MockPMS.initCalled.get());

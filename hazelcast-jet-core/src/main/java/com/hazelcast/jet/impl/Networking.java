@@ -119,7 +119,7 @@ public class Networking {
         Map<Long, ExecutionContext> executionContexts = jobExecutionService.getExecutionContexts();
         out.writeInt(executionContexts.size());
         executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
-            if (!exeCtx.isParticipating(member)) {
+            if (!exeCtx.hasParticipant(member)) {
                 return;
             }
             out.writeLong(execId);

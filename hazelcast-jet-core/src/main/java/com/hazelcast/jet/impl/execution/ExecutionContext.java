@@ -25,7 +25,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.HashSet;
@@ -35,15 +34,18 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
+/**
+ * Data pertaining to single job execution on all cluster members. There's one
+ * instance per job execution; if the job is restarted, another instance will
+ * be used.
+ */
 public class ExecutionContext {
 
     private final long jobId;
@@ -63,7 +65,12 @@ public class ExecutionContext {
     private List<Processor> processors = emptyList();
 
     private List<Tasklet> tasklets;
-    private CompletionStage<Void> jobFuture;
+
+    // future which is completed only after all tasklets are completed and contains execution result
+    private volatile CompletableFuture<Void> executionFuture;
+
+    // future which can only be used to cancel the local execution.
+    private final CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
 
     private final NodeEngine nodeEngine;
     private final TaskletExecutionService execService;
@@ -96,56 +103,38 @@ public class ExecutionContext {
         return this;
     }
 
-    public CompletionStage<Void> execute(Consumer<CompletionStage<Void>> doneCallback) {
+    /**
+     * Starts local execution of job by submitting tasklets to execution service. If
+     * execution was cancelled earlier then execution will not be started.
+     *
+     * Returns a future which is completed only when all tasklets are completed. If
+     * execution was already cancelled before this method is called then the returned
+     * future is completed immediately. The future returned can't be cancelled,
+     * instead {@link #cancelExecution()} should be used.
+     */
+    public CompletableFuture<Void> beginExecution() {
         synchronized (executionLock) {
-            if (jobFuture != null) {
-                jobFuture.whenComplete(withTryCatch(logger, (r, e) -> doneCallback.accept(jobFuture)));
+            if (executionFuture != null) {
+                // beginExecution was already called or execution was cancelled before it started.
+                return executionFuture;
             } else {
+                // begin job execution
                 JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
                 ClassLoader cl = service.getClassLoader(jobId);
-                jobFuture = execService.execute(tasklets, doneCallback, cl);
-                jobFuture.whenComplete(withTryCatch(logger, (r, e) -> tasklets.clear()));
+                executionFuture = execService.beginExecute(tasklets, cancellationFuture, cl);
             }
-
-            return jobFuture;
+            return executionFuture;
         }
     }
 
-    public CompletionStage<Void> cancel() {
-        synchronized (executionLock) {
-            if (jobFuture == null) {
-                jobFuture = new CompletableFuture<>();
-            }
+    /**
+     * Complete local execution. If local execution was started, it should be
+     * called after execution has completed.
+     */
+    public void completeExecution(Throwable error) {
+        assert executionFuture == null || executionFuture.isDone()
+                : "If execution was begun, then completeExecution() should not be called before execution is done.";
 
-            jobFuture.toCompletableFuture().cancel(true);
-
-            return jobFuture;
-        }
-    }
-
-    public long getJobId() {
-        return jobId;
-    }
-
-    public long getExecutionId() {
-        return executionId;
-    }
-
-    public Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap() {
-        return senderMap;
-    }
-
-    public Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap() {
-        return receiverMap;
-    }
-
-    public boolean verify(Address coordinator, long jobId) {
-        return this.coordinator.equals(coordinator) && this.jobId == jobId;
-    }
-
-    // should not leak exceptions thrown by processor suppliers
-    public void complete(Throwable error) {
-        ILogger logger = nodeEngine.getLogger(getClass());
         procSuppliers.forEach(s -> {
             try {
                 s.complete(error);
@@ -158,6 +147,33 @@ public class ExecutionContext {
         processors.forEach(metricsRegistry::deregister);
     }
 
+    /**
+     * Cancels local execution of tasklets and returns a future which is only completed
+     * when all tasklets are completed and contains the result of the execution.
+     */
+    public CompletableFuture<Void> cancelExecution() {
+        synchronized (executionLock) {
+            cancellationFuture.cancel(true);
+            if (executionFuture == null) {
+                // if cancelled before execution started, then assign the already completed future.
+                executionFuture = cancellationFuture;
+            }
+            return executionFuture;
+        }
+    }
+
+    /**
+     * Starts a new snapshot by incrementing the current snapshot id
+     */
+    public CompletionStage<Void> beginSnapshot(long snapshotId) {
+        synchronized (executionLock) {
+            if (cancellationFuture.isDone() || executionFuture != null && executionFuture.isDone()) {
+                throw new CancellationException();
+            }
+            return snapshotContext.startNewSnapshot(snapshotId);
+        }
+    }
+
     public void handlePacket(int vertexId, int ordinal, Address sender, BufferObjectDataInput in) {
         receiverMap.get(vertexId)
                    .get(ordinal)
@@ -165,31 +181,32 @@ public class ExecutionContext {
                    .receiveStreamPacket(in);
     }
 
-    public CompletionStage<Void> beginSnapshot(long snapshotId) {
-        synchronized (executionLock) {
-            if (jobFuture == null) {
-                throw new RetryableHazelcastException();
-            } else if (jobFuture.toCompletableFuture().isDone()) {
-                throw new CancellationException();
-            }
-
-            return snapshotContext.startNewSnapshot(snapshotId);
-        }
-    }
-
-    public boolean isParticipating(Address member) {
+    public boolean hasParticipant(Address member) {
         return participants.contains(member);
     }
 
-    public Address getCoordinator() {
+    public long jobId() {
+        return jobId;
+    }
+
+    public long executionId() {
+        return executionId;
+    }
+
+    public Address coordinator() {
         return coordinator;
     }
 
-    public boolean isCoordinatorOrParticipating(Address member) {
-        return coordinator.equals(member) || isParticipating(member);
+    public Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap() {
+        return senderMap;
     }
 
-    public SnapshotContext getSnapshotContext() {
+    public Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap() {
+        return receiverMap;
+    }
+
+    // visible for testing only
+    public SnapshotContext snapshotContext() {
         return snapshotContext;
     }
 }
