@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.BitSet;
@@ -28,6 +31,7 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.execution.init.ExecutionPlan.createLoggerName;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -80,6 +84,19 @@ public final class PeekWrappedP<T> implements Processor {
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         logger = context.logger();
         outbox = new LoggingOutbox(outbox, peekOutput, peekSnapshot);
+
+        // Fix issue #595: pass a logger with real class name to processor
+        // We do this only if context is ProcCtx (that is, not for tests where TestProcessorContext can be used
+        // and also other objects could be mocked or null, such as jetInstance())
+        if (context instanceof ProcCtx) {
+            ProcCtx c = (ProcCtx) context;
+            NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
+            ILogger newLogger = nodeEngine.getLogger(
+                    createLoggerName(wrappedProcessor.getClass().getName(), c.vertexName(), c.globalProcessorIndex()));
+            context = new ProcCtx(c.jetInstance(), c.getSerializationService(), newLogger, c.vertexName(),
+                    c.globalProcessorIndex(), c.processingGuarantee());
+        }
+
         wrappedProcessor.init(outbox, context);
     }
 

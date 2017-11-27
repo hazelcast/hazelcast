@@ -141,12 +141,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
             int processorIdx = 0;
             for (Processor p : processors) {
-                ILogger logger = nodeEngine.getLogger(p.getClass().getName() + '.' + srcVertex.name()
-                                + '#' + (srcVertex.getProcIdxOffset() + processorIdx));
+                String loggerName = createLoggerName(p.getClass().getName(), srcVertex.name(),
+                        srcVertex.getProcIdxOffset() + processorIdx);
                 ProcCtx context = new ProcCtx(
                         instance,
                         nodeEngine.getSerializationService(),
-                        logger,
+                        nodeEngine.getLogger(loggerName),
                         srcVertex.name(),
                         processorIdx + srcVertex.getProcIdxOffset(),
                         jobConfig.getProcessingGuarantee());
@@ -175,6 +175,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                         .collect(toList());
 
         tasklets.addAll(allReceivers);
+    }
+
+    public static String createLoggerName(String processorClassName, String vertexName, int processorIndex) {
+        return processorClassName + '.' + vertexName + '#' + processorIndex;
     }
 
     public List<ProcessorSupplier> getProcessorSuppliers() {
