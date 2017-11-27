@@ -22,12 +22,14 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -258,6 +260,23 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertTrue(nearCacheConfig.isSerializeKeys());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+    }
+
+    @Test
+    public void testSSLConfigs() {
+        SSLConfig sslConfig = clientConfig.getNetworkConfig().getSSLConfig();
+        assertNotNull(sslConfig);
+        assertFalse(sslConfig.isEnabled());
+
+        assertEquals("com.hazelcast.examples.MySslFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+
+        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
+        assertNotNull(hostVerification);
+        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", hostVerification.getPolicyClassName());
+        assertFalse(hostVerification.isEnabledOnServer());
+        assertTrue(hostVerification.getProperties().isEmpty());
     }
 
     @Test

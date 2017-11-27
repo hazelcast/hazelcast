@@ -64,6 +64,12 @@
 
         <ssl enabled="false">
             <factory-class-name>com.hazelcast.examples.MySslFactory</factory-class-name>
+            <properties>
+                <property name="protocol">TLS</property>
+            </properties>
+            <host-verification policy-class-name="com.hazelcast.nio.ssl.BasicHostVerifier">
+                <properties/>
+            </host-verification>
         </ssl>
         <aws enabled="true" connection-timeout-seconds="11">
             <inside-aws>true</inside-aws>

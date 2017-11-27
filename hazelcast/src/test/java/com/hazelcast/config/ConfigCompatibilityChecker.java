@@ -820,7 +820,15 @@ class ConfigCompatibilityChecker {
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
                     && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
                     && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation()))
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties())
+                    && isCompatible(c1.getHostVerificationConfig(), c2.getHostVerificationConfig());
+        }
+
+        private static boolean isCompatible(HostVerificationConfig c1, HostVerificationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getPolicyClassName(), c2.getPolicyClassName())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                    && c1.isEnabledOnServer() == c2.isEnabledOnServer();
         }
     }
 
