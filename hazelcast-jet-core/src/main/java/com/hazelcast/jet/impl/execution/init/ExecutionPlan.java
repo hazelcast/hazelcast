@@ -139,34 +139,34 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     nodeEngine, srcVertex.name(), srcVertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
 
-            int processorIdx = 0;
+            int localProcessorIdx = 0;
             for (Processor p : processors) {
-                String loggerName = createLoggerName(p.getClass().getName(), srcVertex.name(),
-                        srcVertex.getProcIdxOffset() + processorIdx);
+                int globalProcessorIndex = srcVertex.getProcIdxOffset() + localProcessorIdx;
+                String loggerName = createLoggerName(p.getClass().getName(), srcVertex.name(), globalProcessorIndex);
                 ProcCtx context = new ProcCtx(
                         instance,
                         nodeEngine.getSerializationService(),
                         nodeEngine.getLogger(loggerName),
                         srcVertex.name(),
-                        processorIdx + srcVertex.getProcIdxOffset(),
+                        globalProcessorIndex,
                         jobConfig.getProcessingGuarantee());
 
                  String probePrefix = String.format("jet.job.%s.%s#%d", idToString(executionId), srcVertex.name(),
-                         processorIdx);
+                         localProcessorIdx);
                  ((NodeEngineImpl) nodeEngine).getMetricsRegistry().scanAndRegister(p, probePrefix);
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
-                List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
-                List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
+                List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, localProcessorIdx);
+                List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, localProcessorIdx);
 
-                OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, processorIdx, null);
+                OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, localProcessorIdx, null);
 
                 ProcessorTasklet processorTasklet = new ProcessorTasklet(context, p, inboundStreams, outboundStreams,
                         snapshotContext, snapshotCollector);
                 tasklets.add(processorTasklet);
                 this.processors.add(p);
-                processorIdx++;
+                localProcessorIdx++;
             }
         }
         List<ReceiverTasklet> allReceivers = receiverMap.values().stream()
