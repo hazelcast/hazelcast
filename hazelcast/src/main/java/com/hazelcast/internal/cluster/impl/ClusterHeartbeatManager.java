@@ -565,7 +565,7 @@ public class ClusterHeartbeatManager {
 
         long lastHeartbeat = heartbeatFailureDetector.lastHeartbeat(member);
         if ((now - lastHeartbeat) >= legacyIcmpCheckThresholdMillis) {
-            ping(member);
+            runPingTask(member);
         }
     }
 
@@ -576,7 +576,7 @@ public class ClusterHeartbeatManager {
 
                 for (Member member : members) {
                     try {
-                        ping(member);
+                        runPingTask(member);
                     } catch (Throwable e) {
                         logger.severe(e);
                     }
@@ -590,7 +590,7 @@ public class ClusterHeartbeatManager {
      *
      * @param member the member for which we need to determine reachability
      */
-    private void ping(final Member member) {
+    private void runPingTask(final Member member) {
         nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR,
                 icmpParallelMode ? new PeriodicPingTask(member) : new PingTask(member));
     }
