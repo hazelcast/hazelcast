@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
@@ -30,6 +31,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Map;
@@ -185,8 +187,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         }
 
         if (instance != null) {
-            MemberAttributeChangedOp op = new MemberAttributeChangedOp(REMOVE, key, null);
-            invokeOnAllMembers(op);
+            invokeOnAllMembers(new MemberAttributeOperationSupplier(REMOVE, key, null));
         }
     }
 
@@ -207,22 +208,19 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         }
 
         if (instance != null) {
-            MemberAttributeChangedOp op = new MemberAttributeChangedOp(PUT, key, value);
-            invokeOnAllMembers(op);
+            invokeOnAllMembers(new MemberAttributeOperationSupplier(PUT, key, value));
         }
     }
 
-    private void invokeOnAllMembers(Operation operation) {
+    private void invokeOnAllMembers(Supplier<Operation> operationSupplier) {
         NodeEngineImpl nodeEngine = instance.node.nodeEngine;
         OperationService os = nodeEngine.getOperationService();
-        String uuid = nodeEngine.getLocalMember().getUuid();
-        operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
         try {
             for (Member member : nodeEngine.getClusterService().getMembers()) {
                 if (!member.localMember()) {
-                    os.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
+                    os.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operationSupplier.get(), member.getAddress());
                 } else {
-                    os.execute(operation);
+                    os.execute(operationSupplier.get());
                 }
             }
         } catch (Throwable t) {
@@ -237,5 +235,25 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     @Override
     public int getId() {
         return ClusterDataSerializerHook.MEMBER;
+    }
+
+    private class MemberAttributeOperationSupplier implements Supplier<Operation> {
+        private final MemberAttributeOperationType operationType;
+        private final String key;
+        private final Object value;
+
+        MemberAttributeOperationSupplier(MemberAttributeOperationType operationType, String key, Object value) {
+            this.operationType = operationType;
+            this.key = key;
+            this.value = value;
+        }
+
+        @Override
+        public Operation get() {
+            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+            String uuid = nodeEngine.getLocalMember().getUuid();
+            return new MemberAttributeChangedOp(operationType, key, value)
+                    .setCallerUuid(uuid).setNodeEngine(nodeEngine);
+        }
     }
 }
