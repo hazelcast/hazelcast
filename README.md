@@ -5,7 +5,7 @@
 
   * [Supported Hazelcast Versions](#supported-hazelcast-versions)
   * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
-    * [Zone Aware Support](#zone-aware)
+    * [Zone Aware Support](#zone-aware-support)
   * [IAM Roles](#iam-roles)
     * [IAM Roles in ECS Environment](#iam-roles-in-ecs-environment)
     * [Policy for IAM User](#policy-for-iam-user)
@@ -39,7 +39,10 @@ the former one will be deprecated.
 
 ### Zone Aware Support
 
-This support is available for Hazelcast Client 3.8.6 and newer releases.
+***NOTE:*** 
+ZONE_AWARE configuration is only valid when you use Hazelcast Discovery SPI based configuration with `<discovery-strategies>`. `<aws>` based configuration is still using old implemenation and does not support ZONE_AWARE feature
+
+Zone Aware Support is available for Hazelcast Client 3.8.6 and newer releases.
 
 As a discovery service, Hazelcast AWS plugin put the zone information into the Hazelcast's member attributes map during the discovery process. 
 Please see the [Defining Member Attributes section](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#defining-member-attributes) 
