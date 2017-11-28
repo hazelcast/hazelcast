@@ -110,9 +110,12 @@ public interface Processor {
     }
 
     /**
-     * Called when there is no pending data in the inbox. Allows the processor
-     * to produce output in the absence of input. If it returns {@code false},
-     * it will be called again before proceeding to call any other method.
+     * This method will be called periodically and only when the current batch
+     * of items in the inbox has been exhausted. It can be used to produce
+     * output in the absence of input or to do general maintenance work.
+     * <p>
+     * If the call returns {@code false}, it will be called again before proceeding
+     * to call any other method. Default implementation returns {@code true}.
      */
     default boolean tryProcess() {
         return true;

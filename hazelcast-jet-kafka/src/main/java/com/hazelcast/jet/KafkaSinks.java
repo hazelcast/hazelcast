@@ -39,14 +39,15 @@ public final class KafkaSinks {
      * supplied mapping function.
      * <p>
      * The source creates a single {@code KafkaProducer} per cluster
-     * member using the supplied properties.
+     * member using the supplied {@code properties}.
      * <p>
-     * Behavior on job restart: the processor is stateless. If the job is
-     * restarted, duplicate events can occur. If you need exactly-once
-     * behavior, you must ensure idempotence on the application level.
+     * Behavior on job restart: the processor is stateless. On snapshot we only
+     * make sure that all async operations are done. If the job is restarted,
+     * duplicate events can occur. If you need exactly-once behavior, you must
+     * ensure idempotence on the application level.
      * <p>
-     * IO failures are generally handled by Kafka producer and generally do not
-     * cause the processor to fail. Refer to Kafka documentation for details.
+     * IO failures are generally handled by Kafka producer and do not cause the
+     * processor to fail. Refer to Kafka documentation for details.
      *
      * @param properties     producer properties which should contain broker
      *                       address and key/value serializers

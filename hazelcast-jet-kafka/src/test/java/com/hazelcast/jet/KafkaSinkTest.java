@@ -16,6 +16,10 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.kafka.KafkaTestSupport;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,18 +36,26 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
-import static java.util.stream.IntStream.range;
-import static org.junit.Assert.assertTrue;
+import static com.hazelcast.jet.Util.entry;
+import static java.util.Collections.singletonMap;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class KafkaSinkTest extends KafkaTestSupport {
 
+    private static final int ITEM_COUNT = 20;
+    private static final String SOURCE_IMAP_NAME = "sourceMap";
+
     private Properties properties;
     private String brokerConnectionString;
+    private JetInstance instance;
+    private String topic;
+    private IStreamMap<String, String> sourceIMap;
 
     @Before
     public void setup() throws IOException {
@@ -52,60 +64,133 @@ public class KafkaSinkTest extends KafkaTestSupport {
         properties.setProperty("bootstrap.servers", brokerConnectionString);
         properties.setProperty("key.serializer", StringSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
-    }
 
-    @Test
-    public void testWriteToTopic() throws Exception {
-        Map<String, String> map = range(0, 20)
-                .mapToObj(Integer::toString)
-                .collect(Collectors.toMap(m -> m, m -> m));
+        instance = createJetMember();
+        topic = randomName();
+        createTopic(topic, ITEM_COUNT);
 
-        JetInstance instance = createJetMember();
-        IStreamMap<Object, Object> sourceMap = instance.getMap("source");
-        sourceMap.putAll(map);
-
-        final String topic = randomName();
-        createTopic(topic, 1);
-
-        Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map(sourceMap.getName()))
-         .drainTo(KafkaSinks.kafka(properties, topic));
-        instance.newJob(p).join();
-
-        try (KafkaConsumer<String, String> consumer = createConsumer(brokerConnectionString, topic)) {
-            ConsumerRecords<String, String> records = consumer.poll(100);
-            for (ConsumerRecord<String, String> record : records) {
-                assertTrue(map.containsValue(record.value()));
-            }
+        sourceIMap = instance.getMap(SOURCE_IMAP_NAME);
+        for (int i = 0; i < 20; i++) {
+            sourceIMap.put(String.valueOf(i), String.valueOf(i));
         }
     }
 
     @Test
+    public void testWriteToTopic() throws Exception {
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.map(SOURCE_IMAP_NAME))
+         .drainTo(KafkaSinks.kafka(properties, topic));
+        instance.newJob(p).join();
+
+        assertTopicContentsEventually(sourceIMap, false);
+    }
+
+    @Test
     public void testWriteToSpecificPartitions() throws Exception {
-        int itemCount = 20;
-        Map<String, String> map = range(0, itemCount)
-                .mapToObj(Integer::toString)
-                .collect(Collectors.toMap(m -> m, m -> m));
-
-        JetInstance instance = createJetMember();
-        IStreamMap<Object, Object> sourceMap = instance.getMap("source");
-        sourceMap.putAll(map);
-
-        final String topic = randomName();
-        createTopic(topic, itemCount);
+        String localTopic = topic;
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String, String>map(sourceMap.getName()))
+        p.drawFrom(Sources.<String, String>map(SOURCE_IMAP_NAME))
          .drainTo(KafkaSinks.kafka(properties, e ->
-                 new ProducerRecord<>(topic, Integer.valueOf(e.getKey()), e.getKey(), e.getValue()))
+                 new ProducerRecord<>(localTopic, Integer.valueOf(e.getKey()), e.getKey(), e.getValue()))
          );
         instance.newJob(p).join();
 
+        assertTopicContentsEventually(sourceIMap, true);
+    }
+
+    @Test
+    public void when_recordLingerEnabled_then_sentOnCompletion() throws Exception {
+        // When
+        properties.setProperty("linger.ms", "3600000"); // 1 hour
+
+        // Given
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.<Entry<String, String>>fromProcessor("source",
+                ProcessorMetaSupplier.of(ProcessorWithEntryAndLatch::new)))
+         .drainTo(KafkaSinks.kafka(properties, topic));
+
+        Job job = instance.newJob(p);
+
+        // the event should not appear in the topic due to linger.ms
         try (KafkaConsumer<String, String> consumer = createConsumer(brokerConnectionString, topic)) {
-            ConsumerRecords<String, String> records = consumer.poll(100);
-            for (ConsumerRecord<String, String> record : records) {
-                assertTrue(map.containsValue(record.value()));
+            assertTrueAllTheTime(() -> assertEquals(0, consumer.poll(100).count()), 2);
+        }
+
+        // Then
+        ProcessorWithEntryAndLatch.isDone = true;
+        job.join();
+        System.out.println("Job finished");
+        assertTopicContentsEventually(singletonMap("k", "v"), false);
+    }
+
+    @Test
+    public void when_recordLingerEnabled_then_sentOnSnapshot() throws Exception {
+        // When
+        properties.setProperty("linger.ms", "3600000"); // 1 hour
+
+        // Given
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.<Entry<String, String>>fromProcessor("source",
+                ProcessorMetaSupplier.of(ProcessorWithEntryAndLatch::new)))
+         .drainTo(KafkaSinks.kafka(properties, topic));
+
+        Job job = instance.newJob(p, new JobConfig()
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
+                .setSnapshotIntervalMillis(4000));
+
+        // the event should not appear in the topic due to linger.ms
+        try (KafkaConsumer<String, String> consumer = createConsumer(brokerConnectionString, topic)) {
+            assertTrueAllTheTime(() -> assertEquals(0, consumer.poll(100).count()), 2);
+        }
+
+        // Then
+        ProcessorWithEntryAndLatch.allowSnapshot = true;
+        assertTopicContentsEventually(singletonMap("k", "v"), false);
+
+        ProcessorWithEntryAndLatch.isDone = true;
+        job.join();
+    }
+
+    private void assertTopicContentsEventually(Map<String, String> expectedMap, boolean assertPartitionEqualsKey) {
+        try (KafkaConsumer<String, String> consumer = createConsumer(brokerConnectionString, topic)) {
+            long timeLimit = System.nanoTime() + SECONDS.toNanos(10);
+            for (int totalRecords = 0; totalRecords < expectedMap.size() && System.nanoTime() < timeLimit; ) {
+                ConsumerRecords<String, String> records = consumer.poll(100);
+                for (ConsumerRecord<String, String> record : records) {
+                    assertEquals(expectedMap.get(record.key()), record.value());
+                    if (assertPartitionEqualsKey) {
+                        assertEquals(Integer.parseInt(record.key()), record.partition());
+                    }
+                    totalRecords++;
+                }
             }
+        }
+    }
+
+    private static final class ProcessorWithEntryAndLatch extends AbstractProcessor {
+        static volatile boolean isDone;
+        static volatile boolean allowSnapshot;
+
+        private Traverser<Entry<String, String>> t = Traverser.over(entry("k", "v"));
+
+        private ProcessorWithEntryAndLatch() {
+            // reset so that values from previous run don't remain
+            isDone = false;
+            allowSnapshot = false;
+            setCooperative(false);
+        }
+
+        @Override
+        public boolean saveToSnapshot() {
+            return allowSnapshot;
+        }
+
+        @Override
+        public boolean complete() {
+            // emit the item and wait for the latch to complete
+            emitFromTraverser(t);
+            return isDone;
         }
     }
 }

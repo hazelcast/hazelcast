@@ -16,18 +16,21 @@
 
 package com.hazelcast.jet.impl.connector.kafka;
 
-import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -36,10 +39,18 @@ import static java.util.stream.Collectors.toList;
  * com.hazelcast.jet.function.DistributedFunction)
  * KafkaProcessors.writeKafka()}.
  */
-public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
+public final class WriteKafkaP<T, K, V> implements Processor {
 
     private final KafkaProducer<K, V> producer;
     private final Function<T, ProducerRecord<K, V>> toRecordFn;
+    private final AtomicReference<Throwable> lastError = new AtomicReference<>();
+
+    private final Callback callback = (metadata, exception) -> {
+        // Note: this method may be called on different thread.
+        if (exception != null) {
+            lastError.compareAndSet(null, exception);
+        }
+    };
 
     WriteKafkaP(KafkaProducer<K, V> producer, Function<T, ProducerRecord<K, V>> toRecordFn) {
         this.producer = producer;
@@ -52,21 +63,50 @@ public final class WriteKafkaP<T, K, V> extends AbstractProcessor {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        producer.send(toRecordFn.apply((T) item));
+    public boolean tryProcess() {
+        checkError();
         return true;
     }
 
     @Override
+    public void process(int ordinal, @Nonnull Inbox inbox) {
+        checkError();
+        inbox.drain((T item) -> {
+            // Note: send() method can block even though it is declared to not. This is true for Kafka 1.0 and probably
+            // will stay so, unless they change API.
+            producer.send(toRecordFn.apply(item), callback);
+        });
+    }
+
+    @Override
     public boolean complete() {
-        producer.flush();
+        ensureAllWritten();
         return true;
+    }
+
+    @Override
+    public boolean saveToSnapshot() {
+        ensureAllWritten();
+        return true;
+    }
+
+    private void ensureAllWritten() {
+        checkError();
+        // flush() should ensure that all lingering records are sent and that all futures from
+        // producer.send() are done.
+        producer.flush();
+    }
+
+    private void checkError() {
+        Throwable t = lastError.get();
+        if (t != null) {
+            throw sneakyThrow(t);
+        }
     }
 
     public static class Supplier<T, K, V> implements ProcessorSupplier {
 
-        static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
         private final Properties properties;
         private final Function<? super T, ProducerRecord<K, V>> toRecordFn;
