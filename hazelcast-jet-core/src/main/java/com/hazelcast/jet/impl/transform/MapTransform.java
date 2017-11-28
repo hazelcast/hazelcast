@@ -29,4 +29,9 @@ public class MapTransform<T, R> implements UnaryTransform<T, R> {
     public String toString() {
         return "Map";
     }
+
+    @Override
+    public String name() {
+        return "map";
+    }
 }

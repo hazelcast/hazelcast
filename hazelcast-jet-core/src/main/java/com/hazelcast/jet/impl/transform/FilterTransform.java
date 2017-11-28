@@ -29,4 +29,9 @@ public class FilterTransform<T> implements UnaryTransform<T, T> {
     public String toString() {
         return "Filter";
     }
+
+    @Override
+    public String name() {
+        return "filter";
+    }
 }

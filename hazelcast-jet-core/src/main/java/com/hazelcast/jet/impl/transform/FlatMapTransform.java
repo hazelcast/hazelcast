@@ -31,6 +31,11 @@ public class FlatMapTransform<E, R> implements UnaryTransform<E, R> {
         return "FlatMap";
     }
 
+    @Override
+    public String name() {
+        return "flatMap";
+    }
+
     public DistributedFunction<? super E, Traverser<? extends R>> flatMapFn() {
         return flatMapFn;
     }

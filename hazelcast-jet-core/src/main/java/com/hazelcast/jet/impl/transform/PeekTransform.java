@@ -42,4 +42,9 @@ public class PeekTransform<E> implements UnaryTransform<E, E> {
     public DistributedFunction<? super E, String> toStringFn() {
         return toStringFn;
     }
+
+    @Override
+    public String name() {
+        return "peek";
+    }
 }

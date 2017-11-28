@@ -43,4 +43,9 @@ public class HashJoinTransform<E0> implements MultiTransform {
     public String toString() {
         return tags.size() + "-way HashJoin";
     }
+
+    @Override
+    public String name() {
+        return "hashJoin";
+    }
 }

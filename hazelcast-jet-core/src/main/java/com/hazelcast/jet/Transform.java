@@ -31,4 +31,8 @@ import java.io.Serializable;
  * Jet by implementing this type.
  */
 public interface Transform extends Serializable {
+    /**
+     * Returns the name of this transformation.
+     */
+    String name();
 }

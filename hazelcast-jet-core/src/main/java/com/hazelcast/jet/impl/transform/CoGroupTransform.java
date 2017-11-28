@@ -45,4 +45,9 @@ public class CoGroupTransform<K, A, R> implements MultiTransform {
     public String toString() {
         return groupKeyFs.size() + "-way CoGroup";
     }
+
+    @Override
+    public String name() {
+        return "coGroup";
+    }
 }

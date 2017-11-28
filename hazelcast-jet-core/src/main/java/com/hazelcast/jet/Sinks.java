@@ -68,7 +68,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> map(String mapName) {
-        return fromProcessor("map(" + mapName + ')', writeMapP(mapName));
+        return fromProcessor("mapSink(" + mapName + ')', writeMapP(mapName));
     }
 
     /**
@@ -82,7 +82,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> remoteMap(String mapName, ClientConfig clientConfig) {
-        return fromProcessor("remoteMap(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
+        return fromProcessor("remoteMapSink(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
     }
 
     /**
@@ -95,7 +95,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> cache(String cacheName) {
-        return fromProcessor("cache(" + cacheName + ')', writeCacheP(cacheName));
+        return fromProcessor("cacheSink(" + cacheName + ')', writeCacheP(cacheName));
     }
 
     /**
@@ -109,7 +109,7 @@ public final class Sinks {
      * items will not change the state in the target map.
      */
     public static <E extends Map.Entry> Sink<E> remoteCache(String cacheName, ClientConfig clientConfig) {
-        return fromProcessor("remoteCache(" + cacheName + ')', writeRemoteCacheP(cacheName, clientConfig));
+        return fromProcessor("remoteCacheSink(" + cacheName + ')', writeRemoteCacheP(cacheName, clientConfig));
     }
 
     /**
@@ -121,7 +121,7 @@ public final class Sinks {
      * guarantee.
      */
     public static <E> Sink<E> list(String listName) {
-        return fromProcessor("list(" + listName + ')', writeListP(listName));
+        return fromProcessor("listSink(" + listName + ')', writeListP(listName));
     }
 
     /**
@@ -134,7 +134,7 @@ public final class Sinks {
      * guarantee.
      */
     public static <E> Sink<E> remoteList(String listName, ClientConfig clientConfig) {
-        return fromProcessor("remoteList(" + listName + ')', writeRemoteListP(listName, clientConfig));
+        return fromProcessor("remoteListSink(" + listName + ')', writeRemoteListP(listName, clientConfig));
     }
 
     /**
@@ -154,7 +154,7 @@ public final class Sinks {
             @Nonnull DistributedFunction<E, String> toStringFn,
             @Nonnull Charset charset
     ) {
-        return fromProcessor("socket(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, charset));
+        return fromProcessor("socketSink(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, charset));
     }
 
     /**
@@ -166,7 +166,7 @@ public final class Sinks {
             int port,
             @Nonnull DistributedFunction<E, String> toStringFn
     ) {
-        return fromProcessor("socket(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, UTF_8));
+        return fromProcessor("socketSink(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, UTF_8));
     }
 
     /**
@@ -175,7 +175,7 @@ public final class Sinks {
      * UTF-8 as the charset.
      */
     public static <E> Sink<E> socket(@Nonnull String host, int port) {
-        return fromProcessor("socket(" + host + ':' + port + ')',
+        return fromProcessor("socketSink(" + host + ':' + port + ')',
                 writeSocketP(host, port, Object::toString, UTF_8));
     }
 
@@ -209,7 +209,7 @@ public final class Sinks {
             @Nonnull Charset charset,
             boolean append
     ) {
-        return fromProcessor("files(" + directoryName + ')',
+        return fromProcessor("filesSink(" + directoryName + ')',
                 writeFileP(directoryName, toStringFn, charset, append));
     }
 
@@ -248,7 +248,7 @@ public final class Sinks {
      */
     @Nonnull
     public static <E> Sink<E> logger(DistributedFunction<E, String> toStringFn) {
-        return fromProcessor("logger", writeLoggerP(toStringFn));
+        return fromProcessor("loggerSink", writeLoggerP(toStringFn));
     }
 
     /**

@@ -28,6 +28,7 @@ import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -92,7 +93,7 @@ public final class Sources {
      * miss and/or duplicate some entries.
      */
     public static <K, V> Source<Map.Entry<K, V>> map(@Nonnull String mapName) {
-        return fromProcessor("map(" + mapName + ')', readMapP(mapName));
+        return fromProcessor("mapSource(" + mapName + ')', readMapP(mapName));
     }
 
     /**
@@ -130,7 +131,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return fromProcessor("map(" + mapName + ')', readMapP(mapName, predicate, projection));
+        return fromProcessor("mapSource(" + mapName + ')', readMapP(mapName, predicate, projection));
     }
 
     /**
@@ -142,7 +143,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Map.Entry<K, V>, T> projectionFn
     ) {
-        return fromProcessor("map(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
+        return fromProcessor("mapSource(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
     }
 
     /**
@@ -192,7 +193,7 @@ public final class Sources {
             @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("mapJournal(" + mapName + ')',
+        return fromProcessor("mapJournalSource(" + mapName + ')',
                 streamMapP(mapName, predicateFn, projectionFn, startFromLatestSequence));
     }
 
@@ -206,7 +207,7 @@ public final class Sources {
             @Nonnull String mapName,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("mapJournal(" + mapName + ')', streamMapP(mapName, startFromLatestSequence));
+        return fromProcessor("mapJournalSource(" + mapName + ')', streamMapP(mapName, startFromLatestSequence));
     }
 
     /**
@@ -226,7 +227,7 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return fromProcessor("remoteMap(" + mapName + ')', readRemoteMapP(mapName, clientConfig));
+        return fromProcessor("remoteMapSource(" + mapName + ')', readRemoteMapP(mapName, clientConfig));
     }
 
     /**
@@ -262,7 +263,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Entry<K, V>, T> projection
     ) {
-        return fromProcessor("remoteMap(" + mapName + ')',
+        return fromProcessor("remoteMapSource(" + mapName + ')',
                 readRemoteMapP(mapName, clientConfig, predicate, projection));
     }
 
@@ -276,7 +277,7 @@ public final class Sources {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
     ) {
-        return fromProcessor("remoteMap(" + mapName + ')',
+        return fromProcessor("remoteMapSource(" + mapName + ')',
                 readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
     }
 
@@ -315,7 +316,7 @@ public final class Sources {
             @Nullable DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("remoteMapJournal(" + mapName + ')',
+        return fromProcessor("remoteMapJournalSource(" + mapName + ')',
                 streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, startFromLatestSequence));
     }
 
@@ -330,7 +331,7 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("remoteMapJournal(" + mapName + ')',
+        return fromProcessor("remoteMapJournalSource(" + mapName + ')',
                 streamRemoteMapP(mapName, clientConfig, startFromLatestSequence));
     }
 
@@ -350,7 +351,7 @@ public final class Sources {
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> cache(@Nonnull String cacheName) {
-        return fromProcessor("cache(" + cacheName + ')', readCacheP(cacheName));
+        return fromProcessor("cacheSource(" + cacheName + ')', readCacheP(cacheName));
     }
 
     /**
@@ -388,7 +389,7 @@ public final class Sources {
             @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("cacheJournal(" + cacheName + ')',
+        return fromProcessor("cacheJournalSource(" + cacheName + ')',
                 streamCacheP(cacheName, predicateFn, projectionFn, startFromLatestSequence)
         );
     }
@@ -403,7 +404,7 @@ public final class Sources {
             @Nonnull String cacheName,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("cacheJournal(" + cacheName + ')', streamCacheP(cacheName, startFromLatestSequence));
+        return fromProcessor("cacheJournalSource(" + cacheName + ')', streamCacheP(cacheName, startFromLatestSequence));
     }
 
     /**
@@ -423,7 +424,7 @@ public final class Sources {
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return fromProcessor("remoteCache(" + cacheName + ')', readRemoteCacheP(cacheName, clientConfig)
+        return fromProcessor("remoteCacheSource(" + cacheName + ')', readRemoteCacheP(cacheName, clientConfig)
         );
     }
 
@@ -460,7 +461,7 @@ public final class Sources {
             @Nullable DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("remoteCacheJournal(" + cacheName + ')',
+        return fromProcessor("remoteCacheJournalSource(" + cacheName + ')',
                 streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, startFromLatestSequence));
     }
 
@@ -475,7 +476,7 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig,
             boolean startFromLatestSequence
     ) {
-        return fromProcessor("remoteCacheJournal(" + cacheName + ')',
+        return fromProcessor("remoteCacheJournalSource(" + cacheName + ')',
                 streamRemoteCacheP(cacheName, clientConfig, startFromLatestSequence));
     }
 
@@ -489,7 +490,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> list(@Nonnull String listName) {
-        return fromProcessor("list(" + listName + ')', readListP(listName));
+        return fromProcessor("listSource(" + listName + ')', readListP(listName));
     }
 
     /**
@@ -502,7 +503,7 @@ public final class Sources {
      */
     @Nonnull
     public static <E> Source<E> remoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return fromProcessor("remoteList(" + listName + ')', readRemoteListP(listName, clientConfig));
+        return fromProcessor("remoteListSource(" + listName + ')', readRemoteListP(listName, clientConfig));
     }
 
     /**
@@ -524,7 +525,7 @@ public final class Sources {
     public static Source<String> socket(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
-        return fromProcessor("socket(" + host + ':' + port + ')', streamSocketP(host, port, charset));
+        return fromProcessor("socketSourceSource(" + host + ':' + port + ')', streamSocketP(host, port, charset));
     }
 
     /**
@@ -551,7 +552,7 @@ public final class Sources {
     public static Source<String> files(
             @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return fromProcessor("files(" + directory + '/' + glob + ')', readFilesP(directory, charset, glob));
+        return fromProcessor("filesSource(" + new File(directory, glob) + ')', readFilesP(directory, charset, glob));
     }
 
     /**
@@ -610,7 +611,7 @@ public final class Sources {
     public static Source<String> fileWatcher(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
-        return fromProcessor("fileWatcher(" + watchedDirectory + '/' + glob + ')',
+        return fromProcessor("fileWatcherSource(" + watchedDirectory + '/' + glob + ')',
                 streamFilesP(watchedDirectory, charset, glob)
         );
     }

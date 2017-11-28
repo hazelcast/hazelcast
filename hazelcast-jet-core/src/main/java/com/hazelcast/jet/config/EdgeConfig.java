@@ -47,7 +47,8 @@ public class EdgeConfig implements Serializable {
     private int packetSizeLimit = DEFAULT_PACKET_SIZE_LIMIT;
 
     /**
-     * Sets the capacity of processor-to-processor concurrent queues.
+     * Sets the capacity of processor-to-processor concurrent queues. The value
+     * is rounded upwards to next power of 2.
      * <p>
      * When data needs to travel between two processors on the same cluster member,
      * it is sent over a concurrent single-producer, single-consumer (SPSC) queue of
@@ -58,7 +59,7 @@ public class EdgeConfig implements Serializable {
      * {@code senderParallelism * receiverParallelism} queues representing the edge
      * on each member. Care should be taken to strike a balance between performance
      * and memory usage. The default of {@value #DEFAULT_QUEUE_SIZE} is a good size
-     * for simple DAGs and moderate parallelism, but the optimum can be detemined only
+     * for simple DAGs and moderate parallelism, but the optimum can be determined only
      * by experiment.
      */
     public EdgeConfig setQueueSize(int queueSize) {
@@ -67,7 +68,8 @@ public class EdgeConfig implements Serializable {
     }
 
     /**
-     * Returns the size of the SPSC queues used to implement this edge.
+     * Returns the size of the SPSC queues used to implement this edge. The
+     * real queue size will be rounded upwards to the next power of 2.
      */
     public int getQueueSize() {
         return queueSize;

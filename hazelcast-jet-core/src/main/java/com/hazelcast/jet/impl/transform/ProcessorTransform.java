@@ -24,11 +24,16 @@ import com.hazelcast.jet.function.DistributedSupplier;
  * processor supplier.
  */
 public class ProcessorTransform<E, R> implements UnaryTransform<E, R> {
-    public final String transformName;
     public final DistributedSupplier<Processor> procSupplier;
+    private final String name;
 
-    public ProcessorTransform(String transformName, DistributedSupplier<Processor> procSupplier) {
-        this.transformName = transformName;
+    public ProcessorTransform(String name, DistributedSupplier<Processor> procSupplier) {
+        this.name = name;
         this.procSupplier = procSupplier;
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 }

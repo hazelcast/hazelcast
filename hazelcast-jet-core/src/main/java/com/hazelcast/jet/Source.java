@@ -18,12 +18,10 @@ package com.hazelcast.jet;
 
 /**
  * A transform that takes no input streams and produces an output stream.
+ * <p>
+ * See {@link Sources} for possible choices.
  *
  * @param <E> the stream item type
  */
 public interface Source<E> extends Transform {
-    /**
-     * Returns the name of this source.
-     */
-    String name();
 }

@@ -19,12 +19,10 @@ package com.hazelcast.jet;
 /**
  * A transform which accepts an input stream and produces no output
  * streams.
+ * <p>
+ * See {@link Sinks} for possible choices.
  *
  * @param <E> the type of items the sink will receive
  */
 public interface Sink<E> extends Transform {
-    /**
-     * Returns the name of this sink.
-     */
-    String name();
 }
