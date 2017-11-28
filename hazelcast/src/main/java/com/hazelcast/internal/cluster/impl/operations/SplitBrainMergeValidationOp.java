@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.CANNOT_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 
 /**
@@ -158,11 +160,12 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
                 return false;
             }
 
-            if (service.getClusterJoinManager().shouldMerge(request) != REMOTE_NODE_SHOULD_MERGE) {
-                return false;
+            SplitBrainMergeCheckResult result = service.getClusterJoinManager().shouldMerge(request);
+            if (result == REMOTE_NODE_SHOULD_MERGE) {
+                return service.getMembershipManager().verifySplitBrainMergeMemberListVersion(request);
             }
 
-            return service.getMembershipManager().verifySplitBrainMergeMemberListVersion(request);
+            return result != CANNOT_MERGE;
         } catch (Exception e) {
             if (logger.isFineEnabled()) {
                 logger.fine("Could not validate split-brain join message! -> " + e.getMessage());
