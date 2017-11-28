@@ -446,7 +446,7 @@ public class ClusterHeartbeatManager {
 
     /**
      * Checks the elapsed time from the last local heartbeat and compares it to the expected {@code intervalMillis}.
-     * The method will correct a number of clocks and timestamps based on this difference :
+     * The method will correct a number of clocks and timestamps based on this difference:
      * <ul>
      * <li>
      * set the local cluster time diff if the absolute diff is larger than {@link #CLOCK_JUMP_THRESHOLD} and
