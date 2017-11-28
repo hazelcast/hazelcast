@@ -25,10 +25,9 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,8 +70,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class})
 public class MembershipFailureTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "fd:{0}")
@@ -300,7 +299,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
                 .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
         HazelcastInstance master = newHazelcastInstance(config);
         HazelcastInstance slave1 = newHazelcastInstance(config);
-        final HazelcastInstance slave2 = newHazelcastInstance(config);
+        HazelcastInstance slave2 = newHazelcastInstance(config);
 
         assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
