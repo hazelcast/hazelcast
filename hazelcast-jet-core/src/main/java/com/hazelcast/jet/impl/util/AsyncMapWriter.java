@@ -34,7 +34,6 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratin
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,10 +44,11 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.util.Util.tryIncrement;
+import static com.hazelcast.jet.impl.util.Util.callbackOf;
 import static com.hazelcast.jet.impl.util.Util.completeVoidFuture;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
@@ -190,19 +190,6 @@ public class AsyncMapWriter {
         Arrays.fill(outputBuffers, null);
     }
 
-    private boolean reserveOps(int count) {
-        int prev;
-        int next;
-        do {
-            prev = numConcurrentOps.get();
-            next = prev + count;
-            if (next > MAX_PARALLEL_ASYNC_OPS) {
-                return false;
-            }
-        } while (!numConcurrentOps.compareAndSet(prev, next));
-        return true;
-    }
-
     private boolean invokeOnCluster(List<PartitionOpBuilder> opBuilders,
                                     CompletableFuture<Void> completionFuture,
                                     boolean shouldRetry) {
@@ -211,7 +198,7 @@ public class AsyncMapWriter {
             return true;
         }
 
-        if (!reserveOps(opBuilders.size())) {
+        if (!tryIncrement(numConcurrentOps, opBuilders.size(), MAX_PARALLEL_ASYNC_OPS)) {
             return false;
         }
         AtomicInteger doneLatch = new AtomicInteger(opBuilders.size());
@@ -284,20 +271,6 @@ public class AsyncMapWriter {
                     .invoke();
         }
         return true;
-    }
-
-    private static <T> ExecutionCallback<T> callbackOf(Consumer<T> onResponse, Consumer<Throwable> onError) {
-        return new ExecutionCallback<T>() {
-            @Override
-            public void onResponse(T o) {
-                onResponse.accept(o);
-            }
-
-            @Override
-            public void onFailure(Throwable throwable) {
-                onError.accept(throwable);
-            }
-        };
     }
 
     private class PartitionOpBuilder {

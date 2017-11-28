@@ -20,19 +20,21 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
-
-import javax.annotation.Nonnull;
+import com.hazelcast.map.EntryProcessor;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
@@ -66,6 +68,94 @@ public final class SinkProcessors {
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return HazelcastWriters.writeMapP(mapName, clientConfig);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#mapWithMerging(String, DistributedFunction, DistributedFunction,
+     * DistributedBinaryOperator)}.
+     */
+    @Nonnull
+    public static <E, K, V> ProcessorMetaSupplier mergeMapP(
+            @Nonnull String mapName,
+            @Nonnull DistributedFunction<E, K> toKeyFn,
+            @Nonnull DistributedFunction<E, V> toValueFn,
+            @Nonnull DistributedBinaryOperator<V> mergeFn
+    ) {
+        return HazelcastWriters.mergeMapP(mapName, null, toKeyFn, toValueFn, mergeFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#remoteMapWithMerging(String, ClientConfig, DistributedFunction,
+     * DistributedFunction, DistributedBinaryOperator)}.
+     */
+    @Nonnull
+    public static <E, K, V> ProcessorMetaSupplier mergeRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull DistributedFunction<E, K> toKeyFn,
+            @Nonnull DistributedFunction<E, V> toValueFn,
+            @Nonnull DistributedBinaryOperator<V> mergeFn
+    ) {
+        return HazelcastWriters.mergeMapP(mapName, clientConfig, toKeyFn, toValueFn, mergeFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#mapWithEntryProcessor(String, DistributedFunction, DistributedFunction)} .
+     */
+    @Nonnull
+    public static <E, K, V> ProcessorMetaSupplier updateMapP(
+            @Nonnull String mapName,
+            @Nonnull DistributedFunction<E, K> toKeyFn,
+            @Nonnull DistributedBiFunction<V, E, V> updateFn
+    ) {
+        return HazelcastWriters.updateMapP(mapName, null, toKeyFn, updateFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#remoteMapWithUpdating(String, ClientConfig, DistributedFunction
+     * , DistributedBiFunction)}.
+     */
+    @Nonnull
+    public static <E, K, V> ProcessorMetaSupplier updateRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull DistributedFunction<E, K> toKeyFn,
+            @Nonnull DistributedBiFunction<V, E, V> updateFn
+    ) {
+        return HazelcastWriters.updateMapP(mapName, clientConfig, toKeyFn, updateFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#mapWithEntryProcessor(String, DistributedFunction, DistributedFunction)}.
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier updateMapP(
+            @Nonnull String mapName,
+            @Nonnull DistributedFunction<T, K> toKeyFn,
+            @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
+
+    ) {
+        return HazelcastWriters.updateMapP(mapName, null, toKeyFn, toEntryProcessorFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link com.hazelcast.jet.Sinks#remoteMapWithEntryProcessor(String, ClientConfig, DistributedFunction,
+     * DistributedFunction)}.
+     */
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier updateRemoteMapP(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig,
+            @Nonnull DistributedFunction<T, K> toKeyFn,
+            @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
+    ) {
+        return HazelcastWriters.updateMapP(mapName, clientConfig, toKeyFn, toEntryProcessorFn);
     }
 
     /**
@@ -174,10 +264,10 @@ public final class SinkProcessors {
      * This is a useful building block to implement sinks with explicit control
      * over buffering and flushing.
      *
-     * @param <B> type of buffer
-     * @param <T> type of received item
-     * @param newBufferFn supplies the buffer. The argument to this function
-     *                   is the global processor index.
+     * @param <B>           type of buffer
+     * @param <T>           type of received item
+     * @param newBufferFn   supplies the buffer. The argument to this function
+     *                      is the global processor index.
      * @param addToBufferFn adds an item to the buffer
      * @param flushBufferFn flushes the buffer
      */
@@ -199,12 +289,12 @@ public final class SinkProcessors {
      * This is a useful building block to implement sinks with explicit control
      * over buffering and flushing.
      *
-     * @param <B> type of buffer
-     * @param <T> type of received item
-     * @param newBufferFn supplies the buffer. The argument to this function
-     *                   is the global processor index.
-     * @param addToBufferFn adds item to buffer
-     * @param flushBufferFn flushes the buffer
+     * @param <B>             type of buffer
+     * @param <T>             type of received item
+     * @param newBufferFn     supplies the buffer. The argument to this function
+     *                        is the global processor index.
+     * @param addToBufferFn   adds item to buffer
+     * @param flushBufferFn   flushes the buffer
      * @param disposeBufferFn disposes of the buffer
      */
     @Nonnull

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -35,6 +36,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -95,6 +98,52 @@ public final class Util {
         } catch (Exception e) {
             throw sneakyThrow(e);
         }
+    }
+
+    /**
+     * This method will generate an {@link ExecutionCallback} which
+     * allows to asynchronously get notified when the execution is completed,
+     * either successfully or with error by calling {@code onResponse} on success
+     * and {@code onError} on error respectively.
+     *
+     * @param onResponse function to call when execution is completed successfully
+     * @param onError function to call when execution is completed with error
+     * @param <T> type of the response
+     * @return {@link ExecutionCallback}
+     */
+    public static <T> ExecutionCallback<T> callbackOf(Consumer<T> onResponse, Consumer<Throwable> onError) {
+        return new ExecutionCallback<T>() {
+            @Override
+            public void onResponse(T o) {
+                onResponse.accept(o);
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                onError.accept(throwable);
+            }
+        };
+    }
+
+    /**
+     * Atomically increment the {@code value} by {@code increment}, unless
+     * the value after increment would exceed the {@code limit}.
+     * <p>
+     *
+     * @param limit maximum value the {@code value} can take (inclusive)
+     * @return {@code true}, if successful, {@code false}, if {@code limit} would be exceeded.
+     */
+    public static boolean tryIncrement(AtomicInteger value, int increment, int limit) {
+        int prev;
+        int next;
+        do {
+            prev = value.get();
+            next = prev + increment;
+            if (next > limit) {
+                return false;
+            }
+        } while (!value.compareAndSet(prev, next));
+        return true;
     }
 
     public interface RunnableExc {
