@@ -56,11 +56,11 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 public abstract class AbstractJoiner implements Joiner {
 
     private static final int JOIN_TRY_COUNT = 5;
-    private static final long MIN_WAIT_SECONDS_BEFORE_JOIN = 10;
-    private static final long SPLIT_BRAIN_CONN_TIMEOUT = 5000;
-    private static final long SPLIT_BRAIN_SLEEP_TIME = 10;
-    private static final int SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS = 10;
     private static final int SPLIT_BRAIN_MERGE_TIMEOUT_SECONDS = 30;
+    private static final int SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS = 10;
+    private static final long MIN_WAIT_BEFORE_JOIN_SECONDS = 10;
+    private static final long SPLIT_BRAIN_SLEEP_TIME_MILLIS = 10;
+    private static final long SPLIT_BRAIN_CONN_TIMEOUT_MILLIS = 5000;
 
     protected final Config config;
     protected final Node node;
@@ -94,7 +94,7 @@ public abstract class AbstractJoiner implements Joiner {
         this.config = node.config;
         this.clusterService = node.getClusterService();
         this.clusterJoinManager = clusterService.getClusterJoinManager();
-        mergeNextRunDelayMs = node.getProperties().getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
+        this.mergeNextRunDelayMs = node.getProperties().getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
     }
 
     @Override
@@ -213,7 +213,7 @@ public abstract class AbstractJoiner implements Joiner {
         // max join time to found master node,
         // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
         // hence we add 10 seconds more
-        return TimeUnit.SECONDS.toMillis(MIN_WAIT_SECONDS_BEFORE_JOIN)
+        return TimeUnit.SECONDS.toMillis(MIN_WAIT_BEFORE_JOIN_SECONDS)
                 + node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
     }
 
@@ -222,7 +222,7 @@ public abstract class AbstractJoiner implements Joiner {
      * to the target address.
      */
     protected final SplitBrainMergeCheckResult sendSplitBrainJoinMessageAndCheckResponse(Address target,
-            SplitBrainJoinMessage request) {
+                                                                                         SplitBrainJoinMessage request) {
         SplitBrainJoinMessage response = sendSplitBrainJoinMessage(target, request);
         return clusterService.getClusterJoinManager().shouldMerge(response);
     }
@@ -236,15 +236,16 @@ public abstract class AbstractJoiner implements Joiner {
         }
 
         Connection conn = node.connectionManager.getOrConnect(target, true);
-        long timeout = SPLIT_BRAIN_CONN_TIMEOUT;
+        long timeout = SPLIT_BRAIN_CONN_TIMEOUT_MILLIS;
         while (conn == null) {
-            timeout -= SPLIT_BRAIN_SLEEP_TIME;
+            timeout -= SPLIT_BRAIN_SLEEP_TIME_MILLIS;
             if (timeout < 0) {
+                logger.fine("Returning null timeout<0, " + timeout);
                 return null;
             }
             try {
                 //noinspection BusyWait
-                Thread.sleep(SPLIT_BRAIN_SLEEP_TIME);
+                Thread.sleep(SPLIT_BRAIN_SLEEP_TIME_MILLIS);
             } catch (InterruptedException e) {
                 EmptyStatement.ignore(e);
                 return null;
