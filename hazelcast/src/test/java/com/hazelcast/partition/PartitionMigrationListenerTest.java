@@ -51,7 +51,7 @@ import static org.mockito.Mockito.verify;
 public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     @Test
-    public void testMigrationListenerCalledOnlyOnceWhenMigrationHappens() throws Exception {
+    public void testMigrationListenerCalledOnlyOnceWhenMigrationHappens() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = new Config();
         // even partition count to make migration count deterministic
@@ -59,24 +59,24 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
         // hold the migrations until all nodes join so that there will be no retries / failed migrations etc.
-        final CountDownLatch migrationStartLatch = new CountDownLatch(1);
+        CountDownLatch migrationStartLatch = new CountDownLatch(1);
         config.addListenerConfig(new ListenerConfig(new DelayMigrationStart(migrationStartLatch)));
 
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        warmUpPartitions(instance);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        warmUpPartitions(instance1);
 
-        final CountingMigrationListener migrationListener = new CountingMigrationListener(migrationStartLatch, partitionCount);
-        instance.getPartitionService().addMigrationListener(migrationListener);
+        final CountingMigrationListener migrationListener = new CountingMigrationListener(partitionCount);
+        instance1.getPartitionService().addMigrationListener(migrationListener);
 
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         migrationStartLatch.countDown();
 
-        waitAllForSafeState(instance2, instance);
+        waitAllForSafeState(instance2, instance1);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 int startedTotal = getTotal(migrationListener.migrationStarted);
                 int completedTotal = getTotal(migrationListener.migrationCompleted);
 
@@ -133,7 +133,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         PartitionService partitionService = hz.getPartitionService();
 
-        boolean result = partitionService.removeMigrationListener("notexist");
+        boolean result = partitionService.removeMigrationListener("notExist");
 
         assertFalse(result);
     }
@@ -160,6 +160,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     }
 
 
+    @SuppressWarnings("SameParameterValue")
     private void assertAllLessThanOrEqual(AtomicInteger[] integers, int expected) {
         for (AtomicInteger integer : integers) {
             assertTrue(integer.get() <= expected);
@@ -172,7 +173,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         AtomicInteger[] migrationCompleted;
         AtomicInteger[] migrationFailed;
 
-        CountingMigrationListener(CountDownLatch migrationStartLatch, int partitionCount) {
+        CountingMigrationListener(int partitionCount) {
             migrationStarted = new AtomicInteger[partitionCount];
             migrationCompleted = new AtomicInteger[partitionCount];
             migrationFailed = new AtomicInteger[partitionCount];

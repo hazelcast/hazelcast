@@ -17,15 +17,18 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,31 +41,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(SlowTest.class)
-public class PartitionLostListenerStressTest
-        extends AbstractPartitionLostListenerTest {
+public class PartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
-    public static class EventCollectingPartitionLostListener
-            implements PartitionLostListener {
-
-        private List<PartitionLostEvent> lostPartitions = new ArrayList<PartitionLostEvent>();
-
-        @Override
-        public synchronized void partitionLost(PartitionLostEvent event) {
-            lostPartitions.add(event);
-        }
-
-        public synchronized List<PartitionLostEvent> getEvents() {
-            return new ArrayList<PartitionLostEvent>(lostPartitions);
-        }
-
-        public synchronized void clear() {
-            lostPartitions.clear();
-        }
-    }
-
-    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
+    @Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 {1, true, NodeLeaveType.SHUTDOWN, false},
@@ -80,16 +63,16 @@ public class PartitionLostListenerStressTest
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public int numberOfNodesToCrash;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public boolean withData;
 
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public NodeLeaveType nodeLeaveType;
 
-    @Parameterized.Parameter(3)
+    @Parameter(3)
     public boolean shouldExpectPartitionLostEvents;
 
     protected int getNodeCount() {
@@ -101,8 +84,7 @@ public class PartitionLostListenerStressTest
     }
 
     @Test
-    public void testPartitionLostListener()
-            throws InterruptedException {
+    public void testPartitionLostListener() {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
         List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
         List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
@@ -123,16 +105,14 @@ public class PartitionLostListenerStressTest
         if (shouldExpectPartitionLostEvents) {
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertLostPartitions(log, listener, survivingPartitions, partitionTables);
                 }
             });
         } else {
             assertTrueAllTheTime(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() {
                     assertTrue(listener.getEvents().isEmpty());
                 }
             }, 1);
@@ -174,5 +154,23 @@ public class PartitionLostListenerStressTest
         EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         instance.getPartitionService().addPartitionLostListener(listener);
         return listener;
+    }
+
+    public static class EventCollectingPartitionLostListener implements PartitionLostListener {
+
+        private List<PartitionLostEvent> lostPartitions = new ArrayList<PartitionLostEvent>();
+
+        @Override
+        public synchronized void partitionLost(PartitionLostEvent event) {
+            lostPartitions.add(event);
+        }
+
+        public synchronized List<PartitionLostEvent> getEvents() {
+            return new ArrayList<PartitionLostEvent>(lostPartitions);
+        }
+
+        public synchronized void clear() {
+            lostPartitions.clear();
+        }
     }
 }
