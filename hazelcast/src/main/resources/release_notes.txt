@@ -70,6 +70,7 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 *3.8.7 Fixes*
 
+- MapStore: Map initialization is blocked when new members join during the data loading. [#11407]
 - Split-brain is not working as expected on a 2-member cluster. There occurs a cluster merge deadlock when the core size is 1. [#11403]
 - Unable to connect any address in the configuration. [#11288]
 - OperationTimeoutException thrown at Hazelcast clients should include a more informative text. [#11241], [#11236]
