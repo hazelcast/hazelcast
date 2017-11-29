@@ -27,9 +27,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
-import com.hazelcast.concurrent.flakeidgen.FlakeIdNodeIdOverflowException;
 import com.hazelcast.core.FlakeIdGenerator;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
 import com.hazelcast.core.IdGenerator;
@@ -37,24 +35,15 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Proxy implementation of {@link IdGenerator}.
  */
 public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdGenerator {
-
-    private static final int DEFAULT_NUM_ATTEMPTS = 5;
-
-    // this should be final, but is not due to tests
-    private static int numAttempts = DEFAULT_NUM_ATTEMPTS;
 
     private static final ClientMessageDecoder NEW_ID_BATCH_DECODER = new ClientMessageDecoder() {
         @Override
@@ -63,12 +52,6 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
             return new IdBatch(response.base, response.increment, response.batchSize);
         }
     };
-
-    /**
-     * Set of member UUIDs of which we know have overflowed NodeIds. These members are never again tried
-     * to get ID from.
-      */
-    private final Set<String> overflowedMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>(0));
 
     /**
      * Current randomly chosen member from which we are getting IDs.
@@ -97,22 +80,15 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
     @Override
     public IdBatch newIdBatch(int batchSize) {
         // go to a member for a batch of IDs
-        Throwable error = null;
-        for (int iteration = 0; iteration < numAttempts; iteration++) {
+        for (;;) {
             Member member = getRandomMember();
             try {
                 return newIdBatchAsync(batchSize, member.getAddress()).join();
-            } catch (Throwable e) {
-                if (e instanceof FlakeIdNodeIdOverflowException) {
-                    overflowedMembers.add(member.getUuid());
-                    // don't count this attempt
-                    iteration--;
-                }
+            } catch (TargetNotMemberException e) {
+                // if target member left, we'll retry with another member
                 randomMember = null;
-                error = e;
             }
         }
-        throw ExceptionUtil.rethrow(error);
     }
 
     private InternalCompletableFuture<IdBatch> newIdBatchAsync(int batchSize, Address address) {
@@ -130,17 +106,10 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
         Member member = randomMember;
         if (member == null) {
             Set<Member> members = getClient().getCluster().getMembers();
-            // create list of members skipping those which we know have overflowed Node IDs
-            List<Member> filteredMembers = new ArrayList<Member>(members.size());
-            for (Member m : members) {
-                if (!overflowedMembers.contains(m.getUuid())) {
-                    filteredMembers.add(m);
-                }
+            int randomIndex = ThreadLocalRandomProvider.get().nextInt(members.size());
+            for (Iterator<Member> iterator = members.iterator(); randomIndex >= 0; randomIndex--) {
+                member = iterator.next();
             }
-            if (filteredMembers.isEmpty()) {
-                throw new HazelcastException("All members have overflowed nodeIDs. Cluster restart is required");
-            }
-            member = filteredMembers.get(ThreadLocalRandomProvider.get().nextInt(filteredMembers.size()));
             randomMember = member;
         }
         return member;
@@ -149,12 +118,5 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
     @Override
     public String toString() {
         return "FlakeIdGenerator{name='" + name + "'}";
-    }
-
-    /**
-     * Only for test, value is not properly synchronized.
-     */
-    public static void setNumAttempts(int newNumAttempts) {
-        numAttempts = newNumAttempts;
     }
 }
