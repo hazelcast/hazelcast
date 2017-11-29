@@ -79,11 +79,6 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
 
     public ClientFlakeIdGeneratorProxy(String serviceName, String objectName, ClientContext context) {
         super(serviceName, objectName, context);
-    }
-
-    @Override
-    protected void onInitialize() {
-        super.onInitialize();
 
         FlakeIdGeneratorConfig config = getContext().getClientConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidity(), new IFunction<Integer, IdBatch>() {
