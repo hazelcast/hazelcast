@@ -30,8 +30,6 @@ import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.util.Date;
-
 import static com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy.BITS_TIMESTAMP;
 import static com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy.EPOCH_START;
 import static org.junit.Assert.assertEquals;
@@ -83,7 +81,7 @@ public class FlakeIdGeneratorProxyTest {
                 now < EPOCH_START + (1L << BITS_TIMESTAMP - 1);
                 now += 365L * 24L * 60L * 60L * 1000L) {
             long base = gen.newIdBase(now, 1);
-            System.out.println("at " + new Date(now) + ", id=" + base);
+//            System.out.println("at " + new Date(now) + ", id=" + base);
             assertTrue("lastId=" + lastId + ", newId=" + base, lastId < base);
             lastId = base;
         }

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.flakeidgen;
+package com.hazelcast.client.impl.flakeidgen;
 
-import com.hazelcast.client.proxy.ClientFlakeIdGeneratorProxy.AutoBatcher;
 import com.hazelcast.concurrent.flakeidgen.FlakeIdConcurrencyTestUtil;
-import com.hazelcast.core.FlakeIdGenerator.IdBatch;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.core.IdBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientFlakeIdGeneratorProxy_AutoBatcherTest {
+public class AutoBatcherTest {
 
     private static final int VALIDITY = 1000;
 

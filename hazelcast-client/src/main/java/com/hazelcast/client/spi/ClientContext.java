@@ -46,7 +46,7 @@ import static java.lang.String.format;
 /**
  * Context holding all the required services, managers and the configuration for a Hazelcast client.
  */
-public class ClientContext {
+public final class ClientContext {
 
     private String localUuid;
     private final SerializationService serializationService;

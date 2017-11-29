@@ -2837,13 +2837,18 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="prefetchCount" type="xs:int" default="100" use="optional">
+        <xs:attribute name="prefetchCount" default="100" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     How many IDs are pre-fetched on the background when one call to newId() is made.
                     Value must be >= 1, default is 100.
                 </xs:documentation>
             </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1" />
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="prefetchValidity" type="xs:long" default="10000" use="optional">
             <xs:annotation>

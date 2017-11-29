@@ -52,7 +52,7 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
         // is assigned. This causes the client message to fail and the client will retry with another member
         // and will never again try the failed member.
         //
-        // We set the numAttempts to 0: node ID overflow uses different path than when retrying due to other
+        // We set the numAttempts to 1: node ID overflow uses different path than when retrying due to other
         // errors.
         //
         // Probability of initially choosing a good member and not going through the process of choosing another

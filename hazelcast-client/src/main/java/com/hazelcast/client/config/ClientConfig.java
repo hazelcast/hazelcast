@@ -18,6 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -125,6 +126,10 @@ public class ClientConfig {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
         }
         this.configPatternMatcher = configPatternMatcher;
+    }
+
+    public ConfigPatternMatcher getConfigPatternMatcher() {
+        return configPatternMatcher;
     }
 
     /**
@@ -339,6 +344,21 @@ public class ClientConfig {
         return flakeIdGeneratorConfigMap;
     }
 
+    /**
+     * Returns a {@link FlakeIdGeneratorConfig} configuration for the given flake ID generator name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code "default"}.
+     *
+     * @param name name of the flake ID generator config
+     * @return the flake ID generator configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
     public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
         String baseName = getBaseName(name);
         FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
@@ -348,6 +368,33 @@ public class ClientConfig {
         return getFlakeIdGeneratorConfig("default");
     }
 
+    /**
+     * Returns the {@link FlakeIdGeneratorConfig} for the given name, creating
+     * one if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking {@link #addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the flake ID generator config
+     * @return the cache configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
     public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
         String baseName = getBaseName(name);
         FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
@@ -365,11 +412,27 @@ public class ClientConfig {
         return config;
     }
 
+    /**
+     * Adds a flake ID generator configuration. The configuration is saved under the config
+     * name, which may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param config the flake ID configuration
+     * @return this config instance
+     */
     public ClientConfig addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig config) {
         flakeIdGeneratorConfigMap.put(config.getName(), config);
         return this;
     }
 
+    /**
+     * Sets the map of {@link com.hazelcast.core.FlakeIdGenerator} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration will be obtained in the future.
+     *
+     * @param map the FlakeIdGenerator configuration map to set
+     * @return this config instance
+     */
     public ClientConfig setFlakeIdGeneratorConfigMap(Map<String, FlakeIdGeneratorConfig> map) {
         flakeIdGeneratorConfigMap.clear();
         flakeIdGeneratorConfigMap.putAll(map);

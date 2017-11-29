@@ -618,13 +618,18 @@
     </xs:complexType>
     <xs:complexType name="flake-id-generator">
         <xs:all>
-            <xs:element name="prefetch-count" type="xs:int" minOccurs="0">
+            <xs:element name="prefetch-count" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         How many IDs are pre-fetched on the background when one call to newId() is made.
                         Value must be >= 1, default is 100.
                     </xs:documentation>
                 </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
             </xs:element>
             <xs:element name="prefetch-validity" type="xs:long" minOccurs="0">
                 <xs:annotation>

@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
-import com.hazelcast.core.FlakeIdGenerator.IdBatch;
+import com.hazelcast.core.IdBatch;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

@@ -62,7 +62,7 @@ public class FlakeIdConcurrencyTestUtil {
             thread.join();
         }
 
-        assertNull(error.get());
+        assertNull("Error occurred: " + error.get(), error.get());
         assertEquals(NUM_THREADS * IDS_IN_THREAD, ids.size());
         return ids;
     }

@@ -17,12 +17,15 @@
 package com.hazelcast.concurrent.flakeidgen;
 
 import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.IdBatch;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 public class FlakeIdGeneratorProxy
         extends AbstractDistributedObject<FlakeIdGeneratorService>
@@ -31,7 +34,10 @@ public class FlakeIdGeneratorProxy
     static final int BITS_TIMESTAMP = 42;
 
     /**
-     * 1.1.2017 0:00 GMT will be MIN_VALUE in the 42-bit signed integer
+     * 1.1.2017 0:00 GMT will be MIN_VALUE in the 42-bit signed integer.
+     * <p>
+     * {@code 1483228800000} is the value {@code System.currentTimeMillis()} would return on
+     * 1.1.2017 0:00 GMT.
      */
     @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
@@ -55,10 +61,10 @@ public class FlakeIdGeneratorProxy
 
         // If nodeId is out of range, we'll allow to create the proxy, but we'll refuse to generate IDs.
         // This is to provide functionality when the node ID overflows until the cluster is restarted and
-        // nodeIDs are assigned from 0 again.
-        // It won't be possible to generate IDs through member HZ instances, however clients choose
-        // random member after each error and then stay with it, so they'll mostly work. They also retry
-        // several times until the error is thrown to the caller.
+        // node IDs are assigned from 0 again.
+        // It won't be possible to generate IDs through member HZ instances, however clients ignore
+        // members which threw FlakeIdNodeIdOverflowException, so they'll work as long as there is
+        // at least one member with node ID in the cluster.
         if ((nodeId & -1 << BITS_NODE_ID) != 0) {
             this.nodeId = -1;
             logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
@@ -79,7 +85,22 @@ public class FlakeIdGeneratorProxy
         return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
     }
 
+    /**
+     * The layout of the ID is as follows (starting from most significant bits):<ul>
+     *     <li>42 bits timestamp
+     *     <li>6 bits sequence
+     *     <li>16 bits node ID
+     * </ul>
+     *
+     * This order is important: timestamp must be first to keep IDs ordered. Sequence must be second for
+     * implementation reasons (it's included in {@link #generatedValue}). Node is just an appendix to make
+     * IDs unique.
+     *
+     * @param now Current time (currentTimeMillis() normally or other value in tests)
+     * @return First ID for the batch.
+     */
     long newIdBase(long now, int batchSize) {
+        checkPositive(batchSize, "batchSize");
         if (nodeId < 0) {
             throw new FlakeIdNodeIdOverflowException("NodeID overflow, this member cannot generate IDs");
         }

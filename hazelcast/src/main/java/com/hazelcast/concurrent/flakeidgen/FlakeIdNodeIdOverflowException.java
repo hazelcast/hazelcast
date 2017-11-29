@@ -16,11 +16,13 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
- * Exception thrown from member if that member is not able to generate Flake IDs, because its
+ * Exception thrown from member if that member is not able to generate Flake IDs because its
  * node ID is too big.
  */
-public class FlakeIdNodeIdOverflowException extends RuntimeException {
+public class FlakeIdNodeIdOverflowException extends HazelcastException {
     public FlakeIdNodeIdOverflowException(String message) {
         super(message);
     }

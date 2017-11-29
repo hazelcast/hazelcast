@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.IdBatch;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -43,7 +43,7 @@ public final class FlakeIdGeneratorDataSerializerHook implements DataSerializerH
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
                     case ID_BATCH:
-                        return new FlakeIdGenerator.IdBatch();
+                        return new IdBatch();
                     default:
                         return null;
                 }

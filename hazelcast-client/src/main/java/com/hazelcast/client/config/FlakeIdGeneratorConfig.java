@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.util.Preconditions;
+
 /**
  * The {@code FlakeIdGeneratorConfig} contains the configuration for the client
  * regarding {@link com.hazelcast.core.HazelcastInstance#getFlakeIdGenerator(String)
@@ -55,14 +57,24 @@ public class FlakeIdGeneratorConfig {
         this.prefetchValidity = other.prefetchValidity;
     }
 
+    /**
+     * Returns the configuration name. This can be actual object name or pattern.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the name or name pattern for this config. Must not be modified after this
+     * instance is added to {@link ClientConfig}.
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * @see #setPrefetchCount(int)
+     */
     public int getPrefetchCount() {
         return Math.max(1, prefetchCount);
     }
@@ -76,10 +88,14 @@ public class FlakeIdGeneratorConfig {
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
+        Preconditions.checkPositive(prefetchCount, "prefetch-count must be >=1, not " + prefetchCount);
         this.prefetchCount = prefetchCount;
         return this;
     }
 
+    /**
+     * @see #setPrefetchValidity(long)
+     */
     public long getPrefetchValidity() {
         return prefetchValidity;
     }

@@ -18,6 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.config.FlakeIdGeneratorConfig;
 import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.flakeidgen.AutoBatcher;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.ResponseParameters;
@@ -30,19 +31,18 @@ import com.hazelcast.concurrent.flakeidgen.FlakeIdNodeIdOverflowException;
 import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.core.IdBatch;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static java.util.Collections.newSetFromMap;
 
@@ -154,74 +154,6 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
     @Override
     public String toString() {
         return "FlakeIdGenerator{name='" + name + "'}";
-    }
-
-    /**
-     * A utility to serve IDs from IdBatch one by one, watching for validity.
-     * It's a separate class due to testability.
-     */
-    public static class AutoBatcher {
-        private final int batchSize;
-        private final long validity;
-
-        private volatile Block block = new Block(new IdBatch(0, 0, 0), 0);
-
-        private final IFunction<Integer, IdBatch> batchIdSupplier;
-
-        public AutoBatcher(int batchSize, long validity, IFunction<Integer, IdBatch> idGenerator) {
-            this.batchSize = batchSize;
-            this.validity = validity;
-            this.batchIdSupplier = idGenerator;
-        }
-
-        public long newId() {
-            for (;;) {
-                Block block = this.block;
-                long res = block.next();
-                if (res != Long.MIN_VALUE) {
-                    return res;
-                }
-
-                synchronized (this) {
-                    if (block != this.block) {
-                        // new block was assigned in the meantime
-                        continue;
-                    }
-                    this.block = new Block(batchIdSupplier.apply(batchSize), validity);
-                }
-            }
-        }
-    }
-
-    private static final class Block {
-        private static final AtomicIntegerFieldUpdater<Block> NUM_RETURNED = AtomicIntegerFieldUpdater
-                .newUpdater(Block.class, "numReturned");
-
-        private final IdBatch idBatch;
-        private final long invalidSince;
-        private volatile int numReturned;
-
-        private Block(IdBatch idBatch, long validity) {
-            this.idBatch = idBatch;
-            this.invalidSince = validity > 0 ? Clock.currentTimeMillis() + validity : Long.MAX_VALUE;
-        }
-
-        /**
-         * Returns next ID or Long.MIN_VALUE, if there is none.
-         */
-        long next() {
-            if (invalidSince <= Clock.currentTimeMillis()) {
-                return Long.MIN_VALUE;
-            }
-            int index;
-            do {
-                index = numReturned;
-                if (index == idBatch.batchSize()) {
-                    return Long.MIN_VALUE;
-                }
-            } while (!NUM_RETURNED.compareAndSet(this, index, index + 1));
-            return idBatch.base() + index * idBatch.increment();
-        }
     }
 
     /**

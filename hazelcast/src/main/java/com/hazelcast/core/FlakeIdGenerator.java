@@ -16,16 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorDataSerializerHook;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
  * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
@@ -41,7 +32,8 @@ import java.util.NoSuchElementException;
  * the useful lifespan of the generator to little less than 140 years. The sequence component is 6 bits.
  * If more than 64 IDs are requested in single millisecond, IDs will gracefully overflow to next
  * millisecond and uniqueness is guaranteed in this case.
- * <p>
+ *
+ * <h4>Node ID overflow</h4>
  * Node ID component of the ID has 16 bits. Members with member list join version higher than
  * 2^16 won't be able to generate IDs. The clients will be able to generate IDs as long as there is at
  * least one member with join version smaller than 2^16. The remedy is to restart the cluster:
@@ -56,6 +48,18 @@ import java.util.NoSuchElementException;
  */
 public interface FlakeIdGenerator extends DistributedObject {
 
+    /**
+     * Generates and returns a batch of cluster-wide unique IDs. IDs are generated in one network
+     * roundtrip to member (or locally, if member instance is used).
+     *
+     * @param batchSize Requested number of IDs.
+     * @return Iterable batch of unique IDs
+     *
+     * @throws com.hazelcast.concurrent.flakeidgen.FlakeIdNodeIdOverflowException <br>
+     *  - on client: if node ID for all members in the cluster overflowed<br>
+     *  - on member: if node ID on local member overflowed<br>
+     * See "Node ID overflow" in {@link FlakeIdGenerator class documentation} for more details.
+     */
     IdBatch newIdBatch(int batchSize);
 
     /**
@@ -67,89 +71,11 @@ public interface FlakeIdGenerator extends DistributedObject {
      * <b>Note:</b> Values returned from this method can be not strictly ordered.
      *
      * @return new cluster-wide unique ID
+     *
+     * @throws com.hazelcast.concurrent.flakeidgen.FlakeIdNodeIdOverflowException <br>
+     *  - on client: if node ID for all members in the cluster overflowed<br>
+     *  - on member: if node ID on local member overflowed<br>
+     * See "Node ID overflow" in {@link FlakeIdGenerator class documentation} for more details.
      */
     long newId();
-
-    class IdBatch implements Iterable<Long>, IdentifiedDataSerializable {
-        private long base;
-        private long increment;
-        private int batchSize;
-
-        // for deserialization
-        public IdBatch() {
-        }
-
-        public IdBatch(long base, long increment, int batchSize) {
-            this.base = base;
-            this.increment = increment;
-            this.batchSize = batchSize;
-        }
-
-        public long base() {
-            return base;
-        }
-
-        public long increment() {
-            return increment;
-        }
-
-        public int batchSize() {
-            return batchSize;
-        }
-
-        @Nonnull
-        public Iterator<Long> iterator() {
-            return new Iterator<Long>() {
-                private long base2 = base;
-                private int remaining = batchSize;
-
-                @Override
-                public boolean hasNext() {
-                    return remaining > 0;
-                }
-
-                @Override
-                public Long next() {
-                    if (remaining == 0) {
-                        throw new NoSuchElementException();
-                    }
-                    remaining--;
-                    try {
-                        return base2;
-                    } finally {
-                        base2 += increment;
-                    }
-                }
-
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        }
-
-        @Override
-        public int getFactoryId() {
-            return FlakeIdGeneratorDataSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getId() {
-            return FlakeIdGeneratorDataSerializerHook.ID_BATCH;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeLong(base);
-            out.writeLong(increment);
-            out.writeInt(batchSize);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            base = in.readLong();
-            increment = in.readLong();
-            batchSize = in.readInt();
-        }
-    }
 }
