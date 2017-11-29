@@ -18,7 +18,8 @@ package com.hazelcast.client.impl.protocol.task.flakeidgenerator;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
+import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy;
 import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorService;
 import com.hazelcast.core.IdBatch;
@@ -30,7 +31,7 @@ import com.hazelcast.security.permission.FlakeIdGeneratorPermission;
 import java.security.Permission;
 
 public class NewIdBatchMessageTask
-        extends AbstractMessageTask<FlakeIdGeneratorNewIdBatchCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<RequestParameters> {
 
     public NewIdBatchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,11 +49,10 @@ public class NewIdBatchMessageTask
     }
 
     @Override
-    protected void processMessage() throws Throwable {
+    protected IdBatch call() throws Exception {
         FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) nodeEngine.getProxyService()
                 .getDistributedObject(getServiceName(), parameters.name);
-        IdBatch res = proxy.newIdBatch(parameters.batchSize);
-        sendResponse(res);
+        return proxy.newIdBatch(parameters.batchSize);
     }
 
     @Override

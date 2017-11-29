@@ -200,12 +200,7 @@ public final class ProxyManager {
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, context, atomicLong);
             }
         });
-        register(FlakeIdGeneratorService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
-            @Override
-            public ClientProxy create(String id, ClientContext context) {
-                return new ClientFlakeIdGeneratorProxy(FlakeIdGeneratorService.SERVICE_NAME, id, context);
-            }
-        });
+        register(FlakeIdGeneratorService.SERVICE_NAME, ClientFlakeIdGeneratorProxy.class);
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
 

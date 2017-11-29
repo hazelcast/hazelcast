@@ -16,13 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -39,16 +33,10 @@ import java.util.NoSuchElementException;
  * <p>
  * Object is immutable.
  */
-public class IdBatch implements Iterable<Long>, IdentifiedDataSerializable {
-    private long base;
-    private long increment;
-    private int batchSize;
-
-    /**
-     * For deserialization only, should not be used directly.
-     */
-    public IdBatch() {
-    }
+public class IdBatch implements Iterable<Long> {
+    private final long base;
+    private final long increment;
+    private final int batchSize;
 
     /**
      * Constructor
@@ -117,29 +105,5 @@ public class IdBatch implements Iterable<Long>, IdentifiedDataSerializable {
                 throw new UnsupportedOperationException();
             }
         };
-    }
-
-    @Override
-    public int getFactoryId() {
-        return FlakeIdGeneratorDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return FlakeIdGeneratorDataSerializerHook.ID_BATCH;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(base);
-        out.writeLong(increment);
-        out.writeInt(batchSize);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        base = in.readLong();
-        increment = in.readLong();
-        batchSize = in.readInt();
     }
 }
