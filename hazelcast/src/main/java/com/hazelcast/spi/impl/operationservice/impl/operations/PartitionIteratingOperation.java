@@ -176,6 +176,32 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     }
 
     @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.PARTITION_ITERATOR;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+
+        out.writeObject(operationFactory);
+        out.writeIntArray(partitions);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+
+        operationFactory = in.readObject();
+        partitions = in.readIntArray();
+    }
+
+    @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
@@ -235,32 +261,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
 
             PartitionIteratingOperation.this.sendResponse(new PartitionResponse(partitions, results));
         }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return SpiDataSerializerHook.PARTITION_ITERATOR;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-
-        out.writeObject(operationFactory);
-        out.writeIntArray(partitions);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-
-        operationFactory = in.readObject();
-        partitions = in.readIntArray();
     }
 
     // implements IdentifiedDataSerializable to speed up serialization of arrays
