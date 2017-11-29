@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
 import java.io.IOException;
@@ -112,6 +113,21 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
             setFailed();
         } finally {
             migrationInfo.doneProcessing();
+        }
+    }
+
+    @Override
+    void onMigrationStart() {
+        ((OperationServiceImpl) getNodeEngine().getOperationService()).onStartAsyncOperation(this);
+        super.onMigrationStart();
+    }
+
+    @Override
+    void onMigrationComplete(boolean result) {
+        try {
+            super.onMigrationComplete(result);
+        } finally {
+            ((OperationServiceImpl) getNodeEngine().getOperationService()).onCompletionAsyncOperation(this);
         }
     }
 
