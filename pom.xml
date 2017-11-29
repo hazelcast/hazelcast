@@ -62,7 +62,7 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
         <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.15</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
@@ -71,14 +71,14 @@
         <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.19</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>2.20.1</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
 
         <!--- This is the last log4j2 version working with Java 6 -->
         <log4j2.version>2.3</log4j2.version>
-        <slf4j.api.version>1.6.6</slf4j.api.version>
+        <slf4j.api.version>1.7.25</slf4j.api.version>
 
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
@@ -1239,13 +1239,14 @@
 
     <repositories>
         <repository>
+            <id>backup-repository</id>
+            <name>Maven Central (Backup)</name>
+            <url>http://repo2.maven.org/maven2/</url>
+        </repository>
+        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-            <id>backup-repo</id>
-            <url>http://repo2.maven.org/maven2/</url>
         </repository>
         <repository>
             <id>release-repository</id>
@@ -1255,7 +1256,7 @@
     </repositories>
 
     <pluginRepositories>
-        <!-- JitPack repository is needed to fetch patch surefire-common plugin -->
+        <!-- JitPack repository is needed to fetch patched surefire-common plugin -->
         <pluginRepository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
@@ -1352,5 +1353,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>
