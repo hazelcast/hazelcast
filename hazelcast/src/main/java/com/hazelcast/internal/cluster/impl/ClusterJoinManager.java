@@ -794,12 +794,12 @@ public class ClusterJoinManager {
 
     @SuppressWarnings({"checkstyle:returncount", "checkstyle:npathcomplexity"})
     public SplitBrainJoinMessage.SplitBrainMergeCheckResult shouldMerge(SplitBrainJoinMessage joinMessage) {
-        if (logger.isFineEnabled()) {
-            logger.fine("Checking if we should merge to: " + joinMessage);
-        }
-
         if (joinMessage == null) {
             return CANNOT_MERGE;
+        }
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Checking if we should merge to: " + joinMessage);
         }
 
         if (!checkValidSplitBrainJoinMessage(joinMessage)) {
