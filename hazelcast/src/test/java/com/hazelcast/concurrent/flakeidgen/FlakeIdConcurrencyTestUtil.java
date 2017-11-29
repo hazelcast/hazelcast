@@ -16,53 +16,47 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.function.Supplier;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class FlakeIdConcurrencyTestUtil {
     public static final int NUM_THREADS = 4;
     public static final int IDS_IN_THREAD = 100000;
 
     public static Set<Long> concurrentlyGenerateIds(final Supplier<Long> generator) throws Exception {
-        final Thread[] threads = new Thread[NUM_THREADS];
-        final CountDownLatch latch = new CountDownLatch(1);
-        final Set<Long> ids = new HashSet<Long>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread() {
+        List<Future<Set<Long>>> futures = new ArrayList<Future<Set<Long>>>();
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        for (int i = 0; i < NUM_THREADS; i++) {
+            futures.add(HazelcastTestSupport.spawn(new Callable<Set<Long>>() {
                 @Override
-                public void run() {
-                    try {
-                        Set<Long> localIds = new HashSet<Long>(IDS_IN_THREAD);
-                        latch.await();
-                        for (int i = 0; i < IDS_IN_THREAD; i++) {
-                            localIds.add(generator.get());
-                        }
-                        synchronized (ids) {
-                            ids.addAll(localIds);
-                        }
-                    } catch (Throwable e) {
-                        error.compareAndSet(null, e);
+                public Set<Long> call() throws Exception {
+                    Set<Long> localIds = new HashSet<Long>(IDS_IN_THREAD);
+                    startLatch.await();
+                    for (int i = 0; i < IDS_IN_THREAD; i++) {
+                        localIds.add(generator.get());
                     }
+                    return localIds;
                 }
-            };
-            threads[i].start();
+            }));
         }
 
-        latch.countDown();
-
-        for (Thread thread : threads) {
-            thread.join();
+        startLatch.countDown();
+        Set<Long> ids = new HashSet<Long>();
+        for (Future<Set<Long>> f : futures) {
+            ids.addAll(f.get());
         }
 
-        assertNull("Error occurred: " + error.get(), error.get());
+        // if there were duplicate IDs generated, there will be less items in the set than expected
         assertEquals(NUM_THREADS * IDS_IN_THREAD, ids.size());
         return ids;
     }
