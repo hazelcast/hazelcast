@@ -49,11 +49,12 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
     private final String serviceLabel;
     private final String serviceLabelValue;
     private final String namespace;
+    private final Boolean resolveNotReadyAddresses;
 
     private final KubernetesClient client;
 
     ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, String serviceLabelValue,
-            String namespace, String kubernetesMaster, String apiToken) {
+                            String namespace, Boolean resolveNotReadyAddresses, String kubernetesMaster, String apiToken) {
 
         super(logger);
 
@@ -61,6 +62,7 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
         this.namespace = namespace;
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
+        this.resolveNotReadyAddresses = resolveNotReadyAddresses;
         this.client = buildKubernetesClient(apiToken, kubernetesMaster);
     }
 
@@ -112,20 +114,37 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
         }
         List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
         for (EndpointSubset endpointSubset : endpointsSubsets) {
-            List<EndpointAddress> endpointAddresses = endpointSubset.getAddresses();
-            if (endpointAddresses == null) {
-                continue;
-            }
-            for (EndpointAddress endpointAddress : endpointAddresses) {
-                Map<String, Object> properties = endpointAddress.getAdditionalProperties();
-                String ip = endpointAddress.getIp();
-                InetAddress inetAddress = mapAddress(ip);
-                int port = getServicePort(properties);
-                Address address = new Address(inetAddress, port);
-                discoveredNodes.add(new SimpleDiscoveryNode(address, properties));
-            }
+            resolveNotReadyAddresses(discoveredNodes, endpointSubset);
+            resolveAddresses(discoveredNodes, endpointSubset);
         }
         return discoveredNodes;
+    }
+
+    private void resolveNotReadyAddresses(List<DiscoveryNode> discoveredNodes, EndpointSubset endpointSubset) {
+        if (Boolean.TRUE.equals(resolveNotReadyAddresses)) {
+            for (EndpointAddress endpointAddress : endpointSubset.getNotReadyAddresses()) {
+                addAddress(discoveredNodes, endpointAddress);
+            }
+        }
+    }
+
+    private void resolveAddresses(List<DiscoveryNode> discoveredNodes, EndpointSubset endpointSubset) {
+        List<EndpointAddress> endpointAddresses = endpointSubset.getAddresses();
+        if (endpointAddresses == null) {
+            return;
+        }
+        for (EndpointAddress endpointAddress : endpointAddresses) {
+            addAddress(discoveredNodes, endpointAddress);
+        }
+    }
+
+    private void addAddress(List<DiscoveryNode> discoveredNodes, EndpointAddress endpointAddress) {
+        Map<String, Object> properties = endpointAddress.getAdditionalProperties();
+        String ip = endpointAddress.getIp();
+        InetAddress inetAddress = mapAddress(ip);
+        int port = getServicePort(properties);
+        Address address = new Address(inetAddress, port);
+        discoveredNodes.add(new SimpleDiscoveryNode(address, properties));
     }
 
     @Override

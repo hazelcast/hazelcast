@@ -39,9 +39,10 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
         PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(Arrays.asList(
                 KubernetesProperties.SERVICE_DNS,
                 KubernetesProperties.SERVICE_NAME,
-                KubernetesProperties.NAMESPACE,
                 KubernetesProperties.SERVICE_LABEL_NAME,
                 KubernetesProperties.SERVICE_LABEL_VALUE,
+                KubernetesProperties.NAMESPACE,
+                KubernetesProperties.RESOLVE_NOT_READY_ADDRESSES,
                 KubernetesProperties.KUBERNETES_MASTER_URL,
                 KubernetesProperties.KUBERNETES_API_TOKEN));
     }
