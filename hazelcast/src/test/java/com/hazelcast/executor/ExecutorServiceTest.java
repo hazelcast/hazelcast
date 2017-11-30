@@ -30,6 +30,10 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -41,6 +45,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +58,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -75,6 +81,39 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     private static final int NODE_COUNT = 3;
     private static final int TASK_COUNT = 1000;
+
+
+    // we need to make sure that if a deserialization exception is encounter, the exception isn't lost but always
+    // is send to the caller.
+    @Test
+    public void whenDeserializationFails_thenExceptionPropagatedToCaller() throws Exception {
+        HazelcastInstance hz = createHazelcastInstance();
+        IExecutorService executor = hz.getExecutorService("executor");
+
+        Future<String> future = executor.submit(new CallableWithDeserializationError());
+        try {
+            future.get();
+            fail();
+        } catch (ExecutionException e) {
+            assertInstanceOf(HazelcastSerializationException.class, e.getCause());
+        }
+    }
+
+    public static class CallableWithDeserializationError implements Callable, DataSerializable {
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            in.readInt();
+        }
+
+        @Override
+        public Object call() throws Exception {
+            return null;
+        }
+    }
 
     /* ############ andThen(Callback) ############ */
 
