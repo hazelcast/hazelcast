@@ -31,14 +31,7 @@ import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.util.ThreadLocalRandomProvider;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * Proxy implementation of {@link IdGenerator}.
@@ -52,11 +45,6 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
             return new IdBatch(response.base, response.increment, response.batchSize);
         }
     };
-
-    /**
-     * Current randomly chosen member from which we are getting IDs.
-     */
-    private volatile Member randomMember;
 
     private AutoBatcher batcher;
 
@@ -79,40 +67,13 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
 
     @Override
     public IdBatch newIdBatch(int batchSize) {
-        // go to a member for a batch of IDs
-        for (;;) {
-            Member member = getRandomMember();
-            try {
-                return newIdBatchAsync(batchSize, member.getAddress()).join();
-            } catch (TargetNotMemberException e) {
-                // if target member left, we'll retry with another member
-                randomMember = null;
-            }
-        }
+        return newIdBatchAsync(batchSize).join();
     }
 
-    private InternalCompletableFuture<IdBatch> newIdBatchAsync(int batchSize, Address address) {
+    private InternalCompletableFuture<IdBatch> newIdBatchAsync(int batchSize) {
         ClientMessage request = FlakeIdGeneratorNewIdBatchCodec.encodeRequest(name, batchSize);
-        return invokeOnMemberAsync(request, address, NEW_ID_BATCH_DECODER);
-    }
-
-    private <T> InternalCompletableFuture<T> invokeOnMemberAsync(ClientMessage msg, Address address,
-                                                                 ClientMessageDecoder decoder) {
-        ClientInvocationFuture future = new ClientInvocation(getClient(), msg, getName(), address).invoke();
-        return new ClientDelegatingFuture<T>(future, getSerializationService(), decoder);
-    }
-
-    private Member getRandomMember() {
-        Member member = randomMember;
-        if (member == null) {
-            Set<Member> members = getClient().getCluster().getMembers();
-            int randomIndex = ThreadLocalRandomProvider.get().nextInt(members.size());
-            for (Iterator<Member> iterator = members.iterator(); randomIndex >= 0; randomIndex--) {
-                member = iterator.next();
-            }
-            randomMember = member;
-        }
-        return member;
+        ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        return new ClientDelegatingFuture<IdBatch>(future, getSerializationService(), NEW_ID_BATCH_DECODER);
     }
 
     @Override
