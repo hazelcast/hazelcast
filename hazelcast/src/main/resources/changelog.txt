@@ -1,6 +1,6 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
-??, Release 3.9
+2017.10.23, Release 3.9
 
 - WAN Replication using Discovery SPI.
 - Dynamic Creation of Distributed Objects Configuration.
