@@ -23,8 +23,6 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.LiveOperations;
-import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -51,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class DistributedExecutorService implements ManagedService, RemoteService, LiveOperationsTracker,
+public class DistributedExecutorService implements ManagedService, RemoteService,
         StatisticsAwareService<LocalExecutorStats>, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
@@ -201,14 +199,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private void rejectExecution(String name) {
         getLocalExecutorStats(name).rejectExecution();
-    }
-
-    @Override
-    public void populate(LiveOperations liveOperations) {
-        for (CallableProcessor processor : submittedTasks.values()) {
-            Operation op = processor.op;
-            liveOperations.add(op.getCallerAddress(), op.getCallId());
-        }
     }
 
     @Override
