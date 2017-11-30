@@ -687,6 +687,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * @return          the target config
      */
     public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
+        target.setTenantControl(getTenantControl());
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
         target.setCacheLoaderFactory(getCacheLoaderFactory());
