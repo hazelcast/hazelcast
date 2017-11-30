@@ -54,8 +54,12 @@ The following are the other improvements performed to solve the enhancement issu
 
 3. Fixes
 
-*3.9.1 Fixes*
+*3.9.1*
 
+New Features:
+- Ping Failure Detector: Ping Failure Detector provides a quicker and more deterministic detection of hardware and other lower level events.
+
+Fixes:
 - MulticastJoiner may cause OOME because of the self-amplification in SplitBrainJoinMessage sending. [#11836]
 - Dynamic config added on lite member not found after split-brain healing. [#11815]
 - Client Transactions does not respect unisocket behavior. [#11802]
