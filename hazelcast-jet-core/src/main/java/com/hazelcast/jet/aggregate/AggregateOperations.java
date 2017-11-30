@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Utility class with factory methods for several useful windowing
+ * Utility class with factory methods for several useful aggregate
  * operations.
  */
 public final class AggregateOperations {
@@ -51,7 +51,7 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that tracks the count of items in the window.
+     * Returns an aggregate operation that computes the number of items.
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> counting() {
@@ -64,10 +64,10 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that tracks the sum of the quantity returned by
-     * {@code getLongValueFn} applied to each item in the window.
+     * Returns an aggregate operation that computes the sum of the {@code long}
+     * values it obtains by applying {@code getLongValueFn} to each item.
      *
-     * @param <T> Input item type
+     * @param <T> input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> summingLong(
@@ -82,10 +82,10 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that tracks the sum of the quantity returned by
-     * {@code getDoubleValueFn} applied to each item in the window.
+     * Returns an aggregate operation that computes the sum of the {@code double}
+     * values it obtains by applying {@code getDoubleValueFn} to each item.
      *
-     * @param <T> Input item type
+     * @param <T> input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, DoubleAccumulator, Double> summingDouble(
@@ -100,13 +100,13 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that returns the minimum item, according the given
-     * {@code comparator}.
+     * Returns an aggregate operation that computes the minimal item according
+     * to the given {@code comparator}.
      * <p>
-     * The implementation doesn't have the <i>deduction function </i>. {@link
-     * AggregateOperation1#deductFn() See note here}.
+     * This aggregate operation does not implement the {@link
+     * AggregateOperation1#deductFn() deduct} primitive.
      *
-     * @param <T> Input item type
+     * @param <T> input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, MutableReference<T>, T> minBy(
@@ -116,13 +116,13 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that returns the maximum item, according the given
-     * {@code comparator}.
+     * Returns an aggregate operation that computes the maximal item according
+     * to the given {@code comparator}.
      * <p>
-     * The implementation doesn't have the <i>deduction function </i>. {@link
-     * AggregateOperation1#deductFn() See note here}.
+     * This aggregate operation does not implement the {@link
+     * AggregateOperation1#deductFn() deduct} primitive.
      *
-     * @param <T> Input item type
+     * @param <T> input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, MutableReference<T>, T> maxBy(
@@ -144,10 +144,11 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that calculates the arithmetic mean of {@code long}
-     * values returned by the {@code getLongValueFn} function.
+     * Returns an aggregate operation that computes the arithmetic mean of the
+     * {@code long} values it obtains by applying {@code getLongValueFn} to
+     * each item.
      *
-     * @param <T> Input item type
+     * @param <T> input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongLongAccumulator, Double> averagingLong(
@@ -177,10 +178,11 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that calculates the arithmetic mean of {@code double}
-     * values returned by the {@code getDoubleValueFn} function.
+     * Returns an aggregate operation that computes the arithmetic mean of the
+     * {@code double} values it obtains by applying {@code getDoubleValueFn} to
+     * each item.
      *
-     * @param <T> Input item type
+     * @param <T> input item type
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongDoubleAccumulator, Double> averagingDouble(
@@ -210,11 +212,11 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation that computes a linear trend on the items in the
-     * window. The operation will produce a {@code double}-valued coefficient
-     * that approximates the rate of change of {@code y} as a function of
-     * {@code x}, where {@code x} and {@code y} are {@code long} quantities
-     * extracted from each item by the two provided functions.
+     * Returns an aggregate operation that computes a linear trend on the items.
+     * The operation will produce a {@code double}-valued coefficient that
+     * approximates the rate of change of {@code y} as a function of {@code x},
+     * where {@code x} and {@code y} are {@code long} quantities obtained
+     * by applying the two provided functions to each item.
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LinTrendAccumulator, Double> linearTrend(
@@ -231,12 +233,10 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an operation, that calculates multiple aggregations and returns their value in
-     * {@code List<Object>}.
-     * <p>
-     * Useful, if you want to calculate multiple values for the same window.
+     * Returns a composite operation that computes multiple aggregate
+     * operations and returns their results in a {@code List<Object>}.
      *
-     * @param operations Operations to calculate.
+     * @param operations aggregate operations to apply
      */
     @SafeVarargs @Nonnull
     public static <T> AggregateOperation1<T, List<Object>, List<Object>> allOf(
@@ -284,24 +284,19 @@ public final class AggregateOperations {
     }
 
     /**
-     * Adapts an {@code AggregateOperation1} accepting elements of type {@code
-     * U} to one accepting elements of type {@code T} by applying a mapping
-     * function to each input element before accumulation.
+     * Adapts an aggregate operation accepting items of type {@code
+     * U} to one accepting items of type {@code T} by applying a mapping
+     * function to each item before accumulation.
      * <p>
-     * If the {@code mapFn} maps to {@code null}, the item won't be aggregated
-     * at all. This allows the mapping to be used as a filter at the same time.
-     * <p>
-     * This operation is useful if we cannot precede the aggregating vertex
-     * with a {@link
-     * com.hazelcast.jet.core.processor.Processors#mapP(DistributedFunction) map()}
-     * processors, which is useful
+     * If the {@code mapFn} returns {@code null}, the item won't be aggregated
+     * at all. This allows applying a filter at the same time.
      *
-     * @param <T> the type of the input elements
-     * @param <U> type of elements accepted by downstream operation
-     * @param <A> intermediate accumulation type of the downstream operation
-     * @param <R> result type of operation
-     * @param mapFn a function to be applied to the input elements
-     * @param downstream an operation which will accept mapped values
+     * @param <T> input item type
+     * @param <U> input type of the downstream aggregate operation
+     * @param <A> downstream operation's accumulator type
+     * @param <R> downstream operation's result type
+     * @param mapFn the function to apply to input items
+     * @param downstream the downstream aggregate operation
      */
     public static <T, U, A, R>
     AggregateOperation1<T, ?, R> mapping(
@@ -323,43 +318,43 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates the input
-     * elements into a new {@code Collection}. The {@code Collection} is
-     * created by the provided factory.
+     * Returns an aggregate operation that accumulates the items into a {@code
+     * Collection}. It creates the collections as needed by calling the
+     * provided {@code createCollectionFn}.
      * <p>
-     * Note: due to the distributed nature of processing the order might be
-     * unspecified.
+     * If you use a collection that preserves the insertion order, keep in mind
+     * that there is no specified order in which the items are aggregated.
      *
-     * @param <T> the type of the input elements
-     * @param <C> the type of the resulting {@code Collection}
-     * @param createCollectionFn a {@code Supplier} which returns a new, empty
-     *                          {@code Collection} of the appropriate type
+     * @param <T> input item type
+     * @param <C> the type of the collection
+     * @param createCollectionFn a {@code Supplier} which returns a new, empty {@code Collection} of the
+     *                           appropriate type
      */
     public static <T, C extends Collection<T>> AggregateOperation1<T, C, C> toCollection(
             DistributedSupplier<C> createCollectionFn
     ) {
         return AggregateOperation
                 .withCreate(createCollectionFn)
-                .andAccumulate(Collection<T>::add)
+                .<T>andAccumulate(Collection::add)
                 .andCombine(Collection::addAll)
                 .andIdentityFinish();
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates the input
-     * elements into a new {@code ArrayList}.
+     * Returns an aggregate operation that accumulates the items into an {@code
+     * ArrayList}.
      *
-     * @param <T> the type of the input elements
+     * @param <T> input item type
      */
     public static <T> AggregateOperation1<T, List<T>, List<T>> toList() {
         return toCollection(ArrayList::new);
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates the input
-     * elements into a new {@code HashSet}.
+     * Returns an aggregate operation that accumulates the items into a {@code
+     * HashSet}.
      *
-     * @param <T> the type of the input elements
+     * @param <T> input item type
      */
     public static <T>
     AggregateOperation1<T, ?, Set<T>> toSet() {
@@ -367,26 +362,24 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates elements
-     * into a {@code HashMap} whose keys and values are the result of applying
-     * the provided mapping functions to the input elements.
+     * Returns an aggregate operation that accumulates the items into a
+     * {@code HashMap} whose keys and values are the result of applying
+     * the provided mapping functions.
      * <p>
-     * If the mapped keys contain duplicates (according to {@link
-     * Object#equals(Object)}), an {@code IllegalStateException} is thrown when
-     * the collection operation is performed.  If the mapped keys may have
-     * duplicates, use {@link #toMap(DistributedFunction, DistributedFunction,
-     * DistributedBinaryOperator)} instead.
+     * This aggregate operation does not tolerate duplicate keys and will
+     * throw {@code IllegalStateException} if it detects them. If your
+     * data contains duplicates, use the {@link #toMap(DistributedFunction,
+     * DistributedFunction, DistributedBinaryOperator) toMap()} overload
+     * that can resolve them.
      *
-     * @param <T> the type of the input elements
-     * @param <K> the output type of the key mapping function
-     * @param <U> the output type of the value mapping function
-     * @param getKeyFn a function to extract the key from input item
-     * @param getValueFn a function to extract value from input item
+     * @param <T> input item type
+     * @param <K> type of the key
+     * @param <U> type of the value
+     * @param getKeyFn a function to extract the key from the input item
+     * @param getValueFn a function to extract the value from the input item
      *
-     * @see #toMap(DistributedFunction, DistributedFunction,
-     *      DistributedBinaryOperator)
-     * @see #toMap(DistributedFunction, DistributedFunction,
-     *      DistributedBinaryOperator, DistributedSupplier)
+     * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)
+     * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator, DistributedSupplier)
      */
     public static <T, K, U> AggregateOperation1<T, Map<K, U>, Map<K, U>> toMap(
             DistributedFunction<? super T, ? extends K> getKeyFn,
@@ -396,17 +389,16 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns an {@code AggregateOperation1} that accumulates elements
-     * into a {@code HashMap} whose keys and values are the result of applying
-     * the provided mapping functions to the input elements.
+     * Returns an aggregate operation that accumulates the items into a
+     * {@code HashMap} whose keys and values are the result of applying
+     * the provided mapping functions.
+     * <p>
+     * This aggregate operation resolves duplicate keys by applying {@code
+     * mergeFn} to the conflicting values. {@code mergeFn} will act upon the
+     * values after {@code getValueFn} has already been applied.
      *
-     * <p>If the mapped keys contains duplicates (according to {@link
-     * Object#equals(Object)}), the value mapping function is applied to each
-     * equal element, and the results are merged using the provided merging
-     * function.
-     *
-     * @param <T> the type of the input elements
-     * @param <K> the output type of the key mapping function
+     * @param <T> input item type
+     * @param <K> the type of key
      * @param <U> the output type of the value mapping function
      * @param getKeyFn a function to extract the key from input item
      * @param getValueFn a function to extract value from input item
@@ -416,8 +408,7 @@ public final class AggregateOperations {
      *                      java.util.function.BiFunction)}
      *
      * @see #toMap(DistributedFunction, DistributedFunction)
-     * @see #toMap(DistributedFunction, DistributedFunction,
-     *      DistributedBinaryOperator, DistributedSupplier)
+     * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator, DistributedSupplier)
      */
     public static <T, K, U> AggregateOperation1<T, Map<K, U>, Map<K, U>> toMap(
             DistributedFunction<? super T, ? extends K> getKeyFn,
@@ -438,7 +429,7 @@ public final class AggregateOperations {
      * function. The {@code Map} is created by a provided {@code createMapFn}
      * function.
      *
-     * @param <T> the type of the input elements
+     * @param <T> input item type
      * @param <K> the output type of the key mapping function
      * @param <U> the output type of the value mapping function
      * @param <M> the type of the resulting {@code Map}
@@ -487,16 +478,16 @@ public final class AggregateOperations {
 
     /**
      * A reducing operation maintains an accumulated value that starts out as
-     * {@code emptyAccValue} and is being iteratively transformed by applying
-     * the {@code combine} primitive to it and each stream item's accumulated
-     * value, as returned from {@code toAccValueFn}. The {@code combine} must
-     * be <em>associative</em> because it will also be used to combine partial
-     * results, and <em>commutative</em> because the encounter order of items
-     * is unspecified.
+     * {@code emptyAccValue} and is iteratively transformed by applying
+     * {@code combineAccValuesFn} to it and each stream item's accumulated
+     * value, as returned from {@code toAccValueFn}. {@code combineAccValuesFn}
+     * must be <em>associative</em> because it will also be used to combine
+     * partial results, as well as <em>commutative</em> because the encounter
+     * order of items is unspecified.
      * <p>
-     * The optional {@code deduct} primitive allows Jet to compute the sliding
-     * window in O(1) time. It must undo the effects of a previous
-     * {@code combine}:
+     * The optional {@code deductAccValueFn} allows Jet to compute the sliding
+     * window in O(1) time. It must undo the effects of a previous {@code
+     * combineAccValuesFn} call:
      * <pre>
      *     A accVal;  (has some pre-existing value)
      *     A itemAccVal = toAccValueFn.apply(item);
@@ -510,7 +501,7 @@ public final class AggregateOperations {
      * @param combineAccValuesFn combines two accumulated values into one
      * @param deductAccValueFn deducts the right-hand accumulated value from the left-hand one
      *                        (optional)
-     * @param <T> type of the stream item
+     * @param <T> input item type
      * @param <A> type of the accumulated value
      */
     @Nonnull
