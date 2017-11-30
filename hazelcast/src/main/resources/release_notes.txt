@@ -68,6 +68,11 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
+*3.8.8 Fixes*
+
+- Fix MulticastJoiner split-brain handler message broadcasting. [#11888]
+
+
 *3.8.7 Fixes*
 
 - MapStore: Map initialization is blocked when new members join during the data loading. [#11407]
