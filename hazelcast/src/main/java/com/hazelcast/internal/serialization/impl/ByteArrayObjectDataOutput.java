@@ -29,6 +29,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
 
@@ -424,6 +425,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
         if (buffer != null && buffer.length > initialSize * 8) {
             buffer = new byte[initialSize * 8];
         }
+        version = UNKNOWN;
     }
 
     @Override
