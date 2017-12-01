@@ -2745,7 +2745,7 @@ public class Config {
         return this;
     }
 
-    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigMap() {
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
         return flakeIdGeneratorConfigMap;
     }
 
@@ -2838,7 +2838,7 @@ public class Config {
      * @param map the FlakeIdGenerator configuration map to set
      * @return this config instance
      */
-    public Config setFlakeIdGeneratorConfigMap(Map<String, FlakeIdGeneratorConfig> map) {
+    public Config setFlakeIdGeneratorConfigs(Map<String, FlakeIdGeneratorConfig> map) {
         flakeIdGeneratorConfigMap.clear();
         flakeIdGeneratorConfigMap.putAll(map);
         for (Entry<String, FlakeIdGeneratorConfig> entry : map.entrySet()) {

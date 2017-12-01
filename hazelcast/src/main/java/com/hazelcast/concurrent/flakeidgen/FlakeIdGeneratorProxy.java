@@ -52,9 +52,9 @@ public class FlakeIdGeneratorProxy
      */
     @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
+    static final int BITS_NODE_ID = 16;
 
     private static final int BITS_SEQUENCE = 6;
-    private static final int BITS_NODE_ID = 16;
 
     private final int nodeId;
     private final String name;
@@ -93,7 +93,7 @@ public class FlakeIdGeneratorProxy
             this.nodeId = nodeId;
         }
 
-        FlakeIdGeneratorConfig config = getNodeEngine().getConfig().findFlakeIdGeneratorConfig(getName());
+        FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidity(), new IFunction<Integer, IdBatch>() {
             @Override
             public IdBatch apply(Integer batchSize) {

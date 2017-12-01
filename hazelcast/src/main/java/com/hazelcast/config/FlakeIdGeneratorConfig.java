@@ -16,7 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Preconditions;
+
+import java.io.IOException;
 
 /**
  * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
@@ -27,7 +32,7 @@ import com.hazelcast.util.Preconditions;
  * connect to this member to generate IDs - each client has its own settings in {@code
  * ClientConfig}.
  */
-public class FlakeIdGeneratorConfig {
+public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value for {@link #getPrefetchCount()}.
@@ -43,9 +48,10 @@ public class FlakeIdGeneratorConfig {
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidity = DEFAULT_PREFETCH_VALIDITY;
 
-    // for spring-instantiation
-    @SuppressWarnings("unused")
-    private FlakeIdGeneratorConfig() {
+    private transient FlakeIdGeneratorConfigReadOnly readOnly;
+
+    // for deserialization
+    FlakeIdGeneratorConfig() {
     }
 
     public FlakeIdGeneratorConfig(String name) {
@@ -60,6 +66,20 @@ public class FlakeIdGeneratorConfig {
         this.prefetchCount = other.prefetchCount;
         this.prefetchValidity = other.prefetchValidity;
     }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    public FlakeIdGeneratorConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new FlakeIdGeneratorConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
 
     /**
      * Returns the configuration name. This can be actual object name or pattern.
@@ -157,5 +177,29 @@ public class FlakeIdGeneratorConfig {
                 + ", prefetchCount=" + prefetchCount
                 + ", prefetchValidity=" + prefetchValidity
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.FLAKE_ID_GENERATOR_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(prefetchCount);
+        out.writeLong(prefetchValidity);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        prefetchCount = in.readInt();
+        prefetchValidity = in.readLong();
     }
 }

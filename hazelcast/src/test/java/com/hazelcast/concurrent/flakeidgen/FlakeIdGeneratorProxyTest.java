@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,11 +31,13 @@ import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import static com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy.BITS_NODE_ID;
 import static com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy.BITS_TIMESTAMP;
 import static com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy.EPOCH_START;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -58,6 +61,7 @@ public class FlakeIdGeneratorProxyTest {
                 return null;
             }
         });
+        when(nodeEngine.getConfig()).thenReturn(new Config());
     }
 
     @Test
@@ -88,20 +92,6 @@ public class FlakeIdGeneratorProxyTest {
     }
 
     @Test
-    public void when_nodeIdTooLarge_then_fail() {
-        FlakeIdGeneratorProxy gen = createGenerator(65536);
-        exception.expect(FlakeIdNodeIdOutOfRangeException.class);
-        gen.newId();
-    }
-
-    @Test
-    public void when_nodeIdTooSmall_then_fail() {
-        FlakeIdGeneratorProxy gen = createGenerator(-1);
-        exception.expect(FlakeIdNodeIdOutOfRangeException.class);
-        gen.newId();
-    }
-
-    @Test
     public void when_currentTimeBeforeAllowedRange_then_fail() {
         FlakeIdGeneratorProxy gen = createGenerator(0);
         gen.newIdBaseLocal(EPOCH_START - (1L << BITS_TIMESTAMP - 1), 1);
@@ -124,10 +114,8 @@ public class FlakeIdGeneratorProxyTest {
         FlakeIdGeneratorProxy gen = createGenerator(1234);
         long id1 = gen.newIdBaseLocal(1509700048830L, 1);
         long id2 = gen.newIdBaseLocal(1509700048830L, 1);
-        long[] ids = new long[]{id1, id2};
-        assertEquals(-9112343572002110254L, ids[0]);
-        long increment = gen.newIdBatch(1).increment();
-        assertEquals(ids[0] + increment, ids[1]);
+        assertEquals(-9112343572002110254L, id1);
+        assertEquals(id1 + (1 << BITS_NODE_ID), id2);
     }
 
     private FlakeIdGeneratorProxy createGenerator(int nodeId) {

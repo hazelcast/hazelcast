@@ -24,6 +24,7 @@ import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JobTrackerConfig;
@@ -1009,6 +1010,48 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
+        Map<String, FlakeIdGeneratorConfig> staticMapConfigs = staticConfig.getFlakeIdGeneratorConfigs();
+        Map<String, FlakeIdGeneratorConfig> dynamicMapConfigs = configurationService.getFlakeIdGeneratorConfigs();
+        return aggregate(staticMapConfigs, dynamicMapConfigs);
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
+        return getFlakeIdGeneratorConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
+        return getFlakeIdGeneratorConfigInternal(name, name);
+    }
+
+    private FlakeIdGeneratorConfig getFlakeIdGeneratorConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, FlakeIdGeneratorConfig> staticMapConfigs = staticConfig.getFlakeIdGeneratorConfigs();
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+        if (config == null) {
+            config = configurationService.findFlakeIdGeneratorConfig(baseName);
+        }
+        if (config == null) {
+            config = staticConfig.getFlakeIdGeneratorConfig(fallbackName);
+        }
+        return config;
+    }
+
+    @Override
+    public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig config) {
+        checkStaticConfigurationDoesNotExist(staticConfig.getFlakeIdGeneratorConfigs(), config.getName(), config);
+        configurationService.broadcastConfig(config);
+        return this;
+    }
+
+    @Override
+    public Config setFlakeIdGeneratorConfigs(Map<String, FlakeIdGeneratorConfig> map) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

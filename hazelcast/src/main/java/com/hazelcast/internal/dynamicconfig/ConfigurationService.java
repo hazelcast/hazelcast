@@ -21,6 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -326,4 +327,8 @@ public interface ConfigurationService {
      * @return registered MapEventJournal configurations
      */
     Map<String, EventJournalConfig> getMapEventJournalConfigs();
+
+    FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName);
+
+    Map<String,FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
 }

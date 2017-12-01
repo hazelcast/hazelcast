@@ -21,6 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -41,9 +42,7 @@ import static java.util.Collections.emptyMap;
 
 /**
  * This is used when Hazelcast is starting and {@link ClusterWideConfigurationService} is not available yet.
- *
  */
-
 @SuppressWarnings("checkstyle:methodcount")
 class EmptyConfigurationService implements ConfigurationService {
 
@@ -224,6 +223,16 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, SemaphoreConfig> getSemaphoreConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
+        return null;
+    }
+
+    @Override
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
         return emptyMap();
     }
 
