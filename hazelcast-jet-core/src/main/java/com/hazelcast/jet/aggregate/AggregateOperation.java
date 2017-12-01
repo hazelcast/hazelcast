@@ -79,10 +79,9 @@ public interface AggregateOperation<A, R> extends Serializable {
 
     /**
      * A primitive that returns a new accumulator. If the {@code deduct}
-     * primitive is defined, the accumulator object must properly implement
-     * {@code equals()}, which will be used to detect when an accumulator is
-     * "empty" (i.e., equal to a fresh instance returned from this method) and
-     * can be evicted from a processor's storage.
+     * primitive is defined, the accumulator object <strong>must</strong>
+     * properly implement {@code equals()}. See {@link #deductFn()} for an
+     * explanation.
      */
     @Nonnull
     DistributedSupplier<A> createFn();
@@ -130,14 +129,21 @@ public interface AggregateOperation<A, R> extends Serializable {
      * leaves {@code acc} in the same state as it was before the two
      * operations.
      * <p>
-     * <strong>Note:</strong> this primitive is only used in sliding window
-     * aggregation and even in that case it is optional, but its presence
-     * may significantly reduce the computational cost. With it, the current
-     * sliding window can be obtained from the previous one by deducting the
-     * trailing frame and combining the leading frame; without it, each window
-     * must be recomputed from all its constituent frames. The finer the
-     * sliding step, the more pronounced the difference in computation effort
-     * will be.
+     * This primitive is only used in sliding window aggregation and even in
+     * that case it is optional, but its presence may significantly reduce the
+     * computational cost. With it, the current sliding window can be obtained
+     * from the previous one by deducting the trailing frame and combining the
+     * leading frame; without it, each window must be recomputed from all its
+     * constituent frames. The finer the sliding step, the more pronounced the
+     * difference in computation effort will be.
+     * <p>
+     * If this method returns non-null, then {@link #createFn()} <strong>must
+     * </strong> return an accumulator which properly implements {@code
+     * equals()}. After calling {@code deductFn}, Jet will use {@code equals()}
+     * to determine whether the accumulator is now "empty" (i.e., equal to a
+     * fresh instance), which signals that the current window contains no more
+     * items with the associated grouping key and the entry must be removed
+     * from the resuts.
      */
     @Nullable
     DistributedBiConsumer<? super A, ? super A> deductFn();
