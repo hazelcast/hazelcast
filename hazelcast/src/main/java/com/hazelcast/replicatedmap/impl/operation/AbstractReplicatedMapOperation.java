@@ -28,7 +28,7 @@ import java.util.Collection;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 
-public abstract class AbstractReplicatedMapOperation extends AbstractSerializableOperation {
+public abstract class AbstractReplicatedMapOperation extends AbstractNamedSerializableOperation {
 
     protected String name;
     protected Data key;
@@ -81,6 +81,11 @@ public abstract class AbstractReplicatedMapOperation extends AbstractSerializabl
                 .createInvocationBuilder(getServiceName(), updateCallerOperation, getCallerAddress())
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .invoke();
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

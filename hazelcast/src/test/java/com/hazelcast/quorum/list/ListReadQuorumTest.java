@@ -73,7 +73,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void containsOperation_successful_whenQuorumSize_notMet() {
+    public void containsOperation_failing_whenQuorumSize_notMet() {
         list(3).contains("foo");
     }
 
@@ -83,7 +83,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void containsAllOperation_successful_whenQuorumSize_notMet() {
+    public void containsAllOperation_failing_whenQuorumSize_notMet() {
         list(3).containsAll(asList("foo", "bar"));
     }
 
@@ -93,7 +93,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void isEmptyOperation_successful_whenQuorumSize_notMet() {
+    public void isEmptyOperation_failing_whenQuorumSize_notMet() {
         list(3).isEmpty();
     }
 
@@ -103,7 +103,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void sizeOperation_successful_whenQuorumSize_notMet() {
+    public void sizeOperation_failing_whenQuorumSize_notMet() {
         list(3).size();
     }
 
@@ -123,7 +123,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void getAllOperation_toArrayT_successful_whenQuorumSize_notMet() {
+    public void getAllOperation_toArrayT_failing_whenQuorumSize_notMet() {
         list(3).toArray(new Object[]{});
     }
 
@@ -133,7 +133,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void getAllOperation_listIterator_successful_whenQuorumSize_notMet() {
+    public void getAllOperation_listIterator_failing_whenQuorumSize_notMet() {
         list(3).listIterator();
     }
 
@@ -143,7 +143,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void getAllOperation_iterator_successful_whenQuorumSize_notMet() {
+    public void getAllOperation_iterator_failing_whenQuorumSize_notMet() {
         list(3).iterator();
     }
 
@@ -153,7 +153,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void lastIndexOfOperation_successful_whenQuorumSize_notMet() {
+    public void lastIndexOfOperation_failing_whenQuorumSize_notMet() {
         list(3).lastIndexOf("foo");
     }
 
@@ -163,7 +163,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void indexOfOperation_successful_whenQuorumSize_notMet() {
+    public void indexOfOperation_failing_whenQuorumSize_notMet() {
         list(3).indexOf("foo");
     }
 
@@ -174,7 +174,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void getOperation_successful_whenQuorumSize_notMet() {
+    public void getOperation_failing_whenQuorumSize_notMet() {
         list(3).get(1);
     }
 
@@ -185,7 +185,7 @@ public class ListReadQuorumTest extends AbstractListQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void subOperation_successful_whenQuorumSize_notMet() {
+    public void subOperation_failing_whenQuorumSize_notMet() {
         list(3).subList(0, 1);
     }
 

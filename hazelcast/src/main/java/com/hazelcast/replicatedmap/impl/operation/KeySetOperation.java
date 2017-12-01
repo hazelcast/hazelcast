@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class KeySetOperation extends AbstractSerializableOperation implements ReadonlyOperation {
+public class KeySetOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private transient Object response;
@@ -76,5 +76,10 @@ public class KeySetOperation extends AbstractSerializableOperation implements Re
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.KEY_SET;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

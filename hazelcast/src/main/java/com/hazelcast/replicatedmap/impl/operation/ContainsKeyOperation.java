@@ -25,7 +25,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class ContainsKeyOperation extends AbstractSerializableOperation implements ReadonlyOperation {
+public class ContainsKeyOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private Data key;
@@ -66,5 +66,10 @@ public class ContainsKeyOperation extends AbstractSerializableOperation implemen
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.CONTAINS_KEY;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

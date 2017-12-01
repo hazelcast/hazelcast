@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class EntrySetOperation extends AbstractSerializableOperation implements ReadonlyOperation {
+public class EntrySetOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private transient Object response;
@@ -81,5 +81,10 @@ public class EntrySetOperation extends AbstractSerializableOperation implements 
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.ENTRY_SET;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

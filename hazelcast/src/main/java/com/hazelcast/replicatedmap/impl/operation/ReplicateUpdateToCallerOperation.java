@@ -33,7 +33,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * This operation will update the local record store with the update received from local/remote partition owner.
  */
-public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
+public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperation
+        implements PartitionAwareOperation {
 
     private String name;
     private long callId;

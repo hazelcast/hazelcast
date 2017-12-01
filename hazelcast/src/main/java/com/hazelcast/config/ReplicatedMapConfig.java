@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
 
 import java.io.IOException;
@@ -32,7 +34,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
  */
-public class ReplicatedMapConfig implements IdentifiedDataSerializable {
+public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default value of concurrency level
@@ -70,6 +72,8 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
 
     private List<ListenerConfig> listenerConfigs;
 
+    private String quorumName;
+
     public ReplicatedMapConfig() {
     }
 
@@ -92,6 +96,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         this.asyncFillup = replicatedMapConfig.asyncFillup;
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
         this.mergePolicy = replicatedMapConfig.mergePolicy;
+        this.quorumName = replicatedMapConfig.quorumName;
     }
 
     /**
@@ -323,6 +328,26 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public ReplicatedMapConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "ReplicatedMapConfig{"
@@ -333,6 +358,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
                 + ", asyncFillup=" + asyncFillup
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicy='" + mergePolicy + '\''
+                + ", quorumName='" + quorumName + '\''
                 + '}';
     }
 
@@ -354,6 +380,9 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(mergePolicy);
         writeNullableList(listenerConfigs, out);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -364,6 +393,9 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         statisticsEnabled = in.readBoolean();
         mergePolicy = in.readUTF();
         listenerConfigs = readNullableList(in);
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @Override
@@ -392,6 +424,9 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         return listenerConfigs != null ? listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs == null;
     }
 
@@ -404,6 +439,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 }

@@ -31,4 +31,19 @@ public interface QuorumService {
      * @throws NullPointerException     if quorumName is null
      */
     Quorum getQuorum(String quorumName) throws IllegalArgumentException;
+
+    /**
+     * Ensures that the quorum with the given name is present.
+     * Throws a QuorumException if quorum not present.
+     * Does not throw exception if quorumName null or quorum undefined.
+     *
+     * If (requiredQuorumPermissionType == READ) -> will check for presence of READ or READ_WRITE quorum<br/>
+     * If (requiredQuorumPermissionType == WRITE) -> will check for presence of WRITE or READ_WRITE quorum<br/>
+     * If (requiredQuorumPermissionType == READ_WRITE) -> will check for presence of READ_WRITE quorum<br/>
+     *
+     * @param quorumName                   quorum name to ensure, can be null or empty
+     * @param requiredQuorumPermissionType type of quorum required
+     * @throws QuorumException if quorum defined and not present
+     */
+    void ensureQuorumPresent(String quorumName, QuorumType requiredQuorumPermissionType) throws QuorumException;
 }

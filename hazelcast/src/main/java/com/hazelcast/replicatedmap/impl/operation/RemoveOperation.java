@@ -24,13 +24,14 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 /**
  * Removes the key from replicated map.
  */
-public class RemoveOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation {
+public class RemoveOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private transient ReplicatedMapService service;
     private transient Data oldValue;

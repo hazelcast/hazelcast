@@ -153,7 +153,10 @@ public class QuorumImpl implements Quorum {
         if (!isQuorumNeeded(op)) {
             return;
         }
+        ensureQuorumPresent();
+    }
 
+    void ensureQuorumPresent() {
         if (!isPresent()) {
             throw newQuorumException();
         }
