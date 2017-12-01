@@ -295,18 +295,28 @@ public class JobCoordinationService {
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
+        // first check if there is a job result present.
+        // this map is updated first during completion.
+        JobResult jobResult = jobResults.get(jobId);
+        if (jobResult != null) {
+            return jobResult.getJobStatus();
+        }
+
+        // check if there a master context for running job
         MasterContext currentMasterContext = masterContexts.get(jobId);
         if (currentMasterContext != null) {
             return currentMasterContext.jobStatus();
         }
 
+        // no master context found, job might be just submitted
         JobRecord jobRecord = jobRepository.getJob(jobId);
         if (jobRecord == null) {
-            JobResult jobResult = jobResults.get(jobId);
+            // no job record found, but check job results again
+            // since job might have been completed meanwhile.
+            jobResult = jobResults.get(jobId);
             if (jobResult != null) {
                 return jobResult.getJobStatus();
             }
-
             throw new JobNotFoundException(jobId);
         } else {
             return NOT_STARTED;

@@ -64,15 +64,15 @@ public final class ExceptionUtil {
      * @see #peeledAndUnchecked(Throwable)
      */
     public static Throwable peel(@Nullable Throwable t) {
-        Throwable peeled = t;
-        while ((peeled instanceof CompletionException
-                || peeled instanceof ExecutionException
-                || peeled instanceof InvocationTargetException)
-                && peeled.getCause() != null
+        while ((t instanceof CompletionException
+                || t instanceof ExecutionException
+                || t instanceof InvocationTargetException)
+                && t.getCause() != null
+                && t.getCause() != t
         ) {
-            peeled = t.getCause();
+            t = t.getCause();
         }
-        return peeled;
+        return t;
     }
 
     /**

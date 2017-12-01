@@ -19,48 +19,52 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.stream.JetCacheManager;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.jet.stream.impl.ListDecorator;
 import com.hazelcast.jet.stream.impl.MapDecorator;
 
+import javax.annotation.Nonnull;
+
 abstract class AbstractJetInstance implements JetInstance {
     private final HazelcastInstance hazelcastInstance;
-
     private final JetCacheManagerImpl cacheManager;
+    private final JobRepository jobRepository;
 
     AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         this.cacheManager = new JetCacheManagerImpl(this);
+        this.jobRepository = new JobRepository(this, null);
     }
 
-    @Override
+    @Nonnull @Override
     public Cluster getCluster() {
         return getHazelcastInstance().getCluster();
     }
 
-    @Override
+    @Nonnull @Override
     public String getName() {
         return hazelcastInstance.getName();
     }
 
-    @Override
+    @Nonnull @Override
     public HazelcastInstance getHazelcastInstance() {
         return hazelcastInstance;
     }
 
-    @Override
-    public <K, V> IStreamMap<K, V> getMap(String name) {
+    @Nonnull @Override
+    public <K, V> IStreamMap<K, V> getMap(@Nonnull String name) {
         return new MapDecorator<>(hazelcastInstance.getMap(name), this);
     }
 
-    @Override
-    public <E> IStreamList<E> getList(String name) {
+    @Nonnull @Override
+    public <E> IStreamList<E> getList(@Nonnull String name) {
         return new ListDecorator<>(hazelcastInstance.getList(name), this);
     }
 
-    @Override
+    @Nonnull @Override
     public JetCacheManager getCacheManager() {
         return cacheManager;
     }
@@ -68,6 +72,10 @@ abstract class AbstractJetInstance implements JetInstance {
     @Override
     public void shutdown() {
         hazelcastInstance.shutdown();
+    }
+
+    protected long uploadResourcesAndAssignId(JobConfig config) {
+        return jobRepository.uploadJobResources(config);
     }
 
 }
