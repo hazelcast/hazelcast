@@ -39,6 +39,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -388,6 +389,17 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         Node h2Node = getNode(h2);
         h1Node.getJoiner().unblacklist(h2Node.getThisAddress());
         h2Node.getJoiner().unblacklist(h1Node.getThisAddress());
+    }
+
+    public static String toString(Collection collection) {
+        StringBuilder sb = new StringBuilder("[");
+        String delimiter = "";
+        for (Object item : collection) {
+            sb.append(delimiter).append(item);
+            delimiter = ", ";
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     private interface SplitBrainAction {

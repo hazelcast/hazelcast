@@ -177,7 +177,8 @@ class ConfigCompatibilityChecker {
                 && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
                 && nullSafeEqual(c1.getMaxSize(), c2.getMaxSize())
                 && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
-                && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+                && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
     }
 
     private static boolean isCompatible(HotRestartConfig c1, HotRestartConfig c2) {
@@ -363,18 +364,6 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class SetConfigChecker extends ConfigChecker<SetConfig> {
-        @Override
-        boolean check(SetConfig c1, SetConfig c2) {
-            return isCompatible(c1, c2);
-        }
-
-        @Override
-        SetConfig getDefault(Config c) {
-            return c.getSetConfig("default");
-        }
-    }
-
     private static class ListConfigChecker extends ConfigChecker<ListConfig> {
         @Override
         boolean check(ListConfig c1, ListConfig c2) {
@@ -384,6 +373,18 @@ class ConfigCompatibilityChecker {
         @Override
         ListConfig getDefault(Config c) {
             return c.getListConfig("default");
+        }
+    }
+
+    private static class SetConfigChecker extends ConfigChecker<SetConfig> {
+        @Override
+        boolean check(SetConfig c1, SetConfig c2) {
+            return isCompatible(c1, c2);
+        }
+
+        @Override
+        SetConfig getDefault(Config c) {
+            return c.getSetConfig("default");
         }
     }
 

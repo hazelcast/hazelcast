@@ -163,7 +163,9 @@ public class ConfigXmlGenerator {
                         .node("async-backup-count", config.getAsyncBackupCount())
                         .node("quorum-ref", config.getQuorumName());
                 appendItemListenerConfigs(gen, config.getItemListenerConfigs());
-                gen.close();
+                MergePolicyConfig mergePolicyConfig = config.getMergePolicyConfig();
+                gen.node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                        .close();
             }
         }
     }

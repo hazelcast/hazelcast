@@ -841,6 +841,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     listConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     listConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, listConfigBuilder);
                 }
             }
             listManagedMap.put(name, listConfigBuilder.getBeanDefinition());
@@ -858,6 +860,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     setConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     setConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, setConfigBuilder);
                 }
             }
             setManagedMap.put(name, setConfigBuilder.getBeanDefinition());

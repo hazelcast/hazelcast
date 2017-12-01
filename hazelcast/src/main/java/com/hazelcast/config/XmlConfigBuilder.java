@@ -1087,6 +1087,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 lConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("quorum-ref".equals(nodeName)) {
                 lConfig.setQuorumName(value);
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                lConfig.setMergePolicyConfig(mergePolicyConfig);
             }
 
         }
@@ -1120,6 +1123,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 sConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("quorum-ref".equals(nodeName)) {
                 sConfig.setQuorumName(value);
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                sConfig.setMergePolicyConfig(mergePolicyConfig);
             }
         }
         config.addSetConfig(sConfig);

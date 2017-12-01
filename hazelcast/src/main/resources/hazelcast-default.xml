@@ -233,10 +233,12 @@
 
     <list name="default">
         <backup-count>1</backup-count>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </list>
 
     <set name="default">
         <backup-count>1</backup-count>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </set>
 
     <jobtracker name="default">

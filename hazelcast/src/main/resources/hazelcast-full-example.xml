@@ -1362,7 +1362,9 @@ https://hazelcast.org/documentation/.
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </list>
+
     <!--
         ===== HAZELCAST SET CONFIGURATION =====
 
@@ -1394,7 +1396,9 @@ https://hazelcast.org/documentation/.
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </set>
+
     <!--
         ===== HAZELCAST TOPIC CONFIGURATION =====
 

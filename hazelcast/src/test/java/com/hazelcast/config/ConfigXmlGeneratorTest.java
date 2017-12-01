@@ -20,6 +20,8 @@ import com.hazelcast.config.ConfigCompatibilityChecker.EventJournalConfigChecker
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -216,38 +218,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testSet() {
-        // TODO -> not full config checked
-        SetConfig expectedConfig = new SetConfig()
-                .setName("testSemaphore")
-                .setQuorumName("quorum");
-
-        Config config = new Config()
-                .addSetConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        SetConfig actualConfig = xmlConfig.getSetConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testList() {
-        // TODO -> not full config checked
-        ListConfig expectedConfig = new ListConfig()
-                .setName("testSemaphore")
-                .setQuorumName("quorum");
-
-        Config config = new Config()
-                .addListConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        ListConfig actualConfig = xmlConfig.getListConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testExecutor() {
         // TODO -> not full config checked
         ExecutorConfig expectedConfig = new ExecutorConfig()
@@ -386,6 +356,48 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         CountDownLatchConfig actualConfig = xmlConfig.getCountDownLatchConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testList() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(HigherHitsMergePolicy.class.getName())
+                .setBatchSize(1234);
+
+        ListConfig expectedConfig = new ListConfig("testList")
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setQuorumName("quorum")
+                .setMergePolicyConfig(mergePolicyConfig);
+
+        Config config = new Config()
+                .addListConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ListConfig actualConfig = xmlConfig.getListConfig("testList");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testSet() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(LatestUpdateMergePolicy.class.getName())
+                .setBatchSize(1234);
+
+        SetConfig expectedConfig = new SetConfig("testSet")
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setQuorumName("quorum")
+                .setMergePolicyConfig(mergePolicyConfig);
+
+        Config config = new Config()
+                .addSetConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        SetConfig actualConfig = xmlConfig.getSetConfig("testSet");
         assertEquals(expectedConfig, actualConfig);
     }
 

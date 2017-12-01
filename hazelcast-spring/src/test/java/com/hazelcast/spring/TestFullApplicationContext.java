@@ -589,6 +589,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, testListConfig.getBackupCount());
         assertEquals(1, testListConfig.getAsyncBackupCount());
         assertFalse(testListConfig.isStatisticsEnabled());
+
+        MergePolicyConfig mergePolicyConfig = testListConfig.getMergePolicyConfig();
+        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test
@@ -600,6 +604,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testSetConfig.getBackupCount());
         assertEquals(0, testSetConfig.getAsyncBackupCount());
         assertFalse(testSetConfig.isStatisticsEnabled());
+
+        MergePolicyConfig mergePolicyConfig = testSetConfig.getMergePolicyConfig();
+        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test
