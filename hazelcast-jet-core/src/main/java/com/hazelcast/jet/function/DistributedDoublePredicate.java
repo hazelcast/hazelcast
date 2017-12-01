@@ -18,34 +18,19 @@ package com.hazelcast.jet.function;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.function.DoublePredicate;
 
 /**
- * Represents a predicate (boolean-valued function) of one {@code double}-valued
- * argument. This is the {@code double}-consuming primitive type specialization
- * of {@link DistributedPredicate}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #test(double)}.
- *
- * @see DistributedPredicate
+ * {@code Serializable} variant of {@link DoublePredicate
+ * java.util.function.DoublePredicate}.
  */
 @FunctionalInterface
-public interface DistributedDoublePredicate extends java.util.function.DoublePredicate, Serializable {
+public interface DistributedDoublePredicate extends DoublePredicate, Serializable {
+
     /**
-     * Returns a composed predicate that represents a short-circuiting logical
-     * AND of this predicate and another.  When evaluating the composed
-     * predicate, if this predicate is {@code false}, then the {@code other}
-     * predicate is not evaluated.
-     *
-     * <p>Any exceptions thrown during evaluation of either predicate are relayed
-     * to the caller; if evaluation of this predicate throws an exception, the
-     * {@code other} predicate will not be evaluated.
-     *
-     * @param other a predicate that will be logically-ANDed with this
-     *              predicate
-     * @return a composed predicate that represents the short-circuiting logical
-     * AND of this predicate and the {@code other} predicate
-     * @throws NullPointerException if other is null
+     * {@code Serializable} variant of {@link
+     * DoublePredicate#and(DoublePredicate)
+     * java.util.function.DoublePredicate#and(DoublePredicate)}.
      */
     default DistributedDoublePredicate and(DistributedDoublePredicate other) {
         Objects.requireNonNull(other);
@@ -53,11 +38,7 @@ public interface DistributedDoublePredicate extends java.util.function.DoublePre
     }
 
     /**
-     * Returns a predicate that represents the logical negation of this
-     * predicate.
-     *
-     * @return a predicate that represents the logical negation of this
-     * predicate
+     * {@code Serializable} variant of {@link DoublePredicate#negate()}.
      */
     @Override
     default DistributedDoublePredicate negate() {
@@ -65,20 +46,9 @@ public interface DistributedDoublePredicate extends java.util.function.DoublePre
     }
 
     /**
-     * Returns a composed predicate that represents a short-circuiting logical
-     * OR of this predicate and another.  When evaluating the composed
-     * predicate, if this predicate is {@code true}, then the {@code other}
-     * predicate is not evaluated.
-     *
-     * <p>Any exceptions thrown during evaluation of either predicate are relayed
-     * to the caller; if evaluation of this predicate throws an exception, the
-     * {@code other} predicate will not be evaluated.
-     *
-     * @param other a predicate that will be logically-ORed with this
-     *              predicate
-     * @return a composed predicate that represents the short-circuiting logical
-     * OR of this predicate and the {@code other} predicate
-     * @throws NullPointerException if other is null
+     * {@code Serializable} variant of {@link
+     * DoublePredicate#or(DoublePredicate)
+     * java.util.function.DoublePredicate#or(DoublePredicate)}.
      */
     default DistributedDoublePredicate or(DistributedDoublePredicate other) {
         Objects.requireNonNull(other);

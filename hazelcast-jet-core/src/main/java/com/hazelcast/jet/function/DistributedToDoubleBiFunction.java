@@ -20,16 +20,8 @@ import java.io.Serializable;
 import java.util.function.ToDoubleBiFunction;
 
 /**
- * Represents a function that accepts two arguments and produces a double-valued
- * result.  This is the {@code double}-producing primitive specialization for
- * {@link DistributedBiFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsDouble(Object, Object)}.
- *
- * @param <T> the type of the first argument to the function
- * @param <U> the type of the second argument to the function
- * @see DistributedBiFunction
+ * {@code Serializable} variant of {@link ToDoubleBiFunction
+ * java.util.function.ToDoubleBiFunction}.
  */
 @FunctionalInterface
 public interface DistributedToDoubleBiFunction<T, U> extends ToDoubleBiFunction<T, U>, Serializable {

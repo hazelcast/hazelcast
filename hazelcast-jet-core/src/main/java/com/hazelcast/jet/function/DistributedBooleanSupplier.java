@@ -20,16 +20,8 @@ import java.io.Serializable;
 import java.util.function.BooleanSupplier;
 
 /**
- * Represents a supplier of {@code boolean}-valued results.  This is the
- * {@code boolean}-producing primitive specialization of {@link DistributedSupplier}.
- *
- * <p>There is no requirement that a new or distinct result be returned each
- * time the supplier is invoked.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #getAsBoolean()}.
- *
- * @see DistributedSupplier
+ * {@code Serializable} variant of {@link BooleanSupplier
+ * java.util.function.BooleanSupplier}.
  */
 @FunctionalInterface
 public interface DistributedBooleanSupplier extends BooleanSupplier, Serializable {

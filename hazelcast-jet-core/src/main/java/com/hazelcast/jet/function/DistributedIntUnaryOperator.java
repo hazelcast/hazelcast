@@ -21,37 +21,24 @@ import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
 /**
- * Represents an operation on a single {@code int}-valued operand that produces
- * an {@code int}-valued result.  This is the primitive type specialization of
- * {@link DistributedUnaryOperator} for {@code int}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsInt(int)}.
- *
- * @see DistributedUnaryOperator
+ * {@code Serializable} variant of {@link IntUnaryOperator
+ * java.util.function.IntUnaryOperator}.
  */
 @FunctionalInterface
 public interface DistributedIntUnaryOperator extends IntUnaryOperator, Serializable {
+
     /**
-     * Returns a unary operator that always returns its input argument.
-     *
-     * @return a unary operator that always returns its input argument
+     * {@code Serializable} variant of {@link
+     * IntUnaryOperator#identity() java.util.function.IntUnaryOperator#identity()}.
      */
     static DistributedIntUnaryOperator identity() {
         return t -> t;
     }
 
     /**
-     * Returns a composed operator that first applies the {@code before}
-     * operator to its input, and then applies this operator to the result.
-     * If evaluation of either operator throws an exception, it is relayed to
-     * the caller of the composed operator.
-     *
-     * @param before the operator to apply before this operator is applied
-     * @return a composed operator that first applies the {@code before}
-     * operator and then applies this operator
-     * @throws NullPointerException if before is null
-     * @see #andThen(DistributedIntUnaryOperator)
+     * {@code Serializable} variant of {@link
+     * IntUnaryOperator#compose(IntUnaryOperator)
+     * java.util.function.IntUnaryOperator#compose(IntUnaryOperator)}.
      */
     default DistributedIntUnaryOperator compose(DistributedIntUnaryOperator before) {
         Objects.requireNonNull(before);
@@ -59,16 +46,9 @@ public interface DistributedIntUnaryOperator extends IntUnaryOperator, Serializa
     }
 
     /**
-     * Returns a composed operator that first applies this operator to
-     * its input, and then applies the {@code after} operator to the result.
-     * If evaluation of either operator throws an exception, it is relayed to
-     * the caller of the composed operator.
-     *
-     * @param after the operator to apply after this operator is applied
-     * @return a composed operator that first applies this operator and then
-     * applies the {@code after} operator
-     * @throws NullPointerException if after is null
-     * @see #compose(DistributedIntUnaryOperator)
+     * {@code Serializable} variant of {@link
+     * IntUnaryOperator#andThen(IntUnaryOperator)
+     * java.util.function.IntUnaryOperator#andThen(IntUnaryOperator)}.
      */
     default DistributedIntUnaryOperator andThen(DistributedIntUnaryOperator after) {
         Objects.requireNonNull(after);

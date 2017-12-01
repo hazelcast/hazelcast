@@ -40,7 +40,6 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 
 /**
  * An extension of {@link DoubleStream} that supports
@@ -51,326 +50,94 @@ import java.util.stream.Stream;
 public interface DistributedDoubleStream extends DoubleStream {
 
     /**
-     * Returns a stream consisting of the elements of this stream that match
-     * the given predicate.
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * @param predicate a non-interfering,
-     *                  stateless
-     *                  predicate to apply to each element to determine if it
-     *                  should be included
-     * @return the new stream
+     * {@code Serializable} variant of
+     * {@link DoubleStream#filter(DoublePredicate) java.util.stream.DoubleStream#filter(DoublePredicate)}.
      */
     default DistributedDoubleStream filter(DistributedDoublePredicate predicate) {
         return filter((DoublePredicate) predicate);
     }
 
     /**
-     * Returns a stream consisting of the results of applying the given
-     * function to the elements of this stream.
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * @param mapper a non-interfering,
-     *               stateless
-     *               function to apply to each element
-     * @return the new stream
+     * {@code Serializable} variant of
+     * {@link DoubleStream#map(DoubleUnaryOperator) java.util.stream.DoubleStream#map(DoubleUnaryOperator)}.
      */
     default DistributedDoubleStream map(DistributedDoubleUnaryOperator mapper) {
         return map((DoubleUnaryOperator) mapper);
     }
 
     /**
-     * Returns an object-valued {@code Stream} consisting of the results of
-     * applying the given function to the elements of this stream.
-     *
-     * <p>This is an
-     *     intermediate operation.
-     *
-     * @param <U> the element type of the new stream
-     * @param mapper a non-interfering,
-     *               stateless
-     *               function to apply to each element
-     * @return the new stream
+     * {@code Serializable} variant of
+     * {@link DoubleStream#mapToObj(DoubleFunction) java.util.stream.DoubleStream#mapToObj(DoubleFunction)}.
      */
     default <U> DistributedStream<U> mapToObj(DistributedDoubleFunction<? extends U> mapper) {
         return mapToObj((DoubleFunction<? extends U>) mapper);
     }
 
     /**
-     * Returns a {@code LongStream} consisting of the results of applying the
-     * given function to the elements of this stream.
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * @param mapper a non-interfering,
-     *               stateless
-     *               function to apply to each element
-     * @return the new stream
+     * {@code Serializable} variant of
+     * {@link DoubleStream#mapToLong(DoubleToLongFunction) java.util.stream.DoubleStream#mapToLong(DoubleToLongFunction)}.
      */
     default DistributedLongStream mapToLong(DistributedDoubleToLongFunction mapper) {
         return mapToLong((DoubleToLongFunction) mapper);
     }
 
     /**
-     * Returns an {@code IntStream} consisting of the results of applying the
-     * given function to the elements of this stream.
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * @param mapper a non-interfering,
-     *               stateless
-     *               function to apply to each element
-     * @return the new stream
+     * {@code Serializable} variant of
+     * {@link DoubleStream#mapToInt(DoubleToIntFunction) java.util.stream.DoubleStream#mapToInt(DoubleToIntFunction)}.
      */
     default DistributedIntStream mapToInt(DistributedDoubleToIntFunction mapper) {
         return mapToInt((DoubleToIntFunction) mapper);
     }
 
     /**
-     * Returns a stream consisting of the results of replacing each element of
-     * this stream with the contents of a mapped stream produced by applying
-     * the provided mapping function to each element.  Each mapped stream is
-     * {@link java.util.stream.BaseStream#close() closed} after its contents
-     * have been placed into this stream.  (If a mapped stream is {@code null}
-     * an empty stream is used, instead.)
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * @param mapper a non-interfering,
-     *               stateless
-     *               function to apply to each element which produces a
-     *               {@code DoubleStream} of new values
-     * @return the new stream
-     * @see DistributedStream#flatMap(com.hazelcast.jet.function.DistributedFunction)
+     * {@code Serializable} variant of
+     * {@link DoubleStream#flatMap(DoubleFunction) java.util.stream.DoubleStream#flatMap(DoubleFunction)}.
      */
     default DistributedDoubleStream flatMap(DistributedDoubleFunction<? extends DoubleStream> mapper) {
         return flatMap((DoubleFunction<? extends DoubleStream>) mapper);
     }
 
-    /**
-     * Returns a stream consisting of the distinct elements of this stream. The
-     * elements are compared for equality according to
-     * {@link java.lang.Double#compare(double, double)}.
-     *
-     * <p>This is a stateful
-     * intermediate operation.
-     *
-     * @return the result stream
-     */
+    @Override
     DistributedDoubleStream distinct();
 
-    /**
-     * Returns a stream consisting of the elements of this stream in sorted
-     * order. The elements are compared for equality according to
-     * {@link java.lang.Double#compare(double, double)}.
-     *
-     * <p>This is a stateful
-     * intermediate operation.
-     *
-     * @return the result stream
-     */
+    @Override
     DistributedDoubleStream sorted();
 
     /**
-     * Returns a stream consisting of the elements of this stream, additionally
-     * performing the provided action on each element as elements are consumed
-     * from the resulting stream.
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * <p>For parallel stream pipelines, the action may be called at
-     * whatever time and in whatever thread the element is made available by the
-     * upstream operation.  If the action modifies shared state,
-     * it is responsible for providing the required synchronization.
-     *
-     * @param action a
-     *               non-interfering action to perform on the elements as
-     *               they are consumed from the stream
-     * @return the new stream
+     * {@code Serializable} variant of
+     * {@link DoubleStream#peek(DoubleConsumer) java.util.stream.DoubleStream#peek(DoubleConsumer)}.
      */
     default DistributedDoubleStream peek(DistributedDoubleConsumer action) {
         return peek((DoubleConsumer) action);
     }
 
-    /**
-     * Returns a stream consisting of the elements of this stream, truncated
-     * to be no longer than {@code maxSize} in length.
-     *
-     * <p>This is a short-circuiting
-     * stateful intermediate operation.
-     *
-     * @param maxSize the number of elements the stream should be limited to
-     * @return the new stream
-     * @throws IllegalArgumentException if {@code maxSize} is negative
-     */
+    @Override
     DistributedDoubleStream limit(long maxSize);
 
-    /**
-     * Returns a stream consisting of the remaining elements of this stream
-     * after discarding the first {@code n} elements of the stream.
-     * If this stream contains fewer than {@code n} elements then an
-     * empty stream will be returned.
-     *
-     * <p>This is a stateful
-     * intermediate operation.
-     *
-     * @param n the number of leading elements to skip
-     * @return the new stream
-     * @throws IllegalArgumentException if {@code n} is negative
-     */
+    @Override
     DistributedDoubleStream skip(long n);
 
     /**
-     * Performs an action for each element of this stream.
-     *
-     * <p>This is a terminal
-     * operation.
-     *
-     * @param action a
-     *               non-interfering action to perform on the elements
-     */
-    default void forEach(DistributedDoubleConsumer action) {
-        forEach((DoubleConsumer) action);
-    }
-
-    /**
-     * Performs an action for each element of this stream, guaranteeing that
-     * each element is processed in encounter order for streams that have a
-     * defined encounter order.
-     *
-     * <p>This is a terminal
-     * operation.
-     *
-     * @param action a
-     *               non-interfering action to perform on the elements
-     * @see #forEach(DoubleConsumer)
-     */
-    default void forEachOrdered(DistributedDoubleConsumer action) {
-        forEachOrdered((DoubleConsumer) action);
-    }
-
-    /**
-     * Performs a reduction on the
-     * elements of this stream, using the provided identity value and an
-     * associative
-     * accumulation function, and returns the reduced value.  This is equivalent
-     * to:
-     * <pre>{@code
-     *     double result = identity;
-     *     for (double element : this stream)
-     *         result = accumulator.applyAsDouble(result, element)
-     *     return result;
-     * }</pre>
-     *
-     * but is not constrained to execute sequentially.
-     *
-     * <p>The {@code identity} value must be an identity for the accumulator
-     * function. This means that for all {@code x},
-     * {@code accumulator.apply(identity, x)} is equal to {@code x}.
-     * The {@code accumulator} function must be an
-     * associative function.
-     *
-     * <p>This is a terminal
-     * operation.
-     *
-     * @param identity the identity value for the accumulating function
-     * @param op an associative,
-     *           non-interfering,
-     *           stateless
-     *           function for combining two values
-     * @return the result of the reduction
-     * @see #sum()
-     * @see #min()
-     * @see #max()
-     * @see #average()
+     * {@code Serializable} variant of
+     * {@link DoubleStream#reduce(double, DoubleBinaryOperator)
+     * java.util.stream.DoubleStream#reduce(double, DoubleBinaryOperator)}.
      */
     default double reduce(double identity, DistributedDoubleBinaryOperator op) {
         return reduce(identity, (DoubleBinaryOperator) op);
     }
 
     /**
-     * Performs a reduction on the
-     * elements of this stream, using an
-     * associative accumulation
-     * function, and returns an {@code OptionalDouble} describing the reduced
-     * value, if any. This is equivalent to:
-     * <pre>{@code
-     *     boolean foundAny = false;
-     *     double result = null;
-     *     for (double element : this stream) {
-     *         if (!foundAny) {
-     *             foundAny = true;
-     *             result = element;
-     *         }
-     *         else
-     *             result = accumulator.applyAsDouble(result, element);
-     *     }
-     *     return foundAny ? OptionalDouble.of(result) : OptionalDouble.empty();
-     * }</pre>
-     *
-     * but is not constrained to execute sequentially.
-     *
-     * <p>The {@code accumulator} function must be an
-     * associative function.
-     *
-     * <p>This is a terminal
-     * operation.
-     *
-     * @param op an associative,
-     *           non-interfering,
-     *           stateless
-     *           function for combining two values
-     * @return the result of the reduction
-     * @see #reduce(double, DoubleBinaryOperator)
+     * {@code Serializable} variant of
+     * {@link DoubleStream#reduce(DoubleBinaryOperator) java.util.stream.DoubleStream#reduce(DoubleBinaryOperator)}.
      */
     default OptionalDouble reduce(DistributedDoubleBinaryOperator op) {
         return reduce((DoubleBinaryOperator) op);
     }
 
     /**
-     * Performs a mutable
-     * reduction operation on the elements of this stream.  A mutable
-     * reduction is one in which the reduced value is a mutable result container,
-     * such as an {@code ArrayList}, and elements are incorporated by updating
-     * the state of the result rather than by replacing the result.  This
-     * produces a result equivalent to:
-     * <pre>{@code
-     *     R result = supplier.get();
-     *     for (double element : this stream)
-     *         accumulator.accept(result, element);
-     *     return result;
-     * }</pre>
-     *
-     * <p>Like {@link #reduce(double, DoubleBinaryOperator)}, {@code collect}
-     * operations can be parallelized without requiring additional
-     * synchronization.
-     *
-     * <p>This is a terminal
-     * operation.
-     *
-     * @param <R> type of the result
-     * @param supplier a function that creates a new result container. For a
-     *                 parallel execution, this function may be called
-     *                 multiple times and must return a fresh value each time.
-     * @param accumulator an associative,
-     *                    non-interfering,
-     *                    stateless
-     *                    function for incorporating an additional element into a result
-     * @param combiner an associative,
-     *                    non-interfering,
-     *                    stateless
-     *                    function for combining two values, which must be
-     *                    compatible with the accumulator function
-     * @return the result of the reduction
-     * @see Stream#collect(Supplier, BiConsumer, BiConsumer)
+     * {@code Serializable} variant of
+     * {@link DoubleStream#collect(Supplier, ObjDoubleConsumer, BiConsumer)
+     * java.util.stream.DoubleStream#collect(Supplier, ObjDoubleConsumer, BiConsumer)}.
      */
     default <R> R collect(DistributedSupplier<R> supplier, DistributedObjDoubleConsumer<R> accumulator,
                           DistributedBiConsumer<R, R> combiner) {
@@ -378,97 +145,35 @@ public interface DistributedDoubleStream extends DoubleStream {
     }
 
     /**
-     * Returns whether any elements of this stream match the provided
-     * predicate.  May not evaluate the predicate on all elements if not
-     * necessary for determining the result.  If the stream is empty then
-     * {@code false} is returned and the predicate is not evaluated.
-     *
-     * <p>This is a short-circuiting
-     * terminal operation.
-     *
-     * @param predicate a non-interfering,
-     *                  stateless
-     *                  predicate to apply to elements of this stream
-     * @return {@code true} if any elements of the stream match the provided
-     * predicate, otherwise {@code false}
+     * {@code Serializable} variant of
+     * {@link DoubleStream#anyMatch(DoublePredicate) java.util.stream.DoubleStream#anyMatch(DoublePredicate)}.
      */
     default boolean anyMatch(DistributedDoublePredicate predicate) {
         return anyMatch((DoublePredicate) predicate);
     }
 
     /**
-     * Returns whether all elements of this stream match the provided predicate.
-     * May not evaluate the predicate on all elements if not necessary for
-     * determining the result.  If the stream is empty then {@code true} is
-     * returned and the predicate is not evaluated.
-     *
-     * <p>This is a short-circuiting
-     * terminal operation.
-     *
-     * @param predicate a non-interfering,
-     *                  stateless
-     *                  predicate to apply to elements of this stream
-     * @return {@code true} if either all elements of the stream match the
-     * provided predicate or the stream is empty, otherwise {@code false}
+     * {@code Serializable} variant of
+     * {@link DoubleStream#allMatch(DoublePredicate) java.util.stream.DoubleStream#allMatch(DoublePredicate)}.
      */
     default boolean allMatch(DistributedDoublePredicate predicate) {
         return allMatch((DoublePredicate) predicate);
     }
 
     /**
-     * Returns whether no elements of this stream match the provided predicate.
-     * May not evaluate the predicate on all elements if not necessary for
-     * determining the result.  If the stream is empty then {@code true} is
-     * returned and the predicate is not evaluated.
-     *
-     * <p>This is a short-circuiting
-     * terminal operation.
-     *
-     * @param predicate a non-interfering,
-     *                  stateless
-     *                  predicate to apply to elements of this stream
-     * @return {@code true} if either no elements of the stream match the
-     * provided predicate or the stream is empty, otherwise {@code false}
+     * {@code Serializable} variant of
+     * {@link DoubleStream#noneMatch(DoublePredicate) java.util.stream.DoubleStream#noneMatch(DoublePredicate)}.
      */
     default boolean noneMatch(DistributedDoublePredicate predicate) {
         return noneMatch((DoublePredicate) predicate);
     }
 
-    /**
-     * Returns a {@code DistributedStream} consisting of the elements of this stream,
-     * boxed to {@code Double}.
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * @return a {@code DistributedStream} consistent of the elements of this stream,
-     * each boxed to a {@code Double}
-     */
     @Override
     DistributedStream<Double> boxed();
 
-    /**
-     * Returns an equivalent stream that is sequential.  May return
-     * itself, either because the stream was already sequential, or because
-     * the underlying stream state was modified to be sequential.
-     *
-     * <p>This is an intermediate
-     * operation.
-     *
-     * @return a sequential stream
-     */
     @Override
     DistributedDoubleStream sequential();
 
-    /**
-     * Returns an equivalent stream that is parallel.  May return
-     * itself, either because the stream was already parallel, or because
-     * the underlying stream state was modified to be parallel.
-     *
-     * <p>This is an intermediate operation.
-     *
-     * @return a parallel stream
-     */
     @Override
     DistributedDoubleStream parallel();
 
@@ -478,8 +183,7 @@ public interface DistributedDoubleStream extends DoubleStream {
     @Override
     DistributedDoubleStream map(DoubleUnaryOperator mapper);
 
-    @Override
-    <U> DistributedStream<U> mapToObj(DoubleFunction<? extends U> mapper);
+    @Override <U> DistributedStream<U> mapToObj(DoubleFunction<? extends U> mapper);
 
     @Override
     DistributedLongStream mapToLong(DoubleToLongFunction mapper);
@@ -505,8 +209,7 @@ public interface DistributedDoubleStream extends DoubleStream {
     @Override
     OptionalDouble reduce(DoubleBinaryOperator op);
 
-    @Override
-    <R> R collect(Supplier<R> supplier, ObjDoubleConsumer<R> accumulator, BiConsumer<R, R> combiner);
+    @Override <R> R collect(Supplier<R> supplier, ObjDoubleConsumer<R> accumulator, BiConsumer<R, R> combiner);
 
     @Override
     boolean anyMatch(DoublePredicate predicate);

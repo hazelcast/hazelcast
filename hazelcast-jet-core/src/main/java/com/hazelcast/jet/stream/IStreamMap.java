@@ -23,8 +23,8 @@ import com.hazelcast.query.Predicate;
 import javax.annotation.Nonnull;
 
 /**
- * A decorator for {@link IMap} for supporting distributed {@link java.util.stream.Stream}
- * implementation.
+ * A decorator for {@link IMap} that provides a distributed
+ * {@link java.util.stream.Stream} implementation.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
@@ -32,27 +32,23 @@ import javax.annotation.Nonnull;
 public interface IStreamMap<K, V> extends IMap<K, V> {
 
     /**
-     * Returns a parallel and distributed {@code Stream} with this map as its source.
+     * Returns a {@link DistributedStream} with this map as its source.
      * <p>
-     * If the underlying map is concurrently being modified, there are no guarantees
-     * given with respect to missing or duplicate items in a stream operation.
-     *
-     * @return a parallel {@code Stream} over the elements in this collection
-     * @since 1.8
+     * If the underlying map is being concurrently modified, there are no
+     * guarantees given with respect to missing or duplicate items in a
+     * stream operation.
      */
     DistributedStream<Entry<K, V>> stream();
 
     /**
-     * Returns a parallel and distributed {@code Stream} with this map as its source.
-     * Entries will be filtered and mapped according to the given predicate and projection.
+     * Returns a {@link DistributedStream} with this map as its source.
+     * Entries will be filtered and mapped according to the given predicate
+     * and projection.
      * <p>
-     * If the underlying map is concurrently being modified, there are no guarantees
-     * given with respect to missing or duplicate items in a stream operation.
-     *
-     * @return a parallel {@code Stream} over the elements in this collection
-     * @since 1.8
+     * If the underlying map is being concurrently modified, there are no
+     * guarantees given with respect to missing or duplicate items in a
+     * stream operation.
      */
     <T> DistributedStream<T> stream(@Nonnull Predicate<K, V> predicate,
                                     @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn);
-
 }

@@ -20,16 +20,8 @@ import java.io.Serializable;
 import java.util.function.IntSupplier;
 
 /**
- * Represents a supplier of {@code int}-valued results.  This is the
- * {@code int}-producing primitive specialization of {@link DistributedSupplier}.
- *
- * <p>There is no requirement that a distinct result be returned each
- * time the supplier is invoked.
- *
- * <p>This is a <a href="package-summary.html">functional interface</a>
- * whose functional method is {@link #getAsInt()}.
- *
- * @see DistributedSupplier
+ * {@code Serializable} variant of {@link IntSupplier
+ * java.util.function.IntSupplier}.
  */
 @FunctionalInterface
 public interface DistributedIntSupplier extends IntSupplier, Serializable {

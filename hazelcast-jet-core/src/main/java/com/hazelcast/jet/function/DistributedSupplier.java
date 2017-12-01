@@ -20,15 +20,8 @@ import java.io.Serializable;
 import java.util.function.Supplier;
 
 /**
- * Represents a supplier of results.
- *
- * <p>There is no requirement that a new or distinct result be returned each
- * time the supplier is invoked.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #get()}.
- *
- * @param <T> the type of results supplied by this supplier
+ * {@code Serializable} variant of {@link Supplier
+ * java.util.function.Supplier}.
  */
 @FunctionalInterface
 public interface DistributedSupplier<T> extends Supplier<T>, Serializable {

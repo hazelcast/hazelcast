@@ -20,15 +20,8 @@ import java.io.Serializable;
 import java.util.function.IntFunction;
 
 /**
- * Represents a function that accepts an int-valued argument and produces a
- * result.  This is the {@code int}-consuming primitive specialization for
- * {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #apply(int)}.
- *
- * @param <R> the type of the result of the function
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link IntFunction
+ * java.util.function.IntFunction}.
  */
 @FunctionalInterface
 public interface DistributedIntFunction<R> extends IntFunction<R>, Serializable {

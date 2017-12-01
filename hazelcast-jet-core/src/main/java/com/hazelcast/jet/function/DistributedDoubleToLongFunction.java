@@ -20,14 +20,8 @@ import java.io.Serializable;
 import java.util.function.DoubleToLongFunction;
 
 /**
- * Represents a function that accepts a double-valued argument and produces a
- * long-valued result.  This is the {@code double}-to-{@code long} primitive
- * specialization for {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsLong(double)}.
- *
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link DoubleToLongFunction
+ * java.util.function.DoubleToLongFunction}.
  */
 @FunctionalInterface
 public interface DistributedDoubleToLongFunction extends DoubleToLongFunction, Serializable {

@@ -21,33 +21,15 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 
 /**
- * Represents a predicate (boolean-valued function) of two arguments.  This is
- * the two-arity specialization of {@link DistributedPredicate}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #test(Object, Object)}.
- *
- * @param <T> the type of the first argument to the predicate
- * @param <U> the type of the second argument the predicate
- * @see DistributedPredicate
+ * {@code Serializable} variant of {@link BiPredicate
+ * java.util.function.BiPredicate}.
  */
 @FunctionalInterface
 public interface DistributedBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {
+
     /**
-     * Returns a composed predicate that represents a short-circuiting logical
-     * AND of this predicate and another.  When evaluating the composed
-     * predicate, if this predicate is {@code false}, then the {@code other}
-     * predicate is not evaluated.
-     *
-     * <p>Any exceptions thrown during evaluation of either predicate are relayed
-     * to the caller; if evaluation of this predicate throws an exception, the
-     * {@code other} predicate will not be evaluated.
-     *
-     * @param other a predicate that will be logically-ANDed with this
-     *              predicate
-     * @return a composed predicate that represents the short-circuiting logical
-     * AND of this predicate and the {@code other} predicate
-     * @throws NullPointerException if other is null
+     * {@code Serializable} variant of {@link
+     * BiPredicate#and(BiPredicate) java.util.function.BiPredicate#and(BiPredicate)}.
      */
     default DistributedBiPredicate<T, U> and(DistributedBiPredicate<? super T, ? super U> other) {
         Objects.requireNonNull(other);
@@ -55,11 +37,8 @@ public interface DistributedBiPredicate<T, U> extends BiPredicate<T, U>, Seriali
     }
 
     /**
-     * Returns a predicate that represents the logical negation of this
-     * predicate.
-     *
-     * @return a predicate that represents the logical negation of this
-     * predicate
+     * {@code Serializable} variant of {@link
+     * BiPredicate#negate() java.util.function.BiPredicate#negate()}.
      */
     @Override
     default DistributedBiPredicate<T, U> negate() {
@@ -67,20 +46,8 @@ public interface DistributedBiPredicate<T, U> extends BiPredicate<T, U>, Seriali
     }
 
     /**
-     * Returns a composed predicate that represents a short-circuiting logical
-     * OR of this predicate and another.  When evaluating the composed
-     * predicate, if this predicate is {@code true}, then the {@code other}
-     * predicate is not evaluated.
-     *
-     * <p>Any exceptions thrown during evaluation of either predicate are relayed
-     * to the caller; if evaluation of this predicate throws an exception, the
-     * {@code other} predicate will not be evaluated.
-     *
-     * @param other a predicate that will be logically-ORed with this
-     *              predicate
-     * @return a composed predicate that represents the short-circuiting logical
-     * OR of this predicate and the {@code other} predicate
-     * @throws NullPointerException if other is null
+     * {@code Serializable} variant of {@link
+     * BiPredicate#or(BiPredicate) java.util.function.BiPredicate#or(BiPredicate)}.
      */
     default DistributedBiPredicate<T, U> or(DistributedBiPredicate<? super T, ? super U> other) {
         Objects.requireNonNull(other);

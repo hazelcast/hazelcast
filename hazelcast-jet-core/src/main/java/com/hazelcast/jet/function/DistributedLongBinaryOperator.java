@@ -20,15 +20,8 @@ import java.io.Serializable;
 import java.util.function.LongBinaryOperator;
 
 /**
- * Represents an operation upon two {@code long}-valued operands and producing a
- * {@code long}-valued result.   This is the primitive type specialization of
- * {@link DistributedBinaryOperator} for {@code long}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsLong(long, long)}.
- *
- * @see DistributedBinaryOperator
- * @see DistributedLongUnaryOperator
+ * {@code Serializable} variant of {@link LongBinaryOperator
+ * java.util.function.LongBinaryOperator}.
  */
 @FunctionalInterface
 public interface DistributedLongBinaryOperator extends LongBinaryOperator, Serializable {

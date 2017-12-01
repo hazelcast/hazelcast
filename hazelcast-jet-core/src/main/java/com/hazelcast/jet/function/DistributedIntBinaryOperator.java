@@ -20,15 +20,8 @@ import java.io.Serializable;
 import java.util.function.IntBinaryOperator;
 
 /**
- * Represents an operation upon two {@code int}-valued operands and producing an
- * {@code int}-valued result.   This is the primitive type specialization of
- * {@link DistributedBinaryOperator} for {@code int}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsInt(int, int)}.
- *
- * @see DistributedBinaryOperator
- * @see DistributedIntUnaryOperator
+ * {@code Serializable} variant of {@link IntBinaryOperator
+ * java.util.function.IntBinaryOperator}.
  */
 @FunctionalInterface
 public interface DistributedIntBinaryOperator extends IntBinaryOperator, Serializable {

@@ -20,16 +20,8 @@ import java.io.Serializable;
 import java.util.function.ToIntBiFunction;
 
 /**
- * Represents a function that accepts two arguments and produces an int-valued
- * result.  This is the {@code int}-producing primitive specialization for
- * {@link DistributedBiFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsInt(Object, Object)}.
- *
- * @param <T> the type of the first argument to the function
- * @param <U> the type of the second argument to the function
- * @see DistributedBiFunction
+ * {@code Serializable} variant of {@link ToIntBiFunction
+ * java.util.function.ToIntBiFunction}.
  */
 @FunctionalInterface
 public interface DistributedToIntBiFunction<T, U> extends ToIntBiFunction<T, U>, Serializable {

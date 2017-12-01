@@ -19,8 +19,8 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IList;
 
 /**
- * A decorator for {@link IList} for supporting distributed {@link java.util.stream.Stream}
- * implementation.
+ * A decorator for {@link IList} that provides a distributed
+ * {@link java.util.stream.Stream} implementation.
  *
  * @param <E> the type of elements in this list
  * @see IList
@@ -28,19 +28,15 @@ import com.hazelcast.core.IList;
 public interface IStreamList<E> extends IList<E> {
 
     /**
-     * Returns a sequential {@code Stream} with this list as its source.
-     *
-     * @return a sequential {@code Stream} over the elements in this collection
-     * @since 1.8
+     * Returns an ordered {@link DistributedStream} with this list as its
+     * source.
      */
     @Override
     DistributedStream<E> stream();
 
     /**
-     * Returns a parallel {@code Stream} with this list as its source.
-     *
-     * @return a parallel {@code Stream} over the elements in this collection
-     * @since 1.8
+     * Returns an unordered {@link DistributedStream} with this list as its
+     * source.
      */
     @Override
     DistributedStream<E> parallelStream();

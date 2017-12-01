@@ -20,14 +20,8 @@ import java.io.Serializable;
 import java.util.function.DoubleToIntFunction;
 
 /**
- * Represents a function that accepts a double-valued argument and produces an
- * int-valued result.  This is the {@code double}-to-{@code int} primitive
- * specialization for {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsInt(double)}.
- *
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link DoubleToIntFunction
+ * java.util.function.DoubleToIntFunction}.
  */
 @FunctionalInterface
 public interface DistributedDoubleToIntFunction extends DoubleToIntFunction, Serializable {

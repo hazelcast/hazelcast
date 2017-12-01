@@ -27,6 +27,7 @@ import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -253,7 +254,7 @@ class LongPipe implements DistributedLongStream {
         throw new UnsupportedOperationException();
     }
 
-    @Override
+    @Nonnull @Override
     public DistributedLongStream parallel() {
         return this;
     }

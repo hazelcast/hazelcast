@@ -21,29 +21,15 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * Represents an operation that accepts a single input argument and returns no
- * result. Unlike most other functional interfaces, {@code Consumer} is expected
- * to operate via side-effects.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #accept(Object)}.
- *
- * @param <T> the type of the input to the operation
+ * {@code Serializable} variant of {@link Consumer
+ * java.util.function.Consumer}.
  */
 @FunctionalInterface
 public interface DistributedConsumer<T> extends Consumer<T>, Serializable {
 
     /**
-     * Returns a composed {@code Consumer} that performs, in sequence, this
-     * operation followed by the {@code after} operation. If performing either
-     * operation throws an exception, it is relayed to the caller of the
-     * composed operation.  If performing this operation throws an exception,
-     * the {@code after} operation will not be performed.
-     *
-     * @param after the operation to perform after this operation
-     * @return a composed {@code Consumer} that performs in sequence this
-     * operation followed by the {@code after} operation
-     * @throws NullPointerException if {@code after} is null
+     * {@code Serializable} variant of {@link Consumer#andThen(Consumer)
+     * java.util.function.Consumer#andThen(Consumer)}.
      */
     default DistributedConsumer<T> andThen(DistributedConsumer<? super T> after) {
         Objects.requireNonNull(after);

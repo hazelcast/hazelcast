@@ -21,37 +21,24 @@ import java.util.Objects;
 import java.util.function.LongUnaryOperator;
 
 /**
- * Represents an operation on a single {@code long}-valued operand that produces
- * a {@code long}-valued result.  This is the primitive type specialization of
- * {@link DistributedUnaryOperator} for {@code long}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsLong(long)}.
- *
- * @see DistributedUnaryOperator
+ * {@code Serializable} variant of {@link LongUnaryOperator
+ * java.util.function.LongUnaryOperator}.
  */
 @FunctionalInterface
 public interface DistributedLongUnaryOperator extends LongUnaryOperator, Serializable {
+
     /**
-     * Returns a unary operator that always returns its input argument.
-     *
-     * @return a unary operator that always returns its input argument
+     * {@code Serializable} variant of {@link LongUnaryOperator#identity()
+     * java.util.function.LongUnaryOperator#identity()}.
      */
     static DistributedLongUnaryOperator identity() {
         return t -> t;
     }
 
     /**
-     * Returns a composed operator that first applies the {@code before}
-     * operator to its input, and then applies this operator to the result.
-     * If evaluation of either operator throws an exception, it is relayed to
-     * the caller of the composed operator.
-     *
-     * @param before the operator to apply before this operator is applied
-     * @return a composed operator that first applies the {@code before}
-     * operator and then applies this operator
-     * @throws NullPointerException if before is null
-     * @see #andThen(DistributedLongUnaryOperator)
+     * {@code Serializable} variant of {@link
+     * LongUnaryOperator#compose(LongUnaryOperator)
+     * java.util.function.LongUnaryOperator#compose(LongUnaryOperator)}.
      */
     default DistributedLongUnaryOperator compose(DistributedLongUnaryOperator before) {
         Objects.requireNonNull(before);
@@ -59,16 +46,9 @@ public interface DistributedLongUnaryOperator extends LongUnaryOperator, Seriali
     }
 
     /**
-     * Returns a composed operator that first applies this operator to
-     * its input, and then applies the {@code after} operator to the result.
-     * If evaluation of either operator throws an exception, it is relayed to
-     * the caller of the composed operator.
-     *
-     * @param after the operator to apply after this operator is applied
-     * @return a composed operator that first applies this operator and then
-     * applies the {@code after} operator
-     * @throws NullPointerException if after is null
-     * @see #compose(DistributedLongUnaryOperator)
+     * {@code Serializable} variant of {@link
+     * LongUnaryOperator#andThen(LongUnaryOperator)
+     * java.util.function.LongUnaryOperator#andThen(LongUnaryOperator)}.
      */
     default DistributedLongUnaryOperator andThen(DistributedLongUnaryOperator after) {
         Objects.requireNonNull(after);

@@ -20,17 +20,8 @@ import java.io.Serializable;
 import java.util.function.ObjDoubleConsumer;
 
 /**
- * Represents an operation that accepts an object-valued and a
- * {@code double}-valued argument, and returns no result.  This is the
- * {@code (reference, double)} specialization of {@link DistributedBiConsumer}.
- * Unlike most other functional interfaces, {@code ObjDoubleConsumer} is
- * expected to operate via side-effects.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #accept(Object, double)}.
- *
- * @param <T> the type of the object argument to the operation
- * @see DistributedBiConsumer
+ * {@code Serializable} variant of {@link ObjDoubleConsumer
+ * java.util.function.ObjDoubleConsumer}.
  */
 @FunctionalInterface
 public interface DistributedObjDoubleConsumer<T> extends ObjDoubleConsumer<T>, Serializable {

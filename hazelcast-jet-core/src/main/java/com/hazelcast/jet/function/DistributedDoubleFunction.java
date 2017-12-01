@@ -17,18 +17,12 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
+import java.util.function.DoubleFunction;
 
 /**
- * Represents a function that accepts a double-valued argument and produces a
- * result.  This is the {@code double}-consuming primitive specialization for
- * {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #apply(double)}.
- *
- * @param <R> the type of the result of the function
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link DoubleFunction
+ * java.util.function.DoubleFunction}.
  */
 @FunctionalInterface
-public interface DistributedDoubleFunction<R> extends java.util.function.DoubleFunction<R>, Serializable {
+public interface DistributedDoubleFunction<R> extends DoubleFunction<R>, Serializable {
 }

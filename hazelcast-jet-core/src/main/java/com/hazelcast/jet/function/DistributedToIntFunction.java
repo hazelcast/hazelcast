@@ -20,14 +20,8 @@ import java.io.Serializable;
 import java.util.function.ToIntFunction;
 
 /**
- * Represents a function that produces an int-valued result.  This is the
- * {@code int}-producing primitive specialization for {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsInt(Object)}.
- *
- * @param <T> the type of the input to the function
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link ToIntFunction
+ * java.util.function.ToIntFunction}.
  */
 @FunctionalInterface
 public interface DistributedToIntFunction<T> extends ToIntFunction<T>, Serializable {

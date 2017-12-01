@@ -20,14 +20,8 @@ import java.io.Serializable;
 import java.util.function.LongToIntFunction;
 
 /**
- * Represents a function that accepts a long-valued argument and produces an
- * int-valued result.  This is the {@code long}-to-{@code int} primitive
- * specialization for {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsInt(long)}.
- *
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link LongToIntFunction
+ * java.util.function.LongToIntFunction}.
  */
 @FunctionalInterface
 public interface DistributedLongToIntFunction extends LongToIntFunction, Serializable {

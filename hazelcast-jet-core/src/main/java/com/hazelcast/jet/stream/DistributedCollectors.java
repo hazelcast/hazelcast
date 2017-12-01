@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.cache.ICache;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
@@ -48,7 +46,7 @@ import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -61,49 +59,53 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableSet;
 
 /**
- * Implementations of {@link DistributedCollector} that implement various
- * useful reduction operations, such as accumulating elements into
- * collections, summarizing elements according to various criteria, etc.
+ * {@code Serializable} variants of {@link Collectors
+ * java.util.stream.Collectors}.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class DistributedCollectors {
 
-    static final Set<Collector.Characteristics> CH_ID
-            = Collections.unmodifiableSet(EnumSet.of(java.util.stream.Collector.Characteristics.IDENTITY_FINISH));
+    static final Set<Collector.Characteristics> CH_ID = unmodifiableSet(
+            EnumSet.of(Collector.Characteristics.IDENTITY_FINISH)
+    );
 
-    static final Set<Collector.Characteristics> CH_UNORDERED_ID
-            = Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.UNORDERED,
-            Collector.Characteristics.IDENTITY_FINISH));
+    static final Set<Collector.Characteristics> CH_NOID = emptySet();
 
-    static final Set<Collector.Characteristics> CH_NOID = Collections.emptySet();
+    private static final Set<Collector.Characteristics> CH_UNORDERED_ID = unmodifiableSet(
+            EnumSet.of(Collector.Characteristics.UNORDERED, Collector.Characteristics.IDENTITY_FINISH)
+    );
 
 
     @SuppressWarnings("unchecked")
-    static <T> DistributedSupplier<T[]> boxSupplier(T identity) {
+    private static <T> DistributedSupplier<T[]> boxSupplier(T identity) {
         return () -> (T[]) new Object[]{identity};
     }
 
     /**
-     * Returns a {@code DistributedCollector} that accumulates the input
-     * elements into a new {@code Collection}, in encounter order. The {@code
-     * Collection} is created by the provided factory.
-     *
-     * @param <T>               the type of the input elements
-     * @param <C>               the type of the resulting {@code Collection}
-     * @param collectionFactory a {@code DistributedSupplier} which returns a new, empty
-     *                          {@code Collection} of the appropriate type
-     * @return a {@code DistributedCollector} which collects all the input elements into a
-     * {@code Collection}, in encounter order
+     * {@code Serializable} variant of {@link
+     * Collectors#toCollection(Supplier)
+     * java.util.stream.Collectors#toCollection(Supplier)}
      */
-    public static <T, C extends Collection<T>>
-    DistributedCollector<T, ?, C> toCollection(DistributedSupplier<C> collectionFactory) {
+    public static <T, C extends Collection<T>> DistributedCollector<T, ?, C> toCollection(
+            DistributedSupplier<C> collectionFactory
+    ) {
         return new DistributedCollectorImpl<>(collectionFactory, Collection::add,
                 (r1, r2) -> {
                     r1.addAll(r2);
@@ -113,15 +115,9 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that accumulates the input
-     * elements into a new {@code List}. There are no guarantees on the type,
-     * mutability, serializability, or thread-safety of the {@code List}
-     * returned; if more control over the returned {@code List} is required,
-     * use {@link #toCollection(DistributedSupplier)}.
-     *
-     * @param <T> the type of the input elements
-     * @return a {@code DistributedCollector} which collects all the input elements into a
-     *         {@code List}, in encounter order
+     * {@code Serializable} variant of {@link
+     * Collectors#toList()
+     * java.util.stream.Collectors#toList()}
      */
     public static <T> DistributedCollector<T, ?, List<T>> toList() {
         return new DistributedCollectorImpl<>(ArrayList::new, List::add,
@@ -133,21 +129,11 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that accumulates the input
-     * elements into a new {@code Set}. There are no guarantees on the type,
-     * mutability, serializability, or thread-safety of the {@code Set}
-     * returned; if more control over the returned {@code Set} is required, use
-     * {@link #toCollection(DistributedSupplier)}.
-     * <p>
-     * <p>This is an {@link Collector.Characteristics#UNORDERED unordered}
-     * Collector.
-     *
-     * @param <T> the type of the input elements
-     * @return a {@code  DistributedCollector} which collects all the input elements
-     *         into a {@code Set}
+     * {@code Serializable} variant of {@link
+     * Collectors#toSet()
+     * java.util.stream.Collectors#toSet()}
      */
-    public static <T>
-    DistributedCollector<T, ?, Set<T>> toSet() {
+    public static <T> DistributedCollector<T, ?, Set<T>> toSet() {
         return new DistributedCollectorImpl<>((DistributedSupplier<Set<T>>) HashSet::new, Set<T>::add,
                 (left, right) -> {
                     left.addAll(right);
@@ -157,11 +143,9 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that concatenates the input elements into a
-     * {@code String}, in encounter order.
-     *
-     * @return a {@code DistributedCollector} that concatenates the input elements into a
-     * {@code String}, in encounter order
+     * {@code Serializable} variant of {@link
+     * Collectors#joining()
+     * java.util.stream.Collectors#joining()}
      */
     public static DistributedCollector<CharSequence, ?, String> joining() {
         return new DistributedCollectorImpl<>(
@@ -174,33 +158,22 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that concatenates the input elements,
-     * separated by the specified delimiter, in encounter order.
-     *
-     * @param delimiter the delimiter to be used between each element
-     * @return A {@code DistributedCollector} which concatenates CharSequence elements,
-     * separated by the specified delimiter, in encounter order
+     * {@code Serializable} variant of {@link
+     * Collectors#joining(CharSequence)
+     * java.util.stream.Collectors#joining(CharSequence)}
      */
     public static DistributedCollector<CharSequence, ?, String> joining(CharSequence delimiter) {
         return joining(delimiter, "", "");
     }
 
     /**
-     * Returns a {@code DistributedCollector} that concatenates the input elements,
-     * separated by the specified delimiter, with the specified prefix and
-     * suffix, in encounter order.
-     *
-     * @param delimiter the delimiter to be used between each element
-     * @param prefix    the sequence of characters to be used at the beginning
-     *                  of the joined result
-     * @param suffix    the sequence of characters to be used at the end
-     *                  of the joined result
-     * @return A {@code DistributedCollector} which concatenates CharSequence elements,
-     * separated by the specified delimiter, in encounter order
+     * {@code Serializable} variant of {@link
+     * Collectors#joining(CharSequence, CharSequence, CharSequence)
+     * java.util.stream.Collectors#joining(CharSequence, CharSequence, CharSequence)}
      */
-    public static DistributedCollector<CharSequence, ?, String> joining(CharSequence delimiter,
-                                                                        CharSequence prefix,
-                                                                        CharSequence suffix) {
+    public static DistributedCollector<CharSequence, ?, String> joining(
+            CharSequence delimiter, CharSequence prefix, CharSequence suffix
+    ) {
         return new DistributedCollectorImpl<>(
                 () -> new DistributedStringJoiner(delimiter, prefix, suffix),
                 DistributedStringJoiner::add, DistributedStringJoiner::merge,
@@ -208,22 +181,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Adapts a {@code DistributedCollector} accepting elements of type {@code U} to one
-     * accepting elements of type {@code T} by applying a mapping function to
-     * each input element before accumulation.
-     *
-     * @param <T>        the type of the input elements
-     * @param <U>        type of elements accepted by downstream collector
-     * @param <A>        intermediate accumulation type of the downstream collector
-     * @param <R>        result type of collector
-     * @param mapper     a function to be applied to the input elements
-     * @param downstream a collector which will accept mapped values
-     * @return a collector which applies the mapping function to the input
-     * elements and provides the mapped results to the downstream collector
+     * {@code Serializable} variant of {@link
+     * Collectors#mapping(Function, Collector)
+     * java.util.stream.Collectors#mapping(Function, Collector)}
      */
-    public static <T, U, A, R>
-    DistributedCollector<T, ?, R> mapping(DistributedFunction<? super T, ? extends U> mapper,
-                                          DistributedCollector<? super U, A, R> downstream) {
+    public static <T, U, A, R> DistributedCollector<T, ?, R> mapping(
+            DistributedFunction<? super T, ? extends U> mapper, DistributedCollector<? super U, A, R> downstream
+    ) {
         DistributedBiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
         return new DistributedCollectorImpl<>(downstream.supplier(),
                 (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
@@ -232,22 +196,9 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Adapts a {@code DistributedCollector} to perform an additional finishing
-     * transformation.  For example, one could adapt the {@link #toList()}
-     * collector to always produce an immutable list with:
-     * <pre>{@code
-     *     List<String> people
-     *         = people.stream().collect(collectingAndThen(toList(), Collections::unmodifiableList));
-     * }</pre>
-     *
-     * @param <T>        the type of the input elements
-     * @param <A>        intermediate accumulation type of the downstream collector
-     * @param <R>        result type of the downstream collector
-     * @param <RR>       result type of the resulting collector
-     * @param downstream a collector
-     * @param finisher   a function to be applied to the final result of the downstream collector
-     * @return a collector which performs the action of the downstream collector,
-     * followed by an additional finishing step
+     * {@code Serializable} variant of {@link
+     * Collectors#collectingAndThen(Collector, Function)
+     * java.util.stream.Collectors#collectingAndThen(Collector, Function)
      */
     public static <T, A, R, RR> DistributedCollector<T, A, RR> collectingAndThen(
             DistributedCollector<T, A, R> downstream,
@@ -260,7 +211,7 @@ public abstract class DistributedCollectors {
             } else {
                 characteristics = EnumSet.copyOf(characteristics);
                 characteristics.remove(Collector.Characteristics.IDENTITY_FINISH);
-                characteristics = Collections.unmodifiableSet(characteristics);
+                characteristics = unmodifiableSet(characteristics);
             }
         }
         return new DistributedCollectorImpl<>(downstream.supplier(),
@@ -271,71 +222,45 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} accepting elements of type {@code T} that
-     * counts the number of input elements.  If no elements are present, the
-     * result is 0.
-     *
-     * @param <T> the type of the input elements
-     * @return a {@code DistributedCollector} that counts the input elements
-     * @implSpec This produces a result equivalent to:
-     * <pre>{@code
-     *     reducing(0L, e -> 1L, Long::sum)
-     * }</pre>
+     * {@code Serializable} variant of {@link
+     * Collectors#counting()
+     * java.util.stream.Collectors#counting()}
      */
     public static <T> DistributedCollector<T, ?, Long> counting() {
         return reducing(0L, e -> 1L, Long::sum);
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the minimal element according
-     * to a given {@code DistributedComparator}, described as an {@code Optional<T>}.
-     *
-     * @param <T>        the type of the input elements
-     * @param comparator a {@code DistributedComparator} for comparing elements
-     * @return a {@code DistributedCollector} that produces the minimal value
-     * @implSpec This produces a result equivalent to:
-     * <pre>{@code
-     *     reducing(DistributedBinaryOperator.minBy(comparator))
-     * }</pre>
+     * {@code Serializable} variant of {@link
+     * Collectors#minBy(Comparator)
+     * java.util.stream.Collectors#minBy(Comparator)}
      */
-    public static <T> DistributedCollector<T, ?, DistributedOptional<T>>
-    minBy(DistributedComparator<? super T> comparator) {
+    public static <T> DistributedCollector<T, ?, DistributedOptional<T>> minBy(
+            DistributedComparator<? super T> comparator
+    ) {
         return reducing(DistributedBinaryOperator.minBy(comparator));
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the maximal element according
-     * to a given {@code DistributedComparator}, described as an {@code Optional<T>}.
-     *
-     * @param <T>        the type of the input elements
-     * @param comparator a {@code DistributedComparator} for comparing elements
-     * @return a {@code DistributedCollector} that produces the maximal value
-     * @implSpec This produces a result equivalent to:
-     * <pre>{@code
-     *     reducing(DistributedBinaryOperator.maxBy(comparator))
-     * }</pre>
+     * {@code Serializable} variant of {@link
+     * Collectors#maxBy(Comparator)
+     * java.util.stream.Collectors#maxBy(Comparator)}
      */
-    public static <T> DistributedCollector<T, ?, DistributedOptional<T>>
-    maxBy(DistributedComparator<? super T> comparator) {
+    public static <T> DistributedCollector<T, ?, DistributedOptional<T>> maxBy(
+            DistributedComparator<? super T> comparator
+    ) {
         return reducing(DistributedBinaryOperator.maxBy(comparator));
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the sum of a integer-valued
-     * function applied to the input elements.  If no elements are present,
-     * the result is 0.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code DistributedCollector} that produces the sum of a derived property
+     * {@code Serializable} variant of {@link
+     * Collectors#summingInt(ToIntFunction)
+     * java.util.stream.Collectors#summingInt(ToIntFunction)}
      */
-    public static <T> DistributedCollector<T, ?, Integer>
-    summingInt(DistributedToIntFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, Integer> summingInt(DistributedToIntFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new int[1],
-                (a, t) -> {
-                    a[0] += mapper.applyAsInt(t);
-                },
+                (a, t) -> a[0] += mapper.applyAsInt(t),
                 (a, b) -> {
                     a[0] += b[0];
                     return a;
@@ -344,16 +269,11 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the sum of a long-valued
-     * function applied to the input elements.  If no elements are present,
-     * the result is 0.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code DistributedCollector} that produces the sum of a derived property
+     * {@code Serializable} variant of {@link
+     * Collectors#summingLong(ToLongFunction)
+     * java.util.stream.Collectors#summingLong(ToLongFunction)}
      */
-    public static <T> DistributedCollector<T, ?, Long>
-    summingLong(DistributedToLongFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, Long> summingLong(DistributedToLongFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new long[1],
                 (a, t) -> {
@@ -367,23 +287,11 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the sum of a double-valued
-     * function applied to the input elements.  If no elements are present,
-     * the result is 0.
-     * <p>
-     * <p>The sum returned can vary depending upon the order in which
-     * values are recorded, due to accumulated rounding error in
-     * addition of values of differing magnitudes. Values sorted by increasing
-     * absolute magnitude tend to yield more accurate results.  If any recorded
-     * value is a {@code NaN} or the sum is at any point a {@code NaN} then the
-     * sum will be {@code NaN}.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code DistributedCollector} that produces the sum of a derived property
+     * {@code Serializable} variant of {@link
+     * Collectors#summingDouble(ToDoubleFunction)
+     * java.util.stream.Collectors#summingDouble(ToDoubleFunction)}
      */
-    public static <T> DistributedCollector<T, ?, Double>
-    summingDouble(DistributedToDoubleFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, Double> summingDouble(DistributedToDoubleFunction<? super T> mapper) {
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
@@ -403,21 +311,16 @@ public abstract class DistributedCollectors {
                     a[2] += b[2];
                     return sumWithCompensation(a, b[1]);
                 },
-                a -> computeFinalSum(a),
+                DistributedCollectors::computeFinalSum,
                 CH_NOID);
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the arithmetic mean of an integer-valued
-     * function applied to the input elements.  If no elements are present,
-     * the result is 0.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code DistributedCollector} that produces the sum of a derived property
+     * {@code Serializable} variant of {@link
+     * Collectors#averagingInt(ToIntFunction)
+     * java.util.stream.Collectors#averagingInt(ToIntFunction)}
      */
-    public static <T> DistributedCollector<T, ?, Double>
-    averagingInt(DistributedToIntFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, Double> averagingInt(DistributedToIntFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new long[2],
                 (a, t) -> {
@@ -433,16 +336,11 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the arithmetic mean of a long-valued
-     * function applied to the input elements.  If no elements are present,
-     * the result is 0.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code DistributedCollector} that produces the sum of a derived property
+     * {@code Serializable} variant of {@link
+     * Collectors#averagingLong(ToLongFunction)
+     * java.util.stream.Collectors#averagingLong(ToLongFunction)}
      */
-    public static <T> DistributedCollector<T, ?, Double>
-    averagingLong(DistributedToLongFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, Double> averagingLong(DistributedToLongFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new long[2],
                 (a, t) -> {
@@ -458,24 +356,14 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that produces the arithmetic mean of a double-valued
-     * function applied to the input elements.  If no elements are present,
-     * the result is 0.
-     * <p>
-     * <p>The average returned can vary depending upon the order in which
-     * values are recorded, due to accumulated rounding error in
-     * addition of values of differing magnitudes. Values sorted by increasing
-     * absolute magnitude tend to yield more accurate results.  If any recorded
-     * value is a {@code NaN} or the sum is at any point a {@code NaN} then the
-     * average will be {@code NaN}.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code DistributedCollector} that produces the sum of a derived property
+     * {@code Serializable} variant of {@link
+     * Collectors#averagingDouble(ToDoubleFunction)
+     * java.util.stream.Collectors#averagingDouble(ToDoubleFunction)}
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static <T> DistributedCollector<T, ?, Double>
-    averagingDouble(DistributedToDoubleFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, Double> averagingDouble(
+            DistributedToDoubleFunction<? super T> mapper
+    ) {
         /*
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
@@ -501,17 +389,9 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} which performs a reduction of its
-     * input elements under a specified {@code DistributedBinaryOperator} using the
-     * provided identity.
-     *
-     * @param <T>      element type for the input and output of the reduction
-     * @param identity the identity value for the reduction (also, the value
-     *                 that is returned when there are no input elements)
-     * @param op       a {@code DistributedBinaryOperator<T>} used to reduce the input elements
-     * @return a {@code DistributedCollector} which implements the reduction operation
-     * @see #reducing(DistributedBinaryOperator)
-     * @see #reducing(Object, DistributedFunction, DistributedBinaryOperator)
+     * {@code Serializable} variant of {@link
+     * Collectors#reducing(Object, BinaryOperator)}
+     * java.util.stream.Collectors#reducing(Object, BinaryOperator)}
      */
     public static <T> DistributedCollector<T, ?, T> reducing(T identity, DistributedBinaryOperator<T> op) {
         return new DistributedCollectorImpl<>(
@@ -526,26 +406,16 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} which performs a reduction of its
-     * input elements under a specified {@code DistributedBinaryOperator}.  The result
-     * is described as an {@code Optional<T>}.
-     *
-     * @param <T> element type for the input and output of the reduction
-     * @param op  a {@code DistributedBinaryOperator<T>} used to reduce the input elements
-     * @return a {@code DistributedCollector} which implements the reduction operation
-     * @apiNote The {@code reducing()} collectors are most useful when used in a
-     * multi-level reduction, downstream of {@code groupingBy} or
-     * {@code partitioningBy}.  To perform a simple reduction on a stream,
-     * use {@link DistributedStream#reduce(DistributedBinaryOperator)} instead.
-     * *
-     * @see #reducing(Object, DistributedBinaryOperator)
-     * @see #reducing(Object, DistributedFunction, DistributedBinaryOperator)
+     * {@code Serializable} variant of {@link
+     * Collectors#reducing(BinaryOperator)
+     * java.util.stream.Collectors#reducing(BinaryOperator)}
      */
-    public static <T> DistributedCollector<T, ?, DistributedOptional<T>>
-    reducing(DistributedBinaryOperator<T> op) {
+    public static <T> DistributedCollector<T, ?, DistributedOptional<T>> reducing(
+            DistributedBinaryOperator<T> op
+    ) {
         class OptionalBox implements DistributedConsumer<T> {
-            T value;
-            boolean present;
+            private T value;
+            private boolean present;
 
             @Override
             public void accept(T t) {
@@ -570,31 +440,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} which performs a reduction of its
-     * input elements under a specified mapping function and
-     * {@code DistributedBinaryOperator}. This is a generalization of
-     * {@link #reducing(Object, DistributedBinaryOperator)} which allows a transformation
-     * of the elements before reduction.
-     *
-     * @param <T>      the type of the input elements
-     * @param <U>      the type of the mapped values
-     * @param identity the identity value for the reduction (also, the value
-     *                 that is returned when there are no input elements)
-     * @param mapper   a mapping function to apply to each input value
-     * @param op       a {@code DistributedBinaryOperator<U>} used to reduce the mapped values
-     * @return a {@code DistributedCollector} implementing the map-reduce operation
-     * @apiNote The {@code reducing()} collectors are most useful when used in a
-     * multi-level reduction, downstream of {@code groupingBy} or
-     * {@code partitioningBy}.  To perform a simple map-reduce on a stream,
-     * use {@link DistributedStream#map(DistributedFunction)} and
-     * {@link DistributedStream#reduce(Object, DistributedBinaryOperator)}
-     * instead.
-     * @see #reducing(Object, DistributedBinaryOperator)
-     * @see #reducing(DistributedBinaryOperator)
+     * {@code Serializable} variant of {@link
+     * Collectors#reducing(Object, Function, BinaryOperator)
+     * java.util.stream.Collectors#reducing(Object, Function, BinaryOperator)}
      */
-    public static <T, U> DistributedCollector<T, ?, U> reducing(U identity,
-                                                                DistributedFunction<? super T, ? extends U> mapper,
-                                                                DistributedBinaryOperator<U> op) {
+    public static <T, U> DistributedCollector<T, ?, U> reducing(
+            U identity, DistributedFunction<? super T, ? extends U> mapper, DistributedBinaryOperator<U> op
+    ) {
         return new DistributedCollectorImpl<>(
                 boxSupplier(identity),
                 (a, t) -> a[0] = op.apply(a[0], mapper.apply(t)),
@@ -606,108 +458,38 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} implementing a "group by" operation on
-     * input elements of type {@code T}, grouping elements according to a
-     * classification function, and returning the results in a {@code Map}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The collector produces a {@code Map<K, List<T>>} whose keys are the
-     * values resulting from applying the classification function to the input
-     * elements, and whose corresponding values are {@code List}s containing the
-     * input elements which map to the associated key under the classification
-     * function.
-     * <p>
-     * <p>There are no guarantees on the type, mutability, serializability, or
-     * thread-safety of the {@code Map} or {@code List} objects returned.
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param classifier the classifier function mapping input elements to keys
-     * @return a {@code DistributedCollector} implementing the group-by operation
-     * @see #groupingBy(DistributedFunction, DistributedCollector)
-     * @see #groupingBy(DistributedFunction, DistributedSupplier, DistributedCollector)
+     * {@code Serializable} variant of {@link
+     * Collectors#groupingBy(Function)
+     * java.util.stream.Collectors#groupingBy(Function)}
      */
-    public static <T, K> DistributedCollector<T, ?, Map<K, List<T>>>
-    groupingBy(DistributedFunction<? super T, ? extends K> classifier) {
+    public static <T, K> DistributedCollector<T, ?, Map<K, List<T>>> groupingBy(
+            DistributedFunction<? super T, ? extends K> classifier
+    ) {
         return groupingBy(classifier, toList());
     }
 
     /**
-     * Returns a {@code DistributedCollector} implementing a cascaded "group by" operation
-     * on input elements of type {@code T}, grouping elements according to a
-     * classification function, and then performing a reduction operation on
-     * the values associated with a given key using the specified downstream
-     * {@code DistributedCollector}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The downstream collector operates on elements of type {@code T} and
-     * produces a result of type {@code D}. The resulting collector produces a
-     * {@code Map<K, D>}.
-     * <p>
-     * <p>There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code Map} returned.
-     * <p>
-     * <p>For example, to compute the set of last names of people in each city:
-     * <pre>{@code
-     *     Map<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              mapping(Person::getLastName, toSet())));
-     * }</pre>
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param <A>        the intermediate accumulation type of the downstream collector
-     * @param <D>        the result type of the downstream reduction
-     * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
-     * @return a {@code DistributedCollector} implementing the cascaded group-by operation
-     * @see #groupingBy(DistributedFunction)
-     * @see #groupingBy(DistributedFunction, DistributedSupplier, DistributedCollector)
+     * {@code Serializable} variant of {@link
+     * Collectors#groupingBy(Function, Collector)
+     * java.util.stream.Collectors#groupingBy(Function, Collector)}
      */
-    public static <T, K, A, D>
-    DistributedCollector<T, ?, Map<K, D>> groupingBy(DistributedFunction<? super T, ? extends K> classifier,
-                                                     DistributedCollector<? super T, A, D> downstream) {
+    public static <T, K, A, D> DistributedCollector<T, ?, Map<K, D>> groupingBy(
+            DistributedFunction<? super T, ? extends K> classifier,
+            DistributedCollector<? super T, A, D> downstream
+    ) {
         return groupingBy(classifier, HashMap::new, downstream);
     }
 
     /**
-     * Returns a {@code DistributedCollector} implementing a cascaded "group by" operation
-     * on input elements of type {@code T}, grouping elements according to a
-     * classification function, and then performing a reduction operation on
-     * the values associated with a given key using the specified downstream
-     * {@code DistributedCollector}.  The {@code Map} produced by the Collector is created
-     * with the supplied factory function.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The downstream collector operates on elements of type {@code T} and
-     * produces a result of type {@code D}. The resulting collector produces a
-     * {@code Map<K, D>}.
-     * <p>
-     * <p>For example, to compute the set of last names of people in each city,
-     * where the city names are sorted:
-     * <pre>{@code
-     *     Map<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity, TreeMap::new,
-     *                                              mapping(Person::getLastName, toSet())));
-     * }</pre>
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param <A>        the intermediate accumulation type of the downstream collector
-     * @param <D>        the result type of the downstream reduction
-     * @param <M>        the type of the resulting {@code Map}
-     * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
-     * @param mapFactory a function which, when called, produces a new empty
-     *                   {@code Map} of the desired type
-     * @return a {@code DistributedCollector} implementing the cascaded group-by operation
-     * @see #groupingBy(DistributedFunction, DistributedCollector)
-     * @see #groupingBy(DistributedFunction)
+     * {@code Serializable} variant of {@link
+     * Collectors#groupingBy(Function, Supplier, Collector)
+     * java.util.stream.Collectors#groupingBy(Function, Supplier, Collector)}
      */
-    public static <T, K, D, A, M extends Map<K, D>>
-    DistributedCollector<T, ?, M> groupingBy(DistributedFunction<? super T, ? extends K> classifier,
-                                             DistributedSupplier<M> mapFactory,
-                                             DistributedCollector<? super T, A, D> downstream) {
+    public static <T, K, D, A, M extends Map<K, D>> DistributedCollector<T, ?, M> groupingBy(
+            DistributedFunction<? super T, ? extends K> classifier,
+            DistributedSupplier<M> mapFactory,
+            DistributedCollector<? super T, A, D> downstream
+    ) {
         DistributedSupplier<A> downstreamSupplier = downstream.supplier();
         DistributedBiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
         DistributedBiConsumer<Map<K, A>, T> accumulator = (m, t) -> {
@@ -735,49 +517,25 @@ public abstract class DistributedCollectors {
         }
     }
 
-    // skip groupingByConcurrent
-
     /**
-     * Returns a {@code DistributedCollector} which partitions the input elements according
-     * to a {@code DistributedPredicate}, and organizes them into a
-     * {@code Map<Boolean, List<T>>}.
-     * <p>
-     * There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code Map} returned.
-     *
-     * @param <T>       the type of the input elements
-     * @param predicate a predicate used for classifying input elements
-     * @return a {@code DistributedCollector} implementing the partitioning operation
-     * @see #partitioningBy(DistributedPredicate, DistributedCollector)
+     * {@code Serializable} variant of {@link
+     * Collectors#partitioningBy(Predicate)
+     * java.util.stream.Collectors#partitioningBy(Predicate)}
      */
-    public static <T>
-    Collector<T, ?, Map<Boolean, List<T>>> partitioningBy(DistributedPredicate<? super T> predicate) {
+    public static <T> Collector<T, ?, Map<Boolean, List<T>>> partitioningBy(
+            DistributedPredicate<? super T> predicate
+    ) {
         return partitioningBy(predicate, toList());
     }
 
     /**
-     * Returns a {@code DistributedCollector} which partitions the input elements according
-     * to a {@code DistributedPredicate}, reduces the values in each partition according to
-     * another {@code DistributedCollector}, and organizes them into a
-     * {@code Map<Boolean, D>} whose values are the result of the downstream
-     * reduction.
-     * <p>
-     * <p>There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code Map} returned.
-     *
-     * @param <T>        the type of the input elements
-     * @param <A>        the intermediate accumulation type of the downstream collector
-     * @param <D>        the result type of the downstream reduction
-     * @param predicate  a predicate used for classifying input elements
-     * @param downstream a {@code DistributedCollector} implementing the downstream
-     *                   reduction
-     * @return a {@code DistributedCollector} implementing the cascaded partitioning
-     * operation
-     * @see #partitioningBy(DistributedPredicate)
+     * {@code Serializable} variant of {@link
+     * Collectors#partitioningBy(Predicate, Collector)
+     * java.util.stream.Collectors#partitioningBy(Predicate, Collector)}
      */
-    public static <T, D, A>
-    Collector<T, ?, Map<Boolean, D>> partitioningBy(DistributedPredicate<? super T> predicate,
-                                                    DistributedCollector<? super T, A, D> downstream) {
+    public static <T, D, A> Collector<T, ?, Map<Boolean, D>> partitioningBy(
+            DistributedPredicate<? super T> predicate, DistributedCollector<? super T, A, D> downstream
+    ) {
         DistributedBiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
         DistributedBiConsumer<Partition<A>, T> accumulator = (result, t) ->
                 downstreamAccumulator.accept(predicate.test(t) ? result.forTrue : result.forFalse, t);
@@ -799,127 +557,55 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} that accumulates elements into a
-     * {@code Map} whose keys and values are the result of applying the provided
-     * mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped keys contains duplicates (according to
-     * {@link Object#equals(Object)}), an {@code IllegalStateException} is
-     * thrown when the collection operation is performed.  If the mapped keys
-     * may have duplicates, use {@link #toMap(DistributedFunction, DistributedFunction,
-     * DistributedBinaryOperator)}
-     * instead.
-     *
-     * @param <T>         the type of the input elements
-     * @param <K>         the output type of the key mapping function
-     * @param <U>         the output type of the value mapping function
-     * @param keyMapper   a mapping function to produce keys
-     * @param valueMapper a mapping function to produce values
-     * @return a {@code DistributedCollector} which collects elements into a {@code Map}
-     * whose keys and values are the result of applying mapping functions to
-     * the input elements
-     * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)
-     * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator,
-     * DistributedSupplier)
+     * {@code Serializable} variant of {@link
+     * Collectors#toMap(Function, Function)
+     * java.util.stream.Collectors#toMap(Function, Function)}
      */
-    public static <T, K, U>
-    DistributedCollector<T, ?, Map<K, U>> toMap(DistributedFunction<? super T, ? extends K> keyMapper,
-                                                DistributedFunction<? super T, ? extends U> valueMapper) {
+    public static <T, K, U> DistributedCollector<T, ?, Map<K, U>> toMap(
+            DistributedFunction<? super T, ? extends K> keyMapper,
+            DistributedFunction<? super T, ? extends U> valueMapper
+    ) {
         return toMap(keyMapper, valueMapper, throwingMerger(), HashMap::new);
     }
 
     /**
-     * Returns a {@code DistributedCollector} that accumulates elements into a
-     * {@code Map} whose keys and values are the result of applying the provided
-     * mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped
-     * keys contains duplicates (according to {@link Object#equals(Object)}),
-     * the value mapping function is applied to each equal element, and the
-     * results are merged using the provided merging function.
-     *
-     * @param <T>           the type of the input elements
-     * @param <K>           the output type of the key mapping function
-     * @param <U>           the output type of the value mapping function
-     * @param keyMapper     a mapping function to produce keys
-     * @param valueMapper   a mapping function to produce values
-     * @param mergeFunction a merge function, used to resolve collisions between
-     *                      values associated with the same key, as supplied
-     *                      to {@link Map#merge(Object, Object,
-     *                      java.util.function.BiFunction)}
-     * @return a {@code DistributedCollector} which collects elements into a {@code Map}
-     * whose keys are the result of applying a key mapping function to the input
-     * elements, and whose values are the result of applying a value mapping
-     * function to all input elements equal to the key and combining them
-     * using the merge function
-     * @see #toMap(DistributedFunction, DistributedFunction)
-     * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator,
-     * DistributedSupplier)
+     * {@code Serializable} variant of {@link
+     * Collectors#toMap(Function, Function, BinaryOperator)
+     * java.util.stream.Collectors#toMap(Function, Function, BinaryOperator)}
      */
-    public static <T, K, U>
-    Collector<T, ?, Map<K, U>> toMap(DistributedFunction<? super T, ? extends K> keyMapper,
-                                     DistributedFunction<? super T, ? extends U> valueMapper,
-                                     DistributedBinaryOperator<U> mergeFunction) {
+    public static <T, K, U> Collector<T, ?, Map<K, U>> toMap(
+            DistributedFunction<? super T, ? extends K> keyMapper,
+            DistributedFunction<? super T, ? extends U> valueMapper,
+            DistributedBinaryOperator<U> mergeFunction
+    ) {
         return toMap(keyMapper, valueMapper, mergeFunction, HashMap::new);
     }
 
     /**
-     * Returns a {@code DistributedCollector} that accumulates elements into a
-     * {@code Map} whose keys and values are the result of applying the provided
-     * mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped
-     * keys contains duplicates (according to {@link Object#equals(Object)}),
-     * the value mapping function is applied to each equal element, and the
-     * results are merged using the provided merging function.  The {@code Map}
-     * is created by a provided supplier function.
-     *
-     * @param <T>           the type of the input elements
-     * @param <K>           the output type of the key mapping function
-     * @param <U>           the output type of the value mapping function
-     * @param <M>           the type of the resulting {@code Map}
-     * @param keyMapper     a mapping function to produce keys
-     * @param valueMapper   a mapping function to produce values
-     * @param mergeFunction a merge function, used to resolve collisions between
-     *                      values associated with the same key, as supplied
-     *                      to {@link Map#merge(Object, Object, java.util.function.BiFunction)}
-     * @param mapSupplier   a function which returns a new, empty {@code Map} into
-     *                      which the results will be inserted
-     * @return a {@code DistributedCollector} which collects elements into a {@code Map}
-     * whose keys are the result of applying a key mapping function to the input
-     * elements, and whose values are the result of applying a value mapping
-     * function to all input elements equal to the key and combining them
-     * using the merge function
-     * @see #toMap(DistributedFunction, DistributedFunction)
-     * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)
+     * {@code Serializable} variant of {@link
+     * Collectors#toMap(Function, Function, BinaryOperator, Supplier)
+     * java.util.stream.Collectors#toMap(Function, Function, BinaryOperator, Supplier)}
      */
-    public static <T, K, U, M extends Map<K, U>>
-    DistributedCollector<T, ?, M> toMap(DistributedFunction<? super T, ? extends K> keyMapper,
-                                        DistributedFunction<? super T, ? extends U> valueMapper,
-                                        DistributedBinaryOperator<U> mergeFunction,
-                                        DistributedSupplier<M> mapSupplier) {
+    public static <T, K, U, M extends Map<K, U>> DistributedCollector<T, ?, M> toMap(
+            DistributedFunction<? super T, ? extends K> keyMapper,
+            DistributedFunction<? super T, ? extends U> valueMapper,
+            DistributedBinaryOperator<U> mergeFunction,
+            DistributedSupplier<M> mapSupplier
+    ) {
         DistributedBiConsumer<M, T> accumulator
                 = (map, element) -> map.merge(keyMapper.apply(element),
                 valueMapper.apply(element), mergeFunction);
         return new DistributedCollectorImpl<>(mapSupplier, accumulator, mapMerger(mergeFunction), CH_ID);
     }
 
-    // to concurrent map ? skip?
-
     /**
-     * Returns a {@code DistributedCollector} which applies an {@code int}-producing
-     * mapping function to each input element, and returns summary statistics
-     * for the resulting values.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a mapping function to apply to each element
-     * @return a {@code DistributedCollector} implementing the summary-statistics reduction
-     * @see #summarizingDouble(DistributedToDoubleFunction)
-     * @see #summarizingLong(DistributedToLongFunction)
+     * {@code Serializable} variant of {@link
+     * Collectors#summarizingInt(ToIntFunction)
+     * java.util.stream.Collectors#summarizingInt(ToIntFunction)}
      */
-    public static <T>
-    DistributedCollector<T, ?, IntSummaryStatistics>
-    summarizingInt(DistributedToIntFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, IntSummaryStatistics> summarizingInt(
+            DistributedToIntFunction<? super T> mapper
+    ) {
         return new DistributedCollectorImpl<>(
                 DistributedIntSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsInt(t)),
@@ -930,19 +616,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} which applies an {@code long}-producing
-     * mapping function to each input element, and returns summary statistics
-     * for the resulting values.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper the mapping function to apply to each element
-     * @return a {@code DistributedCollector} implementing the summary-statistics reduction
-     * @see #summarizingDouble(DistributedToDoubleFunction)
-     * @see #summarizingInt(DistributedToIntFunction)
+     * {@code Serializable} variant of {@link
+     * Collectors#summarizingLong(ToLongFunction)
+     * java.util.stream.Collectors#summarizingLong(ToLongFunction)}
      */
-    public static <T>
-    DistributedCollector<T, ?, LongSummaryStatistics>
-    summarizingLong(DistributedToLongFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, LongSummaryStatistics> summarizingLong(
+            DistributedToLongFunction<? super T> mapper
+    ) {
         return new DistributedCollectorImpl<>(
                 DistributedLongSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsLong(t)),
@@ -953,19 +633,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code DistributedCollector} which applies an {@code double}-producing
-     * mapping function to each input element, and returns summary statistics
-     * for the resulting values.
-     *
-     * @param <T>    the type of the input elements
-     * @param mapper a mapping function to apply to each element
-     * @return a {@code DistributedCollector} implementing the summary-statistics reduction
-     * @see #summarizingLong(DistributedToLongFunction)
-     * @see #summarizingInt(DistributedToIntFunction)
+     * {@code Serializable} variant of {@link
+     * Collectors#summarizingDouble(ToDoubleFunction)
+     * java.util.stream.Collectors#summarizingDouble(ToDoubleFunction)}
      */
-    public static <T>
-    DistributedCollector<T, ?, DoubleSummaryStatistics>
-    summarizingDouble(DistributedToDoubleFunction<? super T> mapper) {
+    public static <T> DistributedCollector<T, ?, DoubleSummaryStatistics> summarizingDouble(
+            DistributedToDoubleFunction<? super T> mapper
+    ) {
         return new DistributedCollectorImpl<>(
                 DistributedDoubleSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsDouble(t)),
@@ -975,8 +649,9 @@ public abstract class DistributedCollectors {
                 }, CH_ID);
     }
 
-    private static <K, V, M extends Map<K, V>>
-    DistributedBinaryOperator<M> mapMerger(DistributedBinaryOperator<V> mergeFunction) {
+    private static <K, V, M extends Map<K, V>> DistributedBinaryOperator<M> mapMerger(
+            DistributedBinaryOperator<V> mergeFunction
+    ) {
         return (m1, m2) -> {
             for (Map.Entry<K, V> e : m2.entrySet()) {
                 m1.merge(e.getKey(), e.getValue(), mergeFunction);
@@ -991,11 +666,7 @@ public abstract class DistributedCollectors {
         };
     }
 
-    static <I, R> DistributedFunction<I, R> castingIdentity() {
-        return i -> (R) i;
-    }
-
-    static double[] sumWithCompensation(double[] intermediateSum, double value) {
+    private static double[] sumWithCompensation(double[] intermediateSum, double value) {
         double tmp = value - intermediateSum[1];
         double sum = intermediateSum[0];
         // Little wolf of rounding error
@@ -1005,7 +676,7 @@ public abstract class DistributedCollectors {
         return intermediateSum;
     }
 
-    static double computeFinalSum(double[] summands) {
+    private static double computeFinalSum(double[] summands) {
         // Better error bounds to add both terms as the final sum
         double tmp = summands[0] + summands[1];
         double simpleSum = summands[summands.length - 1];
@@ -1045,345 +716,168 @@ public abstract class DistributedCollectors {
         }
     }
 
-    //** JET SPECIFIC REDUCERS **//
+    //                 JET-SPECIFIC REDUCERS
 
     /**
-     * Returns a {@code Reducer} that accumulates elements into a
-     * new Hazelcast {@code IMap} whose keys and values are the result of applying the provided
-     * mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped keys contains duplicates (according to
-     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
-     * and the others will be dropped. If the mapped keys may have duplicates, use
-     * {@link #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)}
-     * instead.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>         the type of the input elements
-     * @param <K>         the output type of the key mapping function
-     * @param <U>         the output type of the value mapping function
-     * @param mapName     Name of the map to store the results
-     * @param keyMapper   a mapping function to produce keys
-     * @param valueMapper a mapping function to produce values
-     * @return a {@code Reducer} which collects elements into a {@code IMap}
-     * whose keys and values are the result of applying mapping functions to
-     * the input elements
-     * @see #toIMap(String, DistributedFunction, DistributedFunction, DistributedBinaryOperator)
+     * Variant of {@link
+     * Collectors#toMap(Function, Function)
+     * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
+     * returning a map as the result, writes the results to the distributed
+     * {@link IStreamMap} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamMap<K, U>>
-    toIMap(String mapName,
-           DistributedFunction<? super T, ? extends K> keyMapper,
-           DistributedFunction<? super T, ? extends U> valueMapper) {
+    public static <T, K, U> Reducer<T, IStreamMap<K, U>> toIMap(
+            String mapName, DistributedFunction<? super T, ? extends K> keyMapper,
+            DistributedFunction<? super T, ? extends U> valueMapper
+    ) {
         return new SinkReducer<>("write-map-" + mapName, jetInstance -> jetInstance.getMap(mapName),
                 keyMapper, valueMapper, writeMapP(mapName));
     }
 
     /**
-     * Returns a {@code Reducer} that accumulates elements into a
-     * new distributed Hazelcast {@code IMap} whose keys and values are the keys and values of
-     * the corresponding {@code Map.Entry}.
+     * Variant of {@link
+     * Collectors#toMap(Function, Function)
+     * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
+     * returning a map as the result, writes the results to the distributed
+     * {@link IStreamMap} with the given name.
      * <p>
-     * * <p>If the mapped keys contains duplicates (according to
-     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
-     * and the others will be dropped. If the mapped keys may have duplicates, use
-     * {@link #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)}
-     * instead.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <K>       The type of the key in {@code Map.Entry}
-     * @param <U>       The type of the value in {@code Map.Entry}
-     * @param mapName   Name of the map to store the results
-     * @return a {@code Reducer} that accumulates elements into a
-     * Hazelcast {@code IMap} whose keys and values are the keys and values of the corresponding
-     * {@code Map.Entry}.
-     * @see #toIMap(String, DistributedFunction, DistributedFunction)
-     * @see #toIMap(String, DistributedFunction, DistributedFunction, DistributedBinaryOperator)
+     * The key and value of the will be used as the respective key and value to
+     * put to the target {@code IStreamMap}.
      */
     public static <K, U> Reducer<Entry<K, U>, IStreamMap<K, U>> toIMap(String mapName) {
         return toIMap(mapName, Map.Entry::getKey, Map.Entry::getValue);
     }
 
     /**
-     * Returns a {@code Reducer} that accumulates elements into a
-     * new distributed Hazelcast {@code IMap} whose keys and values are the result of applying
-     * the provided mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped
-     * keys contains duplicates (according to {@link Object#equals(Object)}),
-     * the value mapping function is applied to each equal element, and the
-     * results are merged using the provided merging function.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>           the type of the input elements
-     * @param <K>           the output type of the key mapping function
-     * @param <U>           the output type of the value mapping function
-     * @param mapName       Name of the map to store the results
-     * @param keyMapper     a mapping function to produce keys
-     * @param valueMapper   a mapping function to produce values
-     * @param mergeFunction a merge function, used to resolve collisions between
-     *                      values associated with the same key, as supplied
-     *                      to {@link Map#merge(Object, Object,
-     *                      java.util.function.BiFunction)}
-     * @return a {@code Reducer} which collects elements into a distributed
-     * {@code IMap} whose keys are the result of applying a key mapping function to the input
-     * elements, and whose values are the result of applying a value mapping
-     * function to all input elements equal to the key and combining them
-     * using the merge function
-     * @see #toIMap(String, DistributedFunction, DistributedFunction)
+     * Variant of {@link
+     * Collectors#toMap(Function, Function, BinaryOperator)
+     * java.util.stream.Collectors#toMap(Function, Function, BinaryOperator)}
+     * which, instead of returning a map as the result, writes the results
+     * to the distributed {@link IStreamMap} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamMap<K, U>>
-    toIMap(String mapName,
-           DistributedFunction<? super T, ? extends K> keyMapper,
-           DistributedFunction<? super T, ? extends U> valueMapper,
-           DistributedBinaryOperator<U> mergeFunction) {
+    public static <T, K, U> Reducer<T, IStreamMap<K, U>> toIMap(
+            String mapName, DistributedFunction<? super T, ? extends K> keyMapper,
+            DistributedFunction<? super T, ? extends U> valueMapper,
+            DistributedBinaryOperator<U> mergeFunction
+    ) {
         return new MergingSinkReducer<>("write-map-" + mapName, jetInstance -> jetInstance.getMap(mapName),
                 keyMapper, valueMapper, mergeFunction, writeMapP(mapName));
     }
 
     /**
-     * Returns a {@code Reducer} that accumulates elements into a
-     * new Hazelcast {@code ICache} whose keys and values are the result of applying the provided
-     * mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped keys contains duplicates (according to
-     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
-     * and the others will be dropped. If the mapped keys may have duplicates, use
-     * {@link #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)}
-     * instead.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>         the type of the input elements
-     * @param <K>         the output type of the key mapping function
-     * @param <U>         the output type of the value mapping function
-     * @param cacheName   Name of the cache to store the results
-     * @param keyMapper   a mapping function to produce keys
-     * @param valueMapper a mapping function to produce values
-     * @return a {@code Reducer} which collects elements into a {@code ICache}
-     * whose keys and values are the result of applying mapping functions to
-     * the input elements
-     * @see #toICache(String, DistributedFunction, DistributedFunction, DistributedBinaryOperator)
+     * Variant of {@link
+     * Collectors#toMap(Function, Function)
+     * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
+     * returning a map as the result, writes the results to the distributed
+     * {@link IStreamCache} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamCache<K, U>>
-    toICache(String cacheName,
-             DistributedFunction<? super T, ? extends K> keyMapper,
-             DistributedFunction<? super T, ? extends U> valueMapper) {
+    public static <T, K, U> Reducer<T, IStreamCache<K, U>> toICache(
+            String cacheName,
+            DistributedFunction<? super T, ? extends K> keyMapper,
+            DistributedFunction<? super T, ? extends U> valueMapper
+    ) {
         return new SinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
                 keyMapper, valueMapper, writeCacheP(cacheName));
     }
 
     /**
-     * Returns a {@code Reducer} that accumulates elements into a
-     * new distributed Hazelcast {@code ICache} whose keys and values are the keys and values of
-     * the corresponding {@code Cache.Entry}.
-     * <p>
-     * * <p>If the mapped keys contains duplicates (according to
-     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
-     * and the others will be dropped. If the mapped keys may have duplicates, use
-     * {@link #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)}
-     * instead.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <K>           The type of the key in {@code Cache.Entry}
-     * @param <U>           The type of the value in {@code Cache.Entry}
-     * @param cacheName     Name of the cache to store the results
-     * @return a {@code Reducer} that accumulates elements into a
-     * Hazelcast {@code ICache} whose keys and values are the keys and values of the corresponding
-     * {@code Cache.Entry}.
-     * @see #toICache(String, DistributedFunction, DistributedFunction)
-     * @see #toICache(String, DistributedFunction, DistributedFunction, DistributedBinaryOperator)
+     * Variant of {@link
+     * Collectors#toMap(Function, Function)
+     * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
+     * returning a map as the result, writes the results to the distributed
+     * {@link IStreamCache} with the given name.
      */
     public static <K, U> Reducer<Map.Entry<K, U>, IStreamCache<K, U>> toICache(String cacheName) {
         return toICache(cacheName, Entry::getKey, Entry::getValue);
     }
 
     /**
-     * Returns a {@code Reducer} that accumulates elements into a
-     * new distributed Hazelcast {@code ICache} whose keys and values are the result of applying
-     * the provided mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped
-     * keys contains duplicates (according to {@link Object#equals(Object)}),
-     * the value mapping function is applied to each equal element, and the
-     * results are merged using the provided merging function.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>           the type of the input elements
-     * @param <K>           the output type of the key mapping function
-     * @param <U>           the output type of the value mapping function
-     * @param cacheName     Name of the cache to store the results
-     * @param keyMapper     a mapping function to produce keys
-     * @param valueMapper   a mapping function to produce values
-     * @param mergeFunction a merge function, used to resolve collisions between
-     *                      values associated with the same key, as supplied
-     *                      to {@link Map#merge(Object, Object,
-     *                      java.util.function.BiFunction)}
-     * @return a {@code Reducer} which collects elements into a distributed
-     * {@code ICache} whose keys are the result of applying a key mapping function to the input
-     * elements, and whose values are the result of applying a value mapping
-     * function to all input elements equal to the key and combining them
-     * using the merge function
-     * @see #toICache(String, DistributedFunction, DistributedFunction)
+     * Variant of {@link
+     * Collectors#toMap(Function, Function)
+     * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
+     * returning a map as the result, writes the results to the distributed
+     * {@link IStreamCache} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamCache<K, U>>
-    toICache(String cacheName,
-             DistributedFunction<? super T, ? extends K> keyMapper,
-             DistributedFunction<? super T, ? extends U> valueMapper,
-             DistributedBinaryOperator<U> mergeFunction) {
+    public static <T, K, U> Reducer<T, IStreamCache<K, U>> toICache(
+            String cacheName,
+            DistributedFunction<? super T, ? extends K> keyMapper,
+            DistributedFunction<? super T, ? extends U> valueMapper,
+            DistributedBinaryOperator<U> mergeFunction
+    ) {
         return new MergingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
                 keyMapper, valueMapper, mergeFunction, writeCacheP(cacheName));
     }
 
     /**
-     * Returns a {@code Reducer} that accumulates the input elements into a
-     * new Hazelcast {@code IList}.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>       the type of the input elements
-     * @param listName  Name of the list to store the results
-     * @return a {@code DistributedCollector} which collects all the input elements into a
-     * Hazelcast {@code IList}, in encounter order
+     * Variant of {@link
+     * Collectors#toList()
+     * java.util.stream.Collectors#toList()} which, instead of returning a list
+     * as the result, writes the results to the distributed {@link
+     * IStreamList} with the given name.
      */
     public static <T> Reducer<T, IStreamList<T>> toIList(String listName) {
         return new IListReducer<>(listName);
     }
 
     /**
-     * Returns a {@code Reducer} implementing a "group by" operation on
-     * input elements of type {@code T}, grouping elements according to a
-     * classification function, and returning the results in a
-     * new distributed Hazelcast {@code IMap}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The collector produces a {@code Map<K, List<T>>} whose keys are the
-     * values resulting from applying the classification function to the input
-     * elements, and whose corresponding values are {@code List}s containing the
-     * input elements which map to the associated key under the classification
-     * function.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param mapName    Name of the map to store the results
-     * @param classifier the classifier function mapping input elements to keys
-     * @return a {@code Reducer} implementing the group-by operation
-     * @see #groupingByToIMap(String, DistributedFunction, DistributedCollector)
+     * Variant of {@link
+     * Collectors#groupingBy(Function)
+     * java.util.stream.Collectors#groupingBy(Function)} which, instead of
+     * returning a map as the result, writes the grouped results to the
+     * distributed {@link IStreamMap} with the given name.
      */
-    public static <T, K> Reducer<T, IMap<K, List<T>>>
-    groupingByToIMap(String mapName, DistributedFunction<? super T, ? extends K> classifier) {
+    public static <T, K> Reducer<T, IStreamMap<K, List<T>>> groupingByToIMap(
+            String mapName, DistributedFunction<? super T, ? extends K> classifier
+    ) {
         return groupingByToIMap(mapName, classifier, toList());
     }
 
     /**
-     * Returns a {@code Reducer} implementing a cascaded "group by" operation
-     * on input elements of type {@code T}, grouping elements according to a
-     * classification function, and then performing a reduction operation on
-     * the values associated with a given key using the specified downstream
-     * {@code DistributedCollector}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The downstream collector operates on elements of type {@code T} and
-     * produces a result of type {@code D}. The resulting collector produces a new
-     * Hazelcast distributed {@code IMap<K, D>}.
-     * <p>
-     * <p>For example, to compute the set of last names of people in each city:
-     * <pre>{@code
-     *     IMap<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              mapping(Person::getLastName, toSet())));
-     * }</pre>
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param <A>        the intermediate accumulation type of the downstream collector
-     * @param <D>        the result type of the downstream reduction
-     * @param mapName    Name of the map to store the results
-     * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
-     * @return a {@code Reducer} implementing the cascaded group-by operation
-     * @see #groupingByToIMap(String, DistributedFunction)
+     * Variant of {@link
+     * Collectors#groupingBy(Function, Collector)
+     * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
+     * returning a map as the result, writes the grouped results to the distributed
+     * {@link IStreamMap} with the given name.
      */
-    public static <T, K, A, D>
-    Reducer<T, IMap<K, D>> groupingByToIMap(String mapName,
-                                            DistributedFunction<? super T, ? extends K> classifier,
-                                            DistributedCollector<? super T, A, D> downstream) {
+    public static <T, K, A, D> Reducer<T, IStreamMap<K, D>> groupingByToIMap(
+            String mapName, DistributedFunction<? super T, ? extends K> classifier,
+            DistributedCollector<? super T, A, D> downstream
+    ) {
         return new GroupingSinkReducer<>("write-map-" + mapName, jetInstance -> jetInstance.getMap(mapName),
                 classifier, downstream, writeMapP(mapName));
     }
 
     /**
-     * Returns a {@code Reducer} implementing a "group by" operation on
-     * input elements of type {@code T}, grouping elements according to a
-     * classification function, and returning the results in a
-     * new distributed Hazelcast {@code ICache}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The collector produces a {@code Map<K, List<T>>} whose keys are the
-     * values resulting from applying the classification function to the input
-     * elements, and whose corresponding values are {@code List}s containing the
-     * input elements which map to the associated key under the classification
-     * function.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param cacheName  Name of the cache to store the results
-     * @param classifier the classifier function mapping input elements to keys
-     * @return a {@code Reducer} implementing the group-by operation
-     * @see #groupingByToICache(String, DistributedFunction, DistributedCollector)
+     * Variant of {@link
+     * Collectors#groupingBy(Function, Collector)
+     * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
+     * returning a map as the result, writes the grouped results to the distributed
+     * {@link IStreamCache} with the given name.
      */
-    public static <T, K> Reducer<T, ICache<K, List<T>>>
-    groupingByToICache(String cacheName, DistributedFunction<? super T, ? extends K> classifier) {
+    public static <T, K> Reducer<T, IStreamCache<K, List<T>>> groupingByToICache(
+            String cacheName, DistributedFunction<? super T, ? extends K> classifier
+    ) {
         return groupingByToICache(cacheName, classifier, toList());
     }
 
     /**
-     * Returns a {@code Reducer} implementing a cascaded "group by" operation
-     * on input elements of type {@code T}, grouping elements according to a
-     * classification function, and then performing a reduction operation on
-     * the values associated with a given key using the specified downstream
-     * {@code DistributedCollector}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The downstream collector operates on elements of type {@code T} and
-     * produces a result of type {@code D}. The resulting collector produces a new
-     * Hazelcast distributed {@code ICache<K, D>}.
-     * <p>
-     * <p>For example, to compute the set of last names of people in each city:
-     * <pre>{@code
-     *     ICache<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              mapping(Person::getLastName, toSet())));
-     * }</pre>
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param <A>        the intermediate accumulation type of the downstream collector
-     * @param <D>        the result type of the downstream reduction
-     * @param cacheName  Name of the cache to store the results
-     * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
-     * @return a {@code Reducer} implementing the cascaded group-by operation
-     * @see #groupingByToICache(String, DistributedFunction)
+     * Variant of {@link
+     * Collectors#groupingBy(Function, Collector)
+     * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
+     * returning a map as the result, writes the grouped results to the distributed
+     * {@link IStreamCache} with the given name.
      */
-    public static <T, K, A, D>
-    Reducer<T, ICache<K, D>> groupingByToICache(String cacheName,
-                                                DistributedFunction<? super T, ? extends K> classifier,
-                                                DistributedCollector<? super T, A, D> downstream) {
+    public static <T, K, A, D> Reducer<T, IStreamCache<K, D>> groupingByToICache(
+            String cacheName, DistributedFunction<? super T, ? extends K> classifier,
+            DistributedCollector<? super T, A, D> downstream
+    ) {
         return new GroupingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheFn(cacheName),
                 classifier, downstream, writeCacheP(cacheName));
     }
 
     /**
-     * This class is necessary to conceal the cache-api
+     * A class that allows the {@code DistributedCollectors} class to be
+     * loaded without immediately requiring the JCache types (which may not be
+     * on the classpath).
      */
     private static class CacheGetter {
 

@@ -20,88 +20,42 @@ import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 
 /**
- * <i>A mutable reduction operation</i> that
- * accumulates input elements into a mutable result container, optionally transforming
- * the accumulated result into a final representation after all input elements
- * have been processed.
- *
- * @param <T> the type of input elements to the reduction operation
- * @param <A> the mutable accumulation type of the reduction operation (often
- *            hidden as an implementation detail)
- * @param <R> the result type of the reduction operation
- * @see java.util.stream.Collector
- * @see DistributedCollectors
+ * {@code Serializable} variant of {@link Collector java.util.stream.Collector}.
  */
-public interface DistributedCollector<T, A, R> extends java.util.stream.Collector<T, A, R>, Serializable {
+public interface DistributedCollector<T, A, R> extends Collector<T, A, R>, Serializable {
 
-    /**
-     * A function that creates and returns a new mutable result container.
-     *
-     * @return a function which returns a new, mutable result container
-     */
     @Override
     DistributedSupplier<A> supplier();
 
-    /**
-     * A function that folds a value into a mutable result container.
-     *
-     * @return a function which folds a value into a mutable result container
-     */
     @Override
     DistributedBiConsumer<A, T> accumulator();
 
-    /**
-     * A function that accepts two partial results and merges them.  The
-     * combiner function may fold state from one argument into the other and
-     * return that, or may return a new result container.
-     *
-     * @return a function which combines two partial results into a combined
-     * result
-     */
     @Override
     DistributedBinaryOperator<A> combiner();
 
-    /**
-     * Perform the final transformation from the intermediate accumulation type
-     * {@code A} to the final result type {@code R}.
-     * <p>
-     * <p>If the characteristic {@code IDENTITY_TRANSFORM} is
-     * set, this function may be presumed to be an identity transform with an
-     * unchecked cast from {@code A} to {@code R}.
-     *
-     * @return a function which transforms the intermediate result to the final
-     * result
-     */
     @Override
     DistributedFunction<A, R> finisher();
 
     /**
-     * Returns a new {@code DistributedCollector} described by the given {@code supplier},
-     * {@code accumulator}, and {@code combiner} functions.  The resulting
-     * {@code DistributedCollector} has the {@code Collector.Characteristics.IDENTITY_FINISH}
-     * characteristic.
-     *
-     * @param supplier        The supplier function for the new collector
-     * @param accumulator     The accumulator function for the new collector
-     * @param combiner        The combiner function for the new collector
-     * @param characteristics The collector characteristics for the new
-     *                        collector
-     * @param <T>             The type of input elements for the new collector
-     * @param <R>             The type of intermediate accumulation result, and final result,
-     *                        for the new collector
-     * @return the new {@code DistributedCollector}
-     * @throws NullPointerException if any argument is null
+     * {@code Serializable} variant of {@link
+     * Collector#of(Supplier, BiConsumer, BinaryOperator, Characteristics...)
+     * java.util.stream.Collector#of(Supplier, BiConsumer, BinaryOperator, Characteristics...) }
      */
     static <T, R> DistributedCollector<T, R, R> of(DistributedSupplier<R> supplier,
                                                    DistributedBiConsumer<R, T> accumulator,
@@ -119,20 +73,9 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
     }
 
     /**
-     * Returns a new {@code DistributedCollector} described by the given {@code supplier},
-     * {@code accumulator}, {@code combiner}, and {@code finisher} functions.
-     *
-     * @param supplier        The supplier function for the new collector
-     * @param accumulator     The accumulator function for the new collector
-     * @param combiner        The combiner function for the new collector
-     * @param finisher        The finisher function for the new collector
-     * @param characteristics The collector characteristics for the new
-     *                        collector
-     * @param <T>             The type of input elements for the new collector
-     * @param <A>             The intermediate accumulation type of the new collector
-     * @param <R>             The final result type of the new collector
-     * @return the new {@code DistributedCollector}
-     * @throws NullPointerException if any argument is null
+     * {@code Serializable} variant of {@link
+     * Collector#of(Supplier, BiConsumer, BinaryOperator, Function, Characteristics...)
+     * java.util.stream.Collector#of(Supplier, BiConsumer, BinaryOperator, Function, Characteristics...) }
      */
     static <T, A, R> DistributedCollector<T, A, R> of(DistributedSupplier<A> supplier,
                                                       DistributedBiConsumer<A, T> accumulator,
@@ -154,9 +97,10 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
     }
 
     /**
-     * Interface for Jet specific distributed reducers which execute
-     * the terminal reduce operation over the current {@code DistributedStream}
-     * by building and executing a DAG. These reducers can't be used as downstream collectors.
+     * Interface for Jet-specific distributed reducers which execute the
+     * terminal reduce operation over the current {@code DistributedStream}
+     * by building and executing a DAG. These reducers can't be used as
+     * downstream collectors.
      *
      * @param <T> the type of input elements to the reduction operation
      * @param <R> the result type of the reduction operation

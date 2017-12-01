@@ -17,19 +17,12 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
+import java.util.function.DoubleSupplier;
 
 /**
- * Represents a supplier of {@code double}-valued results.  This is the
- * {@code double}-producing primitive specialization of {@link DistributedSupplier}.
- *
- * <p>There is no requirement that a distinct result be returned each
- * time the supplier is invoked.
- *
- * <p>This is a <a href="package-summary.html">functional interface</a>
- * whose functional method is {@link #getAsDouble()}.
- *
- * @see DistributedSupplier
+ * {@code Serializable} variant of {@link DoubleSupplier
+ * java.util.function.DoubleSupplier}.
  */
 @FunctionalInterface
-public interface DistributedDoubleSupplier extends java.util.function.DoubleSupplier, Serializable {
+public interface DistributedDoubleSupplier extends DoubleSupplier, Serializable {
 }

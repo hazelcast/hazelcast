@@ -20,14 +20,8 @@ import java.io.Serializable;
 import java.util.function.ToLongFunction;
 
 /**
- * Represents a function that produces a long-valued result.  This is the
- * {@code long}-producing primitive specialization for {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsLong(Object)}.
- *
- * @param <T> the type of the input to the function
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link ToLongFunction
+ * java.util.function.ToLongFunction}.
  */
 @FunctionalInterface
 public interface DistributedToLongFunction<T> extends ToLongFunction<T>, Serializable {

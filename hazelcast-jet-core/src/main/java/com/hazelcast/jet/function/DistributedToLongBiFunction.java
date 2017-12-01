@@ -20,16 +20,8 @@ import java.io.Serializable;
 import java.util.function.ToLongBiFunction;
 
 /**
- * Represents a function that accepts two arguments and produces a long-valued
- * result.  This is the {@code long}-producing primitive specialization for
- * {@link DistributedBiFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsLong(Object, Object)}.
- *
- * @param <T> the type of the first argument to the function
- * @param <U> the type of the second argument to the function
- * @see DistributedBiFunction
+ * {@code Serializable} variant of {@link ToLongBiFunction
+ * java.util.function.ToLongBiFunction}.
  */
 @FunctionalInterface
 public interface DistributedToLongBiFunction<T, U> extends ToLongBiFunction<T, U>, Serializable {

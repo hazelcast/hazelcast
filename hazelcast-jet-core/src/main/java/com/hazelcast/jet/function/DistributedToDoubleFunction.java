@@ -20,14 +20,8 @@ import java.io.Serializable;
 import java.util.function.ToDoubleFunction;
 
 /**
- * Represents a function that produces a double-valued result.  This is the
- * {@code double}-producing primitive specialization for {@link DistributedFunction}.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #applyAsDouble(Object)}.
- *
- * @param <T> the type of the input to the function
- * @see DistributedFunction
+ * {@code Serializable} variant of {@link ToDoubleFunction
+ * java.util.function.ToDoubleFunction}.
  */
 @FunctionalInterface
 public interface DistributedToDoubleFunction<T> extends ToDoubleFunction<T>, Serializable {

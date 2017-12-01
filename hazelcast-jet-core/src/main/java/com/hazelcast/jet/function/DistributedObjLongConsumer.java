@@ -20,17 +20,8 @@ import java.io.Serializable;
 import java.util.function.ObjLongConsumer;
 
 /**
- * Represents an operation that accepts an object-valued and a
- * {@code long}-valued argument, and returns no result.  This is the
- * {@code (reference, long)} specialization of {@link DistributedBiConsumer}.
- * Unlike most other functional interfaces, {@code ObjLongConsumer} is
- * expected to operate via side-effects.
- *
- * <p>This is a functional interface
- * whose functional method is {@link #accept(Object, long)}.
- *
- * @param <T> the type of the object argument to the operation
- * @see DistributedBiConsumer
+ * {@code Serializable} variant of {@link ObjLongConsumer
+ * java.util.function.ObjLongConsumer}.
  */
 @FunctionalInterface
 public interface DistributedObjLongConsumer<T> extends ObjLongConsumer<T>, Serializable {
