@@ -25,7 +25,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 import java.util.Collection;
 
-public class IsEmptyOperation extends AbstractSerializableOperation implements ReadonlyOperation {
+public class IsEmptyOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private transient boolean response;
@@ -68,5 +68,10 @@ public class IsEmptyOperation extends AbstractSerializableOperation implements R
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.IS_EMPTY;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

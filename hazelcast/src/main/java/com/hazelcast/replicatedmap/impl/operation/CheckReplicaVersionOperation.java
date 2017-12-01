@@ -38,7 +38,8 @@ import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
  * Checks whether replica version is in sync with the primary.
  * If not, it will request the correct state via {@link RequestMapDataOperation}
  */
-public class CheckReplicaVersionOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
+public class CheckReplicaVersionOperation extends AbstractSerializableOperation
+        implements PartitionAwareOperation {
 
     private Map<String, Long> versions;
 
@@ -76,7 +77,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
                 requestDataFromOwner(name);
             } else if (store.isStale(version)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Stale replica! map: "  + name + " owner version: " + version
+                    logger.fine("Stale replica! map: " + name + " owner version: " + version
                             + " replica version: " + store.getVersion() + " partitionId=" + partitionId);
                 }
 

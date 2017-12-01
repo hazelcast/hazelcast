@@ -32,7 +32,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Replicates the update happened on the partition owner to the other nodes.
  */
-public class ReplicateUpdateOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
+public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
+        implements PartitionAwareOperation {
 
     VersionResponsePair response;
     boolean isRemove;
@@ -122,5 +123,10 @@ public class ReplicateUpdateOperation extends AbstractSerializableOperation impl
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.REPLICATE_UPDATE;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

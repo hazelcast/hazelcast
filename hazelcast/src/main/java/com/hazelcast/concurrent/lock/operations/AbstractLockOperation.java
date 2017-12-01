@@ -123,7 +123,7 @@ public abstract class AbstractLockOperation extends Operation
     }
 
     @Override
-    public final String getServiceName() {
+    public String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
     }
 

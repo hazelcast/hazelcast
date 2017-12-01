@@ -26,7 +26,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 import java.util.Collection;
 
-public class ContainsValueOperation extends AbstractSerializableOperation implements ReadonlyOperation {
+public class ContainsValueOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private Data value;
@@ -72,5 +72,10 @@ public class ContainsValueOperation extends AbstractSerializableOperation implem
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.CONTAINS_VALUE;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

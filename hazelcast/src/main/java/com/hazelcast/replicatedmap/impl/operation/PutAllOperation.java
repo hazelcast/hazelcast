@@ -26,6 +26,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 /**
  * Puts a set of records to the replicated map.
  */
-public class PutAllOperation extends AbstractSerializableOperation {
+public class PutAllOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
 
     private String name;
     private ReplicatedMapEntries entries;
@@ -102,5 +103,10 @@ public class PutAllOperation extends AbstractSerializableOperation {
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.PUT_ALL;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.quorum.QuorumEvent;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumListener;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -35,6 +36,8 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.QuorumAwareService;
+import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -43,6 +46,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.quorum.QuorumType.READ;
+import static com.hazelcast.quorum.QuorumType.READ_WRITE;
+import static com.hazelcast.quorum.QuorumType.WRITE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -127,6 +133,34 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         quorum.ensureQuorumPresent(op);
     }
 
+    public void ensureQuorumPresent(String quorumName, QuorumType requiredQuorumPermissionType) {
+        if (inactive || quorumName == null) {
+            return;
+        }
+
+        QuorumImpl definedQuorum = quorums.get(quorumName);
+        QuorumType definedQuorumType = definedQuorum.getConfig().getType();
+        switch (requiredQuorumPermissionType) {
+            case WRITE:
+                if (definedQuorumType.equals(WRITE) || definedQuorumType.equals(READ_WRITE)) {
+                    definedQuorum.ensureQuorumPresent();
+                }
+                break;
+            case READ:
+                if (definedQuorumType.equals(READ) || definedQuorumType.equals(READ_WRITE)) {
+                    definedQuorum.ensureQuorumPresent();
+                }
+                break;
+            case READ_WRITE:
+                if (definedQuorumType.equals(READ_WRITE)) {
+                    definedQuorum.ensureQuorumPresent();
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unhandled quorum type: " + requiredQuorumPermissionType);
+        }
+    }
+
     /**
      * Returns a {@link QuorumImpl} for the given operation. The operation should be named and the operation service should
      * be a {@link QuorumAwareService}. This service will then return the quorum configured under the name returned by the
@@ -139,13 +173,23 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         if (!isNamedOperation(op) || !isQuorumAware(op)) {
             return null;
         }
-        QuorumAwareService service = op.getService();
-        String name = ((NamedOperation) op).getName();
-        String quorumName = service.getQuorumName(name);
+        String quorumName = getQuorumName(op);
         if (quorumName == null) {
             return null;
         }
         return quorums.get(quorumName);
+    }
+
+    private String getQuorumName(Operation op) {
+        QuorumAwareService service;
+        if (op instanceof ServiceNamespaceAware) {
+            ServiceNamespace serviceNamespace = ((ServiceNamespaceAware) op).getServiceNamespace();
+            service = nodeEngine.getService(serviceNamespace.getServiceName());
+        } else {
+            service = op.getService();
+        }
+        String name = ((NamedOperation) op).getName();
+        return service.getQuorumName(name);
     }
 
     private boolean isQuorumAware(Operation op) {

@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * Merges two replicated map entries with the given merge policy after the split-brain syndrome is recovered.
  */
-public class MergeOperation extends AbstractReplicatedMapOperation {
+public class MergeOperation extends AbstractNamedSerializableOperation {
 
     private String name;
     private Object key;
@@ -72,5 +72,10 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.MERGE;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

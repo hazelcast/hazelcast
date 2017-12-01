@@ -24,6 +24,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Puts a key to the replicated map.
  */
-public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation {
+public class PutOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private transient ReplicatedMapService service;
     private transient Data oldValue;

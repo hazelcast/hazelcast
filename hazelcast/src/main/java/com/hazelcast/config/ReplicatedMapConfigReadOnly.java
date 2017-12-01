@@ -73,6 +73,11 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
         throw throwReadOnly();
     }
 
+    @Override
+    public ReplicatedMapConfig setQuorumName(String quorumName) {
+        throw throwReadOnly();
+    }
+
     private UnsupportedOperationException throwReadOnly() {
         throw new UnsupportedOperationException("This config is read-only");
     }
