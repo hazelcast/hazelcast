@@ -156,3 +156,7 @@ link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kub
   </network>
 </hazelcast>
 ----
+
+== Docker images
+
+This plugin is included in the link:https://hub.docker.com/r/hazelcast/hazelcast-kubernetes/[hazelcast/hazelcast-kubernetes] and link:https://hub.docker.com/r/hazelcast/hazelcast-enterprise-kubernetes/[hazelcast/hazelcast-enterprise-kubernetes] Docker images whose source and documentation reside in https://github.com/hazelcast/hazelcast-docker. 
