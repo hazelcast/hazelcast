@@ -78,7 +78,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     static final String HAZELCAST_CLIENT_START_TAG =
             "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
 
-    static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
+    private static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
 
     private ClientConfig clientConfig;
 
@@ -322,10 +322,10 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
                 + "</flake-id-generator>"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig config = buildConfig(xml);
-        FlakeIdGeneratorConfig fconfig = config.findFlakeIdGeneratorConfig("gen");
-        assertEquals("gen", fconfig.getName());
-        assertEquals(3, fconfig.getPrefetchCount());
-        assertEquals(10L, fconfig.getPrefetchValidity());
+        ClientFlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidity());
     }
 
     @Test

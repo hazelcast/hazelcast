@@ -17,9 +17,14 @@
 package com.hazelcast.concurrent.flakeidgen;
 
 import com.hazelcast.core.IdBatch;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -28,13 +33,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class FlakeIdGenerator_IdBatchTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void test_iterator() {
+    public void testIterator() {
         IdBatch b = new IdBatch(1, 10, 2);
         Iterator<Long> it = b.iterator();
 
@@ -48,7 +55,34 @@ public class FlakeIdGenerator_IdBatchTest {
     }
 
     @Test
-    public void test_emptyIdBatch() {
+    public void testIterator_hasNextMultipleCalls() {
+        IdBatch b = new IdBatch(1, 10, 2);
+        Iterator<Long> it = b.iterator();
+
+        assertTrue(it.hasNext());
+        assertTrue(it.hasNext());
+        assertEquals(Long.valueOf(1), it.next());
+        assertTrue(it.hasNext());
+        assertEquals(Long.valueOf(11), it.next());
+        assertFalse(it.hasNext());
+        assertFalse(it.hasNext());
+        exception.expect(NoSuchElementException.class);
+        it.next();
+    }
+
+    @Test
+    public void testIterator_hasNextNotCalled() {
+        IdBatch b = new IdBatch(1, 10, 2);
+        Iterator<Long> it = b.iterator();
+
+        assertEquals(Long.valueOf(1), it.next());
+        assertEquals(Long.valueOf(11), it.next());
+        exception.expect(NoSuchElementException.class);
+        it.next();
+    }
+
+    @Test
+    public void testIterator_emptyIdBatch() {
         IdBatch b = new IdBatch(1, 10, 0);
         Iterator<Long> it = b.iterator();
 

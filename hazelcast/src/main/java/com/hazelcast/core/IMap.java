@@ -1697,6 +1697,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #submitToKey(Object, EntryProcessor)} for an async version of this method.
      *
      * @return result of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if the specified key is {@code null}
@@ -1753,6 +1755,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
@@ -1804,6 +1808,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key

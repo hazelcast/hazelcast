@@ -17,7 +17,7 @@
 package com.hazelcast.client.flakeidgen;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.FlakeIdGeneratorConfig;
+import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.concurrent.flakeidgen.FlakeIdConcurrencyTestUtil;
 import com.hazelcast.core.FlakeIdGenerator;
@@ -68,13 +68,13 @@ public class FlakeIdGenerator_ClientIntegrationTest {
     @Test
     public void configTest() throws Exception {
         int myBatchSize = 3;
-        before(new ClientConfig().addFlakeIdGeneratorConfig(new FlakeIdGeneratorConfig("gen")
+        before(new ClientConfig().addFlakeIdGeneratorConfig(new ClientFlakeIdGeneratorConfig("gen")
                 .setPrefetchCount(myBatchSize)
                 .setPrefetchValidity(3000)));
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
         assertTrue("This test assumes default validity be larger than 3000 by a good margin",
-                FlakeIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY >= 5000);
+                ClientFlakeIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY >= 5000);
         // this should take a batch of 3 IDs from the member and store it in the auto-batcher
         long id1 = generator.newId();
         // this should take another batch, independent from the stored one

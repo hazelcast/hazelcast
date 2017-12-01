@@ -999,6 +999,21 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(20, journalConfig.getTimeToLiveSeconds());
     }
 
+    @Test
+    public void testFlakeIdGeneratorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<flake-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity>10</prefetch-validity>"
+                + "</flake-id-generator>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        FlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidity());
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";

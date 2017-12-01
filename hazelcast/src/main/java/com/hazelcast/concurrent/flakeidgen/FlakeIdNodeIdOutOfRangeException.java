@@ -22,8 +22,8 @@ import com.hazelcast.core.HazelcastException;
  * Exception thrown from member if that member is not able to generate Flake IDs because its
  * node ID is too big.
  */
-public class FlakeIdNodeIdOverflowException extends HazelcastException {
-    public FlakeIdNodeIdOverflowException(String message) {
+public class FlakeIdNodeIdOutOfRangeException extends HazelcastException {
+    public FlakeIdNodeIdOutOfRangeException(String message) {
         super(message);
     }
 }

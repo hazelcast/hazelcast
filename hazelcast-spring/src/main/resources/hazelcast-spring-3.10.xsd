@@ -1449,6 +1449,7 @@
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>

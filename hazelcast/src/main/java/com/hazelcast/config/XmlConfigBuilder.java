@@ -67,6 +67,7 @@ import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
+import static com.hazelcast.config.XmlElements.FLAKE_ID_GENERATOR;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.XmlElements.IMPORT;
@@ -377,6 +378,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleUserCodeDeployment(node);
         } else if (CARDINALITY_ESTIMATOR.isEqual(nodeName)) {
             handleCardinalityEstimator(node);
+        } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
+            handleFlakeIdGenerator(node);
         } else {
             return true;
         }
@@ -638,6 +641,21 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleCardinalityEstimator(Node node) throws Exception {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
         handleViaReflection(node, config, cardinalityEstimatorConfig);
+    }
+
+    private void handleFlakeIdGenerator(Node node) {
+        String name = getAttribute(node, "name");
+        FlakeIdGeneratorConfig generatorConfig = new FlakeIdGeneratorConfig(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("prefetch-count".equals(nodeName)) {
+                generatorConfig.setPrefetchCount(Integer.parseInt(value));
+            } else if ("prefetch-validity".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setPrefetchValidity(Long.parseLong(value));
+            }
+        }
+        config.addFlakeIdGeneratorConfig(generatorConfig);
     }
 
     private void handleGroup(Node node) {

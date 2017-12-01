@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.flakeidgen;
+package com.hazelcast.concurrent.flakeidgen;
 
-import com.hazelcast.concurrent.flakeidgen.FlakeIdConcurrencyTestUtil;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;

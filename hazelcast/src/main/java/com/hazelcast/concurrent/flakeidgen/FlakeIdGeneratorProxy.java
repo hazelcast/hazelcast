@@ -16,16 +16,27 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static java.util.Collections.newSetFromMap;
 
 public class FlakeIdGeneratorProxy
         extends AbstractDistributedObject<FlakeIdGeneratorService>
@@ -54,6 +65,15 @@ public class FlakeIdGeneratorProxy
      */
     private final AtomicLong generatedValue = new AtomicLong(Long.MIN_VALUE);
 
+    private volatile Member randomMember;
+    private AutoBatcher batcher;
+
+    /**
+     * Set of member UUIDs of which we know have node IDs out of range. These members are never again used
+     * to generate unique IDs, because this error is unrecoverable.
+     */
+    private final Set<String> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>(0));
+
     FlakeIdGeneratorProxy(String name, int nodeId, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
@@ -63,7 +83,7 @@ public class FlakeIdGeneratorProxy
         // This is to provide functionality when the node ID overflows until the cluster is restarted and
         // node IDs are assigned from 0 again.
         // It won't be possible to generate IDs through member HZ instances, however clients ignore
-        // members which threw FlakeIdNodeIdOverflowException, so they'll work as long as there is
+        // members which threw FlakeIdNodeIdOutOfRangeException, so they'll work as long as there is
         // at least one member with node ID in the cluster.
         if ((nodeId & -1 << BITS_NODE_ID) != 0) {
             this.nodeId = -1;
@@ -72,17 +92,40 @@ public class FlakeIdGeneratorProxy
         } else {
             this.nodeId = nodeId;
         }
+
+        FlakeIdGeneratorConfig config = getNodeEngine().getConfig().findFlakeIdGeneratorConfig(getName());
+        batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidity(), new IFunction<Integer, IdBatch>() {
+            @Override
+            public IdBatch apply(Integer batchSize) {
+                return newIdBatch(batchSize);
+            }
+        });
     }
 
     @Override
     public long newId() {
-        return newIdBase(Clock.currentTimeMillis(), 1);
+        return batcher.newId();
     }
 
     @Override
     public IdBatch newIdBatch(int batchSize) {
-        long base = newIdBase(Clock.currentTimeMillis(), batchSize);
-        return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
+        while (true) {
+            NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize);
+            Member member = getRandomMember();
+            InternalCompletableFuture<Long> future = getNodeEngine().getOperationService()
+                                                                    .invokeOnTarget(getServiceName(), op, member.getAddress());
+            try {
+                long base = future.join();
+                return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
+            } catch (FlakeIdNodeIdOutOfRangeException e) {
+                outOfRangeMembers.add(member.getUuid());
+                randomMember = null;
+            }
+        }
+    }
+
+    long newIdBaseLocal(int batchSize) {
+        return newIdBaseLocal(Clock.currentTimeMillis(), batchSize);
     }
 
     /**
@@ -99,11 +142,13 @@ public class FlakeIdGeneratorProxy
      * @param now Current time (currentTimeMillis() normally or other value in tests)
      * @return First ID for the batch.
      */
-    long newIdBase(long now, int batchSize) {
+    long newIdBaseLocal(long now, int batchSize) {
         checkPositive(batchSize, "batchSize");
         if (nodeId < 0) {
-            throw new FlakeIdNodeIdOverflowException("NodeID overflow, this member cannot generate IDs");
+            logger.info("Throwing FlakeIdNodeIdOutOfRangeException");
+            throw new FlakeIdNodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
         }
+        logger.info("Generating " + batchSize + " IDs");
         now -= EPOCH_START;
         assert now >= -(1L << BITS_TIMESTAMP - 1) && now < (1L << BITS_TIMESTAMP - 1)  : "Current time out of allowed range";
         now <<= BITS_SEQUENCE;
@@ -114,6 +159,31 @@ public class FlakeIdGeneratorProxy
             base = Math.max(now, oldGeneratedValue);
         } while (!generatedValue.compareAndSet(oldGeneratedValue, base + batchSize));
         return base << BITS_NODE_ID | nodeId;
+    }
+
+    private Member getRandomMember() {
+        Member member = randomMember;
+        if (member == null) {
+            // use local member if possible. Local member is always the first one inserted to outOfRangeMembers
+            if (outOfRangeMembers.isEmpty()) {
+                member = getNodeEngine().getLocalMember();
+            } else {
+                Set<Member> members = getNodeEngine().getClusterService().getMembers();
+                // create list of members skipping those which we know have node ID out of range
+                List<Member> filteredMembers = new ArrayList<Member>(members.size());
+                for (Member m : members) {
+                    if (!outOfRangeMembers.contains(m.getUuid())) {
+                        filteredMembers.add(m);
+                    }
+                }
+                if (filteredMembers.isEmpty()) {
+                    throw new HazelcastException("All members have node ID out of range. Cluster restart is required");
+                }
+                member = filteredMembers.get(ThreadLocalRandomProvider.get().nextInt(filteredMembers.size()));
+                randomMember = member;
+            }
+        }
+        return member;
     }
 
     @Override

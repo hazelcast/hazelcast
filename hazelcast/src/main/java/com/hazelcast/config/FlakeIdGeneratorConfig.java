@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.config;
+package com.hazelcast.config;
 
 import com.hazelcast.util.Preconditions;
 
 /**
- * The {@code FlakeIdGeneratorConfig} contains the configuration for the client
+ * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
  * regarding {@link com.hazelcast.core.HazelcastInstance#getFlakeIdGenerator(String)
  * Flake ID Generator}.
+ * <p>
+ * Settings here only apply when ID generator is used from member, not when clients
+ * connect to this member to generate IDs - each client has its own settings in {@code
+ * ClientConfig}.
  */
 public class FlakeIdGeneratorConfig {
 
@@ -66,7 +70,7 @@ public class FlakeIdGeneratorConfig {
 
     /**
      * Sets the name or name pattern for this config. Must not be modified after this
-     * instance is added to {@link ClientConfig}.
+     * instance is added to {@link Config}.
      */
     public void setName(String name) {
         this.name = name;

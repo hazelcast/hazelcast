@@ -28,6 +28,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -401,6 +402,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
         assertEquals("com.hazelcast.spring.DummyPartitionStrategy",
                 testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+    }
+
+    @Test
+    public void testMemberFlakeIdGeneratorConfig() {
+        FlakeIdGeneratorConfig c = instance.getConfig().findFlakeIdGeneratorConfig("flakeIdGenerator");
+        assertEquals(3, c.getPrefetchCount());
+        assertEquals(10L, c.getPrefetchValidity());
+        assertEquals("flakeIdGenerator*", c.getName());
     }
 
     @Test
