@@ -719,8 +719,7 @@ public abstract class DistributedCollectors {
     //                 JET-SPECIFIC REDUCERS
 
     /**
-     * Variant of {@link
-     * Collectors#toMap(Function, Function)
+     * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
      * {@link IStreamMap} with the given name.
@@ -734,8 +733,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#toMap(Function, Function)
+     * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
      * {@link IStreamMap} with the given name.
@@ -748,8 +746,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#toMap(Function, Function, BinaryOperator)
+     * Variant of {@link Collectors#toMap(Function, Function, BinaryOperator)
      * java.util.stream.Collectors#toMap(Function, Function, BinaryOperator)}
      * which, instead of returning a map as the result, writes the results
      * to the distributed {@link IStreamMap} with the given name.
@@ -764,8 +761,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#toMap(Function, Function)
+     * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
      * {@link IStreamCache} with the given name.
@@ -780,8 +776,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#toMap(Function, Function)
+     * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
      * {@link IStreamCache} with the given name.
@@ -791,8 +786,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#toMap(Function, Function)
+     * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
      * {@link IStreamCache} with the given name.
@@ -808,19 +802,16 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#toList()
-     * java.util.stream.Collectors#toList()} which, instead of returning a list
-     * as the result, writes the results to the distributed {@link
-     * IStreamList} with the given name.
+     * Variant of {@link Collectors#toList() java.util.stream.Collectors#toList()}
+     * which, instead of returning a list as the result, writes the results to the
+     * distributed {@link IStreamList} with the given name.
      */
     public static <T> Reducer<T, IStreamList<T>> toIList(String listName) {
         return new IListReducer<>(listName);
     }
 
     /**
-     * Variant of {@link
-     * Collectors#groupingBy(Function)
+     * Variant of {@link Collectors#groupingBy(Function)
      * java.util.stream.Collectors#groupingBy(Function)} which, instead of
      * returning a map as the result, writes the grouped results to the
      * distributed {@link IStreamMap} with the given name.
@@ -832,8 +823,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#groupingBy(Function, Collector)
+     * Variant of {@link Collectors#groupingBy(Function, Collector)
      * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
      * returning a map as the result, writes the grouped results to the distributed
      * {@link IStreamMap} with the given name.
@@ -847,8 +837,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#groupingBy(Function, Collector)
+     * Variant of {@link Collectors#groupingBy(Function, Collector)
      * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
      * returning a map as the result, writes the grouped results to the distributed
      * {@link IStreamCache} with the given name.
@@ -860,8 +849,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link
-     * Collectors#groupingBy(Function, Collector)
+     * Variant of {@link Collectors#groupingBy(Function, Collector)
      * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
      * returning a map as the result, writes the grouped results to the distributed
      * {@link IStreamCache} with the given name.
