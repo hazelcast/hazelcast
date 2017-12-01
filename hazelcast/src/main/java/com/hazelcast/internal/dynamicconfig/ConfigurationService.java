@@ -330,5 +330,5 @@ public interface ConfigurationService {
 
     FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName);
 
-    Map<String,FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
+    Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
 }

@@ -2745,6 +2745,13 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns the map of {@link com.hazelcast.core.FlakeIdGenerator} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
     public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
         return flakeIdGeneratorConfigMap;
     }

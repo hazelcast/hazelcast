@@ -139,6 +139,21 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testFlakeIdGeneratorConfigGenerator() {
+        FlakeIdGeneratorConfig figConfig = new FlakeIdGeneratorConfig("flake-id-gen1")
+                .setPrefetchCount(3)
+                .setPrefetchValidity(10L);
+
+        Config config = new Config()
+                .addFlakeIdGeneratorConfig(figConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        FlakeIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getFlakeIdGeneratorConfig("flake-id-gen1");
+        assertEquals(figConfig, xmlReplicatedConfig);
+    }
+
+    @Test
     public void testCacheQuorumRef() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig()
                 .setName("testCache")

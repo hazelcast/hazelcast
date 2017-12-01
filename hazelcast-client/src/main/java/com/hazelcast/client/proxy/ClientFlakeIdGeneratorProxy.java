@@ -17,34 +17,22 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
-import com.hazelcast.client.impl.ClientMessageDecoder;
-import com.hazelcast.concurrent.flakeidgen.AutoBatcher;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.ResponseParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.concurrent.flakeidgen.AutoBatcher;
 import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.spi.InternalCompletableFuture;
 
 /**
  * Proxy implementation of {@link IdGenerator}.
  */
 public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdGenerator {
-
-    private static final ClientMessageDecoder NEW_ID_BATCH_DECODER = new ClientMessageDecoder() {
-        @Override
-        public IdBatch decodeClientMessage(ClientMessage clientMessage) {
-            ResponseParameters response = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(clientMessage);
-            return new IdBatch(response.base, response.increment, response.batchSize);
-        }
-    };
 
     private final AutoBatcher batcher;
 
@@ -67,13 +55,11 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
 
     @Override
     public IdBatch newIdBatch(int batchSize) {
-        return newIdBatchAsync(batchSize).join();
-    }
-
-    private InternalCompletableFuture<IdBatch> newIdBatchAsync(int batchSize) {
-        ClientMessage request = FlakeIdGeneratorNewIdBatchCodec.encodeRequest(name, batchSize);
-        ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
-        return new ClientDelegatingFuture<IdBatch>(future, getSerializationService(), NEW_ID_BATCH_DECODER);
+        ClientMessage requestMsg = FlakeIdGeneratorNewIdBatchCodec.encodeRequest(name, batchSize);
+        ClientMessage responseMsg = new ClientInvocation(getClient(), requestMsg, getName())
+                .invoke().join();
+        ResponseParameters response = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(responseMsg);
+        return new IdBatch(response.base, response.increment, response.batchSize);
     }
 
     @Override

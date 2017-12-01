@@ -56,6 +56,7 @@ public class FlakeIdGeneratorProxy
 
     private static final int BITS_SEQUENCE = 6;
 
+    /** Assigned node ID or -1, if it is out of range */
     private final int nodeId;
     private final String name;
     private final ILogger logger;
@@ -72,25 +73,25 @@ public class FlakeIdGeneratorProxy
      * Set of member UUIDs of which we know have node IDs out of range. These members are never again used
      * to generate unique IDs, because this error is unrecoverable.
      */
-    private final Set<String> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>(0));
+    private final Set<String> outOfRangeMembers;
 
     FlakeIdGeneratorProxy(String name, int nodeId, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(getClass());
 
-        // If nodeId is out of range, we'll allow to create the proxy, but we'll refuse to generate IDs.
-        // This is to provide functionality when the node ID overflows until the cluster is restarted and
-        // node IDs are assigned from 0 again.
-        // It won't be possible to generate IDs through member HZ instances, however clients ignore
-        // members which threw FlakeIdNodeIdOutOfRangeException, so they'll work as long as there is
-        // at least one member with node ID in the cluster.
+        // If our nodeId is out of range, ID generation will be forwarded to another member.
+        // This is designed to provide functionality when the node ID overflows for new members but there are
+        // still some members with good node ID.
         if ((nodeId & -1 << BITS_NODE_ID) != 0) {
             this.nodeId = -1;
+            outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+            outOfRangeMembers.add(nodeEngine.getClusterService().getLocalMember().getUuid());
             logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
                     + "Cluster restart is recommended.");
         } else {
             this.nodeId = nodeId;
+            outOfRangeMembers = null;
         }
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
@@ -109,16 +110,23 @@ public class FlakeIdGeneratorProxy
 
     @Override
     public IdBatch newIdBatch(int batchSize) {
+        // local operation if we have valid node ID
+        if (nodeId >= 0) {
+            long base = newIdBaseLocal(batchSize);
+            return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
+        }
+
+        // remote call otherwise
         while (true) {
             NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize);
-            Member member = getRandomMember();
+            Member target = getRandomMember();
             InternalCompletableFuture<Long> future = getNodeEngine().getOperationService()
-                                                                    .invokeOnTarget(getServiceName(), op, member.getAddress());
+                                                                    .invokeOnTarget(getServiceName(), op, target.getAddress());
             try {
                 long base = future.join();
                 return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
             } catch (FlakeIdNodeIdOutOfRangeException e) {
-                outOfRangeMembers.add(member.getUuid());
+                outOfRangeMembers.add(target.getUuid());
                 randomMember = null;
             }
         }
@@ -145,10 +153,8 @@ public class FlakeIdGeneratorProxy
     long newIdBaseLocal(long now, int batchSize) {
         checkPositive(batchSize, "batchSize");
         if (nodeId < 0) {
-            logger.info("Throwing FlakeIdNodeIdOutOfRangeException");
             throw new FlakeIdNodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
         }
-        logger.info("Generating " + batchSize + " IDs");
         now -= EPOCH_START;
         assert now >= -(1L << BITS_TIMESTAMP - 1) && now < (1L << BITS_TIMESTAMP - 1)  : "Current time out of allowed range";
         now <<= BITS_SEQUENCE;
@@ -164,24 +170,19 @@ public class FlakeIdGeneratorProxy
     private Member getRandomMember() {
         Member member = randomMember;
         if (member == null) {
-            // use local member if possible. Local member is always the first one inserted to outOfRangeMembers
-            if (outOfRangeMembers.isEmpty()) {
-                member = getNodeEngine().getLocalMember();
-            } else {
-                Set<Member> members = getNodeEngine().getClusterService().getMembers();
-                // create list of members skipping those which we know have node ID out of range
-                List<Member> filteredMembers = new ArrayList<Member>(members.size());
-                for (Member m : members) {
-                    if (!outOfRangeMembers.contains(m.getUuid())) {
-                        filteredMembers.add(m);
-                    }
+            // if local member is in outOfRangeMembers, use random member
+            Set<Member> members = getNodeEngine().getClusterService().getMembers();
+            List<Member> filteredMembers = new ArrayList<Member>(members.size());
+            for (Member m : members) {
+                if (!outOfRangeMembers.contains(m.getUuid())) {
+                    filteredMembers.add(m);
                 }
-                if (filteredMembers.isEmpty()) {
-                    throw new HazelcastException("All members have node ID out of range. Cluster restart is required");
-                }
-                member = filteredMembers.get(ThreadLocalRandomProvider.get().nextInt(filteredMembers.size()));
-                randomMember = member;
             }
+            if (filteredMembers.isEmpty()) {
+                throw new HazelcastException("All members have node ID out of range. Cluster restart is required");
+            }
+            member = filteredMembers.get(ThreadLocalRandomProvider.get().nextInt(filteredMembers.size()));
+            randomMember = member;
         }
         return member;
     }

@@ -91,6 +91,7 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("list", c1, c2, c1.getListConfigs(), c2.getListConfigs(), new ListConfigChecker());
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
         checkCompatibleConfigs("job tracker", c1, c2, c1.getJobTrackerConfigs(), c2.getJobTrackerConfigs(), new JobTrackerConfigChecker());
+        checkCompatibleConfigs("flake id generator", c1, c2, c1.getFlakeIdGeneratorConfigs(), c2.getFlakeIdGeneratorConfigs(), new FlakeIdGeneratorConfigChecker());
 
         return true;
     }
@@ -459,6 +460,26 @@ class ConfigCompatibilityChecker {
         @Override
         JobTrackerConfig getDefault(Config c) {
             return c.getJobTrackerConfig("default");
+        }
+    }
+
+    private static class FlakeIdGeneratorConfigChecker extends ConfigChecker<FlakeIdGeneratorConfig> {
+        @Override
+        boolean check(FlakeIdGeneratorConfig c1, FlakeIdGeneratorConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+            return nullSafeEqual(c1.getName(), c2.getName())
+                    && c1.getPrefetchCount() == c2.getPrefetchCount()
+                    && c1.getPrefetchValidity() == c2.getPrefetchValidity();
+        }
+
+        @Override
+        FlakeIdGeneratorConfig getDefault(Config c) {
+            return c.getFlakeIdGeneratorConfig("default");
         }
     }
 

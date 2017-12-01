@@ -121,6 +121,14 @@ public class ClientConfig {
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
 
+    /**
+     * Sets the pattern matcher which is used to match item names to
+     * configuration objects.
+     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     *
+     * @param configPatternMatcher the pattern matcher
+     * @throws IllegalArgumentException if the pattern matcher is {@code null}
+     */
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
@@ -128,6 +136,13 @@ public class ClientConfig {
         this.configPatternMatcher = configPatternMatcher;
     }
 
+    /**
+     * Returns the pattern matcher which is used to match item names to
+     * configuration objects.
+     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     *
+     * @return the pattern matcher
+     */
     public ConfigPatternMatcher getConfigPatternMatcher() {
         return configPatternMatcher;
     }
@@ -340,6 +355,13 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the map of {@link com.hazelcast.core.FlakeIdGenerator} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
     public Map<String, ClientFlakeIdGeneratorConfig> getFlakeIdGeneratorConfigMap() {
         return flakeIdGeneratorConfigMap;
     }

@@ -128,6 +128,7 @@ public class ConfigXmlGenerator {
         nativeMemoryXmlGenerator(gen, config);
         servicesXmlGenerator(gen, config);
         hotRestartXmlGenerator(gen, config);
+        flakeIdGeneratorXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -968,6 +969,15 @@ public class ConfigXmlGenerator {
                 .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
                 .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
                 .close();
+    }
+
+    private static void flakeIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
+        for (FlakeIdGeneratorConfig m : config.getFlakeIdGeneratorConfigs().values()) {
+            gen.open("flake-id-generator", "name", m.getName())
+               .node("prefetch-count", m.getPrefetchCount())
+               .node("prefetch-validity", m.getPrefetchValidity());
+            gen.close();
+        }
     }
 
     private static void nativeMemoryXmlGenerator(XmlGenerator gen, Config config) {

@@ -73,8 +73,9 @@ public class ClientNetworkConfig {
     }
 
     /**
+     * See {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}  for details
+     *
      * @return true if client is smart
-     * @see {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}  for details
      */
     public boolean isSmartRouting() {
         return smartRouting;
@@ -119,9 +120,10 @@ public class ClientNetworkConfig {
 
     /**
      * Period for the next attempt to find a member to connect.
+     * <p>
+     * See {@link ClientNetworkConfig#connectionAttemptLimit}.
      *
      * @return connection attempt period in millis
-     * @see {@link ClientNetworkConfig#connectionAttemptLimit}.
      */
     public int getConnectionAttemptPeriod() {
         return connectionAttemptPeriod;
@@ -142,8 +144,9 @@ public class ClientNetworkConfig {
     }
 
     /**
+     * See {@link com.hazelcast.client.config.ClientNetworkConfig#setConnectionAttemptLimit(int)} for details
+     *
      * @return connection attempt Limit
-     * @see {@link com.hazelcast.client.config.ClientNetworkConfig#setConnectionAttemptLimit(int)} for details
      */
     public int getConnectionAttemptLimit() {
         return connectionAttemptLimit;
@@ -228,8 +231,9 @@ public class ClientNetworkConfig {
     }
 
     /**
+     * See {@link com.hazelcast.client.config.ClientNetworkConfig#setRedoOperation(boolean)} for details
+     *
      * @return true if redo operations are enabled
-     * @see {@link com.hazelcast.client.config.ClientNetworkConfig#setRedoOperation(boolean)} for details
      */
     public boolean isRedoOperation() {
         return redoOperation;
