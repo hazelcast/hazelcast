@@ -30,6 +30,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
 
@@ -65,13 +66,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     @Override
     public void clear() {
-        this.data = null;
-        this.size = 0;
-        this.pos = 0;
-        this.mark = 0;
+        data = null;
+        size = 0;
+        pos = 0;
+        mark = 0;
         if (charBuffer != null && charBuffer.length > UTF_BUFFER_SIZE * 8) {
-            this.charBuffer = new char[UTF_BUFFER_SIZE * 8];
+            charBuffer = new char[UTF_BUFFER_SIZE * 8];
         }
+        version = UNKNOWN;
     }
 
     @Override
