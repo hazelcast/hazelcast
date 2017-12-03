@@ -17,10 +17,10 @@
 package com.hazelcast.monitor;
 
 /**
- * Local map statistics. As everything is partitioned in Hazelcast,
- * each member owns 1/N (N being the number of members in the cluster)
- * entries of a distributed map. Each member also holds backup entries
- * of other members. LocalMapStats tells you the count of owned and backup
+ * Local map statistics. As {@link com.hazelcast.core.IMap} is a partitioned data structure
+ * in Hazelcast, each member owns a fraction of the total number of entries of a distributed map.
+ * Depending on the {@link com.hazelcast.core.IMap}'s configuration, each member may also hold backup
+ * entries of other members. LocalMapStats provides the count of owned and backup
  * entries besides their size in memory.
  */
 public interface LocalMapStats extends LocalInstanceStats {
@@ -82,7 +82,11 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getLastUpdateTime();
 
     /**
-     * Returns the number of hits (reads) of the locally owned entries.
+     * Returns the number of hits (reads) of locally owned entries, including those
+     * which are no longer in the map (for example, may have been evicted).
+     *
+     * The number of hits may be inaccurate after a partition is migrated to a new
+     * owner member.
      *
      * @return number of hits (reads) of the locally owned entries.
      */

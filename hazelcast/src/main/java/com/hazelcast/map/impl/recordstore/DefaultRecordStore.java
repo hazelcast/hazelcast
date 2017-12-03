@@ -498,7 +498,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     record.getKey(), record.getValue());
             storage.removeRecord(record);
-            updateStatsOnRemove(record.getHits());
             iterator.remove();
         }
         return removalSize;
@@ -547,7 +546,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeEvictEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, value);
             storage.removeRecord(record);
-            updateStatsOnRemove(record.getHits());
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
             }
@@ -576,7 +574,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                 record.getKey(), record.getValue());
         storage.removeRecord(record);
-        updateStatsOnRemove(record.getHits());
         mapDataStore.removeBackup(key, now);
     }
 
@@ -622,7 +619,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, oldValue);
             storage.removeRecord(record);
-            updateStatsOnRemove(record.getHits());
             removed = true;
         }
         return removed;
@@ -853,7 +849,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
                         partitionId, key, oldValue, null);
                 storage.removeRecord(record);
-                updateStatsOnRemove(record.getHits());
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
@@ -1059,7 +1054,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                 record.getKey(), record.getValue());
         storage.removeRecord(record);
-        updateStatsOnRemove(record.getHits());
         return oldValue;
     }
 
