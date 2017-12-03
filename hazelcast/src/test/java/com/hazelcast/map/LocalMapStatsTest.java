@@ -17,14 +17,20 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,6 +47,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -331,6 +338,41 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         test.put(1, 1);
 
         assertBackupEntryCount(1, mapName, factory.getAllHazelcastInstances());
+    }
+
+    @Test
+    public void testLocalMapStats_preservedAfterEviction() {
+        String mapName = randomMapName();
+        Config config = new Config();
+        config.getProperties().setProperty(GroupProperty.PARTITION_COUNT.getName(), "5");
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
+        maxSizeConfig.setSize(25);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Object, Object> map = instance.getMap(mapName);
+        final CountDownLatch entryEvictedLatch = new CountDownLatch(700);
+        map.addEntryListener(new EntryEvictedListener(){
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                entryEvictedLatch.countDown();
+            }
+        },true);
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+            assertEquals(i, map.get(i));
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(1000, localMapStats.getHits());
+        assertEquals(1000, localMapStats.getPutOperationCount());
+        assertEquals(1000, localMapStats.getGetOperationCount());
+        assertOpenEventually(entryEvictedLatch);
+        localMapStats = map.getLocalMapStats();
+        assertEquals(1000, localMapStats.getHits());
+        assertEquals(1000, localMapStats.getPutOperationCount());
+        assertEquals(1000, localMapStats.getGetOperationCount());
     }
 
     private void assertBackupEntryCount(final long expectedBackupEntryCount, final String mapName,
