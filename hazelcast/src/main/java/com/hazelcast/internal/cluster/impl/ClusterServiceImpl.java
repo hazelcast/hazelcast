@@ -893,6 +893,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
             int joinVersion = localMember.getMemberListJoinVersion();
             if (joinVersion == NA_MEMBER_LIST_JOIN_VERSION) {
+                // This can happen when the cluster was just upgraded to 3.10, but this member did not yet learn
+                // its node ID by an async call from master.
                 throw new IllegalStateException("Member list join version is not yet available");
             }
             return joinVersion;

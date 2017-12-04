@@ -68,7 +68,7 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
             FlakeIdGenerator gen = client.getFlakeIdGenerator("gen");
             for (int j = 0; j < 100; j++) {
                 // call should not fail
-                gen.newIdBatch(1);
+                gen.newId();
             }
         }
     }

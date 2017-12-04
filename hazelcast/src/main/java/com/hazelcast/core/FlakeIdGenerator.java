@@ -52,29 +52,16 @@ import com.hazelcast.internal.cluster.ClusterService;
 public interface FlakeIdGenerator extends DistributedObject {
 
     /**
-     * Generates and returns a batch of cluster-wide unique IDs.
-     *
-     * @param batchSize Requested number of IDs.
-     * @return Iterable batch of unique IDs
-     *
-     * @throws FlakeIdNodeIdOutOfRangeException
-     *   if node ID for all members in the cluster is out of valid range.
-     * See "Node ID overflow" in {@link FlakeIdGenerator class documentation} for more details.
-     */
-    IdBatch newIdBatch(int batchSize);
-
-    /**
      * Generates and returns a cluster-wide unique ID.
      * <p>
      * The call is typically local on member. A batch of IDs is pre-fetched and then used for
-     * preconfigured time locally. If you need multiple IDs at once, use {@link #newIdBatch(int)}.
+     * preconfigured time locally.
      * <p>
      * <b>Note:</b> Values returned from this method may be not strictly ordered.
      *
      * @return new cluster-wide unique ID
      *
-     * @throws FlakeIdNodeIdOutOfRangeException
-     *   if node ID for all members in the cluster is out of valid range.
+     * @throws FlakeIdNodeIdOutOfRangeException if node ID for all members in the cluster is out of valid range.
      * See "Node ID overflow" in {@link FlakeIdGenerator class documentation} for more details.
      */
     long newId();

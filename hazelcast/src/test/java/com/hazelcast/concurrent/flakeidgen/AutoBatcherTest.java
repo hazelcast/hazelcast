@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
-import com.hazelcast.core.IdBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

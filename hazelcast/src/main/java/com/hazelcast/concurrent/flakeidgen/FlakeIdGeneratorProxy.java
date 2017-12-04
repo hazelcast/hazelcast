@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.flakeidgen;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IdBatch;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
@@ -52,6 +51,7 @@ public class FlakeIdGeneratorProxy
     @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
     static final int BITS_NODE_ID = 16;
+    public static final long INCREMENT = 1 << BITS_NODE_ID;
 
     private static final int BITS_SEQUENCE = 6;
 
@@ -108,12 +108,11 @@ public class FlakeIdGeneratorProxy
         return batcher.newId();
     }
 
-    @Override
     public IdBatch newIdBatch(int batchSize) {
         // local operation if we have valid node ID
         if (nodeId >= 0) {
             long base = newIdBaseLocal(batchSize);
-            return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
+            return new IdBatch(base, INCREMENT, batchSize);
         }
 
         // remote call otherwise

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.concurrent.flakeidgen;
+
+import com.hazelcast.core.FlakeIdGenerator;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;

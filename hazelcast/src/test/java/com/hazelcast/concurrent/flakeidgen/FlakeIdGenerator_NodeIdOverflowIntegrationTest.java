@@ -53,7 +53,7 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
 
         // let's use the instance with out-of-range node ID to generate IDs, it should succeed
         FlakeIdGenerator gen = instance2.getFlakeIdGenerator("gen");
-        gen.newIdBatch(1);
+        gen.newId();
     }
 
     @Test

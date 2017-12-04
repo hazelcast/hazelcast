@@ -19,10 +19,10 @@ package com.hazelcast.client.flakeidgen;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.concurrent.flakeidgen.FlakeIdConcurrencyTestUtil;
+import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IdBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -77,17 +77,13 @@ public class FlakeIdGenerator_ClientIntegrationTest {
                 FlakeIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY_MILLIS >= 5000);
         // this should take a batch of 3 IDs from the member and store it in the auto-batcher
         long id1 = generator.newId();
-        // this should take another batch, independent from the stored one
-        IdBatch batch = generator.newIdBatch(5);
-        // the batch start should be out of range for the auto-batch created for id1
-        assertTrue("id1=" + id1 + ", batch.base=" + batch.base() + ", batch.increment=" + batch.increment(),
-                batch.base() >= id1 + myBatchSize * batch.increment());
-        // this should take second ID from auto-created batch. It should be next to id1
+        // this should take second ID from auto-created batch. It should be exactly next to id1
         long id2 = generator.newId();
-        assertEquals(id1 + batch.increment(), id2);
+        assertEquals(id1 + FlakeIdGeneratorProxy.INCREMENT, id2);
 
         Thread.sleep(3000);
+        // this ID should be from a new batch, because the validity elapsed
         long id3 = generator.newId();
-        assertTrue(batch.base() + batch.increment() * batch.batchSize() < id3);
+        assertTrue(id1 + FlakeIdGeneratorProxy.INCREMENT * myBatchSize < id3);
     }
 }

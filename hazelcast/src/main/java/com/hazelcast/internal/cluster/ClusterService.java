@@ -162,8 +162,8 @@ public interface ClusterService extends CoreService, Cluster {
      *    <li>When there is a split-brain issue, if further splits occur in the already split sub-clusters, the
      *    uniqueness guarantee can be lost.
      * </ul>
-     * The value returned from this method can be cached. Even though it can change later, both values should
-     * be unique.
+     * The value returned from this method can be cached. Even though it can change later, both values are
+     * unique.
      *
      * @throws IllegalStateException if the local instance is not joined or the cluster version is below 3.10
      *    or cluster just upgraded to 3.10, but local member has not yet learned its join version from the master

@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy;
 import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorService;
-import com.hazelcast.core.IdBatch;
+import com.hazelcast.concurrent.flakeidgen.IdBatch;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
