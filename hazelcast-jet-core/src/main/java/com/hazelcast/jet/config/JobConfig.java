@@ -142,7 +142,7 @@ public class JobConfig implements Serializable {
      * Default value is set to 10 seconds.
      */
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
-        Preconditions.checkPositive(snapshotInterval, "snapshotInterval must be positive");
+        Preconditions.checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
         this.snapshotIntervalMillis = snapshotInterval;
         return this;
     }

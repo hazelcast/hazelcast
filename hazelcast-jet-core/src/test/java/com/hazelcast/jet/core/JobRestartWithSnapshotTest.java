@@ -315,16 +315,11 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         );
 
         DAG dag = new DAG();
-        SequencesInPartitionsMetaSupplier pms = new SequencesInPartitionsMetaSupplier(3, 100);
-
-        Vertex source = dag.newVertex("source", throttle(pms, 10)).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeListP("sink"));
-
-        dag.edge(between(source, sink).distributed());
+        dag.newVertex("p", FirstSnapshotProcessor::new).localParallelism(1);
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        config.setSnapshotIntervalMillis(250);
+        config.setSnapshotIntervalMillis(0);
         Job job = instance1.newJob(dag, config);
 
         // the first snapshot should succeed
@@ -333,7 +328,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             SnapshotRecord record = records.get(0L);
             assertNotNull("no record found for snapshot 0", record);
             assertTrue("snapshot was not successful", record.isSuccessful());
-        }, 5);
+        }, 30);
     }
 
     private IStreamMap<Long, SnapshotRecord> getSnapshotsMap(Job job) {
@@ -557,11 +552,35 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         }
     }
 
-    /** A source processor that emits nothing and never completes */
+    /**
+     * A source processor that emits nothing and never completes
+     */
     private static final class StreamingNoopSourceP implements Processor {
         @Override
         public boolean complete() {
             return false;
+        }
+    }
+
+    /**
+     * A source processor which never completes and
+     * only allows the first snapshot to finish
+     */
+    private static final class FirstSnapshotProcessor implements Processor {
+        private boolean firstSnapshotDone;
+
+        @Override
+        public boolean complete() {
+            return false;
+        }
+
+        @Override
+        public boolean saveToSnapshot() {
+            try {
+                return !firstSnapshotDone;
+            } finally {
+                firstSnapshotDone = true;
+            }
         }
     }
 }
