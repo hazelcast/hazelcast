@@ -272,6 +272,10 @@
         <prefetch-validity-millis>10000</prefetch-validity-millis>
     </reliable-id-generator>
 
+    <atomic-long name="default"/>
+
+    <atomic-reference name="default"/>
+
     <serialization>
         <portable-version>0</portable-version>
     </serialization>

@@ -44,6 +44,8 @@ enum XmlElements {
     SEMAPHORE("semaphore", true),
     LOCK("lock", true),
     RINGBUFFER("ringbuffer", true),
+    ATOMIC_LONG("atomic-long", true),
+    ATOMIC_REFERENCE("atomic-reference", true),
     LISTENERS("listeners", false),
     SERIALIZATION("serialization", false),
     SERVICES("services", false),

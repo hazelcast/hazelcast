@@ -62,6 +62,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.JobTrackerConfig.DEFAULT_COMMUNICATE_STATS;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import static com.hazelcast.config.XmlElements.ATOMIC_LONG;
+import static com.hazelcast.config.XmlElements.ATOMIC_REFERENCE;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
@@ -354,6 +356,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
+        } else if (ATOMIC_LONG.isEqual(nodeName)) {
+            handleAtomicLong(node);
+        } else if (ATOMIC_REFERENCE.isEqual(nodeName)) {
+            handleAtomicReference(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -1961,6 +1967,20 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.addRingBufferConfig(rbConfig);
+    }
+
+    private void handleAtomicLong(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        AtomicLongConfig atomicLongConfig = new AtomicLongConfig(name);
+        config.addAtomicLongConfig(atomicLongConfig);
+    }
+
+    private void handleAtomicReference(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig(name);
+        config.addAtomicReferenceConfig(atomicReferenceConfig);
     }
 
     private void handleListeners(Node node) {

@@ -425,6 +425,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void readAtomicLong() {
+        String xml = HAZELCAST_START_TAG
+                + "    <atomic-long name=\"custom\"/>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
+        assertEquals("custom", atomicLongConfig.getName());
+    }
+
+    @Test
+    public void readAtomicReference() {
+        String xml = HAZELCAST_START_TAG
+                + "    <atomic-reference name=\"custom\"/>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
+        assertEquals("custom", atomicReferenceConfig.getName());
+    }
+
+    @Test
     public void testConfig2Xml2DefaultConfig() {
         testConfig2Xml2Config("hazelcast-default.xml");
     }

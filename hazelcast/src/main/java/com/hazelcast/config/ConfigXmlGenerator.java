@@ -115,6 +115,8 @@ public class ConfigXmlGenerator {
         semaphoreXmlGenerator(gen, config);
         lockXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
+        atomicLongXmlGenerator(gen, config);
+        atomicReferenceXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
@@ -462,6 +464,24 @@ public class ConfigXmlGenerator {
                         .appendProperties(storeConfig.getProperties());
                 gen.close();
             }
+            gen.close();
+        }
+    }
+
+    private static void atomicLongXmlGenerator(XmlGenerator gen, Config config) {
+        Collection<AtomicLongConfig> configs = config.getAtomicLongConfigs().values();
+        for (AtomicLongConfig atomicLongConfig : configs) {
+            gen.open("atomic-long", "name", atomicLongConfig.getName());
+
+            gen.close();
+        }
+    }
+
+    private static void atomicReferenceXmlGenerator(XmlGenerator gen, Config config) {
+        Collection<AtomicReferenceConfig> configs = config.getAtomicReferenceConfigs().values();
+        for (AtomicReferenceConfig atomicReferenceConfig : configs) {
+            gen.open("atomic-reference", "name", atomicReferenceConfig.getName());
+
             gen.close();
         }
     }

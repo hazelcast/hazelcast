@@ -16,6 +16,8 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -502,6 +504,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
+    public void testAtomicLongConfig() {
+        AtomicLongConfig testAtomicLong = config.getAtomicLongConfig("testAtomicLong");
+        assertNotNull(testAtomicLong);
+        assertEquals("testAtomicLong", testAtomicLong.getName());
+    }
+
+    @Test
+    public void testAtomicReferenceConfig() {
+        AtomicReferenceConfig testAtomicReference = config.getAtomicReferenceConfig("testAtomicReference");
+        assertNotNull(testAtomicReference);
+        assertEquals("testAtomicReference", testAtomicReference.getName());
+    }
+
+    @Test
     public void testSemaphoreConfig() {
         SemaphoreConfig testSemaphore = config.getSemaphoreConfig("testSemaphore");
         assertNotNull(testSemaphore);
@@ -772,8 +788,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
         assertEquals("reliableIdGenerator", reliableIdGenerator.getName());
-        assertEquals("atomicLong", atomicLong.getName());
-        assertEquals("atomicReference", atomicReference.getName());
+        assertEquals("testAtomicLong", atomicLong.getName());
+        assertEquals("testAtomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }

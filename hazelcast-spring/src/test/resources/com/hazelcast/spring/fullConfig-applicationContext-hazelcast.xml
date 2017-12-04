@@ -266,6 +266,10 @@
                 <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
             </hz:ringbuffer>
 
+            <hz:atomic-long name="testAtomicLong"/>
+
+            <hz:atomic-reference name="testAtomicReference"/>
+
             <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10"/>
 
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
@@ -576,8 +580,8 @@
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:reliableIdGenerator id="reliableIdGenerator" instance-ref="instance" name="reliableIdGenerator"/>
-    <hz:atomicLong id="atomicLong" instance-ref="instance" name="atomicLong"/>
-    <hz:atomicReference id="atomicReference" instance-ref="instance" name="atomicReference"/>
+    <hz:atomicLong id="atomicLong" instance-ref="instance" name="testAtomicLong"/>
+    <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
     <hz:lock id="lock" instance-ref="instance" name="lock"/>

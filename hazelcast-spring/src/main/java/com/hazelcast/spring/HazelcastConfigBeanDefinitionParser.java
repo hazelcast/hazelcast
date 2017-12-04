@@ -16,6 +16,8 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -165,6 +167,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> queueManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> lockManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> atomicLongManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> atomicReferenceManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> semaphoreManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> listManagedMap;
@@ -191,6 +195,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.queueManagedMap = createManagedMap("queueConfigs");
             this.lockManagedMap = createManagedMap("lockConfigs");
             this.ringbufferManagedMap = createManagedMap("ringbufferConfigs");
+            this.atomicLongManagedMap = createManagedMap("atomicLongConfigs");
+            this.atomicReferenceManagedMap = createManagedMap("atomicReferenceConfigs");
             this.reliableTopicManagedMap = createManagedMap("reliableTopicConfigs");
             this.semaphoreManagedMap = createManagedMap("semaphoreConfigs");
             this.listManagedMap = createManagedMap("listConfigs");
@@ -248,6 +254,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleLock(node);
                     } else if ("ringbuffer".equals(nodeName)) {
                         handleRingbuffer(node);
+                    } else if ("atomic-long".equals(nodeName)) {
+                        handleAtomicLong(node);
+                    } else if ("atomic-reference".equals(nodeName)) {
+                        handleAtomicReference(node);
                     } else if ("reliable-topic".equals(nodeName)) {
                         handleReliableTopic(node);
                     } else if ("semaphore".equals(nodeName)) {
@@ -692,6 +702,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             extractBasicStoreConfig(node, builder);
             ringbufferConfigBuilder.addPropertyValue("ringbufferStoreConfig", builder.getBeanDefinition());
+        }
+
+        public void handleAtomicLong(Node node) {
+            BeanDefinitionBuilder atomicLongConfigBuilder = createBeanBuilder(AtomicLongConfig.class);
+            fillAttributeValues(node, atomicLongConfigBuilder);
+            atomicLongManagedMap.put(getAttribute(node, "name"), atomicLongConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleAtomicReference(Node node) {
+            BeanDefinitionBuilder atomicReferenceConfigBuilder = createBeanBuilder(AtomicReferenceConfig.class);
+            fillAttributeValues(node, atomicReferenceConfigBuilder);
+            atomicReferenceManagedMap.put(getAttribute(node, "name"), atomicReferenceConfigBuilder.getBeanDefinition());
         }
 
         public void handleQueue(Node node) {

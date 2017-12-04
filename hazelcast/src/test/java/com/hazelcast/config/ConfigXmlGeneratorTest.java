@@ -193,6 +193,32 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testAtomicLong() {
+        AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig");
+
+        Config config = new Config()
+                .addAtomicLongConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        AtomicLongConfig actualConfig = xmlConfig.getAtomicLongConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testAtomicReference() {
+        AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig");
+
+        Config config = new Config()
+                .addAtomicReferenceConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        AtomicReferenceConfig actualConfig = xmlConfig.getAtomicReferenceConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testCacheMergePolicy() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName("testCache");
