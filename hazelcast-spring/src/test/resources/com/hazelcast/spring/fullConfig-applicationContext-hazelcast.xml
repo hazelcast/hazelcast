@@ -557,7 +557,7 @@
                 <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
             </hz:hot-restart-persistence>
 
-            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidity="10"/>
+            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"/>
         </hz:config>
     </hz:hazelcast>
 

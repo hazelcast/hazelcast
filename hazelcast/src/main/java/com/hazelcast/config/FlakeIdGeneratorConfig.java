@@ -40,13 +40,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     public static final int DEFAULT_PREFETCH_COUNT = 100;
 
     /**
-     * Default value for {@link #getPrefetchValidity()}.
+     * Default value for {@link #getPrefetchValidityMillis()}.
      */
-    public static final long DEFAULT_PREFETCH_VALIDITY = 10000;
+    public static final long DEFAULT_PREFETCH_VALIDITY_MILLIS = 10000;
 
     private String name;
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
-    private long prefetchValidity = DEFAULT_PREFETCH_VALIDITY;
+    private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
 
     private transient FlakeIdGeneratorConfigReadOnly readOnly;
 
@@ -64,7 +64,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     public FlakeIdGeneratorConfig(FlakeIdGeneratorConfig other) {
         this.name = other.name;
         this.prefetchCount = other.prefetchCount;
-        this.prefetchValidity = other.prefetchValidity;
+        this.prefetchValidityMillis = other.prefetchValidityMillis;
     }
 
     /**
@@ -118,10 +118,10 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * @see #setPrefetchValidity(long)
+     * @see #setPrefetchValidityMillis(long)
      */
-    public long getPrefetchValidity() {
-        return prefetchValidity;
+    public long getPrefetchValidityMillis() {
+        return prefetchValidityMillis;
     }
 
     /**
@@ -137,8 +137,8 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      *
      * @return this instance for fluent API
      */
-    public FlakeIdGeneratorConfig setPrefetchValidity(long prefetchValidity) {
-        this.prefetchValidity = prefetchValidity;
+    public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
+        this.prefetchValidityMillis = prefetchValidityMs;
         return this;
     }
 
@@ -156,7 +156,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         if (prefetchCount != that.prefetchCount) {
             return false;
         }
-        if (prefetchValidity != that.prefetchValidity) {
+        if (prefetchValidityMillis != that.prefetchValidityMillis) {
             return false;
         }
         return name != null ? name.equals(that.name) : that.name == null;
@@ -166,7 +166,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + prefetchCount;
-        result = 31 * result + (int) (prefetchValidity ^ (prefetchValidity >>> 32));
+        result = 31 * result + (int) (prefetchValidityMillis ^ (prefetchValidityMillis >>> 32));
         return result;
     }
 
@@ -175,7 +175,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         return "FlakeIdGeneratorConfig{"
                 + "name='" + name + '\''
                 + ", prefetchCount=" + prefetchCount
-                + ", prefetchValidity=" + prefetchValidity
+                + ", prefetchValidityMillis=" + prefetchValidityMillis
                 + '}';
     }
 
@@ -193,13 +193,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(prefetchCount);
-        out.writeLong(prefetchValidity);
+        out.writeLong(prefetchValidityMillis);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         prefetchCount = in.readInt();
-        prefetchValidity = in.readLong();
+        prefetchValidityMillis = in.readLong();
     }
 }

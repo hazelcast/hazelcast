@@ -95,12 +95,13 @@ public class FlakeIdGeneratorProxy
         }
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
-        batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidity(), new IFunction<Integer, IdBatch>() {
-            @Override
-            public IdBatch apply(Integer batchSize) {
-                return newIdBatch(batchSize);
-            }
-        });
+        batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
+                new IFunction<Integer, IdBatch>() {
+                    @Override
+                    public IdBatch apply(Integer batchSize) {
+                        return newIdBatch(batchSize);
+                    }
+                });
     }
 
     @Override

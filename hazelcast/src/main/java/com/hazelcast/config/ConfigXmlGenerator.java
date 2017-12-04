@@ -975,7 +975,7 @@ public class ConfigXmlGenerator {
         for (FlakeIdGeneratorConfig m : config.getFlakeIdGeneratorConfigs().values()) {
             gen.open("flake-id-generator", "name", m.getName())
                .node("prefetch-count", m.getPrefetchCount())
-               .node("prefetch-validity", m.getPrefetchValidity());
+               .node("prefetch-validity-millis", m.getPrefetchValidityMillis());
             gen.close();
         }
     }

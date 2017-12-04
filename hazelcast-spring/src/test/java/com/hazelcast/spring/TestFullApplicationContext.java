@@ -408,7 +408,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMemberFlakeIdGeneratorConfig() {
         FlakeIdGeneratorConfig c = instance.getConfig().findFlakeIdGeneratorConfig("flakeIdGenerator");
         assertEquals(3, c.getPrefetchCount());
-        assertEquals(10L, c.getPrefetchValidity());
+        assertEquals(10L, c.getPrefetchValidityMillis());
         assertEquals("flakeIdGenerator*", c.getName());
     }
 

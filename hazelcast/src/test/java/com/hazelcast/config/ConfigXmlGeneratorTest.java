@@ -142,7 +142,7 @@ public class ConfigXmlGeneratorTest {
     public void testFlakeIdGeneratorConfigGenerator() {
         FlakeIdGeneratorConfig figConfig = new FlakeIdGeneratorConfig("flake-id-gen1")
                 .setPrefetchCount(3)
-                .setPrefetchValidity(10L);
+                .setPrefetchValidityMillis(10L);
 
         Config config = new Config()
                 .addFlakeIdGeneratorConfig(figConfig);

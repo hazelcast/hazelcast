@@ -269,7 +269,7 @@
 
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
-        <prefetch-validity>10000</prefetch-validity>
+        <prefetch-validity-millis>10000</prefetch-validity-millis>
     </flake-id-generator>
 
     <serialization>

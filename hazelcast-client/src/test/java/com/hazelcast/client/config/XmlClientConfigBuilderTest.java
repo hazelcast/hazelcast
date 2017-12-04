@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -318,14 +319,14 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<flake-id-generator name='gen'>"
                 + "  <prefetch-count>3</prefetch-count>"
-                + "  <prefetch-validity>10</prefetch-validity>"
+                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
                 + "</flake-id-generator>"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig config = buildConfig(xml);
-        ClientFlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
+        FlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
-        assertEquals(10L, fConfig.getPrefetchValidity());
+        assertEquals(10L, fConfig.getPrefetchValidityMillis());
     }
 
     @Test

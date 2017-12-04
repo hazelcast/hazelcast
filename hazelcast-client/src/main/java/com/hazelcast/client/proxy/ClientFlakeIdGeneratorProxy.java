@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.ResponseParameters;
@@ -24,6 +23,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.concurrent.flakeidgen.AutoBatcher;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
@@ -39,13 +39,14 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
     public ClientFlakeIdGeneratorProxy(String serviceName, String objectName, ClientContext context) {
         super(serviceName, objectName, context);
 
-        ClientFlakeIdGeneratorConfig config = getContext().getClientConfig().findFlakeIdGeneratorConfig(getName());
-        batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidity(), new IFunction<Integer, IdBatch>() {
-            @Override
-            public IdBatch apply(Integer batchSize) {
-                return newIdBatch(batchSize);
-            }
-        });
+        FlakeIdGeneratorConfig config = getContext().getClientConfig().findFlakeIdGeneratorConfig(getName());
+        batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
+                new IFunction<Integer, IdBatch>() {
+                    @Override
+                    public IdBatch apply(Integer batchSize) {
+                        return newIdBatch(batchSize);
+                    }
+                });
     }
 
     @Override

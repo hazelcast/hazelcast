@@ -651,8 +651,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             String value = getTextContent(child).trim();
             if ("prefetch-count".equals(nodeName)) {
                 generatorConfig.setPrefetchCount(Integer.parseInt(value));
-            } else if ("prefetch-validity".equalsIgnoreCase(nodeName)) {
-                generatorConfig.setPrefetchValidity(Long.parseLong(value));
+            } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
             }
         }
         config.addFlakeIdGeneratorConfig(generatorConfig);

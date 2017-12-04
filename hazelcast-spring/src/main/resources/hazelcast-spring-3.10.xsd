@@ -2851,7 +2851,7 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
-        <xs:attribute name="prefetchValidity" type="xs:long" default="10000" use="optional">
+        <xs:attribute name="prefetchValidityMillis" type="xs:long" default="10000" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.

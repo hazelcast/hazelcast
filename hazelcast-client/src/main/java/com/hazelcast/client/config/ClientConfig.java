@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -118,8 +119,8 @@ public class ClientConfig {
 
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
 
-    private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
-            new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
+    private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
+            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     /**
      * Sets the pattern matcher which is used to match item names to
@@ -362,12 +363,12 @@ public class ClientConfig {
      *
      * @return the map configurations mapped by config name
      */
-    public Map<String, ClientFlakeIdGeneratorConfig> getFlakeIdGeneratorConfigMap() {
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigMap() {
         return flakeIdGeneratorConfigMap;
     }
 
     /**
-     * Returns a {@link ClientFlakeIdGeneratorConfig} configuration for the given flake ID generator name.
+     * Returns a {@link FlakeIdGeneratorConfig} configuration for the given flake ID generator name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
@@ -381,9 +382,9 @@ public class ClientConfig {
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
-    public ClientFlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
         String baseName = getBaseName(name);
-        ClientFlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
         if (config != null) {
             return config;
         }
@@ -391,7 +392,7 @@ public class ClientConfig {
     }
 
     /**
-     * Returns the {@link ClientFlakeIdGeneratorConfig} for the given name, creating
+     * Returns the {@link FlakeIdGeneratorConfig} for the given name, creating
      * one if necessary and adding it to the collection of known configurations.
      * <p>
      * The configuration is found by matching the the configuration name
@@ -403,7 +404,7 @@ public class ClientConfig {
      * <p>
      * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addFlakeIdGeneratorConfig(ClientFlakeIdGeneratorConfig)}.
+     * explicitly adding it by invoking {@link #addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig)}.
      * <p>
      * Because it adds new configurations if they are not already present,
      * this method is intended to be used before this config is used to
@@ -417,18 +418,18 @@ public class ClientConfig {
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
-    public ClientFlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
+    public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
         String baseName = getBaseName(name);
-        ClientFlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
         if (config != null) {
             return config;
         }
-        ClientFlakeIdGeneratorConfig defConfig = flakeIdGeneratorConfigMap.get("default");
+        FlakeIdGeneratorConfig defConfig = flakeIdGeneratorConfigMap.get("default");
         if (defConfig == null) {
-            defConfig = new ClientFlakeIdGeneratorConfig("default");
+            defConfig = new FlakeIdGeneratorConfig("default");
             flakeIdGeneratorConfigMap.put(defConfig.getName(), defConfig);
         }
-        config = new ClientFlakeIdGeneratorConfig(defConfig);
+        config = new FlakeIdGeneratorConfig(defConfig);
         config.setName(name);
         flakeIdGeneratorConfigMap.put(config.getName(), config);
         return config;
@@ -442,7 +443,7 @@ public class ClientConfig {
      * @param config the flake ID configuration
      * @return this config instance
      */
-    public ClientConfig addFlakeIdGeneratorConfig(ClientFlakeIdGeneratorConfig config) {
+    public ClientConfig addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig config) {
         flakeIdGeneratorConfigMap.put(config.getName(), config);
         return this;
     }
@@ -455,10 +456,10 @@ public class ClientConfig {
      * @param map the FlakeIdGenerator configuration map to set
      * @return this config instance
      */
-    public ClientConfig setFlakeIdGeneratorConfigMap(Map<String, ClientFlakeIdGeneratorConfig> map) {
+    public ClientConfig setFlakeIdGeneratorConfigMap(Map<String, FlakeIdGeneratorConfig> map) {
         flakeIdGeneratorConfigMap.clear();
         flakeIdGeneratorConfigMap.putAll(map);
-        for (Entry<String, ClientFlakeIdGeneratorConfig> entry : map.entrySet()) {
+        for (Entry<String, FlakeIdGeneratorConfig> entry : map.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
