@@ -55,9 +55,10 @@ public class FlakeIdGeneratorProxy
     @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
 
+    private static final int NODE_ID_NOT_YET_SET = -1;
+    private static final int NODE_ID_OUT_OF_RANGE = -2;
 
-    /** Assigned node ID or -1, if it is out of range */
-    private final int nodeId;
+    private volatile int nodeId = NODE_ID_NOT_YET_SET;
     private final String name;
     private final ILogger logger;
 
@@ -73,26 +74,12 @@ public class FlakeIdGeneratorProxy
      * Set of member UUIDs of which we know have node IDs out of range. These members are never again used
      * to generate unique IDs, because this error is unrecoverable.
      */
-    private final Set<String> outOfRangeMembers;
+    private final Set<String> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-    FlakeIdGeneratorProxy(String name, int nodeId, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
+    FlakeIdGeneratorProxy(String name, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(getClass());
-
-        // If our nodeId is out of range, ID generation will be forwarded to another member.
-        // This is designed to provide functionality when the node ID overflows for new members but there are
-        // still some members with good node ID.
-        if ((nodeId & -1 << BITS_NODE_ID) != 0) {
-            this.nodeId = -1;
-            outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-            outOfRangeMembers.add(nodeEngine.getClusterService().getLocalMember().getUuid());
-            logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
-                    + "Cluster restart is recommended.");
-        } else {
-            this.nodeId = nodeId;
-            outOfRangeMembers = null;
-        }
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
@@ -110,13 +97,15 @@ public class FlakeIdGeneratorProxy
     }
 
     public IdBatch newIdBatch(int batchSize) {
-        // local operation if we have valid node ID
+        int nodeId = getNodeId();
+
+        // if we have valid node ID, generate ID locally
         if (nodeId >= 0) {
-            long base = newIdBaseLocal(batchSize);
+            long base = newIdBaseLocal(Clock.currentTimeMillis(), nodeId, batchSize);
             return new IdBatch(base, INCREMENT, batchSize);
         }
 
-        // remote call otherwise
+        // Remote call otherwise. Loop will end when getRandomMember() throws that all members overflowed.
         while (true) {
             NewIdBatchOperation op = new NewIdBatchOperation(name, batchSize);
             Member target = getRandomMember();
@@ -133,7 +122,7 @@ public class FlakeIdGeneratorProxy
     }
 
     long newIdBaseLocal(int batchSize) {
-        return newIdBaseLocal(Clock.currentTimeMillis(), batchSize);
+        return newIdBaseLocal(Clock.currentTimeMillis(), getNodeId(), batchSize);
     }
 
     /**
@@ -150,11 +139,13 @@ public class FlakeIdGeneratorProxy
      * @param now Current time (currentTimeMillis() normally or other value in tests)
      * @return First ID for the batch.
      */
-    long newIdBaseLocal(long now, int batchSize) {
+    // package-private for testing
+    long newIdBaseLocal(long now, int nodeId, int batchSize) {
         checkPositive(batchSize, "batchSize");
-        if (nodeId < 0) {
+        if (nodeId == NODE_ID_OUT_OF_RANGE) {
             throw new FlakeIdNodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
         }
+        assert (nodeId & -1 << BITS_NODE_ID) == 0  : "nodeId out of range: " + nodeId;
         now -= EPOCH_START;
         assert now >= -(1L << BITS_TIMESTAMP - 1) && now < (1L << BITS_TIMESTAMP - 1)  : "Current time out of allowed range";
         now <<= BITS_SEQUENCE;
@@ -165,6 +156,35 @@ public class FlakeIdGeneratorProxy
             base = Math.max(now, oldGeneratedValue);
         } while (!generatedValue.compareAndSet(oldGeneratedValue, base + batchSize));
         return base << BITS_NODE_ID | nodeId;
+    }
+
+    /**
+     * Three possible return outcomes of this call:<ul>
+     *     <li>returns current node ID of this member that it not out of range (a positive value)
+     *     <li>returns {@link #NODE_ID_OUT_OF_RANGE}
+     *     <li>throws {@link IllegalStateException}, if node ID is not yet available, with description why.
+     * </ul>
+     */
+    private int getNodeId() {
+        int nodeId = this.nodeId;
+        if (nodeId > 0) {
+            return nodeId;
+        }
+
+        nodeId = getNodeEngine().getClusterService().getMemberListJoinVersion();
+        assert nodeId >= 0 : "nodeId=" + nodeId;
+
+        // If our node ID is out of range, assign NODE_ID_OUT_OF_RANGE to nodeId
+        if ((nodeId & -1 << BITS_NODE_ID) != 0) {
+            nodeId = NODE_ID_OUT_OF_RANGE;
+            outOfRangeMembers.add(getNodeEngine().getClusterService().getLocalMember().getUuid());
+            logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
+                    + "Cluster restart is recommended.");
+        }
+
+        // we ignore possible double initialization
+        this.nodeId = nodeId;
+        return nodeId;
     }
 
     private Member getRandomMember() {

@@ -24,7 +24,7 @@ import com.hazelcast.internal.cluster.ClusterService;
  * and are k-ordered (roughly ordered). IDs are in the range from {@code Long.MIN_VALUE} to
  * {@code Long.MAX_VALUE}.
  * <p>
- * The IDs contain timestamp component and a node ID, which is assigned when the member
+ * The IDs contain timestamp component and a node ID component, which is assigned when the member
  * joins the cluster. This allows the IDs to be ordered and unique without any coordination between
  * members, which makes the generator safe even in split-brain scenario (for caveats,
  * {@link ClusterService#getMemberListJoinVersion() see here}).

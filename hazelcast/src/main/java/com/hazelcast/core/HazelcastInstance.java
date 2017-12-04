@@ -192,8 +192,8 @@ public interface HazelcastInstance {
      * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      * <p>
-     * <b>Note:</b> Note that it don't support invokeAll/Any
-     * and don't have standard shutdown behavior
+     * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
+     * and doesn't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return the distributed executor service for the given name
@@ -204,9 +204,9 @@ public interface HazelcastInstance {
      * Returns the durable executor service for the given name.
      * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
-     * <p/>
-     * <p><b>Note:</b> Note that it don't support invokeAll/Any
-     * and don't have standard shutdown behavior</p>
+     * <p>
+     * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
+     * and doesn't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return the durable executor service for the given name

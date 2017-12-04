@@ -49,8 +49,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService {
 
     @Override
     public DistributedObject createDistributedObject(String name) {
-        int nodeId = nodeEngine.getClusterService().getMemberListJoinVersion();
-        return new FlakeIdGeneratorProxy(name, nodeId, nodeEngine, this);
+        return new FlakeIdGeneratorProxy(name, nodeEngine, this);
     }
 
     @Override
