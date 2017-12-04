@@ -16,9 +16,21 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
+import com.hazelcast.config.AtomicLongConfig;
+
 public class AtomicLongContainer {
 
+    private final AtomicLongConfig config;
+
     private long value;
+
+    public AtomicLongContainer(AtomicLongConfig config) {
+        this.config = config;
+    }
+
+    public AtomicLongConfig getConfig() {
+        return config;
+    }
 
     public long get() {
         return value;

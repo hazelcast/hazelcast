@@ -76,6 +76,8 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("network", c1.getNetworkConfig(), c2.getNetworkConfig(), new NetworkConfigChecker());
         checkCompatibleConfigs("map", c1, c2, c1.getMapConfigs(), c2.getMapConfigs(), new MapConfigChecker());
         checkCompatibleConfigs("ringbuffer", c1, c2, c1.getRingbufferConfigs(), c2.getRingbufferConfigs(), new RingbufferConfigChecker());
+        checkCompatibleConfigs("atomic-long", c1, c2, c1.getAtomicLongConfigs(), c2.getAtomicLongConfigs(), new AtomicLongConfigChecker());
+        checkCompatibleConfigs("atomic-reference", c1, c2, c1.getAtomicReferenceConfigs(), c2.getAtomicReferenceConfigs(), new AtomicReferenceConfigChecker());
         checkCompatibleConfigs("queue", c1, c2, c1.getQueueConfigs(), c2.getQueueConfigs(), new QueueConfigChecker());
         checkCompatibleConfigs("semaphore", c1, c2, getSemaphoreConfigsByName(c1), getSemaphoreConfigsByName(c2), new SemaphoreConfigChecker());
         checkCompatibleConfigs("lock", c1, c2, c1.getLockConfigs(), c2.getLockConfigs(), new LockConfigChecker());
@@ -241,6 +243,32 @@ class ConfigCompatibilityChecker {
         @Override
         EventJournalConfig getDefault(Config c) {
             return c.getCacheEventJournalConfig("default");
+        }
+    }
+
+    private static class AtomicLongConfigChecker extends ConfigChecker<AtomicLongConfig> {
+        @Override
+        boolean check(AtomicLongConfig c1, AtomicLongConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getName(), c2.getName());
+        }
+
+        @Override
+        AtomicLongConfig getDefault(Config c) {
+            return c.getAtomicLongConfig("default");
+        }
+    }
+
+    private static class AtomicReferenceConfigChecker extends ConfigChecker<AtomicReferenceConfig> {
+        @Override
+        boolean check(AtomicReferenceConfig c1, AtomicReferenceConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getName(), c2.getName());
+        }
+
+        @Override
+        AtomicReferenceConfig getDefault(Config c) {
+            return c.getAtomicReferenceConfig("default");
         }
     }
 

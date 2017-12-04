@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ConfigPatternMatcher;
@@ -75,6 +77,7 @@ import static java.util.Collections.singleton;
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements PreJoinAwareService,
         CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
+
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
 
@@ -91,6 +94,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
+    private final ConcurrentMap<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
+    private final ConcurrentMap<String, AtomicReferenceConfig> atomicReferenceConfigs
+            = new ConcurrentHashMap<String, AtomicReferenceConfig>();
     private final ConcurrentMap<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
@@ -237,10 +243,10 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
      * Register a dynamic configuration in a local member. When a dynamic configuration with the same name already
      * exists then this call has no effect.
      *
-     * @param newConfig Configuration to register.
+     * @param newConfig       Configuration to register.
      * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
-     * @throws ConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
+     * @throws ConfigurationException        when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
@@ -453,6 +459,26 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public ConcurrentMap<String, RingbufferConfig> getRingbufferConfigs() {
         return ringbufferConfigs;
+    }
+
+    @Override
+    public AtomicLongConfig findAtomicLongConfig(String name) {
+        return lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
+    }
+
+    @Override
+    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
+        return atomicLongConfigs;
+    }
+
+    @Override
+    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
+        return lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
+    }
+
+    @Override
+    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
+        return atomicReferenceConfigs;
     }
 
     @Override

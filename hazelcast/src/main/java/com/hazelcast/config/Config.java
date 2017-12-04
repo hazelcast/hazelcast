@@ -120,6 +120,11 @@ public class Config {
     private final Map<String, ReliableIdGeneratorConfig> reliableIdGeneratorConfigMap =
             new ConcurrentHashMap<String, ReliableIdGeneratorConfig>();
 
+    private final Map<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
+
+    private final Map<String, AtomicReferenceConfig> atomicReferenceConfigs
+            = new ConcurrentHashMap<String, AtomicReferenceConfig>();
+
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
@@ -1393,6 +1398,222 @@ public class Config {
         this.ringbufferConfigs.clear();
         this.ringbufferConfigs.putAll(ringbufferConfigs);
         for (Entry<String, RingbufferConfig> entry : ringbufferConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns a read-only AtomicLong configuration for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the AtomicLong config
+     * @return the AtomicLong configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public AtomicLongConfig findAtomicLongConfig(String name) {
+        name = getBaseName(name);
+        AtomicLongConfig config = lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getAtomicLongConfig("default").getAsReadOnly();
+    }
+
+    /**
+     * Returns the AtomicLongConfig for the given name, creating one
+     * if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking {@link #addAtomicLongConfig(AtomicLongConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the AtomicLong config
+     * @return the AtomicLong configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public AtomicLongConfig getAtomicLongConfig(String name) {
+        name = getBaseName(name);
+        AtomicLongConfig config = lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        AtomicLongConfig defConfig = atomicLongConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new AtomicLongConfig();
+            defConfig.setName("default");
+            addAtomicLongConfig(defConfig);
+        }
+        config = new AtomicLongConfig(defConfig);
+        config.setName(name);
+        addAtomicLongConfig(config);
+        return config;
+    }
+
+    /**
+     * Adds the AtomicLong configuration. The configuration is saved under the config
+     * name, which may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param atomicLongConfig the AtomicLong configuration
+     * @return this config instance
+     */
+    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
+        atomicLongConfigs.put(atomicLongConfig.getName(), atomicLongConfig);
+        return this;
+    }
+
+    /**
+     * Returns the map of AtomicLong configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration was initially obtained.
+     *
+     * @return the AtomicLong configurations mapped by config name
+     */
+    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
+        return atomicLongConfigs;
+    }
+
+    /**
+     * Sets the map of AtomicLong configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration will be obtained in the future.
+     *
+     * @param atomicLongConfigs the AtomicLong configuration map to set
+     * @return this config instance
+     */
+    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
+        this.atomicLongConfigs.clear();
+        this.atomicLongConfigs.putAll(atomicLongConfigs);
+        for (Entry<String, AtomicLongConfig> entry : atomicLongConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns a read-only AtomicReference configuration for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the AtomicReference config
+     * @return the AtomicReference configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
+        name = getBaseName(name);
+        AtomicReferenceConfig config = lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getAtomicReferenceConfig("default").getAsReadOnly();
+    }
+
+    /**
+     * Returns the AtomicReferenceConfig for the given name, creating one
+     * if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking {@link #addAtomicReferenceConfig(AtomicReferenceConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the AtomicReference config
+     * @return the AtomicReference configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
+        name = getBaseName(name);
+        AtomicReferenceConfig config = lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        AtomicReferenceConfig defConfig = atomicReferenceConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new AtomicReferenceConfig();
+            defConfig.setName("default");
+            addAtomicReferenceConfig(defConfig);
+        }
+        config = new AtomicReferenceConfig(defConfig);
+        config.setName(name);
+        addAtomicReferenceConfig(config);
+        return config;
+    }
+
+    /**
+     * Adds the AtomicReference configuration. The configuration is saved under the config
+     * name, which may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param atomicReferenceConfig the AtomicReference configuration
+     * @return this config instance
+     */
+    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
+        atomicReferenceConfigs.put(atomicReferenceConfig.getName(), atomicReferenceConfig);
+        return this;
+    }
+
+    /**
+     * Returns the map of AtomicReference configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration was initially obtained.
+     *
+     * @return the AtomicReference configurations mapped by config name
+     */
+    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
+        return atomicReferenceConfigs;
+    }
+
+    /**
+     * Sets the map of AtomicReference configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration will be obtained in the future.
+     *
+     * @param atomicReferenceConfigs the AtomicReference configuration map to set
+     * @return this config instance
+     */
+    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
+        this.atomicReferenceConfigs.clear();
+        this.atomicReferenceConfigs.putAll(atomicReferenceConfigs);
+        for (Entry<String, AtomicReferenceConfig> entry : atomicReferenceConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -3183,6 +3404,8 @@ public class Config {
                 + ", executorConfigs=" + executorConfigs
                 + ", semaphoreConfigs=" + semaphoreConfigs
                 + ", ringbufferConfigs=" + ringbufferConfigs
+                + ", atomicLongConfigs=" + atomicLongConfigs
+                + ", atomicReferenceConfigs=" + atomicReferenceConfigs
                 + ", wanReplicationConfigs=" + wanReplicationConfigs
                 + ", listenerConfigs=" + listenerConfigs
                 + ", mapEventJournalConfigs=" + mapEventJournalConfigs

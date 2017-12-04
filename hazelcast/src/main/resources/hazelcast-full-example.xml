@@ -1526,7 +1526,6 @@ https://hazelcast.org/documentation/.
         Includes the Ringbuffer store factory class name and property configurations. The store format is the same as the
             in-memory-format for the Ringbuffer.
     -->
-
     <ringbuffer name="default">
         <capacity>10000</capacity>
         <time-to-live-seconds>0</time-to-live-seconds>
@@ -1563,6 +1562,22 @@ https://hazelcast.org/documentation/.
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>10000</prefetch-validity-millis>
     </reliable-id-generator>
+
+    <!--
+        ===== HAZELCAST ATOMIC LONG CONFIGURATION =====
+
+        Configuration element's name is <atomic-long>. It has the required attribute "name" with which you
+        can specify the name of your IAtomicLong. This attribute's default value is "default".
+    -->
+    <atomic-long name="default"/>
+
+    <!--
+        ===== HAZELCAST ATOMIC REFERENCE CONFIGURATION =====
+
+        Configuration element's name is <atomic-reference>. It has the required attribute "name" with which you
+        can specify the name of your IAtomicReference. This attribute's default value is "default".
+    -->
+    <atomic-reference name="default"/>
 
     <!--
         ===== HAZELCAST LISTENER CONFIGURATIONS =====
