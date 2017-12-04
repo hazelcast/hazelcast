@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -74,7 +73,7 @@ public final class PhoneHome {
     private static final int J_INTERVAL = 600;
 
     private static final String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
-    private static final int CONNECTION_TIMEOUT_MILLIS = 30000;
+    private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final String FALSE = "false";
 
     public PhoneHome() {
@@ -243,36 +242,32 @@ public final class PhoneHome {
 
     private void addManCenterInfo(ExecutorService executor, Future<MCResponse> response,
                                   int clusterSize, PhoneHomeParameterCreator parameterCreator) {
-        MCResponse mcResponse = null;
+        MCResponse mcResponse;
         try {
             mcResponse = response.get();
-        } catch (InterruptedException ignored) {
+        } catch (Exception ignored) {
             EmptyStatement.ignore(ignored);
-        } catch (ExecutionException ignored) {
-            EmptyStatement.ignore(ignored);
+            parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
+            parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
+            return;
         } finally {
             executor.shutdown();
         }
 
         MCPhoneHomeInfo mcPhoneHomeInfo = getManCenterPhoneHomeInfo(mcResponse);
-        if (mcPhoneHomeInfo != null) {
-            String version = mcPhoneHomeInfo.getVersion();
-            Object license = mcPhoneHomeInfo.getLicense();
-            int responseCode = mcPhoneHomeInfo.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                if (license == null) {
-                    checkClusterSizeAndSetLicense(clusterSize, parameterCreator);
-                } else {
-                    parameterCreator.addParam("mclicense", license.toString());
-                }
-                parameterCreator.addParam("mcver", version);
+        String version = mcPhoneHomeInfo.getVersion();
+        Object license = mcPhoneHomeInfo.getLicense();
+        int responseCode = mcPhoneHomeInfo.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            if (license == null) {
+                checkClusterSizeAndSetLicense(clusterSize, parameterCreator);
             } else {
-                parameterCreator.addParam("mclicense", "MC_CONN_ERR_" + responseCode);
-                parameterCreator.addParam("mcver", "MC_CONN_ERR_" + responseCode);
+                parameterCreator.addParam("mclicense", license.toString());
             }
+            parameterCreator.addParam("mcver", version);
         } else {
-            parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
-            parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
+            parameterCreator.addParam("mclicense", "MC_CONN_ERR_" + responseCode);
+            parameterCreator.addParam("mcver", "MC_CONN_ERR_" + responseCode);
         }
     }
 
@@ -288,9 +283,6 @@ public final class PhoneHome {
         InputStream inputStream = null;
         InputStreamReader reader = null;
         MCPhoneHomeInfo mcPhoneHomeInfo = null;
-        if (mcResponse == null) {
-            return mcPhoneHomeInfo;
-        }
         try {
             inputStream = mcResponse.getInputStream();
             reader = new InputStreamReader(inputStream, "UTF-8");
@@ -299,7 +291,7 @@ public final class PhoneHome {
             final String license = JsonUtil.getString(mcPhoneHomeInfoJson, "mcLicense", null);
             final int responseCode = mcResponse.getResponseCode();
             mcPhoneHomeInfo = new MCPhoneHomeInfo(version, license, responseCode);
-        } catch (IOException ignored) {
+        } catch (Exception ignored) {
             EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(reader);
