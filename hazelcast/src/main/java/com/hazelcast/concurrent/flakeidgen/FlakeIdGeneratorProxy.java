@@ -40,7 +40,11 @@ public class FlakeIdGeneratorProxy
         extends AbstractDistributedObject<FlakeIdGeneratorService>
         implements FlakeIdGenerator {
 
-    static final int BITS_TIMESTAMP = 42;
+    public static final int BITS_TIMESTAMP = 42;
+    public static final int BITS_SEQUENCE = 6;
+    public static final int BITS_NODE_ID = 16;
+
+    public static final long INCREMENT = 1 << BITS_NODE_ID;
 
     /**
      * 1.1.2017 0:00 GMT will be MIN_VALUE in the 42-bit signed integer.
@@ -50,10 +54,7 @@ public class FlakeIdGeneratorProxy
      */
     @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
-    static final int BITS_NODE_ID = 16;
-    public static final long INCREMENT = 1 << BITS_NODE_ID;
 
-    private static final int BITS_SEQUENCE = 6;
 
     /** Assigned node ID or -1, if it is out of range */
     private final int nodeId;
