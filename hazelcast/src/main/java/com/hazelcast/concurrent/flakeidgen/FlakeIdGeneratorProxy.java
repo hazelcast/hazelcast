@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.flakeidgen;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
@@ -96,10 +95,10 @@ public class FlakeIdGeneratorProxy
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
-                new IFunction<Integer, IdBatch>() {
+                new AutoBatcher.IdBatchSupplier() {
                     @Override
-                    public IdBatch apply(Integer batchSize) {
-                        return newIdBatch(batchSize);
+                    public IdBatch newIdBatch(int batchSize) {
+                        return FlakeIdGeneratorProxy.this.newIdBatch(batchSize);
                     }
                 });
     }

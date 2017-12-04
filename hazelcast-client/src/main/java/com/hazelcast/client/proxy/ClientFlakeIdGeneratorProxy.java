@@ -25,7 +25,6 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.concurrent.flakeidgen.AutoBatcher;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.FlakeIdGenerator;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
 import com.hazelcast.core.IdGenerator;
 
@@ -41,10 +40,10 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
 
         FlakeIdGeneratorConfig config = getContext().getClientConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
-                new IFunction<Integer, IdBatch>() {
+                new AutoBatcher.IdBatchSupplier() {
                     @Override
-                    public IdBatch apply(Integer batchSize) {
-                        return newIdBatch(batchSize);
+                    public IdBatch newIdBatch(int batchSize) {
+                        return ClientFlakeIdGeneratorProxy.this.newIdBatch(batchSize);
                     }
                 });
     }

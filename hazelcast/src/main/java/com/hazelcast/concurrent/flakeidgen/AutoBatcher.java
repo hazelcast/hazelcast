@@ -17,7 +17,6 @@
 package com.hazelcast.concurrent.flakeidgen;
 
 import com.hazelcast.core.IdBatch;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -32,9 +31,9 @@ public class AutoBatcher {
 
     private volatile Block block = new Block(new IdBatch(0, 0, 0), 0);
 
-    private final IFunction<Integer, IdBatch> batchIdSupplier;
+    private final IdBatchSupplier batchIdSupplier;
 
-    public AutoBatcher(int batchSize, long validity, IFunction<Integer, IdBatch> idGenerator) {
+    public AutoBatcher(int batchSize, long validity, IdBatchSupplier idGenerator) {
         this.batchSize = batchSize;
         this.validity = validity;
         this.batchIdSupplier = idGenerator;
@@ -53,7 +52,7 @@ public class AutoBatcher {
                     // new block was assigned in the meantime
                     continue;
                 }
-                this.block = new Block(batchIdSupplier.apply(batchSize), validity);
+                this.block = new Block(batchIdSupplier.newIdBatch(batchSize), validity);
             }
         }
     }
@@ -87,6 +86,10 @@ public class AutoBatcher {
             } while (!NUM_RETURNED.compareAndSet(this, index, index + 1));
             return idBatch.base() + index * idBatch.increment();
         }
+    }
+
+    public interface IdBatchSupplier {
+        IdBatch newIdBatch(int batchSize);
     }
 }
 

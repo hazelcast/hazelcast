@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.flakeidgen;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IdBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -39,10 +38,10 @@ public class AutoBatcherTest {
 
     private static final int VALIDITY = 1000;
 
-    private AutoBatcher batcher = new AutoBatcher(3, VALIDITY, new IFunction<Integer, IdBatch>() {
+    private AutoBatcher batcher = new AutoBatcher(3, VALIDITY, new AutoBatcher.IdBatchSupplier() {
         int base;
         @Override
-        public IdBatch apply(Integer batchSize) {
+        public IdBatch newIdBatch(int batchSize) {
             try {
                 return new IdBatch(base, 1, batchSize);
             } finally {
@@ -52,7 +51,7 @@ public class AutoBatcherTest {
     });
 
     @Test
-    public void when_validButUsedAll_then_fetchNew() throws Exception {
+    public void when_validButUsedAll_then_fetchNew() {
         assertEquals(0, batcher.newId());
         assertEquals(1, batcher.newId());
         assertEquals(2, batcher.newId());
