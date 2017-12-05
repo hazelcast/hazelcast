@@ -1449,7 +1449,7 @@
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -1572,7 +1572,7 @@
                         <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
@@ -1738,10 +1738,10 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
-    <xs:element name="flakeIdGenerator" type="hazelcast-type">
+    <xs:element name="reliableIdGenerator" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrieve a Hazelcast FlakeIdGenerator instance
+                Retrieve a Hazelcast ReliableIdGenerator instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -2830,11 +2830,11 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="flake-id-generator">
+    <xs:complexType name="reliable-id-generator">
         <xs:attribute name="name" type="xs:string" default="default">
             <xs:annotation>
                 <xs:documentation>
-                    Name of the flake-id generator.
+                    Name of the Reliable ID Generator.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

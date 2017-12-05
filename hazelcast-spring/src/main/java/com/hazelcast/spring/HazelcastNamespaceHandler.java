@@ -41,7 +41,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "list",
                 "executorService",
                 "idGenerator",
-                "flakeIdGenerator",
+                "reliableIdGenerator",
                 "atomicLong",
                 "atomicReference",
                 "countDownLatch",

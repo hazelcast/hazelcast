@@ -274,12 +274,12 @@
         </hz:user-code-deployment>
     </hz:client>
 
-    <hz:client id="client10-flakeIdGenerator" credentials-ref="credentials">
+    <hz:client id="client10-reliableIdGenerator" credentials-ref="credentials">
         <hz:network connection-attempt-limit="0">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
-        <hz:flake-id-generator name="gen1" prefetchCount="3" prefetchValidityMillis="3000"/>
+        <hz:reliable-id-generator name="gen1" prefetchCount="3" prefetchValidityMillis="3000"/>
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
@@ -296,7 +296,7 @@
     <hz:list id="list" instance-ref="client" name="list"/>
     <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="client" name="idGenerator"/>
-    <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="client" name="flakeIdGenerator"/>
+    <hz:reliableIdGenerator id="reliableIdGenerator" instance-ref="client" name="reliableIdGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
     <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>

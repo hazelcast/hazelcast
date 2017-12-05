@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.flakeidgen;
+package com.hazelcast.concurrent.reliableidgen;
 
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.ReliableIdGenerator;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Set of IDs returned from {@link FlakeIdGenerator}.
+ * Set of IDs returned from {@link ReliableIdGenerator}.
  * <p>
  * IDs can be iterated using a foreach loop:
  * <pre>{@code
- *    IdBatch idBatch = myFlakeIdGenerator.newIdBatch(100);
+ *    IdBatch idBatch = myReliableIdGenerator.newIdBatch(100);
  *    for (Long id : idBatch) {
  *        // ... use the id
  *    }

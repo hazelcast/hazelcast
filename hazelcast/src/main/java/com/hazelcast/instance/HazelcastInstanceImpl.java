@@ -25,7 +25,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorService;
+import com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -34,7 +34,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
@@ -282,9 +282,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     }
 
     @Override
-    public FlakeIdGenerator getFlakeIdGenerator(String name) {
-        checkNotNull(name, "Retrieving an Flake ID-generator instance with a null name is not allowed!");
-        return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
+    public ReliableIdGenerator getReliableIdGenerator(String name) {
+        checkNotNull(name, "Retrieving a Reliable ID-generator instance with a null name is not allowed!");
+        return getDistributedObject(ReliableIdGeneratorService.SERVICE_NAME, name);
     }
 
     @Override

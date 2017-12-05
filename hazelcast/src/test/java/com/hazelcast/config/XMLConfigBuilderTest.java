@@ -1000,15 +1000,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFlakeIdGeneratorConfig() {
+    public void testReliableIdGeneratorConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<flake-id-generator name='gen'>"
+                + "<reliable-id-generator name='gen'>"
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
-                + "</flake-id-generator>"
+                + "</reliable-id-generator>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
-        FlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());

@@ -87,9 +87,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int QUORUM_LISTENER_CONFIG = 45;
     public static final int CACHE_PARTITION_LOST_LISTENER_CONFIG = 46;
     public static final int SIMPLE_CACHE_ENTRY_LISTENER_CONFIG = 47;
-    public static final int FLAKE_ID_GENERATOR_CONFIG = 48;
+    public static final int RELIABLE_ID_GENERATOR_CONFIG = 48;
 
-    private static final int LEN = FLAKE_ID_GENERATOR_CONFIG + 1;
+    private static final int LEN = RELIABLE_ID_GENERATOR_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -392,11 +392,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                         return new CacheSimpleEntryListenerConfig();
                     }
                 };
-        constructors[FLAKE_ID_GENERATOR_CONFIG] =
+        constructors[RELIABLE_ID_GENERATOR_CONFIG] =
                 new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new FlakeIdGeneratorConfig();
+                        return new ReliableIdGeneratorConfig();
                     }
                 };
 

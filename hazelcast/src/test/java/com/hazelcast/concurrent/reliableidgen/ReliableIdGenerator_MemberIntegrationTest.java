@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.flakeidgen;
+package com.hazelcast.concurrent.reliableidgen;
 
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport {
+public class ReliableIdGenerator_MemberIntegrationTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance[] instances;
@@ -50,8 +50,8 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
 
     @Test
     public void smokeTest() throws Exception {
-        final FlakeIdGenerator generator = instances[0].getFlakeIdGenerator("gen");
-        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
+        final ReliableIdGenerator generator = instances[0].getReliableIdGenerator("gen");
+        ReliableIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
             @Override
             public Long get() {
                 return generator.newId();

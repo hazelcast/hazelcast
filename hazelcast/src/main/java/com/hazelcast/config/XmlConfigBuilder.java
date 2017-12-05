@@ -67,7 +67,7 @@ import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
-import static com.hazelcast.config.XmlElements.FLAKE_ID_GENERATOR;
+import static com.hazelcast.config.XmlElements.RELIABLE_ID_GENERATOR;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.XmlElements.IMPORT;
@@ -378,8 +378,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleUserCodeDeployment(node);
         } else if (CARDINALITY_ESTIMATOR.isEqual(nodeName)) {
             handleCardinalityEstimator(node);
-        } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
-            handleFlakeIdGenerator(node);
+        } else if (RELIABLE_ID_GENERATOR.isEqual(nodeName)) {
+            handleReliableIdGenerator(node);
         } else {
             return true;
         }
@@ -643,9 +643,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         handleViaReflection(node, config, cardinalityEstimatorConfig);
     }
 
-    private void handleFlakeIdGenerator(Node node) {
+    private void handleReliableIdGenerator(Node node) {
         String name = getAttribute(node, "name");
-        FlakeIdGeneratorConfig generatorConfig = new FlakeIdGeneratorConfig(name);
+        ReliableIdGeneratorConfig generatorConfig = new ReliableIdGeneratorConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
@@ -655,7 +655,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
             }
         }
-        config.addFlakeIdGeneratorConfig(generatorConfig);
+        config.addReliableIdGeneratorConfig(generatorConfig);
     }
 
     private void handleGroup(Node node) {
@@ -2202,8 +2202,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.SEMAPHORE;
             } else if ("id-generator-permission".equals(nodeName)) {
                 type = PermissionType.ID_GENERATOR;
-            } else if ("flake-id-generator-permission".equals(nodeName)) {
-                type = PermissionType.FLAKE_ID_GENERATOR;
+            } else if ("reliable-id-generator-permission".equals(nodeName)) {
+                type = PermissionType.RELIABLE_ID_GENERATOR;
             } else if ("executor-service-permission".equals(nodeName)) {
                 type = PermissionType.EXECUTOR_SERVICE;
             } else if ("transaction-permission".equals(nodeName)) {

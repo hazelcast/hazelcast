@@ -27,7 +27,7 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -85,7 +85,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
         private final ManagedMap<String, BeanDefinition> nearCacheConfigMap;
-        private ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap;
+        private ManagedMap<String, BeanDefinition> reliableIdGeneratorConfigMap;
 
         SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -93,11 +93,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
             this.nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
-            this.flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
+            this.reliableIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
 
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
-            configBuilder.addPropertyValue("flakeIdGeneratorConfigMap", flakeIdGeneratorConfigMap);
+            configBuilder.addPropertyValue("reliableIdGeneratorConfigMap", reliableIdGeneratorConfigMap);
         }
 
         AbstractBeanDefinition getBeanDefinition() {
@@ -138,8 +138,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                             configBuilder);
                 } else if ("user-code-deployment".equals(nodeName)) {
                     handleUserCodeDeployment(node);
-                } else if ("flake-id-generator".equals(nodeName)) {
-                    handleFlakeIdGenerator(node);
+                } else if ("reliable-id-generator".equals(nodeName)) {
+                    handleReliableIdGenerator(node);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
@@ -263,11 +263,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             nearCacheConfigMap.put(name, nearCacheConfigBuilder.getBeanDefinition());
         }
 
-        private void handleFlakeIdGenerator(Node node) {
-            BeanDefinitionBuilder configBuilder = createBeanBuilder(FlakeIdGeneratorConfig.class);
+        private void handleReliableIdGenerator(Node node) {
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(ReliableIdGeneratorConfig.class);
             fillAttributeValues(node, configBuilder);
             String name = getAttribute(node, "name");
-            flakeIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
+            reliableIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
         private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {

@@ -28,7 +28,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -77,7 +77,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.ReliableIdGenerator;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -187,8 +187,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
 
-    @Resource(name = "flakeIdGenerator")
-    private FlakeIdGenerator flakeIdGenerator;
+    @Resource(name = "reliableIdGenerator")
+    private ReliableIdGenerator reliableIdGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -405,11 +405,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMemberFlakeIdGeneratorConfig() {
-        FlakeIdGeneratorConfig c = instance.getConfig().findFlakeIdGeneratorConfig("flakeIdGenerator");
+    public void testMemberReliableIdGeneratorConfig() {
+        ReliableIdGeneratorConfig c = instance.getConfig().findReliableIdGeneratorConfig("reliableIdGenerator");
         assertEquals(3, c.getPrefetchCount());
         assertEquals(10L, c.getPrefetchValidityMillis());
-        assertEquals("flakeIdGenerator*", c.getName());
+        assertEquals("reliableIdGenerator*", c.getName());
     }
 
     @Test
@@ -756,7 +756,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
-        assertNotNull(flakeIdGenerator);
+        assertNotNull(reliableIdGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -771,7 +771,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("flakeIdGenerator", flakeIdGenerator.getName());
+        assertEquals("reliableIdGenerator", reliableIdGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.flakeidgen;
+package com.hazelcast.concurrent.reliableidgen;
 
 import com.hazelcast.util.Clock;
 

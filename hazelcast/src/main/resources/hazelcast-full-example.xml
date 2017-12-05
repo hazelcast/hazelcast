@@ -1543,13 +1543,13 @@ https://hazelcast.org/documentation/.
     </ringbuffer>
 
     <!--
-        ===== HAZELCAST FLAKE ID GENERATOR CONFIGURATION =====
-        Configuration element's name is <flake-id-generator>. It has the required attribute "name" with which you
-        can specify the name of your Flake ID generator.
+        ===== HAZELCAST RELIABLE ID GENERATOR CONFIGURATION =====
+        Configuration element's name is <reliable-id-generator>. It has the required attribute "name" with which you
+        can specify the name of your Reliable ID generator.
         It has the following sub-elements:
         * <prefetch-count>:
         How many IDs are pre-fetched on the background when one call to
-        FlakeIdGenerator.newId() is made.
+        ReliableIdGenerator.newId() is made.
         Value must be >= 1, default is 100.
         * <prefetch-validity-millis>:
         For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
@@ -1559,10 +1559,10 @@ https://hazelcast.org/documentation/.
         is assigned to an event that occurred much later, it will be much out of order. If you don't need
         ordering, set this value to 0.
     -->
-    <flake-id-generator name="default">
+    <reliable-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>10000</prefetch-validity-millis>
-    </flake-id-generator>
+    </reliable-id-generator>
 
     <!--
         ===== HAZELCAST LISTENER CONFIGURATIONS =====

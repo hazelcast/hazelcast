@@ -19,7 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -315,15 +315,15 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFlakeIdGeneratorConfig() {
+    public void testReliableIdGeneratorConfig() {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "<flake-id-generator name='gen'>"
+                + "<reliable-id-generator name='gen'>"
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
-                + "</flake-id-generator>"
+                + "</reliable-id-generator>"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig config = buildConfig(xml);
-        FlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());

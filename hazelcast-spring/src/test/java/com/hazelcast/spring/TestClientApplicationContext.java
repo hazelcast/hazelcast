@@ -30,7 +30,7 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -106,7 +106,7 @@ public class TestClientApplicationContext {
     @Resource(name = "client9-user-code-deployment-test")
     private HazelcastClientProxy userCodeDeploymentTestClient;
 
-    @Resource(name = "client10-flakeIdGenerator")
+    @Resource(name = "client10-reliableIdGenerator")
     private HazelcastClientProxy client10;
 
     @Resource(name = "instance")
@@ -376,10 +376,10 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testFlakeIdGeneratorConfig() {
-        Map<String, FlakeIdGeneratorConfig> configMap = client10.getClientConfig().getFlakeIdGeneratorConfigMap();
+    public void testReliableIdGeneratorConfig() {
+        Map<String, ReliableIdGeneratorConfig> configMap = client10.getClientConfig().getReliableIdGeneratorConfigMap();
         assertEquals(1, configMap.size());
-        FlakeIdGeneratorConfig config = configMap.values().iterator().next();
+        ReliableIdGeneratorConfig config = configMap.values().iterator().next();
         assertEquals("gen1", config.getName());
         assertEquals(3, config.getPrefetchCount());
         assertEquals(3000L, config.getPrefetchValidityMillis());

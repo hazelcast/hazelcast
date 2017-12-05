@@ -24,7 +24,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Endpoint;
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.core.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -189,8 +189,8 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public FlakeIdGenerator getFlakeIdGenerator(String name) {
-        return delegatedInstance.getFlakeIdGenerator(name);
+    public ReliableIdGenerator getReliableIdGenerator(String name) {
+        return delegatedInstance.getReliableIdGenerator(name);
     }
 
     @Override

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.flakeidgen;
+package com.hazelcast.concurrent.reliableidgen;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -26,8 +26,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 
-import static com.hazelcast.concurrent.flakeidgen.FlakeIdConcurrencyTestUtil.IDS_IN_THREAD;
-import static com.hazelcast.concurrent.flakeidgen.FlakeIdConcurrencyTestUtil.NUM_THREADS;
+import static com.hazelcast.concurrent.reliableidgen.ReliableIdConcurrencyTestUtil.IDS_IN_THREAD;
+import static com.hazelcast.concurrent.reliableidgen.ReliableIdConcurrencyTestUtil.NUM_THREADS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -66,7 +66,7 @@ public class AutoBatcherTest {
 
     @Test
     public void concurrencySmokeTest() throws Exception {
-        Set<Long> ids = FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
+        Set<Long> ids = ReliableIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
             @Override
             public Long get() {
                 return batcher.newId();

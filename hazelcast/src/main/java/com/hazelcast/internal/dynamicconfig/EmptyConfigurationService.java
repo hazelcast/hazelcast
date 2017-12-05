@@ -21,7 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -227,12 +227,12 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
+    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String baseName) {
         return null;
     }
 
     @Override
-    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
+    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
         return emptyMap();
     }
 

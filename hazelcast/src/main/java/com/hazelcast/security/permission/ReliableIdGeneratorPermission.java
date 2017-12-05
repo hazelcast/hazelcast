@@ -16,13 +16,13 @@
 
 package com.hazelcast.security.permission;
 
-public class FlakeIdGeneratorPermission extends InstancePermission {
+public class ReliableIdGeneratorPermission extends InstancePermission {
 
     private static final int MODIFY = 4;
 
     private static final int ALL = MODIFY | CREATE | DESTROY;
 
-    public FlakeIdGeneratorPermission(String name, String... actions) {
+    public ReliableIdGeneratorPermission(String name, String... actions) {
         super(name, actions);
     }
 

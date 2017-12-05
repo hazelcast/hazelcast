@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.flakeidgen;
+package com.hazelcast.concurrent.reliableidgen;
 
-import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
+import com.hazelcast.core.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
@@ -36,9 +36,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.Collections.newSetFromMap;
 
-public class FlakeIdGeneratorProxy
-        extends AbstractDistributedObject<FlakeIdGeneratorService>
-        implements FlakeIdGenerator {
+public class ReliableIdGeneratorProxy
+        extends AbstractDistributedObject<ReliableIdGeneratorService>
+        implements ReliableIdGenerator {
 
     public static final int BITS_TIMESTAMP = 42;
     public static final int BITS_SEQUENCE = 6;
@@ -76,17 +76,17 @@ public class FlakeIdGeneratorProxy
      */
     private final Set<String> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-    FlakeIdGeneratorProxy(String name, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
+    ReliableIdGeneratorProxy(String name, NodeEngine nodeEngine, ReliableIdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(getClass());
 
-        FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
+        ReliableIdGeneratorConfig config = nodeEngine.getConfig().findReliableIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
                 new AutoBatcher.IdBatchSupplier() {
                     @Override
                     public IdBatch newIdBatch(int batchSize) {
-                        return FlakeIdGeneratorProxy.this.newIdBatch(batchSize);
+                        return ReliableIdGeneratorProxy.this.newIdBatch(batchSize);
                     }
                 });
     }
@@ -114,7 +114,7 @@ public class FlakeIdGeneratorProxy
             try {
                 long base = future.join();
                 return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
-            } catch (FlakeIdNodeIdOutOfRangeException e) {
+            } catch (NodeIdOutOfRangeException e) {
                 outOfRangeMembers.add(target.getUuid());
                 randomMember = null;
             }
@@ -143,7 +143,7 @@ public class FlakeIdGeneratorProxy
     long newIdBaseLocal(long now, int nodeId, int batchSize) {
         checkPositive(batchSize, "batchSize");
         if (nodeId == NODE_ID_OUT_OF_RANGE) {
-            throw new FlakeIdNodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
+            throw new NodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
         }
         assert (nodeId & -1 << BITS_NODE_ID) == 0  : "nodeId out of range: " + nodeId;
         now -= EPOCH_START;
@@ -214,6 +214,6 @@ public class FlakeIdGeneratorProxy
 
     @Override
     public String getServiceName() {
-        return FlakeIdGeneratorService.SERVICE_NAME;
+        return ReliableIdGeneratorService.SERVICE_NAME;
     }
 }

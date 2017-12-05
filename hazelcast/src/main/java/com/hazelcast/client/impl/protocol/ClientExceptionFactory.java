@@ -21,7 +21,7 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.concurrent.flakeidgen.FlakeIdNodeIdOutOfRangeException;
+import com.hazelcast.concurrent.reliableidgen.NodeIdOutOfRangeException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.DuplicateInstanceNameException;
@@ -638,10 +638,10 @@ public class ClientExceptionFactory {
                 return new IndeterminateOperationStateException(message, cause);
             }
         });
-        register(ClientProtocolErrorCodes.FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION, FlakeIdNodeIdOutOfRangeException.class, new ExceptionFactory() {
+        register(ClientProtocolErrorCodes.RELIABLE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION, NodeIdOutOfRangeException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
-                return new FlakeIdNodeIdOutOfRangeException(message);
+                return new NodeIdOutOfRangeException(message);
             }
         });
     }

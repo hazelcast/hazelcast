@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.flakeidgen;
-
-import com.hazelcast.core.HazelcastException;
-
 /**
- * Exception thrown from member if that member is not able to generate Flake IDs because its
- * node ID is too big.
+ * This package contains {@link com.hazelcast.core.HazelcastInstance#getReliableIdGenerator(java.lang.String)
+ * Reliable ID Generator} functionality for Hazelcast.
+ *
+ * @since 3.10
  */
-public class FlakeIdNodeIdOutOfRangeException extends HazelcastException {
-    public FlakeIdNodeIdOutOfRangeException(String message) {
-        super(message);
-    }
-}
+package com.hazelcast.concurrent.reliableidgen;

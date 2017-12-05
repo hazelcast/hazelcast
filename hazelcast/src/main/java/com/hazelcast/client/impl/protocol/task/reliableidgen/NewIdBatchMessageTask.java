@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.flakeidgenerator;
+package com.hazelcast.client.impl.protocol.task.reliableidgen;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
-import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCodec;
+import com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorProxy;
-import com.hazelcast.concurrent.flakeidgen.FlakeIdGeneratorService;
-import com.hazelcast.concurrent.flakeidgen.IdBatch;
+import com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorService;
+import com.hazelcast.concurrent.reliableidgen.IdBatch;
+import com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.FlakeIdGeneratorPermission;
+import com.hazelcast.security.permission.ReliableIdGeneratorPermission;
 
 import java.security.Permission;
 
@@ -38,31 +38,31 @@ public class NewIdBatchMessageTask
     }
 
     @Override
-    protected FlakeIdGeneratorNewIdBatchCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return FlakeIdGeneratorNewIdBatchCodec.decodeRequest(clientMessage);
+    protected ReliableIdGeneratorNewIdBatchCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReliableIdGeneratorNewIdBatchCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         IdBatch idBatch = (IdBatch) response;
-        return FlakeIdGeneratorNewIdBatchCodec.encodeResponse(idBatch.base(), idBatch.increment(), idBatch.batchSize());
+        return ReliableIdGeneratorNewIdBatchCodec.encodeResponse(idBatch.base(), idBatch.increment(), idBatch.batchSize());
     }
 
     @Override
     protected IdBatch call() throws Exception {
-        FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) nodeEngine.getProxyService()
+        ReliableIdGeneratorProxy proxy = (ReliableIdGeneratorProxy) nodeEngine.getProxyService()
                 .getDistributedObject(getServiceName(), parameters.name);
         return proxy.newIdBatch(parameters.batchSize);
     }
 
     @Override
     public String getServiceName() {
-        return FlakeIdGeneratorService.SERVICE_NAME;
+        return ReliableIdGeneratorService.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new FlakeIdGeneratorPermission(parameters.name, ActionConstants.ACTION_MODIFY);
+        return new ReliableIdGeneratorPermission(parameters.name, ActionConstants.ACTION_MODIFY);
     }
 
     @Override

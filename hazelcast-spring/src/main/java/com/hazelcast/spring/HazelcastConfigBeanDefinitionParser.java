@@ -31,7 +31,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -182,7 +182,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> jobTrackerManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
+        private ManagedMap<String, AbstractBeanDefinition> reliableIdGeneratorConfigMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -208,7 +208,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
             this.quorumManagedMap = createManagedMap("quorumConfigs");
-            this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
+            this.reliableIdGeneratorConfigMap = createManagedMap("reliableIdGeneratorConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -300,8 +300,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleQuorum(node);
                     } else if ("hot-restart-persistence".equals(nodeName)) {
                         handleHotRestartPersistence(node);
-                    } else if ("flake-id-generator".equals(nodeName)) {
-                        handleFlakeIdGenerator(node);
+                    } else if ("reliable-id-generator".equals(nodeName)) {
+                        handleReliableIdGenerator(node);
                     }
                 }
             }
@@ -323,11 +323,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("hotRestartPersistenceConfig", hotRestartConfigBuilder.getBeanDefinition());
         }
 
-        private void handleFlakeIdGenerator(Node node) {
-            BeanDefinitionBuilder configBuilder = createBeanBuilder(FlakeIdGeneratorConfig.class);
+        private void handleReliableIdGenerator(Node node) {
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(ReliableIdGeneratorConfig.class);
             fillAttributeValues(node, configBuilder);
             String name = getAttribute(node, "name");
-            flakeIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
+            reliableIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
         private void handleQuorum(Node node) {

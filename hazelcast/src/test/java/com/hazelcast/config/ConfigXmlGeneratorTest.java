@@ -139,17 +139,17 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testFlakeIdGeneratorConfigGenerator() {
-        FlakeIdGeneratorConfig figConfig = new FlakeIdGeneratorConfig("flake-id-gen1")
+    public void testReliableIdGeneratorConfigGenerator() {
+        ReliableIdGeneratorConfig figConfig = new ReliableIdGeneratorConfig("reliable-id-gen1")
                 .setPrefetchCount(3)
                 .setPrefetchValidityMillis(10L);
 
         Config config = new Config()
-                .addFlakeIdGeneratorConfig(figConfig);
+                .addReliableIdGeneratorConfig(figConfig);
 
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
-        FlakeIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getFlakeIdGeneratorConfig("flake-id-gen1");
+        ReliableIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getReliableIdGeneratorConfig("reliable-id-gen1");
         assertEquals(figConfig, xmlReplicatedConfig);
     }
 

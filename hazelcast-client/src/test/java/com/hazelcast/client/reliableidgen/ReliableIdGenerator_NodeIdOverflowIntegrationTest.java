@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.flakeidgen;
+package com.hazelcast.client.reliableidgen;
 
-import com.hazelcast.core.FlakeIdGenerator;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -33,12 +34,12 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
+public class ReliableIdGenerator_NodeIdOverflowIntegrationTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void after() {
@@ -47,30 +48,47 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
 
     @Test
     public void when_memberOutOfRangeNodeId_then_theOtherMemberUsed() throws Exception {
+        // Design of this test: we create two members. To one of them, out-of-range memberListJoinVersion
+        // is assigned. This causes the client message to fail and the client will retry with another member
+        // and will never again try the failed member.
+        //
+        // Probability of initially choosing a good member and not going through the process of choosing another
+        // one is 50%. To avoid false success, we retry 10 times, which gives the probability of false success
+        // of 0.1%.
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
-        assignOutOfRangeNodeId(instance2);
+        assignOverflowedNodeId(instance2);
 
-        // let's use the instance with out-of-range node ID to generate IDs, it should succeed
-        FlakeIdGenerator gen = instance2.getFlakeIdGenerator("gen");
-        gen.newId();
+        ClientConfig clientConfig = new ClientConfig();
+        // disable smart routing - such clients must also work reliably
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        for (int i = 0; i < 10; i++) {
+            System.out.println("Creating client " + i);
+            HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+            ReliableIdGenerator gen = client.getReliableIdGenerator("gen");
+            for (int j = 0; j < 100; j++) {
+                // call should not fail
+                gen.newId();
+            }
+        }
     }
 
     @Test
     public void when_allMembersOutOfRangeNodeId_then_error() {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
-        assignOutOfRangeNodeId(instance1);
-        assignOutOfRangeNodeId(instance2);
+        assignOverflowedNodeId(instance1);
+        assignOverflowedNodeId(instance2);
 
-        FlakeIdGenerator gen = instance1.getFlakeIdGenerator("gen");
+        HazelcastInstance client = factory.newHazelcastClient();
+        ReliableIdGenerator gen = client.getReliableIdGenerator("gen");
 
         exception.expect(HazelcastException.class);
         exception.expectMessage("All members have node ID out of range");
         gen.newId();
     }
 
-    private void assignOutOfRangeNodeId(HazelcastInstance instance2) {
+    private void assignOverflowedNodeId(HazelcastInstance instance2) {
         MemberImpl member = (MemberImpl) instance2.getCluster().getLocalMember();
         member.setMemberListJoinVersion(100000);
     }
