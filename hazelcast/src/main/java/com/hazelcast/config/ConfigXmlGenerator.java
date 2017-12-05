@@ -52,7 +52,7 @@ import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 @SuppressWarnings({"checkstyle:methodcount"})
 public class ConfigXmlGenerator {
 
-    protected static final String MASK_FOR_SESITIVE_DATA = "****";
+    protected static final String MASK_FOR_SENSITIVE_DATA = "****";
 
     private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGenerator.class);
 
@@ -95,9 +95,9 @@ public class ConfigXmlGenerator {
            .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd\">");
         gen.open("group")
            .node("name", config.getGroupConfig().getName())
-           .node("password", MASK_FOR_SESITIVE_DATA)
+           .node("password", MASK_FOR_SENSITIVE_DATA)
            .close()
-           .node("license-key", MASK_FOR_SESITIVE_DATA)
+           .node("license-key", MASK_FOR_SENSITIVE_DATA)
            .node("instance-name", config.getInstanceName());
 
 
@@ -890,11 +890,11 @@ public class ConfigXmlGenerator {
             props.putAll(ssl.getProperties());
 
             if (props.containsKey("trustStorePassword")) {
-                props.setProperty("trustStorePassword", MASK_FOR_SESITIVE_DATA);
+                props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
             if (props.containsKey("keyStorePassword")) {
-                props.setProperty("keyStorePassword", MASK_FOR_SESITIVE_DATA);
+                props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
             gen.node("factory-class-name",
@@ -913,11 +913,11 @@ public class ConfigXmlGenerator {
             props.putAll(mutualAuthConfig.getProperties());
 
             if (props.containsKey("trustStorePassword")) {
-                props.setProperty("trustStorePassword", MASK_FOR_SESITIVE_DATA);
+                props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
             if (props.containsKey("keyStorePassword")) {
-                props.setProperty("keyStorePassword", MASK_FOR_SESITIVE_DATA);
+                props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
             gen.node("factory-class-name",
@@ -944,8 +944,8 @@ public class ConfigXmlGenerator {
         }
         gen.open("symmetric-encryption", "enabled", sec.isEnabled())
            .node("algorithm", sec.getAlgorithm())
-           .node("salt", MASK_FOR_SESITIVE_DATA)
-           .node("password", MASK_FOR_SESITIVE_DATA)
+           .node("salt", MASK_FOR_SENSITIVE_DATA)
+           .node("password", MASK_FOR_SENSITIVE_DATA)
            .node("iteration-count", sec.getIterationCount())
            .close();
     }
