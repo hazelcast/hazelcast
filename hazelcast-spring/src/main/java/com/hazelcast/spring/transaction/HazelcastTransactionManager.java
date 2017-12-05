@@ -183,25 +183,25 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
         private boolean newTransactionContextHolder;
         private boolean rollbackOnly;
 
-        public void setRollbackOnly(boolean rollbackOnly) {
+        void setRollbackOnly(boolean rollbackOnly) {
             this.rollbackOnly = rollbackOnly;
         }
 
-        public void setTransactionContextHolder(TransactionContextHolder transactionContextHolder,
-                                                boolean newTransactionContextHolder) {
+        void setTransactionContextHolder(TransactionContextHolder transactionContextHolder,
+                                         boolean newTransactionContextHolder) {
             this.transactionContextHolder = transactionContextHolder;
             this.newTransactionContextHolder = newTransactionContextHolder;
         }
 
-        public TransactionContextHolder getTransactionContextHolder() {
+        TransactionContextHolder getTransactionContextHolder() {
             return transactionContextHolder;
         }
 
-        public boolean isNewTransactionContextHolder() {
+        boolean isNewTransactionContextHolder() {
             return newTransactionContextHolder;
         }
 
-        public boolean hasTransaction() {
+        boolean hasTransaction() {
             return this.transactionContextHolder != null && this.transactionContextHolder.isTransactionActive();
         }
 
@@ -212,7 +212,7 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
 
         @Override
         public void flush() {
-            //Do nothing here.
+            // do nothing here
         }
     }
 }
