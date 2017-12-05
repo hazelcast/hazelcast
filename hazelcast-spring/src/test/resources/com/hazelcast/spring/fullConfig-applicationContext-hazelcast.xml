@@ -268,7 +268,7 @@
                 <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
             </hz:ringbuffer>
 
-            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10" />
+            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10"/>
 
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
                                statistics-enabled="false">
@@ -296,11 +296,11 @@
                     <hz:index attribute="age" ordered="true"/>
                 </hz:indexes>
                 <hz:attributes>
-                    <hz:attribute name="power" extractor="com.car.PowerExtractor" />
-                    <hz:attribute name="weight" extractor="com.car.WeightExtractor" />
+                    <hz:attribute name="power" extractor="com.car.PowerExtractor"/>
+                    <hz:attribute name="weight" extractor="com.car.WeightExtractor"/>
                 </hz:attributes>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}" />
+                <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}"/>
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
@@ -320,22 +320,22 @@
                 </hz:entry-listeners>
             </hz:map>
 
-            <hz:map name="lfuEvictionMap" eviction-policy="LFU" />
-            <hz:map name="lruEvictionMap" eviction-policy="LRU" />
-            <hz:map name="noneEvictionMap" eviction-policy="NONE" />
-            <hz:map name="randomEvictionMap" eviction-policy="RANDOM" />
+            <hz:map name="lfuEvictionMap" eviction-policy="LFU"/>
+            <hz:map name="lruEvictionMap" eviction-policy="LRU"/>
+            <hz:map name="noneEvictionMap" eviction-policy="NONE"/>
+            <hz:map name="randomEvictionMap" eviction-policy="RANDOM"/>
 
             <hz:map name="lfuNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="LFU" />
+                <hz:near-cache eviction-policy="LFU"/>
             </hz:map>
             <hz:map name="lruNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="LRU" />
+                <hz:near-cache eviction-policy="LRU"/>
             </hz:map>
             <hz:map name="noneNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="NONE" />
+                <hz:near-cache eviction-policy="NONE"/>
             </hz:map>
             <hz:map name="randomNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="RANDOM" />
+                <hz:near-cache eviction-policy="RANDOM"/>
             </hz:map>
 
             <hz:map name="testMap3"
@@ -400,11 +400,11 @@
             <hz:map name="mapWithValueCachingSetToAlways" cache-deserialized-values="${map.conf.cache.deserialized.values}"/>
             <hz:map name="mapWithDefaultOptimizedQueries"/>
             <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"
-                    in-memory-format="NATIVE" />
+                    in-memory-format="NATIVE"/>
 
             <hz:map name="mapWithPartitionLostListener">
                 <hz:partition-lost-listeners>
-                    <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl" />
+                    <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl"/>
                 </hz:partition-lost-listeners>
             </hz:map>
 
@@ -430,7 +430,7 @@
                         <hz:filter-impl>com.example.SampleFilter</hz:filter-impl>
                     </hz:filters>
                 </hz:wan-replication-ref>
-                <hz:hot-restart enabled="true" fsync="true" />
+                <hz:hot-restart enabled="true" fsync="true"/>
             </hz:cache>
 
             <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
@@ -446,16 +446,16 @@
             </hz:multimap>
 
             <hz:list name="testList"
-                      max-size="9999"
-                      backup-count="1"
-                      async-backup-count="1"
-                      statistics-enabled="false"
+                     max-size="9999"
+                     backup-count="1"
+                     async-backup-count="1"
+                     statistics-enabled="false"
             />
             <hz:set name="testSet"
-                      max-size="7777"
-                      backup-count="0"
-                      async-backup-count="0"
-                      statistics-enabled="false"
+                    max-size="7777"
+                    backup-count="0"
+                    async-backup-count="0"
+                    statistics-enabled="false"
             />
 
             <hz:topic name="testTopic">

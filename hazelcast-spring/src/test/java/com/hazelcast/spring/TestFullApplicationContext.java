@@ -147,6 +147,7 @@ import static org.junit.Assert.fail;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullConfig-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
+@SuppressWarnings("unused")
 public class TestFullApplicationContext extends HazelcastTestSupport {
 
     private Config config;
@@ -662,7 +663,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertDiscoveryConfig(networkConfig.getJoin().getDiscoveryConfig());
 
-        final MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
+        MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
         assertFalse(memberAddressProviderConfig.isEnabled());
         assertEquals("com.hazelcast.spring.DummyMemberAddressProvider", memberAddressProviderConfig.getClassName());
         assertFalse(memberAddressProviderConfig.getProperties().isEmpty());
@@ -1067,7 +1068,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testMapEventJournalConfigIsWellParsed() {
-        final EventJournalConfig journalConfig = config.getMapEventJournalConfig("mapName");
+        EventJournalConfig journalConfig = config.getMapEventJournalConfig("mapName");
 
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -1076,7 +1077,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testCacheEventJournalConfigIsWellParsed() {
-        final EventJournalConfig journalConfig = config.getCacheEventJournalConfig("cacheName");
+        EventJournalConfig journalConfig = config.getCacheEventJournalConfig("cacheName");
 
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -1086,7 +1087,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testExplicitPortCountConfiguration() {
         int portCount = instance.getConfig().getNetworkConfig().getPortCount();
+
         assertEquals(42, portCount);
     }
-
 }
