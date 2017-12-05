@@ -33,8 +33,8 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class QueryCacheEndToEndProvider<K, V> {
 
-    private final ContextMutexFactory mutexFactory;
-    private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> mapNameToQueryCaches;
+    private final ContextMutexFactory lifecycleMutexFactory;
+    private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCachesByMapName;
     private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> ctor
             = new ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>>() {
         @Override
@@ -43,18 +43,18 @@ public class QueryCacheEndToEndProvider<K, V> {
         }
     };
 
-    public QueryCacheEndToEndProvider(ContextMutexFactory mutexFactory) {
-        this.mutexFactory = mutexFactory;
-        this.mapNameToQueryCaches = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
+    public QueryCacheEndToEndProvider(ContextMutexFactory lifecycleMutexFactory) {
+        this.lifecycleMutexFactory = lifecycleMutexFactory;
+        this.queryCachesByMapName = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
     }
 
     public InternalQueryCache<K, V> getOrCreateQueryCache(String mapName, String cacheId,
                                                           ConstructorFunction<String, InternalQueryCache<K, V>> constructor) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
                 ConcurrentMap<String, InternalQueryCache<K, V>> cacheIdToQueryCache
-                        = getOrPutIfAbsent(mapNameToQueryCaches, mapName, ctor);
+                        = getOrPutIfAbsent(queryCachesByMapName, mapName, ctor);
                 InternalQueryCache<K, V> queryCache = cacheIdToQueryCache.get(cacheId);
                 if (queryCache == null) {
                     queryCache = constructor.createNew(cacheId);
@@ -72,10 +72,10 @@ public class QueryCacheEndToEndProvider<K, V> {
     }
 
     public void removeSingleQueryCache(String mapName, String cacheId) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
+                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = queryCachesByMapName.get(mapName);
                 if (cacheIdToQueryCache != null) {
                     cacheIdToQueryCache.remove(cacheId);
                 }
@@ -86,10 +86,10 @@ public class QueryCacheEndToEndProvider<K, V> {
     }
 
     public void destroyAllQueryCaches(String mapName) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.remove(mapName);
+                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = queryCachesByMapName.remove(mapName);
                 if (cacheIdToQueryCache != null) {
                     for (InternalQueryCache<K, V> queryCache : cacheIdToQueryCache.values()) {
                         queryCache.destroy();
@@ -103,7 +103,7 @@ public class QueryCacheEndToEndProvider<K, V> {
 
     // only used in tests
     public int getQueryCacheCount(String mapName) {
-        Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
+        Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = queryCachesByMapName.get(mapName);
         if (cacheIdToQueryCache == null) {
             return 0;
         }
