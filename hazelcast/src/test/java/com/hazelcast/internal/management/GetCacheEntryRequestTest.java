@@ -18,57 +18,113 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheTestSupport;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICacheManager;
 import com.hazelcast.internal.management.request.GetCacheEntryRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.Cache;
+import java.util.Random;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class GetCacheEntryRequestTest extends CacheTestSupport {
+    private static Random random = new Random();
 
-    private HazelcastInstance hz;
-    private ManagementCenterService managementCenterService;
+    private TestHazelcastInstanceFactory instanceFactory;
+    private HazelcastInstance[] instances;
+    private String cacheName = randomName();
+    private String value = randomString();
 
     @Override
     protected HazelcastInstance getHazelcastInstance() {
-        return hz;
+        return instances[0];
     }
 
     @Override
     protected void onSetup() {
         Config config = new Config();
-        config.addCacheConfig(new CacheSimpleConfig().setName("test"));
-        config.getCacheConfig("test").setStatisticsEnabled(true);
-        hz = createHazelcastInstance(config);
-        managementCenterService = getNode(hz).getManagementCenterService();
+        config.addCacheConfig(new CacheSimpleConfig().setName(cacheName));
+
+        instanceFactory = createHazelcastInstanceFactory(2);
+        instances = new HazelcastInstance[2];
+        for (int i = 0; i < instances.length; i++) {
+            instances[i] = instanceFactory.newHazelcastInstance(config);
+        }
     }
 
     @Override
     protected void onTearDown() {
-        hz.shutdown();
+        instanceFactory.shutdownAll();
     }
 
     @Test
-    public void testGetCacheEntry() throws Exception {
-        GetCacheEntryRequest request = new GetCacheEntryRequest("string", "test", "1");
-        ICacheManager hazelcastCacheManager = hz.getCacheManager();
-        ICache<String, String> cache = hazelcastCacheManager.getCache("test");
-        cache.put("1", "one");
+    public void testGetCacheEntry_string() throws Exception {
+        String key = randomString();
 
-        JsonObject jsonObject = new JsonObject();
-        request.writeResponse(managementCenterService, jsonObject);
-        JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals("one", result.get("cacheBrowse_value").asString());
+        cacheManager.getCache(cacheName).put(key, value);
+
+        JsonObject result = sendRequestToInstance(instances[0], new GetCacheEntryRequest("string", cacheName, key));
+        assertEquals(value, result.get("cacheBrowse_value").asString());
+    }
+
+    @Test
+    public void testGetCacheEntry_long() throws Exception {
+        long key = random.nextLong();
+
+        cacheManager.getCache(cacheName).put(key, value);
+
+        JsonObject result = sendRequestToInstance(instances[0],
+                new GetCacheEntryRequest("long", cacheName, String.valueOf(key)));
+        assertEquals(value, result.get("cacheBrowse_value").asString());
+    }
+
+    @Test
+    public void testGetCacheEntry_integer() throws Exception {
+        int key = random.nextInt();
+
+        cacheManager.getCache(cacheName).put(key, value);
+
+        JsonObject result = sendRequestToInstance(instances[0],
+                new GetCacheEntryRequest("integer", cacheName, String.valueOf(key)));
+        assertEquals(value, result.get("cacheBrowse_value").asString());
+    }
+
+    @Test
+    public void testGetCacheEntry_remoteMember() throws Exception {
+        Cache<String, String> cache = cacheManager.getCache(cacheName);
+
+        String key = generateKeyNotOwnedBy(instances[0]);
+        String value = randomString();
+
+        cache.put(key, value);
+
+        JsonObject result = sendRequestToInstance(instances[1], new GetCacheEntryRequest("string", cacheName, key));
+        assertEquals(value, result.get("cacheBrowse_value").asString());
+    }
+
+    @Test
+    public void testGetCacheEntry_missingKey() throws Exception {
+        String key = generateKeyOwnedBy(instances[1]);
+
+        JsonObject result = sendRequestToInstance(instances[0], new GetCacheEntryRequest("string", cacheName, key));
+        assertNull(result.get("cacheBrowse_value"));
+    }
+
+    private JsonObject sendRequestToInstance(HazelcastInstance instance, GetCacheEntryRequest request) throws Exception {
+        ManagementCenterService managementCenterService = getNode(instance).getManagementCenterService();
+        JsonObject responseJson = new JsonObject();
+        request.writeResponse(managementCenterService, responseJson);
+        return (JsonObject) responseJson.get("result");
     }
 }

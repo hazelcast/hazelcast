@@ -38,6 +38,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
+import com.hazelcast.cache.impl.operation.CacheGetEntryViewOperation;
 import com.hazelcast.cache.impl.operation.CacheGetInvalidationMetaDataOperation;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
@@ -148,8 +149,9 @@ public final class CacheDataSerializerHook
     public static final short EVENT_JOURNAL_INTERNAL_CACHE_EVENT = 59;
     public static final short EVENT_JOURNAL_READ_RESULT_SET = 60;
     public static final int PRE_JOIN_CACHE_CONFIG = 61;
+    public static final int GET_ENTRY_VIEW = 62;
 
-    private static final int LEN = PRE_JOIN_CACHE_CONFIG + 1;
+    private static final int LEN = GET_ENTRY_VIEW + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -455,6 +457,13 @@ public final class CacheDataSerializerHook
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new PreJoinCacheConfig();
+                    }
+                };
+        constructors[GET_ENTRY_VIEW] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new CacheGetEntryViewOperation();
                     }
                 };
 

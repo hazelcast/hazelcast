@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
@@ -183,6 +184,21 @@ abstract class AbstractInternalCacheProxy<K, V>
             if (completionOperation) {
                 deregisterCompletionLatch(completionId);
             }
+        }
+    }
+
+    public CacheEntryView<K, V> getEntryViewInternal(K key) {
+        ensureOpen();
+        validateNotNull(key);
+
+        Data keyData = serializationService.toData(key);
+        Operation operation = operationProvider.createGetEntryViewOperation(serializationService.toData(key));
+
+        try {
+            InternalCompletableFuture<CacheEntryView<K, V>> future = invoke(operation, keyData, false);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 

@@ -55,6 +55,8 @@ public interface CacheOperationProvider {
 
     Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize);
 
+    Operation createGetEntryViewOperation(Data key);
+
     OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
 
     OperationFactory createLoadAllOperationFactory(Set<Data> keySet, boolean replaceExistingValues);

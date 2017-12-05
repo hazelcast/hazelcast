@@ -19,15 +19,10 @@ package com.hazelcast.internal.management.request;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.CacheEntryProcessorEntry;
-import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.instance.HazelcastInstanceCacheManager;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-
-import javax.cache.processor.EntryProcessor;
-import javax.cache.processor.EntryProcessorException;
-import javax.cache.processor.MutableEntry;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -35,8 +30,6 @@ import static com.hazelcast.util.JsonUtil.getString;
  * Request for fetching cache entries.
  */
 public class GetCacheEntryRequest implements ConsoleRequest {
-
-    private static final GetCacheEntryViewEntryProcessor ENTRY_PROCESSOR = new GetCacheEntryViewEntryProcessor();
     private String cacheName;
     private String type;
     private String key;
@@ -55,20 +48,24 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_CACHE_ENTRY;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         InternalSerializationService serializationService = mcs.getHazelcastInstance().getSerializationService();
         HazelcastInstanceCacheManager cacheManager = mcs.getHazelcastInstance().getCacheManager();
         ICache<Object, Object> cache = cacheManager.getCache(cacheName);
+        CacheProxy cacheProxy = cache.unwrap(CacheProxy.class);
+
         CacheEntryView cacheEntry = null;
 
         if ("string".equals(type)) {
-            cacheEntry = cache.invoke(key, ENTRY_PROCESSOR, cacheEntry);
+            cacheEntry = cacheProxy.getEntryViewInternal(key);
         } else if ("long".equals(type)) {
-            cacheEntry = cache.invoke(Long.valueOf(key), ENTRY_PROCESSOR, cacheEntry);
+            cacheEntry = cacheProxy.getEntryViewInternal(Long.valueOf(key));
         } else if ("integer".equals(type)) {
-            cacheEntry = cache.invoke(Integer.valueOf(key), ENTRY_PROCESSOR, cacheEntry);
+            cacheEntry = cacheProxy.getEntryViewInternal(Integer.valueOf(key));
         }
+
         JsonObject result = new JsonObject();
         if (cacheEntry != null) {
             Object value = serializationService.toObject(cacheEntry.getValue());
@@ -87,44 +84,5 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         cacheName = getString(json, "cacheName");
         type = getString(json, "type");
         key = getString(json, "key");
-    }
-
-    private static class GetCacheEntryViewEntryProcessor implements EntryProcessor<Object, Object, CacheEntryView> {
-        @Override
-        public CacheEntryView process(MutableEntry mutableEntry, Object... objects) throws EntryProcessorException {
-            final CacheEntryProcessorEntry entry = (CacheEntryProcessorEntry) mutableEntry;
-            final CacheRecord record = entry.getRecord();
-            CacheEntryView<Object, Object> cacheEntryView = new CacheEntryView<Object, Object>() {
-                //Key is defined by Management Center user
-                @Override
-                public String getKey() {
-                    return null;
-                }
-                @Override
-                public Object getValue() {
-                    return record.getValue();
-                }
-                @Override
-                public long getExpirationTime() {
-                    return record.getExpirationTime();
-                }
-
-                @Override
-                public long getCreationTime() {
-                    return record.getCreationTime();
-                }
-
-                @Override
-                public long getLastAccessTime() {
-                    return record.getLastAccessTime();
-                }
-
-                @Override
-                public long getAccessHit() {
-                    return record.getAccessHit();
-                }
-            };
-            return cacheEntryView;
-        }
     }
 }
