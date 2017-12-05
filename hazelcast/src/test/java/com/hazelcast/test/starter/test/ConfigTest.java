@@ -21,6 +21,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.ConfigConstructor;
@@ -30,40 +31,38 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertPropertiesEquals;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConfigTest {
+public class ConfigTest extends HazelcastTestSupport {
 
     @Test
-    public void configCloneTest() throws Exception {
-        Config thisConfig = new Config();
-        thisConfig.setInstanceName("TheAssignedName");
-        thisConfig.addMapConfig(new MapConfig("myMap"));
-
-        thisConfig.addListConfig(new ListConfig("myList"));
-
-        thisConfig.addListenerConfig(new ListenerConfig("the.listener.config.class"));
-
-        thisConfig.setProperties(buildPropertiesWithDefaults());
+    public void configCloneTest() {
+        Config config = new Config()
+                .setInstanceName("myInstanceName")
+                .addMapConfig(new MapConfig("myMap"))
+                .addListConfig(new ListConfig("myList"))
+                .addListenerConfig(new ListenerConfig("com.hazelcast.test.MyListenerConfig"))
+                .setProperties(buildPropertiesWithDefaults());
 
         ConfigConstructor configConstructor = new ConfigConstructor(Config.class);
+        Config clonedConfig = (Config) configConstructor.createNew(config);
 
-        Config otherConfig = (Config) configConstructor.createNew(thisConfig);
-        assertEquals(otherConfig.getInstanceName(), thisConfig.getInstanceName());
-        assertEquals(otherConfig.getMapConfigs().size(), thisConfig.getMapConfigs().size());
-        assertEquals(otherConfig.getListConfigs().size(), thisConfig.getListConfigs().size());
-        assertEquals(otherConfig.getListenerConfigs().size(), thisConfig.getListenerConfigs().size());
-        assertPropertiesEquals(thisConfig.getProperties(), otherConfig.getProperties());
+        assertEquals(clonedConfig.getInstanceName(), config.getInstanceName());
+        assertEquals(clonedConfig.getMapConfigs().size(), config.getMapConfigs().size());
+        assertEquals(clonedConfig.getListConfigs().size(), config.getListConfigs().size());
+        assertEquals(clonedConfig.getListenerConfigs().size(), config.getListenerConfigs().size());
+        assertPropertiesEquals(config.getProperties(), clonedConfig.getProperties());
     }
 
     private Properties buildPropertiesWithDefaults() {
         Properties defaults = new Properties();
         defaults.setProperty("key1", "value1");
+
         Properties configProperties = new Properties(defaults);
         configProperties.setProperty("key2", "value2");
+
         return configProperties;
     }
 }
