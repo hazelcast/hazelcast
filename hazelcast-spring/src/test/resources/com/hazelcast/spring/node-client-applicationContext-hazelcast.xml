@@ -20,10 +20,9 @@
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.hazelcast.com/schema/spring
-		hazelcast-spring-3.10.xsd
-		">
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -157,13 +156,13 @@
                        serialize-keys="false"
                        local-update-policy="CACHE_ON_UPDATE"/>
 
-        <hz:near-cache name="lfuNearCacheEviction" eviction-policy="LFU" />
+        <hz:near-cache name="lfuNearCacheEviction" eviction-policy="LFU"/>
         <hz:near-cache name="lruNearCacheEviction"
-                       eviction-policy="LRU" />
+                       eviction-policy="LRU"/>
         <hz:near-cache name="noneNearCacheEviction"
-                       eviction-policy="NONE" />
+                       eviction-policy="NONE"/>
         <hz:near-cache name="randomNearCacheEviction"
-                       eviction-policy="RANDOM" />
+                       eviction-policy="RANDOM"/>
 
         <hz:near-cache name="preloader">
             <hz:preloader enabled="true" directory="/tmp/preloader"
