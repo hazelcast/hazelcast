@@ -27,7 +27,6 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.scheduler.ScheduledEntry;
-import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,8 +42,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 
-public class TestPartitionUtils {
+public final class TestPartitionUtils {
 
     private TestPartitionUtils() {
     }
@@ -61,25 +61,22 @@ public class TestPartitionUtils {
         return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
     }
 
-    public static Map<Integer, PartitionReplicaVersionsView> getAllReplicaVersions(List<HazelcastInstance> instances)
-            throws InterruptedException {
-        Map<Integer, PartitionReplicaVersionsView> replicaVersions =
-                new HashMap<Integer, PartitionReplicaVersionsView>();
+    public static Map<Integer, PartitionReplicaVersionsView> getAllReplicaVersions(List<HazelcastInstance> instances) {
+        Map<Integer, PartitionReplicaVersionsView> replicaVersions = new HashMap<Integer, PartitionReplicaVersionsView>();
         for (HazelcastInstance instance : instances) {
             collectOwnedReplicaVersions(getNode(instance), replicaVersions);
         }
         return replicaVersions;
     }
 
-    public static Map<Integer, PartitionReplicaVersionsView> getOwnedReplicaVersions(Node node) throws InterruptedException {
+    public static Map<Integer, PartitionReplicaVersionsView> getOwnedReplicaVersions(Node node) {
         Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions =
                 new HashMap<Integer, PartitionReplicaVersionsView>();
         collectOwnedReplicaVersions(node, ownedReplicaVersions);
         return ownedReplicaVersions;
     }
 
-    private static void collectOwnedReplicaVersions(Node node, Map<Integer, PartitionReplicaVersionsView> replicaVersions)
-            throws InterruptedException {
+    private static void collectOwnedReplicaVersions(Node node, Map<Integer, PartitionReplicaVersionsView> replicaVersions) {
         InternalPartitionService partitionService = node.getPartitionService();
         Address nodeAddress = node.getThisAddress();
         for (IPartition partition : partitionService.getPartitions()) {
@@ -90,12 +87,11 @@ public class TestPartitionUtils {
         }
     }
 
-    public static long[] getDefaultReplicaVersions(Node node, int partitionId) throws InterruptedException {
+    public static long[] getDefaultReplicaVersions(Node node, int partitionId) {
         return getPartitionReplicaVersionsView(node, partitionId).getVersions(NonFragmentedServiceNamespace.INSTANCE);
     }
 
-    public static PartitionReplicaVersionsView getPartitionReplicaVersionsView(Node node, int partitionId)
-            throws InterruptedException {
+    public static PartitionReplicaVersionsView getPartitionReplicaVersionsView(Node node, int partitionId) {
         GetReplicaVersionsRunnable runnable = new GetReplicaVersionsRunnable(node, partitionId);
         node.getNodeEngine().getOperationService().execute(runnable);
         return runnable.getReplicaVersions();
@@ -208,14 +204,9 @@ public class TestPartitionUtils {
             latch.countDown();
         }
 
-        private void await() throws InterruptedException {
-            Assert.assertTrue("GetReplicaVersionsRunnable is not executed!", latch.await(1, TimeUnit.MINUTES));
-        }
-
-        PartitionReplicaVersionsView getReplicaVersions() throws InterruptedException {
-            await();
+        PartitionReplicaVersionsView getReplicaVersions() {
+            assertOpenEventually(latch, TimeUnit.MINUTES.toSeconds(1));
             return replicaVersions;
         }
     }
-
 }
