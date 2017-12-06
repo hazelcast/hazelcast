@@ -53,7 +53,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    protected IAtomicReference newInstance() {
+    protected <K> IAtomicReference<K> newInstance() {
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
@@ -84,6 +84,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void setAndGet() {
         assertNull(ref.setAndGet(null));
         assertNull(ref.get());
@@ -106,7 +107,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
         ref.set("foo");
         assertEquals("foo", ref.get());
 
-        ref.setAndGet("bar");
+        ref.set("bar");
         assertEquals("bar", ref.get());
 
         ref.set(null);
@@ -289,6 +290,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
     }
 
     private static class AppendFunction implements IFunction<String, String> {
+
         private String add;
 
         private AppendFunction(String add) {

@@ -31,5 +31,4 @@ public class AtomicReferenceBasicDistributedTest extends AtomicReferenceAbstract
     protected HazelcastInstance[] newInstances() {
         return createHazelcastInstanceFactory(2).newInstances();
     }
-
 }
