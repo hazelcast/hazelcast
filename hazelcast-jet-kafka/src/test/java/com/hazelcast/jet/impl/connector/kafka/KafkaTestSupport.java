@@ -66,7 +66,14 @@ public class KafkaTestSupport extends JetTestSupport {
             }
             kafkaServer.shutdown();
             zkUtils.close();
-            zkServer.shutdown();
+            try {
+                zkServer.shutdown();
+            } catch (Exception e) {
+                // ignore error on Windows, it fails there, see https://issues.apache.org/jira/browse/KAFKA-6291
+                if (!isWindows()) {
+                    throw e;
+                }
+            }
 
             producer = null;
             kafkaServer = null;

@@ -17,10 +17,9 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.HdfsProcessors;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -53,16 +52,16 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfsP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class WriteHdfsPTest extends JetTestSupport {
+public class WriteHdfsPTest extends HdfsTestSupport {
 
     @Parameterized.Parameter(0)
     public Class<? extends OutputFormat> outputFormatClass;

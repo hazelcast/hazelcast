@@ -20,7 +20,6 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
@@ -73,7 +72,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ReadHdfsPTest extends JetTestSupport {
+public class ReadHdfsPTest extends HdfsTestSupport {
 
     private static String[] ENTRIES;
 

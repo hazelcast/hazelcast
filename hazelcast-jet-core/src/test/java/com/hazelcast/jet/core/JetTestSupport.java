@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
+import org.junit.Assume;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -92,6 +93,14 @@ public class JetTestSupport extends HazelcastTestSupport {
 
     protected static <E> IStreamList<E> getList(JetInstance instance) {
         return instance.getList(randomName());
+    }
+
+    protected static void assumeNotWindows() {
+        Assume.assumeFalse(isWindows());
+    }
+
+    protected static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("windows");
     }
 
     public static void assertTrueEventually(UncheckedRunnable runnable) {
