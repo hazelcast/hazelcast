@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.reliableidgen;
+package com.hazelcast.reliableidgen.impl;
 
 import com.hazelcast.config.ReliableIdGeneratorConfig;
-import com.hazelcast.core.ReliableIdGenerator;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
@@ -47,10 +47,10 @@ public class ReliableIdGeneratorProxy
     public static final long INCREMENT = 1 << BITS_NODE_ID;
 
     /**
-     * 1.1.2017 0:00 GMT will be MIN_VALUE in the 42-bit signed integer.
+     * 1.1.2017 0:00 UTC will be MIN_VALUE in the 42-bit signed integer.
      * <p>
      * {@code 1483228800000} is the value {@code System.currentTimeMillis()} would return on
-     * 1.1.2017 0:00 GMT.
+     * 1.1.2017 0:00 UTC.
      */
     @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
@@ -93,6 +93,8 @@ public class ReliableIdGeneratorProxy
 
     @Override
     public long newId() {
+        // The cluster version is checked when ClusterService.getMemberListJoinVersion() is called. This always happens
+        // before first ID is generated.
         return batcher.newId();
     }
 
@@ -176,10 +178,10 @@ public class ReliableIdGeneratorProxy
 
         // If our node ID is out of range, assign NODE_ID_OUT_OF_RANGE to nodeId
         if ((nodeId & -1 << BITS_NODE_ID) != 0) {
-            nodeId = NODE_ID_OUT_OF_RANGE;
             outOfRangeMembers.add(getNodeEngine().getClusterService().getLocalMember().getUuid());
             logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
                     + "Cluster restart is recommended.");
+            nodeId = NODE_ID_OUT_OF_RANGE;
         }
 
         // we ignore possible double initialization

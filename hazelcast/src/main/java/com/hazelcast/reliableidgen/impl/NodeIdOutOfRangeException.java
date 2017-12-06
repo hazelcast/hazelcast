@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.reliableidgen;
+package com.hazelcast.reliableidgen.impl;
 
 import com.hazelcast.core.HazelcastException;
 

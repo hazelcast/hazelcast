@@ -22,11 +22,11 @@ import com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCod
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.concurrent.reliableidgen.AutoBatcher;
-import com.hazelcast.concurrent.reliableidgen.IdBatch;
+import com.hazelcast.reliableidgen.impl.AutoBatcher;
+import com.hazelcast.reliableidgen.impl.IdBatch;
 import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.ReliableIdGenerator;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 
 /**
  * Proxy implementation of {@link IdGenerator}.

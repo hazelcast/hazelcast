@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.reliableidgen;
+package com.hazelcast.client.reliableidgen.impl;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.concurrent.reliableidgen.ReliableIdConcurrencyTestUtil;
-import com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorProxy;
+import com.hazelcast.reliableidgen.impl.ReliableIdConcurrencyTestUtil;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy;
 import com.hazelcast.config.ReliableIdGeneratorConfig;
-import com.hazelcast.core.ReliableIdGenerator;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

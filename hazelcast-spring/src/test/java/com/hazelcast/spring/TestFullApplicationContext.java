@@ -77,7 +77,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ReliableIdGenerator;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;

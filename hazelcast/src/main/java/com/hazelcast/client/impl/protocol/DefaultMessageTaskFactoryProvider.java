@@ -44,7 +44,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessa
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
-import com.hazelcast.client.impl.protocol.task.reliableidgen.NewIdBatchMessageTask;
+import com.hazelcast.reliableidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapEventJournalReadTask;

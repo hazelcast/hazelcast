@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.reliableidgen;
+package com.hazelcast.reliableidgen.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCodec;
 import com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorService;
-import com.hazelcast.concurrent.reliableidgen.IdBatch;
-import com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorProxy;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
+import com.hazelcast.reliableidgen.impl.IdBatch;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;

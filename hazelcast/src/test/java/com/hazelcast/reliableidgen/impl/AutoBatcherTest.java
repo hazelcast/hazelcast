@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.reliableidgen;
+package com.hazelcast.reliableidgen.impl;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -26,8 +26,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 
-import static com.hazelcast.concurrent.reliableidgen.ReliableIdConcurrencyTestUtil.IDS_IN_THREAD;
-import static com.hazelcast.concurrent.reliableidgen.ReliableIdConcurrencyTestUtil.NUM_THREADS;
+import static com.hazelcast.reliableidgen.impl.ReliableIdConcurrencyTestUtil.IDS_IN_THREAD;
+import static com.hazelcast.reliableidgen.impl.ReliableIdConcurrencyTestUtil.NUM_THREADS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

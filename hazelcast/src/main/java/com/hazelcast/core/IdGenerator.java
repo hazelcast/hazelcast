@@ -49,7 +49,13 @@ package com.hazelcast.core;
  * It is NOT RECOMMENDED to use {@link IdGenerator} to provide keys that are also used as unique identifiers in
  * underlying persistent storage, for example in an {@link IMap} that writes to a relational database using {@link
  * MapStore}.
+ *
+ * @deprecated The implementation can produce duplicate IDs in case of network split, even with split-brain
+ * protection enabled (during short window while split-brain is detected). Use {@link
+ * HazelcastInstance#getReliableIdGenerator(String)} for an alternative implementation which does not suffer
+ * from this problem.
  */
+@Deprecated
 public interface IdGenerator extends DistributedObject {
 
     /**

@@ -203,6 +203,14 @@ public interface ConfigurationService {
     EventJournalConfig findMapEventJournalConfig(String name);
 
     /**
+     * Finds existing ReliableIdGeneratorConfig config.
+     *
+     * @param name name of the config
+     * @return ReliableIdGenerator config or {@code null} when requested ReliableIdGenerator configuration does not exist
+     */
+    ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name);
+
+    /**
      * Returns all registered map configurations.
      *
      * @return registered map configurations
@@ -328,7 +336,10 @@ public interface ConfigurationService {
      */
     Map<String, EventJournalConfig> getMapEventJournalConfigs();
 
-    ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String baseName);
-
+    /**
+     * Returns all registered ReliableIdGenerator configurations.
+     *
+     * @return registered ReliableIdGenerator configurations
+     */
     Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs();
 }

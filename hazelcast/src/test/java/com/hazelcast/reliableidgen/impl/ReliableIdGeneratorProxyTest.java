@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.reliableidgen;
+package com.hazelcast.reliableidgen.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -31,9 +32,9 @@ import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorProxy.BITS_NODE_ID;
-import static com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorProxy.BITS_TIMESTAMP;
-import static com.hazelcast.concurrent.reliableidgen.ReliableIdGeneratorProxy.EPOCH_START;
+import static com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy.BITS_NODE_ID;
+import static com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy.BITS_TIMESTAMP;
+import static com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy.EPOCH_START;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;

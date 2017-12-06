@@ -22,6 +22,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -262,8 +263,8 @@ public interface HazelcastInstance {
      *
      * @deprecated The implementation can produce duplicate IDs in case of network split, even
      * with split-brain protection enabled (during short window while split-brain is detected).
-     * Use {@link #getReliableIdGenerator(String)} for alternative implementation which does not suffer
-     * from this problems.
+     * Use {@link #getReliableIdGenerator(String)} for an alternative implementation which does not
+     * suffer from this problem.
      */
     @Deprecated
     IdGenerator getIdGenerator(String name);

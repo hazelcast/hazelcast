@@ -165,9 +165,9 @@ public interface ClusterService extends CoreService, Cluster {
      * The value returned from this method can be cached. Even though it can change later, both values are
      * unique.
      *
-     * @throws IllegalStateException if the local instance is not joined or the cluster version is below 3.10
-     *    or cluster just upgraded to 3.10, but local member has not yet learned its join version from the master
-     *    node.
+     * @throws IllegalStateException if the local instance is not joined or the cluster just upgraded to 3.10,
+     *      but local member has not yet learned its join version from the master node.
+     * @throws UnsupportedOperationException if the cluster version is below 3.10
      *
      * @return the member list join version of the local member instance
      */
