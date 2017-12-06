@@ -28,6 +28,7 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
@@ -64,6 +65,8 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.GracefulShutdownAwareService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
@@ -75,6 +78,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
@@ -82,11 +86,14 @@ import com.hazelcast.version.Version;
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -424,8 +431,9 @@ public class Node {
 
         if (!terminate) {
             replicateCRDTs();
-            final int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
-            if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
+            int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
+            boolean success = callGracefulShutdownAwareServices(maxWaitSeconds);
+            if (!success) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
         } else {
@@ -471,14 +479,38 @@ public class Node {
         replicationMigrationService.syncReplicateDirtyCRDTs();
     }
 
+    private boolean callGracefulShutdownAwareServices(final int maxWaitSeconds) {
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        Collection<GracefulShutdownAwareService> services = nodeEngine.getServices(GracefulShutdownAwareService.class);
+        Collection<Future> futures = new ArrayList<Future>(services.size());
+
+        for (final GracefulShutdownAwareService service : services) {
+            Future future = executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    boolean success = service.onShutdown(maxWaitSeconds, TimeUnit.SECONDS);
+                    if (!success) {
+                        throw new HazelcastException("Graceful shutdown failed for " + service);
+                    }
+                }
+            });
+            futures.add(future);
+        }
+        try {
+            FutureUtil.waitWithDeadline(futures, maxWaitSeconds, TimeUnit.SECONDS, FutureUtil.RETHROW_EVERYTHING);
+            return true;
+        } catch (Exception e) {
+            logger.warning(e);
+            return false;
+        }
+    }
+
     @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown();
         }
-        if (phoneHome != null) {
-            phoneHome.shutdown();
-        }
+        phoneHome.shutdown();
         if (managementCenterService != null) {
             managementCenterService.shutdown();
         }

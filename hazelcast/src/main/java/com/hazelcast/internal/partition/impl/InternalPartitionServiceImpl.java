@@ -875,7 +875,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
-    public boolean prepareToSafeShutdown(long timeout, TimeUnit unit) {
+    public boolean onShutdown(long timeout, TimeUnit unit) {
         if (!node.getClusterService().isJoined()) {
             return true;
         }
