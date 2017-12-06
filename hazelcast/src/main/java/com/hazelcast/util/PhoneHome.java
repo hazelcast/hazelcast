@@ -150,10 +150,11 @@ public final class PhoneHome {
             IOUtil.closeResource(is);
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(1);
+        ExecutorService executor = null;
         Future<MCResponse> mcResponse = null;
-        ManagementCenterConfig managementCenterConfig = hazelcastNode.config.getManagementCenterConfig();
-        if (managementCenterConfig.isEnabled()) {
+        boolean isManagementCenterConfigEnabled = hazelcastNode.config.getManagementCenterConfig().isEnabled();
+        if (isManagementCenterConfigEnabled) {
+            executor = Executors.newFixedThreadPool(1);
             mcResponse = executor.submit(new MCRequest(hazelcastNode));
         }
 
@@ -188,7 +189,7 @@ public final class PhoneHome {
         addClientInfo(hazelcastNode, parameterCreator);
         addOSInfo(parameterCreator);
 
-        if (managementCenterConfig.isEnabled()) {
+        if (isManagementCenterConfigEnabled) {
             addManCenterInfo(executor, mcResponse, clusterSize, parameterCreator);
         } else {
             parameterCreator.addParam("mclicense", "MC_NOT_CONFIGURED");
