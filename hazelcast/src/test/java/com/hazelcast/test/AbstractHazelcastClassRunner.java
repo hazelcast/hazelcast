@@ -56,6 +56,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
+import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 
@@ -332,11 +334,20 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             public void evaluate() throws Throwable {
                 originalStatement.evaluate();
 
+                // check for running Hazelcast instances
                 Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
                 if (!instances.isEmpty()) {
                     String message = "Instances haven't been shut down: " + instances;
                     Hazelcast.shutdownAll();
                     throw new IllegalStateException(message);
+                }
+
+                // check for leftover CachingProvider instances
+                int registrySize = getCachingProviderRegistrySize();
+                if (registrySize > 0) {
+                    clearCachingProviderRegistry();
+                    throw new IllegalStateException(registrySize + " CachingProviders are not cleaned up."
+                            + " Please use JsrTestUtil.cleanup() in your test!");
                 }
             }
         };
