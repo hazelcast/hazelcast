@@ -31,7 +31,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
         registerBeanDefinitionParser("cache-manager", new CacheManagerBeanDefinitionParser());
-        final String[] types = {
+        String[] types = {
                 "map",
                 "multiMap",
                 "replicatedMap",
@@ -47,9 +47,8 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "semaphore",
                 "lock",
         };
-        for (final String type : types) {
+        for (String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }
     }
 }
-
