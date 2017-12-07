@@ -38,7 +38,7 @@ public class LikePredicate extends AbstractPredicate {
     }
 
     public LikePredicate(String attributeName, String expression) {
-        this.attributeName = attributeName;
+        super(attributeName);
         this.expression = expression;
     }
 
@@ -73,13 +73,13 @@ public class LikePredicate extends AbstractPredicate {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributeName);
+        super.writeData(out);
         out.writeUTF(expression);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attributeName = in.readUTF();
+        super.readData(in);
         expression = in.readUTF();
     }
 
