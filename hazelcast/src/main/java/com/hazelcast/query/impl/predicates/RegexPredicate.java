@@ -38,7 +38,7 @@ public class RegexPredicate extends AbstractPredicate {
     }
 
     public RegexPredicate(String attributeName, String regex) {
-        this.attributeName = attributeName;
+        super(attributeName);
         this.regex = regex;
     }
 
@@ -60,13 +60,13 @@ public class RegexPredicate extends AbstractPredicate {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributeName);
+        super.writeData(out);
         out.writeUTF(regex);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attributeName = in.readUTF();
+        super.readData(in);
         regex = in.readUTF();
     }
 
