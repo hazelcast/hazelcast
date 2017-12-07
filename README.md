@@ -281,17 +281,10 @@ Amazon Web Services (AWS) platform can be an unpredictable environment compared 
 
 ### Selecting EC2 Instance Type
 
-Hazelcast is an in-memory data grid that distributes the data and computation to the members that are connected with a network, making Hazelcast very sensitive to the network. Not all EC2 Instance types are the same in terms of the network performance. It is recommended that you choose instances that have **10 Gigabit** or **High** network performance for Hazelcast deployments. Please see the below list for the recommended instances.
+Hazelcast is an in-memory data grid that distributes the data and computation to the members that are connected with a network, making Hazelcast very sensitive to the network. Not all EC2 Instance types are the same in terms of the network performance. It is recommended that you choose instances that have **10 Gigabit** or **High** network performance for Hazelcast deployments.
 
-* m3.2xlarge - High
-* m1.xlarge - High
-* c3.2xlarge - High
-* c3.4xlarge - High
-* c3.8xlarge - 10 Gigabit
-* c1.xlarge - High
-* cc2.8xlarge - 10 Gigabit
-* m2.4xlarge - High
-* cr1.8xlarge - 10 Gigabit
+You can check latest Instance Types on <a href="https://aws.amazon.com/ec2/instance-types/" target="_blank">
+Amazon EC2 Instance Types </a>
 
 ### Dealing with Network Latency
 
@@ -316,10 +309,3 @@ AWS uses two virtualization types to launch the EC2 instances: Para-Virtualizati
 ***RELATED INFORMATION***
 
 *You can download the white paper "Amazon EC2 Deployment Guide for Hazelcast IMDG" <a href="https://hazelcast.com/resources/amazon-ec2-deployment-guide/" target="_blank">here</a>.*
-
-
-
-
-
-
-
