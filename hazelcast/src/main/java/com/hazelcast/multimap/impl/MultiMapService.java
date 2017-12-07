@@ -65,6 +65,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
         EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats> {
@@ -287,7 +289,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                 MultiMapValue multiMapValue = multiMapValueEntry.getValue();
                 container.getMultiMapValues().put(multiMapValueEntry.getKey(), multiMapValue);
                 long recordId = getMaxRecordId(multiMapValue);
-                maxRecordId = Math.max(maxRecordId, recordId);
+                maxRecordId = max(maxRecordId, recordId);
             }
             container.setId(maxRecordId);
         }
@@ -296,7 +298,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private long getMaxRecordId(MultiMapValue multiMapValue) {
         long maxRecordId = -1;
         for (MultiMapRecord record : multiMapValue.getCollection(false)) {
-            maxRecordId = Math.max(maxRecordId, record.getRecordId());
+            maxRecordId = max(maxRecordId, record.getRecordId());
         }
         return maxRecordId;
     }
@@ -345,8 +347,13 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long hits = 0;
+        long misses = 0;
         long lockedEntryCount = 0;
+        long lastAccessTime = 0;
+        long lastUpdateTime = 0;
         ClusterService clusterService = nodeEngine.getClusterService();
+        MultiMapConfig config = nodeEngine.getConfig().findMultiMapConfig(name);
+        int backupCount = config.getTotalBackupCount();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
@@ -360,26 +367,16 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             if (owner != null) {
                 if (owner.equals(thisAddress)) {
                     lockedEntryCount += multiMapContainer.getLockedCount();
+                    lastAccessTime = max(lastAccessTime, multiMapContainer.getLastAccessTime());
+                    lastUpdateTime = max(lastUpdateTime, multiMapContainer.getLastUpdateTime());
                     for (MultiMapValue multiMapValue : multiMapContainer.getMultiMapValues().values()) {
                         hits += multiMapValue.getHits();
                         ownedEntryCount += multiMapValue.getCollection(false).size();
                     }
                 } else {
-                    int backupCount = multiMapContainer.getConfig().getTotalBackupCount();
                     for (int j = 1; j <= backupCount; j++) {
-                        Address replicaAddress = partition.getReplicaAddress(j);
-                        int memberSize = nodeEngine.getClusterService().getMembers().size();
-
-                        int tryCount = REPLICA_ADDRESS_TRY_COUNT;
                         // wait if the partition table is not updated yet
-                        while (memberSize > backupCount && replicaAddress == null && tryCount-- > 0) {
-                            try {
-                                Thread.sleep(REPLICA_ADDRESS_SLEEP_WAIT_MILLIS);
-                            } catch (InterruptedException e) {
-                                throw ExceptionUtil.rethrow(e);
-                            }
-                            replicaAddress = partition.getReplicaAddress(j);
-                        }
+                        Address replicaAddress = getReplicaAddress(partition, backupCount, j);
 
                         if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                             for (MultiMapValue multiMapValue : multiMapContainer.getMultiMapValues().values()) {
@@ -394,6 +391,9 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         stats.setBackupEntryCount(backupEntryCount);
         stats.setHits(hits);
         stats.setLockedEntryCount(lockedEntryCount);
+        stats.setBackupCount(backupCount);
+        stats.setLastAccessTime(lastAccessTime);
+        stats.setLastUpdateTime(lastUpdateTime);
         return stats;
     }
 
@@ -427,5 +427,21 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             }
         }
         return multiMapStats;
+    }
+
+    private Address getReplicaAddress(IPartition partition, int backupCount, int replicaIndex) {
+        Address replicaAddress = partition.getReplicaAddress(replicaIndex);
+        int tryCount = REPLICA_ADDRESS_TRY_COUNT;
+        int maxAllowedBackupCount = min(backupCount, nodeEngine.getPartitionService().getMaxAllowedBackupCount());
+
+        while (maxAllowedBackupCount > replicaIndex && replicaAddress == null && tryCount-- > 0) {
+            try {
+                Thread.sleep(REPLICA_ADDRESS_SLEEP_WAIT_MILLIS);
+            } catch (InterruptedException e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+            replicaAddress = partition.getReplicaAddress(replicaIndex);
+        }
+        return replicaAddress;
     }
 }
