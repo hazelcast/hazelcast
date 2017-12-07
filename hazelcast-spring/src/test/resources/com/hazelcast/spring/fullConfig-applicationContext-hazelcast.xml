@@ -20,13 +20,11 @@
        xmlns:s="http://www.hazelcast.com/schema/sample"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-		http://www.hazelcast.com/schema/spring
-		hazelcast-spring-3.10.xsd
-		http://www.hazelcast.com/schema/sample
-		hazelcast-sample-service.xsd">
-
-    <!--xmlns="http://www.hazelcast.com/schema/config"-->
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/sample
+        hazelcast-sample-service.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
