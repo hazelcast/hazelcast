@@ -66,6 +66,7 @@ import com.hazelcast.cache.impl.record.CacheDataRecord;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperationFactory;
+import com.hazelcast.internal.management.request.GetCacheEntryRequest;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -148,8 +149,10 @@ public final class CacheDataSerializerHook
     public static final short EVENT_JOURNAL_INTERNAL_CACHE_EVENT = 59;
     public static final short EVENT_JOURNAL_READ_RESULT_SET = 60;
     public static final int PRE_JOIN_CACHE_CONFIG = 61;
+    public static final int CACHE_BROWSER_ENTRY_VIEW = 62;
+    public static final int GET_CACHE_ENTRY_VIEW_PROCESSOR = 63;
 
-    private static final int LEN = PRE_JOIN_CACHE_CONFIG + 1;
+    private static final int LEN = GET_CACHE_ENTRY_VIEW_PROCESSOR + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -455,6 +458,20 @@ public final class CacheDataSerializerHook
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new PreJoinCacheConfig();
+                    }
+                };
+        constructors[CACHE_BROWSER_ENTRY_VIEW] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new GetCacheEntryRequest.CacheBrowserEntryView();
+                    }
+                };
+        constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new GetCacheEntryRequest.GetCacheEntryViewEntryProcessor();
                     }
                 };
 
