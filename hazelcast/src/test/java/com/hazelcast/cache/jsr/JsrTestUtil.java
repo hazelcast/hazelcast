@@ -19,6 +19,7 @@ package com.hazelcast.cache.jsr;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
@@ -162,6 +163,8 @@ public final class JsrTestUtil {
 
             // return the map size
             return count;
+        } catch (NoClassDefFoundError e) {
+            return -1;
         } catch (Exception e) {
             return -1;
         }
