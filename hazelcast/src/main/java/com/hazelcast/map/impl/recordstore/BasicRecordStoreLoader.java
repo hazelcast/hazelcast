@@ -73,7 +73,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      */
     @Override
     public Future<?> loadValues(List<Data> keys, boolean replaceExistingValues) {
-        final Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
+        Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
         return executeTask(MAP_LOADER_EXECUTOR, task);
     }
 
@@ -82,7 +82,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     private ExecutionService getExecutionService() {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         return nodeEngine.getExecutionService();
     }
 
@@ -156,7 +156,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      */
     private Future removeExistingKeys(List<Data> keys) {
         OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
-        final Operation operation = new RemoveFromLoadAllOperation(name, keys);
+        Operation operation = new RemoveFromLoadAllOperation(name, keys);
         return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
     }
 
@@ -172,13 +172,13 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * store
      */
     private List<Future> doBatchLoad(List<Data> keys) {
-        final Queue<List<Data>> batchChunks = createBatchChunks(keys);
-        final int size = batchChunks.size();
-        final List<Future> futures = new ArrayList<Future>(size);
+        Queue<List<Data>> batchChunks = createBatchChunks(keys);
+        int size = batchChunks.size();
+        List<Future> futures = new ArrayList<Future>(size);
 
         while (!batchChunks.isEmpty()) {
-            final List<Data> chunk = batchChunks.poll();
-            final List<Data> keyValueSequence = loadAndGet(chunk);
+            List<Data> chunk = batchChunks.poll();
+            List<Data> keyValueSequence = loadAndGet(chunk);
             if (keyValueSequence.isEmpty()) {
                 continue;
             }
@@ -194,8 +194,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * @param keys the keys to be batched
      */
     private Queue<List<Data>> createBatchChunks(List<Data> keys) {
-        final Queue<List<Data>> chunks = new LinkedList<List<Data>>();
-        final int loadBatchSize = getLoadBatchSize();
+        Queue<List<Data>> chunks = new LinkedList<List<Data>>();
+        int loadBatchSize = getLoadBatchSize();
         int page = 0;
         List<Data> tmpKeys;
         while ((tmpKeys = getBatchChunk(keys, loadBatchSize, page++)) != null) {
@@ -214,7 +214,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      */
     private List<Data> loadAndGet(List<Data> keys) {
         try {
-            final Map entries = mapDataStore.loadAll(keys);
+            Map entries = mapDataStore.loadAll(keys);
             return getKeyValueSequence(entries);
         } catch (Throwable t) {
             logger.warning("Could not load keys from map store", t);
@@ -232,12 +232,12 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (entries == null || entries.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Data> keyValueSequence = new ArrayList<Data>(entries.size() * 2);
-        for (final Map.Entry<?, ?> entry : entries.entrySet()) {
-            final Object key = entry.getKey();
-            final Object value = entry.getValue();
-            final Data dataKey = mapServiceContext.toData(key);
-            final Data dataValue = mapServiceContext.toData(value);
+        List<Data> keyValueSequence = new ArrayList<Data>(entries.size() * 2);
+        for (Map.Entry<?, ?> entry : entries.entrySet()) {
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+            Data dataKey = mapServiceContext.toData(key);
+            Data dataValue = mapServiceContext.toData(value);
             keyValueSequence.add(dataKey);
             keyValueSequence.add(dataValue);
         }
@@ -262,8 +262,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (list == null || list.isEmpty()) {
             return null;
         }
-        final int start = pageNumber * pageSize;
-        final int end = Math.min(start + pageSize, list.size());
+        int start = pageNumber * pageSize;
+        int end = Math.min(start + pageSize, list.size());
         if (start >= end) {
             return null;
         }
@@ -278,8 +278,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * @return the future representing the pending completion of the put operation
      */
     private Future<?> sendOperation(List<Data> keyValueSequence) {
-        final OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
-        final Operation operation = createOperation(keyValueSequence);
+        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
+        Operation operation = createOperation(keyValueSequence);
         return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
     }
 
@@ -290,9 +290,9 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * @param keyValueSequence the list of serialised alternating key-value pairs
      */
     private Operation createOperation(List<Data> keyValueSequence) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
-        final MapOperation operation = operationProvider.createPutFromLoadAllOperation(name, keyValueSequence);
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
+        MapOperation operation = operationProvider.createPutFromLoadAllOperation(name, keyValueSequence);
         operation.setNodeEngine(nodeEngine);
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
@@ -310,9 +310,9 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        final Iterator<Data> iterator = keys.iterator();
+        Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
-            final Data key = iterator.next();
+            Data key = iterator.next();
             if (!mapDataStore.loadable(key)) {
                 iterator.remove();
             }
