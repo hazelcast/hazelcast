@@ -100,11 +100,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
-        final long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
-        final long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
+        long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
+        long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
         record.setTtl(ttl);
 
-        final long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
+        long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
         setExpirationTime(record, maxIdleMillis);
         updateStatsOnPut(true, now);
         return record;
@@ -149,7 +149,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected void saveIndex(Record record, Object oldValue) {
         Data dataKey = record.getKey();
-        final Indexes indexes = mapContainer.getIndexes(partitionId);
+        Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
@@ -180,7 +180,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected LockStore createLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService == null) {
             return null;
         }
