@@ -19,6 +19,9 @@ package com.hazelcast.spi.merge;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.multimap.impl.MultiMapContainer;
+import com.hazelcast.multimap.impl.MultiMapMergeContainer;
+import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,9 +41,9 @@ public final class SplitBrainEntryViews {
     private SplitBrainEntryViews() {
     }
 
-    public static <V> SplitBrainMergeEntryView<Boolean, V> createSplitBrainMergeEntryView(boolean isExistingContainer, V value) {
-        return new SimpleSplitBrainEntryView<Boolean, V>()
-                .setKey(isExistingContainer)
+    public static <K, V> SplitBrainMergeEntryView<K, V> createSplitBrainMergeEntryView(K key, V value) {
+        return new SimpleSplitBrainEntryView<K, V>()
+                .setKey(key)
                 .setValue(value);
     }
 
@@ -56,6 +59,28 @@ public final class SplitBrainEntryViews {
                 .setKey(item.getItemId())
                 .setValue(item.getData())
                 .setCreationTime(item.getCreationTime());
+    }
+
+    public static SplitBrainMergeEntryView<Data, Object> createSplitBrainMergeEntryView(MultiMapMergeContainer container,
+                                                                                        MultiMapRecord record) {
+        return new SimpleSplitBrainEntryView<Data, Object>()
+                .setKey(container.getKey())
+                .setValue(record.getObject())
+                .setCreationTime(container.getCreationTime())
+                .setLastAccessTime(container.getLastAccessTime())
+                .setLastUpdateTime(container.getLastUpdateTime())
+                .setHits(container.getHits());
+    }
+
+    public static SplitBrainMergeEntryView<Data, Object> createSplitBrainMergeEntryView(MultiMapContainer container, Data key,
+                                                                                        MultiMapRecord record, int hits) {
+        return new SimpleSplitBrainEntryView<Data, Object>()
+                .setKey(key)
+                .setValue(record.getObject())
+                .setCreationTime(container.getCreationTime())
+                .setLastAccessTime(container.getLastAccessTime())
+                .setLastUpdateTime(container.getLastUpdateTime())
+                .setHits(hits);
     }
 
     public static SplitBrainMergeEntryView<String, HyperLogLog>

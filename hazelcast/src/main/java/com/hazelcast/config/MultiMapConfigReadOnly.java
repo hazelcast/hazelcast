@@ -95,4 +95,9 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
     public MultiMapConfig setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
     }
+
+    @Override
+    public MultiMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+    }
 }

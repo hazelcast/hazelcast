@@ -523,6 +523,25 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testMultiMapConfig() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(DiscardMergePolicy.class.getSimpleName())
+                .setBatchSize(2342);
+
+        MultiMapConfig multiMapConfig = new MultiMapConfig()
+                .setName("myMultiMap")
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setBinary(false)
+                .setMergePolicyConfig(mergePolicyConfig);
+
+        Config config = new Config().addMultiMapConfig(multiMapConfig);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        assertEquals(multiMapConfig, xmlConfig.getMultiMapConfig("myMultiMap"));
+    }
+
+    @Test
     public void testWanConfig() {
         HashMap<String, Comparable> props = new HashMap<String, Comparable>();
         props.put("prop1", "val1");

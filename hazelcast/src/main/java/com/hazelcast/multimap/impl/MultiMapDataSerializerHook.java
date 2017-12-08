@@ -27,6 +27,8 @@ import com.hazelcast.multimap.impl.operations.EntrySetOperation;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.GetAllOperation;
 import com.hazelcast.multimap.impl.operations.KeySetOperation;
+import com.hazelcast.multimap.impl.operations.MergeBackupOperation;
+import com.hazelcast.multimap.impl.operations.MergeOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
@@ -114,6 +116,9 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     public static final int MULTIMAP_RESPONSE = 46;
     public static final int ENTRY_SET_RESPONSE = 47;
 
+    public static final int MERGE_CONTAINER = 48;
+    public static final int MERGE_OPERATION = 49;
+    public static final int MERGE_BACKUP_OPERATION = 50;
 
     public int getFactoryId() {
         return F_ID;
@@ -121,7 +126,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[ENTRY_SET_RESPONSE + 1];
+                = new ConstructorFunction[MERGE_BACKUP_OPERATION + 1];
         constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearBackupOperation();
@@ -302,6 +307,21 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
         constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new EntrySetResponse();
+            }
+        };
+        constructors[MERGE_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MultiMapMergeContainer();
+            }
+        };
+        constructors[MERGE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeOperation();
+            }
+        };
+        constructors[MERGE_BACKUP_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeBackupOperation();
             }
         };
 

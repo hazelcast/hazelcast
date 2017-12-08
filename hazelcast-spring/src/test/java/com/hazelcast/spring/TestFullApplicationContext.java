@@ -583,6 +583,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 assertTrue(listener.isIncludeValue());
             }
         }
+        MergePolicyConfig mergePolicyConfig = testMultiMapConfig.getMergePolicyConfig();
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(1234, mergePolicyConfig.getBatchSize());
     }
 
     @Test

@@ -1596,17 +1596,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMultiMapConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <multimap name=\"foobar\">\n"
+                + "  <multimap name=\"myMultiMap\">"
+                + "        <backup-count>2</backup-count>"
+                + "        <async-backup-count>3</async-backup-count>"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </multimap>\n"
+                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
+                + "  </multimap>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        MultiMapConfig multiMapConfig = config.getMultiMapConfig("foobar");
+        assertFalse(config.getMultiMapConfigs().isEmpty());
 
         // TODO -> not full config checked
-        assertFalse(config.getMultiMapConfigs().isEmpty());
+        MultiMapConfig multiMapConfig = config.getMultiMapConfig("myMultiMap");
+        assertEquals(2, multiMapConfig.getBackupCount());
+        assertEquals(3, multiMapConfig.getAsyncBackupCount());
+
+        MergePolicyConfig mergePolicyConfig = multiMapConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals("customQuorumRule", multiMapConfig.getQuorumName());
+        assertEquals(23, mergePolicyConfig.getBatchSize());
     }
 
     @Test

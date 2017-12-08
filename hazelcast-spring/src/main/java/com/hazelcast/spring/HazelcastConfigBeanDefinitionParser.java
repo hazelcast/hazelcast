@@ -1370,6 +1370,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     multiMapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, multiMapConfigBuilder);
                 }
             }
             multiMapManagedMap.put(name, multiMapConfigBuilder.getBeanDefinition());

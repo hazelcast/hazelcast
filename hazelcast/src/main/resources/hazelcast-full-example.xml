@@ -1079,7 +1079,9 @@ https://hazelcast.org/documentation/.
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </multimap>
+
     <!--
         ===== HAZELCAST REPLICATED MAP CONFIGURATION =====
 
