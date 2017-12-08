@@ -114,6 +114,7 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public void init() {
+        context.getSerializationService().getManagedContext().initialize(processor);
         processor.init(outbox, context);
     }
 

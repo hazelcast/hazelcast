@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -48,6 +50,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -66,7 +69,10 @@ public class ProcessorTaskletTest {
     public void setUp() {
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.processor = new PassThroughProcessor();
-        this.context = new ProcCtx(null, null, null, null, 0, NONE);
+        SerializationService service = mock(SerializationService.class);
+        ManagedContext managedContext = mock(ManagedContext.class);
+        when(service.getManagedContext()).thenReturn(managedContext);
+        this.context = new ProcCtx(null, service, null, null, 0, NONE);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
     }
