@@ -38,12 +38,14 @@ import java.util.Set;
 /**
  * Defines a record-store.
  */
-public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
+public interface RecordStore<R extends Record> {
 
     /**
      * Default TTL value of a record.
      */
     long DEFAULT_TTL = -1L;
+
+    LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
 
