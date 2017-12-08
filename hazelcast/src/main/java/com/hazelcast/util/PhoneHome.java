@@ -45,10 +45,6 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -72,7 +68,7 @@ public final class PhoneHome {
     private static final int H_INTERVAL = 300;
     private static final int J_INTERVAL = 600;
 
-    private static final String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
+    private static final String BASE_PHONE_HOME_URL = "http://127.0.0.1:8080/ping";
     private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final String FALSE = "false";
 
@@ -150,14 +146,6 @@ public final class PhoneHome {
             IOUtil.closeResource(is);
         }
 
-        ExecutorService executor = null;
-        Future<MCResponse> mcResponse = null;
-        boolean isManagementCenterConfigEnabled = hazelcastNode.config.getManagementCenterConfig().isEnabled();
-        if (isManagementCenterConfigEnabled) {
-            executor = Executors.newFixedThreadPool(1);
-            mcResponse = executor.submit(new MCRequest(hazelcastNode));
-        }
-
         //Calculate native memory usage from native memory config
         NativeMemoryConfig memoryConfig = hazelcastNode.getConfig().getNativeMemoryConfig();
         final ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
@@ -189,8 +177,9 @@ public final class PhoneHome {
         addClientInfo(hazelcastNode, parameterCreator);
         addOSInfo(parameterCreator);
 
+        boolean isManagementCenterConfigEnabled = hazelcastNode.config.getManagementCenterConfig().isEnabled();
         if (isManagementCenterConfigEnabled) {
-            addManCenterInfo(executor, mcResponse, clusterSize, parameterCreator);
+            addManCenterInfo(hazelcastNode, clusterSize, parameterCreator);
         } else {
             parameterCreator.addParam("mclicense", "MC_NOT_CONFIGURED");
             parameterCreator.addParam("mcver", "MC_NOT_CONFIGURED");
@@ -241,29 +230,51 @@ public final class PhoneHome {
         parameterCreator.addParam("cpy", Integer.toString(clusterClientStats.get(ClientType.PYTHON)));
     }
 
-    private void addManCenterInfo(ExecutorService executor, Future<MCResponse> response,
-                                  int clusterSize, PhoneHomeParameterCreator parameterCreator) {
-        MCResponse mcResponse;
+    private void addManCenterInfo(Node hazelcastNode, int clusterSize, PhoneHomeParameterCreator parameterCreator) {
+        InputStreamReader reader = null;
+        InputStream inputStream = null;
+        int responseCode;
+        String version;
+        String license;
         try {
-            mcResponse = response.get();
+            ManagementCenterConfig managementCenterConfig = hazelcastNode.config.getManagementCenterConfig();
+            String manCenterURL = managementCenterConfig.getUrl();
+            manCenterURL = manCenterURL.endsWith("/") ? manCenterURL : manCenterURL + '/';
+            URL manCenterPhoneHomeURL = new URL(manCenterURL + "phoneHome.do");
+            ManagementCenterConnectionFactory connectionFactory
+                    = hazelcastNode.getNodeExtension().getManagementCenterConnectionFactory();
+            HttpURLConnection connection;
+            if (connectionFactory != null) {
+                connectionFactory.init(managementCenterConfig.getMutualAuthConfig());
+                connection = (HttpURLConnection) connectionFactory.openConnection(manCenterPhoneHomeURL);
+            } else {
+                connection = (HttpURLConnection) manCenterPhoneHomeURL.openConnection();
+            }
+            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
+            // if management center is not running,
+            // connection.getInputStream() throws 'java.net.ConnectException: Connection refused'
+            inputStream = connection.getInputStream();
+            responseCode = connection.getResponseCode();
+            reader = new InputStreamReader(inputStream, "UTF-8");
+            JsonObject mcPhoneHomeInfoJson = JsonValue.readFrom(reader).asObject();
+            version = JsonUtil.getString(mcPhoneHomeInfoJson, "mcVersion");
+            license = JsonUtil.getString(mcPhoneHomeInfoJson, "mcLicense", null);
         } catch (Exception ignored) {
             EmptyStatement.ignore(ignored);
             parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
             parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
             return;
         } finally {
-            executor.shutdown();
+            IOUtil.closeResource(reader);
+            IOUtil.closeResource(inputStream);
         }
 
-        MCPhoneHomeInfo mcPhoneHomeInfo = getManCenterPhoneHomeInfo(mcResponse);
-        String version = mcPhoneHomeInfo.getVersion();
-        Object license = mcPhoneHomeInfo.getLicense();
-        int responseCode = mcPhoneHomeInfo.getResponseCode();
         if (responseCode == HttpURLConnection.HTTP_OK) {
             if (license == null) {
                 checkClusterSizeAndSetLicense(clusterSize, parameterCreator);
             } else {
-                parameterCreator.addParam("mclicense", license.toString());
+                parameterCreator.addParam("mclicense", license);
             }
             parameterCreator.addParam("mcver", version);
         } else {
@@ -277,95 +288,6 @@ public final class PhoneHome {
             parameterCreator.addParam("mclicense", "MC_LICENSE_NOT_REQUIRED");
         } else {
             parameterCreator.addParam("mclicense", "MC_LICENSE_REQUIRED_BUT_NOT_SET");
-        }
-    }
-
-    private MCPhoneHomeInfo getManCenterPhoneHomeInfo(MCResponse mcResponse) {
-        InputStream inputStream = null;
-        InputStreamReader reader = null;
-        MCPhoneHomeInfo mcPhoneHomeInfo = null;
-        try {
-            inputStream = mcResponse.getInputStream();
-            reader = new InputStreamReader(inputStream, "UTF-8");
-            JsonObject mcPhoneHomeInfoJson = JsonValue.readFrom(reader).asObject();
-            final String version = JsonUtil.getString(mcPhoneHomeInfoJson, "mcVersion");
-            final String license = JsonUtil.getString(mcPhoneHomeInfoJson, "mcLicense", null);
-            final int responseCode = mcResponse.getResponseCode();
-            mcPhoneHomeInfo = new MCPhoneHomeInfo(version, license, responseCode);
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
-        } finally {
-            IOUtil.closeResource(reader);
-            IOUtil.closeResource(inputStream);
-        }
-        return mcPhoneHomeInfo;
-    }
-
-    private static class MCRequest implements Callable<MCResponse> {
-
-        private Node hazelcastNode;
-
-        public MCRequest(Node hazelcastNode) {
-            this.hazelcastNode = hazelcastNode;
-        }
-
-        @Override
-        public MCResponse call() throws Exception {
-            ManagementCenterConfig managementCenterConfig = hazelcastNode.config.getManagementCenterConfig();
-            String manCenterURL = managementCenterConfig.getUrl();
-            manCenterURL = manCenterURL.endsWith("/") ? manCenterURL : manCenterURL + '/';
-            URL manCenterPhoneHomeURL = new URL(manCenterURL + "phoneHome.do");
-            ManagementCenterConnectionFactory connectionFactory
-                    = hazelcastNode.getNodeExtension().getManagementCenterConnectionFactory();
-            HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
-                    ? connectionFactory.openConnection(manCenterPhoneHomeURL)
-                    : manCenterPhoneHomeURL.openConnection());
-            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
-            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
-
-            return new MCResponse(connection.getResponseCode(), connection.getInputStream());
-        }
-    }
-
-    private static class MCPhoneHomeInfo {
-        private String version;
-        private Object license;
-        private int responseCode;
-
-        public MCPhoneHomeInfo(String version, Object license, int responseCode) {
-            this.version = version;
-            this.license = license;
-            this.responseCode = responseCode;
-        }
-
-        public String getVersion() {
-            return version;
-        }
-
-        public Object getLicense() {
-            return license;
-        }
-
-        public int getResponseCode() {
-            return responseCode;
-        }
-    }
-
-    private static class MCResponse {
-        private int responseCode;
-        private InputStream inputStream;
-
-        public MCResponse(int responseCode, InputStream inputStream) {
-            this.responseCode = responseCode;
-            this.inputStream = inputStream;
-        }
-
-        public int getResponseCode() {
-            return responseCode;
-        }
-
-        public InputStream getInputStream() {
-            return inputStream;
         }
     }
 
