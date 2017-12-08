@@ -278,6 +278,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return record;
     }
 
+    @Override
     public Iterator<Record> iterator() {
         return new ReadOnlyRecordIterator(storage.values());
     }
