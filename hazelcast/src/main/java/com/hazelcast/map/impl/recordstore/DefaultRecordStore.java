@@ -532,7 +532,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapDataStore.reset();
         storage.clear(false);
         eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
-        resetStats();
+        stats.reset();
     }
 
     @Override
