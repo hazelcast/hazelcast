@@ -514,7 +514,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object toObject(Object data) {
-        return nodeEngine.toObject(data);
+        return serializationService.toObject(data);
     }
 
     @Override
@@ -524,7 +524,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Data toData(Object object) {
-        return nodeEngine.toData(object);
+        return serializationService.toData(object);
     }
 
     @Override
