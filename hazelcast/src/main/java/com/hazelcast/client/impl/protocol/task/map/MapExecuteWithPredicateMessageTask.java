@@ -16,42 +16,81 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 public class MapExecuteWithPredicateMessageTask
-        extends AbstractMapAllPartitionsMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
 
     public MapExecuteWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
+    protected Object call() throws Exception {
+        ClientEndpoint endpoint = getEndpoint();
+        InternalOperationService operationService = nodeEngine.getOperationService();
+
+        Predicate predicate = serializationService.toObject(parameters.predicate);
+
+        if (predicate instanceof PartitionPredicate) {
+            return invokeOnPartition((PartitionPredicate) predicate, operationService);
+        }
+        OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(predicate), endpoint.getUuid());
+        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+        return reduce(map);
+    }
+
+    private Object invokeOnPartition(PartitionPredicate partitionPredicate,
+                                     InternalOperationService operationService) {
+        int partitionId = getPartitionId();
+        Predicate predicate = partitionPredicate.getTarget();
+        OperationFactory factory = createOperationFactory(predicate);
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(getServiceName(),
+                factory.createOperation(), partitionId);
+        Object result = invocationBuilder.invoke().join();
+        return reduce(Collections.singletonMap(partitionId, result));
+    }
+
+    private OperationFactory createOperationFactory(Predicate predicate) {
         MapOperationProvider operationProvider = getOperationProvider(parameters.name);
         EntryProcessor entryProcessor = serializationService.toObject(parameters.entryProcessor);
-        Predicate predicate = serializationService.toObject(parameters.predicate);
         return operationProvider.
                 createPartitionWideEntryWithPredicateOperationFactory(parameters.name, entryProcessor, predicate);
     }
 
-    @Override
+    private MapOperationProvider getOperationProvider(String mapName) {
+        MapService mapService = getService(SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapOperationProvider(mapName);
+    }
+
     protected Object reduce(Map<Integer, Object> map) {
         List<Map.Entry<Data, Data>> dataMap = new ArrayList<Map.Entry<Data, Data>>();
         MapService mapService = getService(MapService.SERVICE_NAME);
