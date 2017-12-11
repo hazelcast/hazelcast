@@ -49,6 +49,9 @@ import java.util.concurrent.TimeUnit;
  * use of the {@code equals} method when comparing objects. Instead of the {@code equals} method, this
  * implementation compares the serialized byte version of the objects.</b>
  * <p>
+ * <b>Moreover, stored values are handled as having a value type semantics, while standard Java implementations treat them
+ * as having a reference type semantics.</b>
+ * <p>
  * <b>Gotchas:</b>
  * <ul>
  * <li>Methods, including but not limited to {@code get}, {@code containsKey}, {@code containsValue}, {@code evict},
@@ -61,6 +64,9 @@ import java.util.concurrent.TimeUnit;
  * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return a collection
  * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
  * in the collection, and vice-versa.</li>
+ * <li>Methods, including but not limited to {@code computeIfPresent}, may behave incorrectly if the value passed to
+ * {@code remappingFunction} is modified in-place and returned as a result of the invocation. You should create a new
+ * value instance and return it as a result.</li>
  * </ul>
  * <p>
  * This class does <em>not</em> allow {@code null} to be used as a key or value.
