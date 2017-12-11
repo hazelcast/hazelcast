@@ -16,10 +16,13 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
@@ -113,6 +116,53 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
         for (Map.Entry<String, Integer> entry : entries) {
             assertEquals(partitionId, server.getPartitionService().getPartition(entry.getKey()).getPartitionId());
             assertEquals(partitionId, entry.getValue().intValue());
+        }
+    }
+
+    @Test
+    public void aggregate() throws Exception {
+        int partitionId = 2;
+        String keyForPartition = generateKeyForPartition(server, partitionId);
+        Predicate partitionPredicate = new PartitionPredicate<String, Integer>(keyForPartition, TruePredicate.INSTANCE);
+        Long aggregate = map.aggregate(Aggregators.<Map.Entry<String, Integer>>integerSum(), partitionPredicate);
+        Long sum = (long) (partitionId * ITEMS_PER_PARTITION);
+        assertEquals(sum, aggregate);
+    }
+
+    @Test
+    public void executeOnEntries() throws Exception {
+        int partitionId = 2;
+        String keyForPartition = generateKeyForPartition(server, partitionId);
+        Predicate partitionPredicate = new PartitionPredicate<String, Integer>(keyForPartition, TruePredicate.INSTANCE);
+        Map<String, Object> entries = map.executeOnEntries(new MyProcessor(), partitionPredicate);
+        assertEquals(ITEMS_PER_PARTITION, entries.size());
+
+    }
+
+    static class MyProcessor extends AbstractEntryProcessor<String, Integer> {
+
+        public MyProcessor() {
+        }
+
+        @Override
+        public Object process(Map.Entry<String, Integer> entry) {
+            Integer in = entry.getValue();
+            entry.setValue(in * 10);
+            return entry;
+        }
+    }
+
+    @Test
+    public void project() throws Exception {
+        Predicate partitionPredicate = new PartitionPredicate<String, Integer>(1, TruePredicate.INSTANCE);
+        Collection<Integer> collection = map.project(new PrimitiveValueIncrementingProjection(), partitionPredicate);
+        assertEquals(ITEMS_PER_PARTITION, collection.size());
+    }
+
+    public static class PrimitiveValueIncrementingProjection extends Projection<Map.Entry<String, Integer>, Integer> {
+        @Override
+        public Integer transform(Map.Entry<String, Integer> input) {
+            return input.getValue() + 1;
         }
     }
 
