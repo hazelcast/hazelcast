@@ -64,9 +64,10 @@ import java.util.concurrent.TimeUnit;
  * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return a collection
  * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
  * in the collection, and vice-versa.</li>
- * <li>Methods, including but not limited to {@code computeIfPresent}, may behave incorrectly if the value passed to
- * the update function is modified in-place and returned as a result of the invocation. You should create a new
- * value instance and return it as a result.
+ * <li>Since Hazelcast is compiled with Java 1.6, we can't override default methods introduced in later Java versions,
+ * nor can we add documentation to them. Methods, including but not limited to {@code computeIfPresent}, may behave
+ * incorrectly if the value passed to the update function is modified in-place and returned as a result of the invocation.
+ * You should create a new value instance and return it as a result.
  * <p>
  * For example, following code fragment will behave incorrectly and will enter an infinite loop:
  * <pre>
