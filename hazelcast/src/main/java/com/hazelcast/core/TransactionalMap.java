@@ -64,9 +64,9 @@ import java.util.concurrent.TimeUnit;
  * }
  * </code>
  * </pre>
- * <h2>Split-brain</h2>
- * It should be noted that transactions do not provide any consistency support in case of a split-brain or
- * node failures.
+ * <h2>ACID Guarantees</h2>
+ * It should be noted that in split-brain situations or during a node failure Hazelcast might not be able
+ * to always hold ACID guarantees.
  *
  * @param <K> key
  * @param <V> value
