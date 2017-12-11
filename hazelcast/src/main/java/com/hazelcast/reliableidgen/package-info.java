@@ -17,6 +17,6 @@
 /**
  * This package contains Reliable ID Generator functionality for Hazelcast.
  *
- * @since 3.8
+ * @since 3.10
  */
  package com.hazelcast.reliableidgen;
