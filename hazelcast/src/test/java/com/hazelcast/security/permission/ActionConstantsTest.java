@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -138,6 +139,14 @@ public class ActionConstantsTest {
 
         assertNotNull(permission);
         assertTrue(permission instanceof AtomicLongPermission);
+    }
+
+    @Test
+    public void getPermission_ReliableIdGenerator() {
+        Permission permission = ActionConstants.getPermission("foo", ReliableIdGeneratorService.SERVICE_NAME);
+
+        assertNotNull(permission);
+        assertTrue(permission instanceof ReliableIdGeneratorPermission);
     }
 
     @Test

@@ -198,7 +198,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     V put(K key, V value);
 
     /**
-     * {@inheritDoc}
+     * Removes the mapping for a key from this map if it is present.
+     * <p>
+     * If you don't need the previously mapped value for the removed key, prefer to use
+     * {@link #delete} and avoid the cost of serialization and network transfer.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -242,13 +245,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void removeAll(Predicate<K, V> predicate);
 
     /**
-     * Removes the mapping for a key from this map if it is present (optional operation).
+     * Removes the mapping for the key from this map if it is present.
      * <p>
      * Unlike {@link #remove(Object)}, this operation does not return
-     * the removed value, which avoids the serialization cost of the returned value.
-     * <p>
-     * If the removed value will not be used, a delete operation
-     * is preferred over a remove operation for better performance.
+     * the removed value, which avoids the serialization and network transfer cost of the
+     * returned value. If the removed value will not be used, this operation
+     * is preferred over the remove operation for better performance.
      * <p>
      * The map will not contain a mapping for the specified key once the call returns.
      * <p>
@@ -315,8 +317,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void loadAll(Set<K> keys, boolean replaceExistingValues);
 
     /**
-     * Clears the map and invokes {@link MapStore#deleteAll}deleteAll on MapStore which,
-     * if connected to a database, will delete the records from that database.
+     * Clears the map and invokes {@link MapStore#deleteAll} which,
+     * if connected to a database, will delete the records from the database.
      * <p>
      * The MAP_CLEARED event is fired for any registered listeners.
      * See {@link com.hazelcast.core.EntryListener#mapCleared(MapEvent)}.
@@ -1697,6 +1699,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #submitToKey(Object, EntryProcessor)} for an async version of this method.
      *
      * @return result of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if the specified key is {@code null}
@@ -1753,6 +1757,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
@@ -1804,6 +1810,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key

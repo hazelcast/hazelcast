@@ -128,6 +128,7 @@ public class ConfigXmlGenerator {
         nativeMemoryXmlGenerator(gen, config);
         servicesXmlGenerator(gen, config);
         hotRestartXmlGenerator(gen, config);
+        reliableIdGeneratorXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -968,6 +969,15 @@ public class ConfigXmlGenerator {
                 .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
                 .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
                 .close();
+    }
+
+    private static void reliableIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
+        for (ReliableIdGeneratorConfig m : config.getReliableIdGeneratorConfigs().values()) {
+            gen.open("reliable-id-generator", "name", m.getName())
+               .node("prefetch-count", m.getPrefetchCount())
+               .node("prefetch-validity-millis", m.getPrefetchValidityMillis());
+            gen.close();
+        }
     }
 
     private static void nativeMemoryXmlGenerator(XmlGenerator gen, Config config) {

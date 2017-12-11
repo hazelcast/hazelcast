@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -78,7 +79,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     static final String HAZELCAST_CLIENT_START_TAG =
             "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
 
-    static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
+    private static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
 
     private ClientConfig clientConfig;
 
@@ -90,7 +91,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @After
     @Before
-    public void after() {
+    public void beforeAndAfter() {
         System.clearProperty("hazelcast.client.config");
     }
 
@@ -314,6 +315,21 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testReliableIdGeneratorConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<reliable-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
+                + "</reliable-id-generator>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidityMillis());
+    }
+
+    @Test
     public void testConnectionStrategyConfig() {
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
@@ -367,7 +383,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastClientTagAppearsTwice() {
-        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
+        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/><hazelcast-client/>";
         buildConfig(xml);
     }
 

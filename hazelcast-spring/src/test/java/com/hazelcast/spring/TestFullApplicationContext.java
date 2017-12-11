@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -29,6 +28,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -44,6 +44,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -76,6 +77,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -184,6 +186,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
+
+    @Resource(name = "reliableIdGenerator")
+    private ReliableIdGenerator reliableIdGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -397,6 +402,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
         assertEquals("com.hazelcast.spring.DummyPartitionStrategy",
                 testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+    }
+
+    @Test
+    public void testMemberReliableIdGeneratorConfig() {
+        ReliableIdGeneratorConfig c = instance.getConfig().findReliableIdGeneratorConfig("reliableIdGenerator");
+        assertEquals(3, c.getPrefetchCount());
+        assertEquals(10L, c.getPrefetchValidityMillis());
+        assertEquals("reliableIdGenerator*", c.getName());
     }
 
     @Test
@@ -743,6 +756,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
+        assertNotNull(reliableIdGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -757,6 +771,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
+        assertEquals("reliableIdGenerator", reliableIdGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());

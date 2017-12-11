@@ -44,6 +44,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessa
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
+import com.hazelcast.reliableidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapEventJournalReadTask;
@@ -1932,8 +1933,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         };
 //endregion
-
-        //region ----------  REGISTRATION FOR continuous query operations of com.hazelcast.client.impl.protocol.task.map
+//region ----------  REGISTRATION FOR continuous query operations of com.hazelcast.client.impl.protocol.task.map
         factories[com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.map.MapDestroyCacheMessageTask(clientMessage, node, connection);
@@ -1965,7 +1965,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         };
 //endregion
-        //region ----------  REGISTRATION FOR dynamic config configuration
+//region ----------  REGISTRATION FOR dynamic config configuration
         factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddMultiMapConfigMessageTask(clientMessage, node, connection);
@@ -2052,6 +2052,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         };
 //endregion
+// region ----------- REGISTRATION FOR reliable id generator
+        factories[com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new NewIdBatchMessageTask(clientMessage, node, connection);
+            }
+        };
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

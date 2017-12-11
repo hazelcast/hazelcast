@@ -73,6 +73,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -126,23 +127,24 @@ import static org.springframework.util.Assert.isTrue;
  * BeanDefinitionParser for Hazelcast Config Configuration.
  * <p>
  * <b>Sample Spring XML for Hazelcast Config:</b>
- * <pre>
- * &lt;hz:config&gt;
- *  &lt;hz:map name="map1"&gt;
- *      &lt;hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
- *          eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/&gt;
  *
- *  &lt;hz:map-store enabled="true" class-name="com.foo.DummyStore"
- *          write-delay-seconds="0"/&gt;
- *  &lt;/hz:map&gt;
- *  &lt;hz:map name="map2"&gt;
- *      &lt;hz:map-store enabled="true" implementation="dummyMapStore"
- *          write-delay-seconds="0"/&gt;
- *  &lt;/hz:map&gt;
+ * <pre>{@code
+ *   <hz:config>
+ *     <hz:map name="map1">
+ *       <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+ *            eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
  *
- *  &lt;bean id="dummyMapStore" class="com.foo.DummyStore" /&gt;
- * &lt;/hz:config&gt;
- * </pre>
+ *     <hz:map-store enabled="true" class-name="com.foo.DummyStore"
+ *            write-delay-seconds="0"/>
+ *     </hz:map>
+ *     <hz:map name="map2">
+ *       <hz:map-store enabled="true" implementation="dummyMapStore"
+ *          write-delay-seconds="0"/>
+ *       </hz:map>
+ *
+ *     <bean id="dummyMapStore" class="com.foo.DummyStore" />
+ *  </hz:config>
+ * }</pre>
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:executablestatementcount", "checkstyle:cyclomaticcomplexity",
         "WeakerAccess"})
@@ -179,6 +181,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> jobTrackerManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> reliableIdGeneratorConfigMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -204,6 +207,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
             this.quorumManagedMap = createManagedMap("quorumConfigs");
+            this.reliableIdGeneratorConfigMap = createManagedMap("reliableIdGeneratorConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -295,6 +299,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleQuorum(node);
                     } else if ("hot-restart-persistence".equals(nodeName)) {
                         handleHotRestartPersistence(node);
+                    } else if ("reliable-id-generator".equals(nodeName)) {
+                        handleReliableIdGenerator(node);
                     }
                 }
             }
@@ -314,6 +320,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("hotRestartPersistenceConfig", hotRestartConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleReliableIdGenerator(Node node) {
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(ReliableIdGeneratorConfig.class);
+            fillAttributeValues(node, configBuilder);
+            String name = getAttribute(node, "name");
+            reliableIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
         private void handleQuorum(Node node) {

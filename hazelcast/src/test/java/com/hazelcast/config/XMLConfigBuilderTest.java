@@ -999,6 +999,21 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(20, journalConfig.getTimeToLiveSeconds());
     }
 
+    @Test
+    public void testReliableIdGeneratorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<reliable-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
+                + "</reliable-id-generator>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidityMillis());
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";
@@ -1804,7 +1819,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testMemberAddressProvider_classnameIsMandatory() {
+    public void testMemberAddressProvider_classNameIsMandatory() {
         String xml = HAZELCAST_START_TAG
                 + "<network> "
                 + "  <member-address-provider enabled=\"true\">"

@@ -24,6 +24,7 @@ import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JobTrackerConfig;
@@ -1009,6 +1010,48 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
+        Map<String, ReliableIdGeneratorConfig> staticMapConfigs = staticConfig.getReliableIdGeneratorConfigs();
+        Map<String, ReliableIdGeneratorConfig> dynamicMapConfigs = configurationService.getReliableIdGeneratorConfigs();
+        return aggregate(staticMapConfigs, dynamicMapConfigs);
+    }
+
+    @Override
+    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
+        return getReliableIdGeneratorConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
+        return getReliableIdGeneratorConfigInternal(name, name);
+    }
+
+    private ReliableIdGeneratorConfig getReliableIdGeneratorConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, ReliableIdGeneratorConfig> staticMapConfigs = staticConfig.getReliableIdGeneratorConfigs();
+        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+        if (config == null) {
+            config = configurationService.findReliableIdGeneratorConfig(baseName);
+        }
+        if (config == null) {
+            config = staticConfig.getReliableIdGeneratorConfig(fallbackName);
+        }
+        return config;
+    }
+
+    @Override
+    public Config addReliableIdGeneratorConfig(ReliableIdGeneratorConfig config) {
+        checkStaticConfigurationDoesNotExist(staticConfig.getReliableIdGeneratorConfigs(), config.getName(), config);
+        configurationService.broadcastConfig(config);
+        return this;
+    }
+
+    @Override
+    public Config setReliableIdGeneratorConfigs(Map<String, ReliableIdGeneratorConfig> map) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

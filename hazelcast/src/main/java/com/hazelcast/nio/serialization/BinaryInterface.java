@@ -43,10 +43,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Open Binary Client Protocol or in other ways which may break Hazelcast or other systems. Changing the way
  * {@code @BinaryInterface} classes are serialized will result in incompatibilities, so the following rules
  * apply to classes annotated with this annotation in the 3.x release series:
- *
- * - NEVER CHANGE THEM
+ * <p>
+ * - NEVER CHANGE THEM<br>
  * - NEVER MAKE THEM IMPLEMENT THE VERSIONED INTERFACE
- *
+ * <p>
  * For the purposes of serializable classes conventions testing, this annotation is only taken into account when
  * used on concrete classes; it does not make sense to annotate an interface or an abstract class, because serialized form
  * is only relevant in the context of a concrete class. However, it may be informative to use this annotation also on

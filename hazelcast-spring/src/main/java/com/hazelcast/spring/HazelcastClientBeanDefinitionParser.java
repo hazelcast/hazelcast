@@ -27,6 +27,7 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -54,19 +55,19 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
  * BeanDefinitionParser for Hazelcast Client Configuration.
  * <p>
  * <b>Sample Spring XML for Hazelcast Client:</b>
- * <pre>
- * &lt;hz:client id="client"&gt;
- *  &lt;hz:group name="${cluster.group.name}" password="${cluster.group.password}" /&gt;
- *  &lt;hz:network connection-attempt-limit="3"
- *      connection-attempt-period="3000"
- *      connection-timeout="1000"
- *      redo-operation="true"
- *      smart-routing="true"&gt;
- *          &lt;hz:member&gt;10.10.1.2:5701&lt;/hz:member&gt;
- *          &lt;hz:member&gt;10.10.1.3:5701&lt;/hz:member&gt;
- *  &lt;/hz:network&gt;
- * &lt;/hz:client&gt;
- * </pre>
+ * <pre>{@code
+ *   <hz:client id="client">
+ *      <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+ *      <hz:network connection-attempt-limit="3"
+ *          connection-attempt-period="3000"
+ *          connection-timeout="1000"
+ *          redo-operation="true"
+ *          smart-routing="true">
+ *              <hz:member>10.10.1.2:5701</hz:member>
+ *              <hz:member>10.10.1.3:5701</hz:member>
+ *      </hz:network>
+ *   </hz:client>
+ * }</pre>
  */
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
@@ -84,6 +85,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
         private final ManagedMap<String, BeanDefinition> nearCacheConfigMap;
+        private ManagedMap<String, BeanDefinition> reliableIdGeneratorConfigMap;
 
         SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -91,9 +93,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
             this.nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
+            this.reliableIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
 
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
+            configBuilder.addPropertyValue("reliableIdGeneratorConfigMap", reliableIdGeneratorConfigMap);
         }
 
         AbstractBeanDefinition getBeanDefinition() {
@@ -134,6 +138,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                             configBuilder);
                 } else if ("user-code-deployment".equals(nodeName)) {
                     handleUserCodeDeployment(node);
+                } else if ("reliable-id-generator".equals(nodeName)) {
+                    handleReliableIdGenerator(node);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
@@ -255,6 +261,13 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             String name = getAttribute(node, "name");
             nearCacheConfigMap.put(name, nearCacheConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleReliableIdGenerator(Node node) {
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(ReliableIdGeneratorConfig.class);
+            fillAttributeValues(node, configBuilder);
+            String name = getAttribute(node, "name");
+            reliableIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
         private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {

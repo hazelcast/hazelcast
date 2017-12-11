@@ -24,6 +24,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Endpoint;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -64,6 +65,7 @@ import java.util.concurrent.ConcurrentMap;
  * {@link com.hazelcast.osgi.HazelcastOSGiInstance} implementation
  * as proxy of delegated {@link com.hazelcast.core.HazelcastInstance} for getting from OSGi service.
  */
+@SuppressWarnings({"checkstyle:classfanoutcomplexity"})
 class HazelcastOSGiInstanceImpl
         implements HazelcastOSGiInstance {
 
@@ -184,6 +186,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public IdGenerator getIdGenerator(String name) {
         return delegatedInstance.getIdGenerator(name);
+    }
+
+    @Override
+    public ReliableIdGenerator getReliableIdGenerator(String name) {
+        return delegatedInstance.getReliableIdGenerator(name);
     }
 
     @Override

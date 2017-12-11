@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -115,6 +116,9 @@ public class Config {
     private final Map<String, EventJournalConfig> mapEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
 
     private final Map<String, EventJournalConfig> cacheEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
+
+    private final Map<String, ReliableIdGeneratorConfig> reliableIdGeneratorConfigMap =
+            new ConcurrentHashMap<String, ReliableIdGeneratorConfig>();
 
     private ServicesConfig servicesConfig = new ServicesConfig();
 
@@ -2738,6 +2742,115 @@ public class Config {
         }
         if (!StringUtil.isNullOrEmpty(cacheName)) {
             cacheEventJournalConfigs.put(cacheName, eventJournalConfig);
+        }
+        return this;
+    }
+
+    /**
+     * Returns the map of {@link ReliableIdGenerator} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
+    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
+        return reliableIdGeneratorConfigMap;
+    }
+
+    /**
+     * Returns a {@link ReliableIdGeneratorConfig} configuration for the given reliable ID generator name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code "default"}.
+     *
+     * @param name name of the reliable ID generator config
+     * @return the reliable ID generator configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
+        String baseName = getBaseName(name);
+        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, reliableIdGeneratorConfigMap, baseName);
+        if (config != null) {
+            return config;
+        }
+        return getReliableIdGeneratorConfig("default");
+    }
+
+    /**
+     * Returns the {@link ReliableIdGeneratorConfig} for the given name, creating
+     * one if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking {@link #addReliableIdGeneratorConfig(ReliableIdGeneratorConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the reliable ID generator config
+     * @return the cache configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
+        String baseName = getBaseName(name);
+        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, reliableIdGeneratorConfigMap, baseName);
+        if (config != null) {
+            return config;
+        }
+        ReliableIdGeneratorConfig defConfig = reliableIdGeneratorConfigMap.get("default");
+        if (defConfig == null) {
+            defConfig = new ReliableIdGeneratorConfig("default");
+            reliableIdGeneratorConfigMap.put(defConfig.getName(), defConfig);
+        }
+        config = new ReliableIdGeneratorConfig(defConfig);
+        config.setName(name);
+        reliableIdGeneratorConfigMap.put(config.getName(), config);
+        return config;
+    }
+
+    /**
+     * Adds a reliable ID generator configuration. The configuration is saved under the config
+     * name, which may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param config the reliable ID generator configuration
+     * @return this config instance
+     */
+    public Config addReliableIdGeneratorConfig(ReliableIdGeneratorConfig config) {
+        reliableIdGeneratorConfigMap.put(config.getName(), config);
+        return this;
+    }
+
+    /**
+     * Sets the map of {@link ReliableIdGenerator} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration will be obtained in the future.
+     *
+     * @param map the ReliableIdGenerator configuration map to set
+     * @return this config instance
+     */
+    public Config setReliableIdGeneratorConfigs(Map<String, ReliableIdGeneratorConfig> map) {
+        reliableIdGeneratorConfigMap.clear();
+        reliableIdGeneratorConfigMap.putAll(map);
+        for (Entry<String, ReliableIdGeneratorConfig> entry : map.entrySet()) {
+            entry.getValue().setName(entry.getKey());
         }
         return this;
     }

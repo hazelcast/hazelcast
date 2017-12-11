@@ -41,6 +41,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "list",
                 "executorService",
                 "idGenerator",
+                "reliableIdGenerator",
                 "atomicLong",
                 "atomicReference",
                 "countDownLatch",

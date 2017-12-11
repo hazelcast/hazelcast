@@ -139,6 +139,21 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testReliableIdGeneratorConfigGenerator() {
+        ReliableIdGeneratorConfig figConfig = new ReliableIdGeneratorConfig("reliable-id-gen1")
+                .setPrefetchCount(3)
+                .setPrefetchValidityMillis(10L);
+
+        Config config = new Config()
+                .addReliableIdGeneratorConfig(figConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ReliableIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getReliableIdGeneratorConfig("reliable-id-gen1");
+        assertEquals(figConfig, xmlReplicatedConfig);
+    }
+
+    @Test
     public void testCacheQuorumRef() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig()
                 .setName("testCache")

@@ -21,6 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -202,6 +203,14 @@ public interface ConfigurationService {
     EventJournalConfig findMapEventJournalConfig(String name);
 
     /**
+     * Finds existing ReliableIdGeneratorConfig config.
+     *
+     * @param name name of the config
+     * @return ReliableIdGenerator config or {@code null} when requested ReliableIdGenerator configuration does not exist
+     */
+    ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name);
+
+    /**
      * Returns all registered map configurations.
      *
      * @return registered map configurations
@@ -326,4 +335,11 @@ public interface ConfigurationService {
      * @return registered MapEventJournal configurations
      */
     Map<String, EventJournalConfig> getMapEventJournalConfigs();
+
+    /**
+     * Returns all registered ReliableIdGenerator configurations.
+     *
+     * @return registered ReliableIdGenerator configurations
+     */
+    Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs();
 }

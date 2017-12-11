@@ -22,11 +22,11 @@
 
     1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
 
-       The config option can be set by adding the following to the java command: - Dhazelcast.config=path_to_the_hazelcast.xml.
+       The config option can be set by adding the following to the java command: -Dhazelcast.config=path_to_the_hazelcast.xml.
 
        The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
 
-    2. Else it checks if there is a ’hazelcast.xml’ in the working directory.
+    2. Otherwise it checks if there is a ’hazelcast.xml’ in the working directory.
 
     3. After that it checks if there is a ’hazelcast.xml’ in the root of the classpath.
 
@@ -554,6 +554,11 @@
             <fsync>true</fsync>
         </hot-restart>
     </cache>
+
+    <reliable-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>10000</prefetch-validity-millis>
+    </reliable-id-generator>
 
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
