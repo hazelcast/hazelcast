@@ -84,7 +84,7 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  * </li>
  * <li>Be careful while using default interface method implementations from {@link ConcurrentMap} and {@link Map}. Under
- * the hood they typically implemented as a sequence of more primitive map operations, therefore atomicity of the
+ * the hood they are typically implemented as a sequence of more primitive map operations, therefore atomicity of the
  * operation as a whole can't be guaranteed.</li>
  * </ul>
  * <p>
