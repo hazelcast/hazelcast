@@ -65,8 +65,26 @@ import java.util.concurrent.TimeUnit;
  * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
  * in the collection, and vice-versa.</li>
  * <li>Methods, including but not limited to {@code computeIfPresent}, may behave incorrectly if the value passed to
- * {@code remappingFunction} is modified in-place and returned as a result of the invocation. You should create a new
- * value instance and return it as a result.</li>
+ * the update function is modified in-place and returned as a result of the invocation. You should create a new
+ * value instance and return it as a result.
+ * <p>
+ * For example, following code fragment will behave incorrectly and will enter an infinite loop:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -> {
+ *     value.setSomeAttribute("newAttributeValue");
+ *     return value;
+ * });
+ * </pre>
+ * It should be replaced with:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -> {
+ *     return new ObjectWithSomeAttribute("newAttributeValue");
+ * });
+ * </pre>
+ * </li>
+ * <li>Be careful while using default interface method implementations from {@link ConcurrentMap} and {@link Map}. Under
+ * the hood they typically implemented as a sequence of more primitive map operations, therefore atomicity of the
+ * operation as a whole can't be guaranteed.</li>
  * </ul>
  * <p>
  * This class does <em>not</em> allow {@code null} to be used as a key or value.
@@ -179,6 +197,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
+     * <p>Consider usage of {@link #delete(Object)} if you don't need the returned value. This will trim the serialization
+     * costs.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -221,6 +241,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * previously put into the map.
      *
      * @throws NullPointerException if the specified key is null
+     * @see #delete(Object)
      */
     V remove(Object key);
 
@@ -270,6 +291,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for this map (optional)
      * @throws NullPointerException if the specified key is null
+     * @see #remove(Object)
      */
     void delete(Object key);
 
@@ -1717,6 +1739,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      *
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException     if the specified key is {@code null}
@@ -1831,12 +1856,18 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * Applies the user defined {@link EntryProcessor} to the all entries in the map.
      * Returns the results mapped by each key in the map.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries in the map which satisfy provided predicate.
      * Returns the results mapped by each key in the map.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 
