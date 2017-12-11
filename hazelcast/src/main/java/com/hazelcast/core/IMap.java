@@ -84,8 +84,8 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  * </li>
  * <li>Be careful while using default interface method implementations from {@link ConcurrentMap} and {@link Map}. Under
- * the hood they are typically implemented as a sequence of more primitive map operations, therefore atomicity of the
- * operation as a whole can't be guaranteed.</li>
+ * the hood they are typically implemented as a sequence of more primitive map operations, therefore the operations won't
+ * be executed atomically.</li>
  * </ul>
  * <p>
  * This class does <em>not</em> allow {@code null} to be used as a key or value.
