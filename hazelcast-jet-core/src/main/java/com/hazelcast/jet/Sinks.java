@@ -262,9 +262,8 @@ public final class Sinks {
      * As opposed to {@link #mapWithUpdating} and {@link #mapWithMerging},
      * this sink does not use batching and submits a separate entry processor
      * for each received item. For use cases that are efficiently solvable
-     * using those sinks, this one will perform worse. Its main advantage is
-     * that it can update large map values in a data-local manner, without
-     * having to retrieve them first.
+     * using those sinks, this one will perform worse. It should be used only
+     * when they are not applicable.
      * <p>
      * If your entry processors take a long time to update a value, consider
      * using entry processors that implement {@link Offloadable}. This will
