@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,18 +57,18 @@ public class PingFailureDetectorTest {
     @Test
     public void member_isNotAlive_afterThreeAttempts() throws Exception {
         Member member = newMember(5000);
-        ((PingFailureDetector) failureDetector).logAttempt(member);
-        ((PingFailureDetector) failureDetector).logAttempt(member);
-        ((PingFailureDetector) failureDetector).logAttempt(member);
+        failureDetector.logAttempt(member);
+        failureDetector.logAttempt(member);
+        failureDetector.logAttempt(member);
         assertFalse(failureDetector.isAlive(member));
     }
 
     @Test
     public void member_isAlive_afterThreeAttempts_afterHeartbeat() throws Exception {
         Member member = newMember(5000);
-        ((PingFailureDetector) failureDetector).logAttempt(member);
-        ((PingFailureDetector) failureDetector).logAttempt(member);
-        ((PingFailureDetector) failureDetector).logAttempt(member);
+        failureDetector.logAttempt(member);
+        failureDetector.logAttempt(member);
+        failureDetector.logAttempt(member);
         failureDetector.heartbeat(member);
         assertTrue(failureDetector.isAlive(member));
     }
