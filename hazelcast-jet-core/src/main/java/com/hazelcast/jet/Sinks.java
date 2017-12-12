@@ -68,6 +68,33 @@ public final class Sinks {
     }
 
     /**
+     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * {@code IMap} with the specified name.
+     * <p>
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
+     */
+    public static <E extends Map.Entry> Sink<E> map(String mapName) {
+        return fromProcessor("mapSink(" + mapName + ')', writeMapP(mapName));
+    }
+
+    /**
+     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * {@code IMap} with the specified name in a remote cluster identified by
+     * the supplied {@code ClientConfig}.
+     * <p>
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
+     */
+    public static <E extends Map.Entry> Sink<E> remoteMap(String mapName, ClientConfig clientConfig) {
+        return fromProcessor("remoteMapSink(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
+    }
+
+    /**
      * Returns a sink that uses the supplied functions to extract the key
      * and value with which to update a Hazelcast {@code IMap}. If the map
      * already contains the key, it applies the given {@code mergeFn} to
@@ -276,33 +303,6 @@ public final class Sinks {
     ) {
         return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
                 updateRemoteMapP(mapName, clientConfig, toKeyFn, toEntryProcessorFn));
-    }
-
-    /**
-     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
-     * {@code IMap} with the specified name.
-     * <p>
-     * This sink provides the exactly-once guarantee thanks to <i>idempotent
-     * updates</i>. It means that the value with the same key is not appended,
-     * but overwritten. After the job is restarted from snapshot, duplicate
-     * items will not change the state in the target map.
-     */
-    public static <E extends Map.Entry> Sink<E> map(String mapName) {
-        return fromProcessor("mapSink(" + mapName + ')', writeMapP(mapName));
-    }
-
-    /**
-     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
-     * {@code IMap} with the specified name in a remote cluster identified by
-     * the supplied {@code ClientConfig}.
-     * <p>
-     * This sink provides the exactly-once guarantee thanks to <i>idempotent
-     * updates</i>. It means that the value with the same key is not appended,
-     * but overwritten. After the job is restarted from snapshot, duplicate
-     * items will not change the state in the target map.
-     */
-    public static <E extends Map.Entry> Sink<E> remoteMap(String mapName, ClientConfig clientConfig) {
-        return fromProcessor("remoteMapSink(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
     }
 
     /**
