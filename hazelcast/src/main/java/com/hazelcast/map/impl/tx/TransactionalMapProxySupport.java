@@ -141,7 +141,9 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         operation.setThreadId(ThreadUtil.getThreadId());
         int partitionId = partitionService.getPartitionId(keyData);
         try {
-            Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            Future future = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .setResultDeserialized(false)
+                    .invoke();
             return future.get();
         } catch (Throwable t) {
             throw rethrow(t);

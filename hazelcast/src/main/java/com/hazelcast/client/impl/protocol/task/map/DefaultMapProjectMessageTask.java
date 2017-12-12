@@ -25,7 +25,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.util.ArrayList;
@@ -78,13 +77,12 @@ public abstract class DefaultMapProjectMessageTask<P>
         }
 
         Set result = QueryResultUtils.transformToSet(nodeEngine.getSerializationService(), combinedResult,
-                getPredicate(), IterationType.VALUE, false);
+                getPredicate(), IterationType.VALUE, false, true);
 
         List<Data> serialized = new ArrayList<Data>(result.size());
 
-        SerializationService serializationService = nodeEngine.getSerializationService();
         for (Object row : result) {
-            serialized.add(serializationService.toData(row));
+            serialized.add((Data) row);
         }
 
         return serialized;

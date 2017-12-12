@@ -20,9 +20,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
@@ -39,7 +36,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -554,60 +550,4 @@ public class ClientTxnMapTest {
         txMap.values(null);
     }
 
-    @Test
-    public void testPutDoesNotDeserializeOnServerSide() {
-        String name = randomString();
-        client.getMap(name).put(5, new DeserializeOnceObject(5));
-        TransactionContext context = client.newTransactionContext();
-        context.beginTransaction();
-        TransactionalMap<Integer, DeserializeOnceObject> map = context.getMap(name);
-        map.put(5, new DeserializeOnceObject(6));
-        context.commitTransaction();
-    }
-
-    private static class DeserializeOnceObject implements DataSerializable {
-
-        private int amount;
-
-        private static AtomicBoolean readCalled = new AtomicBoolean(false);
-
-        public DeserializeOnceObject() {
-        }
-
-        public DeserializeOnceObject(int amount) {
-            this.amount = amount;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(amount);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            if (!readCalled.compareAndSet(false, true)) {
-                throw new AssertionError("Read called more than once!!!");
-            }
-            amount = in.readInt();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof DeserializeOnceObject)) {
-                return false;
-            }
-
-            DeserializeOnceObject that = (DeserializeOnceObject) o;
-
-            return amount == that.amount;
-        }
-
-        @Override
-        public int hashCode() {
-            return amount;
-        }
-    }
 }
