@@ -471,18 +471,20 @@ public class ConfigXmlGenerator {
     private static void atomicLongXmlGenerator(XmlGenerator gen, Config config) {
         Collection<AtomicLongConfig> configs = config.getAtomicLongConfigs().values();
         for (AtomicLongConfig atomicLongConfig : configs) {
-            gen.open("atomic-long", "name", atomicLongConfig.getName());
-
-            gen.close();
+            MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
+            gen.open("atomic-long", "name", atomicLongConfig.getName())
+                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .close();
         }
     }
 
     private static void atomicReferenceXmlGenerator(XmlGenerator gen, Config config) {
         Collection<AtomicReferenceConfig> configs = config.getAtomicReferenceConfigs().values();
         for (AtomicReferenceConfig atomicReferenceConfig : configs) {
-            gen.open("atomic-reference", "name", atomicReferenceConfig.getName());
-
-            gen.close();
+            MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
+            gen.open("atomic-reference", "name", atomicReferenceConfig.getName())
+                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .close();
         }
     }
 
@@ -1003,8 +1005,8 @@ public class ConfigXmlGenerator {
     private static void reliableIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
         for (ReliableIdGeneratorConfig m : config.getReliableIdGeneratorConfigs().values()) {
             gen.open("reliable-id-generator", "name", m.getName())
-               .node("prefetch-count", m.getPrefetchCount())
-               .node("prefetch-validity-millis", m.getPrefetchValidityMillis());
+                    .node("prefetch-count", m.getPrefetchCount())
+                    .node("prefetch-validity-millis", m.getPrefetchValidityMillis());
             gen.close();
         }
     }

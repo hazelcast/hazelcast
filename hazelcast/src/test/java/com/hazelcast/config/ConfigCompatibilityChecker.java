@@ -256,7 +256,8 @@ class ConfigCompatibilityChecker {
         @Override
         boolean check(AtomicLongConfig c1, AtomicLongConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName());
+                    && nullSafeEqual(c1.getName(), c2.getName())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
         @Override
@@ -269,7 +270,8 @@ class ConfigCompatibilityChecker {
         @Override
         boolean check(AtomicReferenceConfig c1, AtomicReferenceConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
-                    && nullSafeEqual(c1.getName(), c2.getName());
+                    && nullSafeEqual(c1.getName(), c2.getName())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
         @Override

@@ -35,4 +35,9 @@ public abstract class AbstractBasicConfigReadOnlyTest<T extends AbstractBasicCon
     public void setName() {
         config.setName("myAtomicLong");
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setMergePolicyConfig() {
+        config.setMergePolicyConfig(new MergePolicyConfig());
+    }
 }

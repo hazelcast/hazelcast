@@ -318,11 +318,17 @@
                         </xs:element>
                         <xs:element name="atomic-long" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+                                </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="atomic-reference" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+                                </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>

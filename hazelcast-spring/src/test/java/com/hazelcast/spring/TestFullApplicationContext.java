@@ -30,7 +30,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HostVerificationConfig;
@@ -50,6 +49,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -59,6 +59,7 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -80,7 +81,6 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -111,6 +111,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -509,6 +510,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         AtomicLongConfig testAtomicLong = config.getAtomicLongConfig("testAtomicLong");
         assertNotNull(testAtomicLong);
         assertEquals("testAtomicLong", testAtomicLong.getName());
+
+        MergePolicyConfig mergePolicyConfig = testAtomicLong.getMergePolicyConfig();
+        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test
@@ -516,6 +521,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         AtomicReferenceConfig testAtomicReference = config.getAtomicReferenceConfig("testAtomicReference");
         assertNotNull(testAtomicReference);
         assertEquals("testAtomicReference", testAtomicReference.getName());
+
+        MergePolicyConfig mergePolicyConfig = testAtomicReference.getMergePolicyConfig();
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(4223, mergePolicyConfig.getBatchSize());
     }
 
     @Test

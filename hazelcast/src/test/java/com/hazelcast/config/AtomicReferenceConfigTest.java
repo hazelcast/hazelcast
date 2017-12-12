@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.AtomicReferenceConfig.AtomicReferenceConfigReadOnly;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,6 +54,9 @@ public class AtomicReferenceConfigTest extends AbstractBasicConfigTest<AtomicRef
                 .withPrefabValues(AtomicReferenceConfigReadOnly.class,
                         new AtomicReferenceConfigReadOnly(new AtomicReferenceConfig("red")),
                         new AtomicReferenceConfigReadOnly(new AtomicReferenceConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
                 .verify();
     }
 }

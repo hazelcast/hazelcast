@@ -70,5 +70,10 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
         public AtomicLongConfig setName(String name) {
             throw new UnsupportedOperationException("This is a read-only config!");
         }
+
+        @Override
+        public AtomicLongConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+            throw new UnsupportedOperationException("This is a read-only config!");
+        }
     }
 }
