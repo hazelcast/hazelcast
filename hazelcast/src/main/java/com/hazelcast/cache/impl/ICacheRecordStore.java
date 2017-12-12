@@ -55,7 +55,8 @@ public interface ICacheRecordStore {
      * because the entry is missing from the cache, the Cache's {@link javax.cache.integration.CacheLoader}
      * is called in an attempt to load the entry.
      * </p>
-     * @param key the key whose associated value is to be returned.
+     *
+     * @param key          the key whose associated value is to be returned.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @return the element, or null, if it does not exist.
      */
@@ -74,10 +75,10 @@ public interface ICacheRecordStore {
      * The previous value is returned, or null if there was no value associated
      * with the key previously.
      *
-     * @param key   key with which the specified value is to be associated.
-     * @param value value to be associated with the specified key.
+     * @param key          key with which the specified value is to be associated.
+     * @param value        value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @param caller  uuid of the calling node or client.
+     * @param caller       UUID of the calling node or client.
      * @return the stored {@link CacheRecord}  (added as new record or updated). <code>null</code> if record has expired.
      */
     CacheRecord put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
@@ -95,12 +96,12 @@ public interface ICacheRecordStore {
      * The previous value is returned, or null if there was no value associated
      * with the key previously.
      *
-     * @param key   key with which the specified value is to be associated.
-     * @param value value to be associated with the specified key.
+     * @param key          key with which the specified value is to be associated.
+     * @param value        value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @param caller  uuid of the calling node or client.
+     * @param caller       UUID of the calling node or client.
      * @return the value associated with the key at the start of the operation or
-     *         null if none was associated.
+     * null if none was associated.
      */
     Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
@@ -118,10 +119,10 @@ public interface ICacheRecordStore {
      * The cache will not contain a mapping for the specified key once the
      * call returns.
      *
-     * @param key key with which the specified value is to be associated.
-     * @param value value to be associated with the specified key.
+     * @param key          key with which the specified value is to be associated.
+     * @param value        value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @param caller  uuid of the calling node or client.
+     * @param caller       UUID of the calling node or client.
      * @return true if a value was set..
      */
     boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
@@ -142,8 +143,8 @@ public interface ICacheRecordStore {
      * </code></pre>
      * except that the action is performed atomically.
      *
-     * @param key key with which the specified value is associated.
-     * @param caller  uuid of the calling node or client.
+     * @param key    key with which the specified value is associated.
+     * @param caller UUID of the calling node or client.
      * @return the value if one existed or null if no mapping existed for this key.
      */
     Object getAndRemove(Data key, String caller, int completionId);
@@ -162,8 +163,8 @@ public interface ICacheRecordStore {
      * The cache will not contain a mapping for the specified key once the
      * call returns.
      *
-     * @param key key whose mapping is to be removed from the cache.
-     * @param caller  uuid of the calling node or client.
+     * @param key    key whose mapping is to be removed from the cache.
+     * @param caller UUID of the calling node or client.
      * @return returns false if there was no matching key.
      */
     boolean remove(Data key, String caller, int completionId);
@@ -183,9 +184,9 @@ public interface ICacheRecordStore {
      * </code></pre>
      * except that the action is performed atomically.
      *
-     * @param key key whose mapping is to be removed from the cache.
-     * @param value value expected to be associated with the specified key.
-     * @param caller  uuid of the calling node or client.
+     * @param key    key whose mapping is to be removed from the cache.
+     * @param value  value expected to be associated with the specified key.
+     * @param caller UUID of the calling node or client.
      * @return returns false if there was no matching key.
      */
     boolean remove(Data key, Object value, String caller, int completionId);
@@ -204,10 +205,10 @@ public interface ICacheRecordStore {
      * }</code></pre>
      * except that the action is performed atomically.
      *
-     * @param key  the key with which the specified value is associated.
-     * @param value the value to be associated with the specified key.
+     * @param key          the key with which the specified value is associated.
+     * @param value        the value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @param caller  uuid of the calling node or client.
+     * @param caller       UUID of the calling node or client.
      * @return <tt>true</tt> if the value was replaced.
      */
     boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
@@ -227,11 +228,11 @@ public interface ICacheRecordStore {
      * </code></pre>
      * except that the action is performed atomically.
      *
-     * @param key      key with which the specified value is associated.
-     * @param oldValue value expected to be associated with the specified key.
-     * @param newValue value to be associated with the specified key.
+     * @param key          key with which the specified value is associated.
+     * @param oldValue     value expected to be associated with the specified key.
+     * @param newValue     value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @param caller  uuid of the calling node or client.
+     * @param caller       UUID of the calling node or client.
      * @return <tt>true</tt> if the value was replaced.
      */
     boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy, String caller, int completionId);
@@ -252,12 +253,12 @@ public interface ICacheRecordStore {
      * </code></pre>
      * except that the action is performed atomically.
      *
-     * @param key   key with which the specified value is associated.
-     * @param value value to be associated with the specified key.
+     * @param key          key with which the specified value is associated.
+     * @param value        value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @param caller  uuid of the calling node or client.
+     * @param caller       uuid of the calling node or client.
      * @return the previous value associated with the specified key, or
-     *         <tt>null</tt> if there was no mapping for the key.
+     * <tt>null</tt> if there was no mapping for the key.
      */
     Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
@@ -283,16 +284,17 @@ public interface ICacheRecordStore {
      * entry cannot be loaded for a given key, the key will not be present in
      * the returned Map.
      *
-     * @param keySet keys whose associated values are to be returned.
+     * @param keySet       keys whose associated values are to be returned.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @return A simple wrapper for map of entries that were found for the given keys. Keys not found
-     *         in the cache are not in the result.
+     * in the cache are not in the result.
      */
     MapEntries getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
 
     /**
-     *  Calculates the entry size of this store which reflects the partition size of the cache.
-      * @return partition size of the cache.
+     * Calculates the entry size of this store which reflects the partition size of the cache.
+     *
+     * @return partition size of the cache.
      */
     int size();
 
@@ -304,6 +306,7 @@ public interface ICacheRecordStore {
     /**
      * records of keys will be deleted one by one and will publish a REMOVE event
      * for each key.
+     *
      * @param keys set of keys to be cleaned.
      */
     void removeAll(Set<Data> keys, int completionId);
@@ -316,8 +319,8 @@ public interface ICacheRecordStore {
     /**
      * Close is equivalent to below operations in the given order:
      * <ul>
-     *     <li>close resources.</li>
-     *     <li>unregister all listeners.</li>
+     * <li>close resources.</li>
+     * <li>unregister all listeners.</li>
      * </ul>
      *
      * @param onShutdown true if {@code close} is called during CacheService shutdown,
@@ -330,9 +333,9 @@ public interface ICacheRecordStore {
     /**
      * Destroy is equivalent to below operations in the given order:
      * <ul>
-     *     <li>clear all.</li>
-     *     <li>close resources.</li>
-     *     <li>unregister all listeners.</li>
+     * <li>clear all.</li>
+     * <li>close resources.</li>
+     * <li>unregister all listeners.</li>
      * </ul>
      *
      * @see #clear()
@@ -342,24 +345,28 @@ public interface ICacheRecordStore {
 
     /**
      * Gets the configuration of the cache that this store belongs to.
+     *
      * @return {@link CacheConfig}
      */
     CacheConfig getConfig();
 
     /**
      * Gets the name of the distributed object name of the cache.
+     *
      * @return name.
      */
     String getName();
 
     /**
      * Returns a readonly map of the internal key value store.
+     *
      * @return readonly map of the internal key value store.
      */
     Map<Data, CacheRecord> getReadOnlyRecords();
 
     /**
      * Gets internal record of the store by key.
+     *
      * @param key the key to the entry.
      * @return {@link CacheRecord} instance mapped.
      */
@@ -370,13 +377,14 @@ public interface ICacheRecordStore {
      * This is simply a put operation on the internal map data
      * without any CacheLoad. It also <b>DOES</b> trigger eviction!
      *
-     * @param key the key to the entry.
+     * @param key    the key to the entry.
      * @param record the value to be associated with the specified key.
      */
     void putRecord(Data key, CacheRecord record);
 
     /**
      * Removes the record for a key.
+     *
      * @param key the key to the entry.
      * @return the removed record if one exists.
      */
@@ -384,16 +392,18 @@ public interface ICacheRecordStore {
 
     /**
      * Starting from the provided table index, a set of keys are returned with a maximum size of <code>size</code>
+     *
      * @param tableIndex initial table index.
-     * @param size maximum key set size.
+     * @param size       maximum key set size.
      * @return {@link CacheKeyIterationResult} which wraps keys and last tableIndex.
      */
     CacheKeyIterationResult fetchKeys(int tableIndex, int size);
 
     /**
      * Starting from the provided table index, a set of entries are returned with a maximum size of <code>size</code>
+     *
      * @param tableIndex initial table index.
-     * @param size maximum entry set size.
+     * @param size       maximum entry set size.
      * @return {@link CacheEntryIterationResult} which wraps entries and last tableIndex.
      */
     CacheEntryIterationResult fetchEntries(int tableIndex, int size);
@@ -410,7 +420,7 @@ public interface ICacheRecordStore {
      * @param arguments      additional arguments to be passed to the
      *                       {@link EntryProcessor}.
      * @return the result of the processing, if any, defined by the
-     *         {@link EntryProcessor} implementation.
+     * {@link EntryProcessor} implementation.
      */
     Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments, int completionId);
 
@@ -431,6 +441,7 @@ public interface ICacheRecordStore {
 
     /**
      * Gets the Cache statistics associated with this {@link com.hazelcast.cache.impl.CacheService}.
+     *
      * @return {@link CacheStatisticsImpl} cache statistics.
      */
     CacheStatisticsImpl getCacheStats();
@@ -439,6 +450,7 @@ public interface ICacheRecordStore {
      * Evict cache record store if eviction is required.
      * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
      * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
+     *
      * @return true is an entry was evicted, otherwise false
      */
     boolean evictIfRequired();
@@ -452,6 +464,7 @@ public interface ICacheRecordStore {
 
     /**
      * Returns {@link com.hazelcast.spi.ObjectNamespace} associated with this record store.
+     *
      * @return ObjectNamespace associated with this record store.
      */
     ObjectNamespace getObjectNamespace();

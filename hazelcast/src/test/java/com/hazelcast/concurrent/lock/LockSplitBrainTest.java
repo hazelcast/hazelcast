@@ -34,12 +34,6 @@ public class LockSplitBrainTest extends SplitBrainTestSupport {
     private String key;
 
     @Override
-    protected int[] brains() {
-        // 2nd merges to the 1st
-        return new int[]{2, 1};
-    }
-
-    @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         warmUpPartitions(instances);
 

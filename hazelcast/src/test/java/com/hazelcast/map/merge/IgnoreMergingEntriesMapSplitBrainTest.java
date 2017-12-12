@@ -43,6 +43,12 @@ public class IgnoreMergingEntriesMapSplitBrainTest extends SplitBrainTestSupport
     private final CountDownLatch clusterMergedLatch = new CountDownLatch(1);
 
     @Override
+    protected int[] brains() {
+        // first half merges into second half
+        return new int[]{1, 2};
+    }
+
+    @Override
     protected Config config() {
         Config config = super.config();
         config.getMapConfig(testMapName)

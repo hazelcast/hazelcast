@@ -330,7 +330,7 @@
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[The unique identifier for a bean.
-                    A bean id may not be used more than once within the same <beans> element.]]>
+                    A bean ID may not be used more than once within the same <beans> element.]]>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

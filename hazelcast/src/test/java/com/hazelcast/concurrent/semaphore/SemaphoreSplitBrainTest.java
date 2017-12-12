@@ -36,12 +36,6 @@ public class SemaphoreSplitBrainTest extends SplitBrainTestSupport {
     private int permits = 5;
 
     @Override
-    protected int[] brains() {
-        // 2nd merges to the 1st
-        return new int[]{2, 1};
-    }
-
-    @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
         warmUpPartitions(instances);
 

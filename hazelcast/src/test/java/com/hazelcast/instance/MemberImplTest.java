@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -93,7 +94,8 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withHazelcastInstance() throws Exception {
-        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid2342", null, false, hazelcastInstance);
+        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid2342", null, false,
+                NA_MEMBER_LIST_JOIN_VERSION, hazelcastInstance);
 
         assertBasicMemberImplFields(member);
         assertTrue(member.localMember());
@@ -106,7 +108,8 @@ public class MemberImplTest extends HazelcastTestSupport {
         attributes.put("key1", "value");
         attributes.put("key2", 12345);
 
-        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid2342", attributes, false, hazelcastInstance);
+        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid2342", attributes, false,
+                NA_MEMBER_LIST_JOIN_VERSION, hazelcastInstance);
 
         assertBasicMemberImplFields(member);
         assertTrue(member.localMember());
@@ -230,7 +233,8 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAttribute_withHazelcastInstance() {
-        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid", null, false, hazelcastInstance);
+        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid", null, false,
+                NA_MEMBER_LIST_JOIN_VERSION, hazelcastInstance);
 
         member.removeAttribute("removeKeyWithInstance");
         assertNull(member.getStringAttribute("removeKeyWithInstance"));
@@ -238,7 +242,8 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testSetAttribute_withHazelcastInstance() {
-        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid", null, false, hazelcastInstance);
+        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true, "uuid", null, false,
+                NA_MEMBER_LIST_JOIN_VERSION, hazelcastInstance);
 
         member.setStringAttribute("setKeyWithInstance", "setValueWithInstance");
         assertEquals("setValueWithInstance", member.getStringAttribute("setKeyWithInstance"));

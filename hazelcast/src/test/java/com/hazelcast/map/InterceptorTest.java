@@ -29,6 +29,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.StringUtil;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -146,7 +148,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(value.toUpperCase(), listener.value.get());
+                assertEquals(value.toUpperCase(StringUtil.LOCALE_INTERNAL), listener.value.get());
             }
         }, 15);
     }
@@ -166,7 +168,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(value.toUpperCase(), listener.value.get());
+                assertEquals(value.toUpperCase(StringUtil.LOCALE_INTERNAL), listener.value.get());
             }
         }, 15);
     }
@@ -184,7 +186,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(value.toUpperCase(), listener.value.get());
+                assertEquals(value.toUpperCase(StringUtil.LOCALE_INTERNAL), listener.value.get());
             }
         }, 15);
     }
@@ -278,7 +280,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
-            return newValue.toString().toUpperCase();
+            return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
         }
 
         @Override

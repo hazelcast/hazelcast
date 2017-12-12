@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Properties;
 
+import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -56,30 +57,30 @@ public class ConfigXmlGeneratorTest {
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), MASK_FOR_SENSITIVE_DATA);
 
         String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
-        assertEquals(theSalt, ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
+        assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), MASK_FOR_SENSITIVE_DATA);
     }
 
     @Test
     public void testMemberAddressProvider() {
         Config cfg = new Config();
-        final MemberAddressProviderConfig expected = cfg.getNetworkConfig().getMemberAddressProviderConfig();
+        MemberAddressProviderConfig expected = cfg.getNetworkConfig().getMemberAddressProviderConfig();
         expected.setEnabled(true)
                 .setEnabled(true)
                 .setClassName("ClassName");
-        final Properties props = expected.getProperties();
+        Properties props = expected.getProperties();
         props.setProperty("p1", "v1");
         props.setProperty("p2", "v2");
         props.setProperty("p3", "v3");
 
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
-        final MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
+        MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
 
         assertEquals(expected.isEnabled(), actual.isEnabled());
         assertEquals(expected.getClassName(), actual.getClassName());
@@ -117,6 +118,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testReplicatedMapConfigGenerator() {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
                 .setName("replicated-map-name")
@@ -137,6 +139,21 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testReliableIdGeneratorConfigGenerator() {
+        ReliableIdGeneratorConfig figConfig = new ReliableIdGeneratorConfig("reliable-id-gen1")
+                .setPrefetchCount(3)
+                .setPrefetchValidityMillis(10L);
+
+        Config config = new Config()
+                .addReliableIdGeneratorConfig(figConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ReliableIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getReliableIdGeneratorConfig("reliable-id-gen1");
+        assertEquals(figConfig, xmlReplicatedConfig);
+    }
+
+    @Test
     public void testCacheQuorumRef() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig()
                 .setName("testCache")
@@ -153,13 +170,13 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testRingbuffer() {
-        final RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
+        RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
                 .setEnabled(true)
                 .setClassName("ClassName")
                 .setProperty("p1", "v1")
                 .setProperty("p2", "v2")
                 .setProperty("p3", "v3");
-        final RingbufferConfig rbConfig = new RingbufferConfig("testRbConfig")
+        RingbufferConfig rbConfig = new RingbufferConfig("testRbConfig")
                 .setBackupCount(1)
                 .setAsyncBackupCount(2)
                 .setCapacity(3)
@@ -167,12 +184,38 @@ public class ConfigXmlGeneratorTest {
                 .setInMemoryFormat(InMemoryFormat.BINARY)
                 .setRingbufferStoreConfig(ringbufferStoreConfig);
 
-        final Config config = new Config().addRingBufferConfig(rbConfig);
+        Config config = new Config().addRingBufferConfig(rbConfig);
 
-        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
-        final RingbufferConfig xmlRbConfig = xmlConfig.getRingbufferConfig(rbConfig.getName());
+        RingbufferConfig xmlRbConfig = xmlConfig.getRingbufferConfig(rbConfig.getName());
         assertEquals(rbConfig, xmlRbConfig);
+    }
+
+    @Test
+    public void testAtomicLong() {
+        AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig");
+
+        Config config = new Config()
+                .addAtomicLongConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        AtomicLongConfig actualConfig = xmlConfig.getAtomicLongConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testAtomicReference() {
+        AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig");
+
+        Config config = new Config()
+                .addAtomicReferenceConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        AtomicReferenceConfig actualConfig = xmlConfig.getAtomicReferenceConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
@@ -189,7 +232,6 @@ public class ConfigXmlGeneratorTest {
         CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals("testMergePolicy", xmlCacheConfig.getMergePolicy());
     }
-
 
     @Test
     public void testNativeMemory() {
@@ -237,6 +279,7 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testMapNearCacheConfig() {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
@@ -266,36 +309,36 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testWanConfig() {
-        final HashMap<String, Comparable> props = new HashMap<String, Comparable>();
+        HashMap<String, Comparable> props = new HashMap<String, Comparable>();
         props.put("prop1", "val1");
         props.put("prop2", "val2");
         props.put("prop3", "val3");
-        final WanReplicationConfig wanConfig = new WanReplicationConfig()
+        WanReplicationConfig wanConfig = new WanReplicationConfig()
                 .setName("testName")
                 .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
-        final WanPublisherConfig publisherConfig = new WanPublisherConfig()
+        WanPublisherConfig publisherConfig = new WanPublisherConfig()
                 .setGroupName("dummyGroup")
                 .setClassName("dummyClass")
                 .setAwsConfig(getDummyAwsConfig())
                 .setDiscoveryConfig(getDummyDiscoveryConfig());
         wanConfig.setWanPublisherConfigs(Collections.singletonList(publisherConfig));
 
-        final Config config = new Config().addWanReplicationConfig(wanConfig);
-        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config config = new Config().addWanReplicationConfig(wanConfig);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ConfigCompatibilityChecker.checkWanConfigs(config.getWanReplicationConfigs(), xmlConfig.getWanReplicationConfigs());
     }
 
     @Test
     public void testMapEventJournal() {
-        final String mapName = "mapName";
-        final EventJournalConfig journalConfig = new EventJournalConfig()
+        String mapName = "mapName";
+        EventJournalConfig journalConfig = new EventJournalConfig()
                 .setMapName(mapName)
                 .setEnabled(true)
                 .setCapacity(123)
                 .setTimeToLiveSeconds(321);
-        final Config config = new Config().addEventJournalConfig(journalConfig);
-        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config config = new Config().addEventJournalConfig(journalConfig);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         assertTrue(new EventJournalConfigChecker().check(
                 journalConfig,
@@ -304,14 +347,14 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testCacheEventJournal() {
-        final String cacheName = "cacheName";
-        final EventJournalConfig journalConfig = new EventJournalConfig()
+        String cacheName = "cacheName";
+        EventJournalConfig journalConfig = new EventJournalConfig()
                 .setCacheName(cacheName)
                 .setEnabled(true)
                 .setCapacity(123)
                 .setTimeToLiveSeconds(321);
-        final Config config = new Config().addEventJournalConfig(journalConfig);
-        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        Config config = new Config().addEventJournalConfig(journalConfig);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         assertTrue(new EventJournalConfigChecker().check(
                 journalConfig,
@@ -319,27 +362,29 @@ public class ConfigXmlGeneratorTest {
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {
-        final DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig("dummyClass");
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig("dummyClass");
         strategyConfig.addProperty("prop1", "val1");
         strategyConfig.addProperty("prop2", "val2");
-        final DiscoveryConfig c = new DiscoveryConfig();
-        c.setNodeFilterClass("dummyNodeFilter");
-        c.addDiscoveryStrategyConfig(strategyConfig);
-        c.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("dummyClass2"));
-        return c;
+
+        DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+        discoveryConfig.setNodeFilterClass("dummyNodeFilter");
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+        discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("dummyClass2"));
+
+        return discoveryConfig;
     }
 
     private AwsConfig getDummyAwsConfig() {
         return new AwsConfig().setHostHeader("dummyHost")
-                              .setRegion("dummyRegion")
-                              .setEnabled(false)
-                              .setConnectionTimeoutSeconds(1)
-                              .setAccessKey("dummyKey")
-                              .setIamRole("dummyIam")
-                              .setSecretKey("dummySecretKey")
-                              .setSecurityGroupName("dummyGroupName")
-                              .setTagKey("dummyTagKey")
-                              .setTagValue("dummyTagValue");
+                .setRegion("dummyRegion")
+                .setEnabled(false)
+                .setConnectionTimeoutSeconds(1)
+                .setAccessKey("dummyKey")
+                .setIamRole("dummyIam")
+                .setSecretKey("dummySecretKey")
+                .setSecurityGroupName("dummyGroupName")
+                .setTagKey("dummyTagKey")
+                .setTagValue("dummyTagValue");
     }
 
     private static Config getNewConfigViaXMLGenerator(Config config) {

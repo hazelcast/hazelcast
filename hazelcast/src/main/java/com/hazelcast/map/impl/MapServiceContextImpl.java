@@ -64,6 +64,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
@@ -103,6 +104,7 @@ import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptim
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 
@@ -512,7 +514,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object toObject(Object data) {
-        return nodeEngine.toObject(data);
+        return serializationService.toObject(data);
     }
 
     @Override
@@ -522,7 +524,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Data toData(Object object) {
-        return nodeEngine.toData(object);
+        return serializationService.toData(object);
     }
 
     @Override
@@ -790,15 +792,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addListenerAdapter(String cacheName, ListenerAdapter listenerAdaptor) {
-        EventService eventService = getNodeEngine().getEventService();
-        EventRegistration registration
-                = eventService.registerListener(MapService.SERVICE_NAME,
-                cacheName, TrueEventFilter.INSTANCE, listenerAdaptor);
-        return registration.getId();
-    }
-
-    @Override
     public String addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration registration = eventService.registerLocalListener(MapService.SERVICE_NAME, mapName, adapter);
@@ -808,5 +801,10 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public QueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
+    }
+
+    @Override
+    public IndexCopyBehavior getIndexCopyBehavior() {
+        return nodeEngine.getProperties().getEnum(INDEX_COPY_BEHAVIOR, IndexCopyBehavior.class);
     }
 }

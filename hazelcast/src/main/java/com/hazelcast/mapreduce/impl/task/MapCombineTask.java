@@ -42,7 +42,6 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -55,6 +54,8 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * This class acutally executed the mapping-combine phase. It is responsible for opening / closing
@@ -167,7 +168,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
     public static <K, V> Map<Address, Map<K, V>> mapResultToMember(JobSupervisor supervisor, Map<K, V> result) {
 
-        Set<Object> unassignedKeys = new HashSet<Object>();
+        Set<Object> unassignedKeys = createHashSet(result.size());
         for (Map.Entry<K, V> entry : result.entrySet()) {
             Address address = supervisor.getReducerAddressByKey(entry.getKey());
             if (address == null) {
@@ -180,7 +181,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
 
         // Now assign all keys
-        Map<Address, Map<K, V>> mapping = new HashMap<Address, Map<K, V>>();
+        Map<Address, Map<K, V>> mapping = createHashMap(result.size());
         for (Map.Entry<K, V> entry : result.entrySet()) {
             Address address = supervisor.getReducerAddressByKey(entry.getKey());
             if (address != null) {

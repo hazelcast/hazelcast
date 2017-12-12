@@ -273,7 +273,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public String get(Integer key) {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             String value = expectedKeyValueMappings.get(key);
             latestKeyOnGet = key;
@@ -289,7 +289,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public void put(Integer key, Data keyData, String value) {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             expectedKeyValueMappings.put(key, value);
             latestKeyOnPut = key;
@@ -299,7 +299,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public boolean remove(Integer key) {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             boolean result = expectedKeyValueMappings.remove(key) != null;
             latestKeyOnRemove = key;
@@ -310,7 +310,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public void clear() {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             expectedKeyValueMappings.clear();
             clearCalled = true;
@@ -319,7 +319,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public void destroy() {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             expectedKeyValueMappings.clear();
             expectedKeyValueMappings = null;
@@ -340,7 +340,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public int size() {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             latestSize = expectedKeyValueMappings.size();
             return latestSize;
@@ -349,7 +349,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public void doExpiration() {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             doExpirationCalled = true;
         }
@@ -357,7 +357,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public void doEvictionIfRequired() {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
             doEvictionIfRequiredCalled = true;
         }
@@ -365,7 +365,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         @Override
         public void doEviction() {
             if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near-Cache is already destroyed");
+                throw new IllegalStateException("Near Cache is already destroyed");
             }
         }
 

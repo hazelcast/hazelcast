@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.CONTAINER;
 import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.F_ID;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SemaphoreContainer implements IdentifiedDataSerializable {
 
@@ -185,7 +186,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int size = in.readInt();
-        attachMap = new HashMap<String, Integer>(size);
+        attachMap = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String owner = in.readUTF();
             Integer val = in.readInt();

@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 
 /**
  * Checks whether replica version is in sync with the primary.
@@ -45,8 +46,8 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
     }
 
     public CheckReplicaVersionOperation(PartitionContainer container) {
-        versions = new ConcurrentHashMap<String, Long>();
         ConcurrentMap<String, ReplicatedRecordStore> stores = container.getStores();
+        versions = createConcurrentHashMap(stores.size());
         for (Map.Entry<String, ReplicatedRecordStore> storeEntry : stores.entrySet()) {
             String name = storeEntry.getKey();
             ReplicatedRecordStore store = storeEntry.getValue();

@@ -25,10 +25,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class ListSetOperation extends CollectionBackupAwareOperation {
+public class ListSetOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     private int index;
     private Data value;

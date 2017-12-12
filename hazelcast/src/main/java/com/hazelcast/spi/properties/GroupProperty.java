@@ -25,6 +25,7 @@ import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.InvocationBuilder;
 
@@ -381,32 +382,48 @@ public final class GroupProperty {
 
     /**
      * The interval at which master confirmations are sent from non-master nodes to the master node
+     * @deprecated since 3.10
      */
+    @Deprecated
     public static final HazelcastProperty MASTER_CONFIRMATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.master.confirmation.interval.seconds", 30, SECONDS);
     /**
      * The timeout which defines when a cluster member is removed because it has not sent any master confirmations.
+     * @deprecated since 3.10
      */
+    @Deprecated
     public static final HazelcastProperty MAX_NO_MASTER_CONFIRMATION_SECONDS
             = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 150, SECONDS);
 
     /**
      * Heartbeat failure detector type. Available options are:
      * <ul>
-     *    <li><code>deadline</code>:  A deadline based failure detector uses an absolute timeout
-     *    for missing/lost heartbeats. After timeout member is considered as dead/unavailable.
-     *    </li>
-     *    <li><code>phi-accrual</code>: Implementation of 'The Phi Accrual Failure Detector' by Hayashibara et al.
-     *    as defined in their paper. Phi Accrual Failure Detector is adaptive to network/environment conditions,
-     *    that's why a lower {@link #MAX_NO_HEARTBEAT_SECONDS} (for example 10 or 15 seconds) can be used to provide
-     *    faster detection of unavailable members.
-     *    </li>
+     * <li><code>deadline</code>:  A deadline based failure detector uses an absolute timeout
+     * for missing/lost heartbeats. After timeout member is considered as dead/unavailable.
+     * </li>
+     * <li><code>phi-accrual</code>: Implementation of 'The Phi Accrual Failure Detector' by Hayashibara et al.
+     * as defined in their paper. Phi Accrual Failure Detector is adaptive to network/environment conditions,
+     * that's why a lower {@link #MAX_NO_HEARTBEAT_SECONDS} (for example 10 or 15 seconds) can be used to provide
+     * faster detection of unavailable members.
+     * </li>
      * </ul>
      *
      * Default failure detector is <code>deadline</code>.
      */
     public static final HazelcastProperty HEARTBEAT_FAILURE_DETECTOR_TYPE
             = new HazelcastProperty("hazelcast.heartbeat.failuredetector.type", "deadline");
+
+    /**
+     * The Hazelcast master node increments the member list version for each joining member. Then, member list versions
+     * are used to identify joined members with unique integers. For this algorithm to work under network partitioning scenarios
+     * without generating duplicate member list join versions for different members, a mastership-claiming node increments
+     * the member list version as specified by this parameter, multiplied by its position in the member list.
+     * The value of the parameter must be bigger than the cluster size.
+     * <p>
+     * Introduced in 3.10.
+     */
+    public static final HazelcastProperty MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT =
+            new HazelcastProperty("hazelcast.mastership.claim.member.list.version.increment", 25);
 
     /**
      * The interval at which the master sends the member lists are sent to other non-master members
@@ -428,13 +445,39 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.icmp.enabled", false);
 
     /**
-     * Ping timeout in milliseconds.
+     * Run ICMP detection in parallel with the Heartbeat failure detector.
+     */
+    public static final HazelcastProperty ICMP_PARALLEL_MODE
+            = new HazelcastProperty("hazelcast.icmp.parallel.mode", true);
+
+    /**
+     * Enforce ICMP Echo Request mode for ping-detector. If OS is not supported,
+     * or not configured correctly as per reference-manual, hazelcast will fail to start.
+     */
+    public static final HazelcastProperty ICMP_ECHO_FAIL_FAST
+            = new HazelcastProperty("hazelcast.icmp.echo.fail.fast.on.startup", true);
+
+    /**
+     * Ping timeout in milliseconds. This cannot be more than the interval value. Should always be smaller.
      */
     public static final HazelcastProperty ICMP_TIMEOUT
             = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
+
     /**
-     * Ping TTL (maximum numbers of hops to try the maximum numbers of hops the packets should go through or 0 for the
-     * default.
+     * Interval between ping attempts in milliseconds. Default and min allowed, 1 second.
+     */
+    public static final HazelcastProperty ICMP_INTERVAL
+            = new HazelcastProperty("hazelcast.icmp.interval", 1000, MILLISECONDS);
+
+    /**
+     * Max ping attempts before suspecting a member
+     */
+    public static final HazelcastProperty ICMP_MAX_ATTEMPTS
+            = new HazelcastProperty("hazelcast.icmp.max.attempts", 3);
+
+    /**
+     * Ping TTL, the maximum number of hops the packets should go through or 0 for the default.
+     * Zero in this case means unlimited hops.
      */
     public static final HazelcastProperty ICMP_TTL
             = new HazelcastProperty("hazelcast.icmp.ttl", 0);
@@ -483,10 +526,14 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
     public static final HazelcastProperty CONNECTION_MONITOR_MAX_FAULTS
             = new HazelcastProperty("hazelcast.connection.monitor.max.faults", 3);
-    /** Time in seconds to sleep after a migration task. */
+    /**
+     * Time in seconds to sleep after a migration task.
+     */
     public static final HazelcastProperty PARTITION_MIGRATION_INTERVAL
             = new HazelcastProperty("hazelcast.partition.migration.interval", 0, SECONDS);
-    /** Timeout in seconds for all migration operations. */
+    /**
+     * Timeout in seconds for all migration operations.
+     */
     public static final HazelcastProperty PARTITION_MIGRATION_TIMEOUT
             = new HazelcastProperty("hazelcast.partition.migration.timeout", 300, SECONDS);
     public static final HazelcastProperty PARTITION_FRAGMENTED_MIGRATION_ENABLED
@@ -747,6 +794,60 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty QUERY_OPTIMIZER_TYPE
             = new HazelcastProperty("hazelcast.query.optimizer.type", QueryOptimizerFactory.Type.RULES.toString());
+
+    /**
+     * Type of Query Index result copying behavior.
+     *
+     * Defines the behavior for index copying on index read/write.
+     *
+     * Supported in BINARY and OBJECT in-memory-formats. Ignored in NATIVE in-memory-format.
+     *
+     * Why is it needed? In order to support correctness the internal data-structures used by indexes need to do some copying.
+     * The copying may take place on-read or on-write:
+     *
+     * -> Copying on-read means that each index-read operation will copy the result of the query before returning it to the
+     * caller.This copying may be expensive, depending on the size of the result, since the result is stored in a map, which
+     * means that all entries need to have the hash calculated before being stored in a bucket.
+     * Each index-write operation however will be fast, since there will be no copying taking place.
+     *
+     * -> Copying on-write means that each index-write operation will completely copy the underlying map to provide the
+     * copy-on-write semantics. Depending on the index size, it may be a very expensive operation.
+     * Each index-read operation will be very fast, however, since it may just access the map and return it to the caller.
+     *
+     * -> Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
+     * copy-on-write semantics. Index reads never copy the results of a query to a separate map.
+     * It means that the results backed by the underlying index-map can change after the query has been executed.
+     * Specifically an entry might have been added / removed from an index, or it might have been remapped.
+     * Should be used in cases when a the caller expects "mostly correct" results - specifically, if it's ok
+     * if some entries returned in the result set do not match the initial query criteria.
+     * The fastest solution for read and writes, since no copying takes place.
+     *
+     * It's a tuneable trade-off - the user may decide.
+     *
+     * Valid Values:
+     * <ul>
+     * <li>COPY_ON_READY - Internal data structures of the index are concurrently modified without copy-on-write semantics.
+     * Index queries copy the results of a query on index read to detach the result from the source map.
+     * Should be used in index-write intensive cases, since the reads will slow down due to the copying.
+     * Default value.
+     * </li>
+     * <li>COPY_ON_WRITE - Internal data structures of the index are modified with copy-on-write semantics.
+     * Previously returned index query results reflect the state of the index at the time of the query and are not
+     * affected by future index modifications.
+     * Should be used in index-read intensive cases, since the writes will slow down due to the copying.
+     * </li>
+     * <li>NEVER - Internal data structures of the index are concurrently modified without copy-on-write semantics.
+     * Index reads never copy the results of a query to a separate map.
+     * It means that the results backed by the underlying index-map can change after the query has been executed.
+     * Specifically an entry might have been added / removed from an index, or it might have been remapped.
+     * Should be used in cases when a the caller expects "mostly correct" results - specifically, if it's ok
+     * if some entries returned in the result set do not match the initial query criteria.
+     * The fastest solution for read and writes, since no copying takes place.</li>
+     * </ul>
+     * <p/>
+     */
+    public static final HazelcastProperty INDEX_COPY_BEHAVIOR
+            = new HazelcastProperty("hazelcast.index.copy.behavior", IndexCopyBehavior.COPY_ON_READ.toString());
 
 
     /**

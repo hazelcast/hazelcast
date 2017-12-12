@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 /**
  * Simple HashMap adapter class to implement DataSerializable serialization semantics
  * to not loose hands on serialization while sending intermediate results.
@@ -78,7 +80,7 @@ public class HashMapAdapter<K, V>
             throws IOException {
 
         int size = in.readInt();
-        Map<K, V> map = new HashMap<K, V>(size);
+        Map<K, V> map = createHashMap(size);
         for (int i = 0; i < size; i++) {
             K key = in.readObject();
             V value = in.readObject();

@@ -24,51 +24,60 @@ import com.hazelcast.cache.impl.operation.CacheMergeOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Handles split-brain functionality for cache.
  */
 class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
+    private final int partitionCount;
     private final NodeEngine nodeEngine;
+    private final CacheService cacheService;
     private final Map<String, CacheConfig> configs;
     private final CachePartitionSegment[] segments;
+    private final OperationService operationService;
+    private final IPartitionService partitionService;
     private final CacheMergePolicyProvider mergePolicyProvider;
+    private final SerializationService serializationService;
 
     CacheSplitBrainHandlerService(NodeEngine nodeEngine, Map<String, CacheConfig> configs, CachePartitionSegment[] segments) {
         this.nodeEngine = nodeEngine;
         this.configs = configs;
         this.segments = segments;
         this.mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
+        this.partitionService = nodeEngine.getPartitionService();
+        this.partitionCount = partitionService.getPartitionCount();
+        this.cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
+        this.serializationService = nodeEngine.getSerializationService();
+        this.operationService = nodeEngine.getOperationService();
     }
 
     @Override
     public Runnable prepareMergeRunnable() {
-        final Map<String, Map<Data, CacheRecord>> recordMap = new HashMap<String, Map<Data, CacheRecord>>(configs.size());
-        final IPartitionService partitionService = nodeEngine.getPartitionService();
-        final int partitionCount = partitionService.getPartitionCount();
-        final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
+        Map<String, Map<Data, CacheRecord>> recordMap = createHashMap(configs.size());
 
-        for (int i = 0; i < partitionCount; i++) {
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             // add your owned entries so they will be merged
-            if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
-                CachePartitionSegment segment = segments[i];
+            if (isLocalPartition(partitionId)) {
+                CachePartitionSegment segment = segments[partitionId];
                 Iterator<ICacheRecordStore> iterator = segment.recordStoreIterator();
                 while (iterator.hasNext()) {
                     ICacheRecordStore cacheRecordStore = iterator.next();
@@ -78,7 +87,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                     String cacheName = cacheRecordStore.getName();
                     Map<Data, CacheRecord> records = recordMap.get(cacheName);
                     if (records == null) {
-                        records = new HashMap<Data, CacheRecord>(cacheRecordStore.size());
+                        records = createHashMap(cacheRecordStore.size());
                         recordMap.put(cacheName, records);
                     }
                     for (Map.Entry<Data, CacheRecord> cacheRecordEntry : cacheRecordStore.getReadOnlyRecords().entrySet()) {
@@ -88,40 +97,48 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                     }
                     // clear all records either owned or backup
                     cacheRecordStore.clear();
-
-                    // send the cache invalidation event regardless if any actually cleared or not
-                    // (no need to know how many actually cleared)
-                    final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
-                    cacheService.sendInvalidationEvent(cacheName, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
                 }
             }
         }
-        return new CacheMerger(nodeEngine, configs, recordMap, mergePolicyProvider);
+
+        invalidateNearCaches(recordMap);
+
+        return new CacheMerger(recordMap);
     }
 
-    private static class CacheMerger implements Runnable {
+    /**
+     * Sends cache invalidation event regardless if any actually cleared or not
+     * (no need to know how many actually cleared)
+     */
+    private void invalidateNearCaches(Map<String, Map<Data, CacheRecord>> recordMap) {
+        for (String cacheName : recordMap.keySet()) {
+            cacheService.sendInvalidationEvent(cacheName, null, SOURCE_NOT_AVAILABLE);
+        }
+    }
+
+    /**
+     * @see IPartition#isLocal()
+     */
+    private boolean isLocalPartition(int partitionId) {
+        IPartition partition = partitionService.getPartition(partitionId, false);
+        return partition.isLocal();
+    }
+
+    private class CacheMerger implements Runnable {
 
         private static final int TIMEOUT_FACTOR = 500;
 
-        private final NodeEngine nodeEngine;
-        private final Map<String, CacheConfig> configs;
-        private final Map<String, Map<Data, CacheRecord>> recordMap;
-        private final CacheMergePolicyProvider mergePolicyProvider;
         private final ILogger logger;
+        private final Map<String, Map<Data, CacheRecord>> recordMap;
 
-        CacheMerger(NodeEngine nodeEngine, Map<String, CacheConfig> configs, Map<String, Map<Data, CacheRecord>> recordMap,
-                    CacheMergePolicyProvider mergePolicyProvider) {
-            this.nodeEngine = nodeEngine;
-            this.configs = configs;
+        CacheMerger(Map<String, Map<Data, CacheRecord>> recordMap) {
             this.recordMap = recordMap;
-            this.mergePolicyProvider = mergePolicyProvider;
             this.logger = nodeEngine.getLogger(CacheService.class);
         }
 
         @Override
         public void run() {
             final Semaphore semaphore = new Semaphore(0);
-            int recordCount = 0;
 
             ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
                 @Override
@@ -136,18 +153,16 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                 }
             };
 
-            SerializationService serializationService = nodeEngine.getSerializationService();
-
+            int recordCount = 0;
             for (Map.Entry<String, Map<Data, CacheRecord>> recordMapEntry : recordMap.entrySet()) {
                 String cacheName = recordMapEntry.getKey();
-                CacheConfig cacheConfig = configs.get(cacheName);
                 Map<Data, CacheRecord> records = recordMapEntry.getValue();
-                String mergePolicyName = cacheConfig.getMergePolicy();
-                final CacheMergePolicy cacheMergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
-                for (Map.Entry<Data, CacheRecord> recordEntry : records.entrySet()) {
-                    Data key = recordEntry.getKey();
-                    CacheRecord record = recordEntry.getValue();
+                CacheMergePolicy cacheMergePolicy = getCacheMergePolicy(cacheName);
+
+                for (Map.Entry<Data, CacheRecord> entry : records.entrySet()) {
                     recordCount++;
+                    Data key = entry.getKey();
+                    CacheRecord record = entry.getValue();
                     CacheEntryView<Data, Data> entryView = new DefaultCacheEntryView(
                             key,
                             serializationService.toData(record.getValue()),
@@ -155,16 +170,12 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                             record.getExpirationTime(),
                             record.getLastAccessTime(),
                             record.getAccessHit());
-                    CacheMergeOperation operation = new CacheMergeOperation(
-                            cacheName,
-                            key,
-                            entryView,
-                            cacheMergePolicy);
+
+                    Operation operation = new CacheMergeOperation(cacheName, key, entryView, cacheMergePolicy);
                     try {
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        ICompletableFuture<Object> future = nodeEngine.getOperationService()
-                                .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId);
-                        future.andThen(mergeCallback);
+                        int partitionId = partitionService.getPartitionId(key);
+                        operationService.invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId)
+                                .andThen(mergeCallback);
                     } catch (Throwable t) {
                         throw rethrow(t);
                     }
@@ -176,5 +187,11 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                 logger.finest("Interrupted while waiting merge operation...");
             }
         }
+    }
+
+    protected CacheMergePolicy getCacheMergePolicy(String cacheName) {
+        CacheConfig cacheConfig = configs.get(cacheName);
+        String mergePolicyName = cacheConfig.getMergePolicy();
+        return mergePolicyProvider.getMergePolicy(mergePolicyName);
     }
 }

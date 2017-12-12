@@ -77,10 +77,11 @@ import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -90,10 +91,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Class that requests, listeners from client handled in node side.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwareService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
 
@@ -345,8 +348,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public Collection<Client> getClients() {
-        final HashSet<Client> clients = new HashSet<Client>();
-        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
+        final Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
+        final Set<Client> clients = createHashSet(endpoints.size());
+        for (ClientEndpoint endpoint : endpoints) {
             clients.add(endpoint);
         }
         return clients;
@@ -535,7 +539,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
-
         int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
         int numberOfJavaClients = 0;
@@ -544,7 +547,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         int numberOfOtherClients = 0;
 
         OperationService operationService = node.nodeEngine.getOperationService();
-        Map<ClientType, Integer> resultMap = new HashMap<ClientType, Integer>();
         Map<String, ClientType> clientsMap = new HashMap<String, ClientType>();
 
         for (Member member : node.getClusterService().getMembers()) {
@@ -557,7 +559,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (endpoints == null) {
                     continue;
                 }
-                //Merge connected clients according to their uuid.
+                //Merge connected clients according to their UUID
                 for (Map.Entry<String, ClientType> entry : endpoints.entrySet()) {
                     clientsMap.put(entry.getKey(), entry.getValue());
                 }
@@ -588,6 +590,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                     numberOfOtherClients++;
             }
         }
+
+        final Map<ClientType, Integer> resultMap = new EnumMap<ClientType, Integer>(ClientType.class);
 
         resultMap.put(ClientType.CPP, numberOfCppClients);
         resultMap.put(ClientType.CSHARP, numberOfDotNetClients);

@@ -17,7 +17,7 @@
 
 <!--
     The default Hazelcast configuration. This is used when no hazelcast.xml is present.
-    Please see the schema for how to configure Hazelcast at https://hazelcast.com/schema/config/hazelcast-config-3.9.xsd
+    Please see the schema for how to configure Hazelcast at https://hazelcast.com/schema/config/hazelcast-config-3.10.xsd
     or the documentation at https://hazelcast.org/documentation/
 -->
 <!--suppress XmlDefaultAttributeValue -->
@@ -266,6 +266,15 @@
         <time-to-live-seconds>0</time-to-live-seconds>
         <in-memory-format>BINARY</in-memory-format>
     </ringbuffer>
+
+    <reliable-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>10000</prefetch-validity-millis>
+    </reliable-id-generator>
+
+    <atomic-long name="default"/>
+
+    <atomic-reference name="default"/>
 
     <serialization>
         <portable-version>0</portable-version>

@@ -159,7 +159,7 @@ public abstract class AbstractXmlConfigHelper {
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {
-                LOGGER.warning("Name of the hazelcast schema location incorrect using default");
+                LOGGER.warning("Name of the hazelcast schema location is incorrect, using default");
             }
 
             // if this is not hazelcast namespace then try to load from uri
@@ -204,7 +204,7 @@ public abstract class AbstractXmlConfigHelper {
             try {
                 inputStream = new URL(schemaLocation).openStream();
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Your xsd schema couldn't be load");
+                throw new InvalidConfigurationException("Your xsd schema couldn't be loaded");
             }
         }
         return inputStream;

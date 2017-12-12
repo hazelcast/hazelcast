@@ -45,6 +45,10 @@ public abstract class InstancePermission extends ClusterPermission {
         for (String action : actions) {
             s.append(action).append(" ");
         }
+        // trim the trailing space
+        if (s.length() > 0) {
+            s.setLength(s.length() - 1);
+        }
         this.actions = s.toString();
     }
 

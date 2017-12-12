@@ -75,6 +75,6 @@ public final class NonFragmentedServiceNamespace implements ServiceNamespace, Id
 
     @Override
     public int getId() {
-        return PartitionDataSerializerHook.NONFRAGMENTED_SERVICE_NAMESPACE;
+        return PartitionDataSerializerHook.NON_FRAGMENTED_SERVICE_NAMESPACE;
     }
 }

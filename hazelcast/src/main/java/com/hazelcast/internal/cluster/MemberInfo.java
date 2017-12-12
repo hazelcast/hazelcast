@@ -29,6 +29,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 public class MemberInfo implements IdentifiedDataSerializable {
 
     private Address address;
@@ -36,25 +40,33 @@ public class MemberInfo implements IdentifiedDataSerializable {
     private boolean liteMember;
     private MemberVersion version;
     private Map<String, Object> attributes;
+    private int memberListJoinVersion = NA_MEMBER_LIST_JOIN_VERSION;
 
     public MemberInfo() {
     }
 
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes, MemberVersion version) {
-        this(address, uuid, attributes, false, version);
+        this(address, uuid, attributes, false, version, NA_MEMBER_LIST_JOIN_VERSION);
     }
 
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, MemberVersion version) {
+        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION);
+    }
+
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, MemberVersion version,
+                      int memberListJoinVersion) {
         this.address = address;
         this.uuid = uuid;
         this.attributes = attributes == null || attributes.isEmpty()
                 ? Collections.<String, Object>emptyMap() : new HashMap<String, Object>(attributes);
         this.liteMember = liteMember;
         this.version = version;
+        this.memberListJoinVersion = memberListJoinVersion;
     }
 
     public MemberInfo(MemberImpl member) {
-        this(member.getAddress(), member.getUuid(), member.getAttributes(), member.isLiteMember(), member.getVersion());
+        this(member.getAddress(), member.getUuid(), member.getAttributes(), member.isLiteMember(), member.getVersion(),
+                member.getMemberListJoinVersion());
     }
 
     public Address getAddress() {
@@ -77,8 +89,12 @@ public class MemberInfo implements IdentifiedDataSerializable {
         return liteMember;
     }
 
+    public int getMemberListJoinVersion() {
+        return memberListJoinVersion;
+    }
+
     public MemberImpl toMember() {
-        return new MemberImpl(address, version, false, uuid,  attributes, liteMember);
+        return new MemberImpl(address, version, false, uuid, attributes, liteMember, memberListJoinVersion, null);
     }
 
     @Override
@@ -91,7 +107,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         liteMember = in.readBoolean();
         int size = in.readInt();
         if (size > 0) {
-            attributes = new HashMap<String, Object>();
+            attributes = createHashMap(size);
         }
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
@@ -99,6 +115,9 @@ public class MemberInfo implements IdentifiedDataSerializable {
             attributes.put(key, value);
         }
         version = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(V3_10)) {
+            memberListJoinVersion = in.readInt();
+        }
     }
 
     @Override
@@ -118,6 +137,9 @@ public class MemberInfo implements IdentifiedDataSerializable {
             }
         }
         out.writeObject(version);
+        if (out.getVersion().isGreaterOrEqual(V3_10)) {
+            out.writeInt(memberListJoinVersion);
+        }
     }
 
     @Override
@@ -156,6 +178,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
                 + "address=" + address
                 + ", uuid=" + uuid
                 + ", liteMember=" + liteMember
+                + ", memberListJoinVersion=" + memberListJoinVersion
                 + '}';
     }
 

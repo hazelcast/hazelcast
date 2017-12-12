@@ -18,7 +18,6 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.replicatedmap.impl.operation.MergeOperation;
@@ -128,9 +127,9 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
                     MergeOperation mergeOperation = new MergeOperation(name, record.getKeyInternal(), entryView, policy);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKeyInternal());
-                        ICompletableFuture<Object> future = nodeEngine.getOperationService()
-                                .invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
-                        future.andThen(mergeCallback);
+                        nodeEngine.getOperationService()
+                                .invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId)
+                                .andThen(mergeCallback);
                     } catch (Throwable t) {
                         throw rethrow(t);
                     }
@@ -145,15 +144,14 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
         }
 
         private ReplicatedMapEntryView createEntryView(ReplicatedRecord record) {
-            Object key = serializationService.toObject(record.getKeyInternal());
-            Object value = serializationService.toObject(record.getValueInternal());
-            ReplicatedMapEntryView entryView = new ReplicatedMapEntryView<Object, Object>(key, value);
-            entryView.setHits(record.getHits());
-            entryView.setTtl(record.getTtlMillis());
-            entryView.setLastAccessTime(record.getLastAccessTime());
-            entryView.setCreationTime(record.getCreationTime());
-            entryView.setLastUpdateTime(record.getUpdateTime());
-            return entryView;
+            return new ReplicatedMapEntryView<Object, Object>()
+                    .setKey(serializationService.toObject(record.getKeyInternal()))
+                    .setValue(serializationService.toObject(record.getValueInternal()))
+                    .setHits(record.getHits())
+                    .setTtl(record.getTtlMillis())
+                    .setLastAccessTime(record.getLastAccessTime())
+                    .setCreationTime(record.getCreationTime())
+                    .setLastUpdateTime(record.getUpdateTime());
         }
     }
 }

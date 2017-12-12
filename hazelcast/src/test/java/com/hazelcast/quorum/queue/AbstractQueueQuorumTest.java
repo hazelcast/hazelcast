@@ -53,11 +53,11 @@ public abstract class AbstractQueueQuorumTest {
                 .setQuorumName(QUORUM_ID);
         cluster = new PartitionedCluster(new TestHazelcastInstanceFactory());
         cluster.createFiveMemberCluster(qConfig, quorumConfig);
-        q1 = getQueue(cluster.h1);
-        q2 = getQueue(cluster.h2);
-        q3 = getQueue(cluster.h3);
-        q4 = getQueue(cluster.h4);
-        q5 = getQueue(cluster.h5);
+        q1 = getQueue(cluster.instance[0]);
+        q2 = getQueue(cluster.instance[1]);
+        q3 = getQueue(cluster.instance[2]);
+        q4 = getQueue(cluster.instance[3]);
+        q5 = getQueue(cluster.instance[4]);
     }
 
     protected static <E> IQueue<E> getQueue(HazelcastInstance instance) {

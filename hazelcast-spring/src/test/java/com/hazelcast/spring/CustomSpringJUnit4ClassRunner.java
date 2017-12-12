@@ -16,10 +16,15 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.TestLoggingUtils;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.Set;
 
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
@@ -41,5 +46,23 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
      */
     public CustomSpringJUnit4ClassRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
+    }
+
+    @Override
+    protected Statement withAfterClasses(Statement statement) {
+        final Statement originalStatement = super.withAfterClasses(statement);
+        return new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                originalStatement.evaluate();
+
+                Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+                if (!instances.isEmpty()) {
+                    String message = "Instances haven't been shut down: " + instances;
+                    Hazelcast.shutdownAll();
+                    throw new IllegalStateException(message);
+                }
+            }
+        };
     }
 }

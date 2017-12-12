@@ -23,13 +23,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
+public class CollectionAddAllOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     protected List<Data> valueList;
 

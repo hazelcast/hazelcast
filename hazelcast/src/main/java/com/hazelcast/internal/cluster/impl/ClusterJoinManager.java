@@ -47,6 +47,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -58,7 +59,11 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIST_VERSION;
+import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.CANNOT_MERGE;
+import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
+import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -309,8 +314,8 @@ public class ClusterJoinManager {
 
             if (removedMember != null && !target.equals(removedMember.getAddress())) {
 
-                logger.warning("Uuid " + uuid + " was being used by " + removedMember
-                        + " before. " + target + " is not allowed to join with a uuid which belongs to"
+                logger.warning("UUID " + uuid + " was being used by " + removedMember
+                        + " before. " + target + " is not allowed to join with a UUID which belongs to"
                         + " a known passive member.");
 
                 return true;
@@ -439,8 +444,8 @@ public class ClusterJoinManager {
             }
         } else if (!existing.getUuid().equals(memberInfo.getUuid())) {
             logger.warning("Received a new join request from " + memberInfo.getAddress()
-                    + " with a new uuid " + memberInfo.getUuid()
-                    + ". Previous uuid was " + existing.getUuid());
+                    + " with a new UUID " + memberInfo.getUuid()
+                    + ". Previous UUID was " + existing.getUuid());
         }
         if (now >= timeToStartJoin) {
             startJoin();
@@ -482,13 +487,13 @@ public class ClusterJoinManager {
 
             clusterService.getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
             clusterService.setClusterId(UuidUtil.createClusterUuid());
+            clusterService.getMembershipManager().setLocalMemberListJoinVersion(SINGLETON_MEMBER_LIST_VERSION);
             clusterService.setJoined(true);
 
             return true;
         } finally {
             clusterServiceLock.unlock();
         }
-
     }
 
     /**
@@ -768,10 +773,7 @@ public class ClusterJoinManager {
     }
 
     private OnJoinOp preparePreJoinOps() {
-        Operation[] preJoinOps = null;
-        if (clusterService.getClusterVersion().isGreaterOrEqual(V3_9)) {
-            preJoinOps = nodeEngine.getPreJoinOperations();
-        }
+        Operation[] preJoinOps = nodeEngine.getPreJoinOperations();
         return (preJoinOps != null && preJoinOps.length > 0) ? new OnJoinOp(preJoinOps) : null;
     }
 
@@ -788,6 +790,164 @@ public class ClusterJoinManager {
         return nodeEngine.getOperationService()
                 .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME, op, target)
                 .setTryCount(CLUSTER_OPERATION_RETRY_COUNT).invoke();
+    }
+
+    @SuppressWarnings({"checkstyle:returncount", "checkstyle:npathcomplexity"})
+    public SplitBrainJoinMessage.SplitBrainMergeCheckResult shouldMerge(SplitBrainJoinMessage joinMessage) {
+        if (joinMessage == null) {
+            return CANNOT_MERGE;
+        }
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Checking if we should merge to: " + joinMessage);
+        }
+
+        if (!checkValidSplitBrainJoinMessage(joinMessage)) {
+            return CANNOT_MERGE;
+        }
+
+        if (!checkCompatibleSplitBrainJoinMessage(joinMessage)) {
+            return CANNOT_MERGE;
+        }
+
+        if (!checkMergeTargetIsNotMember(joinMessage)) {
+            return CANNOT_MERGE;
+        }
+
+        if (!checkClusterStateAllowsJoinBeforeMerge(joinMessage)) {
+            return CANNOT_MERGE;
+        }
+
+        if (!checkMembershipIntersectionSetEmpty(joinMessage)) {
+            return CANNOT_MERGE;
+        }
+
+        int targetDataMemberCount = joinMessage.getDataMemberCount();
+        int currentDataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
+
+        if (targetDataMemberCount > currentDataMemberCount) {
+            logger.info("We should merge to " + joinMessage.getAddress()
+                    + ", because their data member count is bigger than ours ["
+                    + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
+            return LOCAL_NODE_SHOULD_MERGE;
+        }
+
+        if (targetDataMemberCount < currentDataMemberCount) {
+            logger.info(joinMessage.getAddress() + " should merge to us "
+                    + ", because our data member count is bigger than theirs ["
+                    + (currentDataMemberCount + " > " + targetDataMemberCount) + ']');
+            return REMOTE_NODE_SHOULD_MERGE;
+        }
+
+        // targetDataMemberCount == currentDataMemberCount
+        if (shouldMergeTo(node.getThisAddress(), joinMessage.getAddress())) {
+            logger.info("We should merge to " + joinMessage.getAddress()
+                    + ", both have the same data member count: " + currentDataMemberCount);
+            return LOCAL_NODE_SHOULD_MERGE;
+        }
+
+        logger.info(joinMessage.getAddress() + " should merge to us "
+                + ", both have the same data member count: " + currentDataMemberCount);
+        return REMOTE_NODE_SHOULD_MERGE;
+    }
+
+    private boolean checkValidSplitBrainJoinMessage(SplitBrainJoinMessage joinMessage) {
+        try {
+            if (!validateJoinMessage(joinMessage)) {
+                logger.fine("Cannot process split brain merge message from " + joinMessage.getAddress()
+                        + ", since join-message could not be validated.");
+                return false;
+            }
+        } catch (Exception e) {
+            logger.fine("failure during validating join message", e);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkCompatibleSplitBrainJoinMessage(SplitBrainJoinMessage joinMessage) {
+        Version clusterVersion = clusterService.getClusterVersion();
+        if (!clusterVersion.isEqualTo(joinMessage.getClusterVersion())) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Should not merge to " + joinMessage.getAddress() + " because other cluster version is "
+                        + joinMessage.getClusterVersion() + " while this cluster version is "
+                        + clusterVersion);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkMergeTargetIsNotMember(SplitBrainJoinMessage joinMessage) {
+        if (clusterService.getMember(joinMessage.getAddress()) != null) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Should not merge to " + joinMessage.getAddress()
+                        + ", because it is already member of this cluster.");
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkClusterStateAllowsJoinBeforeMerge(SplitBrainJoinMessage joinMessage) {
+        ClusterState clusterState = clusterService.getClusterState();
+        if (!clusterState.isJoinAllowed()) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Should not merge to " + joinMessage.getAddress() + ", because this cluster is in "
+                        + clusterState + " state.");
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkMembershipIntersectionSetEmpty(SplitBrainJoinMessage joinMessage) {
+        Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
+        Address joinMessageAddress = joinMessage.getAddress();
+        if (targetMemberAddresses.contains(node.getThisAddress())) {
+            // Join request is coming from master of the split and it thinks that I am its member.
+            // This is partial split case and we want to convert it to a full split.
+            // So it should remove me from its cluster.
+            MembersViewMetadata membersViewMetadata = new MembersViewMetadata(joinMessageAddress, joinMessage.getUuid(),
+                    joinMessageAddress, joinMessage.getMemberListVersion());
+            clusterService.sendExplicitSuspicion(membersViewMetadata);
+            logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
+                    + ", because it thinks this-node as its member.");
+            return false;
+        }
+
+        for (Address address : clusterService.getMemberAddresses()) {
+            if (targetMemberAddresses.contains(address)) {
+                logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
+                        + ", because it thinks " + address + " as its member. "
+                        + "But " + address + " is member of this cluster.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Determines whether this address should merge to target address and called when two sides are equal on all aspects.
+     * This is a pure function that must produce always the same output when called with the same parameters.
+     * This logic should not be changed, otherwise compatibility will be broken.
+     *
+     * @param thisAddress this address
+     * @param targetAddress target address
+     * @return true if this address should merge to target, false otherwise
+     */
+    private boolean shouldMergeTo(Address thisAddress, Address targetAddress) {
+        String thisAddressStr = "[" + thisAddress.getHost() + "]:" + thisAddress.getPort();
+        String targetAddressStr = "[" + targetAddress.getHost() + "]:" + targetAddress.getPort();
+
+        if (thisAddressStr.equals(targetAddressStr)) {
+            throw new IllegalArgumentException("Addresses should be different! This: "
+                    + thisAddress + ", Target: " + targetAddress);
+        }
+
+        // Since strings are guaranteed to be different, result will always be non-zero.
+        int result = thisAddressStr.compareTo(targetAddressStr);
+        return result > 0;
     }
 
     void reset() {

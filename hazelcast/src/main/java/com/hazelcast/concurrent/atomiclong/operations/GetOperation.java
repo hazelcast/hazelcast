@@ -17,8 +17,9 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.spi.ReadonlyOperation;
+
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.GET;
 
 public class GetOperation extends AbstractAtomicLongOperation implements ReadonlyOperation {
 
@@ -33,8 +34,8 @@ public class GetOperation extends AbstractAtomicLongOperation implements Readonl
 
     @Override
     public void run() throws Exception {
-        AtomicLongContainer atomicLongContainer = getLongContainer();
-        returnValue = atomicLongContainer.get();
+        AtomicLongContainer container = getLongContainer();
+        returnValue = container.get();
     }
 
     @Override
@@ -44,6 +45,6 @@ public class GetOperation extends AbstractAtomicLongOperation implements Readonl
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.GET;
+        return GET;
     }
 }

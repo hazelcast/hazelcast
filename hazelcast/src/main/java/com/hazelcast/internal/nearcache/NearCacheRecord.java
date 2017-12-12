@@ -126,7 +126,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     void setUuid(UUID uuid);
 
     /**
-     * @return {@code true} if supplied uuid equals existing one, otherwise and when one of supplied
+     * @return {@code true} if supplied UUID equals existing one, otherwise and when one of supplied
      * or existing is null returns {@code false}
      */
     boolean hasSameUuid(UUID uuid);

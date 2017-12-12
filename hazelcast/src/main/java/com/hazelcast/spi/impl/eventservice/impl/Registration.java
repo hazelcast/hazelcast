@@ -46,7 +46,7 @@ public class Registration implements EventRegistration {
 
     public Registration(String id, String serviceName, String topic,
                         EventFilter filter, Address subscriber, Object listener, boolean localOnly) {
-        this.id = Preconditions.checkNotNull(id, "Registration id cannot be null!");
+        this.id = Preconditions.checkNotNull(id, "Registration ID cannot be null!");
         this.filter = filter;
         this.listener = listener;
         this.serviceName = serviceName;
@@ -87,8 +87,8 @@ public class Registration implements EventRegistration {
         return listener;
     }
 
-    // Registration equals() and hashCode() relies on only id field.
-    // Because registration id is unique in cluster.
+    // Registration equals() and hashCode() relies on the ID field only,
+    // because the registration ID is unique in the cluster
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -27,7 +27,7 @@ import java.util.Collection;
 /**
  * Cluster service for Hazelcast clients.
  *
- * Allows to retrieve Hazelcast members of the cluster, e.g. by their {@link Address} or uuid.
+ * Allows to retrieve Hazelcast members of the cluster, e.g. by their {@link Address} or UUID.
  */
 public interface ClientClusterService {
 
@@ -45,10 +45,10 @@ public interface ClientClusterService {
     Member getMember(Address address);
 
     /**
-     * Gets the member with the given uuid.
+     * Gets the member with the given UUID.
      *
-     * @param uuid The uuid of the member.
-     * @return The member that was found, or null if not found. If uuid is null, null is returned.
+     * @param uuid The UUID of the member.
+     * @return The member that was found, or null if not found. If UUID is null, null is returned.
      */
     Member getMember(String uuid);
 

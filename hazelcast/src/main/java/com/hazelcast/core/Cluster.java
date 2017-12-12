@@ -194,10 +194,10 @@ public interface Cluster {
      * by joining existing members or becoming master of its standalone cluster if it is the first node on the cluster.
      * Importantly, this is the time during which a lifecycle event with state
      * {@link com.hazelcast.core.LifecycleEvent.LifecycleState#STARTING} is triggered.
-     *
+     * <p>
      * For example, consider a cluster comprised of nodes running on {@code hazelcast-3.8.0.jar}. Each node's codebase version
      * is 3.8.0 and on startup the cluster version is 3.8. After a while, another node joins, running on
-     * {@code hazelcast-3.9.0jar}; this node's codebase version is 3.9.0. If deemed compatible, it is allowed to join the cluster.
+     * {@code hazelcast-3.9.jar}; this node's codebase version is 3.9.0. If deemed compatible, it is allowed to join the cluster.
      * At this point, the cluster version is still 3.8 and the 3.9.0 member should be able to adapt its behaviour to be compatible
      * with the other 3.8.0 members. Once all 3.8.0 members have been shutdown and replaced by other members on codebase
      * version 3.9.0, still the cluster version will be 3.8. At this point, it is possible to update the cluster version to

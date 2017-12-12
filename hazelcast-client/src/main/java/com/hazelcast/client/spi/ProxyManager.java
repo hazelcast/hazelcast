@@ -36,6 +36,7 @@ import com.hazelcast.client.proxy.ClientCardinalityEstimatorProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
+import com.hazelcast.client.proxy.ClientReliableIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientListProxy;
 import com.hazelcast.client.proxy.ClientLockProxy;
@@ -50,8 +51,8 @@ import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -62,6 +63,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -108,7 +110,7 @@ import static com.hazelcast.util.ServiceLoader.classIterator;
  * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
  * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public final class ProxyManager {
 
     private static final String PROVIDER_ID = ClientProxyDescriptorProvider.class.getCanonicalName();
@@ -161,6 +163,7 @@ public final class ProxyManager {
         }
     }
 
+    @SuppressWarnings("checkstyle:methodlength")
     public void init(ClientConfig config, ClientContext clientContext) {
         context = clientContext;
         // register defaults
@@ -197,6 +200,7 @@ public final class ProxyManager {
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, context, atomicLong);
             }
         });
+        register(ReliableIdGeneratorService.SERVICE_NAME, ClientReliableIdGeneratorProxy.class);
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
 
@@ -290,25 +294,26 @@ public final class ProxyManager {
         if (proxyFuture != null) {
             return proxyFuture.get();
         }
-        final ClientProxyFactory factory = proxyFactories.get(service);
+        ClientProxyFactory factory = proxyFactories.get(service);
         if (factory == null) {
             throw new ClientServiceNotFoundException("No factory registered for service: " + service);
         }
-        final ClientProxy clientProxy = createClientProxy(id, factory);
         proxyFuture = new ClientProxyFuture();
-        final ClientProxyFuture current = proxies.putIfAbsent(ns, proxyFuture);
+        ClientProxyFuture current = proxies.putIfAbsent(ns, proxyFuture);
         if (current != null) {
             return current.get();
         }
+
         try {
+            ClientProxy clientProxy = createClientProxy(id, factory);
             initializeWithRetry(clientProxy);
+            proxyFuture.set(clientProxy);
+            return clientProxy;
         } catch (Throwable e) {
             proxies.remove(ns);
             proxyFuture.set(e);
             throw rethrow(e);
         }
-        proxyFuture.set(clientProxy);
-        return clientProxy;
     }
 
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {

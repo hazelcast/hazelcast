@@ -33,7 +33,7 @@ import java.util.Map;
  * Typical usage would allow, for example, synchronizing access to a {@link java.util.concurrent.ConcurrentMap} on a
  * per-key basis, to avoid blocking other threads which could perform updates on other entries of the {@link Map}.
  *
- * <pre>
+ * <pre>{@code
  *    class Test {
  *
  *        private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
@@ -55,6 +55,7 @@ import java.util.Map;
  *                mutex.close();
  *            }
  *        }
+ *    }
  * }</pre>
  */
 public final class ContextMutexFactory {

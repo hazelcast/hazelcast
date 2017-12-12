@@ -49,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,6 +59,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 
@@ -75,6 +75,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     private static final int WAIT_INTERVAL_MILLIS = 1000;
     private static final int RETRY_INTERVAL_COUNT = 3;
+    private static final int KEY_SET_MIN_SIZE = 16;
+    private static final int KEY_SET_STORE_MULTIPLE = 4;
 
     private final String name;
     private final NodeEngine nodeEngine;
@@ -375,7 +377,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Set<K> keySet() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        Set<K> keySet = new HashSet<K>();
+        Set<K> keySet = createHashSet(Math.max(KEY_SET_MIN_SIZE, stores.size() * KEY_SET_STORE_MULTIPLE));
         for (ReplicatedRecordStore store : stores) {
             keySet.addAll(store.keySet(true));
         }

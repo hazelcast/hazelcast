@@ -84,11 +84,11 @@ public class ClientCacheReadQuorumTest extends HazelcastTestSupport {
     }
 
     private static void initializeClients() {
-        c1 = factory.newHazelcastClient(getClientConfig(cluster.h1));
-        c2 = factory.newHazelcastClient(getClientConfig(cluster.h2));
-        c3 = factory.newHazelcastClient(getClientConfig(cluster.h3));
-        c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
-        c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
+        c1 = factory.newHazelcastClient(getClientConfig(cluster.instance[0]));
+        c2 = factory.newHazelcastClient(getClientConfig(cluster.instance[1]));
+        c3 = factory.newHazelcastClient(getClientConfig(cluster.instance[2]));
+        c4 = factory.newHazelcastClient(getClientConfig(cluster.instance[3]));
+        c5 = factory.newHazelcastClient(getClientConfig(cluster.instance[4]));
     }
 
     private static void initializeCaches() {

@@ -33,7 +33,6 @@ import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +44,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Abstract class providing cache open/close operations and {@link NodeEngine}, {@link CacheService} and
@@ -60,6 +61,12 @@ abstract class AbstractCacheProxyBase<K, V>
         implements ICacheInternal<K, V> {
 
     private static final int TIMEOUT = 10;
+
+    /**
+     * Speculative factor to be used when initialising collections
+     * of an approximate final size.
+     */
+    private static final double SIZING_FUDGE_FACTOR = 1.3;
 
     protected final ILogger logger;
     protected final CacheConfig<K, V> cacheConfig;
@@ -246,7 +253,7 @@ abstract class AbstractCacheProxyBase<K, V>
 
                 IPartitionService partitionService = getNodeEngine().getPartitionService();
                 Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
-                Map<Integer, Object> results = new HashMap<Integer, Object>();
+                Map<Integer, Object> results = createHashMap(partitionService.getPartitionCount());
 
                 for (Map.Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
                     Set<Integer> partitions = new HashSet<Integer>(memberPartitions.getValue());
@@ -277,7 +284,10 @@ abstract class AbstractCacheProxyBase<K, V>
         }
 
         private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {
-            Set<Data> ownerKeys = new HashSet<Data>();
+            //assume that the key data is evenly distributed over the partition count, so multiply by number of partitions
+            final int roughSize = (int) (keysData.size() * partitions.size()
+                    / (double) partitionService.getPartitionCount() * SIZING_FUDGE_FACTOR);
+            Set<Data> ownerKeys = createHashSet(roughSize);
             for (Data key : keysData) {
                 int keyPartitionId = partitionService.getPartitionId(key);
                 if (partitions.contains(keyPartitionId)) {

@@ -49,6 +49,9 @@ import java.util.concurrent.TimeUnit;
  * use of the {@code equals} method when comparing objects. Instead of the {@code equals} method, this
  * implementation compares the serialized byte version of the objects.</b>
  * <p>
+ * <b>Moreover, stored values are handled as having a value type semantics, while standard Java implementations treat them
+ * as having a reference type semantics.</b>
+ * <p>
  * <b>Gotchas:</b>
  * <ul>
  * <li>Methods, including but not limited to {@code get}, {@code containsKey}, {@code containsValue}, {@code evict},
@@ -61,6 +64,28 @@ import java.util.concurrent.TimeUnit;
  * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return a collection
  * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
  * in the collection, and vice-versa.</li>
+ * <li>Since Hazelcast is compiled with Java 1.6, we can't override default methods introduced in later Java versions,
+ * nor can we add documentation to them. Methods, including but not limited to {@code computeIfPresent}, may behave
+ * incorrectly if the value passed to the update function is modified in-place and returned as a result of the invocation.
+ * You should create a new value instance and return it as a result.
+ * <p>
+ * For example, following code fragment will behave incorrectly and will enter an infinite loop:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -> {
+ *     value.setSomeAttribute("newAttributeValue");
+ *     return value;
+ * });
+ * </pre>
+ * It should be replaced with:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -> {
+ *     return new ObjectWithSomeAttribute("newAttributeValue");
+ * });
+ * </pre>
+ * </li>
+ * <li>Be careful while using default interface method implementations from {@link ConcurrentMap} and {@link Map}. Under
+ * the hood they are typically implemented as a sequence of more primitive map operations, therefore the operations won't
+ * be executed atomically.</li>
  * </ul>
  * <p>
  * This class does <em>not</em> allow {@code null} to be used as a key or value.
@@ -68,15 +93,15 @@ import java.util.concurrent.TimeUnit;
  * <b>Entry Processing</b>
  * <p>
  * The following operations are lock-aware, since they operate on a single key only.
- * If the key is locked the EntryProcessor will wait until it acquires the lock.
+ * If the key is locked, the EntryProcessor will wait until it acquires the lock.
  * <ul>
  * <li>{@link IMap#executeOnKey(Object, EntryProcessor)}</li>
  * <li>{@link IMap#submitToKey(Object, EntryProcessor)}</li>
  * <li>{@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)}</li>
  * </ul>
- * There are however following methods that run the EntryProcessor on more than one entry.
+ * However, there are following methods that run the {@code EntryProcessor} on more than one entry.
  * These operations are not lock-aware.
- * The EntryProcessor will process the entries no matter if they are locked or not.
+ * The {@code EntryProcessor} will process the entries no matter if they are locked or not.
  * The user may however check if an entry is locked by casting the {@link java.util.Map.Entry} to
  * {@link LockAware} and invoking the {@link LockAware#isLocked()} method.
  * <ul>
@@ -84,7 +109,7 @@ import java.util.concurrent.TimeUnit;
  * <li>{@link IMap#executeOnEntries(EntryProcessor, Predicate)}</li>
  * <li>{@link IMap#executeOnKeys(Set, EntryProcessor)}</li>
  * </ul>
- * This applies to both EntryProcessor and backup EntryProcessor.
+ * This applies to both {@code EntryProcessor} and {@code BackupEntryProcessor}.
  *
  * <p>
  * <b>Split-brain</b>
@@ -173,6 +198,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
+     * <p>Consider usage of {@link #delete(Object)} if you don't need the returned value. This will trim the serialization
+     * costs.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -189,26 +216,33 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
      * expire when the initial TTL has elapsed.
+     * <p>
+     * <p><b>Note:</b>
+     * Use {@link #set(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
      * @throws NullPointerException if the specified key or value is null
      */
     V put(K key, V value);
 
     /**
-     * {@inheritDoc}
+     * Removes the mapping for a key from this map if it is present.
+     * <p>
+     * If you don't need the previously mapped value for the removed key, prefer to use
+     * {@link #delete} and avoid the cost of serialization and network transfer.
      * <p>
      * <b>Warning 1:</b>
      * <p>
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p/>
+     * <p>
      * <b>Warning 2:</b>
      * <p>
      * This method returns a clone of the previous value, not the original (identically equal) value
      * previously put into the map.
      *
      * @throws NullPointerException if the specified key is null
+     * @see #delete(Object)
      */
     V remove(Object key);
 
@@ -239,13 +273,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void removeAll(Predicate<K, V> predicate);
 
     /**
-     * Removes the mapping for a key from this map if it is present (optional operation).
+     * Removes the mapping for the key from this map if it is present.
      * <p>
      * Unlike {@link #remove(Object)}, this operation does not return
-     * the removed value, which avoids the serialization cost of the returned value.
-     * <p>
-     * If the removed value will not be used, a delete operation
-     * is preferred over a remove operation for better performance.
+     * the removed value, which avoids the serialization and network transfer cost of the
+     * returned value. If the removed value will not be used, this operation
+     * is preferred over the remove operation for better performance.
      * <p>
      * The map will not contain a mapping for the specified key once the call returns.
      * <p>
@@ -259,6 +292,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for this map (optional)
      * @throws NullPointerException if the specified key is null
+     * @see #remove(Object)
      */
     void delete(Object key);
 
@@ -312,8 +346,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void loadAll(Set<K> keys, boolean replaceExistingValues);
 
     /**
-     * Clears the map and invokes {@link MapStore#deleteAll}deleteAll on MapStore which,
-     * if connected to a database, will delete the records from that database.
+     * Clears the map and invokes {@link MapStore#deleteAll} which,
+     * if connected to a database, will delete the records from the database.
      * <p>
      * The MAP_CLEARED event is fired for any registered listeners.
      * See {@link com.hazelcast.core.EntryListener#mapCleared(MapEvent)}.
@@ -421,6 +455,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
      * expire when the initial TTL has elapsed.
+     * <p>
+     * <p><b>Note:</b>
+     * Use {@link #setAsync(Object, Object)} if you don't need the return value, it's slightly more efficient.
      *
      * @param key   the key of the map entry
      * @param value the new value of the map entry
@@ -479,6 +516,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <b>Warning 2:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * <p>
+     * <p><b>Note:</b>
+     * Use {@link #setAsync(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly
+     * more efficient.
      *
      * @param key      the key of the map entry
      * @param value    the new value of the map entry
@@ -694,6 +735,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <b>Warning 3:</b>
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     * <p>
+     * <p><b>Note:</b>
+     * Use {@link #set(Object, Object, long, TimeUnit)} if you don't need the return value, it's slightly more efficient.
      *
      * @param key      key of the entry
      * @param value    value of the entry
@@ -1646,13 +1690,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     LocalMapStats getLocalMapStats();
 
     /**
-     * Applies the user defined EntryProcessor to the entry mapped by the key.
-     * Returns the the object which is result of the process() method of EntryProcessor.
+     * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
+     * Returns the object which is the result of the {@link EntryProcessor#process(Entry)} method.
      * <p>
-     * The EntryProcessor may implement the Offloadable and ReadOnly interfaces.
+     * The {@code EntryProcessor} may implement the {@link Offloadable} and {@link ReadOnly} interfaces.
      * <p>
-     * If the EntryProcessor implements the Offloadable interface the processing will be offloaded to the given
-     * ExecutorService allowing unblocking the partition-thread, which means that other partition-operations
+     * If the EntryProcessor implements the {@link Offloadable} interface the processing will be offloaded to the given
+     * ExecutorService allowing unblocking of the partition-thread, which means that other partition-operations
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
@@ -1684,32 +1728,36 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #submitToKey(Object, EntryProcessor)} for an async version of this method.
      *
-     * @return result of entry process
-     * @throws NullPointerException if the specified key is null
+     * @return result of {@link EntryProcessor#process(Entry)}
+     * @throws NullPointerException if the specified key is {@code null}
      * @see Offloadable
      * @see ReadOnly
      */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
     /**
-     * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.
-     * the results mapped by each key in the collection.
+     * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      *
-     * @return result of entry process
-     * @throws NullPointerException     if the specified key is null
-     * @throws IllegalArgumentException if the specified keys set is empty
+     * @return results of {@link EntryProcessor#process(Entry)}
+     * @throws NullPointerException     if the specified key is {@code null}
+     * @throws IllegalArgumentException if the specified {@code keys} set is empty
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
     /**
-     * Applies the user defined EntryProcessor to the entry mapped by the key with
-     * specified ExecutionCallback to listen event status and returns immediately.
+     * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key} with
+     * specified {@link ExecutionCallback} to listen event status and returns immediately.
      * <p>
-     * The EntryProcessor may implement the Offloadable and ReadOnly interfaces.
+     * The {@code EntryProcessor} may implement the {@link Offloadable} and {@link ReadOnly} interfaces.
      * <p>
-     * If the EntryProcessor implements the Offloadable interface the processing will be offloaded to the given
-     * ExecutorService allowing unblocking the partition-thread, which means that other partition-operations
+     * If the EntryProcessor implements the {@link Offloadable} interface the processing will be offloaded to the given
+     * ExecutorService allowing unblocking of the partition-thread, which means that other partition-operations
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
      * <ol>
@@ -1741,6 +1789,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
@@ -1751,8 +1801,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
 
     /**
-     * Applies the user defined EntryProcessor to the entry mapped by the key.
-     * Returns immediately with a ICompletableFuture representing that task.
+     * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
+     * Returns immediately with a {@link ICompletableFuture} representing that task.
      * <p>
      * EntryProcessor is not cancellable, so calling ICompletableFuture.cancel() method
      * won't cancel the operation of EntryProcessor.
@@ -1792,6 +1842,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
@@ -1803,14 +1855,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);
 
     /**
-     * Applies the user defined EntryProcessor to the all entries in the map.
+     * Applies the user defined {@link EntryProcessor} to the all entries in the map.
      * Returns the results mapped by each key in the map.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor);
 
     /**
-     * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
+     * Applies the user defined {@link EntryProcessor} to the entries in the map which satisfy provided predicate.
      * Returns the results mapped by each key in the map.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 

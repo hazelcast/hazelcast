@@ -31,47 +31,45 @@ import java.util.Properties;
  * <p>
  * <b>Sample bean</b>
  * <pre>
- * &lt;hz:cache-manager id="cacheManager" instance-ref="instance" name="cacheManager" /&gt;
+ * &lt;hz:cache-manager id="cacheManager" instance-ref="instance" name="cacheManager"/&gt;
  * </pre>
  */
-public class CacheManagerBeanDefinitionParser
-        extends AbstractHazelcastBeanDefinitionParser {
+public class CacheManagerBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(SpringHazelcastCachingProvider.class, parserContext);
+        SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(SpringHazelcastCachingProvider.class, parserContext);
         springXmlBuilder.handle(element);
-        final BeanDefinitionBuilder builder = springXmlBuilder.getBuilder();
+        BeanDefinitionBuilder builder = springXmlBuilder.getBuilder();
         return builder.getBeanDefinition();
     }
 
     private class SpringXmlBuilder extends AbstractHazelcastBeanDefinitionParser.SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
+        private final BeanDefinitionBuilder builder;
 
-        private BeanDefinitionBuilder builder;
-
-        public SpringXmlBuilder(Class providerClass, ParserContext parserContext) {
+        SpringXmlBuilder(Class providerClass, ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(providerClass);
         }
 
-        public BeanDefinitionBuilder getBuilder() {
+        BeanDefinitionBuilder getBuilder() {
             return this.builder;
         }
 
         public void handle(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
-            final NamedNodeMap attrs = element.getAttributes();
+            NamedNodeMap attributes = element.getAttributes();
 
             String uri = null;
             String instanceRef = null;
-            if (attrs != null) {
-                Node instanceRefNode = attrs.getNamedItem("instance-ref");
+            if (attributes != null) {
+                Node instanceRefNode = attributes.getNamedItem("instance-ref");
                 if (instanceRefNode != null) {
                     instanceRef = getTextContent(instanceRefNode);
                 }
-                Node uriNode = attrs.getNamedItem("uri");
+                Node uriNode = attributes.getNamedItem("uri");
                 if (uriNode != null) {
                     uri = getTextContent(uriNode);
                 }
@@ -79,16 +77,16 @@ public class CacheManagerBeanDefinitionParser
 
             Properties properties = new Properties();
             for (Node n : childElements(element)) {
-                final String nodeName = cleanNodeName(n);
+                String nodeName = cleanNodeName(n);
                 if ("properties".equals(nodeName)) {
                     for (Node propNode : childElements(n)) {
-                        final String name = cleanNodeName(propNode);
-                        final String propertyName;
+                        String name = cleanNodeName(propNode);
+                        String propertyName;
                         if (!"property".equals(name)) {
                             continue;
                         }
                         propertyName = getTextContent(propNode.getAttributes().getNamedItem("name")).trim();
-                        final String value = getTextContent(propNode);
+                        String value = getTextContent(propNode);
                         properties.setProperty(propertyName, value);
                     }
                 }

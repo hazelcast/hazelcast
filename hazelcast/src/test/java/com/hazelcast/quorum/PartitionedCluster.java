@@ -47,16 +47,17 @@ public class PartitionedCluster {
 
     private static final String SUCCESSFUL_SPLIT_TEST_QUORUM_NAME = "SUCCESSFUL_SPLIT_TEST_QUORUM";
 
-    public HazelcastInstance h1;
-    public HazelcastInstance h2;
-    public HazelcastInstance h3;
-    public HazelcastInstance h4;
-    public HazelcastInstance h5;
+    public HazelcastInstance[] instance;
 
     protected TestHazelcastInstanceFactory factory;
 
     public PartitionedCluster(TestHazelcastInstanceFactory factory) {
         this.factory = factory;
+    }
+
+    public PartitionedCluster createFiveMemberCluster(Config config) {
+        createInstances(config);
+        return this;
     }
 
     public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) {
@@ -74,7 +75,7 @@ public class PartitionedCluster {
         return splitFiveMembersThreeAndTwo(quorumConfig.getName());
     }
 
-    private PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
+    public PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
         Config config = createClusterConfig()
                 .addMapConfig(mapConfig)
                 .addQuorumConfig(quorumConfig);
@@ -106,8 +107,11 @@ public class PartitionedCluster {
         return this;
     }
 
-    private Config createClusterConfig() {
-        Config config = new Config();
+    public static Config createClusterConfig() {
+        return createClusterConfig(new Config());
+    }
+
+    public static Config createClusterConfig(Config config) {
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "9999");
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "9999");
         config.getGroupConfig().setName(generateRandomString(10));
@@ -115,15 +119,15 @@ public class PartitionedCluster {
         return config;
     }
 
-    public PartitionedCluster splitFiveMembersThreeAndTwo(String quorumId) {
+    public PartitionedCluster splitFiveMembersThreeAndTwo(String... quorumIds) {
         final CountDownLatch splitLatch = new CountDownLatch(6);
-        h4.getCluster().addMembershipListener(new MembershipAdapter() {
+        instance[3].getCluster().addMembershipListener(new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 splitLatch.countDown();
             }
         });
-        h5.getCluster().addMembershipListener(new MembershipAdapter() {
+        instance[4].getCluster().addMembershipListener(new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 splitLatch.countDown();
@@ -133,27 +137,31 @@ public class PartitionedCluster {
         splitCluster();
 
         assertOpenEventually(splitLatch, 30);
-        assertClusterSizeEventually(3, h1, h2, h3);
-        assertClusterSizeEventually(2, h4, h5);
+        assertClusterSizeEventually(3, instance[0], instance[1], instance[2]);
+        assertClusterSizeEventually(2, instance[3], instance[4]);
 
         verifyQuorums(SUCCESSFUL_SPLIT_TEST_QUORUM_NAME);
-        verifyQuorums(quorumId);
+        for (String quorumId : quorumIds) {
+            verifyQuorums(quorumId);
+        }
 
         return this;
     }
 
     private void createInstances(Config config) {
-        h1 = factory.newHazelcastInstance(config);
-        h2 = factory.newHazelcastInstance(config);
-        h3 = factory.newHazelcastInstance(config);
-        h4 = factory.newHazelcastInstance(config);
-        h5 = factory.newHazelcastInstance(config);
-
-        assertClusterSize(5, h1, h5);
-        assertClusterSizeEventually(5, h2, h3, h4);
+        if (instance == null) {
+            instance = new HazelcastInstance[5];
+            instance[0] = factory.newHazelcastInstance(config);
+            instance[1] = factory.newHazelcastInstance(config);
+            instance[2] = factory.newHazelcastInstance(config);
+            instance[3] = factory.newHazelcastInstance(config);
+            instance[4] = factory.newHazelcastInstance(config);
+        }
+        assertClusterSize(5, instance[0], instance[4]);
+        assertClusterSizeEventually(5, instance[1], instance[2], instance[3]);
     }
 
-    private QuorumConfig createSuccessfulSplitTestQuorum() {
+    private static QuorumConfig createSuccessfulSplitTestQuorum() {
         QuorumConfig splitConfig = new QuorumConfig();
         splitConfig.setEnabled(true);
         splitConfig.setSize(3);
@@ -162,30 +170,30 @@ public class PartitionedCluster {
     }
 
     private void splitCluster() {
-        blockCommunicationBetween(h1, h4);
-        blockCommunicationBetween(h1, h5);
+        blockCommunicationBetween(instance[0], instance[3]);
+        blockCommunicationBetween(instance[0], instance[4]);
 
-        blockCommunicationBetween(h2, h4);
-        blockCommunicationBetween(h2, h5);
+        blockCommunicationBetween(instance[1], instance[3]);
+        blockCommunicationBetween(instance[1], instance[4]);
 
-        blockCommunicationBetween(h3, h4);
-        blockCommunicationBetween(h3, h5);
+        blockCommunicationBetween(instance[2], instance[3]);
+        blockCommunicationBetween(instance[2], instance[4]);
 
-        closeConnectionBetween(h4, h3);
-        closeConnectionBetween(h4, h2);
-        closeConnectionBetween(h4, h1);
+        closeConnectionBetween(instance[3], instance[2]);
+        closeConnectionBetween(instance[3], instance[1]);
+        closeConnectionBetween(instance[3], instance[0]);
 
-        closeConnectionBetween(h5, h3);
-        closeConnectionBetween(h5, h2);
-        closeConnectionBetween(h5, h1);
+        closeConnectionBetween(instance[4], instance[2]);
+        closeConnectionBetween(instance[4], instance[1]);
+        closeConnectionBetween(instance[4], instance[0]);
     }
 
     private void verifyQuorums(String quorumId) {
-        assertQuorumIsPresentEventually(h1, quorumId);
-        assertQuorumIsPresentEventually(h2, quorumId);
-        assertQuorumIsPresentEventually(h3, quorumId);
-        assertQuorumIsAbsentEventually(h4, quorumId);
-        assertQuorumIsAbsentEventually(h5, quorumId);
+        assertQuorumIsPresentEventually(instance[0], quorumId);
+        assertQuorumIsPresentEventually(instance[1], quorumId);
+        assertQuorumIsPresentEventually(instance[2], quorumId);
+        assertQuorumIsAbsentEventually(instance[3], quorumId);
+        assertQuorumIsAbsentEventually(instance[4], quorumId);
     }
 
     private void assertQuorumIsPresentEventually(final HazelcastInstance instance, final String quorumId) {
@@ -206,6 +214,10 @@ public class PartitionedCluster {
                 assertFalse(instance.getQuorumService().getQuorum(quorumId).isPresent());
             }
         });
+    }
+
+    public HazelcastInstance getInstance(int index) {
+        return instance[index];
     }
 
 }

@@ -19,7 +19,10 @@ package com.hazelcast.util;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,6 +50,7 @@ public final class StringUtil {
      * LOCALE_INTERNAL is the default locale for string operations and number formatting. Initialized to
      * {@code java.util.Locale.US} (US English).
      */
+    //TODO Use java.util.Locale#ROOT value (language neutral) in Hazelcast 4
     public static final Locale LOCALE_INTERNAL = Locale.US;
 
     /**
@@ -97,7 +101,7 @@ public final class StringUtil {
      * Checks if a string is empty or not.
      *
      * @param s the string to check.
-     * @return true if the string is null or empty, false otherwise
+     * @return true if the string is {@code null} or empty, false otherwise
      */
 
     public static boolean isNullOrEmpty(String s) {
@@ -111,7 +115,7 @@ public final class StringUtil {
      * Checks if a string is empty or not after trim operation
      *
      * @param s the string to check.
-     * @return true if the string is null or empty, false otherwise
+     * @return true if the string is {@code null} or empty, false otherwise
      */
 
     public static boolean isNullOrEmptyAfterTrim(String s) {
@@ -126,7 +130,7 @@ public final class StringUtil {
      * Creates an uppercase string from the given string.
      *
      * @param s the given string
-     * @return an uppercase string, or null/empty if the string is null/empty
+     * @return an uppercase string, or {@code null}/empty if the string is {@code null}/empty
      */
     public static String upperCaseInternal(String s) {
         if (isNullOrEmpty(s)) {
@@ -140,7 +144,7 @@ public final class StringUtil {
      * Creates a lowercase string from the given string.
      *
      * @param s the given string
-     * @return a lowercase string, or null/empty if the string is null/empty
+     * @return a lowercase string, or {@code null}/empty if the string is {@code null}/empty
      */
     public static String lowerCaseInternal(String s) {
         if (isNullOrEmpty(s)) {
@@ -234,7 +238,7 @@ public final class StringUtil {
      * Tokenizes a version string and returns the tokens with the following grouping:
      * (1) major version, eg "3"
      * (2) minor version, eg "8"
-     * (3) patch version prefixed with ".", if exists, otherwise null (eg ".0")
+     * (3) patch version prefixed with ".", if exists, otherwise {@code null} (eg ".0")
      * (4) patch version, eg "0"
      * (5) 1st -qualifier, if exists
      * (6) -SNAPSHOT qualifier, if exists
@@ -286,5 +290,67 @@ public final class StringUtil {
             propertyName = toLowerCase(firstChar) + propertyName.substring(1, propertyName.length());
         }
         return propertyName;
+    }
+
+    /**
+     * Trim whitespaces. This method (compared to {@link String#trim()}) doesn't limit to space character.
+     *
+     * @param input string to trim
+     * @return {@code null} if provided value was {@code null}, input with removed leading and trailing whitespaces
+     */
+    public static String trim(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replaceAll("^\\s+|\\s+$", "");
+    }
+
+    /**
+     * Splits String value with comma "," used as a separator. The whitespaces around values are trimmed.
+     *
+     * @param input string to split
+     * @return {@code null} if provided value was {@code null}, split parts otherwise (trimmed)
+     */
+    public static String[] splitByComma(String input, boolean allowEmpty) {
+        if (input == null) {
+            return null;
+        }
+        String[] splitWithEmptyValues = trim(input).split("\\s*,\\s*", -1);
+        return allowEmpty ? splitWithEmptyValues : subraction(splitWithEmptyValues, new String[] { "" });
+    }
+
+    /**
+     * Returns intersection of given String arrays. If either array is {@code null}, then {@code null} is returned.
+     *
+     * @param arr1 first array
+     * @param arr2 second array
+     * @return arr1 without values which are not present in arr2
+     */
+    public static String[] intersection(String[] arr1, String[] arr2) {
+        if (arr1 == null || arr2 == null) {
+            return null;
+        }
+        if (arr1.length == 0 || arr2.length == 0) {
+            return new String[0];
+        }
+        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        list.retainAll(Arrays.asList(arr2));
+        return list.toArray(new String[list.size()]);
+    }
+
+    /**
+     * Returns subtraction between given String arrays.
+     *
+     * @param arr1 first array
+     * @param arr2 second array
+     * @return arr1 without values which are not present in arr2
+     */
+    public static String[] subraction(String[] arr1, String[] arr2) {
+        if (arr1 == null || arr1.length == 0 || arr2 == null || arr2.length == 0) {
+            return arr1;
+        }
+        List<String> list = new ArrayList<String>(Arrays.asList(arr1));
+        list.removeAll(Arrays.asList(arr2));
+        return list.toArray(new String[list.size()]);
     }
 }

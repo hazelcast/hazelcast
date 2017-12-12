@@ -29,7 +29,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -61,7 +61,7 @@ public final class HazelcastInstanceFactory {
     }
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
-        Set<HazelcastInstance> result = new HashSet<HazelcastInstance>();
+        Set<HazelcastInstance> result = createHashSet(INSTANCE_MAP.size());
         for (InstanceFuture f : INSTANCE_MAP.values()) {
             result.add(f.get());
         }

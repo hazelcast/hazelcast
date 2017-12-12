@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -56,7 +57,7 @@ public abstract class AbstractHazelcastCachingProvider
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
     protected static final String INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE =
-            "Not available Hazelcast instance. "
+            "No available Hazelcast instance. "
             + "Please specify your Hazelcast configuration file path via "
             + "\"HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION\" property or "
             + "specify Hazelcast instance name via "
@@ -87,7 +88,7 @@ public abstract class AbstractHazelcastCachingProvider
         try {
             defaultURI = new URI("hazelcast");
         } catch (URISyntaxException e) {
-            throw new CacheException("Cannot create Default URI", e);
+            throw new CacheException("Cannot create default URI", e);
         }
     }
 
@@ -257,6 +258,6 @@ public abstract class AbstractHazelcastCachingProvider
             }
         }
 
-        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase()));
+        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase(StringUtil.LOCALE_INTERNAL)));
     }
 }

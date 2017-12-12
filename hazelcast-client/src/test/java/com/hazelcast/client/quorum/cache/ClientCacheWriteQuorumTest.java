@@ -91,11 +91,11 @@ public class ClientCacheWriteQuorumTest extends HazelcastTestSupport {
     }
 
     private static void initializeClients() {
-        hz1 = factory.newHazelcastClient(getClientConfig(cluster.h1));
-        hz2 = factory.newHazelcastClient(getClientConfig(cluster.h2));
-        hz3 = factory.newHazelcastClient(getClientConfig(cluster.h3));
-        hz4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
-        hz5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
+        hz1 = factory.newHazelcastClient(getClientConfig(cluster.instance[0]));
+        hz2 = factory.newHazelcastClient(getClientConfig(cluster.instance[1]));
+        hz3 = factory.newHazelcastClient(getClientConfig(cluster.instance[2]));
+        hz4 = factory.newHazelcastClient(getClientConfig(cluster.instance[3]));
+        hz5 = factory.newHazelcastClient(getClientConfig(cluster.instance[4]));
     }
 
     private static void initializeCaches() {

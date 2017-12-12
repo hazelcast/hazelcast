@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.5.0-8</client.protocol.version>
+        <client.protocol.version>1.6.0-3</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
@@ -62,23 +62,23 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
         <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.15</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
         <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
-        <maven.sonar.plugin.version>2.6</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.7.4.201502262128</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.19</maven.failsafe.plugin.version>
+        <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
+        <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
+        <maven.failsafe.plugin.version>2.20.1</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
 
         <!--- This is the last log4j2 version working with Java 6 -->
         <log4j2.version>2.3</log4j2.version>
-        <slf4j.api.version>1.6.6</slf4j.api.version>
+        <slf4j.api.version>1.7.25</slf4j.api.version>
 
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
@@ -168,6 +168,7 @@
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <includes>
+                    <include>**/*.so</include>
                     <include>**/*.license</include>
                     <include>**/*.key</include>
                     <include>**/*.ftl</include>
@@ -255,6 +256,7 @@
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
                         <exclude>**/client/**Request.*</exclude>
+                        <exclude>**/mapreduce/**.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -269,12 +271,6 @@
                         <version>${maven.surefire.plugin.version}-buffered</version>
                     </dependency>
                 </dependencies>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>${maven.sonar.plugin.version}</version>
             </plugin>
 
             <plugin>
@@ -312,6 +308,7 @@
 
     <profiles>
         <profile>
+            <!-- used by the PR builder -->
             <id>parallelTest</id>
             <build>
                 <plugins>
@@ -339,6 +336,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
+                                        -Dlog4j.configurationFile=log4j2-info.xml
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -346,6 +344,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
+                                        <exclude>**/mapreduce/**.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
@@ -375,6 +374,7 @@
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
+                                        -Dlog4j.configurationFile=log4j2-info.xml
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -382,6 +382,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
+                                        <exclude>**/mapreduce/**.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
@@ -427,6 +428,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -569,6 +571,7 @@
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
                                 <exclude>**/client/**Request.*</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                         </configuration>
                         <executions>
@@ -593,6 +596,7 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -651,6 +655,11 @@
                         </dependencies>
                     </plugin>
 
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
+                        <version>${maven.sonar.plugin.version}</version>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -730,6 +739,7 @@
                                 <include>**/ExecutorConfigTest*.java</include>
                                 <include>**/TopicTest*.java</include>
                                 <include>**/LockTest*.java</include>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </includes>
 
                             <groups>
@@ -992,6 +1002,7 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -1065,6 +1076,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -1140,6 +1152,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -1197,6 +1210,7 @@
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -1225,13 +1239,14 @@
 
     <repositories>
         <repository>
+            <id>backup-repository</id>
+            <name>Maven Central (Backup)</name>
+            <url>http://repo2.maven.org/maven2/</url>
+        </repository>
+        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-            <id>backup-repo</id>
-            <url>http://repo2.maven.org/maven2/</url>
         </repository>
         <repository>
             <id>release-repository</id>
@@ -1241,7 +1256,7 @@
     </repositories>
 
     <pluginRepositories>
-        <!-- JitPack repository is needed to fetch patch surefire-common plugin -->
+        <!-- JitPack repository is needed to fetch patched surefire-common plugin -->
         <pluginRepository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
@@ -1338,5 +1353,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

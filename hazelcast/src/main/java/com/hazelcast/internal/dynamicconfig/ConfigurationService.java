@@ -16,11 +16,14 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -39,269 +42,333 @@ import java.util.Map;
 
 /**
  * Dynamic configurations.
- * Register dynamic configurations in a local member and also can broadcast configuration to all cluster members.
- *
- * Implementations should do pattern matching on its own.
- *
+ * <p>
+ * Registers dynamic configurations in a local member and also broadcasts configuration to all cluster members.
+ * <p>
+ * <b>Note:</b> Implementations should do pattern matching on their own.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface ConfigurationService {
 
     /**
-     * Register a dynamic configurations to all cluster members.
+     * Registers a dynamic configurations to all cluster members.
      *
-     * @param config Configuration to register
+     * @param config configuration to register
      * @throws com.hazelcast.config.ConfigurationException when static configuration already contains the same config
-     * with the same name
+     *                                                     with the same name
      */
     void broadcastConfig(IdentifiedDataSerializable config);
 
     /**
-     * Find existing Multimap Config
+     * Finds existing Multimap config.
      *
-     * @param name
-     * @return Multimap Config or null when requested MultiMap configuration does not exist
+     * @param name name of the config
+     * @return Multimap config or {@code null} when requested MultiMap configuration does not exist
      */
     MultiMapConfig findMultiMapConfig(String name);
 
     /**
-     * Find existing Map Config
+     * Finds existing Map config.
      *
-     * @param name
-     * @return Map Config or null when requested Map configuration does not exist
+     * @param name name of the config
+     * @return Map config or {@code null} when requested Map configuration does not exist
      */
     MapConfig findMapConfig(String name);
 
-
     /**
-     * Find existing Topic Config
+     * Finds existing Topic config.
      *
-     * @param name
-     * @return Topic Config or null when requested Topic configuration does not exist
+     * @param name name of the config
+     * @return Topic config or {@code null} when requested Topic configuration does not exist
      */
     TopicConfig findTopicConfig(String name);
 
     /**
-     * Find existing Cardinality Estimator Config
+     * Finds existing Cardinality Estimator config.
      *
-     * @param name
-     * @return Cardinality Estimator Config or null when requested Cardinality Estimator configuration does not exist
+     * @param name name of the config
+     * @return Cardinality Estimator config or {@code null} when requested Cardinality Estimator configuration does not exist
      */
     CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name);
 
     /**
-     * Find existing Executor Config
+     * Finds existing Executor config.
      *
-     * @param name
-     * @return Executor Config or null when requested Executor configuration does not exist
+     * @param name name of the config
+     * @return Executor config or {@code null} when requested Executor configuration does not exist
      */
     ExecutorConfig findExecutorConfig(String name);
 
     /**
-     * Find existing Scheduled Executor Config
+     * Finds existing Scheduled Executor config.
      *
-     * @param name
-     * @return Scheduled Executor Config or null when requested Scheduled Executor configuration does not exist
+     * @param name name of the config
+     * @return Scheduled Executor config or {@code null} when requested Scheduled Executor configuration does not exist
      */
     ScheduledExecutorConfig findScheduledExecutorConfig(String name);
 
     /**
-     * Find existing Durable Executor Config
+     * Finds existing Durable Executor config.
      *
-     * @param name
-     * @return Durable Executor Config or null when requested Durable Executor configuration does not exist
+     * @param name name of the config
+     * @return Durable Executor config or {@code null} when requested Durable Executor configuration does not exist
      */
     DurableExecutorConfig findDurableExecutorConfig(String name);
 
     /**
-     * Find existing Semaphore Config
+     * Finds existing Semaphore config.
      *
-     * @param name
-     * @return Semaphore Config or null when requested Semaphore configuration does not exist
+     * @param name name of the config
+     * @return Semaphore config or {@code null} when requested Semaphore configuration does not exist
      */
     SemaphoreConfig findSemaphoreConfig(String name);
 
     /**
-     * Find existing Ringbuffer Config
+     * Finds existing Ringbuffer config.
      *
-     * @param name
-     * @return Ringbuffer Config or null when requested Ringbuffer configuration does not exist
+     * @param name name of the config
+     * @return Ringbuffer config or {@code null} when requested Ringbuffer configuration does not exist
      */
     RingbufferConfig findRingbufferConfig(String name);
 
     /**
-     * Find existing Lock Config
+     * Finds existing AtomicLong config.
      *
-     * @param name
-     * @return Lock Config or null when requested Lock configuration does not exist
+     * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
+     */
+    AtomicLongConfig findAtomicLongConfig(String name);
+
+    /**
+     * Finds existing AtomicReference config.
+     *
+     * @return AtomicReference Config or {@code null} when requested AtomicReference configuration does not exist
+     */
+    AtomicReferenceConfig findAtomicReferenceConfig(String name);
+
+    /**
+     * Finds existing Lock config.
+     *
+     * @param name name of the config
+     * @return Lock config or {@code null} when requested Lock configuration does not exist
      */
     LockConfig findLockConfig(String name);
 
     /**
-     * Find existing List Config
+     * Finds existing List config.
      *
-     * @param name
-     * @return MaListp Config or null when requested List configuration does not exist
+     * @param name name of the config
+     * @return List config or {@code null} when requested List configuration does not exist
      */
     ListConfig findListConfig(String name);
 
     /**
-     * Find existing Queue Config
+     * Finds existing Queue config.
      *
-     * @param name
-     * @return Queue Config or null when requested Queue configuration does not exist
+     * @param name name of the config
+     * @return Queue config or {@code null} when requested Queue configuration does not exist
      */
     QueueConfig findQueueConfig(String name);
 
     /**
-     * Find existing Set Config
+     * Finds existing Set config.
      *
-     * @param name
-     * @return Set Config or null when requested Set configuration does not exist
+     * @param name name of the config
+     * @return Set config or {@code null} when requested Set configuration does not exist
      */
     SetConfig findSetConfig(String name);
 
     /**
-     * Find existing Replicated Map Config
+     * Finds existing ReplicatedMap config.
      *
-     * @param name
-     * @return Replicated Map Config or null when requested Replicated Map configuration does not exist
+     * @param name name of the config
+     * @return ReplicatedMap config or {@code null} when requested ReplicatedMap configuration does not exist
      */
     ReplicatedMapConfig findReplicatedMapConfig(String name);
 
     /**
-     * Find existing Reliable Topic Config
+     * Finds existing Reliable Topic config.
      *
-     * @param name
-     * @return Reliable Topic Config or null when requested Reliable Topic configuration does not exist
+     * @param name name of the config
+     * @return Reliable Topic config or {@code null} when requested Reliable Topic configuration does not exist
      */
     ReliableTopicConfig findReliableTopicConfig(String name);
 
     /**
-     * Find existing Cache Config
+     * Finds existing Cache config.
      *
-     * @param name
-     * @return Cache Config or null when requested Cache configuration does not exist
+     * @param name name of the config
+     * @return Cache config or {@code null} when requested Cache configuration does not exist
      */
     CacheSimpleConfig findCacheSimpleConfig(String name);
 
     /**
-     * Return all registered map configurations.
+     * Finds existing CacheEventJournal config.
+     *
+     * @param name name of the config
+     * @return CacheEventJournal config or {@code null} when requested CacheEventJournal configuration does not exist
+     */
+    EventJournalConfig findCacheEventJournalConfig(String name);
+
+    /**
+     * Finds existing MapEventJournal config.
+     *
+     * @param name name of the config
+     * @return MapEventJournal config or {@code null} when requested MapEventJournal configuration does not exist
+     */
+    EventJournalConfig findMapEventJournalConfig(String name);
+
+    /**
+     * Finds existing ReliableIdGeneratorConfig config.
+     *
+     * @param name name of the config
+     * @return ReliableIdGenerator config or {@code null} when requested ReliableIdGenerator configuration does not exist
+     */
+    ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name);
+
+    /**
+     * Returns all registered map configurations.
      *
      * @return registered map configurations
      */
     Map<String, MapConfig> getMapConfigs();
 
     /**
-     * Return all registered lock configurations.
+     * Returns all registered lock configurations.
      *
      * @return registered lock configurations
      */
     Map<String, LockConfig> getLockConfigs();
 
     /**
-     * Return all registered queue configurations.
+     * Returns all registered queue configurations.
      *
      * @return registered queue configurations
      */
     Map<String, QueueConfig> getQueueConfigs();
 
     /**
-     * Return all registered list configurations.
+     * Returns all registered list configurations.
      *
      * @return registered list configurations
      */
     Map<String, ListConfig> getListConfigs();
 
     /**
-     * Return all registered set configurations.
+     * Returns all registered set configurations.
      *
      * @return registered set configurations
      */
     Map<String, SetConfig> getSetConfigs();
 
     /**
-     * Return all registered multimap configurations.
+     * Returns all registered multimap configurations.
      *
      * @return registered multimap configurations
      */
     Map<String, MultiMapConfig> getMultiMapConfigs();
 
     /**
-     * Return all registered replicated map configurations.
+     * Returns all registered replicated map configurations.
      *
      * @return registered replicated map configurations
      */
     Map<String, ReplicatedMapConfig> getReplicatedMapConfigs();
 
     /**
-     * Return all registered ringbuffer configurations.
+     * Returns all registered ringbuffer configurations.
      *
      * @return registered ringbuffer configurations
      */
     Map<String, RingbufferConfig> getRingbufferConfigs();
 
     /**
-     * Return all registered topic configurations.
+     * Returns all registered AtomicLong configurations.
+     *
+     * @return registered AtomicLong configurations
+     */
+    Map<String, AtomicLongConfig> getAtomicLongConfigs();
+
+    /**
+     * Returns all registered AtomicReference configurations.
+     *
+     * @return registered AtomicReference configurations
+     */
+    Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs();
+
+    /**
+     * Returns all registered topic configurations.
      *
      * @return registered topic configurations
      */
     Map<String, TopicConfig> getTopicConfigs();
 
     /**
-     * Return all registered reliable topic configurations.
+     * Returns all registered reliable topic configurations.
      *
      * @return registered reliable topic configurations
      */
     Map<String, ReliableTopicConfig> getReliableTopicConfigs();
 
     /**
-     * Return all registered executor configurations.
+     * Returns all registered executor configurations.
      *
      * @return registered executor configurations
      */
     Map<String, ExecutorConfig> getExecutorConfigs();
 
     /**
-     * Return all registered durable executor configurations.
+     * Returns all registered durable executor configurations.
      *
      * @return registered durable executor configurations
      */
     Map<String, DurableExecutorConfig> getDurableExecutorConfigs();
 
     /**
-     * Return all registered scheduled executor configurations.
+     * Returns all registered scheduled executor configurations.
      *
      * @return registered scheduled executor configurations
      */
     Map<String, ScheduledExecutorConfig> getScheduledExecutorConfigs();
 
     /**
-     * Return all registered cardinality estimator configurations.
+     * Returns all registered cardinality estimator configurations.
      *
      * @return registered cardinality estimator configurations
      */
     Map<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs();
 
     /**
-     * Return all registered semaphore configurations.
+     * Returns all registered semaphore configurations.
      *
      * @return registered semaphore configurations
      */
     Map<String, SemaphoreConfig> getSemaphoreConfigs();
 
     /**
-     * Return all registered cache configurations.
+     * Returns all registered cache configurations.
      *
      * @return registered cache configurations
      */
     Map<String, CacheSimpleConfig> getCacheSimpleConfigs();
 
-    EventJournalConfig findCacheEventJournalConfig(String baseName);
-
+    /**
+     * Returns all registered CacheEventJournal configurations.
+     *
+     * @return registered CacheEventJournal configurations
+     */
     Map<String, EventJournalConfig> getCacheEventJournalConfigs();
 
-    EventJournalConfig findMapEventJournalConfig(String baseName);
-
+    /**
+     * Returns all registered MapEventJournal configurations.
+     *
+     * @return registered MapEventJournal configurations
+     */
     Map<String, EventJournalConfig> getMapEventJournalConfigs();
+
+    /**
+     * Returns all registered ReliableIdGenerator configurations.
+     *
+     * @return registered ReliableIdGenerator configurations
+     */
+    Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs();
 }

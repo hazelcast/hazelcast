@@ -957,7 +957,7 @@ public class MapConfig implements IdentifiedDataSerializable {
 
     @Override
     public final int hashCode() {
-        int result = name.hashCode();
+        int result = (name != null ? name.hashCode() : 0);
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
         result = 31 * result + timeToLiveSeconds;
@@ -973,7 +973,6 @@ public class MapConfig implements IdentifiedDataSerializable {
         result = 31 * result + inMemoryFormat.hashCode();
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + getEntryListenerConfigs().hashCode();
-        result = 31 * result + getPartitioningStrategyConfig().hashCode();
         result = 31 * result + getMapIndexConfigs().hashCode();
         result = 31 * result + getMapAttributeConfigs().hashCode();
         result = 31 * result + getQueryCacheConfigs().hashCode();

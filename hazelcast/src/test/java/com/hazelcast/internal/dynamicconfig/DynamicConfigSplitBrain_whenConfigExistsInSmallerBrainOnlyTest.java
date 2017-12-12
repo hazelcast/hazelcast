@@ -21,7 +21,7 @@ public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainOnlyTest exte
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        HazelcastInstance instanceInSmallerBrain = firstBrain[0];
+        HazelcastInstance instanceInSmallerBrain = secondBrain[0];
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT);
         mapConfig.setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);

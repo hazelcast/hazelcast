@@ -51,7 +51,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         super.innerBeforeRun();
 
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
-            throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
+            throw new TransactionException("Cannot acquire lock UUID: " + ownerUuid + ", threadId: " + threadId);
         }
     }
 

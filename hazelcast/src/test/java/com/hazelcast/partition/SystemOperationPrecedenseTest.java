@@ -97,9 +97,9 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         private final CountDownLatch latch;
 
-        public UrgentPartitionAwareOperation(CountDownLatch completedLatch, int partitionId) {
-            setPartitionId(partitionId);
+        UrgentPartitionAwareOperation(CountDownLatch completedLatch, int partitionId) {
             this.latch = completedLatch;
+            setPartitionId(partitionId);
         }
 
         @Override
@@ -110,7 +110,7 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
     public static class NormalPartitionAwareOperation extends Operation implements PartitionAwareOperation {
 
-        public NormalPartitionAwareOperation(int partitionId) {
+        NormalPartitionAwareOperation(int partitionId) {
             setPartitionId(partitionId);
         }
 
@@ -124,7 +124,7 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         private final CountDownLatch latch;
 
-        public UrgentPartitionUnawareOperation(CountDownLatch completedLatch) {
+        UrgentPartitionUnawareOperation(CountDownLatch completedLatch) {
             this.latch = completedLatch;
         }
 

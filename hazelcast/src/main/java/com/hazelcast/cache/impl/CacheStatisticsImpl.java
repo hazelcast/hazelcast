@@ -428,7 +428,7 @@ public class CacheStatisticsImpl
 
     @Override
     public NearCacheStats getNearCacheStatistics() {
-        throw new UnsupportedOperationException("Near-Cache is not supported at server");
+        throw new UnsupportedOperationException("Near Cache is not supported at server");
     }
 
     @Override

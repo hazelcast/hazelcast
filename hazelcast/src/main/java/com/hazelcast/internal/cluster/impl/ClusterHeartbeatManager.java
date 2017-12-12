@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -23,6 +24,7 @@ import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.DeadlineClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector;
+import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
@@ -39,18 +41,22 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ICMPHelper;
 
+import java.io.IOException;
 import java.net.ConnectException;
-import java.net.NetworkInterface;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.logging.Level;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * ClusterHeartbeatManager manages the heartbeat sending and receiving
@@ -61,17 +67,13 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * ping packets (an ICMP ping or an echo packet depending on the environment and settings).
  * <p/>
  * If it detects a member is not live anymore, that member is kicked out of cluster.
- * <p/>
- * Another job of ClusterHeartbeatManager is to send (if not master node) and track (if master)
- * master-confirmation requests. Each slave node sends a master-confirmation periodically and
- * master node stores them with timestamps. A slave node which does not send master-confirmation in
- * a timeout will be kicked out of the cluster by master node.
  */
 public class ClusterHeartbeatManager {
 
     private static final long CLOCK_JUMP_THRESHOLD = MINUTES.toMillis(2);
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
     private static final int MAX_PING_RETRY_COUNT = 5;
+    private static final long MIN_ICMP_INTERVAL_MILLIS = SECONDS.toMillis(1);
 
     private final ILogger logger;
     private final Lock clusterServiceLock;
@@ -81,20 +83,23 @@ public class ClusterHeartbeatManager {
     private final ClusterClockImpl clusterClock;
 
     private final ClusterFailureDetector heartbeatFailureDetector;
-    private final ClusterFailureDetector masterConfirmationFailureDetector;
+    private final PingFailureDetector icmpFailureDetector;
 
     private final long maxNoHeartbeatMillis;
-    private final long maxNoMasterConfirmationMillis;
     private final long heartbeatIntervalMillis;
-    private final long pingIntervalMillis;
+    private final long legacyIcmpCheckThresholdMillis;
     private final boolean icmpEnabled;
+    private final boolean icmpParallelMode;
     private final int icmpTtl;
     private final int icmpTimeoutMillis;
+    private final int icmpIntervalMillis;
+    private final int icmpMaxAttempts;
 
     @Probe(name = "lastHeartbeat")
     private volatile long lastHeartbeat;
     private volatile long lastClusterTimeDiff;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     ClusterHeartbeatManager(Node node, ClusterServiceImpl clusterService, Lock lock) {
         this.node = node;
         this.clusterService = clusterService;
@@ -105,17 +110,46 @@ public class ClusterHeartbeatManager {
 
         HazelcastProperties hazelcastProperties = node.getProperties();
         maxNoHeartbeatMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
-        maxNoMasterConfirmationMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
 
         heartbeatIntervalMillis = getHeartbeatInterval(hazelcastProperties);
-        pingIntervalMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
+        legacyIcmpCheckThresholdMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
-        icmpEnabled = hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED);
-        icmpTtl = hazelcastProperties.getInteger(GroupProperty.ICMP_TTL);
-        icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
+        this.icmpTtl = hazelcastProperties.getInteger(GroupProperty.ICMP_TTL);
+        this.icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
+        this.icmpIntervalMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_INTERVAL);
+        this.icmpMaxAttempts = hazelcastProperties.getInteger(GroupProperty.ICMP_MAX_ATTEMPTS);
+        this.icmpEnabled = hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED);
+        this.icmpParallelMode = icmpEnabled && hazelcastProperties.getBoolean(GroupProperty.ICMP_PARALLEL_MODE);
+
+        if (icmpTimeoutMillis > icmpIntervalMillis) {
+            throw new IllegalStateException("ICMP timeout is set to a value greater than the ICMP interval, "
+                    + "this is not allowed.");
+        }
+
+        if (icmpIntervalMillis < MIN_ICMP_INTERVAL_MILLIS) {
+            throw new IllegalStateException("ICMP interval is set to a value less than the min allowed, "
+                    + MIN_ICMP_INTERVAL_MILLIS + "ms");
+        }
+
+        boolean icmpEchoFailFast = hazelcastProperties.getBoolean(GroupProperty.ICMP_ECHO_FAIL_FAST);
+        if (icmpParallelMode) {
+            if (icmpEchoFailFast) {
+                logger.info("Checking that ICMP failure-detector is permitted. Attempting to create a raw-socket using JNI.");
+
+                if (!ICMPHelper.isRawSocketPermitted()) {
+                    throw new IllegalStateException("ICMP failure-detector can't be used in this environment. "
+                            + "Check Hazelcast Documentation Chapter on the Ping Failure Detector for supported platforms "
+                            + "and how to enable this capability for your operating system");
+                }
+                logger.info("ICMP failure-detector is supported, enabling.");
+            }
+
+            this.icmpFailureDetector = new PingFailureDetector(icmpMaxAttempts);
+        } else {
+            this.icmpFailureDetector = null;
+        }
 
         heartbeatFailureDetector = createHeartbeatFailureDetector(hazelcastProperties);
-        masterConfirmationFailureDetector = new DeadlineClusterFailureDetector(maxNoMasterConfirmationMillis);
     }
 
     private ClusterFailureDetector createHeartbeatFailureDetector(HazelcastProperties properties) {
@@ -165,6 +199,10 @@ public class ClusterHeartbeatManager {
             }
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
+        if (icmpParallelMode) {
+            startPeriodicPinger();
+        }
+
         long masterConfirmationInterval = hazelcastProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
         masterConfirmationInterval = (masterConfirmationInterval > 0 ? masterConfirmationInterval : 1);
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
@@ -211,8 +249,8 @@ public class ClusterHeartbeatManager {
                     return;
                 }
 
-                logger.warning("Local uuid mismatch on received heartbeat. local uuid: " + clusterService.getThisUuid()
-                        + " received uuid: " + receiverUuid + " with " + senderMembersViewMetadata);
+                logger.warning("Local UUID mismatch on received heartbeat. local UUID: " + clusterService.getThisUuid()
+                        + " received UUID: " + receiverUuid + " with " + senderMembersViewMetadata);
             }
 
             onInvalidHeartbeat(senderMembersViewMetadata);
@@ -354,31 +392,6 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Accepts the master confirmation message sent from cluster members to the master. The timestamp must be
-     * related to the cluster clock, not the local clock. If the duration between {@code timestamp} and the current
-     * cluster clock time is more than {@link GroupProperty#MAX_NO_MASTER_CONFIRMATION_SECONDS}/2 then the confirmation
-     * is ignored.
-     *
-     * @param member    the member sending the confirmation to the master node
-     * @param timestamp the cluster timestamp when the confirmation was made
-     */
-    void acceptMasterConfirmation(MemberImpl member, long timestamp) {
-        if (member != null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("MasterConfirmation has been received from " + member);
-            }
-            long clusterTime = clusterClock.getClusterTime();
-            if (clusterTime - timestamp > maxNoMasterConfirmationMillis / 2) {
-                logger.warning(
-                        format("Ignoring master confirmation from %s, since it is expired (now: %s, timestamp: %s)",
-                                member, timeToString(clusterTime), timeToString(timestamp)));
-                return;
-            }
-            masterConfirmationFailureDetector.heartbeat(member, clusterTime);
-        }
-    }
-
-    /**
      * Send heartbeats and calculate clock drift. This method is expected to be called periodically because it calculates
      * the clock drift based on the expected and actual invocation period.
      */
@@ -399,17 +412,13 @@ public class ClusterHeartbeatManager {
 
     /**
      * Checks the elapsed time from the last local heartbeat and compares it to the expected {@code intervalMillis}.
-     * The method will correct a number of clocks and timestamps based on this difference :
+     * The method will correct a number of clocks and timestamps based on this difference:
      * <ul>
      * <li>
      * set the local cluster time diff if the absolute diff is larger than {@link #CLOCK_JUMP_THRESHOLD} and
      * the change in diff from the previous and current value is less than {@link #CLOCK_JUMP_THRESHOLD}.
      * In the case that the diff change is larger than the threshold, we assume that the current clock diff is not
      * from any local cause but that this node received a heartbeat message from the master, setting the cluster clock diff.
-     * </li>
-     * <li>
-     * reset the master confirmations if the absolute diff is greater or equal to
-     * {@link GroupProperty#MAX_NO_MASTER_CONFIRMATION_SECONDS}/2
      * </li>
      * <li>
      * Reset the heartbeat timestamps if the absolute diff is greater or equal to
@@ -440,11 +449,6 @@ public class ClusterHeartbeatManager {
                 }
             }
 
-            if (absoluteClockJump >= maxNoMasterConfirmationMillis / 2) {
-                logger.warning(format("Resetting master confirmation timestamps because of huge system clock jump!"
-                        + " Clock-Jump: %d ms, Master-Confirmation-Timeout: %d ms", clockJump, maxNoMasterConfirmationMillis));
-                resetMemberMasterConfirmations();
-            }
             if (absoluteClockJump >= maxNoHeartbeatMillis / 2) {
                 logger.warning(format("Resetting heartbeat timestamps because of huge system clock jump!"
                         + " Clock-Jump: %d ms, Heartbeat-Timeout: %d ms", clockJump, maxNoHeartbeatMillis));
@@ -457,8 +461,8 @@ public class ClusterHeartbeatManager {
 
     /**
      * Sends heartbeat to each of the cluster members.
-     * Checks whether a member has failed to send a heartbeat or master-confirmation in time
-     * (see {@link #maxNoHeartbeatMillis} and {@link #maxNoMasterConfirmationMillis})
+     * Checks whether a member has failed to send a heartbeat in time
+     * (see {@link #maxNoHeartbeatMillis})
      * and removes that member from the cluster.
      * <p></p>
      * This method is only called on the master member.
@@ -472,10 +476,6 @@ public class ClusterHeartbeatManager {
                 try {
                     logIfConnectionToEndpointIsMissing(now, member);
                     if (suspectMemberIfNotHeartBeating(now, member)) {
-                        continue;
-                    }
-
-                    if (removeMemberIfMasterConfirmationExpired(now, member)) {
                         continue;
                     }
 
@@ -496,7 +496,7 @@ public class ClusterHeartbeatManager {
      * @param member the member which needs to be checked
      * @return if the member has been removed
      */
-    private boolean suspectMemberIfNotHeartBeating(long now, MemberImpl member) {
+    private boolean suspectMemberIfNotHeartBeating(long now, Member member) {
         if (clusterService.getMembershipManager().isMemberSuspected(member.getAddress())) {
             return true;
         }
@@ -520,36 +520,6 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Removes the {@code member} if it has not sent any master confirmation in
-     * {@link GroupProperty#MAX_NO_MASTER_CONFIRMATION_SECONDS}.
-     *
-     * @param now    the current cluster clock time
-     * @param member the member which needs to be checked
-     * @return if the member has been removed
-     */
-    private boolean removeMemberIfMasterConfirmationExpired(long now, MemberImpl member) {
-        if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
-            return false;
-        }
-
-        if (!masterConfirmationFailureDetector.isAlive(member, now)) {
-            long lastConfirmation = masterConfirmationFailureDetector.lastHeartbeat(member);
-            String reason = format("Removing %s because it has not sent any master confirmation for %d ms. "
-                            + " Clock time: %s."
-                            + " Cluster time: %s."
-                            + " Last confirmation time was %s.",
-                    member, maxNoMasterConfirmationMillis,
-                    timeToString(Clock.currentTimeMillis()),
-                    timeToString(now),
-                    timeToString(lastConfirmation));
-            logger.warning(reason);
-            clusterService.suspectMember(member, reason, true);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Sends heartbeat to each of the cluster members.
      * Checks whether the master member has failed to send a heartbeat (see {@link #maxNoHeartbeatMillis})
      * and removes that master member from cluster, if it fails on heartbeat.
@@ -558,26 +528,24 @@ public class ClusterHeartbeatManager {
      */
     private void heartbeatWhenSlave(long now) {
         MembershipManager membershipManager = clusterService.getMembershipManager();
-        Collection<MemberImpl> members = clusterService.getMemberImpls();
+        Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
 
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                try {
-                    logIfConnectionToEndpointIsMissing(now, member);
+        for (Member member : members) {
+            try {
+                logIfConnectionToEndpointIsMissing(now, member);
 
-                    if (suspectMemberIfNotHeartBeating(now, member)) {
-                        continue;
-                    }
-
-                    if (membershipManager.isMemberSuspected(member.getAddress())) {
-                        continue;
-                    }
-
-                    pingMemberIfRequired(now, member);
-                    sendHeartbeat(member);
-                } catch (Throwable e) {
-                    logger.severe(e);
+                if (suspectMemberIfNotHeartBeating(now, member)) {
+                    continue;
                 }
+
+                if (membershipManager.isMemberSuspected(member.getAddress())) {
+                    continue;
+                }
+
+                pingMemberIfRequired(now, member);
+                sendHeartbeat(member);
+            } catch (Throwable e) {
+                logger.severe(e);
             }
         }
     }
@@ -590,49 +558,41 @@ public class ClusterHeartbeatManager {
      * Pings the {@code member} if {@link GroupProperty#ICMP_ENABLED} is true and more than {@link #HEART_BEAT_INTERVAL_FACTOR}
      * heartbeats have passed.
      */
-    private void pingMemberIfRequired(long now, MemberImpl member) {
-        if (!icmpEnabled) {
+    private void pingMemberIfRequired(long now, Member member) {
+        if (!icmpEnabled || icmpParallelMode) {
             return;
         }
+
         long lastHeartbeat = heartbeatFailureDetector.lastHeartbeat(member);
-        if ((now - lastHeartbeat) >= pingIntervalMillis) {
-            ping(member);
+        if ((now - lastHeartbeat) >= legacyIcmpCheckThresholdMillis) {
+            runPingTask(member);
         }
     }
 
+    private void startPeriodicPinger() {
+        nodeEngine.getExecutionService().scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
+            public void run() {
+                Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
+
+                for (Member member : members) {
+                    try {
+                        runPingTask(member);
+                    } catch (Throwable e) {
+                        logger.severe(e);
+                    }
+                }
+            }
+        }, icmpIntervalMillis, icmpIntervalMillis, TimeUnit.MILLISECONDS);
+    }
+
     /**
-     * Tries to ping the {@code member} and removes the member if it is unreachable. The actual method of determining
-     * reachability is defined by the privileges and does not need to be an ICMP packet
-     * (see {@link java.net.InetAddress#isReachable(NetworkInterface, int, int)}).
+     * Tries to ping the {@code member} and removes the member if it is unreachable.
      *
      * @param member the member for which we need to determine reachability
      */
-    private void ping(final Member member) {
-        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-            public void run() {
-                try {
-                    Address address = member.getAddress();
-                    logger.warning(format("%s will ping %s", node.getThisAddress(), address));
-                    for (int i = 0; i < MAX_PING_RETRY_COUNT; i++) {
-                        try {
-                            if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeoutMillis)) {
-                                logger.info(format("%s pinged %s successfully", node.getThisAddress(), address));
-                                return;
-                            }
-                        } catch (ConnectException ignored) {
-                            // no route to host, means we cannot connect anymore
-                            EmptyStatement.ignore(ignored);
-                        }
-                    }
-                    // host not reachable
-                    String reason = format("%s could not ping %s", node.getThisAddress(), address);
-                    logger.warning(reason);
-                    clusterService.suspectMember(member, reason, true);
-                } catch (Throwable ignored) {
-                    EmptyStatement.ignore(ignored);
-                }
-            }
-        });
+    private void runPingTask(final Member member) {
+        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR,
+                icmpParallelMode ? new PeriodicPingTask(member) : new PingTask(member));
     }
 
     /** Send a {@link HeartbeatOp} to the {@code target}
@@ -658,7 +618,7 @@ public class ClusterHeartbeatManager {
      * Logs a warning if the {@code member} hasn't sent a heartbeat in {@link #HEART_BEAT_INTERVAL_FACTOR} heartbeat
      * intervals and there is no live connection to the member
      */
-    private void logIfConnectionToEndpointIsMissing(long now, MemberImpl member) {
+    private void logIfConnectionToEndpointIsMissing(long now, Member member) {
         long heartbeatTime = heartbeatFailureDetector.lastHeartbeat(member);
         if ((now - heartbeatTime) >= heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
             Connection conn = node.connectionManager.getOrConnect(member.getAddress());
@@ -671,9 +631,13 @@ public class ClusterHeartbeatManager {
     /**
      * Sends a {@link MasterConfirmationOp} to the master if this node is joined, it is not in the
      * {@link NodeState#SHUT_DOWN} state and is not the master node.
+     * This method is here only for 3.9 compatibility
+     * @deprecated since 3.10
      */
+    @Deprecated
     public void sendMasterConfirmation() {
-        if (!clusterService.isJoined() || node.getState() == NodeState.SHUT_DOWN || clusterService.isMaster()) {
+        if (!clusterService.isJoined() || node.getState() == NodeState.SHUT_DOWN || clusterService.isMaster()
+                || clusterService.getClusterVersion().isGreaterThan(V3_9)) {
             return;
         }
         Address masterAddress = clusterService.getMasterAddress();
@@ -705,17 +669,6 @@ public class ClusterHeartbeatManager {
         nodeEngine.getOperationService().send(op, masterAddress);
     }
 
-    /**
-     * Reset all master confirmations to the current cluster time. Called just before this node becomes the master and when
-     * system clock jump is detected.
-     */
-    void resetMemberMasterConfirmations() {
-        long now = clusterClock.getClusterTime();
-        for (MemberImpl member : clusterService.getMemberImpls()) {
-            masterConfirmationFailureDetector.heartbeat(member, now);
-        }
-    }
-
     /** Reset all heartbeats to the current cluster time. Called when system clock jump is detected. */
     private void resetHeartbeats() {
         long now = clusterClock.getClusterTime();
@@ -724,14 +677,93 @@ public class ClusterHeartbeatManager {
         }
     }
 
-    /** Remove the {@code member}'s master confirmation and heartbeat timestamps */
+    /** Remove the {@code member}'s heartbeat timestamps */
     void removeMember(MemberImpl member) {
-        masterConfirmationFailureDetector.remove(member);
         heartbeatFailureDetector.remove(member);
+        if (icmpParallelMode) {
+            icmpFailureDetector.remove(member);
+        }
     }
 
     void reset() {
-        masterConfirmationFailureDetector.reset();
         heartbeatFailureDetector.reset();
+        if (icmpParallelMode) {
+            icmpFailureDetector.reset();
+        }
     }
+
+    private class PingTask
+            implements Runnable {
+
+        final Member member;
+
+        PingTask(Member member) {
+            this.member = member;
+        }
+
+        public void run() {
+            try {
+                Address address = member.getAddress();
+                logger.warning(format("%s will ping %s", node.getThisAddress(), address));
+                for (int i = 0; i < MAX_PING_RETRY_COUNT; i++) {
+                    if (doPing(address, Level.INFO)) {
+                        return;
+                    }
+                }
+                // host not reachable
+                String reason = format("%s could not ping %s", node.getThisAddress(), address);
+                logger.warning(reason);
+                clusterService.suspectMember(member, reason, true);
+            } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+        }
+
+        boolean doPing(Address address, Level level)
+                throws IOException {
+            try {
+                if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeoutMillis)) {
+                    String msg = format("%s pinged %s successfully", node.getThisAddress(), address);
+                    logger.log(level, msg);
+                    return true;
+                }
+            } catch (ConnectException ignored) {
+                // no route to host, means we cannot connect anymore
+                EmptyStatement.ignore(ignored);
+            }
+            return false;
+        }
+    }
+
+    private class PeriodicPingTask
+            extends PingTask {
+
+        PeriodicPingTask(Member member) {
+            super(member);
+        }
+
+        public void run() {
+            try {
+                Address address = member.getAddress();
+                logger.fine(format("%s will ping %s", node.getThisAddress(), address));
+                if (doPing(address, Level.FINE)) {
+                    icmpFailureDetector.heartbeat(member);
+                    return;
+                }
+
+                icmpFailureDetector.logAttempt(member);
+
+                // host not reachable
+                String reason = format("%s could not ping %s", node.getThisAddress(), address);
+                logger.warning(reason);
+
+                if (!icmpFailureDetector.isAlive(member)) {
+                    clusterService.suspectMember(member, reason, true);
+                }
+            } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+        }
+    }
+
 }

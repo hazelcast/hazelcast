@@ -29,14 +29,6 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapConfigTest {
 
-    /**
-     * Test method for {@link ReplicatedMapConfigReadOnly#setStatisticsEnabled(boolean)}
-     */
-    @Test(expected = java.lang.UnsupportedOperationException.class)
-    public void testReadOnlyReplicatedMapConfigSetStatisticsEnabled() {
-        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig()).setStatisticsEnabled(true);
-    }
-
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ReplicatedMapConfig.class)

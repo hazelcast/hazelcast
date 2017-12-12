@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -46,6 +45,10 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.MapUtil.createLinkedHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
@@ -468,7 +471,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of item ID and items added
      */
     public Map<Long, Data> addAll(Collection<Data> dataList) {
-        final Map<Long, Data> map = new HashMap<Long, Data>(dataList.size());
+        final Map<Long, Data> map = createHashMap(dataList.size());
         final List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
         for (Data data : dataList) {
             final QueueItem item = new QueueItem(this, nextId(), null);
@@ -583,7 +586,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (maxSizeParam < 0 || maxSizeParam > getItemQueue().size()) {
             maxSizeParam = getItemQueue().size();
         }
-        final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(maxSizeParam);
+        final Map<Long, Data> map = createLinkedHashMap(maxSizeParam);
         mapDrainIterator(maxSizeParam, map);
         if (store.isEnabled() && maxSizeParam != 0) {
             try {
@@ -649,7 +652,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public Map<Long, Data> clear() {
         long current = Clock.currentTimeMillis();
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(getItemQueue().size());
+        final Map<Long, Data> map = createLinkedHashMap(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             map.put(item.getItemId(), item.getData());
             // For stats
@@ -838,7 +841,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         } else if (bulkLoad > 1) {
             long maxIdToLoad = -1;
             final Iterator<QueueItem> iter = getItemQueue().iterator();
-            final HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
+            final Set<Long> keySet = createHashSet(bulkLoad);
 
             keySet.add(item.getItemId());
             while (keySet.size() < bulkLoad && iter.hasNext()) {
@@ -912,13 +915,15 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     private Map<Long, QueueItem> getBackupMap() {
         if (backupMap == null) {
-            backupMap = new HashMap<Long, QueueItem>();
             if (itemQueue != null) {
+                backupMap = createHashMap(itemQueue.size());
                 for (QueueItem item : itemQueue) {
                     backupMap.put(item.getItemId(), item);
                 }
                 itemQueue.clear();
                 itemQueue = null;
+            } else {
+                backupMap = new HashMap<Long, QueueItem>();
             }
         }
         return backupMap;

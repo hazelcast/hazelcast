@@ -31,7 +31,7 @@ import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * This class includes mappings of {@code cacheId --to--> listener collections}.
+ * This class includes mappings for cacheId to its listener-info-collection
  */
 public class QueryCacheToListenerMapper {
 
@@ -49,21 +49,21 @@ public class QueryCacheToListenerMapper {
         this.registrations = new ConcurrentHashMap<String, Collection<ListenerInfo>>();
     }
 
-    public String addListener(String cacheName, ListenerAdapter listenerAdapter, EventFilter filter) {
-        Collection<ListenerInfo> adapters = getOrPutIfAbsent(registrations, cacheName, LISTENER_SET_CONSTRUCTOR);
+    public String addListener(String cacheId, ListenerAdapter listenerAdapter, EventFilter filter) {
+        Collection<ListenerInfo> adapters = getOrPutIfAbsent(registrations, cacheId, LISTENER_SET_CONSTRUCTOR);
         String id = UuidUtil.newUnsecureUuidString();
         ListenerInfo info = new ListenerInfo(filter, listenerAdapter, id);
         adapters.add(info);
         return id;
     }
 
-    public boolean removeListener(String cacheName, String id) {
-        Collection<ListenerInfo> adapters = getOrPutIfAbsent(registrations, cacheName, LISTENER_SET_CONSTRUCTOR);
+    public boolean removeListener(String cacheId, String listenerId) {
+        Collection<ListenerInfo> adapters = getOrPutIfAbsent(registrations, cacheId, LISTENER_SET_CONSTRUCTOR);
         Iterator<ListenerInfo> iterator = adapters.iterator();
         while (iterator.hasNext()) {
             ListenerInfo listenerInfo = iterator.next();
             String listenerInfoId = listenerInfo.getId();
-            if (listenerInfoId.equals(id)) {
+            if (listenerInfoId.equals(listenerId)) {
                 iterator.remove();
                 return true;
             }
@@ -71,9 +71,32 @@ public class QueryCacheToListenerMapper {
         return false;
     }
 
+    /**
+     * Removes all associated listener info for the cache represented with the supplied {@code cacheId}
+     *
+     * @param cacheId ID of the cache
+     */
+    public void removeAllListeners(String cacheId) {
+        registrations.remove(cacheId);
+    }
+
+    /**
+     * @return {@code true} if this class contains any registered
+     *  listener for the cache represented with the supplied {@code cacheId} else returns {@code false}
+     */
+    public boolean hasListener(String cacheId) {
+        Collection<ListenerInfo> listenerInfos = registrations.get(cacheId);
+        return !isEmpty(listenerInfos);
+    }
+
+    // this method is only used for testing purposes
+    public boolean hasAnyQueryCacheRegistered() {
+        return !registrations.isEmpty();
+    }
+
     @SuppressWarnings("unchecked")
-    Collection<ListenerInfo> getListenerInfos(String cacheName) {
-        Collection<ListenerInfo> infos = registrations.get(cacheName);
-        return isEmpty(infos) ? Collections.EMPTY_SET : infos;
+    Collection<ListenerInfo> getListenerInfos(String cacheId) {
+        Collection<ListenerInfo> infos = registrations.get(cacheId);
+        return isEmpty(infos) ? Collections.<ListenerInfo>emptySet() : infos;
     }
 }

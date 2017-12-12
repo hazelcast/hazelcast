@@ -46,49 +46,45 @@ public final class EntryViews {
     }
 
     public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
-        final SimpleEntryView<K, V> simpleEntryView = new SimpleEntryView<K, V>(key, value);
-        simpleEntryView.setCost(record.getCost());
-        simpleEntryView.setVersion(record.getVersion());
-        simpleEntryView.setHits(record.getHits());
-        simpleEntryView.setLastAccessTime(record.getLastAccessTime());
-        simpleEntryView.setLastUpdateTime(record.getLastUpdateTime());
-        simpleEntryView.setTtl(record.getTtl());
-        simpleEntryView.setCreationTime(record.getCreationTime());
-        simpleEntryView.setExpirationTime(record.getExpirationTime());
-        simpleEntryView.setLastStoredTime(record.getLastStoredTime());
-        return simpleEntryView;
+        return new SimpleEntryView<K, V>(key, value)
+                .withCost(record.getCost())
+                .withVersion(record.getVersion())
+                .withHits(record.getHits())
+                .withLastAccessTime(record.getLastAccessTime())
+                .withLastUpdateTime(record.getLastUpdateTime())
+                .withTtl(record.getTtl())
+                .withCreationTime(record.getCreationTime())
+                .withExpirationTime(record.getExpirationTime())
+                .withLastStoredTime(record.getLastStoredTime());
     }
 
     public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record,
                                                              SerializationService serializationService,
                                                              MapMergePolicy mergePolicy) {
-        LazyEntryView<K, V> lazyEntryView = new LazyEntryView<K, V>(key, value, serializationService, mergePolicy);
-        lazyEntryView.setCost(record.getCost());
-        lazyEntryView.setVersion(record.getVersion());
-        lazyEntryView.setHits(record.getHits());
-        lazyEntryView.setLastAccessTime(record.getLastAccessTime());
-        lazyEntryView.setLastUpdateTime(record.getLastUpdateTime());
-        lazyEntryView.setTtl(record.getTtl());
-        lazyEntryView.setCreationTime(record.getCreationTime());
-        lazyEntryView.setExpirationTime(lazyEntryView.getExpirationTime());
-        lazyEntryView.setLastStoredTime(lazyEntryView.getLastStoredTime());
-        return lazyEntryView;
+        return new LazyEntryView<K, V>(key, value, serializationService, mergePolicy)
+                .setCost(record.getCost())
+                .setVersion(record.getVersion())
+                .setHits(record.getHits())
+                .setLastAccessTime(record.getLastAccessTime())
+                .setLastUpdateTime(record.getLastUpdateTime())
+                .setTtl(record.getTtl())
+                .setCreationTime(record.getCreationTime())
+                .setExpirationTime(record.getExpirationTime())
+                .setLastStoredTime(record.getLastStoredTime());
     }
 
     public static <K, V> EntryView<K, V> convertToLazyEntryView(EntryView<K, V> entryView,
                                                                 SerializationService serializationService,
                                                                 MapMergePolicy mergePolicy) {
-        final LazyEntryView<K, V> lazyEntryView = new LazyEntryView<K, V>(entryView.getKey(), entryView.getValue(),
-                serializationService, mergePolicy);
-        lazyEntryView.setCost(entryView.getCost());
-        lazyEntryView.setVersion(entryView.getVersion());
-        lazyEntryView.setLastAccessTime(entryView.getLastAccessTime());
-        lazyEntryView.setLastUpdateTime(entryView.getLastUpdateTime());
-        lazyEntryView.setTtl(entryView.getTtl());
-        lazyEntryView.setCreationTime(entryView.getCreationTime());
-        lazyEntryView.setHits(entryView.getHits());
-        lazyEntryView.setExpirationTime(entryView.getExpirationTime());
-        lazyEntryView.setLastStoredTime(entryView.getLastStoredTime());
-        return lazyEntryView;
+        return new LazyEntryView<K, V>(entryView.getKey(), entryView.getValue(), serializationService, mergePolicy)
+                .setCost(entryView.getCost())
+                .setVersion(entryView.getVersion())
+                .setLastAccessTime(entryView.getLastAccessTime())
+                .setLastUpdateTime(entryView.getLastUpdateTime())
+                .setTtl(entryView.getTtl())
+                .setCreationTime(entryView.getCreationTime())
+                .setHits(entryView.getHits())
+                .setExpirationTime(entryView.getExpirationTime())
+                .setLastStoredTime(entryView.getLastStoredTime());
     }
 }

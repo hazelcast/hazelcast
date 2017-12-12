@@ -113,7 +113,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public Condition newCondition() {
-        throw new UnsupportedOperationException("Use ICondition.newCondition(String name) instead!");
+        throw new UnsupportedOperationException("Use ILock.newCondition(String name) instead!");
     }
 
     @Override

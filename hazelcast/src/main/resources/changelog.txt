@@ -1,6 +1,6 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
-??, Release 3.9
+2017.10.23, Release 3.9
 
 - WAN Replication using Discovery SPI.
 - Dynamic Creation of Distributed Objects Configuration.
@@ -27,9 +27,9 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 - Introduced distributed implementation of Scheduled Executor Service.
 - Introduced User Code Deployment enabling you to load your new classes to Hazelcast IMDG members dynamically without restarting all of them.
 - Introduced fast aggregations and projections for queries.
-- Improved near cache so that it is eventually consistent; possible losses of invalidation events are detected and stale reads are prevented.
+- Improved Near Cache so that it is eventually consistent; possible losses of invalidation events are detected and stale reads are prevented.
 - Added cluster split-brain protection for Queue and Lock.
-- Unified near cache implementation.
+- Unified Near Cache implementation.
 - Introduced a preloader to improve the performance of near caches.
 - Implemented Ringbuffer with persistent datastore.
 - Introduced Hazelcast Striim Hot Cache Adapter.
@@ -52,7 +52,7 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 - Added alignment of WAN Replication Clusters feature providing a mechanism to align or realign distributed objects in the clusters connected through WAN.
 - Introduced fault tolerant executor service.
 - Introduced modularized Hazelcast. Clients, languages and plugins are now modules which have separate GitHub repositories, Maven modules, and release cycles.
-- Enhanced near cache (for JCache) notifications.
+- Enhanced Near Cache (for JCache) notifications.
 - Enhanced migration algorithm.
 - Integrated WAN Replication with Solace.
 - Added Cloud Discovery SPI plugin for Multicast.
@@ -109,7 +109,7 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 - Added Hazelcast Enterprise implementation of the WAN Replication.
 - Added sub-listener interfaces for map listener enabling you to listen to map-wide or entry-based events.
 - Implemented scalable map loader enabling you to load the keys incrementally if the number of keys is large.
-- Added near cache feature for Hazelcast JCache implementation.
+- Added Near Cache feature for Hazelcast JCache implementation.
 - Added fail fast feature on invalid configuration.
 - Added Continuous Query Caching feature.
 - Improved eventing system by introducing RingBuffer and Reliable Topic structures.
@@ -201,13 +201,13 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 - Fixed issues with Spring configuration and merge policies.
 - Hazelcast source archives in Maven central repository now contains the class files.
 - Fixed formatting problems when using SQL predicates with date.
-- Fixed the issues of near cache functionality for Java client.
+- Fixed the issues of Near Cache functionality for Java client.
 - Improved the Memcache client content in the Reference Manual.
 
 
 2013.01.15, Release 2.5
 
-- Added near cache support for Java Client.
+- Added Near Cache support for Java Client.
 - Management Center alert system can now receive alerts based on custom filters.
 - Management Center has now better support for Hazelcast cluster running in OSGI environment.
 - Nodes can be easily shutdown or restarted using Management Center interface.
@@ -311,7 +311,7 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 - Added the ability to start the cluster members evenly partitioned. Hence, no migration.
 - Added Java clients for accessing the cluster remotely.
 - Added Distributed Query for maps. Both Criteria API and SQL are supported.
-- Added near cache feature for distributed maps.
+- Added Near Cache feature for distributed maps.
 - Added TTL (time-to-live) property for each individual map entry.
 - Improved the put operation: IMap.put(key,value, ttl, timeunit).
 - Introduced the method IMap.putIfAbsent(key,value, ttl, timeunit).

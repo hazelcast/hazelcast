@@ -25,7 +25,7 @@ import com.hazelcast.spi.EventFilter;
 import java.io.IOException;
 
 /**
- * Compares supplied uuid with this filters' uuid to prevent unneeded delivery of an invalidation event to operation caller.
+ * Compares supplied UUID with this filters' UUID to prevent unneeded delivery of an invalidation event to operation caller.
  * Operation caller invalidates its own local Near Cache, no need to send an extra invalidation from remote.
  */
 public class UuidFilter implements EventFilter, IdentifiedDataSerializable {

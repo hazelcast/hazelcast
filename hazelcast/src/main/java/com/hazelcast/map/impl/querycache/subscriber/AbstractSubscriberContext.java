@@ -40,7 +40,7 @@ public abstract class AbstractSubscriberContext implements SubscriberContext {
     public AbstractSubscriberContext(QueryCacheContext context) {
         this.queryCacheConfigurator = context.getQueryCacheConfigurator();
         this.eventService = context.getQueryCacheEventService();
-        this.queryCacheEndToEndProvider = new QueryCacheEndToEndProvider();
+        this.queryCacheEndToEndProvider = new QueryCacheEndToEndProvider(context.getLifecycleMutexFactory());
         this.mapSubscriberRegistry = new MapSubscriberRegistry(context);
         this.queryCacheFactory = new QueryCacheFactory();
         this.accumulatorInfoSupplier = new DefaultAccumulatorInfoSupplier();

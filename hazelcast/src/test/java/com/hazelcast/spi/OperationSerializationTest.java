@@ -168,7 +168,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     private void assertSerializationCloneEquals(Operation expected) {
         Operation actual = copy(expected);
-        assertEquals("caller uuid does not match", expected.getCallerUuid(), actual.getCallerUuid());
+        assertEquals("caller UUID does not match", expected.getCallerUuid(), actual.getCallerUuid());
         assertEquals("call timeout does not match", expected.getCallTimeout(), actual.getCallTimeout());
         assertEquals("validates target does not match", expected.validatesTarget(), actual.validatesTarget());
         assertEquals("callid does not match", expected.getCallId(), actual.getCallId());

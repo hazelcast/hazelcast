@@ -223,7 +223,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
             if (typeId == INTERNAL_CACHE_PRIMARY_STATE_GETTER) {
                 return new CachePrimaryStateGetterOperation();
             } else {
-                throw new UnsupportedOperationException("Could not create instance of type id " + typeId);
+                throw new UnsupportedOperationException("Could not create instance of type ID " + typeId);
             }
         }
     }

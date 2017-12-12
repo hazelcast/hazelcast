@@ -44,17 +44,17 @@ import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
+import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
-import com.hazelcast.client.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
-import com.hazelcast.client.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
+import com.hazelcast.client.spi.impl.NonSmartClientInvocationService;
+import com.hazelcast.client.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.spi.impl.listener.NonSmartClientListenerService;
@@ -67,6 +67,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -78,6 +79,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -588,6 +590,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public IdGenerator getIdGenerator(String name) {
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public ReliableIdGenerator getReliableIdGenerator(String name) {
+        return getDistributedObject(ReliableIdGeneratorService.SERVICE_NAME, name);
     }
 
     @Override

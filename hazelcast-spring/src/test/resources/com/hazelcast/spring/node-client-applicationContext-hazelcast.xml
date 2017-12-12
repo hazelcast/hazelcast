@@ -20,10 +20,9 @@
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.hazelcast.com/schema/spring
-		hazelcast-spring-3.9.xsd
-		">
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -43,7 +42,7 @@
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
             </hz:properties>
-            <hz:network port="${cluster.port}" port-auto-increment="false">
+            <hz:network port="${cluster.port}" port-auto-increment="true">
                 <hz:join>
                     <hz:multicast enabled="false"
                                   multicast-group="224.2.2.3"
@@ -157,13 +156,13 @@
                        serialize-keys="false"
                        local-update-policy="CACHE_ON_UPDATE"/>
 
-        <hz:near-cache name="lfuNearCacheEviction" eviction-policy="LFU" />
+        <hz:near-cache name="lfuNearCacheEviction" eviction-policy="LFU"/>
         <hz:near-cache name="lruNearCacheEviction"
-                       eviction-policy="LRU" />
+                       eviction-policy="LRU"/>
         <hz:near-cache name="noneNearCacheEviction"
-                       eviction-policy="NONE" />
+                       eviction-policy="NONE"/>
         <hz:near-cache name="randomNearCacheEviction"
-                       eviction-policy="RANDOM" />
+                       eviction-policy="RANDOM"/>
 
         <hz:near-cache name="preloader">
             <hz:preloader enabled="true" directory="/tmp/preloader"
@@ -258,7 +257,7 @@
         <hz:connection-strategy async-start="true" reconnect-mode="ASYNC"/>
     </hz:client>
 
-    <hz:client id="user-code-deployment-test" credentials-ref="credentials">
+    <hz:client id="client9-user-code-deployment-test" credentials-ref="credentials">
         <hz:network connection-attempt-limit="0">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
@@ -275,6 +274,13 @@
         </hz:user-code-deployment>
     </hz:client>
 
+    <hz:client id="client10-reliableIdGenerator" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:reliable-id-generator name="gen1" prefetchCount="3" prefetchValidityMillis="3000"/>
+    </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="username" value="spring-group"/>
@@ -290,6 +296,7 @@
     <hz:list id="list" instance-ref="client" name="list"/>
     <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="client" name="idGenerator"/>
+    <hz:reliableIdGenerator id="reliableIdGenerator" instance-ref="client" name="reliableIdGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
     <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>

@@ -22,8 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * This notification is used to notify the reducer that this chunk is the last chunk of the
@@ -80,7 +81,7 @@ public class LastChunkNotification<KeyOut, Value>
             throws IOException {
         super.readData(in);
         int size = in.readInt();
-        chunk = new HashMap<KeyOut, Value>();
+        chunk = createHashMap(size);
         for (int i = 0; i < size; i++) {
             KeyOut key = in.readObject();
             Value value = in.readObject();

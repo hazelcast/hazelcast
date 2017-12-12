@@ -25,8 +25,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * {@link com.hazelcast.spi.OperationFactory} implementation for RemoveAll Operations.
@@ -80,7 +81,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
         if (size == -1) {
             return;
         }
-        keys = new HashSet<Data>(size);
+        keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());
         }

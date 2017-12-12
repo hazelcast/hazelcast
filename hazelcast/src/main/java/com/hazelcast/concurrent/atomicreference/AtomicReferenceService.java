@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
@@ -49,7 +50,8 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     private final ConstructorFunction<String, AtomicReferenceContainer> atomicReferenceConstructorFunction =
             new ConstructorFunction<String, AtomicReferenceContainer>() {
                 public AtomicReferenceContainer createNew(String key) {
-                    return new AtomicReferenceContainer();
+                    AtomicReferenceConfig config = nodeEngine.getConfig().findAtomicReferenceConfig(key);
+                    return new AtomicReferenceContainer(config);
                 }
             };
 

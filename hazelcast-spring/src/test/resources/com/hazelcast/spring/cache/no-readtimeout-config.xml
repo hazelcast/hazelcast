@@ -19,11 +19,11 @@
        xmlns:cache="http://www.springframework.org/schema/cache"
        xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/cache
-		http://www.springframework.org/schema/cache/spring-cache.xsd
-		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/cache
+        http://www.springframework.org/schema/cache/spring-cache.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <cache:annotation-driven cache-manager="cacheManager"/>
 

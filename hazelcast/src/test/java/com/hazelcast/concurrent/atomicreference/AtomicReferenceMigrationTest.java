@@ -80,6 +80,7 @@ public class AtomicReferenceMigrationTest extends HazelcastTestSupport {
     }
 
     static class SimpleObject implements DataSerializable, Serializable {
+
         int field;
 
         SimpleObject(int field) {
@@ -117,11 +118,9 @@ public class AtomicReferenceMigrationTest extends HazelcastTestSupport {
             }
 
             SimpleObject that = (SimpleObject) o;
-
             if (field != that.field) {
                 return false;
             }
-
             return true;
         }
 

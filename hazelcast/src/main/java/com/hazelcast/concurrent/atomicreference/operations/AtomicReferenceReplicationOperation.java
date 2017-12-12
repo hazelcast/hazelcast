@@ -17,7 +17,6 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,8 +25,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.REPLICATION;
 
 public class AtomicReferenceReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
@@ -43,12 +45,12 @@ public class AtomicReferenceReplicationOperation extends Operation
 
     @Override
     public void run() throws Exception {
-        AtomicReferenceService atomicReferenceService = getService();
+        AtomicReferenceService service = getService();
         for (Map.Entry<String, Data> entry : migrationData.entrySet()) {
             String name = entry.getKey();
-            AtomicReferenceContainer atomicReferenceContainer = atomicReferenceService.getReferenceContainer(name);
+            AtomicReferenceContainer container = service.getReferenceContainer(name);
             Data value = entry.getValue();
-            atomicReferenceContainer.set(value);
+            container.set(value);
         }
     }
 
@@ -59,12 +61,12 @@ public class AtomicReferenceReplicationOperation extends Operation
 
     @Override
     public int getFactoryId() {
-        return AtomicReferenceDataSerializerHook.F_ID;
+        return F_ID;
     }
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.REPLICATION;
+        return REPLICATION;
     }
 
     @Override
@@ -79,7 +81,7 @@ public class AtomicReferenceReplicationOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, Data>(mapSize);
+        migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             Data data = in.readData();

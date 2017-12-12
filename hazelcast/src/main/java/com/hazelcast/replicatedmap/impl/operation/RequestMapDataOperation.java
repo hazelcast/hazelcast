@@ -30,12 +30,12 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Collects and sends the replicated map data from the executing node to the caller via
@@ -82,7 +82,7 @@ public class RequestMapDataOperation extends AbstractSerializableOperation {
     }
 
     private Set<RecordMigrationInfo> getRecordSet(ReplicatedRecordStore store) {
-        Set<RecordMigrationInfo> recordSet = new HashSet<RecordMigrationInfo>(store.size());
+        Set<RecordMigrationInfo> recordSet = createHashSet(store.size());
         Iterator<ReplicatedRecord> iterator = store.recordIterator();
         while (iterator.hasNext()) {
             ReplicatedRecord record = iterator.next();

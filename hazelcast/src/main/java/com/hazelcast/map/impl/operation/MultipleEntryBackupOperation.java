@@ -24,10 +24,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.util.SetUtil.createLinkedHashSet;
 
 public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
@@ -54,7 +54,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
         super.readInternal(in);
         backupProcessor = in.readObject();
         int size = in.readInt();
-        keys = new LinkedHashSet<Data>(size);
+        keys = createLinkedHashSet(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             keys.add(key);

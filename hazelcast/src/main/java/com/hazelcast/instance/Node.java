@@ -92,6 +92,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
@@ -113,7 +114,7 @@ public class Node {
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
-    public final Config config;
+    public final DynamicConfigurationAwareConfig config;
 
     public final NodeEngineImpl nodeEngine;
     public final ClientEngineImpl clientEngine;
@@ -193,7 +194,7 @@ public class Node {
             nodeExtension = nodeContext.createNodeExtension(this);
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
             MemberImpl localMember = new MemberImpl(address, version, true, nodeExtension.createMemberUuid(address),
-                    memberAttributes, liteMember, hazelcastInstance);
+                    memberAttributes, liteMember, NA_MEMBER_LIST_JOIN_VERSION, hazelcastInstance);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
 
@@ -213,12 +214,12 @@ public class Node {
 
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
+            discoveryService = createDiscoveryService(
+                    this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this, localMember);
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
-            discoveryService = createDiscoveryService(
-                    this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
             try {

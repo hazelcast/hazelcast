@@ -22,6 +22,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -192,8 +193,8 @@ public interface HazelcastInstance {
      * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      * <p>
-     * <b>Note:</b> Note that it don't support invokeAll/Any
-     * and don't have standard shutdown behavior
+     * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
+     * and doesn't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return the distributed executor service for the given name
@@ -204,9 +205,9 @@ public interface HazelcastInstance {
      * Returns the durable executor service for the given name.
      * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
-     * <p/>
-     * <p><b>Note:</b> Note that it don't support invokeAll/Any
-     * and don't have standard shutdown behavior</p>
+     * <p>
+     * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
+     * and doesn't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return the durable executor service for the given name
@@ -252,15 +253,41 @@ public interface HazelcastInstance {
     TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
-     * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
+     * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
      * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
-     * <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
+     * local <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
      *
      * @param name name of the {@link IdGenerator}
      * @return IdGenerator for the given name
+     *
+     * @deprecated The implementation can produce duplicate IDs in case of network split, even
+     * with split-brain protection enabled (during short window while split-brain is detected).
+     * Use {@link #getReliableIdGenerator(String)} for an alternative implementation which does not
+     * suffer from this problem.
      */
+    @Deprecated
     IdGenerator getIdGenerator(String name);
+
+    /**
+     * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
+     * and are k-ordered (roughly ordered). IDs are in the range from {@code Long.MIN_VALUE} to
+     * {@code Long.MAX_VALUE}. This type of generator is generally known as Flake ID generator.
+     * <p>
+     * The IDs contain timestamp component and a node ID component, which is assigned when the member
+     * joins the cluster. This allows the IDs to be ordered and unique without any coordination between
+     * members, which makes the generator safe even in split-brain scenario (for caveats,
+     * {@link com.hazelcast.internal.cluster.ClusterService#getMemberListJoinVersion() see here}).
+     * <p>
+     * For more details and caveats, see class documentation for {@link ReliableIdGenerator}.
+     * <p>
+     * Note: this implementation doesn't share namespace with {@link #getIdGenerator(String)}.
+     * That is, {@code getIdGenerator("a")} is distinct from {@code getReliableIdGenerator("a")}.
+     *
+     * @param name name of the {@link IdGenerator}
+     * @return ReliableIdGenerator for the given name
+     */
+    ReliableIdGenerator getReliableIdGenerator(String name);
 
     /**
      * Creates cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed

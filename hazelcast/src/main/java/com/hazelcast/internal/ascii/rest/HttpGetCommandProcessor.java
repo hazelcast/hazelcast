@@ -24,6 +24,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.util.StringUtil;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
@@ -73,7 +74,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         StringBuilder res = new StringBuilder();
         res.append("Hazelcast::NodeState=").append(nodeState).append("\n");
         res.append("Hazelcast::ClusterState=").append(clusterState).append("\n");
-        res.append("Hazelcast::ClusterSafe=").append(Boolean.toString(clusterSafe).toUpperCase()).append("\n");
+        res.append("Hazelcast::ClusterSafe=").append(Boolean.toString(clusterSafe)
+                .toUpperCase(StringUtil.LOCALE_INTERNAL)).append("\n");
         res.append("Hazelcast::MigrationQueueSize=").append(migrationQueueSize).append("\n");
         res.append("Hazelcast::ClusterSize=").append(clusterSize).append("\n");
         command.setResponse(MIME_TEXT_PLAIN, stringToBytes(res.toString()));

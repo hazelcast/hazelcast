@@ -47,9 +47,9 @@ import static com.hazelcast.util.StringUtil.timeToString;
 /**
  * Handles the routing of a request from a Hazelcast client.
  * <p>
- * 1) Where should request be send?
- * 2) Should it be retried?
- * 3) How many times it is retried?
+ * 1) Where should request be sent?<br>
+ * 2) Should it be retried?<br>
+ * 3) How many times is it retried?
  */
 public class ClientInvocation implements Runnable {
 
@@ -100,20 +100,32 @@ public class ClientInvocation implements Runnable {
                 clientMessage, logger, callIdSequence);
     }
 
+    /**
+     * Create an invocation that will be executed on random member.
+     */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, null);
     }
 
+    /**
+     * Create an invocation that will be executed on owner of {@code partitionId}.
+     */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
                             int partitionId) {
         this(client, clientMessage, objectName, partitionId, null, null);
     }
 
+    /**
+     * Create an invocation that will be executed on member with given {@code address}.
+     */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
                             Address address) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, address, null);
     }
 
+    /**
+     * Create an invocation that will be executed on given {@code connection}.
+     */
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage, String objectName,
                             Connection connection) {
         this(client, clientMessage, objectName, UNASSIGNED_PARTITION, null, connection);
@@ -247,7 +259,6 @@ public class ClientInvocation implements Runnable {
             //when invocation send over address
             //if exception is target not member and
             //address is not available in member list , don't retry
-            clientInvocationFuture.complete(exception);
             return true;
         }
         return false;

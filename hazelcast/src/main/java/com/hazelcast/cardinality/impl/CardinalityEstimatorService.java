@@ -29,7 +29,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -38,12 +37,19 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
         implements ManagedService, RemoteService, MigrationAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
+
+    /**
+     * Speculative factor to be used when initialising collections
+     * of an approximate final size.
+     */
+    private static final double SIZING_FUDGE_FACTOR = 1.3;
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
@@ -99,7 +105,9 @@ public class CardinalityEstimatorService
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, CardinalityEstimatorContainer> data = new HashMap<String, CardinalityEstimatorContainer>();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        final int roughSize = (int) ((containers.size() * SIZING_FUDGE_FACTOR) / partitionService.getPartitionCount());
+        Map<String, CardinalityEstimatorContainer> data = createHashMap(roughSize);
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, CardinalityEstimatorContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();

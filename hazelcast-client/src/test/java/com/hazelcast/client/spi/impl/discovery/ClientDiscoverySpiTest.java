@@ -101,7 +101,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = ClientDiscoverySpiTest.class.getClassLoader().getResource("hazelcast-client-config-3.9.xsd");
+        URL schemaResource = ClientDiscoverySpiTest.class.getClassLoader().getResource("hazelcast-client-config-3.10.xsd");
         Schema schema = factory.newSchema(schemaResource);
 
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -111,7 +111,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testParsing() throws Exception {
+    public void testParsing() {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         ClientConfig clientConfig = new XmlClientConfigBuilder(xmlResource).build();

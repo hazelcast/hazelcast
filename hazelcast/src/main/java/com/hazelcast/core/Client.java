@@ -20,7 +20,7 @@ import java.net.InetSocketAddress;
 
 /**
  * The Client interface allows to get information about
- * a connected client's socket address, type and uuid.
+ * a connected client's socket address, type and UUID.
  *
  * @see ClientService
  * @see ClientListener
@@ -28,9 +28,9 @@ import java.net.InetSocketAddress;
 public interface Client extends Endpoint {
 
     /**
-     * Returns a unique uuid for this client.
+     * Returns a unique UUID for this client.
      *
-     * @return a unique uuid for this client
+     * @return a unique UUID for this client
      */
     String getUuid();
 

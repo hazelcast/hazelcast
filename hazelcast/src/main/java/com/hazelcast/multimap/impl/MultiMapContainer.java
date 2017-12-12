@@ -24,13 +24,13 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * MultiMap container which holds a map of {@link MultiMapValue}.
@@ -116,9 +116,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public Set<Data> keySet() {
         Set<Data> keySet = multiMapValues.keySet();
-        Set<Data> keys = new HashSet<Data>(keySet.size());
-        keys.addAll(keySet);
-        return keys;
+        return new HashSet<Data>(keySet);
     }
 
     public Collection<MultiMapRecord> values() {
@@ -152,7 +150,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public Map<Data, Collection<MultiMapRecord>> copyCollections() {
-        Map<Data, Collection<MultiMapRecord>> map = new HashMap<Data, Collection<MultiMapRecord>>(multiMapValues.size());
+        Map<Data, Collection<MultiMapRecord>> map = createHashMap(multiMapValues.size());
         for (Map.Entry<Data, MultiMapValue> entry : multiMapValues.entrySet()) {
             Data key = entry.getKey();
             Collection<MultiMapRecord> col = entry.getValue().getCollection(true);
@@ -171,7 +169,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public int clear() {
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        Map<Data, MultiMapValue> lockedKeys = new HashMap<Data, MultiMapValue>(locks.size());
+        Map<Data, MultiMapValue> lockedKeys = createHashMap(locks.size());
         for (Data key : locks) {
             MultiMapValue multiMapValue = multiMapValues.get(key);
             if (multiMapValue != null) {

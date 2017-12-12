@@ -18,6 +18,8 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -27,6 +29,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
@@ -35,10 +38,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.util.Preconditions.checkFalse;
 
 /**
@@ -91,9 +97,9 @@ public class ClientConfig {
 
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
-    private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
+    private final Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
-    private Map<String, ClientReliableTopicConfig> reliableTopicConfigMap
+    private final Map<String, ClientReliableTopicConfig> reliableTopicConfigMap
             = new ConcurrentHashMap<String, ClientReliableTopicConfig>();
 
     private Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs;
@@ -102,7 +108,7 @@ public class ClientConfig {
 
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
-    private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
+    private final List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
     private ManagedContext managedContext;
 
@@ -114,11 +120,33 @@ public class ClientConfig {
 
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
 
+    private final Map<String, ReliableIdGeneratorConfig> reliableIdGeneratorConfigMap =
+            new ConcurrentHashMap<String, ReliableIdGeneratorConfig>();
+
+    /**
+     * Sets the pattern matcher which is used to match item names to
+     * configuration objects.
+     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     *
+     * @param configPatternMatcher the pattern matcher
+     * @throws IllegalArgumentException if the pattern matcher is {@code null}
+     */
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
         }
         this.configPatternMatcher = configPatternMatcher;
+    }
+
+    /**
+     * Returns the pattern matcher which is used to match item names to
+     * configuration objects.
+     * By default the {@link MatchingPointConfigPatternMatcher} is used.
+     *
+     * @return the pattern matcher
+     */
+    public ConfigPatternMatcher getConfigPatternMatcher() {
+        return configPatternMatcher;
     }
 
     /**
@@ -226,7 +254,7 @@ public class ClientConfig {
      * @return the found config. If none is found, a default configured one is returned.
      */
     public ClientReliableTopicConfig getReliableTopicConfig(String name) {
-        ClientReliableTopicConfig reliableTopicConfig = lookupByPattern(reliableTopicConfigMap, name);
+        ClientReliableTopicConfig reliableTopicConfig = lookupByPattern(configPatternMatcher, reliableTopicConfigMap, name);
         if (reliableTopicConfig == null) {
             reliableTopicConfig = new ClientReliableTopicConfig(name);
             addReliableTopicConfig(reliableTopicConfig);
@@ -291,7 +319,7 @@ public class ClientConfig {
      * @see com.hazelcast.config.NearCacheConfig
      */
     public NearCacheConfig getNearCacheConfig(String name) {
-        NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, name);
+        NearCacheConfig nearCacheConfig = lookupByPattern(configPatternMatcher, nearCacheConfigMap, name);
         if (nearCacheConfig == null) {
             nearCacheConfig = nearCacheConfigMap.get("default");
             if (nearCacheConfig != null) {
@@ -321,7 +349,120 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setNearCacheConfigMap(Map<String, NearCacheConfig> nearCacheConfigMap) {
-        this.nearCacheConfigMap = nearCacheConfigMap;
+        this.nearCacheConfigMap.clear();
+        this.nearCacheConfigMap.putAll(nearCacheConfigMap);
+        for (Entry<String, NearCacheConfig> entry : this.nearCacheConfigMap.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns the map of {@link ReliableIdGenerator} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
+    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigMap() {
+        return reliableIdGeneratorConfigMap;
+    }
+
+    /**
+     * Returns a {@link ReliableIdGeneratorConfig} configuration for the given reliable ID generator name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code "default"}.
+     *
+     * @param name name of the reliable ID generator config
+     * @return the reliable ID generator configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
+        String baseName = getBaseName(name);
+        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, reliableIdGeneratorConfigMap, baseName);
+        if (config != null) {
+            return config;
+        }
+        return getReliableIdGeneratorConfig("default");
+    }
+
+    /**
+     * Returns the {@link ReliableIdGeneratorConfig} for the given name, creating
+     * one if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking {@link #addReliableIdGeneratorConfig(ReliableIdGeneratorConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the reliable ID generator config
+     * @return the cache configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
+        String baseName = getBaseName(name);
+        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, reliableIdGeneratorConfigMap, baseName);
+        if (config != null) {
+            return config;
+        }
+        ReliableIdGeneratorConfig defConfig = reliableIdGeneratorConfigMap.get("default");
+        if (defConfig == null) {
+            defConfig = new ReliableIdGeneratorConfig("default");
+            reliableIdGeneratorConfigMap.put(defConfig.getName(), defConfig);
+        }
+        config = new ReliableIdGeneratorConfig(defConfig);
+        config.setName(name);
+        reliableIdGeneratorConfigMap.put(config.getName(), config);
+        return config;
+    }
+
+    /**
+     * Adds a reliable ID generator configuration. The configuration is saved under the config
+     * name, which may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param config the reliable ID configuration
+     * @return this config instance
+     */
+    public ClientConfig addReliableIdGeneratorConfig(ReliableIdGeneratorConfig config) {
+        reliableIdGeneratorConfigMap.put(config.getName(), config);
+        return this;
+    }
+
+    /**
+     * Sets the map of {@link ReliableIdGenerator} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration will be obtained in the future.
+     *
+     * @param map the ReliableIdGenerator configuration map to set
+     * @return this config instance
+     */
+    public ClientConfig setReliableIdGeneratorConfigMap(Map<String, ReliableIdGeneratorConfig> map) {
+        reliableIdGeneratorConfigMap.clear();
+        reliableIdGeneratorConfigMap.putAll(map);
+        for (Entry<String, ReliableIdGeneratorConfig> entry : map.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -635,7 +776,8 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setProxyFactoryConfigs(List<ProxyFactoryConfig> proxyFactoryConfigs) {
-        this.proxyFactoryConfigs = proxyFactoryConfigs;
+        this.proxyFactoryConfigs.clear();
+        this.proxyFactoryConfigs.addAll(proxyFactoryConfigs);
         return this;
     }
 
@@ -707,21 +849,6 @@ public class ClientConfig {
         this.queryCacheConfigs = queryCacheConfigs;
     }
 
-    private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
-        T candidate = configPatterns.get(itemName);
-        if (candidate != null) {
-            return candidate;
-        }
-        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
-        if (configPatternKey != null) {
-            return configPatterns.get(configPatternKey);
-        }
-        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
-            LOGGER.finest("No configuration found for " + itemName + ", using default config!");
-        }
-        return null;
-    }
-
     public String getInstanceName() {
         return instanceName;
     }
@@ -769,13 +896,14 @@ public class ClientConfig {
     public QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName) {
         Map<String, Map<String, QueryCacheConfig>> allQueryCacheConfig = getQueryCacheConfigs();
 
-        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(allQueryCacheConfig, mapName);
+        Map<String, QueryCacheConfig> queryCacheConfigsForMap =
+                lookupByPattern(configPatternMatcher, allQueryCacheConfig, mapName);
         if (queryCacheConfigsForMap == null) {
             queryCacheConfigsForMap = new HashMap<String, QueryCacheConfig>();
             allQueryCacheConfig.put(mapName, queryCacheConfigsForMap);
         }
 
-        QueryCacheConfig queryCacheConfig = lookupByPattern(queryCacheConfigsForMap, cacheName);
+        QueryCacheConfig queryCacheConfig = lookupByPattern(configPatternMatcher, queryCacheConfigsForMap, cacheName);
         if (queryCacheConfig == null) {
             queryCacheConfig = new QueryCacheConfig(cacheName);
             queryCacheConfigsForMap.put(cacheName, queryCacheConfig);
@@ -794,11 +922,11 @@ public class ClientConfig {
             return null;
         }
 
-        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(queryCacheConfigs, mapName);
+        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(configPatternMatcher, queryCacheConfigs, mapName);
         if (queryCacheConfigsForMap == null) {
             return null;
         }
 
-        return lookupByPattern(queryCacheConfigsForMap, cacheName);
+        return lookupByPattern(configPatternMatcher, queryCacheConfigsForMap, cacheName);
     }
 }

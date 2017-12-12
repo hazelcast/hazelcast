@@ -61,7 +61,7 @@ public class MembersViewTest {
         MembersView view =
                 MembersView.cloneAdding(MembersView.createNew(version, Arrays.asList(members)), additionalMembers);
 
-        assertEquals(version + 1, view.getVersion());
+        assertEquals(version + additionalMembers.size(), view.getVersion());
 
         MemberImpl[] newMembers = Arrays.copyOf(members, members.length + additionalMembers.size());
         for (int i = 0; i < additionalMembers.size(); i++) {

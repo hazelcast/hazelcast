@@ -35,13 +35,14 @@ import com.hazelcast.util.FutureUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class PartitionServiceProxy implements PartitionService {
 
@@ -64,7 +65,7 @@ public class PartitionServiceProxy implements PartitionService {
         this.partitionService = partitionService;
 
         int partitionCount = partitionService.getPartitionCount();
-        Map<Integer, Partition> map = new HashMap<Integer, Partition>(partitionCount);
+        Map<Integer, Partition> map = createHashMap(partitionCount);
         Set<Partition> set = new TreeSet<Partition>();
         for (int i = 0; i < partitionCount; i++) {
             Partition partition = new PartitionProxy(i);

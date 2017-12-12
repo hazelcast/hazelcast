@@ -69,11 +69,12 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * A Factory for creating {@link com.hazelcast.monitor.TimedMemberState} instances.
@@ -152,8 +153,9 @@ public class TimedMemberStateFactory {
                                    Collection<StatisticsAwareService> services) {
         Node node = instance.node;
 
-        HashSet<ClientEndPointDTO> serializableClientEndPoints = new HashSet<ClientEndPointDTO>();
-        for (Client client : instance.node.clientEngine.getClients()) {
+        final Collection<Client> clients = instance.node.clientEngine.getClients();
+        final Set<ClientEndPointDTO> serializableClientEndPoints = createHashSet(clients.size());
+        for (Client client : clients) {
             serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);
@@ -222,7 +224,7 @@ public class TimedMemberStateFactory {
                                 Collection<StatisticsAwareService> services) {
         int count = 0;
         Config config = instance.getConfig();
-        Set<String> longInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
+        Set<String> longInstanceNames = createHashSet(maxVisibleInstanceCount);
         for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {

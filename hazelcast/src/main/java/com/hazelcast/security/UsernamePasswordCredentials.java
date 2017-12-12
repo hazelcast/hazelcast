@@ -23,6 +23,7 @@ import com.hazelcast.spi.impl.SpiPortableHook;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -42,6 +43,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
 
     public UsernamePasswordCredentials(String username, String password) {
         super(username);
+        checkNotNull(password);
         this.password = stringToBytes(password);
     }
 
@@ -60,11 +62,8 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
      * @return the password
      */
     public String getPassword() {
-        if (password == null) {
-            return null;
-        } else {
-            return bytesToString(password);
-        }
+        checkNotNull(password);
+        return bytesToString(password);
     }
 
     /**
@@ -82,6 +81,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
      * @param password the password to set
      */
     public void setPassword(String password) {
+        checkNotNull(password);
         this.password = stringToBytes(password);
     }
 

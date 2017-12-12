@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,17 +32,21 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.springframework.util.Assert.isTrue;
+
 /**
- * @author mdogan 4/3/12
+ * Sprint related {@link HazelcastCacheManager} implementation for Hazelcast.
  */
+@SuppressWarnings("WeakerAccess")
 public class HazelcastCacheManager implements CacheManager {
 
     /**
-     * Property name for hazelcast spring-cache related properties
+     * Property name for hazelcast spring-cache related properties.
      */
     public static final String CACHE_PROP = "hazelcast.spring.cache.prop";
 
     private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<String, Cache>();
+
     private HazelcastInstance hazelcastInstance;
 
     /**
@@ -51,6 +54,7 @@ public class HazelcastCacheManager implements CacheManager {
      * Can be overridden setting a cache specific value to readTimeoutMap.
      */
     private long defaultReadTimeout;
+
     /**
      * Holds cache specific value retrieval timeouts. Override defaultReadTimeout for specified caches.
      */
@@ -67,11 +71,11 @@ public class HazelcastCacheManager implements CacheManager {
     public Cache getCache(String name) {
         Cache cache = caches.get(name);
         if (cache == null) {
-            final IMap<Object, Object> map = hazelcastInstance.getMap(name);
+            IMap<Object, Object> map = hazelcastInstance.getMap(name);
             cache = new HazelcastCache(map);
             long cacheTimeout = calculateCacheReadTimeout(name);
             ((HazelcastCache) cache).setReadTimeout(cacheTimeout);
-            final Cache currentCache = caches.putIfAbsent(name, cache);
+            Cache currentCache = caches.putIfAbsent(name, cache);
             if (currentCache != null) {
                 cache = currentCache;
             }
@@ -82,10 +86,10 @@ public class HazelcastCacheManager implements CacheManager {
     @Override
     public Collection<String> getCacheNames() {
         Set<String> cacheNames = new HashSet<String>();
-        final Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
+        Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
         for (DistributedObject distributedObject : distributedObjects) {
             if (distributedObject instanceof IMap) {
-                final IMap<?, ?> map = (IMap) distributedObject;
+                IMap<?, ?> map = (IMap) distributedObject;
                 cacheNames.add(map.getName());
             }
         }
@@ -101,7 +105,7 @@ public class HazelcastCacheManager implements CacheManager {
         return hazelcastInstance;
     }
 
-    public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
     }
 
@@ -116,13 +120,13 @@ public class HazelcastCacheManager implements CacheManager {
 
     private void parseOption(String option) {
         String[] keyValue = option.split("=");
-        Assert.isTrue(keyValue.length != 0, "blank key-value pair");
-        Assert.isTrue(keyValue.length <= 2, String.format("key-value pair %s with more than one equals sign", option));
+        isTrue(keyValue.length != 0, "blank key-value pair");
+        isTrue(keyValue.length <= 2, String.format("key-value pair %s with more than one equals sign", option));
 
         String key = keyValue[0].trim();
         String value = (keyValue.length == 1) ? null : keyValue[1].trim();
 
-        Assert.isTrue(value != null && !value.isEmpty(), String.format("value for %s should not be null or empty", key));
+        isTrue(value != null && !value.isEmpty(), String.format("value for %s should not be null or empty", key));
 
         if ("defaultReadTimeout".equals(key)) {
             defaultReadTimeout = Long.parseLong(value);
@@ -157,8 +161,9 @@ public class HazelcastCacheManager implements CacheManager {
 
     /**
      * Set the cache ead-timeout params
-     * @param options cache read-timeout params, autowired by Spring automatically by getting value of
-     *               hazelcast.spring.cache.prop parameter
+     *
+     * @param options cache read-timeout params, auto-wired by Spring automatically by getting value of
+     *                hazelcast.spring.cache.prop parameter
      */
     @Autowired
     public void setCacheOptions(@Value("${" + CACHE_PROP + ":}") String options) {

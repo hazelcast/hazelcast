@@ -16,10 +16,11 @@
 
 package com.hazelcast.concurrent.countdownlatch.operations;
 
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.WaitNotifyKey;
+
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.COUNT_DOWN_OPERATION;
 
 public class CountDownOperation extends BackupAwareCountDownLatchOperation implements Notifier {
 
@@ -57,6 +58,6 @@ public class CountDownOperation extends BackupAwareCountDownLatchOperation imple
 
     @Override
     public int getId() {
-        return CountDownLatchDataSerializerHook.COUNT_DOWN_OPERATION;
+        return COUNT_DOWN_OPERATION;
     }
 }

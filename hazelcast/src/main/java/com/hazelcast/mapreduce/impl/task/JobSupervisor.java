@@ -24,7 +24,6 @@ import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
@@ -60,6 +59,7 @@ import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.createJobProcessInformation;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
+import static com.hazelcast.util.MapUtil.createHashMapAdapter;
 
 /**
  * The JobSupervisor is the overall control instance of a map reduce job. There is one JobSupervisor per
@@ -237,7 +237,7 @@ public class JobSupervisor {
         Map<Object, Object> result;
         if (configuration.getReducerFactory() != null) {
             int mapSize = MapReduceUtil.mapSize(reducers.size());
-            result = new HashMapAdapter<Object, Object>(mapSize);
+            result = createHashMapAdapter(mapSize);
             for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {
                 Object reducedResults = entry.getValue().finalizeReduce();
                 if (reducedResults != null) {

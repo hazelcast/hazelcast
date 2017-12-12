@@ -141,7 +141,7 @@ public class MemberChannelInitializer implements ChannelInitializer {
         ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketClientReceiveBufferSize());
 
         ChannelInboundHandler inboundHandler
-                = new ClientMessageChannelInboundHandler(new MessageHandlerImpl(connection, ioService.getClientEngine()));
+                = new ClientMessageChannelInboundHandler(new ClientMessageHandlerImpl(connection, ioService.getClientEngine()));
 
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }

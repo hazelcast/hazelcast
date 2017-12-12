@@ -92,7 +92,7 @@ public interface ClientEngine {
      * An e.g. Operating system committedVirtualMemorySize path would be: os.committedVirtualMemorySize
      *
      * The statistics key names can be one of the following (Used IMap named <example.fastmap> and ICache Named
-     * <StatTestCacheName> and assuming that the near cache is configured):
+     * <StatTestCacheName> and assuming that the Near Cache is configured):
      *
      * clientType
      * clusterConnectionTimestamp

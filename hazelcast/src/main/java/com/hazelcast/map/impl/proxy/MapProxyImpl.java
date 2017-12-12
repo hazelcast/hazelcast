@@ -80,7 +80,6 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -100,6 +99,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -718,7 +718,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         if (keys.isEmpty()) {
             return emptyMap();
         }
-        Set<Data> dataKeys = new HashSet<Data>(keys.size());
+        Set<Data> dataKeys = createHashSet(keys.size());
         return executeOnKeysInternal(keys, dataKeys, entryProcessor);
     }
 
@@ -896,16 +896,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     /**
      * Returns an iterator for iterating entries in the {@code partitionId}. If {@code prefetchValues} is
-     * {@code true}, all values will be sent along with the keys and no additional data will be fetched when
-     * iterating. If {@code false}, the values will be fetched when iterating the entries.
+     * {@code true}, values will be sent along with the keys and no additional data will be fetched when
+     * iterating. If {@code false}, only keys will be sent and values will be fetched when calling {@code
+     * Map.Entry.getValue()} lazily.
      * <p>
-     * The values are not fetched one-by-one but rather in batches.
+     * The entries are not fetched one-by-one but in batches.
      * You may control the size of the batch by changing the {@code fetchSize} parameter.
      * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
      * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
      * including internal operations.
      * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
-     * a "safepoint" to later resume iteration.
+     * a "safepoint" to resume iteration later.
      * <p>
      * <b>NOTE</b>
      * Iterating the map should be done only when the {@link IMap} is not being
@@ -914,6 +915,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
+     * @param prefetchValues whether to send values along with keys (if {@code true}) or
+     *                       to fetch them lazily when iterating (if {@code false})
      * @return the iterator for the projected entries
      */
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {

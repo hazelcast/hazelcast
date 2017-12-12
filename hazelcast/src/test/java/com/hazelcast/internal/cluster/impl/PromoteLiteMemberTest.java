@@ -22,8 +22,6 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;
@@ -60,6 +58,7 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
@@ -325,15 +324,52 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    // RU_COMPAT_WITH_3_8
-    public void liteMemberPromotion_notSupported_beforeV39()  {
-        System.setProperty(BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION, Versions.V3_8.toString());
+    @Test
+    public void masterMemberAttributes_arePreserved_afterPromotion() throws Exception {
+        memberAttributes_arePreserved_afterPromotion(true);
+    }
+
+    @Test
+    public void normalMemberAttributes_arePreserved_afterPromotion() throws Exception {
+        memberAttributes_arePreserved_afterPromotion(false);
+    }
+
+    private void memberAttributes_arePreserved_afterPromotion(boolean isMaster) throws Exception {
+        final String attribute1 = "attr1";
+        final String attribute2 = "attr2";
+        final String attributeValue = "value";
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        instances[0] = factory.newHazelcastInstance(new Config().setLiteMember(isMaster));
+        instances[1] = factory.newHazelcastInstance(new Config().setLiteMember(!isMaster));
 
-        HazelcastInstance hz = factory.newHazelcastInstance(new Config().setLiteMember(true));
+        HazelcastInstance hz = instances[isMaster ? 0 : 1];
 
+        // Get local member and SET attribute BEFORE promotion
+        Member localMember = hz.getCluster().getLocalMember();
+        localMember.setStringAttribute(attribute1, attributeValue);
+        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
+
+        // Promote local Lite member
         hz.getCluster().promoteLocalLiteMember();
+
+        // Get local member and SET attribute AFTER promotion
+        localMember = hz.getCluster().getLocalMember();
+        localMember.setStringAttribute(attribute2, attributeValue);
+
+        // Check attributes from localMember
+        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
+        assertEquals(attributeValue, localMember.getStringAttribute(attribute2));
+
+        // Check attributes from member list
+        for (Member member : hz.getCluster().getMembers()) {
+            if (member.localMember()) {
+                assertEquals(attributeValue, member.getStringAttribute(attribute1));
+                assertEquals(attributeValue, member.getStringAttribute(attribute2));
+                break;
+            }
+        }
     }
 
     private void assertPromotionInvocationStarted(HazelcastInstance instance) {

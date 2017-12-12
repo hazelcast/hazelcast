@@ -20,6 +20,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 
@@ -46,7 +47,7 @@ public class SimpleClientInterceptor implements MapInterceptor, Portable {
 
     @Override
     public Object interceptPut(Object oldValue, Object newValue) {
-        return newValue.toString().toUpperCase();
+        return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
     }
 
     @Override

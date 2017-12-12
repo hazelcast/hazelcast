@@ -20,13 +20,11 @@
        xmlns:s="http://www.hazelcast.com/schema/sample"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-		http://www.hazelcast.com/schema/spring
-		hazelcast-spring-3.9.xsd
-		http://www.hazelcast.com/schema/sample
-		hazelcast-sample-service.xsd">
-
-    <!--xmlns="http://www.hazelcast.com/schema/config"-->
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/sample
+        hazelcast-sample-service.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -268,7 +266,11 @@
                 <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
             </hz:ringbuffer>
 
-            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10" />
+            <hz:atomic-long name="testAtomicLong"/>
+
+            <hz:atomic-reference name="testAtomicReference"/>
+
+            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10"/>
 
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
                                statistics-enabled="false">
@@ -296,11 +298,11 @@
                     <hz:index attribute="age" ordered="true"/>
                 </hz:indexes>
                 <hz:attributes>
-                    <hz:attribute name="power" extractor="com.car.PowerExtractor" />
-                    <hz:attribute name="weight" extractor="com.car.WeightExtractor" />
+                    <hz:attribute name="power" extractor="com.car.PowerExtractor"/>
+                    <hz:attribute name="weight" extractor="com.car.WeightExtractor"/>
                 </hz:attributes>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}" />
+                <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}"/>
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
@@ -320,22 +322,22 @@
                 </hz:entry-listeners>
             </hz:map>
 
-            <hz:map name="lfuEvictionMap" eviction-policy="LFU" />
-            <hz:map name="lruEvictionMap" eviction-policy="LRU" />
-            <hz:map name="noneEvictionMap" eviction-policy="NONE" />
-            <hz:map name="randomEvictionMap" eviction-policy="RANDOM" />
+            <hz:map name="lfuEvictionMap" eviction-policy="LFU"/>
+            <hz:map name="lruEvictionMap" eviction-policy="LRU"/>
+            <hz:map name="noneEvictionMap" eviction-policy="NONE"/>
+            <hz:map name="randomEvictionMap" eviction-policy="RANDOM"/>
 
             <hz:map name="lfuNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="LFU" />
+                <hz:near-cache eviction-policy="LFU"/>
             </hz:map>
             <hz:map name="lruNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="LRU" />
+                <hz:near-cache eviction-policy="LRU"/>
             </hz:map>
             <hz:map name="noneNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="NONE" />
+                <hz:near-cache eviction-policy="NONE"/>
             </hz:map>
             <hz:map name="randomNearCacheEvictionMap">
-                <hz:near-cache eviction-policy="RANDOM" />
+                <hz:near-cache eviction-policy="RANDOM"/>
             </hz:map>
 
             <hz:map name="testMap3"
@@ -400,11 +402,11 @@
             <hz:map name="mapWithValueCachingSetToAlways" cache-deserialized-values="${map.conf.cache.deserialized.values}"/>
             <hz:map name="mapWithDefaultOptimizedQueries"/>
             <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"
-                    in-memory-format="NATIVE" />
+                    in-memory-format="NATIVE"/>
 
             <hz:map name="mapWithPartitionLostListener">
                 <hz:partition-lost-listeners>
-                    <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl" />
+                    <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl"/>
                 </hz:partition-lost-listeners>
             </hz:map>
 
@@ -430,7 +432,7 @@
                         <hz:filter-impl>com.example.SampleFilter</hz:filter-impl>
                     </hz:filters>
                 </hz:wan-replication-ref>
-                <hz:hot-restart enabled="true" fsync="true" />
+                <hz:hot-restart enabled="true" fsync="true"/>
             </hz:cache>
 
             <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
@@ -446,16 +448,16 @@
             </hz:multimap>
 
             <hz:list name="testList"
-                      max-size="9999"
-                      backup-count="1"
-                      async-backup-count="1"
-                      statistics-enabled="false"
+                     max-size="9999"
+                     backup-count="1"
+                     async-backup-count="1"
+                     statistics-enabled="false"
             />
             <hz:set name="testSet"
-                      max-size="7777"
-                      backup-count="0"
-                      async-backup-count="0"
-                      statistics-enabled="false"
+                    max-size="7777"
+                    backup-count="0"
+                    async-backup-count="0"
+                    statistics-enabled="false"
             />
 
             <hz:topic name="testTopic">
@@ -558,6 +560,8 @@
                 <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
                 <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
             </hz:hot-restart-persistence>
+
+            <hz:reliable-id-generator name="reliableIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"/>
         </hz:config>
     </hz:hazelcast>
 
@@ -575,8 +579,9 @@
     <hz:list id="list" instance-ref="instance" name="list"/>
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
-    <hz:atomicLong id="atomicLong" instance-ref="instance" name="atomicLong"/>
-    <hz:atomicReference id="atomicReference" instance-ref="instance" name="atomicReference"/>
+    <hz:reliableIdGenerator id="reliableIdGenerator" instance-ref="instance" name="reliableIdGenerator"/>
+    <hz:atomicLong id="atomicLong" instance-ref="instance" name="testAtomicLong"/>
+    <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
     <hz:lock id="lock" instance-ref="instance" name="lock"/>

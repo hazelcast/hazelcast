@@ -87,8 +87,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int QUORUM_LISTENER_CONFIG = 45;
     public static final int CACHE_PARTITION_LOST_LISTENER_CONFIG = 46;
     public static final int SIMPLE_CACHE_ENTRY_LISTENER_CONFIG = 47;
+    public static final int RELIABLE_ID_GENERATOR_CONFIG = 48;
+    public static final int ATOMIC_LONG_CONFIG = 49;
+    public static final int ATOMIC_REFERENCE_CONFIG = 50;
 
-    private static final int LEN = SIMPLE_CACHE_ENTRY_LISTENER_CONFIG + 1;
+    private static final int LEN = ATOMIC_REFERENCE_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -391,7 +394,27 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                         return new CacheSimpleEntryListenerConfig();
                     }
                 };
-
+        constructors[RELIABLE_ID_GENERATOR_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new ReliableIdGeneratorConfig();
+                    }
+                };
+        constructors[ATOMIC_LONG_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new AtomicLongConfig();
+                    }
+                };
+        constructors[ATOMIC_REFERENCE_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new AtomicReferenceConfig();
+                    }
+                };
 
         return new ArrayDataSerializableFactory(constructors);
     }

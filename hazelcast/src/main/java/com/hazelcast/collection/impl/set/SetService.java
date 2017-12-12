@@ -20,21 +20,41 @@ import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
 import com.hazelcast.collection.impl.txnset.TransactionalSetProxy;
+import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
 public class SetService extends CollectionService {
 
     public static final String SERVICE_NAME = "hz:impl:setService";
 
+    private static final Object NULL_OBJECT = new Object();
+
     private final ConcurrentMap<String, SetContainer> containerMap = new ConcurrentHashMap<String, SetContainer>();
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            SetConfig lockConfig = nodeEngine.getConfig().findSetConfig(name);
+            String quorumName = lockConfig.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public SetService(NodeEngine nodeEngine) {
         super(nodeEngine);
@@ -79,5 +99,13 @@ public class SetService extends CollectionService {
         return migrationData.isEmpty()
                 ? null
                 : new SetReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+    }
+
+    @Override
+    public String getQuorumName(final String name) {
+        // we use caching here because lock operations are often and we should avoid lock config lookup
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }

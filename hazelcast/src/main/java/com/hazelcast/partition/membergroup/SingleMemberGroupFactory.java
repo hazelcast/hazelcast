@@ -19,8 +19,9 @@ package com.hazelcast.partition.membergroup;
 import com.hazelcast.core.Member;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Arranges members in single-member groups (every member is its own group).
@@ -29,7 +30,7 @@ public class SingleMemberGroupFactory implements MemberGroupFactory {
 
     @Override
     public Set<MemberGroup> createMemberGroups(Collection<? extends Member> members) {
-        Set<MemberGroup> groups = new HashSet<MemberGroup>(members.size());
+        Set<MemberGroup> groups = createHashSet(members.size());
         for (Member member : members) {
             groups.add(new SingleMemberGroup(member));
         }

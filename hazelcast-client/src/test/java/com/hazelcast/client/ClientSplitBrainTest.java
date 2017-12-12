@@ -59,9 +59,9 @@ public class ClientSplitBrainTest extends ClientTestSupport {
 
     @Test
     public void testClientListeners_InSplitBrain() throws Throwable {
-        Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+        Config config = new Config()
+                .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
+                .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
@@ -102,14 +102,11 @@ public class ClientSplitBrainTest extends ClientTestSupport {
 
         try {
             checkEventsEventually(listenerGotEventFlags);
-        } catch (Throwable t) {
-            throw t;
         } finally {
             testFinished.set(true);
             clientThread.interrupt();
             clientThread.join();
         }
-
     }
 
     private void checkEventsEventually(final AtomicBoolean[] listenerGotEventFlags) {
@@ -117,8 +114,8 @@ public class ClientSplitBrainTest extends ClientTestSupport {
             final int id = i;
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
-                    assertTrue("listener id " + id, listenerGotEventFlags[id].get());
+                public void run() {
+                    assertTrue("listener ID " + id, listenerGotEventFlags[id].get());
                 }
             });
         }
@@ -162,7 +159,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientEngineCleanup_AfterMergeFromSplitBrain() throws InterruptedException {
+    public void testClientEngineCleanup_AfterMergeFromSplitBrain() {
         Config config = new Config();
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "10");
@@ -197,10 +194,10 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         blockCommunicationBetween(h1, h2);
         blockCommunicationBetween(h1, h3);
 
-        //make sure that cluster is split as [ 1 ] , [ 2 , 3 ]
+        // make sure that cluster is split as [ 1 ] , [ 2 , 3 ]
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(2, h2.getCluster().getMembers().size());
                 assertEquals(2, h3.getCluster().getMembers().size());
             }
@@ -208,26 +205,26 @@ public class ClientSplitBrainTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, h1.getCluster().getMembers().size());
             }
         });
 
-        //open communication back for nodes to merge
+        // open communication back for nodes to merge
         unblockCommunicationBetween(h1, h2);
         unblockCommunicationBetween(h1, h3);
 
-        //wait for cluster is merged back
+        // wait for cluster is merged back
         assertClusterSizeEventually(3, h1, h2, h3);
 
-        //wait for client is disconnected from h1 because of merge
+        // wait for client is disconnected from h1 because of merge
         assertOpenEventually(disconnected);
         assertOpenEventually(connected);
 
-        //wait for client to connect back to all nodes
+        // wait for client to connect back to all nodes
         assertSizeEventually(3, clientInstanceImpl.getConnectionManager().getActiveConnections());
 
-        //verify endpoints are cleared.
+        // verify endpoints are cleared
         ClientEngineImpl clientEngineImpl1 = getClientEngineImpl(h1);
         ClientEngineImpl clientEngineImpl2 = getClientEngineImpl(h2);
         ClientEngineImpl clientEngineImpl3 = getClientEngineImpl(h3);

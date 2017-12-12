@@ -16,11 +16,14 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -41,9 +44,7 @@ import static java.util.Collections.emptyMap;
 
 /**
  * This is used when Hazelcast is starting and {@link ClusterWideConfigurationService} is not available yet.
- *
  */
-
 @SuppressWarnings("checkstyle:methodcount")
 class EmptyConfigurationService implements ConfigurationService {
 
@@ -89,6 +90,16 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public RingbufferConfig findRingbufferConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public AtomicLongConfig findAtomicLongConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
         return null;
     }
 
@@ -193,6 +204,16 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
+    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
+        return emptyMap();
+    }
+
+    @Override
     public Map<String, TopicConfig> getTopicConfigs() {
         return emptyMap();
     }
@@ -224,6 +245,16 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, SemaphoreConfig> getSemaphoreConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String baseName) {
+        return null;
+    }
+
+    @Override
+    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
         return emptyMap();
     }
 

@@ -155,17 +155,17 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         String name = randomString();
         IMap map = client.getMap(name);
 
-        IExecutorService executorService = client.getExecutorService(randomString());
-        for (int i = 0; i < MAX_ALLOWED - 1; i++) {
-            executorService.submit(new SleepyProcessor(Integer.MAX_VALUE));
-        }
-
-        ClientDelegatingFuture future = (ClientDelegatingFuture) executorService.submit(new SleepyProcessor(0));
         CountDownLatch countDownLatch = new CountDownLatch(1);
         SleepyCallback sleepyCallback = new SleepyCallback(countDownLatch);
-        registerCallbackCall.call(future, sleepyCallback);
-        future.get();
         try {
+            IExecutorService executorService = client.getExecutorService(randomString());
+            for (int i = 0; i < MAX_ALLOWED - 1; i++) {
+                executorService.submit(new SleepyProcessor(Integer.MAX_VALUE));
+            }
+
+            ClientDelegatingFuture future = (ClientDelegatingFuture) executorService.submit(new SleepyProcessor(0));
+            registerCallbackCall.call(future, sleepyCallback);
+            future.get();
             map.get(1);
         } finally {
             countDownLatch.countDown();
@@ -216,12 +216,12 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         SleepyCallback sleepyCallback = new SleepyCallback(countDownLatch);
 
-        for (int i = 0; i < MAX_ALLOWED; i++) {
-            ClientDelegatingFuture future = (ClientDelegatingFuture) executorService.submit(new SleepyProcessor(0));
-            registerCallbackCall.call(future, sleepyCallback);
-            future.get();
-        }
         try {
+            for (int i = 0; i < MAX_ALLOWED; i++) {
+                ClientDelegatingFuture future = (ClientDelegatingFuture) executorService.submit(new SleepyProcessor(0));
+                registerCallbackCall.call(future, sleepyCallback);
+                future.get();
+            }
             map.get(1);
         } finally {
             countDownLatch.countDown();

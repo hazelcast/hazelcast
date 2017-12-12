@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -241,12 +239,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeObject(namespace);
-        } else {
-            assert namespace.equals(NonFragmentedServiceNamespace.INSTANCE)
-                    : "Only internal namespace is allowed before V3.9: " + namespace;
-        }
+        out.writeObject(namespace);
         out.writeLongArray(versions);
 
         int size = operations != null ? operations.size() : 0;
@@ -260,11 +253,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            namespace = in.readObject();
-        } else {
-            namespace = NonFragmentedServiceNamespace.INSTANCE;
-        }
+        namespace = in.readObject();
         versions = in.readLongArray();
 
         int size = in.readInt();

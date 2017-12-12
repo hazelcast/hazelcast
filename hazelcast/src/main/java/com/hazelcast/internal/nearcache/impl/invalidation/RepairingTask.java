@@ -197,8 +197,8 @@ public final class RepairingTask implements Runnable {
     }
 
     /**
-     * Synchronously makes initial population of partition uuids & sequences.
-     * This initialization is done for every near-cached data structure.
+     * Synchronously makes initial population of partition UUIDs & sequences.
+     * This initialization is done for every data structure with Near Cache.
      */
     private void initRepairingHandler(RepairingHandler handler) {
         logger.finest("Initializing repairing handler");
@@ -217,7 +217,7 @@ public final class RepairingTask implements Runnable {
     }
 
     /**
-     * Asynchronously makes initial population of partition uuids & sequences.
+     * Asynchronously makes initial population of partition UUIDs & sequences.
      * This is the fallback operation when {@link #initRepairingHandler} is failed.
      */
     private void initRepairingHandlerAsync(final RepairingHandler handler) {

@@ -21,13 +21,18 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 import java.util.Set;
+
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 public class ClientReAuthOperation
         extends AbstractClientOperation
@@ -50,7 +55,7 @@ public class ClientReAuthOperation
         ClientEngineImpl engine = getService();
         String memberUuid = getCallerUuid();
         if (!engine.trySetLastAuthenticationCorrelationId(clientUuid, authCorrelationId)) {
-            String message = "Server already processed a newer authentication from client with uuid " + clientUuid
+            String message = "Server already processed a newer authentication from client with UUID " + clientUuid
                     + ". Not applying requested ownership change to " + memberUuid;
             getLogger().info(message);
             throw new AuthenticationException(message);
@@ -69,6 +74,14 @@ public class ClientReAuthOperation
         if (!(e instanceof AuthenticationException)) {
             super.logError(e);
         }
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
+            return THROW_EXCEPTION;
+        }
+        return super.onInvocationException(throwable);
     }
 
     @Override

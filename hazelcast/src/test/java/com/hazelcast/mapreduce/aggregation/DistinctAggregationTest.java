@@ -20,7 +20,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +35,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore
 public class DistinctAggregationTest extends AbstractAggregationTest {
 
     @Test

@@ -24,7 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -55,7 +57,6 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertEquals("f", StringUtil.getterIntoProperty("getF"));
     }
 
-
     @Test
     public void getterIntoProperty_whenGetNumber_returnNumber() throws Exception {
         assertEquals("8", StringUtil.getterIntoProperty("get8"));
@@ -64,5 +65,39 @@ public class StringUtilTest extends HazelcastTestSupport {
     @Test
     public void getterIntoProperty_whenPropertyIsLowerCase_DoNotChange() throws Exception {
         assertEquals("getfoo", StringUtil.getterIntoProperty("getfoo"));
+    }
+
+    @Test
+    public void testSplitByComma() throws Exception {
+        assertNull(StringUtil.splitByComma(null, true));
+        assertArrayEquals(arr(""), StringUtil.splitByComma("", true));
+        assertArrayEquals(arr(""), StringUtil.splitByComma(" ", true));
+        assertArrayEquals(arr(), StringUtil.splitByComma(" ", false));
+        assertArrayEquals(arr("a"), StringUtil.splitByComma("a", true));
+        assertArrayEquals(arr("a"), StringUtil.splitByComma("a", false));
+        assertArrayEquals(arr("aa", "bbb", "c"), StringUtil.splitByComma("aa,bbb,c", true));
+        assertArrayEquals(arr("aa", "bbb", "c", ""), StringUtil.splitByComma(" aa\t,\nbbb   ,\r c,  ", true));
+        assertArrayEquals(arr("aa", "bbb", "c"), StringUtil.splitByComma("  aa ,\n,\r\tbbb  ,c , ", false));
+    }
+
+    @Test
+    public void testArrayIntersection() throws Exception {
+        assertArrayEquals(arr("test"), StringUtil.intersection(arr("x", "test", "y", "z"), arr("a", "b", "test")));
+        assertArrayEquals(arr(""), StringUtil.intersection(arr("", "z"), arr("a", "")));
+        assertArrayEquals(arr(), StringUtil.intersection(arr("", "z"), arr("a")));
+    }
+
+    @Test
+    public void testArraySubraction() throws Exception {
+        assertNull(StringUtil.subraction(null, arr("a", "test", "b", "a")));
+        assertArrayEquals(arr("a", "test", "b", "a"), StringUtil.subraction(arr("a", "test", "b", "a"), null));
+        assertArrayEquals(arr("test"), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b")));
+        assertArrayEquals(arr(), StringUtil.subraction(arr(), arr("a", "b")));
+        assertArrayEquals(arr("a", "b"), StringUtil.subraction(arr("a", "b"), arr()));
+        assertArrayEquals(arr(), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b", "test")));
+    }
+
+    private String[] arr(String... strings) {
+        return strings;
     }
 }

@@ -83,6 +83,10 @@ public class PermissionConfig {
          */
         ID_GENERATOR("id-generator-permission"),
         /**
+         * Reliable ID generator
+         */
+        RELIABLE_ID_GENERATOR("reliable-id-generator-permission"),
+        /**
          * Lock
          */
         LOCK("lock-permission"),

@@ -22,6 +22,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
@@ -174,6 +175,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public IdGenerator getIdGenerator(String name) {
         return getOriginal().getIdGenerator(name);
+    }
+
+    @Override
+    public ReliableIdGenerator getReliableIdGenerator(String name) {
+        return getOriginal().getReliableIdGenerator(name);
     }
 
     @Override

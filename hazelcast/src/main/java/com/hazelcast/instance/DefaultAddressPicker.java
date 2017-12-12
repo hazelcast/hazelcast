@@ -28,6 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.CollectionUtil;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -42,13 +43,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
+import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 
 class DefaultAddressPicker implements AddressPicker {
 
@@ -218,9 +219,9 @@ class DefaultAddressPicker implements AddressPicker {
         Map<String, String> addressDomainMap;
         TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
-            // LinkedHashMap is to guarantee order
-            addressDomainMap = new LinkedHashMap<String, String>();
             Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(config);
+            // LinkedHashMap is to guarantee order
+            addressDomainMap = createLinkedHashMap(possibleAddresses.size());
             for (String possibleAddress : possibleAddresses) {
                 String addressHolder = AddressUtil.getAddressHolder(possibleAddress).getAddress();
                 if (AddressUtil.isIpAddress(addressHolder)) {
@@ -334,15 +335,19 @@ class DefaultAddressPicker implements AddressPicker {
     private AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         boolean preferIPv4Stack = preferIPv4Stack();
+        boolean matchInterfaceDefinition = CollectionUtil.isNotEmpty(interfaces);
         while (networkInterfaces.hasMoreElements()) {
             NetworkInterface ni = networkInterfaces.nextElement();
+            if (!matchInterfaceDefinition && skipInterface(ni)) {
+                continue;
+            }
             Enumeration<InetAddress> e = ni.getInetAddresses();
             while (e.hasMoreElements()) {
                 InetAddress inetAddress = e.nextElement();
                 if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
                     continue;
                 }
-                if (interfaces != null && !interfaces.isEmpty()) {
+                if (matchInterfaceDefinition) {
                     AddressDefinition address = match(inetAddress, interfaces);
                     if (address != null) {
                         return address;
@@ -353,6 +358,19 @@ class DefaultAddressPicker implements AddressPicker {
             }
         }
         return null;
+    }
+
+    /**
+     * Checks given network interface and returns true when it should not be used for picking address. Reasons for skipping are
+     * the interface is: down, virtual or loopback.
+     */
+    private boolean skipInterface(NetworkInterface ni) throws SocketException {
+        boolean skipInterface = !ni.isUp() || ni.isVirtual() || ni.isLoopback();
+        if (skipInterface && logger.isFineEnabled()) {
+            logger.fine("Skipping NetworkInterface '" + ni.getName() + "': isUp=" + ni.isUp() + ", isVirtual=" + ni.isVirtual()
+                    + ", isLoopback=" + ni.isLoopback());
+        }
+        return skipInterface;
     }
 
     private AddressDefinition match(InetAddress address, Collection<InterfaceDefinition> interfaces) {

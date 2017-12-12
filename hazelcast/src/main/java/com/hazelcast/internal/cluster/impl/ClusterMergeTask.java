@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -51,16 +50,17 @@ class ClusterMergeTask implements Runnable {
     private static final String MERGE_TASKS_EXECUTOR = "hz:cluster-merge";
 
     private final Node node;
+    private final LifecycleServiceImpl lifecycleService;
 
     ClusterMergeTask(Node node) {
         this.node = node;
+        this.lifecycleService = node.hazelcastInstance.getLifecycleService();
     }
 
     public void run() {
-        LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
         lifecycleService.fireLifecycleEvent(MERGING);
-        LifecycleState finalLifecycleState = MERGE_FAILED;
 
+        boolean joined = false;
         try {
             resetState();
 
@@ -72,19 +72,19 @@ class ClusterMergeTask implements Runnable {
 
             rejoin();
 
-            finalLifecycleState = getFinalLifecycleState();
+            joined = isJoined();
 
-            if (finalLifecycleState == MERGED) {
+            if (joined) {
                 executeMergeTasks(coreTasks);
                 executeMergeTasks(nonCoreTasks);
             }
         } finally {
-            lifecycleService.fireLifecycleEvent(finalLifecycleState);
+            lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
         }
     }
 
-    private LifecycleState getFinalLifecycleState() {
-       return (node.isRunning() && node.getClusterService().isJoined()) ? MERGED : MERGE_FAILED;
+    private boolean isJoined() {
+        return node.isRunning() && node.getClusterService().isJoined();
     }
 
     private void resetState() {

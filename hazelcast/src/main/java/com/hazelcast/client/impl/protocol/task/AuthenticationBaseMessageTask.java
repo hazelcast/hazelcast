@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
@@ -95,7 +96,11 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
 
     @Override
     protected ClientEndpointImpl getEndpoint() {
-        return new ClientEndpointImpl(clientEngine, connection);
+        ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
+        if (endpoint != null) {
+            return (ClientEndpointImpl) endpoint;
+        }
+        return new ClientEndpointImpl(clientEngine, nodeEngine, connection);
     }
 
     @Override
@@ -131,7 +136,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     private void prepareAndSendResponse(AuthenticationStatus authenticationStatus) {
         boolean isNotMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
         if (isNotMember) {
-            logger.warning("Member having uuid " + principal.getOwnerUuid()
+            logger.warning("Member having UUID " + principal.getOwnerUuid()
                     + " is not part of the cluster. Client Authentication rejected.");
             authenticationStatus = AuthenticationStatus.CREDENTIALS_FAILED;
         }

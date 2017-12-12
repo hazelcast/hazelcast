@@ -41,8 +41,9 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Helper class to be gather JMX related stats for {@link TimedMemberStateFactory}
@@ -107,7 +108,8 @@ final class TimedMemberStateFactoryHelper {
         MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemory = memoryMxBean.getHeapMemoryUsage();
         MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
-        Map<String, Long> map = new HashMap<String, Long>();
+        final int propertyCount = 29;
+        Map<String, Long> map = createHashMap(propertyCount);
         map.put("runtime.availableProcessors", Integer.valueOf(runtime.availableProcessors()).longValue());
         map.put("date.startTime", runtimeMxBean.getStartTime());
         map.put("seconds.upTime", runtimeMxBean.getUptime());

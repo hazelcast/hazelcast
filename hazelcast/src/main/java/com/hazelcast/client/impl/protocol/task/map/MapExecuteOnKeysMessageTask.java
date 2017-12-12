@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 public class MapExecuteOnKeysMessageTask
         extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysCodec.RequestParameters> {
 
@@ -73,7 +75,7 @@ public class MapExecuteOnKeysMessageTask
         IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitions = partitionService.getPartitionCount();
         int capacity = Math.min(partitions, parameters.keys.size());
-        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        Set<Integer> partitionIds = createHashSet(capacity);
         Iterator<Data> iterator = parameters.keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {
             Data key = iterator.next();

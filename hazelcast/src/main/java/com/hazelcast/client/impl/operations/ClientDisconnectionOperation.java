@@ -59,7 +59,6 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
 
         // This part cleans up locks conditions semaphore etc..
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        nodeEngine.onClientDisconnected(clientUuid);
         Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
         for (ClientAwareService service : services) {
             service.clientDisconnected(clientUuid);

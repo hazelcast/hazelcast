@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -101,14 +102,12 @@ public class LocalMapStatsProvider {
 
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
         for (PartitionContainer partitionContainer : partitionContainers) {
-            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
             Collection<RecordStore> allRecordStores = partitionContainer.getAllRecordStores();
-
             for (RecordStore recordStore : allRecordStores) {
                 if (!isStatsCalculationEnabledFor(recordStore)) {
                     continue;
                 }
-
+                IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId(), false);
                 if (partition.isLocal()) {
                     addPrimaryStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
                 } else {
@@ -116,7 +115,6 @@ public class LocalMapStatsProvider {
                 }
             }
         }
-
 
         // reuse same HashMap to return calculated LocalMapStats.
         for (Object object : statsPerMap.entrySet()) {
@@ -184,16 +182,18 @@ public class LocalMapStatsProvider {
             return;
         }
 
+        LocalRecordStoreStats stats = recordStore.getLocalRecordStoreStats();
+
         onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
-        onDemandStats.incrementHits(recordStore.getHits());
+        onDemandStats.incrementHits(stats.getHits());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getOwnedEntryCost());
         if (NATIVE  != recordStore.getMapContainer().getMapConfig().getInMemoryFormat()) {
             onDemandStats.incrementHeapCost(recordStore.getOwnedEntryCost());
         }
         onDemandStats.incrementOwnedEntryCount(recordStore.size());
-        onDemandStats.setLastAccessTime(recordStore.getLastAccessTime());
-        onDemandStats.setLastUpdateTime(recordStore.getLastUpdateTime());
+        onDemandStats.setLastAccessTime(stats.getLastAccessTime());
+        onDemandStats.setLastUpdateTime(stats.getLastUpdateTime());
         onDemandStats.setBackupCount(recordStore.getMapContainer().getMapConfig().getTotalBackupCount());
     }
 

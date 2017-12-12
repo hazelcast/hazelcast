@@ -216,7 +216,7 @@ public final class CacheProxyUtil {
         if (Object.class != keyType) {
             // means that type checks is required
             if (!keyType.isAssignableFrom(key.getClass())) {
-                throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
+                throw new ClassCastException("Key '" + key + "' is not assignable to " + keyType);
             }
         }
     }
@@ -233,7 +233,7 @@ public final class CacheProxyUtil {
         if (Object.class != valueType) {
             // means that type checks is required
             if (!valueType.isAssignableFrom(value.getClass())) {
-                throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
+                throw new ClassCastException("Value '" + value + "' is not assignable to " + valueType);
             }
         }
     }

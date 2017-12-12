@@ -16,12 +16,13 @@
 
 package com.hazelcast.concurrent.countdownlatch.operations;
 
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.SET_COUNT_OPERATION;
 
 public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
@@ -54,7 +55,7 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
     @Override
     public int getId() {
-        return CountDownLatchDataSerializerHook.SET_COUNT_OPERATION;
+        return SET_COUNT_OPERATION;
     }
 
     @Override

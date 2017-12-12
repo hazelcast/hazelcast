@@ -37,6 +37,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
@@ -179,9 +180,9 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     QueryCacheContext getQueryCacheContext();
 
-    String addListenerAdapter(String cacheName, ListenerAdapter listenerAdaptor);
-
     String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
 
     String addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
+
+    IndexCopyBehavior getIndexCopyBehavior();
 }

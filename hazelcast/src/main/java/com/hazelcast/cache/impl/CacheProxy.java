@@ -21,8 +21,8 @@ import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
+import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
@@ -49,15 +49,15 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * <h1>ICache implementation</h1>
@@ -116,7 +116,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
         for (K key : keys) {
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
-        HashSet<Data> keysData = new HashSet<Data>(keys.size());
+        Set<Data> keysData = createHashSet(keys.size());
         for (K key : keys) {
             validateNotNull(key);
             keysData.add(serializationService.toData(key));
@@ -258,7 +258,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
         ensureOpen();
         validateNotNull(keys);
         checkNotNull(entryProcessor, "Entry Processor is null");
-        Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
+        Map<K, EntryProcessorResult<T>> allResult = createHashMap(keys.size());
         for (K key : keys) {
             validateNotNull(key);
             CacheEntryProcessorResult<T> ceResult;
