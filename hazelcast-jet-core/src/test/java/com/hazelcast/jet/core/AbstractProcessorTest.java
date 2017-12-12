@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor.FlatMapper;
+import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInInit;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.logging.ILogger;
@@ -115,12 +116,8 @@ public class AbstractProcessorTest {
 
     @Test(expected = UnknownHostException.class)
     public void when_customInitThrows_then_initRethrows() {
-        new AbstractProcessor() {
-            @Override
-            protected void init(@Nonnull Context context) throws UnknownHostException {
-                throw new UnknownHostException();
-            }
-        }.init(mock(Outbox.class), mock(Processor.Context.class));
+        new ProcessorThatFailsInInit(new UnknownHostException())
+                .init(mock(Outbox.class), mock(Processor.Context.class));
     }
 
     @Test

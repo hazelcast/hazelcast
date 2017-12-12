@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -26,6 +25,7 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -40,7 +40,6 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -95,7 +94,7 @@ public class WriteBufferedPTest extends JetTestSupport {
         JetInstance instance = createJetMember();
         try {
             DAG dag = new DAG();
-            Vertex source = dag.newVertex("source", StuckSource::new);
+            Vertex source = dag.newVertex("source", StuckForeverSourceP::new);
             Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
 
             dag.edge(Edge.between(source, sink));
@@ -123,20 +122,5 @@ public class WriteBufferedPTest extends JetTestSupport {
                 buffer -> events.add("flush"),
                 buffer -> events.add("dispose")
         );
-    }
-
-    private static class StuckSource extends AbstractProcessor {
-        StuckSource() {
-            setCooperative(false);
-        }
-
-        @Override
-        public boolean complete() {
-            try {
-                currentThread().join();
-            } catch (InterruptedException ignored) {
-            }
-            return false;
-        }
     }
 }

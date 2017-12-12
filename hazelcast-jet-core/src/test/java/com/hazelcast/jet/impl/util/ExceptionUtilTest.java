@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.core.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,50 +70,40 @@ public class ExceptionUtilTest extends JetTestSupport {
     }
 
     @Test
-    public void test_serializationFromNodeToClient() throws InterruptedException {
+    public void test_serializationFromNodeToClient() {
         // create one member and one client
         createJetMember();
         JetInstance client = createJetClient();
 
+        RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
-            dag.newVertex("source", ErrorGenerator::new).localParallelism(1);
+            dag.newVertex("source", () -> new ProcessorThatFailsInComplete(exc)).localParallelism(1);
             client.newJob(dag).join();
         } catch (Exception caught) {
-            assertThat(caught.toString(), containsString(ErrorGenerator.newException().toString()));
-            TestUtil.assertExceptionInCauses(ErrorGenerator.newException(), caught);
+            assertThat(caught.toString(), containsString(exc.toString()));
+            TestUtil.assertExceptionInCauses(exc, caught);
         } finally {
             shutdownFactory();
         }
     }
 
     @Test
-    public void test_serializationOnNode() throws InterruptedException {
+    public void test_serializationOnNode() {
         JetTestInstanceFactory factory = new JetTestInstanceFactory();
         // create one member and one client
         JetInstance client = factory.newMember();
 
+        RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
-            dag.newVertex("source", ErrorGenerator::new).localParallelism(1);
+            dag.newVertex("source", () -> new ProcessorThatFailsInComplete(exc)).localParallelism(1);
             client.newJob(dag).join();
         } catch (Exception caught) {
-            assertThat(caught.toString(), containsString(ErrorGenerator.newException().toString()));
-            TestUtil.assertExceptionInCauses(ErrorGenerator.newException(), caught);
+            assertThat(caught.toString(), containsString(exc.toString()));
+            TestUtil.assertExceptionInCauses(exc, caught);
         } finally {
             factory.terminateAll();
         }
     }
-
-    public static class ErrorGenerator implements Processor {
-        @Override
-        public boolean complete() {
-            throw newException();
-        }
-
-        private static RuntimeException newException() {
-            return new RuntimeException("myException");
-        }
-    }
-
 }

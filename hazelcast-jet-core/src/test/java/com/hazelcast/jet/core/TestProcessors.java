@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -49,7 +51,7 @@ public class TestProcessors {
 
         private final RuntimeException e;
 
-        ProcessorThatFailsInComplete(@Nonnull RuntimeException e) {
+        public ProcessorThatFailsInComplete(@Nonnull RuntimeException e) {
             this.e = e;
         }
 
@@ -61,9 +63,9 @@ public class TestProcessors {
 
     public static class ProcessorThatFailsInInit extends AbstractProcessor {
 
-        private final RuntimeException e;
+        private final Exception e;
 
-        ProcessorThatFailsInInit(@Nonnull RuntimeException e) {
+        ProcessorThatFailsInInit(@Nonnull Exception e) {
             this.e = e;
         }
 
@@ -96,6 +98,13 @@ public class TestProcessors {
             } catch (InterruptedException e) {
                 return false;
             }
+        }
+    }
+
+    public static final class StuckForeverSourceP implements Processor {
+        @Override
+        public boolean complete() {
+            return false;
         }
     }
 
@@ -243,6 +252,23 @@ public class TestProcessors {
                     + initCount.get() + " node count: " + nodeCount, initCount.get() >= nodeCount);
             assertTrue("Complete called " + completeCount.get() + " but init called "
                     + initCount.get() + " times!", completeCount.get() <= initCount.get());
+        }
+    }
+
+    /**
+     * A processor that emits the given list of items. The same items are
+     * emitted from each instance.
+     */
+    public static class ListSource extends AbstractProcessor {
+        private final Traverser<?> trav;
+
+        public ListSource(List<?> list) {
+            trav = traverseIterable(list);
+        }
+
+        @Override
+        public boolean complete() {
+            return emitFromTraverser(trav);
         }
     }
 }

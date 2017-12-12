@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -234,6 +235,20 @@ public class RoutingPolicyTest extends JetTestSupport {
 
         List<Object> getListAt(int i) {
             return ((ListSink) processors.get(i)).getList();
+        }
+    }
+
+    private static class ListSink extends AbstractProcessor {
+        private final List<Object> list = new ArrayList<>();
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+            list.add(item);
+            return true;
+        }
+
+        public List<Object> getList() {
+            return list;
         }
     }
 }

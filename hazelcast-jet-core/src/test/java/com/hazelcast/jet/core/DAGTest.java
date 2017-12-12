@@ -27,7 +27,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +34,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 public class DAGTest {
 
-    private static final DistributedSupplier<Processor> PROCESSOR_SUPPLIER = TestProcessor::new;
+    private static final DistributedSupplier<Processor> PROCESSOR_SUPPLIER = noopP();
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
@@ -375,12 +375,5 @@ public class DAGTest {
 
         // When
         dag.edge(from(b).to(c, 1));
-    }
-
-    private static class TestProcessor extends AbstractProcessor {
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            return true;
-        }
     }
 }

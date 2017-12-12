@@ -18,11 +18,10 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -39,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.accumulateP;
@@ -80,7 +78,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
         AggregateOperation1<Long, ?, Long> summingOp = summingLong((Long l) -> l);
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", () -> new EmitListP(sourceItems)).localParallelism(1);
+        Vertex source = dag.newVertex("source", () -> new ListSource(sourceItems)).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeListP("sink"));
 
         if (singleStageProcessor) {
@@ -110,21 +108,4 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
 
         assertEquals(expectedOutput, sinkList.get(0));
     }
-
-    /**
-     * A processor that will emit contents of a list and then complete.
-     */
-    private static class EmitListP extends AbstractProcessor {
-        private final Traverser<Object> traverser;
-
-        EmitListP(List<?> list) {
-            this.traverser = traverseIterable(list);
-        }
-
-        @Override
-        public boolean complete() {
-            return emitFromTraverser(traverser);
-        }
-    }
-
 }

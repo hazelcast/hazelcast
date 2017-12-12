@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.stream.impl.sources;
 
-import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.stream.AbstractStreamTest;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedStream;
@@ -42,6 +41,7 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.of;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -97,19 +97,10 @@ public class SourcesTest extends AbstractStreamTest {
         public Collection<? extends Processor> get(int count) {
             return IntStream.range(0, count).mapToObj(i -> {
                 if (i == 0) {
-                    return new DummySource();
+                    return new ListSource(asList("Hello World!", "How are you?"));
                 }
                 return noopP().get();
             }).collect(Collectors.toList());
-        }
-    }
-
-    private static class DummySource extends AbstractProcessor {
-        private Traverser<String> traverser = Traverser.over("Hello World!", "How are you?");
-
-        @Override
-        public boolean complete() {
-            return emitFromTraverser(traverser);
         }
     }
 }
