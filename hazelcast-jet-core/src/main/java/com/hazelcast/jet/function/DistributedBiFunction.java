@@ -29,7 +29,7 @@ public interface DistributedBiFunction<T, U, R> extends BiFunction<T, U, R>, Ser
 
     /**
      * {@code Serializable} variant of {@link
-     * BiFunction#andThen(java.util.Function)
+     * BiFunction#andThen(java.util.function.Function)
      * java.util.function.BiFunction#andThen(Function)}.
      */
     default <V> DistributedBiFunction<T, U, V> andThen(DistributedFunction<? super R, ? extends V> after) {

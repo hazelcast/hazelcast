@@ -75,6 +75,7 @@
                     <includeDependencySources>true</includeDependencySources>
                     <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                     <dependencySourceIncludes>
+                        <dependencySourceInclude>com.hazelcast</dependencySourceInclude>
                         <dependencySourceInclude>com.hazelcast.jet</dependencySourceInclude>
                     </dependencySourceIncludes>
                 </configuration>

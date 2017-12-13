@@ -59,6 +59,7 @@
                             <descriptors>
                                 <descriptor>src/assembly/zip.xml</descriptor>
                             </descriptors>
+                            <tarLongFileMode>posix</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
