@@ -16,6 +16,10 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
@@ -26,24 +30,32 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.util.ThreadUtil.getThreadId;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientInvocationTest extends HazelcastTestSupport {
+public class ClientInvocationTest extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -173,5 +185,23 @@ public class ClientInvocationTest extends HazelcastTestSupport {
             failure = t;
             latch.countDown();
         }
+    }
+
+    @Test(expected = TargetNotMemberException.class)
+    public void invokeOnPartitionOwnerWhenPartitionTableNotUpdated() throws IOException, ExecutionException, InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        SmartClientInvocationService spyInvocationService = spy((SmartClientInvocationService) clientInstanceImpl.getInvocationService());
+
+        //trying to simulate late partition table update here in case a member removed
+        //in that case, the member that partitionService returns should not be in member list
+        //we are simulating that by returning false when a membership of a member is asked
+        when(spyInvocationService.isMember(Matchers.<Address>any())).thenReturn(false);
+
+        SerializationService serializationService = clientInstanceImpl.getSerializationService();
+        ClientMessage request = MapGetCodec.encodeRequest("test", serializationService.toData("test"), getThreadId());
+        ClientInvocation invocation = new ClientInvocation(clientInstanceImpl, request, "map", 1);
+        spyInvocationService.invokeOnPartitionOwner(invocation, 1);
     }
 }
