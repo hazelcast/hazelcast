@@ -37,6 +37,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.RESOLVE_NOT_READY_ADDRESSES;
 
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
@@ -56,9 +57,10 @@ final class HazelcastKubernetesDiscoveryStrategy
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
-        String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
         String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
+        Boolean resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, false);
         String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
+        String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
 
         logger.info("Kubernetes Discovery properties: { "
                 + "service-dns: " + serviceDns + ", "
@@ -66,14 +68,16 @@ final class HazelcastKubernetesDiscoveryStrategy
                 + "service-name: " + serviceName + ", "
                 + "service-label: " + serviceLabel + ", "
                 + "service-label-value: " + serviceLabelValue + ", "
-                + "namespace: " + namespace + ", " + "kubernetes-master: " + kubernetesMaster + "}");
+                + "namespace: " + namespace + ", "
+                + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
+                + "kubernetes-master: " + kubernetesMaster + "}");
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, serviceDnsTimeout);
         } else {
-            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel, serviceLabelValue, namespace,
-                    kubernetesMaster, apiToken);
+            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel, serviceLabelValue,
+                    namespace, resolveNotReadyAddresses, kubernetesMaster, apiToken);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
         this.endpointResolver = endpointResolver;

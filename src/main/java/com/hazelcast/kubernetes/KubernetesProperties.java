@@ -22,6 +22,7 @@ import com.hazelcast.core.TypeConverter;
 
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
+import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 
 /**
  * <p>Configuration class of the Hazelcast Discovery Plugin for <a href="http://kubernetes.io">Kubernetes</a>.</p>
@@ -83,6 +84,12 @@ public final class KubernetesProperties {
      * Defines the namespace of the application POD through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
+
+    /**
+     *  <p>Configuration key: <tt>resolve-notready-addresses</tt></p>
+     *  Defines if not ready addresses should be evaluated to be discovered on startup.
+     */
+    public static final PropertyDefinition RESOLVE_NOT_READY_ADDRESSES = property("resolve-not-ready-addresses", BOOLEAN);
 
     /**
      * <p>Configuration key: <tt>kubernetes-master</tt></p>
