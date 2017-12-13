@@ -76,6 +76,15 @@ public class PartitionLostEvent implements DataSerializable, PartitionEvent {
     }
 
     /**
+     * Returns true if all replicas of a partition are lost
+     *
+     * @return true if all replicas of a partition are lost
+     */
+    public boolean allReplicasInPartitionLost() {
+        return lostBackupCount == InternalPartition.MAX_BACKUP_COUNT;
+    }
+
+    /**
      * Returns the address of the node that dispatches the event
      *
      * @return the address of the node that dispatches the event

@@ -44,9 +44,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.google.common.collect.Iterables.getLast;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -142,6 +144,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
                     assertEquals(survivingAddress, event.getEventSource());
                     assertFalse(survivingPartitionIds.contains(event.getPartitionId()));
                     assertEquals(0, event.getLostBackupCount());
+                    assertFalse(event.allReplicasInPartitionLost());
                 }
             }
         });
@@ -167,6 +170,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
             public void run() {
                 List<PartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
+                assertTrue(getLast(events).allReplicasInPartitionLost());
             }
         });
     }
