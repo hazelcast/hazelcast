@@ -41,9 +41,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.Map.Entry;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
@@ -98,7 +99,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readMap_and_writeMap() throws ExecutionException, InterruptedException {
+    public void when_readMap_and_writeMap() {
         IStreamMap<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
@@ -114,7 +115,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readMap_withNativePredicateAndProjection() throws ExecutionException, InterruptedException {
+    public void when_readMap_withNativePredicateAndProjection() {
         IStreamMap<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
@@ -138,7 +139,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readMap_withPredicateAndDistributedFunction() throws ExecutionException, InterruptedException {
+    public void when_readMap_withPredicateAndDistributedFunction() {
         IStreamMap<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 
@@ -157,9 +158,9 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamMap() throws ExecutionException, InterruptedException {
+    public void when_streamMap() {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamMapP(streamSourceName, false));
+        Vertex source = dag.newVertex("source", streamMapP(streamSourceName, START_FROM_OLDEST));
         Vertex sink = dag.newVertex("sink", writeListP(streamSinkName));
 
         dag.edge(between(source, sink));
@@ -174,10 +175,10 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamMap_withFilterAndProjection() throws ExecutionException, InterruptedException {
+    public void when_streamMap_withFilterAndProjection() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", streamMapP(streamSourceName,
-                event -> !event.getKey().equals(0), EventJournalMapEvent::getKey, false));
+                event -> !event.getKey().equals(0), EventJournalMapEvent::getKey, START_FROM_OLDEST));
         Vertex sink = dag.newVertex("sink", writeListP(streamSinkName));
 
         dag.edge(between(source, sink));
@@ -194,7 +195,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readCache_and_writeCache() throws ExecutionException, InterruptedException {
+    public void when_readCache_and_writeCache() {
         ICache<Integer, Integer> sourceCache = jetInstance.getCacheManager().getCache(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceCache.put(i, i));
 
@@ -210,9 +211,9 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamCache() throws ExecutionException, InterruptedException {
+    public void when_streamCache() {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", streamCacheP(streamSourceName, false));
+        Vertex source = dag.newVertex("source", streamCacheP(streamSourceName, START_FROM_OLDEST));
         Vertex sink = dag.newVertex("sink", writeListP(streamSinkName));
 
         dag.edge(between(source, sink));
@@ -227,10 +228,10 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamCache_withFilterAndProjection() throws ExecutionException, InterruptedException {
+    public void when_streamCache_withFilterAndProjection() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", streamCacheP(streamSourceName,
-                event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey, false));
+                event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey, START_FROM_OLDEST));
         Vertex sink = dag.newVertex("sink", writeListP(streamSinkName));
 
         dag.edge(between(source, sink));
@@ -247,7 +248,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readList_and_writeList() throws ExecutionException, InterruptedException {
+    public void when_readList_and_writeList() {
         IStreamList<Integer> list = jetInstance.getList(sourceName);
         list.addAll(range(0, ENTRY_COUNT).boxed().collect(toList()));
 
@@ -262,4 +263,65 @@ public class HazelcastConnectorTest extends JetTestSupport {
         assertEquals(ENTRY_COUNT, jetInstance.getList(sinkName).size());
     }
 
+    @Test
+    public void test_defaultFilter_mapJournal() {
+        DAG dag = new DAG();
+        Vertex source = dag.newVertex("source", streamMapP(streamSourceName, START_FROM_OLDEST));
+        Vertex sink = dag.newVertex("sink", writeListP(streamSinkName));
+
+        dag.edge(between(source, sink));
+
+        Future<Void> future = jetInstance.newJob(dag).getFuture();
+
+        IStreamMap<Integer, Integer> sourceMap = jetInstance.getMap(streamSourceName);
+        sourceMap.put(1, 1); // ADDED
+        sourceMap.remove(1); // REMOVED - filtered out
+        sourceMap.put(1, 2); // ADDED
+
+        IStreamList<Entry<Integer, Integer>> sinkList = jetInstance.getList(streamSinkName);
+        assertTrueEventually(() -> {
+            assertEquals(2, sinkList.size());
+
+            Entry<Integer, Integer> e = sinkList.get(0);
+            assertEquals(Integer.valueOf(1), e.getKey());
+            assertEquals(Integer.valueOf(1), e.getValue());
+
+            e = sinkList.get(1);
+            assertEquals(Integer.valueOf(1), e.getKey());
+            assertEquals(Integer.valueOf(2), e.getValue());
+        }, 3);
+
+        future.cancel(true);
+    }
+
+    @Test
+    public void test_defaultFilter_cacheJournal() {
+        DAG dag = new DAG();
+        Vertex source = dag.newVertex("source", streamCacheP(streamSourceName, START_FROM_OLDEST));
+        Vertex sink = dag.newVertex("sink", writeListP(streamSinkName));
+
+        dag.edge(between(source, sink));
+
+        Future<Void> future = jetInstance.newJob(dag).getFuture();
+
+        IStreamCache<Object, Object> sourceCache = jetInstance.getCacheManager().getCache(streamSourceName);
+        sourceCache.put(1, 1); // ADDED
+        sourceCache.remove(1); // REMOVED - filtered out
+        sourceCache.put(1, 2); // UPDATED
+
+        IStreamList<Entry<Integer, Integer>> sinkList = jetInstance.getList(streamSinkName);
+        assertTrueEventually(() -> {
+            assertEquals(2, sinkList.size());
+
+            Entry<Integer, Integer> e = sinkList.get(0);
+            assertEquals(Integer.valueOf(1), e.getKey());
+            assertEquals(Integer.valueOf(1), e.getValue());
+
+            e = sinkList.get(1);
+            assertEquals(Integer.valueOf(1), e.getKey());
+            assertEquals(Integer.valueOf(2), e.getValue());
+        }, 3);
+
+        future.cancel(true);
+    }
 }

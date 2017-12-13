@@ -49,6 +49,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
@@ -224,7 +225,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     @Test
     public void when_streamRemoteMap() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig, false));
+        Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig, START_FROM_OLDEST));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
@@ -240,7 +241,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_streamRemoteMap_withPredicateAndProjection() throws Exception {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig,
-                event -> !event.getKey().equals(0), EventJournalMapEvent::getKey, false));
+                event -> !event.getKey().equals(0), EventJournalMapEvent::getKey, START_FROM_OLDEST));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
@@ -258,7 +259,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_streamRemoteCache() throws Exception {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME,
-                streamRemoteCacheP(SOURCE_NAME, clientConfig, false)
+                streamRemoteCacheP(SOURCE_NAME, clientConfig, START_FROM_OLDEST)
         ).localParallelism(4);
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
@@ -276,7 +277,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
             throws Exception {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteCacheP(SOURCE_NAME, clientConfig,
-                event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey, false));
+                event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey, START_FROM_OLDEST));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 

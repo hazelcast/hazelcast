@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -26,6 +24,8 @@ import org.junit.Test;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
+import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -41,8 +41,8 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         input.forEach(i -> srcMap.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
         // When we start the job...
-        pipeline.drawFrom(Sources.mapJournal(mapName, false))
-                .map(EventJournalMapEvent::getNewValue)
+        pipeline.drawFrom(Sources.mapJournal(mapName, START_FROM_OLDEST))
+                .map(entryValue())
                 .drainTo(sink);
         jet().newJob(pipeline);
 
@@ -55,6 +55,12 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // Then eventually we get all the updated values in the sink.
         assertSizeEventually(2 * ITEM_COUNT, sinkList);
+
+        // When we delete all map items...
+        input.forEach(i -> srcMap.remove(String.valueOf(key[0]++)));
+
+        // Then we won't get any more events in the sink.
+        assertTrueAllTheTime(() -> assertEquals(2 * ITEM_COUNT, sinkList.size()), 2);
 
         // The values we got are exactly all the original values
         // and all the updated values.
@@ -74,7 +80,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         DistributedPredicate<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
-        pipeline.drawFrom(Sources.mapJournal(mapName, p, EventJournalMapEvent::getNewValue, false))
+        pipeline.drawFrom(Sources.mapJournal(mapName, p, EventJournalMapEvent::getNewValue, START_FROM_OLDEST))
                 .drainTo(sink);
         jet().newJob(pipeline);
 
@@ -96,40 +102,5 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
                 .filter(i -> i % 2 == 0)
                 .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
-    }
-
-    private abstract static class JournalEvent {
-
-        final String key;
-        final Integer oldValue;
-        final Integer newValue;
-
-        JournalEvent(String key, Integer oldValue, Integer newValue) {
-            this.key = key;
-            this.oldValue = oldValue;
-            this.newValue = newValue;
-        }
-
-        Integer newValue() {
-            return newValue;
-        }
-    }
-
-    private static class MapJournalEvent extends JournalEvent {
-        final EntryEventType type;
-
-        MapJournalEvent(String key, Integer oldValue, Integer newValue, EntryEventType type) {
-            super(key, oldValue, newValue);
-            this.type = type;
-        }
-    }
-
-    private static class CacheJournalEvent extends JournalEvent {
-        final CacheEventType type;
-
-        CacheJournalEvent(String key, Integer oldValue, Integer newValue, CacheEventType type) {
-            super(key, oldValue, newValue);
-            this.type = type;
-        }
     }
 }

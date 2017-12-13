@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.test.TestSupport.drainOutbox;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
@@ -79,7 +80,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
                 instance.getHazelcastInstance().<Integer, Integer>getMap("test");
         List<Integer> allPartitions = IntStream.range(0, NUM_PARTITIONS).boxed().collect(toList());
         supplier = () -> new StreamEventJournalP<>(map, allPartitions, e -> true,
-                EventJournalMapEvent::getNewValue, false, true);
+                EventJournalMapEvent::getNewValue, START_FROM_OLDEST, true);
     }
 
     @Test
