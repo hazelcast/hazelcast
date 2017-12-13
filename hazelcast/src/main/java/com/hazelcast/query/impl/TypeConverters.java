@@ -316,12 +316,15 @@ public final class TypeConverters {
             if (value instanceof Character) {
                 return value;
             }
-            if (value instanceof String) {
-                return ((String) value).charAt(0);
-            }
             if (value instanceof Number) {
                 Number number = (Number) value;
-                return number.intValue();
+                return (char) number.intValue();
+            }
+            if (value instanceof String) {
+                final String string = (String) value;
+                if (!string.isEmpty()) {
+                    return string.charAt(0);
+                }
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to char");
         }
