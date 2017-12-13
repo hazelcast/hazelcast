@@ -84,7 +84,6 @@ public abstract class MultiMapOperation extends Operation
 
         MultiMapConfig config = container.getConfig();
         return config.getValueCollectionType();
-
     }
 
     public final boolean isBinary() {

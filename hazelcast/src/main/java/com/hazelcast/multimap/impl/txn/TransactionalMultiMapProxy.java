@@ -28,10 +28,7 @@ import java.util.Collection;
 
 public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxySupport<K, V> {
 
-    public TransactionalMultiMapProxy(NodeEngine nodeEngine,
-                                      MultiMapService service,
-                                      String name,
-                                      Transaction tx) {
+    public TransactionalMultiMapProxy(NodeEngine nodeEngine, MultiMapService service, String name, Transaction tx) {
         super(nodeEngine, service, name, tx);
     }
 

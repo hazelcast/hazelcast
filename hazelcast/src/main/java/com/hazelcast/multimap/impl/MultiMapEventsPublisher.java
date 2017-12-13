@@ -38,36 +38,31 @@ public class MultiMapEventsPublisher {
         this.nodeEngine = nodeEngine;
     }
 
-    public void publishMultiMapEvent(String mapName, EntryEventType eventType,
-                                     int numberOfEntriesAffected) {
-        final EventService eventService = nodeEngine.getEventService();
-        final Collection<EventRegistration> registrations =
-                eventService.getRegistrations(MultiMapService.SERVICE_NAME, mapName);
+    public void publishMultiMapEvent(String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(MultiMapService.SERVICE_NAME, mapName);
         if (registrations.isEmpty()) {
             return;
         }
-        final Address caller = nodeEngine.getThisAddress();
-        final String source = caller.toString();
-        final MapEventData mapEventData =
-                new MapEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
+        Address caller = nodeEngine.getThisAddress();
+        String source = caller.toString();
+        MapEventData mapEventData = new MapEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
         eventService.publishEvent(MultiMapService.SERVICE_NAME, registrations, mapEventData, mapName.hashCode());
-
     }
 
-    public final void publishEntryEvent(String multiMapName, EntryEventType eventType, Data key,
-                                        Object newValue, Object oldValue) {
+    public final void publishEntryEvent(String multiMapName, EntryEventType eventType, Data key, Object newValue,
+                                        Object oldValue) {
         EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations =
-                eventService.getRegistrations(MultiMapService.SERVICE_NAME, multiMapName);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(MultiMapService.SERVICE_NAME, multiMapName);
         for (EventRegistration registration : registrations) {
             MultiMapEventFilter filter = (MultiMapEventFilter) registration.getFilter();
             if (filter.getKey() == null || filter.getKey().equals(key)) {
                 Data dataNewValue = filter.isIncludeValue() ? nodeEngine.toData(newValue) : null;
                 Data dataOldValue = filter.isIncludeValue() ? nodeEngine.toData(oldValue) : null;
-                final Address caller = nodeEngine.getThisAddress();
-                final String source = caller.toString();
-                EntryEventData event = new EntryEventData(source, multiMapName, caller,
-                        key, dataNewValue, dataOldValue, eventType.getType());
+                Address caller = nodeEngine.getThisAddress();
+                String source = caller.toString();
+                EntryEventData event = new EntryEventData(source, multiMapName, caller, key, dataNewValue, dataOldValue,
+                        eventType.getType());
                 eventService.publishEvent(MultiMapService.SERVICE_NAME, registration, event, multiMapName.hashCode());
             }
         }

@@ -67,5 +67,4 @@ public class CountOperation extends MultiMapKeyBasedOperation implements Blockin
     public void onWaitExpire() {
         sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
-
 }

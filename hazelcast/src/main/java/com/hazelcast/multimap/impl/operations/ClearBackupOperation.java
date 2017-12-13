@@ -40,5 +40,4 @@ public class ClearBackupOperation extends MultiMapOperation implements BackupOpe
     public int getId() {
         return MultiMapDataSerializerHook.CLEAR_BACKUP;
     }
-
 }

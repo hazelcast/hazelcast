@@ -38,12 +38,12 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 
 public class MultiMapReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
-    private Map<String, Map> map;
+    private Map<String, Map<Data, MultiMapValue>> map;
 
     public MultiMapReplicationOperation() {
     }
 
-    public MultiMapReplicationOperation(Map<String, Map> map) {
+    public MultiMapReplicationOperation(Map<String, Map<Data, MultiMapValue>> map) {
         this.map = map;
     }
 
@@ -56,7 +56,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
-        for (Map.Entry<String, Map> entry : map.entrySet()) {
+        for (Map.Entry<String, Map<Data, MultiMapValue>> entry : map.entrySet()) {
             String name = entry.getKey();
             out.writeUTF(name);
 
@@ -82,7 +82,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        final int mapSize = in.readInt();
+        int mapSize = in.readInt();
         map = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
