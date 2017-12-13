@@ -78,10 +78,7 @@
         <timestamp>${maven.build.timestamp}</timestamp>
         <hazelcast.version>3.9</hazelcast.version>
 
-        <!-- Not using 3.1 at the moment since it recompiles all classes every time -->
-        <!-- https://jira.codehaus.org/browse/MCOMPILER-205 -->
-        <!--<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>-->
-        <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
+        <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>2.10.4</maven.javadoc.plugin.version>
