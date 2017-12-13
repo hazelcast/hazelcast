@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.Data;
 class TransactionRecordKey {
 
     final String name;
-
     final Data key;
 
     public TransactionRecordKey(String name, Data key) {
@@ -39,14 +38,12 @@ class TransactionRecordKey {
         }
 
         TransactionRecordKey that = (TransactionRecordKey) o;
-
         if (!key.equals(that.key)) {
             return false;
         }
         if (!name.equals(that.name)) {
             return false;
         }
-
         return true;
     }
 

@@ -31,7 +31,7 @@ import java.util.List;
 
 public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
-    // todo: probably better to switch to an ArrayList to reduce litter.
+    // TODO: probably better to switch to an ArrayList to reduce litter
     private final List<Operation> opList = new LinkedList<Operation>();
     private int partitionId;
     private String name;
@@ -113,13 +113,13 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
         } else if (op instanceof TxnRemoveAllOperation) {
             TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation) op;
             Collection<Long> recordIds = removeAllOperation.getRecordIds();
-            Iterator<Operation> iter = opList.iterator();
-            while (iter.hasNext()) {
-                Operation opp = iter.next();
+            Iterator<Operation> iterator = opList.iterator();
+            while (iterator.hasNext()) {
+                Operation opp = iterator.next();
                 if (opp instanceof TxnPutOperation) {
                     TxnPutOperation putOperation = (TxnPutOperation) opp;
                     if (recordIds.remove(putOperation.getRecordId())) {
-                        iter.remove();
+                        iterator.remove();
                     }
                 }
             }
