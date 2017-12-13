@@ -86,7 +86,7 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    protected Map<Long, CollectionItem> getMap() {
+    public Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemSet != null && !itemSet.isEmpty()) {
                 itemMap = createHashMap(itemSet.size());
