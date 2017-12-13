@@ -910,7 +910,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      *
      * @return backup replica map from item ID to queue item
      */
-    private Map<Long, QueueItem> getBackupMap() {
+    public Map<Long, QueueItem> getBackupMap() {
         if (backupMap == null) {
             backupMap = new HashMap<Long, QueueItem>();
             if (itemQueue != null) {

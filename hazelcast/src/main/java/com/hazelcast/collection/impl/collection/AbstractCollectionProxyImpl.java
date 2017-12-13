@@ -96,6 +96,10 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return name;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     public boolean add(E e) {
         checkObjectNotNull(e);
         final Data value = getNodeEngine().toData(e);
