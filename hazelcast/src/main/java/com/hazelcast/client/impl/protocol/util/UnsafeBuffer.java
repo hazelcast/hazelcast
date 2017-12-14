@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.nio.Bits;
+import com.hazelcast.util.collection.ArrayUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -227,18 +228,13 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
 
     private void boundsCheck(final int index, final int length) {
         if (SHOULD_BOUNDS_CHECK) {
-            if (index < 0 || length < 0 || (index + length) > capacity) {
-                throw new IndexOutOfBoundsException(String.format("index=%d, length=%d, capacity=%d", index, length, capacity));
-            }
+            ArrayUtils.boundsCheck(capacity, index, length);
         }
     }
 
     private static void boundsCheck(final byte[] buffer, final int index, final int length) {
         if (SHOULD_BOUNDS_CHECK) {
-            final int capacity = buffer.length;
-            if (index < 0 || length < 0 || (index + length) > capacity) {
-                throw new IndexOutOfBoundsException(String.format("index=%d, length=%d, capacity=%d", index, length, capacity));
-            }
+            ArrayUtils.boundsCheck(buffer.length, index, length);
         }
     }
 }
