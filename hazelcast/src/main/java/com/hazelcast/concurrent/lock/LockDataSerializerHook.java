@@ -26,6 +26,7 @@ import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.concurrent.lock.operations.LockBackupOperation;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
+import com.hazelcast.concurrent.lock.operations.MergeOperation;
 import com.hazelcast.concurrent.lock.operations.SignalBackupOperation;
 import com.hazelcast.concurrent.lock.operations.SignalOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockBackupOperation;
@@ -61,6 +62,7 @@ public final class LockDataSerializerHook implements DataSerializerHook {
     public static final int UNLOCK_BACKUP = 15;
     public static final int UNLOCK = 16;
     public static final int UNLOCK_IF_LEASE_EXPIRED = 17;
+    public static final int MERGE = 18;
 
 
     @Override
@@ -110,6 +112,8 @@ public final class LockDataSerializerHook implements DataSerializerHook {
                         return new LockResourceImpl();
                     case UNLOCK_IF_LEASE_EXPIRED:
                         return new UnlockIfLeaseExpiredOperation();
+                    case MERGE:
+                        return new MergeOperation();
                     default:
                         return null;
                 }
