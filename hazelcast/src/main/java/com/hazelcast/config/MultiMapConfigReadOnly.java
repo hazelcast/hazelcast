@@ -90,4 +90,9 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
     public MultiMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
     }
+
+    @Override
+    public MultiMapConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+    }
 }

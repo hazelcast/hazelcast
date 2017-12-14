@@ -30,6 +30,8 @@ import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -40,6 +42,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.StatisticsAwareService;
@@ -50,6 +53,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -60,18 +64,23 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
-        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats> {
+        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats>,
+        QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
+
+    private static final Object NULL_OBJECT = new Object();
 
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
     private static final int REPLICA_ADDRESS_TRY_COUNT = 3;
@@ -88,6 +97,20 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     };
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
+    private final QuorumService quorumService;
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+            String quorumName = multiMapConfig.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public MultiMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -95,6 +118,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         this.partitionContainers = new MultiMapPartitionContainer[partitionCount];
         this.dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
         this.publisher = new MultiMapEventsPublisher(nodeEngine);
+        this.quorumService = nodeEngine.getQuorumService();
     }
 
     @Override
@@ -437,5 +461,16 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             replicaAddress = partition.getReplicaAddress(replicaIndex);
         }
         return replicaAddress;
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
+        quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
     }
 }

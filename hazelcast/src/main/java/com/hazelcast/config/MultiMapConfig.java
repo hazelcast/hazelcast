@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
@@ -31,7 +33,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 /**
  * Configuration for MultiMap.
  */
-public class MultiMapConfig implements IdentifiedDataSerializable {
+public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * The default number of synchronous backups for this MultiMap.
@@ -55,6 +57,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
+    private String quorumName;
     private MultiMapConfigReadOnly readOnly;
 
     public MultiMapConfig() {
@@ -72,6 +75,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         this.asyncBackupCount = defConfig.asyncBackupCount;
         this.statisticsEnabled = defConfig.statisticsEnabled;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
+        this.quorumName = defConfig.quorumName;
     }
 
     /**
@@ -295,6 +299,26 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public MultiMapConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
     public String toString() {
         return "MultiMapConfig{"
                 + "name='" + name + '\''
@@ -303,6 +327,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
                 + ", binary=" + binary
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
+                + ", quorumName=" + quorumName
                 + '}';
     }
 
@@ -333,6 +358,9 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(statisticsEnabled);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -352,6 +380,9 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         statisticsEnabled = in.readBoolean();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @Override
@@ -381,6 +412,9 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         if (!name.equals(that.name)) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         if (valueCollectionType != null
                 ? !valueCollectionType.equals(that.valueCollectionType) : that.valueCollectionType != null) {
             return false;
@@ -397,6 +431,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable {
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -35,7 +36,7 @@ import java.io.IOException;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class MultiMapOperation extends Operation
-        implements PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
+        implements NamedOperation, PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     protected String name;
     protected transient Object response;
@@ -56,6 +57,11 @@ public abstract class MultiMapOperation extends Operation
     @Override
     public final String getServiceName() {
         return MultiMapService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     public final void publishEvent(EntryEventType eventType, Data key, Object newValue, Object oldValue) {

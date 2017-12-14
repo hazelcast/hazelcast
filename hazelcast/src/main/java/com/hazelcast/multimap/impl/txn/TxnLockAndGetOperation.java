@@ -30,12 +30,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
+public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements BlockingOperation, MutatingOperation {
 
     private long ttl;
 
