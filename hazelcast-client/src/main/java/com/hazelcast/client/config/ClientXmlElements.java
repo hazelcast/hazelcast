@@ -34,7 +34,8 @@ enum ClientXmlElements {
     LICENSE_KEY("license-key", false),
     INSTANCE_NAME("instance-name", false),
     CONNECTION_STRATEGY("connection-strategy", false),
-    USER_CODE_DEPLOYMENT("user-code-deployment", false);
+    USER_CODE_DEPLOYMENT("user-code-deployment", false),
+    RELIABLE_ID_GENERATOR("reliable-id-generator", true);
 
     final String name;
     final boolean multipleOccurrence;

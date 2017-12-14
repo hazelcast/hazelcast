@@ -258,7 +258,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record putBackup(Data key, Object value, long ttl, boolean putTransient) {
-        final long now = getNow();
+        long now = getNow();
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, true);
@@ -308,7 +308,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            final ObjectNamespace namespace = MapService.getObjectNamespace(name);
+            ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);
         }
 
@@ -360,7 +360,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean containsValue(Object value) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
         Collection<Record> records = storage.values();
 
         if (!records.isEmpty()) {
@@ -446,7 +446,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Record loadRecordOrNull(Data key, boolean backup) {
         Record record = null;
-        final Object value = mapDataStore.load(key);
+        Object value = mapDataStore.load(key);
         if (value != null) {
             record = createRecord(value, DEFAULT_TTL, getNow());
             storage.put(key, record);
@@ -498,7 +498,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     record.getKey(), record.getValue());
             storage.removeRecord(record);
-            updateStatsOnRemove(record.getHits());
             iterator.remove();
         }
         return removalSize;
@@ -533,7 +532,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapDataStore.reset();
         storage.clear(false);
         eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
-        resetStats();
+        stats.reset();
     }
 
     @Override
@@ -547,7 +546,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeEvictEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, value);
             storage.removeRecord(record);
-            updateStatsOnRemove(record.getHits());
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
             }
@@ -567,25 +565,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void removeBackup(Data key) {
-        final long now = getNow();
+        long now = getNow();
 
-        final Record record = getRecordOrNull(key, now, true);
+        Record record = getRecordOrNull(key, now, true);
         if (record == null) {
             return;
         }
         eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                 record.getKey(), record.getValue());
         storage.removeRecord(record);
-        updateStatsOnRemove(record.getHits());
         mapDataStore.removeBackup(key, now);
     }
 
     @Override
     public Object remove(Data key) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, false);
         Object oldValue;
         if (record == null) {
             oldValue = mapDataStore.load(key);
@@ -601,9 +598,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean remove(Data key, Object testValue) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, false);
         Object oldValue;
         boolean removed = false;
         if (record == null) {
@@ -622,7 +619,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, oldValue);
             storage.removeRecord(record);
-            updateStatsOnRemove(record.getHits());
             removed = true;
         }
         return removed;
@@ -631,9 +627,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean delete(Data key) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, false);
         if (record == null) {
             mapDataStore.remove(key, now);
         } else {
@@ -645,7 +641,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Object get(Data key, boolean backup) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
         Record record = getRecordOrNull(key, now, backup);
         if (record == null) {
@@ -676,14 +672,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public MapEntries getAll(Set<Data> keys) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final MapEntries mapEntries = new MapEntries(keys.size());
+        MapEntries mapEntries = new MapEntries(keys.size());
 
-        final Iterator<Data> iterator = keys.iterator();
+        Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
-            final Data key = iterator.next();
-            final Record record = getRecordOrNull(key, now, false);
+            Data key = iterator.next();
+            Record record = getRecordOrNull(key, now, false);
             if (record != null) {
                 addMapEntrySet(key, record.getValue(), mapEntries);
                 accessRecord(record, now);
@@ -736,8 +732,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
         value = mapServiceContext.interceptGet(name, value);
-        final Data dataKey = mapServiceContext.toData(key);
-        final Data dataValue = mapServiceContext.toData(value);
+        Data dataKey = mapServiceContext.toData(key);
+        Data dataValue = mapServiceContext.toData(value);
         mapEntries.add(dataKey, dataValue);
     }
 
@@ -755,7 +751,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean containsKey(Data key) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
         if (record == null) {
@@ -821,15 +817,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
         mergingEntry = EntryViews.convertToLazyEntryView(mergingEntry, serializationService, mergePolicy);
         Object newValue;
         Object oldValue = null;
         if (record == null) {
-            final Object notExistingKey = mapServiceContext.toObject(key);
-            final EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
+            Object notExistingKey = mapServiceContext.toObject(key);
+            EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
             newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;
@@ -853,7 +849,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
                         partitionId, key, oldValue, null);
                 storage.removeRecord(record);
-                updateStatsOnRemove(record.getHits());
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
@@ -877,9 +872,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Object replace(Data key, Object update) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, false);
         if (record == null || record.getValue() == null) {
             return null;
         }
@@ -896,14 +891,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean replace(Data key, Object expect, Object update) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, false);
         if (record == null) {
             return false;
         }
-        final MapServiceContext mapServiceContext = this.mapServiceContext;
-        final Object current = record.getValue();
+        MapServiceContext mapServiceContext = this.mapServiceContext;
+        Object current = record.getValue();
         if (!recordComparator.isEqual(expect, current)) {
             return false;
         }
@@ -919,7 +914,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Object putTransient(Data key, Object value, long ttl) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
@@ -961,7 +956,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return null;
         }
 
-        final long now = getNow();
+        long now = getNow();
 
         if (shouldEvict()) {
             return null;
@@ -1011,7 +1006,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Object putIfAbsent(Data key, Object value, long ttl) {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
@@ -1059,14 +1054,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                 record.getKey(), record.getValue());
         storage.removeRecord(record);
-        updateStatsOnRemove(record.getHits());
         return oldValue;
     }
 
     @Override
     public Record getRecordOrNull(Data key) {
-        final long now = getNow();
-
+        long now = getNow();
         return getRecordOrNull(key, now, false);
     }
 

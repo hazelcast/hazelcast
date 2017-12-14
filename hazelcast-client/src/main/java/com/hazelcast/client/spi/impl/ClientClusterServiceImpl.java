@@ -213,16 +213,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     void handleMembershipEvent(MembershipEvent event) {
         synchronized (initialMembershipListenerMutex) {
             Member member = event.getMember();
+            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
             if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
                 newMap.put(member.getAddress(), member);
-                members.set(Collections.unmodifiableMap(newMap));
             } else {
-                LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
                 newMap.remove(member.getAddress());
-                members.set(Collections.unmodifiableMap(newMap));
             }
-
+            members.set(Collections.unmodifiableMap(newMap));
             fireMembershipEvent(event);
         }
     }

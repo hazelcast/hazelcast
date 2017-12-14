@@ -52,13 +52,14 @@ public final class SplitBrainEntryViews {
 
         private K key;
         private V value;
-        private long cost;
-        private long creationTime;
+
+        private long cost = -1;
+        private long creationTime = -1;
         private long expirationTime;
-        private long hits;
-        private long lastAccessTime;
-        private long lastStoredTime;
-        private long lastUpdateTime;
+        private long hits = -1;
+        private long lastAccessTime = -1;
+        private long lastStoredTime = -1;
+        private long lastUpdateTime = -1;
         private long version;
         private long ttl;
 

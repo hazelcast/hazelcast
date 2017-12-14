@@ -26,8 +26,14 @@ import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.serialization.SerializationService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -424,6 +430,32 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
         public void await() {
             assertOpenEventually(latch);
+        }
+    }
+
+    protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy, DataSerializable {
+
+        private transient SerializationService serializationService;
+
+        @Override
+        public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
+            if (serializationService.toObject(mergingEntry.getValue()) instanceof Integer) {
+                return mergingEntry.getValue();
+            }
+            return null;
+        }
+
+        @Override
+        public void setSerializationService(SerializationService serializationService) {
+            this.serializationService = serializationService;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
         }
     }
 }

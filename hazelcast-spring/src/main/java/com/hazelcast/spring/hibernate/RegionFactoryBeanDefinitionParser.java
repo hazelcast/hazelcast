@@ -44,13 +44,13 @@ public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionPar
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        final NamedNodeMap atts = element.getAttributes();
+         NamedNodeMap attributes = element.getAttributes();
         String instanceRefName = "instance";
         String mode = "DISTRIBUTED";
-        if (atts != null) {
-            for (int a = 0; a < atts.getLength(); a++) {
-                final Node att = atts.item(a);
-                final String name = att.getNodeName();
+        if (attributes != null) {
+            for (int a = 0; a < attributes.getLength(); a++) {
+                 Node att = attributes.item(a);
+                 String name = att.getNodeName();
                 if ("instance-ref".equals(name)) {
                     instanceRefName = att.getTextContent();
                 } else if ("mode".equals(name)) {

@@ -50,7 +50,7 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
+        SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handle(element);
         return springXmlBuilder.getBeanDefinition();
     }
@@ -58,17 +58,16 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
     private class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
+        private final BeanDefinitionBuilder builder;
 
-        private BeanDefinitionBuilder builder;
-
-        public SpringXmlBuilder(ParserContext parserContext) {
+        SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastInstanceFactory.class);
             this.builder.setFactoryMethod("newHazelcastInstance");
             this.builder.setDestroyMethodName("shutdown");
         }
 
-        public AbstractBeanDefinition getBeanDefinition() {
+        AbstractBeanDefinition getBeanDefinition() {
             return builder.getBeanDefinition();
         }
 
@@ -76,14 +75,14 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
             handleCommonBeanAttributes(element, builder, parserContext);
             Element config = null;
             for (Node node : childElements(element)) {
-                final String nodeName = cleanNodeName(node);
+                String nodeName = cleanNodeName(node);
                 if ("config".equals(nodeName)) {
                     config = (Element) node;
                 }
             }
-            final HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
-            final AbstractBeanDefinition configBeanDef = configParser.parseInternal(config, parserContext);
-            this.builder.addConstructorArgValue(configBeanDef);
+            HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
+            AbstractBeanDefinition configBeanDef = configParser.parseInternal(config, parserContext);
+            builder.addConstructorArgValue(configBeanDef);
         }
     }
 }

@@ -57,6 +57,8 @@
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="atomic-long" type="atomic-long" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="atomic-reference" type="atomic-reference" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -68,6 +70,7 @@
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -1296,6 +1299,30 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="atomic-long">
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the IAtomicLong. Required.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="atomic-reference">
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the IAtomicReference. Required.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="merge-policy">
         <xs:annotation>
             <xs:documentation>
@@ -2133,11 +2160,37 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="host-verification" type="host-verification" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="enabled" default="false" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation>
                     True to enable this ssl configuration, false to disable.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="host-verification">
+        <xs:annotation>
+            <xs:documentation>
+                Configures additional TLS host verification (based on com.hazelcast.nio.ssl.TlsHostVerifier interface)
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="policy-class-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Fully qualified class name implementing com.hazelcast.nio.ssl.TlsHostVerifier 
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="enabled-on-server" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    The TLS verifier by default only runs on client side of SSL connection.
+                    Configuring this flag to true causes the verifier will run also on the server side.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3303,4 +3356,44 @@
             <xs:enumeration value="THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="reliable-id-generator">
+        <xs:all>
+            <xs:element name="prefetch-count" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many IDs are pre-fetched on the background when one call to newId() is made.
+                        Value must be >= 1, default is 100.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="prefetch-validity-millis" type="xs:long" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
+                        Time unit is milliseconds.
+                        If value is &lt;= 0, validity is unlimited. Default value is 10000 (10 seconds).
+                        The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
+                        is assigned to an event that occurred much later, it will be much out of order.
+                        If you don't need ordering, set this value to 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the ID generator.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

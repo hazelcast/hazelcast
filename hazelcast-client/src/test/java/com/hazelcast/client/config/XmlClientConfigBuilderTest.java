@@ -19,14 +19,17 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -78,7 +81,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     static final String HAZELCAST_CLIENT_START_TAG =
             "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
 
-    static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
+    private static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
 
     private ClientConfig clientConfig;
 
@@ -90,7 +93,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @After
     @Before
-    public void after() {
+    public void beforeAndAfter() {
         System.clearProperty("hazelcast.client.config");
     }
 
@@ -260,6 +263,23 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSSLConfigs() {
+        SSLConfig sslConfig = clientConfig.getNetworkConfig().getSSLConfig();
+        assertNotNull(sslConfig);
+        assertFalse(sslConfig.isEnabled());
+
+        assertEquals("com.hazelcast.examples.MySslFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+
+        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
+        assertNotNull(hostVerification);
+        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", hostVerification.getPolicyClassName());
+        assertFalse(hostVerification.isEnabledOnServer());
+        assertTrue(hostVerification.getProperties().isEmpty());
+    }
+
+    @Test
     public void testNearCacheConfig_withEvictionConfig_withPreloaderConfig() throws IOException {
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-test.xml");
         ClientConfig clientConfig = new XmlClientConfigBuilder(schemaResource).build();
@@ -311,6 +331,21 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         }
 
         assertEquals("com.hazelcast.examples.ExamplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
+    }
+
+    @Test
+    public void testReliableIdGeneratorConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<reliable-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
+                + "</reliable-id-generator>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidityMillis());
     }
 
     @Test
@@ -367,7 +402,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastClientTagAppearsTwice() {
-        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
+        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/><hazelcast-client/>";
         buildConfig(xml);
     }
 

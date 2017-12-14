@@ -115,6 +115,8 @@ public class ConfigXmlGenerator {
         semaphoreXmlGenerator(gen, config);
         lockXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
+        atomicLongXmlGenerator(gen, config);
+        atomicReferenceXmlGenerator(gen, config);
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
@@ -128,6 +130,7 @@ public class ConfigXmlGenerator {
         nativeMemoryXmlGenerator(gen, config);
         servicesXmlGenerator(gen, config);
         hotRestartXmlGenerator(gen, config);
+        reliableIdGeneratorXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -461,6 +464,24 @@ public class ConfigXmlGenerator {
                         .appendProperties(storeConfig.getProperties());
                 gen.close();
             }
+            gen.close();
+        }
+    }
+
+    private static void atomicLongXmlGenerator(XmlGenerator gen, Config config) {
+        Collection<AtomicLongConfig> configs = config.getAtomicLongConfigs().values();
+        for (AtomicLongConfig atomicLongConfig : configs) {
+            gen.open("atomic-long", "name", atomicLongConfig.getName());
+
+            gen.close();
+        }
+    }
+
+    private static void atomicReferenceXmlGenerator(XmlGenerator gen, Config config) {
+        Collection<AtomicReferenceConfig> configs = config.getAtomicReferenceConfigs().values();
+        for (AtomicReferenceConfig atomicReferenceConfig : configs) {
+            gen.open("atomic-reference", "name", atomicReferenceConfig.getName());
+
             gen.close();
         }
     }
@@ -887,6 +908,15 @@ public class ConfigXmlGenerator {
             gen.node("factory-class-name",
                     classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation()))
                     .appendProperties(props);
+
+            HostVerificationConfig hostVerification = ssl.getHostVerificationConfig();
+            if (hostVerification != null) {
+                gen.open("host-verification",
+                        "policy-class-name", hostVerification.getPolicyClassName(),
+                        "enabled-on-server", hostVerification.isEnabledOnServer());
+                gen.appendProperties(hostVerification.getProperties());
+                gen.close();
+            }
         }
         gen.close();
     }
@@ -968,6 +998,15 @@ public class ConfigXmlGenerator {
                 .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
                 .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
                 .close();
+    }
+
+    private static void reliableIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
+        for (ReliableIdGeneratorConfig m : config.getReliableIdGeneratorConfigs().values()) {
+            gen.open("reliable-id-generator", "name", m.getName())
+               .node("prefetch-count", m.getPrefetchCount())
+               .node("prefetch-validity-millis", m.getPrefetchValidityMillis());
+            gen.close();
+        }
     }
 
     private static void nativeMemoryXmlGenerator(XmlGenerator gen, Config config) {

@@ -56,7 +56,8 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
 
     @Override
     protected void toString(StringBuilder sb) {
-        sb.append(", entryProcessor=").append(entryProcessor);
+        super.toString(sb);
+
         sb.append(", predicate=").append(predicate);
     }
 

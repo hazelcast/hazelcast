@@ -19,7 +19,6 @@ package com.hazelcast.spi.merge;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
@@ -28,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * A provider for {@link SplitBrainMergePolicy} instances.
@@ -40,18 +40,12 @@ public final class SplitBrainMergePolicyProvider {
 
     static {
         OUT_OF_THE_BOX_MERGE_POLICIES = new HashMap<String, SplitBrainMergePolicy>();
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(DiscardMergePolicy.class.getName(), new DiscardMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(DiscardMergePolicy.class.getSimpleName(), new DiscardMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(HigherHitsMergePolicy.class.getName(), new HigherHitsMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(HigherHitsMergePolicy.class.getSimpleName(), new HigherHitsMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(LatestAccessMergePolicy.class.getName(), new LatestAccessMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(LatestAccessMergePolicy.class.getSimpleName(), new LatestAccessMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(LatestUpdateMergePolicy.class.getName(), new LatestUpdateMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(LatestUpdateMergePolicy.class.getSimpleName(), new LatestUpdateMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(PassThroughMergePolicy.class.getName(), new PassThroughMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(PassThroughMergePolicy.class.getSimpleName(), new PassThroughMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(PutIfAbsentMergePolicy.class.getName(), new PutIfAbsentMergePolicy());
-        OUT_OF_THE_BOX_MERGE_POLICIES.put(PutIfAbsentMergePolicy.class.getSimpleName(), new PutIfAbsentMergePolicy());
+        addPolicy(DiscardMergePolicy.class, new DiscardMergePolicy());
+        addPolicy(HigherHitsMergePolicy.class, new HigherHitsMergePolicy());
+        addPolicy(LatestAccessMergePolicy.class, new LatestAccessMergePolicy());
+        addPolicy(LatestUpdateMergePolicy.class, new LatestUpdateMergePolicy());
+        addPolicy(PassThroughMergePolicy.class, new PassThroughMergePolicy());
+        addPolicy(PutIfAbsentMergePolicy.class, new PutIfAbsentMergePolicy());
     }
 
     private final NodeEngine nodeEngine;
@@ -81,6 +75,12 @@ public final class SplitBrainMergePolicyProvider {
         if (className == null) {
             throw new InvalidConfigurationException("Class name is mandatory!");
         }
-        return ConcurrencyUtil.getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
+
+        return getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
+    }
+
+    private static <T extends SplitBrainMergePolicy> void addPolicy(Class<T> clazz, T policy) {
+        OUT_OF_THE_BOX_MERGE_POLICIES.put(clazz.getName(), policy);
+        OUT_OF_THE_BOX_MERGE_POLICIES.put(clazz.getSimpleName(), policy);
     }
 }

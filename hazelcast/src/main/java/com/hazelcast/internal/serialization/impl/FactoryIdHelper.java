@@ -140,8 +140,11 @@ public final class FactoryIdHelper {
     public static final String EVENT_JOURNAL_DS_FACTORY = "hazelcast.serialization.ds.event_journal";
     public static final int EVENT_JOURNAL_DS_FACTORY_ID = -45;
 
+    public static final String RELIABLE_ID_GENERATOR_DS_FACTORY = "hazelcast.serialization.ds.reliable_id_generator";
+    public static final int RELIABLE_ID_GENERATOR_DS_FACTORY_ID = -46;
+
     public static final String SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY = "hazelcast.serialization.ds.split.brain.merge.policy";
-    public static final int SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY_ID = -46;
+    public static final int SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY_ID = -47;
 
     // =========================== portables =============================================
 

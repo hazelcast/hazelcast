@@ -234,6 +234,41 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSSLConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "        <ssl enabled=\"true\">\r\n"
+                + "          <factory-class-name>\r\n"
+                + "              com.hazelcast.nio.ssl.BasicSSLContextFactory\r\n"
+                + "          </factory-class-name>\r\n"
+                + "          <properties>\r\n"
+                + "            <property name=\"protocol\">TLS</property>\r\n"
+                + "          </properties>\r\n"
+                + "          <host-verification policy-class-name=\"com.example.Verifier\"\r\n"
+                + "              enabled-on-server=\"true\">\r\n"
+                + "            <properties>\r\n"
+                + "              <property name=\"host\">127.0.0.1</property>\r\n"
+                + "            </properties>\r\n"
+                + "          </host-verification>\r\n"
+                + "        </ssl>\r\n"
+                + "    </network>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
+        assertTrue(sslConfig.isEnabled());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+
+        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
+        assertEquals("com.example.Verifier", hostVerification.getPolicyClassName());
+        assertTrue(hostVerification.isEnabledOnServer());
+        assertEquals(1, hostVerification.getProperties().size());
+        assertEquals("127.0.0.1", hostVerification.getProperties().get("host"));
+    }
+
+    @Test
     public void readPortCount() {
         // check when it is explicitly set
         Config config = buildConfig(HAZELCAST_START_TAG
@@ -422,6 +457,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
         Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
         assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
+    }
+
+    @Test
+    public void readAtomicLong() {
+        String xml = HAZELCAST_START_TAG
+                + "    <atomic-long name=\"custom\"/>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
+        assertEquals("custom", atomicLongConfig.getName());
+    }
+
+    @Test
+    public void readAtomicReference() {
+        String xml = HAZELCAST_START_TAG
+                + "    <atomic-reference name=\"custom\"/>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
+        assertEquals("custom", atomicReferenceConfig.getName());
     }
 
     @Test
@@ -997,6 +1052,21 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(journalConfig.isEnabled());
         assertEquals(120, journalConfig.getCapacity());
         assertEquals(20, journalConfig.getTimeToLiveSeconds());
+    }
+
+    @Test
+    public void testReliableIdGeneratorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<reliable-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
+                + "</reliable-id-generator>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidityMillis());
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -1804,7 +1874,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testMemberAddressProvider_classnameIsMandatory() {
+    public void testMemberAddressProvider_classNameIsMandatory() {
         String xml = HAZELCAST_START_TAG
                 + "<network> "
                 + "  <member-address-provider enabled=\"true\">"

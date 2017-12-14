@@ -145,10 +145,29 @@ public interface ClusterService extends CoreService, Cluster {
 
     /**
      * Returns the member list join version of the local member instance.
-     * @throws IllegalStateException if the local instance is not joined or the cluster version is below 3.10.
-     * If the cluster is upgraded from 3.9 to 3.10, this method can return {@link MemberImpl#NA_MEMBER_LIST_JOIN_VERSION}
-     * until the local node eventually learns its member list join version from the master node.
-     * The caller can cache the member list join version returned from this method.
+     * <p>
+     * The join algorithm is specifically designed to ensure that member list join version is unique for each
+     * member in the cluster, even during a network-split situation:<ul>
+     *     <li>If two members join at the same time, they will appear on different version of member list
+     *     <li>If a new member claims mastership, it makes a jump in the member list version based on its
+     *     index in the member list multiplied by the value of the
+     *     {@link com.hazelcast.spi.properties.GroupProperty#MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT}
+     *     configuration property. This is to protect against the possibility that the original master is still
+     *     running in a separate network partition.
+     * </ul>
+     * The solution provides uniqueness guarantee of member list join version numbers with the following
+     * limitations:<ul>
+     *    <li>When there is a split-brain issue, the number of member list changes that can occur in the
+     *    sub-clusters are capped by the abovementioned configuration parameter.
+     *    <li>When there is a split-brain issue, if further splits occur in the already split sub-clusters, the
+     *    uniqueness guarantee can be lost.
+     * </ul>
+     * The value returned from this method can be cached. Even though it can change later, both values are
+     * unique.
+     *
+     * @throws IllegalStateException if the local instance is not joined or the cluster just upgraded to 3.10,
+     *      but local member has not yet learned its join version from the master node.
+     * @throws UnsupportedOperationException if the cluster version is below 3.10
      *
      * @return the member list join version of the local member instance
      */

@@ -16,7 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.MemberAddressProviderConfig;
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -29,8 +30,10 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
@@ -44,6 +47,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -76,6 +80,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -184,6 +189,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
+
+    @Resource(name = "reliableIdGenerator")
+    private ReliableIdGenerator reliableIdGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -400,6 +408,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMemberReliableIdGeneratorConfig() {
+        ReliableIdGeneratorConfig c = instance.getConfig().findReliableIdGeneratorConfig("reliableIdGenerator");
+        assertEquals(3, c.getPrefetchCount());
+        assertEquals(10L, c.getPrefetchValidityMillis());
+        assertEquals("reliableIdGenerator*", c.getName());
+    }
+
+    @Test
     public void testQueueConfig() {
         QueueConfig testQConfig = config.getQueueConfig("testQ");
         assertNotNull(testQConfig);
@@ -486,6 +502,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         RingbufferStoreConfig store4 = testRingbuffer4.getRingbufferStoreConfig();
         assertNotNull(store4);
         assertEquals(dummyRingbufferStoreFactory, store4.getFactoryImplementation());
+    }
+
+    @Test
+    public void testAtomicLongConfig() {
+        AtomicLongConfig testAtomicLong = config.getAtomicLongConfig("testAtomicLong");
+        assertNotNull(testAtomicLong);
+        assertEquals("testAtomicLong", testAtomicLong.getName());
+    }
+
+    @Test
+    public void testAtomicReferenceConfig() {
+        AtomicReferenceConfig testAtomicReference = config.getAtomicReferenceConfig("testAtomicReference");
+        assertNotNull(testAtomicReference);
+        assertEquals("testAtomicReference", testAtomicReference.getName());
     }
 
     @Test
@@ -743,6 +773,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
+        assertNotNull(reliableIdGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -757,8 +788,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicLong", atomicLong.getName());
-        assertEquals("atomicReference", atomicReference.getName());
+        assertEquals("reliableIdGenerator", reliableIdGenerator.getName());
+        assertEquals("testAtomicLong", atomicLong.getName());
+        assertEquals("testAtomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }
@@ -841,6 +873,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(sslConfig.isEnabled());
         assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+    }
+
+    @Test
+    public void testHostVerification() {
+        HostVerificationConfig hostVerification = config.getNetworkConfig().getSSLConfig().getHostVerificationConfig();
+        assertNotNull(hostVerification);
+        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", hostVerification.getPolicyClassName());
+        assertTrue(hostVerification.isEnabledOnServer());
+        assertEquals(1, hostVerification.getProperties().size());
     }
 
     @Test

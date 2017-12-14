@@ -177,7 +177,7 @@ public class ListContainer extends CollectionContainer {
     }
 
     @Override
-    protected Map<Long, CollectionItem> getMap() {
+    public Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemList != null && !itemList.isEmpty()) {
                 itemMap = createHashMap(itemList.size());

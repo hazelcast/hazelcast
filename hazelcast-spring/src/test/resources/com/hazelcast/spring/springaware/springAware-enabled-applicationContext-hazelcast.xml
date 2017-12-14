@@ -19,13 +19,13 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
-            <hz:spring-aware />
+            <hz:spring-aware/>
             <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
@@ -43,8 +43,8 @@
     </hz:hazelcast>
 
     <hz:client id="client" lazy-init="true" scope="prototype">
-        <hz:spring-aware />
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:spring-aware/>
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"

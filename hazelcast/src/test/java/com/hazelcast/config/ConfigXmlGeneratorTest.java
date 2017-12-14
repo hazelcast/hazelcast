@@ -34,6 +34,8 @@ import java.util.Properties;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -139,6 +141,21 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testReliableIdGeneratorConfigGenerator() {
+        ReliableIdGeneratorConfig figConfig = new ReliableIdGeneratorConfig("reliable-id-gen1")
+                .setPrefetchCount(3)
+                .setPrefetchValidityMillis(10L);
+
+        Config config = new Config()
+                .addReliableIdGeneratorConfig(figConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ReliableIdGeneratorConfig xmlReplicatedConfig = xmlConfig.getReliableIdGeneratorConfig("reliable-id-gen1");
+        assertEquals(figConfig, xmlReplicatedConfig);
+    }
+
+    @Test
     public void testCacheQuorumRef() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig()
                 .setName("testCache")
@@ -175,6 +192,32 @@ public class ConfigXmlGeneratorTest {
 
         RingbufferConfig xmlRbConfig = xmlConfig.getRingbufferConfig(rbConfig.getName());
         assertEquals(rbConfig, xmlRbConfig);
+    }
+
+    @Test
+    public void testAtomicLong() {
+        AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig");
+
+        Config config = new Config()
+                .addAtomicLongConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        AtomicLongConfig actualConfig = xmlConfig.getAtomicLongConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testAtomicReference() {
+        AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig");
+
+        Config config = new Config()
+                .addAtomicReferenceConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        AtomicReferenceConfig actualConfig = xmlConfig.getAtomicReferenceConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
@@ -318,6 +361,26 @@ public class ConfigXmlGeneratorTest {
         assertTrue(new EventJournalConfigChecker().check(
                 journalConfig,
                 xmlConfig.getCacheEventJournalConfig(cacheName)));
+    }
+
+    @Test
+    public void testTlsHostVerification() {
+        Config cfg = new Config();
+        SSLConfig sslConfig = new SSLConfig();
+        HostVerificationConfig hostVerification = new HostVerificationConfig();
+        hostVerification.setEnabledOnServer(true);
+        hostVerification.setPolicyClassName("example.mycompany.FooVerifier");
+        hostVerification.setProperty("test", "value");
+        sslConfig.setHostVerificationConfig(hostVerification);
+        cfg.getNetworkConfig().setSSLConfig(sslConfig);
+
+        HostVerificationConfig generatedConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSSLConfig()
+                .getHostVerificationConfig();
+        assertNotNull(generatedConfig);
+        assertEquals("example.mycompany.FooVerifier", generatedConfig.getPolicyClassName());
+        assertTrue(generatedConfig.isEnabledOnServer());
+        assertEquals("value", generatedConfig.getProperties().get("test"));
+
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {

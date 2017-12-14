@@ -27,6 +27,7 @@ public final class SSLConfig {
     private String factoryClassName;
     private Object factoryImplementation;
     private Properties properties = new Properties();
+    private HostVerificationConfig hostVerificationConfig;
 
     /**
      * Returns the name of the implementation class.
@@ -95,6 +96,26 @@ public final class SSLConfig {
         return factoryImplementation;
     }
 
+
+    /**
+     * Returns the TLS host verification config object.
+     *
+     * @return the hostVerification
+     */
+    public HostVerificationConfig getHostVerificationConfig() {
+        return hostVerificationConfig;
+    }
+
+    /**
+     * Sets the TLS host verification config object.
+     *
+     * @param hostVerification the hostVerification to set
+     */
+    public SSLConfig setHostVerificationConfig(HostVerificationConfig hostVerification) {
+        this.hostVerificationConfig = hostVerification;
+        return this;
+    }
+
     /**
      * Sets a property.
      *
@@ -150,6 +171,7 @@ public final class SSLConfig {
                 + ", enabled=" + enabled
                 + ", implementation=" + factoryImplementation
                 + ", properties=" + properties
+                + ", hostVerification=" + hostVerificationConfig
                 + '}';
     }
 }

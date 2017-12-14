@@ -22,16 +22,16 @@
     <xs:element name="my-service">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="string-prop" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="int-prop" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="bool-prop" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="string-prop" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="int-prop" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="bool-prop" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="string-prop" type="xs:string" />
-    <xs:element name="int-prop" type="xs:int" />
-    <xs:element name="bool-prop" type="xs:boolean" />
+    <xs:element name="string-prop" type="xs:string"/>
+    <xs:element name="int-prop" type="xs:int"/>
+    <xs:element name="bool-prop" type="xs:boolean"/>
 
 </xs:schema>

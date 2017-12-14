@@ -246,4 +246,10 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void whenValueIsUpdated_thenAnotherNearCacheContextShouldBeInvalidated() {
     }
+
+    @Test
+    @Override
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/11456")
+    public void whenGetIsUsed_thenNearCacheShouldBePopulated() {
+    }
 }

@@ -32,12 +32,13 @@ public final class QueryResultUtils {
     }
 
     public static Set transformToSet(
-            SerializationService ss, QueryResult queryResult, Predicate predicate, IterationType iterationType, boolean unique) {
+            SerializationService ss, QueryResult queryResult, Predicate predicate,
+            IterationType iterationType, boolean unique, boolean binary) {
         if (predicate instanceof PagingPredicate) {
-            Set result = new QueryResultCollection(ss, IterationType.ENTRY, false, unique, queryResult);
+            Set result = new QueryResultCollection(ss, IterationType.ENTRY, binary, unique, queryResult);
             return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) predicate, iterationType);
         } else {
-            return new QueryResultCollection(ss, iterationType, false, unique, queryResult);
+            return new QueryResultCollection(ss, iterationType, binary, unique, queryResult);
         }
     }
 }

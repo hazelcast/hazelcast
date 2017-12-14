@@ -64,7 +64,7 @@ public interface ClientConnectionManager extends ConnectionListenable {
 
     Collection<ClientConnection> getActiveConnections();
 
-    Address getOwnerConnectionAddress() ;
+    Address getOwnerConnectionAddress();
 
     ClientPrincipal getPrincipal();
 

@@ -356,7 +356,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.KEY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
-        Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.KEY, true);
+        Set result = QueryResultUtils.transformToSet(serializationService, queryResult,
+                predicate, IterationType.KEY, true, true);
 
         // TODO: can't we just use the original set?
         Set<Object> keySet = new HashSet<Object>(result);
@@ -371,13 +372,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                         keyData, value, extractors);
                 // apply predicate on txMap
                 if (predicate.apply(queryEntry)) {
-                    Object keyObject = serializationService.toObject(keyData);
-                    keySet.add(keyObject);
+                    keySet.add(toObjectIfNeeded(keyData));
                 }
             } else {
                 // meanwhile remove keys which are not in txMap
-                Object keyObject = serializationService.toObject(keyData);
-                keySet.remove(keyObject);
+                keySet.remove(toObjectIfNeeded(keyData));
             }
         }
         return keySet;
@@ -400,11 +399,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
-        Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.ENTRY, true);
+        Set result = QueryResultUtils.transformToSet(serializationService, queryResult,
+                predicate, IterationType.ENTRY, true, true);
 
         // TODO: can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
-        Set<Object> keyWontBeIncluded = new HashSet<Object>();
+        Set<Data> keyWontBeIncluded = new HashSet<Data>();
         Extractors extractors = mapServiceContext.getExtractors(name);
 
         // iterate over the txMap and see if the values are updated or removed
@@ -412,18 +412,17 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             boolean isRemoved = Type.REMOVED.equals(entry.getValue().type);
             boolean isUpdated = Type.UPDATED.equals(entry.getValue().type);
 
-            Object keyObject = serializationService.toObject(entry.getKey());
             if (isRemoved) {
-                keyWontBeIncluded.add(keyObject);
+                keyWontBeIncluded.add(entry.getKey());
             } else {
                 if (isUpdated) {
-                    keyWontBeIncluded.add(keyObject);
+                    keyWontBeIncluded.add(entry.getKey());
                 }
                 Object entryValue = entry.getValue().value;
                 QueryableEntry queryEntry = new CachedQueryEntry((InternalSerializationService) serializationService,
                         entry.getKey(), entryValue, extractors);
                 if (predicate.apply(queryEntry)) {
-                    valueSet.add(queryEntry.getValue());
+                    valueSet.add(toObjectIfNeeded(queryEntry.getValueData()));
                 }
             }
         }
@@ -442,12 +441,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     }
 
     private void removeFromResultSet(Set<Map.Entry> queryResultSet, List<Object> valueSet,
-                                     Set<Object> keyWontBeIncluded) {
+                                     Set<Data> keyWontBeIncluded) {
         for (Map.Entry entry : queryResultSet) {
-            if (keyWontBeIncluded.contains(entry.getKey())) {
+            if (keyWontBeIncluded.contains((Data) entry.getKey())) {
                 continue;
             }
-            valueSet.add(entry.getValue());
+            valueSet.add(toObjectIfNeeded(entry.getValue()));
         }
     }
 }

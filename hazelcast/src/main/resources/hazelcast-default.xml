@@ -21,9 +21,11 @@
     or the documentation at https://hazelcast.org/documentation/
 -->
 <!--suppress XmlDefaultAttributeValue -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.10.xsd"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd">
+
     <group>
         <name>dev</name>
         <password>dev-pass</password>
@@ -137,18 +139,18 @@
         -->
         <async-backup-count>0</async-backup-count>
         <!--
-			Maximum number of seconds for each entry to stay in the map. Entries that are
-			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
-			will get automatically evicted from the map.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-		-->
+            Maximum number of seconds for each entry to stay in the map. Entries that are
+            older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
+            will get automatically evicted from the map.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0
+        -->
         <time-to-live-seconds>0</time-to-live-seconds>
         <!--
-			Maximum number of seconds for each entry to stay idle in the map. Entries that are
-			idle(not touched) for more than <max-idle-seconds> will get
-			automatically evicted from the map. Entry is touched if get, put or containsKey is called.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-		-->
+            Maximum number of seconds for each entry to stay idle in the map. Entries that are
+            idle(not touched) for more than <max-idle-seconds> will get
+            automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+        -->
         <max-idle-seconds>0</max-idle-seconds>
         <!--
             Valid values are:
@@ -266,6 +268,15 @@
         <time-to-live-seconds>0</time-to-live-seconds>
         <in-memory-format>BINARY</in-memory-format>
     </ringbuffer>
+
+    <reliable-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>10000</prefetch-validity-millis>
+    </reliable-id-generator>
+
+    <atomic-long name="default"/>
+
+    <atomic-reference name="default"/>
 
     <serialization>
         <portable-version>0</portable-version>

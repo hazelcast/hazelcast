@@ -59,19 +59,49 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
         this.batchSize = mergePolicyConfig.batchSize;
     }
 
+    /**
+     * Returns the classname of the {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+     *
+     * @return the classname of the merge policy
+     */
     public String getPolicy() {
         return policy;
     }
 
+    /**
+     * Sets the classname of your {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+     * <p>
+     * For the out-of-the-box merge policies the simple classname is sufficient, e.g. {@code PutIfAbsentMergePolicy}.
+     * But also the fully qualified classname is fine, e.g. com.hazelcast.spi.merge.PutIfAbsentMergePolicy.
+     * For a custom merge policy the fully qualified classname is needed.
+     * <p>
+     * Must be a non-empty string. The default value is {@code PutIfAbsentMergePolicy}.
+     *
+     * @param policy the classname of the merge policy
+     * @return this {@code MergePolicyConfig} instance
+     */
     public MergePolicyConfig setPolicy(String policy) {
         this.policy = checkHasText(policy, "Merge policy must contain text!");
         return this;
     }
 
+    /**
+     * Returns the batch size, which will be used to determine the number of entries to be sent in a merge operation.
+     *
+     * @return the batch size
+     */
     public int getBatchSize() {
         return batchSize;
     }
 
+    /**
+     * Sets the batch size, which will be used to determine the number of entries to be sent in a merge operation.
+     * <p>
+     * Must be a positive number. Set to {@code 1} to disable batching. The default value is {@value #DEFAULT_BATCH_SIZE}.
+     *
+     * @param batchSize the batch size
+     * @return this {@code MergePolicyConfig} instance
+     */
     public MergePolicyConfig setBatchSize(int batchSize) {
         this.batchSize = checkPositive(batchSize, "batchSize must be a positive number!");
         return this;
@@ -143,7 +173,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
         return readOnly;
     }
 
-    private class MergePolicyConfigReadOnly extends MergePolicyConfig {
+    private static class MergePolicyConfigReadOnly extends MergePolicyConfig {
 
         MergePolicyConfigReadOnly(MergePolicyConfig mergePolicyConfig) {
             super(mergePolicyConfig);

@@ -64,6 +64,12 @@
 
         <ssl enabled="false">
             <factory-class-name>com.hazelcast.examples.MySslFactory</factory-class-name>
+            <properties>
+                <property name="protocol">TLS</property>
+            </properties>
+            <host-verification policy-class-name="com.hazelcast.nio.ssl.BasicHostVerifier">
+                <properties/>
+            </host-verification>
         </ssl>
         <aws enabled="true" connection-timeout-seconds="11">
             <inside-aws>true</inside-aws>
@@ -144,6 +150,11 @@
         <serialize-keys>true</serialize-keys>
         <local-update-policy>INVALIDATE</local-update-policy>
     </near-cache>
+
+    <reliable-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>10000</prefetch-validity-millis>
+    </reliable-id-generator>
 
     <query-caches>
         <query-cache name="query-cache-name" mapName="map-name">

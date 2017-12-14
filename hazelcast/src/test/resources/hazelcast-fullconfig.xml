@@ -22,20 +22,22 @@
 
     1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
 
-       The config option can be set by adding the following to the java command: - Dhazelcast.config=path_to_the_hazelcast.xml.
+       The config option can be set by adding the following to the java command: -Dhazelcast.config=path_to_the_hazelcast.xml.
 
        The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
 
-    2. Else it checks if there is a ’hazelcast.xml’ in the working directory.
+    2. Otherwise it checks if there is a ’hazelcast.xml’ in the working directory.
 
     3. After that it checks if there is a ’hazelcast.xml’ in the root of the classpath.
 
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.10.xsd"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd">
+
     <group>
         <name>dev</name>
         <password>dev-pass</password>
@@ -554,6 +556,11 @@
             <fsync>true</fsync>
         </hot-restart>
     </cache>
+
+    <reliable-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>10000</prefetch-validity-millis>
+    </reliable-id-generator>
 
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>

@@ -24,6 +24,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -41,6 +42,7 @@ import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings({"checkstyle:executablestatementcount"})
 public final class ActionConstants {
 
     public static final String ACTION_ALL = "all";
@@ -139,6 +141,12 @@ public final class ActionConstants {
             @Override
             public Permission create(String name, String... actions) {
                 return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(ReliableIdGeneratorService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new ReliableIdGeneratorPermission(name, actions);
             }
         });
         PERMISSION_FACTORY_MAP.put(MapReduceService.SERVICE_NAME, new PermissionFactory() {

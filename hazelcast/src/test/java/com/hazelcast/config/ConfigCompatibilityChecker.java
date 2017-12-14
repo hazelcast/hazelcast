@@ -76,6 +76,8 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("network", c1.getNetworkConfig(), c2.getNetworkConfig(), new NetworkConfigChecker());
         checkCompatibleConfigs("map", c1, c2, c1.getMapConfigs(), c2.getMapConfigs(), new MapConfigChecker());
         checkCompatibleConfigs("ringbuffer", c1, c2, c1.getRingbufferConfigs(), c2.getRingbufferConfigs(), new RingbufferConfigChecker());
+        checkCompatibleConfigs("atomic-long", c1, c2, c1.getAtomicLongConfigs(), c2.getAtomicLongConfigs(), new AtomicLongConfigChecker());
+        checkCompatibleConfigs("atomic-reference", c1, c2, c1.getAtomicReferenceConfigs(), c2.getAtomicReferenceConfigs(), new AtomicReferenceConfigChecker());
         checkCompatibleConfigs("queue", c1, c2, c1.getQueueConfigs(), c2.getQueueConfigs(), new QueueConfigChecker());
         checkCompatibleConfigs("semaphore", c1, c2, getSemaphoreConfigsByName(c1), getSemaphoreConfigsByName(c2), new SemaphoreConfigChecker());
         checkCompatibleConfigs("lock", c1, c2, c1.getLockConfigs(), c2.getLockConfigs(), new LockConfigChecker());
@@ -91,6 +93,7 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("list", c1, c2, c1.getListConfigs(), c2.getListConfigs(), new ListConfigChecker());
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
         checkCompatibleConfigs("job tracker", c1, c2, c1.getJobTrackerConfigs(), c2.getJobTrackerConfigs(), new JobTrackerConfigChecker());
+        checkCompatibleConfigs("reliable id generator", c1, c2, c1.getReliableIdGeneratorConfigs(), c2.getReliableIdGeneratorConfigs(), new ReliableIdGeneratorConfigChecker());
 
         return true;
     }
@@ -246,6 +249,32 @@ class ConfigCompatibilityChecker {
         @Override
         EventJournalConfig getDefault(Config c) {
             return c.getCacheEventJournalConfig("default");
+        }
+    }
+
+    private static class AtomicLongConfigChecker extends ConfigChecker<AtomicLongConfig> {
+        @Override
+        boolean check(AtomicLongConfig c1, AtomicLongConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getName(), c2.getName());
+        }
+
+        @Override
+        AtomicLongConfig getDefault(Config c) {
+            return c.getAtomicLongConfig("default");
+        }
+    }
+
+    private static class AtomicReferenceConfigChecker extends ConfigChecker<AtomicReferenceConfig> {
+        @Override
+        boolean check(AtomicReferenceConfig c1, AtomicReferenceConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getName(), c2.getName());
+        }
+
+        @Override
+        AtomicReferenceConfig getDefault(Config c) {
+            return c.getAtomicReferenceConfig("default");
         }
     }
 
@@ -465,6 +494,26 @@ class ConfigCompatibilityChecker {
         @Override
         JobTrackerConfig getDefault(Config c) {
             return c.getJobTrackerConfig("default");
+        }
+    }
+
+    private static class ReliableIdGeneratorConfigChecker extends ConfigChecker<ReliableIdGeneratorConfig> {
+        @Override
+        boolean check(ReliableIdGeneratorConfig c1, ReliableIdGeneratorConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+            return nullSafeEqual(c1.getName(), c2.getName())
+                    && c1.getPrefetchCount() == c2.getPrefetchCount()
+                    && c1.getPrefetchValidityMillis() == c2.getPrefetchValidityMillis();
+        }
+
+        @Override
+        ReliableIdGeneratorConfig getDefault(Config c) {
+            return c.getReliableIdGeneratorConfig("default");
         }
     }
 
@@ -777,7 +826,15 @@ class ConfigCompatibilityChecker {
             return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
                     && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
                     && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation()))
-                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties())
+                    && isCompatible(c1.getHostVerificationConfig(), c2.getHostVerificationConfig());
+        }
+
+        private static boolean isCompatible(HostVerificationConfig c1, HostVerificationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getPolicyClassName(), c2.getPolicyClassName())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                    && c1.isEnabledOnServer() == c2.isEnabledOnServer();
         }
     }
 

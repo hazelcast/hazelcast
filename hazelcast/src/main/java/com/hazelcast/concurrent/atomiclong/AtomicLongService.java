@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
+import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -47,7 +48,8 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     private final ConstructorFunction<String, AtomicLongContainer> atomicLongConstructorFunction =
             new ConstructorFunction<String, AtomicLongContainer>() {
                 public AtomicLongContainer createNew(String key) {
-                    return new AtomicLongContainer();
+                    AtomicLongConfig config = nodeEngine.getConfig().findAtomicLongConfig(key);
+                    return new AtomicLongContainer(config);
                 }
             };
 
@@ -58,7 +60,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         return getOrPutIfAbsent(containers, name, atomicLongConstructorFunction);
     }
 
-    // need for testing..
+    // need for testing
     public boolean containsAtomicLong(String name) {
         return containers.containsKey(name);
     }

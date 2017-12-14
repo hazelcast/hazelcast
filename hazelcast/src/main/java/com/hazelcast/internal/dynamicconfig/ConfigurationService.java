@@ -16,11 +16,14 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -71,7 +74,6 @@ public interface ConfigurationService {
      * @return Map config or {@code null} when requested Map configuration does not exist
      */
     MapConfig findMapConfig(String name);
-
 
     /**
      * Finds existing Topic config.
@@ -128,6 +130,20 @@ public interface ConfigurationService {
      * @return Ringbuffer config or {@code null} when requested Ringbuffer configuration does not exist
      */
     RingbufferConfig findRingbufferConfig(String name);
+
+    /**
+     * Finds existing AtomicLong config.
+     *
+     * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
+     */
+    AtomicLongConfig findAtomicLongConfig(String name);
+
+    /**
+     * Finds existing AtomicReference config.
+     *
+     * @return AtomicReference Config or {@code null} when requested AtomicReference configuration does not exist
+     */
+    AtomicReferenceConfig findAtomicReferenceConfig(String name);
 
     /**
      * Finds existing Lock config.
@@ -202,6 +218,14 @@ public interface ConfigurationService {
     EventJournalConfig findMapEventJournalConfig(String name);
 
     /**
+     * Finds existing ReliableIdGeneratorConfig config.
+     *
+     * @param name name of the config
+     * @return ReliableIdGenerator config or {@code null} when requested ReliableIdGenerator configuration does not exist
+     */
+    ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name);
+
+    /**
      * Returns all registered map configurations.
      *
      * @return registered map configurations
@@ -256,6 +280,20 @@ public interface ConfigurationService {
      * @return registered ringbuffer configurations
      */
     Map<String, RingbufferConfig> getRingbufferConfigs();
+
+    /**
+     * Returns all registered AtomicLong configurations.
+     *
+     * @return registered AtomicLong configurations
+     */
+    Map<String, AtomicLongConfig> getAtomicLongConfigs();
+
+    /**
+     * Returns all registered AtomicReference configurations.
+     *
+     * @return registered AtomicReference configurations
+     */
+    Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs();
 
     /**
      * Returns all registered topic configurations.
@@ -326,4 +364,11 @@ public interface ConfigurationService {
      * @return registered MapEventJournal configurations
      */
     Map<String, EventJournalConfig> getMapEventJournalConfigs();
+
+    /**
+     * Returns all registered ReliableIdGenerator configurations.
+     *
+     * @return registered ReliableIdGenerator configurations
+     */
+    Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs();
 }

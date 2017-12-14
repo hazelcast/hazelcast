@@ -20,9 +20,9 @@
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -67,9 +67,8 @@
         </hz:config>
     </hz:hazelcast>
 
-
     <hz:client id="client"
-               credentials-ref="credentials" >
+               credentials-ref="credentials">
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"
@@ -91,6 +90,7 @@
                     <hz:property name="javax.net.ssl.trustStorePassword">123456</hz:property>
                     <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
                 </hz:properties>
+                <hz:host-verification policy-class-name="com.hazelcast.nio.ssl.BasicHostVerifier"/>
             </hz:ssl>
             <hz:discovery-strategies>
                 <hz:node-filter implementation="dummyNodeFilter"/>
@@ -126,13 +126,14 @@
                           enable-compression="false"
                           enable-shared-object="false"
                           portable-version="10"
-                          use-native-byte-order="false" >
+                          use-native-byte-order="false">
 
             <hz:data-serializable-factories>
-                <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+                <hz:data-serializable-factory factory-id="1"
+                                              class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
             </hz:data-serializable-factories>
             <hz:portable-factories>
-                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory" />
+                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory"/>
             </hz:portable-factories>
             <hz:serializers>
                 <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo"
@@ -141,12 +142,11 @@
         </hz:serialization>
 
 
-
         <hz:proxy-factories>
-            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService" />
+            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService"/>
         </hz:proxy-factories>
 
-        <hz:load-balancer type="round-robin" />
+        <hz:load-balancer type="round-robin"/>
 
         <hz:near-cache name="default"
                        time-to-live-seconds="1"
@@ -156,12 +156,11 @@
                        invalidate-on-change="true"/>
 
 
-
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
-        <property name="username" value="spring-group" />
-        <property name="password" value="spring-group-pass" />
+        <property name="username" value="spring-group"/>
+        <property name="password" value="spring-group-pass"/>
     </bean>
 
     <hz:map id="map" instance-ref="client" name="map"/>

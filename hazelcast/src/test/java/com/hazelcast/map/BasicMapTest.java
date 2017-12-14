@@ -23,6 +23,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.PagingPredicate;
@@ -34,6 +35,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.Preconditions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,6 +50,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -178,6 +181,30 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.putIfAbsent("key1", "valueX"), "value1");
         assertEquals(map.get("key1"), "value1");
         assertEquals(map.size(), 2);
+    }
+
+    @Test
+    public void testComputeIfPresent() {
+        final IMap<String, AtomicBoolean> map = getInstance().getMap("testComputeIfPresent");
+
+        map.put("presentKey", new AtomicBoolean(false));
+        AtomicBoolean value = emulateComputeIfPresent(map, "presentKey", new IBiFunction<String, AtomicBoolean, AtomicBoolean>() {
+            @Override
+            public AtomicBoolean apply(String key, AtomicBoolean value) {
+                return new AtomicBoolean(true);
+            }
+        });
+        assertNotNull(value);
+        assertTrue(value.get());
+
+        value = emulateComputeIfPresent(map, "absentKey", new IBiFunction<String, AtomicBoolean, AtomicBoolean>() {
+            @Override
+            public AtomicBoolean apply(String s, AtomicBoolean atomicBoolean) {
+                fail("should not be called");
+                return null;
+            }
+        });
+        assertNull(value);
     }
 
     @Test
@@ -1658,4 +1685,24 @@ public class BasicMapTest extends HazelcastTestSupport {
             entry.setValue(entry.getValue() + 1);
         }
     }
+
+    private static <K, V> V emulateComputeIfPresent(ConcurrentMap<K, V> map, K key,
+                                                    IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        // emulates ConcurrentMap.computeIfPresent() introduced in Java 8
+
+        Preconditions.checkNotNull(remappingFunction);
+
+        V oldValue;
+        while((oldValue = map.get(key)) != null) {
+            V newValue = remappingFunction.apply(key, oldValue);
+            if (newValue != null) {
+                if (map.replace(key, oldValue, newValue))
+                    return newValue;
+            } else if (map.remove(key, oldValue))
+                return null;
+        }
+
+        return null;
+    }
+
 }

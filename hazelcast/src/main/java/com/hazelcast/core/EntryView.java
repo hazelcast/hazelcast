@@ -41,7 +41,7 @@ public interface EntryView<K, V> {
     /**
      * Returns the cost (in bytes) of the entry.
      * <p>
-     * <b>Warning:</b> This method returns -1 if statistics are not enabled.
+     * <b>Warning:</b> This method returns -1 if statistics are not enabled or not implemented.
      *
      * @return the cost in bytes of the entry
      */
@@ -50,7 +50,7 @@ public interface EntryView<K, V> {
     /**
      * Returns the creation time of the entry.
      * <p>
-     * <b>Warning:</b> This method returns -1 if statistics are not enabled.
+     * <b>Warning:</b> This method returns -1 if statistics are not enabled or not implemented.
      *
      * @return the creation time of the entry
      */
@@ -66,7 +66,7 @@ public interface EntryView<K, V> {
     /**
      * Returns number of hits of the entry.
      * <p>
-     * <b>Warning:</b> This method returns -1 if statistics are not enabled.
+     * <b>Warning:</b> This method returns -1 if statistics are not enabled or not implemented.
      *
      * @return number of hits of the entry
      */
@@ -75,7 +75,7 @@ public interface EntryView<K, V> {
     /**
      * Returns the last access time for the entry.
      * <p>
-     * <b>Warning:</b> This method returns -1 if statistics are not enabled.
+     * <b>Warning:</b> This method returns -1 if statistics are not enabled or not implemented.
      *
      * @return the last access time for the entry
      */
@@ -84,7 +84,7 @@ public interface EntryView<K, V> {
     /**
      * Returns the last time the value was flushed to its store (e.g. {@link MapStore}).
      * <p>
-     * <b>Warning:</b> This method returns -1 if statistics are not enabled.
+     * <b>Warning:</b> This method returns -1 if statistics are not enabled or not implemented.
      *
      * @return the last store time for the value
      */
@@ -93,7 +93,7 @@ public interface EntryView<K, V> {
     /**
      * Returns the last time the value was updated.
      * <p>
-     * <b>Warning:</b> This method returns -1 if statistics are not enabled.
+     * <b>Warning:</b> This method returns -1 if statistics are not enabled or not implemented.
      *
      * @return the last time the value was updated
      */

@@ -23,9 +23,11 @@ https://hazelcast.com/schema/config/hazelcast-config-3.10.xsd or the Reference M
 https://hazelcast.org/documentation/.
 -->
 <!--suppress XmlDefaultAttributeValue -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.10.xsd"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd">
+
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
         You can import as many XML files as you want and hence compose your Hazelcast configuration
@@ -1500,7 +1502,7 @@ https://hazelcast.org/documentation/.
         ===== HAZELCAST RINGBUFFER CONFIGURATION =====
 
         Configuration element's name is <ringbuffer>. It has the required attribute "name" with which you
-        can specify the name of your Ringbuffer. This attribute's default value is "default".
+        can specify the name of your Ringbuffer.
         It has the following sub-elements:
         * <capacity>:
             Number of items in the Ringbuffer. If no <time-to-live-seconds> is set, this value will always
@@ -1526,7 +1528,6 @@ https://hazelcast.org/documentation/.
         Includes the Ringbuffer store factory class name and property configurations. The store format is the same as the
             in-memory-format for the Ringbuffer.
     -->
-
     <ringbuffer name="default">
         <capacity>10000</capacity>
         <time-to-live-seconds>0</time-to-live-seconds>
@@ -1541,6 +1542,45 @@ https://hazelcast.org/documentation/.
             </properties>
         </ringbuffer-store>
     </ringbuffer>
+
+    <!--
+        ===== HAZELCAST RELIABLE ID GENERATOR CONFIGURATION =====
+        Configuration element's name is <reliable-id-generator>. It has the required attribute "name" with which you
+        can specify the name of your Reliable ID generator.
+        It has the following sub-elements:
+        * <prefetch-count>:
+        How many IDs are pre-fetched on the background when one call to
+        ReliableIdGenerator.newId() is made.
+        Value must be >= 1, default is 100.
+        * <prefetch-validity-millis>:
+        For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
+        Time unit is milliseconds.
+        If value is <= 0, validity is unlimited. Default value is 10000 (10 seconds).
+        The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
+        is assigned to an event that occurred much later, it will be much out of order. If you don't need
+        ordering, set this value to 0.
+    -->
+    <reliable-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>10000</prefetch-validity-millis>
+    </reliable-id-generator>
+
+    <!--
+        ===== HAZELCAST ATOMIC LONG CONFIGURATION =====
+
+        Configuration element's name is <atomic-long>. It has the required attribute "name" with which you
+        can specify the name of your IAtomicLong. This attribute's default value is "default".
+    -->
+    <atomic-long name="default"/>
+
+    <!--
+        ===== HAZELCAST ATOMIC REFERENCE CONFIGURATION =====
+
+        Configuration element's name is <atomic-reference>. It has the required attribute "name" with which you
+        can specify the name of your IAtomicReference. This attribute's default value is "default".
+    -->
+    <atomic-reference name="default"/>
+
     <!--
         ===== HAZELCAST LISTENER CONFIGURATIONS =====
 

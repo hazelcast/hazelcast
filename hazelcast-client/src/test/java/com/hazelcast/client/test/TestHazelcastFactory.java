@@ -47,7 +47,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     private final TestClientRegistry clientRegistry;
 
     public TestHazelcastFactory() {
-        super(0);
+        this(0);
+    }
+
+    public TestHazelcastFactory(int count) {
+        super(count);
         this.clientRegistry = new TestClientRegistry(getRegistry());
     }
 

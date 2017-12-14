@@ -73,18 +73,24 @@ public class ClientNetworkConfig {
     }
 
     /**
+     * See {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}  for details
+     *
      * @return true if client is smart
-     * @see {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}  for details
      */
     public boolean isSmartRouting() {
         return smartRouting;
     }
 
     /**
-     * If true, client will route the key based operations to owner of the key at the best effort.
+     * If {@code true}, client will route the key based operations to owner of the key on best-effort basis.
      * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every 10 seconds.
-     * Default value is true.
+     * <p>
+     * If {@code smartRouting == false}, all operations will be routed to single member. Operations will need two
+     * hops if the chosen member is not owner of the key. Client will have only single open connection. Useful, if
+     * there are many clients and we want to avoid each of them connecting to each member.
+     * <p>
+     * Default value is {@code true}.
      *
      * @param smartRouting true if smart routing should be enabled.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
@@ -114,9 +120,10 @@ public class ClientNetworkConfig {
 
     /**
      * Period for the next attempt to find a member to connect.
+     * <p>
+     * See {@link ClientNetworkConfig#connectionAttemptLimit}.
      *
      * @return connection attempt period in millis
-     * @see {@link ClientNetworkConfig#connectionAttemptLimit}.
      */
     public int getConnectionAttemptPeriod() {
         return connectionAttemptPeriod;
@@ -137,8 +144,9 @@ public class ClientNetworkConfig {
     }
 
     /**
+     * See {@link com.hazelcast.client.config.ClientNetworkConfig#setConnectionAttemptLimit(int)} for details
+     *
      * @return connection attempt Limit
-     * @see {@link com.hazelcast.client.config.ClientNetworkConfig#setConnectionAttemptLimit(int)} for details
      */
     public int getConnectionAttemptLimit() {
         return connectionAttemptLimit;
@@ -223,8 +231,9 @@ public class ClientNetworkConfig {
     }
 
     /**
+     * See {@link com.hazelcast.client.config.ClientNetworkConfig#setRedoOperation(boolean)} for details
+     *
      * @return true if redo operations are enabled
-     * @see {@link com.hazelcast.client.config.ClientNetworkConfig#setRedoOperation(boolean)} for details
      */
     public boolean isRedoOperation() {
         return redoOperation;

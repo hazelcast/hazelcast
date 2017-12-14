@@ -26,6 +26,8 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.HostVerificationConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
@@ -58,6 +60,7 @@ import java.util.Set;
 
 import static com.hazelcast.client.config.ClientXmlElements.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
+import static com.hazelcast.client.config.ClientXmlElements.RELIABLE_ID_GENERATOR;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
 import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
@@ -214,7 +217,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         for (Node node : childElements(docElement)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
-                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration");
             }
             handleXmlNode(node, nodeName);
             if (!canOccurMultipleTimes(nodeName)) {
@@ -256,6 +259,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleConnectionStrategy(node);
         } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
             handleUserCodeDeployment(node);
+        } else if (RELIABLE_ID_GENERATOR.isEqual(nodeName)) {
+            handleReliableIdGenerator(node);
         }
     }
 
@@ -339,6 +344,21 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                     + " This setting will have no effect!");
         }
         clientConfig.addNearCacheConfig(nearCacheConfig);
+    }
+
+    private void handleReliableIdGenerator(Node node) {
+        String name = getAttribute(node, "name");
+        ReliableIdGeneratorConfig config = new ReliableIdGeneratorConfig(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("prefetch-count".equals(nodeName)) {
+                config.setPrefetchCount(Integer.parseInt(value));
+            } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
+                config.setPrefetchValidityMillis(Long.parseLong(value));
+            }
+        }
+        clientConfig.addReliableIdGeneratorConfig(config);
     }
 
     private EvictionConfig getEvictionConfig(Node node) {
@@ -534,9 +554,30 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, sslConfig.getProperties());
+            } else if ("host-verification".equals(nodeName)) {
+                handleTlsHostVerificationConfig(n, sslConfig);
             }
         }
         clientNetworkConfig.setSSLConfig(sslConfig);
+    }
+
+    private void handleTlsHostVerificationConfig(Node node, SSLConfig sslConfig) {
+        HostVerificationConfig hostVerification = new HostVerificationConfig();
+        NamedNodeMap attributes = node.getAttributes();
+        Node classNameNode = attributes.getNamedItem("policy-class-name");
+        if (classNameNode == null) {
+            throw new InvalidConfigurationException(
+                    "The 'policy-class-name' attribute has to be provided in ssl/host-verification");
+        }
+        hostVerification.setPolicyClassName(getTextContent(classNameNode).trim());
+
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if ("properties".equals(nodeName)) {
+                fillProperties(n, hostVerification.getProperties());
+            }
+        }
+        sslConfig.setHostVerificationConfig(hostVerification);
     }
 
     private void handleSocketOptions(Node node, ClientNetworkConfig clientNetworkConfig) {

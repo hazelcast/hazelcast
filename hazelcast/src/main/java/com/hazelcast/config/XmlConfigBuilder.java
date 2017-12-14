@@ -62,11 +62,14 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.JobTrackerConfig.DEFAULT_COMMUNICATE_STATS;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import static com.hazelcast.config.XmlElements.ATOMIC_LONG;
+import static com.hazelcast.config.XmlElements.ATOMIC_REFERENCE;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
+import static com.hazelcast.config.XmlElements.RELIABLE_ID_GENERATOR;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.XmlElements.IMPORT;
@@ -353,6 +356,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
+        } else if (ATOMIC_LONG.isEqual(nodeName)) {
+            handleAtomicLong(node);
+        } else if (ATOMIC_REFERENCE.isEqual(nodeName)) {
+            handleAtomicReference(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -377,6 +384,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleUserCodeDeployment(node);
         } else if (CARDINALITY_ESTIMATOR.isEqual(nodeName)) {
             handleCardinalityEstimator(node);
+        } else if (RELIABLE_ID_GENERATOR.isEqual(nodeName)) {
+            handleReliableIdGenerator(node);
         } else {
             return true;
         }
@@ -638,6 +647,21 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleCardinalityEstimator(Node node) throws Exception {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
         handleViaReflection(node, config, cardinalityEstimatorConfig);
+    }
+
+    private void handleReliableIdGenerator(Node node) {
+        String name = getAttribute(node, "name");
+        ReliableIdGeneratorConfig generatorConfig = new ReliableIdGeneratorConfig(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("prefetch-count".equals(nodeName)) {
+                generatorConfig.setPrefetchCount(Integer.parseInt(value));
+            } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
+            }
+        }
+        config.addReliableIdGeneratorConfig(generatorConfig);
     }
 
     private void handleGroup(Node node) {
@@ -1730,13 +1754,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
         String policyString = getTextContent(node).trim();
         mergePolicyConfig.setPolicy(policyString);
-        NamedNodeMap attributes = node.getAttributes();
-        for (int a = 0; a < attributes.getLength(); a++) {
-            Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("batch-size")) {
-                mergePolicyConfig.setBatchSize(getIntegerValue("batch-size", value));
-            }
+
+        final String att = getAttribute(node, "batch-size");
+        if (att != null) {
+            mergePolicyConfig.setBatchSize(getIntegerValue("batch-size", att));
         }
         return mergePolicyConfig;
     }
@@ -1777,9 +1798,32 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, sslConfig.getProperties());
+            } else if ("host-verification".equals(nodeName)) {
+                handleTlsHostVerificationConfig(n, sslConfig);
             }
         }
         config.getNetworkConfig().setSSLConfig(sslConfig);
+    }
+
+    private void handleTlsHostVerificationConfig(Node node, SSLConfig sslConfig) {
+        HostVerificationConfig hostVerification = new HostVerificationConfig();
+        NamedNodeMap attributes = node.getAttributes();
+        Node classNameNode = attributes.getNamedItem("policy-class-name");
+        if (classNameNode == null) {
+            throw new InvalidConfigurationException(
+                    "The 'policy-class-name' attribute has to be provided in ssl/host-verification");
+        }
+        hostVerification.setPolicyClassName(getTextContent(classNameNode).trim());
+        Node enabledNode = attributes.getNamedItem("enabled-on-server");
+        hostVerification.setEnabledOnServer(enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim()));
+
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if ("properties".equals(nodeName)) {
+                fillProperties(n, hostVerification.getProperties());
+            }
+        }
+        sslConfig.setHostVerificationConfig(hostVerification);
     }
 
     private void handleMcMutualAuthConfig(Node node) {
@@ -1958,6 +2002,20 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.addRingBufferConfig(rbConfig);
+    }
+
+    private void handleAtomicLong(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        AtomicLongConfig atomicLongConfig = new AtomicLongConfig(name);
+        config.addAtomicLongConfig(atomicLongConfig);
+    }
+
+    private void handleAtomicReference(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig(name);
+        config.addAtomicReferenceConfig(atomicReferenceConfig);
     }
 
     private void handleListeners(Node node) {
@@ -2199,6 +2257,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.SEMAPHORE;
             } else if ("id-generator-permission".equals(nodeName)) {
                 type = PermissionType.ID_GENERATOR;
+            } else if ("reliable-id-generator-permission".equals(nodeName)) {
+                type = PermissionType.RELIABLE_ID_GENERATOR;
             } else if ("executor-service-permission".equals(nodeName)) {
                 type = PermissionType.EXECUTOR_SERVICE;
             } else if ("transaction-permission".equals(nodeName)) {
