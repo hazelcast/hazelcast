@@ -64,7 +64,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     protected abstract Collection<CollectionItem> getCollection();
 
-    protected abstract Map<Long, CollectionItem> getMap();
+    public abstract Map<Long, CollectionItem> getMap();
 
     public long add(Data value) {
         final CollectionItem item = new CollectionItem(nextId(), value);

@@ -87,6 +87,10 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         }
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     boolean offerInternal(Data data, long timeout) throws InterruptedException {
         checkObjectNotNull(data);
 
@@ -156,10 +160,6 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     boolean compareAndRemove(Collection<Data> dataList, boolean retain) {
         CompareAndRemoveOperation operation = new CompareAndRemoveOperation(name, dataList, retain);
         return (Boolean) invokeAndGet(operation);
-    }
-
-    private int getPartitionId() {
-        return partitionId;
     }
 
     protected void checkObjectNotNull(Object o) {
