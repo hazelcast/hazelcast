@@ -43,7 +43,7 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
     /**
      * Default value for {@link #getPrefetchValidityMillis()}.
      */
-    public static final long DEFAULT_PREFETCH_VALIDITY_MILLIS = 10000;
+    public static final long DEFAULT_PREFETCH_VALIDITY_MILLIS = 600000;
 
     private String name;
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
@@ -130,7 +130,7 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
      * <p>
      * Time unit is milliseconds.
      * <p>
-     * If value is &lt;= 0, validity is unlimited. Default value is 10000 (10 seconds).
+     * If value is &lt;= 0, validity is unlimited. Default value is 600,000 (10 minutes).
      * <p>
      * The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
      * is assigned to an event that occurred much later, it will be much out of order. If you don't need
