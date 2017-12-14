@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
-import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
+import com.hazelcast.client.impl.protocol.util.AbstractClientMessage;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.internal.networking.OutboundFrame;
@@ -56,7 +56,7 @@ import java.nio.ByteBuffer;
  * </pre>
  */
 public class ClientMessage
-        extends MessageFlyweight
+        extends AbstractClientMessage
         implements OutboundFrame {
 
     /**
