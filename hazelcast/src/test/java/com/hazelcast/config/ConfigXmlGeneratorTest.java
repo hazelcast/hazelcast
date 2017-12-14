@@ -34,6 +34,8 @@ import java.util.Properties;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -359,6 +361,26 @@ public class ConfigXmlGeneratorTest {
         assertTrue(new EventJournalConfigChecker().check(
                 journalConfig,
                 xmlConfig.getCacheEventJournalConfig(cacheName)));
+    }
+
+    @Test
+    public void testTlsHostVerification() {
+        Config cfg = new Config();
+        SSLConfig sslConfig = new SSLConfig();
+        HostVerificationConfig hostVerification = new HostVerificationConfig();
+        hostVerification.setEnabledOnServer(true);
+        hostVerification.setPolicyClassName("example.mycompany.FooVerifier");
+        hostVerification.setProperty("test", "value");
+        sslConfig.setHostVerificationConfig(hostVerification);
+        cfg.getNetworkConfig().setSSLConfig(sslConfig);
+
+        HostVerificationConfig generatedConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSSLConfig()
+                .getHostVerificationConfig();
+        assertNotNull(generatedConfig);
+        assertEquals("example.mycompany.FooVerifier", generatedConfig.getPolicyClassName());
+        assertTrue(generatedConfig.isEnabledOnServer());
+        assertEquals("value", generatedConfig.getProperties().get("test"));
+
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {

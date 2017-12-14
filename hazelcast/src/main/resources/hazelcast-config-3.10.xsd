@@ -2133,11 +2133,37 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="host-verification" type="host-verification" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="enabled" default="false" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation>
                     True to enable this ssl configuration, false to disable.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="host-verification">
+        <xs:annotation>
+            <xs:documentation>
+                Configures additional TLS host verification (based on com.hazelcast.nio.ssl.TlsHostVerifier interface)
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="policy-class-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Fully qualified class name implementing com.hazelcast.nio.ssl.TlsHostVerifier 
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="enabled-on-server" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    The TLS verifier by default only runs on client side of SSL connection.
+                    Configuring this flag to true causes the verifier will run also on the server side.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

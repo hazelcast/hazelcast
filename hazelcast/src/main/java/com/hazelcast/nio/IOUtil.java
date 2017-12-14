@@ -488,7 +488,7 @@ public final class IOUtil {
      */
     public static void copy(InputStream source, File target) {
         if (!target.exists()) {
-            throw new HazelcastException("The target directory doesn't exist " + target);
+            throw new HazelcastException("The target file doesn't exist " + target);
         }
 
         FileOutputStream out = null;

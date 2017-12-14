@@ -234,6 +234,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String name = cleanNodeName(child);
                 if ("properties".equals(name)) {
                     handleProperties(child, sslConfigBuilder);
+                } else if ("host-verification".equals(name)) {
+                    handleHostVerification(child, sslConfigBuilder);
                 }
             }
             networkConfigBuilder.addPropertyValue("SSLConfig", sslConfigBuilder.getBeanDefinition());

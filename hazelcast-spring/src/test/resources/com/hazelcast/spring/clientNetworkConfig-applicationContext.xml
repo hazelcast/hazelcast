@@ -90,6 +90,7 @@
                     <hz:property name="javax.net.ssl.trustStorePassword">123456</hz:property>
                     <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
                 </hz:properties>
+                <hz:host-verification policy-class-name="com.hazelcast.nio.ssl.BasicHostVerifier"/>
             </hz:ssl>
             <hz:discovery-strategies>
                 <hz:node-filter implementation="dummyNodeFilter"/>
