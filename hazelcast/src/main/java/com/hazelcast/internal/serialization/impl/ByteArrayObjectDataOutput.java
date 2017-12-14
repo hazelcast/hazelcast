@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -63,9 +64,12 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
 
     @Override
     public void write(byte[] b, int off, int len) {
-        if ((off < 0) || (len < 0) || ((off + len) > b.length)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        if (b == null) {
+            throw new NullPointerException();
+        } else {
+            ArrayUtils.boundsCheck(b.length, off, len);
+        }
+        if (len == 0) {
             return;
         }
         ensureAvailable(len);
