@@ -19,8 +19,9 @@ package com.hazelcast.multimap.impl.operations;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation, MutatingOperation {
 
     public RemoveAllBackupOperation() {
     }

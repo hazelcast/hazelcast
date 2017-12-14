@@ -23,10 +23,11 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.util.Collection;
 
-public class RemoveAllOperation extends MultiMapBackupAwareOperation {
+public class RemoveAllOperation extends MultiMapBackupAwareOperation implements MutatingOperation {
 
     private Collection<MultiMapRecord> coll;
 

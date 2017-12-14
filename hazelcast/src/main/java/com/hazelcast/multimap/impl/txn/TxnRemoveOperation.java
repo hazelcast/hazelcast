@@ -28,12 +28,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
+public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, MutatingOperation {
 
     long recordId;
     Data value;

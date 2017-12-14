@@ -26,11 +26,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class ContainsEntryOperation extends MultiMapOperation implements BlockingOperation {
+public class ContainsEntryOperation extends MultiMapOperation implements BlockingOperation, ReadonlyOperation {
 
     private Data key;
     private Data value;

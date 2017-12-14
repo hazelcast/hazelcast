@@ -24,12 +24,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class RemoveOperation extends MultiMapBackupAwareOperation {
+public class RemoveOperation extends MultiMapBackupAwareOperation implements MutatingOperation {
 
     private Data value;
     private long recordId;

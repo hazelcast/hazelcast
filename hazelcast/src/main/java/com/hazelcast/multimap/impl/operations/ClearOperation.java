@@ -22,8 +22,10 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
+public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation,
+        MutatingOperation {
 
     boolean shouldBackup;
 
