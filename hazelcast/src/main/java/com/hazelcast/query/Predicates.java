@@ -230,6 +230,7 @@ public final class Predicates {
      * @param attribute the attribute to fetch the value for comparison from.
      * @param value     the value to compare the attribute value against. Can be {@code null}.
      * @return the created <b>not equal</b> predicate instance.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate notEqual(String attribute, Comparable value) {
         return new NotEqualPredicate(attribute, value);
@@ -245,6 +246,7 @@ public final class Predicates {
      * @param attribute the attribute to fetch the value for comparison from.
      * @param value     the value to compare the attribute value against. Can be {@code null}.
      * @return the created <b>equal</b> predicate instance.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate equal(String attribute, Comparable value) {
         return new EqualPredicate(attribute, value);
@@ -263,6 +265,7 @@ public final class Predicates {
      *                  match the percentage sign or the underscore character itself, escape it with the backslash,
      *                  for example {@code "\\%"} string will match the percentage sign. Can be {@code null}.
      * @return the created <b>like</b> predicate instance.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      * @see #ilike(String, String)
      * @see #regex(String, String)
      */
@@ -283,6 +286,7 @@ public final class Predicates {
      *                  match the percentage sign or the underscore character itself, escape it with the backslash,
      *                  for example {@code "\\%"} string will match the percentage sign. Can be {@code null}.
      * @return the created <b>case-insensitive like</b> predicate instance.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      * @see #like(String, String)
      * @see #regex(String, String)
      */
@@ -301,6 +305,7 @@ public final class Predicates {
      * @param pattern   the pattern to match the attribute value against. The pattern interpreted exactly the same as
      *                  described in {@link java.util.regex.Pattern}. Can be {@code null}.
      * @return the created <b>regex</b> predicate instance.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      * @see #like(String, String)
      * @see #ilike(String, String)
      */
@@ -318,6 +323,7 @@ public final class Predicates {
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
      * @return the created <b>greater than</b> predicate.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate greaterThan(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, false, false);
@@ -333,6 +339,7 @@ public final class Predicates {
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
      * @return the created <b>greater than or equal to</b> predicate.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate greaterEqual(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, true, false);
@@ -348,6 +355,7 @@ public final class Predicates {
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
      * @return the created <b>less than</b> predicate.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate lessThan(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, false, true);
@@ -363,6 +371,7 @@ public final class Predicates {
      * @param attribute the left-hand side attribute to fetch the value for comparison from.
      * @param value     the right-hand side value to compare the attribute value against.
      * @return the created <b>less than or equal to</b> predicate.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate lessEqual(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, true, true);
@@ -380,6 +389,7 @@ public final class Predicates {
      * @param from      the inclusive lower bound of the range to check.
      * @param to        the inclusive upper bound of the range to check.
      * @return the created <b>between</b> predicate.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate between(String attribute, Comparable from, Comparable to) {
         return new BetweenPredicate(attribute, from, to);
@@ -395,6 +405,7 @@ public final class Predicates {
      * @param attribute the attribute to fetch the value to test from.
      * @param values    the values set to test the membership in. Individual values can be {@code null}.
      * @return the created <b>in</b> predicate.
+     * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
     public static Predicate in(String attribute, Comparable... values) {
         return new InPredicate(attribute, values);
