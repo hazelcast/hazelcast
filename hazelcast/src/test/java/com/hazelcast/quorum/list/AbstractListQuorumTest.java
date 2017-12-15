@@ -35,7 +35,7 @@ public abstract class AbstractListQuorumTest {
 
     protected static final String LIST_NAME = "quorum" + randomString();
 
-    protected static PartitionedCluster CLUSTER;
+    protected static PartitionedCluster cluster;
 
     protected static void initTestEnvironment(Config config, TestHazelcastInstanceFactory factory) {
         initCluster(PartitionedCluster.createClusterConfig(config), factory, READ, WRITE, READ_WRITE);
@@ -43,7 +43,7 @@ public abstract class AbstractListQuorumTest {
 
     protected static void shutdownTestEnvironment() {
         HazelcastInstanceFactory.terminateAll();
-        CLUSTER = null;
+        cluster = null;
     }
 
     protected static ListConfig newListConfig(QuorumType quorumType, String quorumName) {
@@ -62,7 +62,7 @@ public abstract class AbstractListQuorumTest {
     }
 
     protected static void initCluster(Config config, TestHazelcastInstanceFactory factory, QuorumType... types) {
-        CLUSTER = new PartitionedCluster(factory);
+        cluster = new PartitionedCluster(factory);
 
         String[] quorumNames = new String[types.length];
         int i = 0;
@@ -75,12 +75,12 @@ public abstract class AbstractListQuorumTest {
             quorumNames[i++] = quorumName;
         }
 
-        CLUSTER.createFiveMemberCluster(config);
-        CLUSTER.splitFiveMembersThreeAndTwo(quorumNames);
+        cluster.createFiveMemberCluster(config);
+        cluster.splitFiveMembersThreeAndTwo(quorumNames);
     }
 
     protected IList list(int index, QuorumType quorumType) {
-        return CLUSTER.instance[index].getList(LIST_NAME + quorumType.name());
+        return cluster.instance[index].getList(LIST_NAME + quorumType.name());
     }
 
 }

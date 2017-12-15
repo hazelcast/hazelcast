@@ -1,12 +1,13 @@
-package com.hazelcast.client.quorum.set;
+package com.hazelcast.client.quorum.list;
 
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ISet;
-import com.hazelcast.quorum.set.SetWriteQuorumTest;
+import com.hazelcast.quorum.list.TransactionalListQuorumWriteTest;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
@@ -16,25 +17,26 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class ClientSetWriteQuorumTest extends SetWriteQuorumTest {
+public class ClientTransactionalListQuorumWriteTest extends TransactionalListQuorumWriteTest {
 
-    private static PartitionedClusterClients CLIENTS;
+    private static PartitionedClusterClients clients;
 
     @BeforeClass
     public static void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
         initTestEnvironment(new Config(), factory);
-        CLIENTS = new PartitionedClusterClients(CLUSTER, factory);
+        clients = new PartitionedClusterClients(cluster, factory);
     }
 
     @AfterClass
     public static void tearDown() {
         shutdownTestEnvironment();
-        CLIENTS.terminateAll();
+        clients.terminateAll();
     }
 
-    protected ISet set(int index) {
-        return CLIENTS.client(index).getSet(SET_NAME + quorumType.name());
+    @Override
+    public TransactionContext newTransactionContext(int index) {
+        return clients.client(index).newTransactionContext(options);
     }
 
 }
