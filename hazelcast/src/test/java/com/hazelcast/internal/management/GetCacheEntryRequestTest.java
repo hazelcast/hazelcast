@@ -20,23 +20,30 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheTestSupport;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.request.GetCacheEntryRequest;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.cache.Cache;
+import java.util.Collection;
 import java.util.Random;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class GetCacheEntryRequestTest extends CacheTestSupport {
     private static final Random random = new Random();
@@ -46,15 +53,29 @@ public class GetCacheEntryRequestTest extends CacheTestSupport {
     private String cacheName = randomName();
     private String value = randomString();
 
+    @Parameterized.Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameterized.Parameters(name = "inMemoryFormat:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {BINARY}, {OBJECT},
+        });
+    }
+
     @Override
     protected HazelcastInstance getHazelcastInstance() {
         return instances[0];
     }
 
+    protected CacheSimpleConfig getCacheConfig() {
+        return new CacheSimpleConfig().setName(cacheName).setInMemoryFormat(inMemoryFormat);
+    }
+
     @Override
     protected void onSetup() {
-        Config config = new Config();
-        config.addCacheConfig(new CacheSimpleConfig().setName(cacheName));
+        Config config = getConfig();
+        config.addCacheConfig(getCacheConfig());
 
         instanceFactory = createHazelcastInstanceFactory(2);
         instances = new HazelcastInstance[2];
