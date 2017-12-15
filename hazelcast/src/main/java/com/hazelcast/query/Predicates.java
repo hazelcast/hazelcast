@@ -48,11 +48,15 @@ import java.util.Date;
  * <p>
  * Dot notation may be used for attribute name to instruct the predicate to act on the attribute located at deeper
  * level of an item: given {@code "fullName.firstName"} path the predicate will act on {@code firstName} attribute
- * of the value fetched by {@code fullName} attribute from the item itself.
+ * of the value fetched by {@code fullName} attribute from the item itself. If any of the attributes along the path
+ * can't be resolved, {@link IllegalArgumentException} will be thrown. Reading of any attribute from {@code null}
+ * will produce {@code null} value.
  * <p>
  * Square brackets notation may be used to instruct the predicate to act on the array/collection element at the
  * specified index: given {@code "names[0]"} path the predicate will act on the first item of the array/collection
- * fetched by {@code names} attribute from the item.
+ * fetched by {@code names} attribute from the item. The index must be non-negative, otherwise
+ * {@link IllegalArgumentException} will be thrown. Reading from the index pointing beyond the end of the collection/array
+ * will produce {@code null} value.
  * <p>
  * Special {@code any} keyword may be used to act on every array/collection element: given
  * {@code "names[any].fullName.firstName"} path the predicate will act on {@code firstName} attribute of the value
