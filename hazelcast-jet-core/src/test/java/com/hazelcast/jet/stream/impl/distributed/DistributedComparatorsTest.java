@@ -25,8 +25,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.function.DistributedComparator.nullsFirst;
 import static com.hazelcast.jet.function.DistributedComparator.nullsLast;
-import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.NATURAL_ORDER_COMPARATOR;
-import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.REVERSE_ORDER_COMPARATOR;
+import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.NATURAL_ORDER;
+import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.REVERSE_ORDER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -36,20 +36,20 @@ public class DistributedComparatorsTest {
 
     @Test
     public void reverseComparator() {
-        assertSame(REVERSE_ORDER_COMPARATOR, NATURAL_ORDER_COMPARATOR.reversed());
-        assertSame(NATURAL_ORDER_COMPARATOR, REVERSE_ORDER_COMPARATOR.reversed());
+        assertSame(REVERSE_ORDER, NATURAL_ORDER.reversed());
+        assertSame(NATURAL_ORDER, REVERSE_ORDER.reversed());
     }
 
     @Test
     public void reverseOrderComparator() {
-        DistributedComparator c = REVERSE_ORDER_COMPARATOR;
+        DistributedComparator c = REVERSE_ORDER;
         assertEquals(1, c.compare(1, 2));
         assertEquals(-1, c.compare(2, 1));
     }
 
     @Test
     public void nullsFirstComparator() {
-        DistributedComparator c = nullsFirst(NATURAL_ORDER_COMPARATOR);
+        DistributedComparator c = nullsFirst(NATURAL_ORDER);
         assertEquals(-1, c.compare(1, 2));
         assertEquals(1, c.compare(2, 1));
         assertEquals(1, c.compare(0, null));
@@ -58,7 +58,7 @@ public class DistributedComparatorsTest {
 
     @Test
     public void nullsLastComparator() {
-        DistributedComparator c = nullsLast(NATURAL_ORDER_COMPARATOR);
+        DistributedComparator c = nullsLast(NATURAL_ORDER);
         assertEquals(-1, c.compare(1, 2));
         assertEquals(1, c.compare(2, 1));
         assertEquals(-1, c.compare(0, null));

@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.LongConsumer;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link LongConsumer
@@ -33,10 +34,10 @@ public interface DistributedLongConsumer extends LongConsumer, Serializable {
      * java.util.function.LongConsumer#andThen(LongConsumer)}.
      */
     default DistributedLongConsumer andThen(DistributedLongConsumer after) {
-        Objects.requireNonNull(after);
-        return (long t) -> {
-            accept(t);
-            after.accept(t);
+        checkNotNull(after, "after");
+        return n -> {
+            accept(n);
+            after.accept(n);
         };
     }
 }

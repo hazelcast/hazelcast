@@ -22,36 +22,30 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector;
 
-import java.util.Set;
-
 public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T, A, R> {
 
     private final DistributedSupplier<A> supplier;
     private final DistributedBiConsumer<A, T> accumulator;
     private final DistributedBinaryOperator<A> combiner;
-    private final Set<Characteristics> characteristics;
     private final DistributedFunction<A, R> finisher;
 
     public DistributedCollectorImpl(
             DistributedSupplier<A> supplier, DistributedBiConsumer<A, T> accumulator,
-            DistributedBinaryOperator<A> combiner, DistributedFunction<A, R> finisher,
-            Set<Characteristics> characteristics
-    ) {
+            DistributedBinaryOperator<A> combiner, DistributedFunction<A, R> finisher) {
         this.supplier = supplier;
         this.accumulator = accumulator;
         this.combiner = combiner;
         this.finisher = finisher;
-        this.characteristics = characteristics;
     }
 
     public DistributedCollectorImpl(
             DistributedSupplier<A> supplier, DistributedBiConsumer<A, T> accumulator,
-            DistributedBinaryOperator<A> combiner, Set<Characteristics> characteristics
+            DistributedBinaryOperator<A> combiner
     ) {
-        this(supplier, accumulator, combiner, castingIdentity(), characteristics);
+        this(supplier, accumulator, combiner, identity());
     }
 
-    static <I, R> DistributedFunction<I, R> castingIdentity() {
+    static <I, R> DistributedFunction<I, R> identity() {
         return i -> (R) i;
     }
 
@@ -75,8 +69,4 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
         return finisher;
     }
 
-    @Override
-    public Set<Characteristics> characteristics() {
-        return characteristics;
-    }
 }

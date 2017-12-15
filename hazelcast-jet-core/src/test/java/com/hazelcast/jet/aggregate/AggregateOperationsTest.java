@@ -31,11 +31,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -44,7 +46,9 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingLong;
+import static com.hazelcast.jet.aggregate.AggregateOperations.concatenating;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.aggregate.AggregateOperations.groupingBy;
 import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
 import static com.hazelcast.jet.aggregate.AggregateOperations.mapping;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
@@ -62,9 +66,11 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
@@ -99,9 +105,31 @@ public class AggregateOperationsTest {
     }
 
     @Test
+    public void when_averagingLongOverflow_thenException() {
+        // Given
+        AggregateOperation1<Long, LongLongAccumulator, Double> aggrOp = averagingLong(Long::longValue);
+        LongLongAccumulator acc = new LongLongAccumulator(Long.MAX_VALUE, 0L);
+
+        // When and Then
+        exception.expect(ArithmeticException.class);
+        aggrOp.accumulateFn().accept(acc, 0L);
+    }
+
+    @Test
     public void when_averagingDouble() {
         validateOp(averagingDouble(Double::doubleValue), identity(),
                 1.5, 2.5, new LongDoubleAccumulator(1, 1.5), new LongDoubleAccumulator(2, 4.0), 2.0);
+    }
+
+    @Test
+    public void when_averagingDoubleOverflow_thenException() {
+        // Given
+        AggregateOperation1<Double, LongDoubleAccumulator, Double> aggrOp = averagingDouble(Double::doubleValue);
+        LongDoubleAccumulator acc = new LongDoubleAccumulator(Long.MAX_VALUE, 0.0d);
+
+        // When and Then
+        exception.expect(ArithmeticException.class);
+        aggrOp.accumulateFn().accept(acc, 0.0d);
     }
 
     @Test
@@ -121,8 +149,8 @@ public class AggregateOperationsTest {
         validateOp(
                 allOf(counting(), summingLong(Long::longValue)),
                 identity(), 10L, 11L,
-                asList(new LongAccumulator(1L), new LongAccumulator(10L)),
-                asList(new LongAccumulator(2L), new LongAccumulator(21L)),
+                asList(longAcc(1), longAcc(10)),
+                asList(longAcc(2), longAcc(21)),
                 asList(2L, 21L)
         );
     }
@@ -132,8 +160,8 @@ public class AggregateOperationsTest {
         validateOpWithoutDeduct(
                 allOf(counting(), maxBy(naturalOrder())),
                 identity(), 10L, 11L,
-                asList(new LongAccumulator(1), new MutableReference<>(10L)),
-                asList(new LongAccumulator(2), new MutableReference<>(11L)),
+                asList(longAcc(1), new MutableReference<>(10L)),
+                asList(longAcc(2), new MutableReference<>(11L)),
                 asList(2L, 11L)
         );
     }
@@ -314,6 +342,138 @@ public class AggregateOperationsTest {
         );
     }
 
+    @Test
+    public void when_concatenating_withoutDelimiter() {
+        validateOpWithoutDeduct(
+                concatenating(),
+                StringBuilder::toString,
+                "A",
+                "B",
+                "A",
+                "AB",
+                "AB"
+        );
+    }
+
+    @Test
+    public void when_concatenating_withDelimiter() {
+        validateOpWithoutDeduct(
+                concatenating(","),
+                StringBuilder::toString,
+                "A",
+                "B",
+                "A",
+                "A,B",
+                "A,B"
+        );
+    }
+
+    @Test
+    public void when_concatenating_withDelimiterPrefixSuffix() {
+        validateOpWithoutDeduct(
+                concatenating(",", "(", ")"),
+                StringBuilder::toString,
+                "A",
+                "B",
+                "(A",
+                "(A,B",
+                "(A,B)"
+        );
+    }
+
+    @Test
+    public void when_concatenatingEmptyItems_withDelimiterPrefixSuffix() {
+        validateOpWithoutDeduct(
+                concatenating(",", "(", ")"),
+                StringBuilder::toString,
+                "A",
+                "",
+                "(A",
+                "(A",
+                "(A)"
+        );
+        validateOpWithoutDeduct(
+                concatenating(",", "(", ")"),
+                StringBuilder::toString,
+                "",
+                "B",
+                "(",
+                "(B",
+                "(B)"
+        );
+        validateOpWithoutDeduct(
+                concatenating(",", "(", ")"),
+                StringBuilder::toString,
+                "",
+                "",
+                "(",
+                "(",
+                "()"
+        );
+    }
+
+    @Test
+    public void when_groupingBy_withDifferentKey() {
+        Entry<String, Integer> entryA = entry("a", 1);
+        Entry<String, Integer> entryB = entry("b", 1);
+        validateOpWithoutDeduct(
+                groupingBy(entryKey()),
+                identity(),
+                entryA,
+                entryB,
+                asMap("a", singletonList(entryA)),
+                asMap("a", singletonList(entryA), "b", singletonList(entryB)),
+                asMap("a", singletonList(entryA), "b", singletonList(entryB))
+        );
+    }
+
+    @Test
+    public void when_groupingBy_withSameKey() {
+        Entry<String, Integer> entryA = entry("a", 1);
+        validateOpWithoutDeduct(
+                groupingBy(entryKey()),
+                identity(),
+                entryA,
+                entryA,
+                asMap("a", Arrays.asList(entryA)),
+                asMap("a", Arrays.asList(entryA, entryA)),
+                asMap("a", Arrays.asList(entryA, entryA))
+        );
+    }
+
+    @Test
+    public void when_groupingBy_withDownstreamOperation() {
+        Entry<String, Integer> entryA = entry("a", 1);
+        validateOpWithoutDeduct(
+                groupingBy(entryKey(), AggregateOperations.counting()),
+                identity(),
+                entryA,
+                entryA,
+                asMap("a", longAcc(1)),
+                asMap("a", longAcc(2)),
+                asMap("a", 2L)
+        );
+    }
+
+    @Test
+    public void when_groupingBy_withDownstreamOperationAndMapSupplier() {
+        Entry<String, Integer> entryA = entry("a", 1);
+        Entry<String, Integer> entryB = entry("b", 1);
+        validateOpWithoutDeduct(
+                groupingBy(entryKey(), TreeMap::new, AggregateOperations.counting()),
+                a -> {
+                    assertThat(a, instanceOf(TreeMap.class));
+                    return a;
+                },
+                entryB,
+                entryA,
+                asMap("b", longAcc(1)),
+                asMap("a", longAcc(1), "b", longAcc(1)),
+                asMap("a", 1L, "b", 1L)
+        );
+    }
+
+
     private static <T, A, X, R> void validateOp(
             AggregateOperation1<T, A, R> op,
             Function<A, X> getAccValFn,
@@ -325,7 +485,7 @@ public class AggregateOperationsTest {
     ) {
         // Given
         BiConsumer<? super A, ? super A> deductAccFn = op.deductFn();
-        assertNotNull(deductAccFn);
+        assertNotNull("deductAccFn was null", deductAccFn);
 
         // When
         A acc1 = op.createFn().get();
@@ -373,7 +533,7 @@ public class AggregateOperationsTest {
             R expectFinished
     ) {
         // Then
-        assertNull(op.deductFn());
+        assertNull("deductFn must be null", op.deductFn());
 
         // When
         A acc1 = op.createFn().get();
@@ -405,4 +565,17 @@ public class AggregateOperationsTest {
         // Then
         assertEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
     }
+
+    private static <K, V> Map<K, V> asMap(Object... entries) {
+        Map<K, V> map = new HashMap<>();
+        for (int i = 0; i < entries.length; i += 2) {
+            map.put((K) entries[i], (V) entries[i + 1]);
+        }
+        return map;
+    }
+
+    private static LongAccumulator longAcc(long val) {
+        return new LongAccumulator(val);
+    }
+
 }

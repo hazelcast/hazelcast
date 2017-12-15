@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.Function;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link Function
@@ -40,8 +41,8 @@ public interface DistributedFunction<T, R> extends Function<T, R>, Serializable 
      * java.util.function.Function#compose(Function)}.
      */
     default <V> DistributedFunction<V, R> compose(DistributedFunction<? super V, ? extends T> before) {
-        Objects.requireNonNull(before);
-        return (V v) -> apply(before.apply(v));
+        checkNotNull(before, "before");
+        return v -> apply(before.apply(v));
     }
 
     /**
@@ -49,7 +50,7 @@ public interface DistributedFunction<T, R> extends Function<T, R>, Serializable 
      * java.util.function.Function#andThen(Function)}.
      */
     default <V> DistributedFunction<T, V> andThen(DistributedFunction<? super R, ? extends V> after) {
-        Objects.requireNonNull(after);
-        return (T t) -> after.apply(apply(t));
+        checkNotNull(after, "after");
+        return t -> after.apply(apply(t));
     }
 }

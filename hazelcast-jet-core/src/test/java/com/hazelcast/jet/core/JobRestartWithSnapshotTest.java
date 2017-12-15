@@ -21,7 +21,6 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -154,7 +153,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         DAG dag = new DAG();
 
         WindowDefinition wDef = WindowDefinition.tumblingWindowDef(3);
-        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
+        AggregateOperation1<Object, ?, Long> aggrOp = counting();
 
         Map<List<Long>, Long> result = instance1.getMap("result");
         result.clear();

@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.DoubleConsumer;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link DoubleConsumer
@@ -32,10 +33,10 @@ public interface DistributedDoubleConsumer extends DoubleConsumer, Serializable 
      * java.util.function.DoubleConsumer#andThen(DoubleConsumer)}.
      */
     default DistributedDoubleConsumer andThen(DistributedDoubleConsumer after) {
-        Objects.requireNonNull(after);
-        return (double t) -> {
-            accept(t);
-            after.accept(t);
+        checkNotNull(after, "after");
+        return n -> {
+            accept(n);
+            after.accept(n);
         };
     }
 }

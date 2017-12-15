@@ -25,9 +25,6 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -35,10 +32,40 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
+import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * {@code Serializable} variant of {@link Collector java.util.stream.Collector}.
  */
 public interface DistributedCollector<T, A, R> extends Collector<T, A, R>, Serializable {
+
+    /**
+     * {@code Serializable} variant of {@link
+     * Collector#of(Supplier, BiConsumer, BinaryOperator, Characteristics...)
+     * java.util.stream.Collector#of(Supplier, BiConsumer, BinaryOperator, Characteristics...) }
+     */
+    static <T, R> DistributedCollector<T, R, R> of(DistributedSupplier<R> supplier,
+                                                   DistributedBiConsumer<R, T> accumulator,
+                                                   DistributedBinaryOperator<R> combiner) {
+        return of(supplier, accumulator, combiner, identity());
+    }
+
+    /**
+     * {@code Serializable} variant of {@link
+     * Collector#of(Supplier, BiConsumer, BinaryOperator, Function, Characteristics...)
+     * java.util.stream.Collector#of(Supplier, BiConsumer, BinaryOperator, Function, Characteristics...) }
+     */
+    static <T, A, R> DistributedCollector<T, A, R> of(DistributedSupplier<A> supplier,
+                                                      DistributedBiConsumer<A, T> accumulator,
+                                                      DistributedBinaryOperator<A> combiner,
+                                                      DistributedFunction<A, R> finisher) {
+        checkNotNull(supplier, "supplier");
+        checkNotNull(accumulator, "accumulator");
+        checkNotNull(combiner, "combiner");
+        checkNotNull(finisher, "finisher");
+        return new DistributedCollectorImpl<>(supplier, accumulator, combiner, finisher);
+    }
 
     @Override
     DistributedSupplier<A> supplier();
@@ -52,48 +79,9 @@ public interface DistributedCollector<T, A, R> extends Collector<T, A, R>, Seria
     @Override
     DistributedFunction<A, R> finisher();
 
-    /**
-     * {@code Serializable} variant of {@link
-     * Collector#of(Supplier, BiConsumer, BinaryOperator, Characteristics...)
-     * java.util.stream.Collector#of(Supplier, BiConsumer, BinaryOperator, Characteristics...) }
-     */
-    static <T, R> DistributedCollector<T, R, R> of(DistributedSupplier<R> supplier,
-                                                   DistributedBiConsumer<R, T> accumulator,
-                                                   DistributedBinaryOperator<R> combiner,
-                                                   Characteristics... characteristics) {
-        Objects.requireNonNull(supplier);
-        Objects.requireNonNull(accumulator);
-        Objects.requireNonNull(combiner);
-        Objects.requireNonNull(characteristics);
-        Set<Characteristics> cs = (characteristics.length == 0)
-                ? DistributedCollectors.CH_ID
-                : Collections.unmodifiableSet(EnumSet.of(Characteristics.IDENTITY_FINISH,
-                characteristics));
-        return new DistributedCollectorImpl<>(supplier, accumulator, combiner, cs);
-    }
-
-    /**
-     * {@code Serializable} variant of {@link
-     * Collector#of(Supplier, BiConsumer, BinaryOperator, Function, Characteristics...)
-     * java.util.stream.Collector#of(Supplier, BiConsumer, BinaryOperator, Function, Characteristics...) }
-     */
-    static <T, A, R> DistributedCollector<T, A, R> of(DistributedSupplier<A> supplier,
-                                                      DistributedBiConsumer<A, T> accumulator,
-                                                      DistributedBinaryOperator<A> combiner,
-                                                      DistributedFunction<A, R> finisher,
-                                                      Characteristics... characteristics) {
-        Objects.requireNonNull(supplier);
-        Objects.requireNonNull(accumulator);
-        Objects.requireNonNull(combiner);
-        Objects.requireNonNull(finisher);
-        Objects.requireNonNull(characteristics);
-        Set<Characteristics> cs = DistributedCollectors.CH_NOID;
-        if (characteristics.length > 0) {
-            cs = EnumSet.noneOf(Characteristics.class);
-            Collections.addAll(cs, characteristics);
-            cs = Collections.unmodifiableSet(cs);
-        }
-        return new DistributedCollectorImpl<>(supplier, accumulator, combiner, finisher, cs);
+    @Override
+    default Set<Characteristics> characteristics() {
+        throw new UnsupportedOperationException("characteristics is not supported for DistributedCollector");
     }
 
     /**

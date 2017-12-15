@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.IntUnaryOperator;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link IntUnaryOperator
@@ -32,7 +33,7 @@ public interface DistributedIntUnaryOperator extends IntUnaryOperator, Serializa
      * IntUnaryOperator#identity() java.util.function.IntUnaryOperator#identity()}.
      */
     static DistributedIntUnaryOperator identity() {
-        return t -> t;
+        return n -> n;
     }
 
     /**
@@ -41,8 +42,8 @@ public interface DistributedIntUnaryOperator extends IntUnaryOperator, Serializa
      * java.util.function.IntUnaryOperator#compose(IntUnaryOperator)}.
      */
     default DistributedIntUnaryOperator compose(DistributedIntUnaryOperator before) {
-        Objects.requireNonNull(before);
-        return (int v) -> applyAsInt(before.applyAsInt(v));
+        checkNotNull(before, "before");
+        return n -> applyAsInt(before.applyAsInt(n));
     }
 
     /**
@@ -51,7 +52,7 @@ public interface DistributedIntUnaryOperator extends IntUnaryOperator, Serializa
      * java.util.function.IntUnaryOperator#andThen(IntUnaryOperator)}.
      */
     default DistributedIntUnaryOperator andThen(DistributedIntUnaryOperator after) {
-        Objects.requireNonNull(after);
-        return (int t) -> after.applyAsInt(applyAsInt(t));
+        checkNotNull(after, "after");
+        return n -> after.applyAsInt(applyAsInt(n));
     }
 }

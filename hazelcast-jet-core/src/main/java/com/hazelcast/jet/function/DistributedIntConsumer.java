@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.IntConsumer;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link IntConsumer
@@ -33,10 +34,10 @@ public interface DistributedIntConsumer extends IntConsumer, Serializable {
      * java.util.function.IntConsumer#andThen(IntConsumer)}.
      */
     default DistributedIntConsumer andThen(DistributedIntConsumer after) {
-        Objects.requireNonNull(after);
-        return (int t) -> {
-            accept(t);
-            after.accept(t);
+        checkNotNull(after, "after");
+        return n -> {
+            accept(n);
+            after.accept(n);
         };
     }
 }

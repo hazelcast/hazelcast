@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.DoublePredicate;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link DoublePredicate
@@ -33,7 +34,7 @@ public interface DistributedDoublePredicate extends DoublePredicate, Serializabl
      * java.util.function.DoublePredicate#and(DoublePredicate)}.
      */
     default DistributedDoublePredicate and(DistributedDoublePredicate other) {
-        Objects.requireNonNull(other);
+        checkNotNull(other, "other");
         return (value) -> test(value) && other.test(value);
     }
 
@@ -42,7 +43,7 @@ public interface DistributedDoublePredicate extends DoublePredicate, Serializabl
      */
     @Override
     default DistributedDoublePredicate negate() {
-        return (value) -> !test(value);
+        return v -> !test(v);
     }
 
     /**
@@ -51,7 +52,7 @@ public interface DistributedDoublePredicate extends DoublePredicate, Serializabl
      * java.util.function.DoublePredicate#or(DoublePredicate)}.
      */
     default DistributedDoublePredicate or(DistributedDoublePredicate other) {
-        Objects.requireNonNull(other);
+        checkNotNull(other, "other");
         return (value) -> test(value) || other.test(value);
     }
 }

@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.BiConsumer;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link BiConsumer
@@ -32,11 +33,10 @@ public interface DistributedBiConsumer<T, U> extends BiConsumer<T, U>, Serializa
      * {@link BiConsumer#andThen(BiConsumer) java.util.function.BiConsumer#andThen(BiConsumer)}.
      */
     default DistributedBiConsumer<T, U> andThen(DistributedBiConsumer<? super T, ? super U> after) {
-        Objects.requireNonNull(after);
-
-        return (l, r) -> {
-            accept(l, r);
-            after.accept(l, r);
+        checkNotNull(after, "after");
+        return (left, right) -> {
+            accept(left, right);
+            after.accept(left, right);
         };
     }
 }

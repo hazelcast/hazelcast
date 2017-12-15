@@ -25,7 +25,8 @@ import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.Objects;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains primitives needed to compute an aggregated result of stream
@@ -181,7 +182,7 @@ public interface AggregateOperation<A, R> extends Serializable {
             @Nonnull DistributedFunction<T, A> getAccFn
     ) {
         DistributedBiConsumer<? super A, ? super A> combineFn = combineFn();
-        Objects.requireNonNull(combineFn, "The 'combine' primitive is missing");
+        checkNotNull(combineFn, "The 'combine' primitive is missing");
         return new AggregateOperation1Impl<>(
                 createFn(),
                 (A acc, T item) -> combineFn.accept(acc, getAccFn.apply(item)),

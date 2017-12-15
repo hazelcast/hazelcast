@@ -20,6 +20,8 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * {@code Serializable} variant of {@link Predicate
  * java.util.function.Predicate}.
@@ -31,10 +33,8 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@code Serializable} variant of
      * {@link Predicate#isEqual(Object) java.util.function.Predicate#isEqual(Object)}.
      */
-    static <T> DistributedPredicate<T> isEqual(Object targetRef) {
-        return (null == targetRef)
-                ? Objects::isNull
-                : object -> targetRef.equals(object);
+    static <T> DistributedPredicate<T> isEqual(Object other) {
+        return null == other ? Objects::isNull : other::equals;
     }
 
     /**
@@ -42,8 +42,8 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@link Predicate#and(Predicate) java.util.function.Predicate#and(Predicate)}.
      */
     default DistributedPredicate<T> and(DistributedPredicate<? super T> other) {
-        Objects.requireNonNull(other);
-        return (t) -> test(t) && other.test(t);
+        checkNotNull(other, "other");
+        return t -> test(t) && other.test(t);
     }
 
     /**
@@ -52,7 +52,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      */
     @Override
     default DistributedPredicate<T> negate() {
-        return (t) -> !test(t);
+        return t -> !test(t);
     }
 
     /**
@@ -60,7 +60,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@link Predicate#or(Predicate) java.util.function.Predicate#or(Predicate)}.
      */
     default DistributedPredicate<T> or(DistributedPredicate<? super T> other) {
-        Objects.requireNonNull(other);
-        return (t) -> test(t) || other.test(t);
+        checkNotNull(other, "other");
+        return t -> test(t) || other.test(t);
     }
 }

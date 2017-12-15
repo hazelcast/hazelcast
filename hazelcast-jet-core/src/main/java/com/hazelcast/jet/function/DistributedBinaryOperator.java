@@ -18,8 +18,9 @@ package com.hazelcast.jet.function;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.function.BinaryOperator;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link
@@ -32,17 +33,17 @@ public interface DistributedBinaryOperator<T> extends BinaryOperator<T>, Seriali
      * {@code Serializable} variant of {@link
      * BinaryOperator#minBy(Comparator) java.util.function.BinaryOperator#minBy(Comparator)}.
      */
-    static <T> DistributedBinaryOperator<T> minBy(java.util.Comparator<? super T> comparator) {
-        Objects.requireNonNull(comparator);
-        return (a, b) -> comparator.compare(a, b) <= 0 ? a : b;
+    static <T> DistributedBinaryOperator<T> minBy(Comparator<? super T> comparator) {
+        checkNotNull(comparator, "comparator");
+        return (l, r) -> comparator.compare(l, r) <= 0 ? l : r;
     }
 
     /**
      * {@code Serializable} variant of {@link
      * BinaryOperator#maxBy(Comparator) java.util.function.BinaryOperator#maxBy(Comparator)}.
      */
-    static <T> DistributedBinaryOperator<T> maxBy(java.util.Comparator<? super T> comparator) {
-        Objects.requireNonNull(comparator);
-        return (a, b) -> comparator.compare(a, b) >= 0 ? a : b;
+    static <T> DistributedBinaryOperator<T> maxBy(Comparator<? super T> comparator) {
+        checkNotNull(comparator, "comparator");
+        return (l, r) -> comparator.compare(l, r) >= 0 ? l : r;
     }
 }

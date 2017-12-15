@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.BiPredicate;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link BiPredicate
@@ -32,7 +33,7 @@ public interface DistributedBiPredicate<T, U> extends BiPredicate<T, U>, Seriali
      * BiPredicate#and(BiPredicate) java.util.function.BiPredicate#and(BiPredicate)}.
      */
     default DistributedBiPredicate<T, U> and(DistributedBiPredicate<? super T, ? super U> other) {
-        Objects.requireNonNull(other);
+        checkNotNull(other, "other");
         return (T t, U u) -> test(t, u) && other.test(t, u);
     }
 
@@ -50,7 +51,7 @@ public interface DistributedBiPredicate<T, U> extends BiPredicate<T, U>, Seriali
      * BiPredicate#or(BiPredicate) java.util.function.BiPredicate#or(BiPredicate)}.
      */
     default DistributedBiPredicate<T, U> or(DistributedBiPredicate<? super T, ? super U> other) {
-        Objects.requireNonNull(other);
+        checkNotNull(other, "other");
         return (T t, U u) -> test(t, u) || other.test(t, u);
     }
 }

@@ -103,7 +103,7 @@ public final class Reducers {
 
 
     private static <T> Vertex buildCombiner(DAG dag, Vertex accumulate, BinaryOperator<T> combiner) {
-        DistributedSupplier<Processor> supplier = () -> new CombineP<>(combiner, identity());
+        DistributedSupplier<Processor> supplier = () -> new CombineP<>(combiner);
         Vertex combine = dag.newVertex("combine", supplier).localParallelism(1);
         dag.edge(between(accumulate, combine)
                 .distributed()
@@ -155,7 +155,7 @@ public final class Reducers {
     private static <T> Vertex reduceVertex(BinaryOperator<T> accumulator, T identity) {
         return identity != null
                 ? new Vertex("reduce", () -> new AccumulateP<>(accumulator, identity))
-                : new Vertex("reduce", () -> new CombineP<>(accumulator, identity()));
+                : new Vertex("reduce", () -> new CombineP<>(accumulator));
     }
 
 

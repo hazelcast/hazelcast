@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.LongPredicate;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link LongPredicate
@@ -33,8 +34,8 @@ public interface DistributedLongPredicate extends LongPredicate, Serializable {
      * java.util.function.LongPredicate#and(LongPredicate)}.
      */
     default DistributedLongPredicate and(DistributedLongPredicate other) {
-        Objects.requireNonNull(other);
-        return (value) -> test(value) && other.test(value);
+        checkNotNull(other, "other");
+        return n -> test(n) && other.test(n);
     }
 
     /**
@@ -51,7 +52,7 @@ public interface DistributedLongPredicate extends LongPredicate, Serializable {
      * java.util.function.LongPredicate#or(LongPredicate)}.
      */
     default DistributedLongPredicate or(DistributedLongPredicate other) {
-        Objects.requireNonNull(other);
-        return (value) -> test(value) || other.test(value);
+        checkNotNull(other, "other");
+        return n -> test(n) || other.test(n);
     }
 }

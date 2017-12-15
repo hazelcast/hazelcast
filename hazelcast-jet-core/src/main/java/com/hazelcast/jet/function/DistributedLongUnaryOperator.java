@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.LongUnaryOperator;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link LongUnaryOperator
@@ -32,7 +33,7 @@ public interface DistributedLongUnaryOperator extends LongUnaryOperator, Seriali
      * java.util.function.LongUnaryOperator#identity()}.
      */
     static DistributedLongUnaryOperator identity() {
-        return t -> t;
+        return n -> n;
     }
 
     /**
@@ -41,8 +42,8 @@ public interface DistributedLongUnaryOperator extends LongUnaryOperator, Seriali
      * java.util.function.LongUnaryOperator#compose(LongUnaryOperator)}.
      */
     default DistributedLongUnaryOperator compose(DistributedLongUnaryOperator before) {
-        Objects.requireNonNull(before);
-        return (long v) -> applyAsLong(before.applyAsLong(v));
+        checkNotNull(before, "before");
+        return n -> applyAsLong(before.applyAsLong(n));
     }
 
     /**
@@ -51,7 +52,7 @@ public interface DistributedLongUnaryOperator extends LongUnaryOperator, Seriali
      * java.util.function.LongUnaryOperator#andThen(LongUnaryOperator)}.
      */
     default DistributedLongUnaryOperator andThen(DistributedLongUnaryOperator after) {
-        Objects.requireNonNull(after);
-        return (long t) -> after.applyAsLong(applyAsLong(t));
+        checkNotNull(after, "after");
+        return n -> after.applyAsLong(applyAsLong(n));
     }
 }

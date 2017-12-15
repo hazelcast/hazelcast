@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.BiFunction;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link
@@ -33,7 +34,7 @@ public interface DistributedBiFunction<T, U, R> extends BiFunction<T, U, R>, Ser
      * java.util.function.BiFunction#andThen(Function)}.
      */
     default <V> DistributedBiFunction<T, U, V> andThen(DistributedFunction<? super R, ? extends V> after) {
-        Objects.requireNonNull(after);
-        return (T t, U u) -> after.apply(apply(t, u));
+        checkNotNull(after, "after");
+        return (t, u) -> after.apply(apply(t, u));
     }
 }

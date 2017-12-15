@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.IntPredicate;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link IntPredicate
@@ -33,8 +34,8 @@ public interface DistributedIntPredicate extends IntPredicate, Serializable {
      * java.util.function.IntPredicate#and(IntPredicate)}.
      */
     default DistributedIntPredicate and(DistributedIntPredicate other) {
-        Objects.requireNonNull(other);
-        return (value) -> test(value) && other.test(value);
+        checkNotNull(other, "other");
+        return n -> test(n) && other.test(n);
     }
 
     /**
@@ -51,7 +52,7 @@ public interface DistributedIntPredicate extends IntPredicate, Serializable {
      * java.util.function.IntPredicate#or(IntPredicate)}.
      */
     default DistributedIntPredicate or(DistributedIntPredicate other) {
-        Objects.requireNonNull(other);
-        return (value) -> test(value) || other.test(value);
+        checkNotNull(other, "other");
+        return n -> test(n) || other.test(n);
     }
 }

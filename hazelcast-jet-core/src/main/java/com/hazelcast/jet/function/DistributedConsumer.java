@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.Consumer;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link Consumer
@@ -32,8 +33,8 @@ public interface DistributedConsumer<T> extends Consumer<T>, Serializable {
      * java.util.function.Consumer#andThen(Consumer)}.
      */
     default DistributedConsumer<T> andThen(DistributedConsumer<? super T> after) {
-        Objects.requireNonNull(after);
-        return (T t) -> {
+        checkNotNull(after, "after");
+        return t -> {
             accept(t);
             after.accept(t);
         };

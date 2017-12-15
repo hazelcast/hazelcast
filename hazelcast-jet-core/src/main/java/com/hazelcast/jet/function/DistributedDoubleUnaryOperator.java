@@ -17,8 +17,9 @@
 package com.hazelcast.jet.function;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.function.DoubleUnaryOperator;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@code Serializable} variant of {@link DoubleUnaryOperator
@@ -32,7 +33,7 @@ public interface DistributedDoubleUnaryOperator extends DoubleUnaryOperator, Ser
      * DoubleUnaryOperator#identity() java.util.function.DoubleUnaryOperator#identity()}.
      */
     static DistributedDoubleUnaryOperator identity() {
-        return t -> t;
+        return n -> n;
     }
 
     /**
@@ -41,8 +42,8 @@ public interface DistributedDoubleUnaryOperator extends DoubleUnaryOperator, Ser
      * java.util.function.DoubleUnaryOperator#compose(DoubleUnaryOperator)}.
      */
     default DistributedDoubleUnaryOperator compose(DistributedDoubleUnaryOperator before) {
-        Objects.requireNonNull(before);
-        return (double v) -> applyAsDouble(before.applyAsDouble(v));
+        checkNotNull(before, "before");
+        return n -> applyAsDouble(before.applyAsDouble(n));
     }
 
     /**
@@ -51,7 +52,7 @@ public interface DistributedDoubleUnaryOperator extends DoubleUnaryOperator, Ser
      * java.util.function.DoubleUnaryOperator#andThen(DoubleUnaryOperator)}.
      */
     default DistributedDoubleUnaryOperator andThen(DistributedDoubleUnaryOperator after) {
-        Objects.requireNonNull(after);
-        return (double t) -> after.applyAsDouble(applyAsDouble(t));
+        checkNotNull(after, "after");
+        return n -> after.applyAsDouble(applyAsDouble(n));
     }
 }

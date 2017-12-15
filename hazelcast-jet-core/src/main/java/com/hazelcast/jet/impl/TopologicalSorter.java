@@ -26,9 +26,9 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.stream.DistributedCollectors.toList;
 import static java.lang.Math.min;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**

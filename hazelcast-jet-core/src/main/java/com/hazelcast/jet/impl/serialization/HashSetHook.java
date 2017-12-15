@@ -23,38 +23,49 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.Map.Entry;
+import java.util.HashSet;
 
-import static com.hazelcast.jet.Util.entry;
-
-public final class MapEntryHook implements SerializerHook<Entry> {
+public final class HashSetHook implements SerializerHook<HashSet> {
 
     @Override
-    public Class<Entry> getSerializationType() {
-        return Entry.class;
+    public Class<HashSet> getSerializationType() {
+        return HashSet.class;
     }
 
     @Override
+    @SuppressWarnings("checkstyle:anoninnerlength")
     public Serializer createSerializer() {
-        return new StreamSerializer<Entry>() {
+        return new StreamSerializer<HashSet>() {
+
             @Override
             public int getTypeId() {
-                return SerializerHookConstants.MAP_ENTRY;
-            }
-
-            @Override
-            public void write(ObjectDataOutput out, Entry object) throws IOException {
-                out.writeObject(object.getKey());
-                out.writeObject(object.getValue());
-            }
-
-            @Override
-            public Entry read(ObjectDataInput in) throws IOException {
-                return entry(in.readObject(), in.readObject());
+                return SerializerHookConstants.HASH_SET;
             }
 
             @Override
             public void destroy() {
+
+            }
+
+            @Override
+            @SuppressWarnings("checkstyle:illegaltype")
+            public void write(ObjectDataOutput out, HashSet set) throws IOException {
+                out.writeInt(set.size());
+                for (Object o : set) {
+                    out.writeObject(o);
+                }
+            }
+
+            @Override
+            @SuppressWarnings("checkstyle:illegaltype")
+            public HashSet read(ObjectDataInput in) throws IOException {
+                int length = in.readInt();
+                HashSet set = new HashSet();
+                for (int i = 0; i < length; i++) {
+                    //noinspection unchecked
+                    set.add(in.readObject());
+                }
+                return set;
             }
         };
     }

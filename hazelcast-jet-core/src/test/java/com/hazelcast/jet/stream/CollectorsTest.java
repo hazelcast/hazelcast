@@ -18,7 +18,6 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.function.DistributedComparator;
-import com.hazelcast.jet.function.DistributedOptional;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -29,9 +28,9 @@ import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -243,7 +242,7 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void list_minBy() throws Exception {
-        DistributedOptional<Integer> min = streamList()
+        Optional<Integer> min = streamList()
                 .collect(DistributedCollectors.minBy(DistributedComparator.naturalOrder()));
 
         assertTrue(min.isPresent());
@@ -254,7 +253,7 @@ public class CollectorsTest extends AbstractStreamTest {
     public void empty_minBy() throws Exception {
         IStreamList<Integer> list = getList();
 
-        DistributedOptional<Integer> min = list
+        Optional<Integer> min = list
                 .stream()
                 .collect(DistributedCollectors.minBy(DistributedComparator.naturalOrder()));
 
@@ -263,7 +262,7 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void list_maxBy() throws Exception {
-        DistributedOptional<Integer> max = streamList()
+        Optional<Integer> max = streamList()
                 .collect(DistributedCollectors.maxBy(DistributedComparator.naturalOrder()));
 
         assertTrue(max.isPresent());
@@ -274,7 +273,7 @@ public class CollectorsTest extends AbstractStreamTest {
     public void empty_maxBy() throws Exception {
         IStreamList<Integer> list = getList();
 
-        DistributedOptional<Integer> max = list
+        Optional<Integer> max = list
                 .stream()
                 .collect(DistributedCollectors.maxBy(DistributedComparator.naturalOrder()));
 
@@ -325,7 +324,7 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void map_reducing() throws Exception {
-        DistributedOptional<Integer> sum = streamMap()
+        Optional<Integer> sum = streamMap()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
@@ -335,7 +334,7 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void cache_reducing() throws Exception {
-        DistributedOptional<Integer> sum = streamCache()
+        Optional<Integer> sum = streamCache()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
@@ -347,7 +346,7 @@ public class CollectorsTest extends AbstractStreamTest {
     public void map_empty_reducing() throws Exception {
         IStreamMap<String, Integer> map = getMap();
 
-        DistributedOptional<Integer> sum = map.stream()
+        Optional<Integer> sum = map.stream()
                                               .map(Entry::getValue)
                                               .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
@@ -358,7 +357,7 @@ public class CollectorsTest extends AbstractStreamTest {
     public void cache_empty_reducing() throws Exception {
         IStreamCache<String, Integer> cache = getCache();
 
-        DistributedOptional<Integer> sum = cache.stream()
+        Optional<Integer> sum = cache.stream()
                                                 .map(Entry::getValue)
                                                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
@@ -594,8 +593,7 @@ public class CollectorsTest extends AbstractStreamTest {
                         (l, r) -> {
                             l[0] += r[0];
                             return l;
-                        },
-                        Collector.Characteristics.IDENTITY_FINISH
+                        }
                 )
         );
 

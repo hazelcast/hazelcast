@@ -20,17 +20,14 @@ import com.hazelcast.jet.core.AbstractProcessor;
 
 import javax.annotation.Nonnull;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 
-public class CombineP<T, R> extends AbstractProcessor {
+public class CombineP<T> extends AbstractProcessor {
 
     private final BinaryOperator<T> combiner;
-    private final Function<T, R> finisher;
     private T result;
 
-    public CombineP(BinaryOperator<T> combiner, Function<T, R> finisher) {
+    public CombineP(BinaryOperator<T> combiner) {
         this.combiner = combiner;
-        this.finisher = finisher;
     }
 
     @Override
@@ -45,6 +42,6 @@ public class CombineP<T, R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return result == null || tryEmit(finisher.apply(result));
+        return result == null || tryEmit(result);
     }
 }

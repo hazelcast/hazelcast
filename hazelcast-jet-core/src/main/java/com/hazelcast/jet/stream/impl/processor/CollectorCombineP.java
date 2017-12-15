@@ -20,14 +20,13 @@ import com.hazelcast.jet.core.AbstractProcessor;
 
 import javax.annotation.Nonnull;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 public class CollectorCombineP<T> extends AbstractProcessor {
 
     private final BiConsumer<T, T> combiner;
     private T result;
 
-    public CollectorCombineP(BiConsumer<T, T> combiner, Function ignored) {
+    public CollectorCombineP(BiConsumer<T, T> combiner) {
         this.combiner = combiner;
     }
 

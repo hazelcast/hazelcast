@@ -71,7 +71,7 @@ public final class AggregateOperations {
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> summingLong(
-            @Nonnull DistributedToLongFunction<T> getLongValueFn
+            @Nonnull DistributedToLongFunction<? super T> getLongValueFn
     ) {
         return AggregateOperation
                 .withCreate(LongAccumulator::new)
@@ -89,7 +89,7 @@ public final class AggregateOperations {
      */
     @Nonnull
     public static <T> AggregateOperation1<T, DoubleAccumulator, Double> summingDouble(
-            @Nonnull DistributedToDoubleFunction<T> getDoubleValueFn
+            @Nonnull DistributedToDoubleFunction<? super T> getDoubleValueFn
     ) {
         return AggregateOperation
                 .withCreate(DoubleAccumulator::new)
@@ -131,12 +131,12 @@ public final class AggregateOperations {
         return AggregateOperation
                 .withCreate(MutableReference<T>::new)
                 .andAccumulate((MutableReference<T> a, T i) -> {
-                    if (a.get() == null || comparator.compare(i, a.get()) > 0) {
+                    if (!a.isPresent() || comparator.compare(i, a.get()) > 0) {
                         a.set(i);
                     }
                 })
                 .andCombine((a1, a2) -> {
-                    if (a1.get() == null || comparator.compare(a1.get(), a2.get()) < 0) {
+                    if (!a1.isPresent() || comparator.compare(a1.get(), a2.get()) < 0) {
                         a1.set(a2.get());
                     }
                 })
@@ -152,7 +152,7 @@ public final class AggregateOperations {
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongLongAccumulator, Double> averagingLong(
-            @Nonnull DistributedToLongFunction<T> getLongValueFn
+            @Nonnull DistributedToLongFunction<? super T> getLongValueFn
     ) {
         // accumulator.value1 is count
         // accumulator.value2 is sum
@@ -186,7 +186,7 @@ public final class AggregateOperations {
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongDoubleAccumulator, Double> averagingDouble(
-            @Nonnull DistributedToDoubleFunction<T> getDoubleValueFn
+            @Nonnull DistributedToDoubleFunction<? super T> getDoubleValueFn
     ) {
         // accumulator.value1 is count
         // accumulator.value2 is sum
@@ -284,6 +284,55 @@ public final class AggregateOperations {
     }
 
     /**
+     * Returns an aggregate operation that concatenates the input items into a
+     * string.
+     */
+    public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating() {
+        return AggregateOperation
+                .withCreate(StringBuilder::new)
+                .<CharSequence>andAccumulate(StringBuilder::append)
+                .andCombine(StringBuilder::append)
+                .andFinish(StringBuilder::toString);
+    }
+
+    /**
+     * Returns an aggregate operation that concatenates the input items into a
+     * string with the given {@code delimiter}.
+     */
+    public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating(
+            CharSequence delimiter
+    ) {
+        return concatenating(delimiter, "", "");
+    }
+
+
+    /**
+     * Returns an aggregate operation that concatenates the input items into a
+     * string with the given {@code delimiter}. The resulting string will also
+     * have the given {@code prefix} and {@code suffix}.
+     **/
+    public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating(
+            CharSequence delimiter, CharSequence prefix, CharSequence suffix
+    ) {
+        int prefixLen = prefix.length();
+        return AggregateOperation
+                .withCreate(() -> new StringBuilder().append(prefix))
+                .<CharSequence>andAccumulate((builder, val) -> {
+                    if (builder.length() != prefixLen && val.length() > 0) {
+                        builder.append(delimiter);
+                    }
+                    builder.append(val);
+                })
+                .andCombine((l, r) -> {
+                    if (l.length() != prefixLen && r.length() != prefixLen) {
+                        l.append(delimiter);
+                    }
+                    l.append(r, prefixLen, r.length());
+                })
+                .andFinish(r -> r.append(suffix).toString());
+    }
+
+    /**
      * Adapts an aggregate operation accepting items of type {@code
      * U} to one accepting items of type {@code T} by applying a mapping
      * function to each item before accumulation.
@@ -299,7 +348,7 @@ public final class AggregateOperations {
      * @param downstream the downstream aggregate operation
      */
     public static <T, U, A, R>
-    AggregateOperation1<T, ?, R> mapping(
+    AggregateOperation1<T, A, R> mapping(
             @Nonnull DistributedFunction<? super T, ? extends U> mapFn,
             @Nonnull AggregateOperation1<? super U, A, R> downstream
     ) {
@@ -356,8 +405,7 @@ public final class AggregateOperations {
      *
      * @param <T> input item type
      */
-    public static <T>
-    AggregateOperation1<T, ?, Set<T>> toSet() {
+    public static <T> AggregateOperation1<T, Set<T>, Set<T>> toSet() {
         return toCollection(HashSet::new);
     }
 
@@ -375,17 +423,19 @@ public final class AggregateOperations {
      * @param <T> input item type
      * @param <K> type of the key
      * @param <U> type of the value
-     * @param getKeyFn a function to extract the key from the input item
-     * @param getValueFn a function to extract the value from the input item
+     * @param toKeyFn a function to extract the key from the input item
+     * @param toValueFn a function to extract the value from the input item
      *
      * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)
      * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator, DistributedSupplier)
      */
     public static <T, K, U> AggregateOperation1<T, Map<K, U>, Map<K, U>> toMap(
-            DistributedFunction<? super T, ? extends K> getKeyFn,
-            DistributedFunction<? super T, ? extends U> getValueFn
+            DistributedFunction<? super T, ? extends K> toKeyFn,
+            DistributedFunction<? super T, ? extends U> toValueFn
     ) {
-        return toMap(getKeyFn, getValueFn, throwingMerger(), HashMap::new);
+        return toMap(toKeyFn, toValueFn,
+                (k, v) -> { throw new IllegalStateException("Duplicate key: " + k); },
+                HashMap::new);
     }
 
     /**
@@ -395,13 +445,13 @@ public final class AggregateOperations {
      * <p>
      * This aggregate operation resolves duplicate keys by applying {@code
      * mergeFn} to the conflicting values. {@code mergeFn} will act upon the
-     * values after {@code getValueFn} has already been applied.
+     * values after {@code toValueFn} has already been applied.
      *
      * @param <T> input item type
      * @param <K> the type of key
      * @param <U> the output type of the value mapping function
-     * @param getKeyFn a function to extract the key from input item
-     * @param getValueFn a function to extract value from input item
+     * @param toKeyFn a function to extract the key from input item
+     * @param toValueFn a function to extract value from input item
      * @param mergeFn a merge function, used to resolve collisions between
      *                      values associated with the same key, as supplied
      *                      to {@link Map#merge(Object, Object,
@@ -411,11 +461,11 @@ public final class AggregateOperations {
      * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator, DistributedSupplier)
      */
     public static <T, K, U> AggregateOperation1<T, Map<K, U>, Map<K, U>> toMap(
-            DistributedFunction<? super T, ? extends K> getKeyFn,
-            DistributedFunction<? super T, ? extends U> getValueFn,
+            DistributedFunction<? super T, ? extends K> toKeyFn,
+            DistributedFunction<? super T, ? extends U> toValueFn,
             DistributedBinaryOperator<U> mergeFn
     ) {
-        return toMap(getKeyFn, getValueFn, mergeFn, HashMap::new);
+        return toMap(toKeyFn, toValueFn, mergeFn, HashMap::new);
     }
 
     /**
@@ -433,8 +483,8 @@ public final class AggregateOperations {
      * @param <K> the output type of the key mapping function
      * @param <U> the output type of the value mapping function
      * @param <M> the type of the resulting {@code Map}
-     * @param getKeyFn a function to extract the key from input item
-     * @param getValueFn a function to extract value from input item
+     * @param toKeyFn a function to extract the key from input item
+     * @param toValueFn a function to extract value from input item
      * @param mergeFn a merge function, used to resolve collisions between
      *                      values associated with the same key, as supplied
      *                      to {@link Map#merge(Object, Object,
@@ -446,35 +496,119 @@ public final class AggregateOperations {
      * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)
      */
     public static <T, K, U, M extends Map<K, U>> AggregateOperation1<T, M, M> toMap(
-            DistributedFunction<? super T, ? extends K> getKeyFn,
-            DistributedFunction<? super T, ? extends U> getValueFn,
+            DistributedFunction<? super T, ? extends K> toKeyFn,
+            DistributedFunction<? super T, ? extends U> toValueFn,
             DistributedBinaryOperator<U> mergeFn,
             DistributedSupplier<M> createMapFn
     ) {
         DistributedBiConsumer<M, T> accumulateFn =
-                (map, element) -> map.merge(getKeyFn.apply(element), getValueFn.apply(element), mergeFn);
+                (map, element) -> map.merge(toKeyFn.apply(element), toValueFn.apply(element), mergeFn);
         return AggregateOperation
                 .withCreate(createMapFn)
                 .andAccumulate(accumulateFn)
-                .andCombine(mapMerger(mergeFn))
+                .andCombine((l, r) -> r.forEach((key, value) -> l.merge(key, value, mergeFn)))
                 .andIdentityFinish();
     }
 
-    private static <T> DistributedBinaryOperator<T> throwingMerger() {
-        return (u, v) -> {
-            throw new IllegalStateException("Duplicate key: " + u);
-        };
+    /**
+     * Returns an {@code AggregateOperation1} that accumulates the items into a
+     * {@code HashMap} where the key is the result of applying {@code toKeyFn}
+     * and the value is a list of the items with that key.
+     * <p>
+     * This operation achieves the effect of a cascaded group-by where the
+     * members of each group are further classified by a secondary key.
+     *
+     * @param toKeyFn a function to extract the key from input item
+     * @param <T> input item type
+     * @param <K> the output type of the key mapping function
+     *
+     * @see #groupingBy(DistributedFunction, AggregateOperation1)
+     * @see #groupingBy(DistributedFunction, DistributedSupplier, AggregateOperation1)
+     */
+    public static <T, K> AggregateOperation1<T, Map<K, List<T>>, Map<K, List<T>>> groupingBy(
+            DistributedFunction<? super T, ? extends K> toKeyFn
+    ) {
+        return groupingBy(toKeyFn, toList());
     }
 
-    private static <K, V, M extends Map<K, V>> DistributedBiConsumer<M, M> mapMerger(
-            DistributedBinaryOperator<V> mergeFunction
+    /**
+     * Returns an {@code AggregateOperation1} that accumulates the items into a
+     * {@code HashMap} where the key is the result of applying {@code toKeyFn}
+     * and the value is the result of applying the downstream aggregate
+     * operation to the items with that key.
+     * <p>
+     * This operation achieves the effect of a cascaded group-by where the
+     * members of each group are further classified by a secondary key.
+     *
+     * @param toKeyFn a function to extract the key from input item
+     * @param downstream the downstream aggregate operation
+     * @param <T> input item type
+     * @param <K> the output type of the key mapping function
+     * @param <R> the type of the downstream aggregation result
+     * @param <A> downstream aggregation's accumulator type
+     *
+     * @see #groupingBy(DistributedFunction)
+     * @see #groupingBy(DistributedFunction, DistributedSupplier, AggregateOperation1)
+     */
+    public static <T, K, A, R> AggregateOperation1<T, Map<K, A>, Map<K, R>> groupingBy(
+            DistributedFunction<? super T, ? extends K> toKeyFn,
+            AggregateOperation1<? super T, A, R> downstream
     ) {
-        return (m1, m2) -> {
-            for (Map.Entry<K, V> e : m2.entrySet()) {
-                m1.merge(e.getKey(), e.getValue(), mergeFunction);
-            }
-        };
+        return groupingBy(toKeyFn, HashMap::new, downstream);
     }
+
+
+    /**
+     * Returns an {@code AggregateOperation1} that accumulates the items into a
+     * {@code Map} (as obtained from {@code createMapFn}) where the key is the
+     * result of applying {@code toKeyFn} and the value is the result of
+     * applying the downstream aggregate operation to the items with that key.
+     * <p>
+     * This operation achieves the effect of a cascaded group-by where the
+     * members of each group are further classified by a secondary key.
+     *
+     * @param toKeyFn a function to extract the key from input item
+     * @param createMapFn a function which returns a new, empty {@code Map} into
+     *                    which the results will be inserted
+     * @param downstream the downstream aggregate operation
+     * @param <T> input item type
+     * @param <K> the output type of the key mapping function
+     * @param <R> the type of the downstream aggregation result
+     * @param <A> downstream aggregation's accumulator type
+     * @param <M> output type of the resulting {@code Map}
+     *
+     * @see #groupingBy(DistributedFunction)
+     * @see #groupingBy(DistributedFunction, AggregateOperation1)
+     */
+    public static <T, K, R, A, M extends Map<K, R>> AggregateOperation1<T, Map<K, A>, M> groupingBy(
+            DistributedFunction<? super T, ? extends K> toKeyFn,
+            DistributedSupplier<M> createMapFn,
+            AggregateOperation1<? super T, A, R> downstream
+    ) {
+        DistributedBiConsumer<? super Map<K, A>, T> accumulateFn = (m, t) -> {
+            A acc = m.computeIfAbsent(toKeyFn.apply(t), k -> downstream.createFn().get());
+            downstream.accumulateFn().accept(acc, t);
+        };
+
+        DistributedBiConsumer<Map<K, A>, Map<K, A>> combineFn = (l, r) ->
+                r.forEach((key, value) -> l.merge(key, value, (a, b) -> {
+                    downstream.combineFn().accept(a, b);
+                    return a;
+        }));
+
+        // replace the map contents with finished values
+        DistributedSupplier<Map<K, A>> createAccMapFn = (DistributedSupplier<Map<K, A>>) createMapFn;
+        DistributedFunction<A, A> downstreamFinishFn = (DistributedFunction<A, A>) downstream.finishFn();
+        DistributedFunction<? super Map<K, A>, M> finisher = accMap -> {
+            accMap.replaceAll((K k, A v) -> downstreamFinishFn.apply(v));
+            return (M) accMap;
+        };
+
+        return AggregateOperation.withCreate(createAccMapFn).andAccumulate(accumulateFn)
+                .andCombine(combineFn).andFinish(finisher);
+    }
+
+
 
     /**
      * A reducing operation maintains an accumulated value that starts out as
@@ -521,4 +655,5 @@ public final class AggregateOperations {
                         : null)
                 .andFinish(MutableReference::get);
     }
+
 }

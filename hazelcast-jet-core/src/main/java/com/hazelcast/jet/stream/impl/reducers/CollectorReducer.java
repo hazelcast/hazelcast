@@ -57,15 +57,15 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
         this.finisher = finisher;
     }
 
-    static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
+    static <A, R> R execute(StreamContext context, DAG dag, Vertex combiner, Function<A, R> finisher) {
         String listName = uniqueListName();
         Vertex writer = dag.newVertex("write-" + listName, SinkProcessors.writeListP(listName));
         dag.edge(between(combiner, writer));
         executeJob(context, dag);
-        IList<R> list = context.getJetInstance().getList(listName);
-        R result = list.get(0);
+        IList<A> list = context.getJetInstance().getList(listName);
+        A result = list.get(0);
         list.destroy();
-        return result;
+        return finisher.apply(result);
     }
 
     static <T, R> Vertex buildAccumulator(DAG dag, Pipe<T> upstream, Supplier<R> supplier,
@@ -84,9 +84,8 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
         return accumulatorVertex;
     }
 
-    static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
-                                       Object combiner, Function<A, R> finisher) {
-        DistributedSupplier<Processor> processorSupplier = getCombinerSupplier(combiner, finisher);
+    static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, Object combiner) {
+        DistributedSupplier<Processor> processorSupplier = getCombinerSupplier(combiner);
         Vertex combinerVertex = dag.newVertex("combiner", processorSupplier).localParallelism(1);
         dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
@@ -96,11 +95,11 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
         return combinerVertex;
     }
 
-    private static <A, R> DistributedSupplier<Processor> getCombinerSupplier(Object combiner, Function<A, R> finisher) {
+    private static DistributedSupplier<Processor> getCombinerSupplier(Object combiner) {
         if (combiner instanceof BiConsumer) {
-            return () -> new CollectorCombineP((BiConsumer) combiner, finisher);
+            return () -> new CollectorCombineP((BiConsumer) combiner);
         } else if (combiner instanceof BinaryOperator) {
-            return () -> new CombineP<>((BinaryOperator) combiner, finisher);
+            return () -> new CombineP<>((BinaryOperator) combiner);
         } else {
             throw new IllegalArgumentException("combiner is of type " + combiner.getClass());
         }
@@ -110,8 +109,8 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
     public R reduce(StreamContext context, Pipe<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier, accumulator);
-        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner, finisher);
+        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner);
 
-        return execute(context, dag, combinerVertex);
+        return execute(context, dag, combinerVertex, finisher);
     }
 }

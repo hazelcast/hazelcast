@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -50,8 +51,8 @@ public class BiConsumerCombinerReducer<T, R> implements Reducer<T, R> {
     public R reduce(StreamContext context, Pipe<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier, accumulator);
-        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner, null);
+        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner);
 
-        return execute(context, dag, combinerVertex);
+        return execute(context, dag, combinerVertex, DistributedFunction.identity());
     }
 }

@@ -23,38 +23,51 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.Map.Entry;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.hazelcast.jet.Util.entry;
-
-public final class MapEntryHook implements SerializerHook<Entry> {
+public final class HashMapHook implements SerializerHook<HashMap> {
 
     @Override
-    public Class<Entry> getSerializationType() {
-        return Entry.class;
+    public Class<HashMap> getSerializationType() {
+        return HashMap.class;
     }
 
     @Override
+    @SuppressWarnings("checkstyle:anoninnerlength")
     public Serializer createSerializer() {
-        return new StreamSerializer<Entry>() {
+        return new StreamSerializer<HashMap>() {
+
             @Override
             public int getTypeId() {
-                return SerializerHookConstants.MAP_ENTRY;
-            }
-
-            @Override
-            public void write(ObjectDataOutput out, Entry object) throws IOException {
-                out.writeObject(object.getKey());
-                out.writeObject(object.getValue());
-            }
-
-            @Override
-            public Entry read(ObjectDataInput in) throws IOException {
-                return entry(in.readObject(), in.readObject());
+                return SerializerHookConstants.HASH_MAP;
             }
 
             @Override
             public void destroy() {
+            }
+
+            @Override
+            @SuppressWarnings("checkstyle:illegaltype")
+            public void write(ObjectDataOutput out, HashMap map) throws IOException {
+                out.writeInt(map.size());
+                for (Object o : map.entrySet()) {
+                    Map.Entry e = (Map.Entry) o;
+                    out.writeObject(e.getKey());
+                    out.writeObject(e.getValue());
+                }
+            }
+
+            @Override
+            @SuppressWarnings("checkstyle:illegaltype")
+            public HashMap read(ObjectDataInput in) throws IOException {
+                int length = in.readInt();
+                HashMap map = new HashMap();
+                for (int i = 0; i < length; i++) {
+                    //noinspection unchecked
+                    map.put(in.readObject(), in.readObject());
+                }
+                return map;
             }
         };
     }

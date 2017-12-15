@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.datamodel.Session;
-import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.datamodel.Session;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
@@ -42,8 +41,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -56,7 +55,7 @@ public class SessionWindowPTest {
 
     private static final int SESSION_TIMEOUT = 10;
     private Supplier<Processor> supplier;
-    private SessionWindowP<Entry<String, Long>, String, LongAccumulator, Long> lastSuppliedProcessor;
+    private SessionWindowP<Entry<String, Long>, String, ?, Long> lastSuppliedProcessor;
 
     @Before
     public void before() {
