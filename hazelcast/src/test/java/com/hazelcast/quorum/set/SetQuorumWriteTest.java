@@ -35,14 +35,14 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class SetReadQuorumTest extends AbstractSetQuorumTest {
+public class SetQuorumWriteTest extends AbstractSetQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
 
     @Parameterized.Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
-        return asList(new Object[][]{{QuorumType.READ}, {QuorumType.READ_WRITE}});
+        return asList(new Object[][]{{QuorumType.WRITE}, {QuorumType.READ_WRITE}});
     }
 
     @BeforeClass
@@ -55,83 +55,71 @@ public class SetReadQuorumTest extends AbstractSetQuorumTest {
         shutdownTestEnvironment();
     }
 
-    // size
-    // isEmpty
-    // contains
-    // iterator
-    // containsAll(Collection<?> c);
-    // iterator
-    // toArray()
-    // toArray(T[] a);
+    // add(E e);
+    // remove(Object o);
+    // addAll(Collection<? extends E> c);
+    // retainAll(Collection<?> c);
+    // removeAll(Collection<?> c);
+    // clear();
 
     @Test
-    public void containsOperation_successful_whenQuorumSize_met() {
-        set(0).contains("foo");
+    public void addOperation_successful_whenQuorumSize_met() {
+        set(0).add("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void containsOperation_successful_whenQuorumSize_notMet() {
-        set(3).contains("foo");
+    public void addOperation_successful_whenQuorumSize_notMet() {
+        set(3).add("foo");
     }
 
     @Test
-    public void containsAllOperation_successful_whenQuorumSize_met() {
-        set(0).containsAll(asList("foo", "bar"));
+    public void addAllOperation_successful_whenQuorumSize_met() {
+        set(0).addAll(asList("foo", "bar"));
     }
 
     @Test(expected = QuorumException.class)
-    public void containsAllOperation_successful_whenQuorumSize_notMet() {
-        set(3).containsAll(asList("foo", "bar"));
+    public void addAllOperation_successful_whenQuorumSize_notMet() {
+        set(3).add(asList("foo", "bar"));
     }
 
     @Test
-    public void isEmptyOperation_successful_whenQuorumSize_met() {
-        set(0).isEmpty();
+    public void removeOperation_successful_whenQuorumSize_met() {
+        set(0).remove("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void isEmptyOperation_successful_whenQuorumSize_notMet() {
-        set(3).isEmpty();
+    public void removeOperation_successful_whenQuorumSize_notMet() {
+        set(3).remove("foo");
     }
 
     @Test
-    public void sizeOperation_successful_whenQuorumSize_met() {
-        set(0).size();
+    public void compareAndRemoveOperation_removeAll_successful_whenQuorumSize_met() {
+        set(0).removeAll(asList("foo", "bar"));
     }
 
     @Test(expected = QuorumException.class)
-    public void sizeOperation_successful_whenQuorumSize_notMet() {
-        set(3).size();
+    public void compareAndRemoveOperation_removeAll_successful_whenQuorumSize_notMet() {
+        set(3).removeAll(asList("foo", "bar"));
     }
 
     @Test
-    public void getAllOperation_toArray_successful_whenQuorumSize_met() {
-        set(0).toArray();
+    public void compareAndRemoveOperation_retainAll_successful_whenQuorumSize_met() {
+        set(0).removeAll(asList("foo", "bar"));
     }
 
     @Test(expected = QuorumException.class)
-    public void getAllOperation_toArray_successful_whenQuorumSize_notMet() {
-        set(3).toArray();
+    public void compareAndRemoveOperation_retainAll_successful_whenQuorumSize_notMet() {
+        set(3).removeAll(asList("foo", "bar"));
     }
 
     @Test
-    public void getAllOperation_toArrayT_successful_whenQuorumSize_met() {
-        set(0).toArray(new Object[]{});
+    public void clearOperation_successful_whenQuorumSize_met() {
+        set(0).clear();
     }
 
     @Test(expected = QuorumException.class)
-    public void getAllOperation_toArrayT_successful_whenQuorumSize_notMet() {
-        set(3).toArray(new Object[]{});
-    }
-
-    @Test
-    public void getAllOperation_iterator_successful_whenQuorumSize_met() {
-        set(0).iterator();
-    }
-
-    @Test(expected = QuorumException.class)
-    public void getAllOperation_iterator_successful_whenQuorumSize_notMet() {
-        set(3).iterator();
+    public void clearOperation_successful_whenQuorumSize_notMet() {
+        set(3).clear();
     }
 
     protected ISet set(int index) {

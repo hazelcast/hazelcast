@@ -35,7 +35,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class ListReadQuorumTest extends AbstractListQuorumTest {
+public class ListQuorumReadTest extends AbstractListQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;

@@ -22,10 +22,11 @@ import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class CollectionReserveAddOperation extends CollectionOperation {
+public class CollectionReserveAddOperation extends CollectionOperation implements MutatingOperation {
 
     private String transactionId;
     private Data value;

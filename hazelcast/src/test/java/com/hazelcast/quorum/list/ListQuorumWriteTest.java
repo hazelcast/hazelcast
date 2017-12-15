@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.quorum.set;
+package com.hazelcast.quorum.list;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ISet;
+import com.hazelcast.core.IList;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -30,19 +30,21 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import static com.hazelcast.quorum.QuorumType.READ_WRITE;
+import static com.hazelcast.quorum.QuorumType.WRITE;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class SetWriteQuorumTest extends AbstractSetQuorumTest {
+public class ListQuorumWriteTest extends AbstractListQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
 
     @Parameterized.Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
-        return asList(new Object[][]{{QuorumType.WRITE}, {QuorumType.READ_WRITE}});
+        return asList(new Object[][]{{WRITE}, {READ_WRITE}});
     }
 
     @BeforeClass
@@ -61,69 +63,86 @@ public class SetWriteQuorumTest extends AbstractSetQuorumTest {
     // retainAll(Collection<?> c);
     // removeAll(Collection<?> c);
     // clear();
+    // remove();
+    // set();
 
     @Test
     public void addOperation_successful_whenQuorumSize_met() {
-        set(0).add("foo");
+        list(0).add("foo");
     }
 
     @Test(expected = QuorumException.class)
     public void addOperation_successful_whenQuorumSize_notMet() {
-        set(3).add("foo");
+        list(3).add("foo");
     }
 
     @Test
     public void addAllOperation_successful_whenQuorumSize_met() {
-        set(0).addAll(asList("foo", "bar"));
+        list(0).addAll(asList("foo", "bar"));
     }
 
     @Test(expected = QuorumException.class)
     public void addAllOperation_successful_whenQuorumSize_notMet() {
-        set(3).add(asList("foo", "bar"));
+        list(3).add(asList("foo", "bar"));
     }
 
     @Test
     public void removeOperation_successful_whenQuorumSize_met() {
-        set(0).remove("foo");
+        list(0).remove("foo");
     }
 
     @Test(expected = QuorumException.class)
     public void removeOperation_successful_whenQuorumSize_notMet() {
-        set(3).remove("foo");
+        list(3).remove("foo");
     }
 
     @Test
     public void compareAndRemoveOperation_removeAll_successful_whenQuorumSize_met() {
-        set(0).removeAll(asList("foo", "bar"));
+        list(0).removeAll(asList("foo", "bar"));
     }
 
     @Test(expected = QuorumException.class)
     public void compareAndRemoveOperation_removeAll_successful_whenQuorumSize_notMet() {
-        set(3).removeAll(asList("foo", "bar"));
+        list(3).removeAll(asList("foo", "bar"));
     }
 
     @Test
     public void compareAndRemoveOperation_retainAll_successful_whenQuorumSize_met() {
-        set(0).removeAll(asList("foo", "bar"));
+        list(0).removeAll(asList("foo", "bar"));
     }
 
     @Test(expected = QuorumException.class)
     public void compareAndRemoveOperation_retainAll_successful_whenQuorumSize_notMet() {
-        set(3).removeAll(asList("foo", "bar"));
+        list(3).removeAll(asList("foo", "bar"));
     }
 
     @Test
     public void clearOperation_successful_whenQuorumSize_met() {
-        set(0).clear();
+        list(0).clear();
+        list(0).add("object123");
     }
 
     @Test(expected = QuorumException.class)
     public void clearOperation_successful_whenQuorumSize_notMet() {
-        set(3).clear();
+        list(3).clear();
     }
 
-    protected ISet set(int index) {
-        return set(index, quorumType);
+    @Test
+    public void setOperation_successful_whenQuorumSize_met() {
+        try {
+            list(0).set(0, "bar");
+        } catch(IndexOutOfBoundsException ex) {
+            // meaningless
+        }
+    }
+
+    @Test(expected = QuorumException.class)
+    public void setOperation_successful_whenQuorumSize_notMet() {
+        list(3).set(0, "bar");
+    }
+
+    protected IList list(int index) {
+        return list(index, quorumType);
     }
 
 }
