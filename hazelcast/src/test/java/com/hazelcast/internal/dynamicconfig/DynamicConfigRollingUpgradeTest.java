@@ -1,5 +1,8 @@
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.Versions;
@@ -24,5 +27,23 @@ public class DynamicConfigRollingUpgradeTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
 
         hazelcastInstance.getConfig().addMapConfig(new MapConfig(randomName()));
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testThrowsExceptionWhenAddingAtomicLongConfigInClusterVersion39() {
+        // system properties are cleared automatically by the Hazelcast Runner
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, Versions.V3_9.toString());
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+
+        hazelcastInstance.getConfig().addAtomicLongConfig(new AtomicLongConfig(randomMapName()));
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testThrowsExceptionWhenAddingAtomicReferenceConfigInClusterVersion39() {
+        // system properties are cleared automatically by the Hazelcast Runner
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, Versions.V3_9.toString());
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+
+        hazelcastInstance.getConfig().addAtomicReferenceConfig(new AtomicReferenceConfig(randomMapName()));
     }
 }
