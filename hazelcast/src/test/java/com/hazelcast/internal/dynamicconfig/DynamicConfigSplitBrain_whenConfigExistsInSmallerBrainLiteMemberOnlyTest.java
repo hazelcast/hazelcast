@@ -29,8 +29,6 @@ import org.junit.runner.RunWith;
 public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainLiteMemberOnlyTest
         extends DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainOnlyTest {
 
-    private static final String MAP_NAME = "mapConfigCreatedInSmallerBrain";
-
     // start 2 data members and 1 lite member
     @Override
     protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {

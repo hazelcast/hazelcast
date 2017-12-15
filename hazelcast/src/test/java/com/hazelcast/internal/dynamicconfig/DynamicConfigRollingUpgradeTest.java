@@ -19,12 +19,10 @@ public class DynamicConfigRollingUpgradeTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testThrowsExceptionWhenRunningInClusterVersion38() {
-        //system properties are cleared automatically by the Hazelcast Runner
+        // system properties are cleared automatically by the Hazelcast Runner
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, Versions.V3_8.toString());
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
 
         hazelcastInstance.getConfig().addMapConfig(new MapConfig(randomName()));
     }
-
-
 }
