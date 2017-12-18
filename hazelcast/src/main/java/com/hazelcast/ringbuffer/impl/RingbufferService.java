@@ -22,6 +22,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
@@ -31,10 +33,13 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.version.Version;
 
 import java.util.Collection;
@@ -51,13 +56,15 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * The SPI Service that deals with the {@link com.hazelcast.ringbuffer.Ringbuffer}.
  */
-public class RingbufferService implements ManagedService, RemoteService, FragmentedMigrationAwareService {
+public class RingbufferService implements ManagedService, RemoteService, FragmentedMigrationAwareService, QuorumAwareService {
+
     /**
      * Prefix of ringbuffers that are created for topics. Using a prefix prevents users accidentally retrieving the ringbuffer.
      */
@@ -67,6 +74,9 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
      * The ringbuffer service name which defines it in the node engine.
      */
     public static final String SERVICE_NAME = "hz:impl:ringbufferService";
+
+    private static final Object NULL_OBJECT = new Object();
+
     /**
      * Map from namespace to actual ringbuffer containers. The namespace defines the service and object name which
      * is the owner of the ringbuffer container.
@@ -78,8 +88,24 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
      */
     private NodeEngine nodeEngine;
 
+    private final QuorumService quorumService;
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            RingbufferConfig config = nodeEngine.getConfig().findRingbufferConfig(name);
+            String quorumName = config.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
+
     public RingbufferService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = checkNotNull(nodeEngine, "nodeEngine can't be null");
+        this.quorumService = nodeEngine.getQuorumService();
     }
 
     private static String getConfigName(String name) {
@@ -303,4 +329,16 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
         return namespace instanceof ObjectNamespace;
     }
+
+    @Override
+    public String getQuorumName(final String name) {
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
+        quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
+    }
+
 }
