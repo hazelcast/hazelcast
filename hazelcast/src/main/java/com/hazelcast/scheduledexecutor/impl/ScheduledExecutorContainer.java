@@ -28,6 +28,9 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 
 import java.util.Collection;
@@ -43,11 +46,13 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class ScheduledExecutorContainer {
+public class ScheduledExecutorContainer
+        implements SplitBrainAwareDataContainer<String, ScheduledTaskDescriptor, ScheduledTaskDescriptor> {
 
     protected final ConcurrentMap<String, ScheduledTaskDescriptor> tasks;
 
@@ -120,14 +125,12 @@ public class ScheduledExecutorContainer {
         return descriptor.getStatsSnapshot();
     }
 
-    public boolean isCancelled(String taskName)
-            throws ExecutionException, InterruptedException {
+    public boolean isCancelled(String taskName) {
         checkNotStaleTask(taskName);
         return tasks.get(taskName).isCancelled();
     }
 
-    public boolean isDone(String taskName)
-            throws ExecutionException, InterruptedException {
+    public boolean isDone(String taskName) {
         checkNotStaleTask(taskName);
         return tasks.get(taskName).isDone();
     }
@@ -147,8 +150,7 @@ public class ScheduledExecutorContainer {
         }
     }
 
-    public void dispose(String taskName)
-            throws ExecutionException, InterruptedException {
+    public void dispose(String taskName) {
         checkNotStaleTask(taskName);
 
         if (logger.isFinestEnabled()) {
@@ -161,22 +163,22 @@ public class ScheduledExecutorContainer {
         tasks.remove(taskName);
     }
 
-    public void stash(TaskDefinition definition) {
-        stash(new ScheduledTaskDescriptor(definition));
+    public void enqueueSuspended(TaskDefinition definition) {
+        enqueueSuspended(new ScheduledTaskDescriptor(definition), false);
     }
 
-    public void stash(ScheduledTaskDescriptor descriptor) {
+    public void enqueueSuspended(ScheduledTaskDescriptor descriptor, boolean force) {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Backup Scheduler: " + name + "][Partition: " + partitionId + "] Stashing "
+            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] reserving "
                     + descriptor.getDefinition());
         }
 
-        if (!tasks.containsKey(descriptor.getDefinition().getName())) {
+        if (force || !tasks.containsKey(descriptor.getDefinition().getName())) {
             tasks.put(descriptor.getDefinition().getName(), descriptor);
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Backup Scheduler: " + name + "][Partition: " + partitionId + "] Stash size: " + tasks.size());
+            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] reserved size: " + tasks.size());
         }
     }
 
@@ -237,6 +239,61 @@ public class ScheduledExecutorContainer {
         return ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName);
     }
 
+    public void promoteSuspended() {
+        for (ScheduledTaskDescriptor descriptor : tasks.values()) {
+            try {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("[Partition: " + partitionId + "] " + "Attempt to promote reserved " + descriptor);
+                }
+
+                if (descriptor.shouldSchedule()) {
+                    doSchedule(descriptor);
+                }
+
+                descriptor.setTaskOwner(true);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        }
+    }
+
+    @Override
+    public ScheduledTaskDescriptor merge(SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> merging,
+                                         SplitBrainMergePolicy mergePolicy) {
+        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
+
+        // try to find an existing item with the same value
+        ScheduledTaskDescriptor match = null;
+        for (ScheduledTaskDescriptor item : tasks.values()) {
+            if (merging.getValue().equals(item)) {
+                match = item;
+                break;
+            }
+        }
+
+        ScheduledTaskDescriptor merged;
+        if (match == null) {
+            // Missing incoming entry
+            merged = mergePolicy.merge(merging, null);
+            if (merged != null) {
+                enqueueSuspended(merged, false);
+            }
+        } else {
+            // Found a match -> real merge
+            SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> matchEntryView = createSplitBrainMergeEntryView(match);
+            merged = mergePolicy.merge(merging, matchEntryView);
+            if (merged != null && !merged.equals(match)) {
+                // Cancel matched one, before replacing it
+                match.cancel(true);
+                enqueueSuspended(merged, true);
+            } else {
+                merged = null;
+            }
+        }
+
+        return merged;
+    }
+
     ScheduledFuture createContextAndSchedule(TaskDefinition definition) {
         if (logger.isFinestEnabled()) {
             logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Scheduling " + definition);
@@ -252,24 +309,6 @@ public class ScheduledExecutorContainer {
         }
 
         return descriptor.getScheduledFuture();
-    }
-
-    void promoteStash() {
-        for (ScheduledTaskDescriptor descriptor : tasks.values()) {
-            try {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("[Partition: " + partitionId + "] " + "Attempt to promote stashed " + descriptor);
-                }
-
-                if (descriptor.shouldSchedule()) {
-                    doSchedule(descriptor);
-                }
-
-                descriptor.setTaskOwner(true);
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
     }
 
     Map<String, ScheduledTaskDescriptor> prepareForReplication(boolean migrationMode) {
@@ -292,7 +331,7 @@ public class ScheduledExecutorContainer {
                     // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
                     // the line below is only cancelling future runs.
                     try {
-                        descriptor.stopForMigration();
+                        descriptor.suspend();
                     } catch (Exception ex) {
                         throw rethrow(ex);
                     }
