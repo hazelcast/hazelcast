@@ -135,7 +135,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *     }
      * </pre>
      * Due to the lazy nature of the returned set, changes to the map (addition,
-     * removal, update) might be reflected in the set.<br/>
+     * removal, update) might be reflected on the collection.<br/>
+     * Changes on the map are <b>NOT</b> reflected on the collection on the <b>CLIENT</b> or vice versa.
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior. If a specific order is needed, use
      * {@link #values(java.util.Comparator)} to force reordering of the
@@ -150,7 +151,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     /**
      * Returns an eagerly populated {@link Collection} view of the values contained in this map.
      * The collection is <b>NOT</b> backed by the map, so changes to the map are
-     * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
+     * <b>NOT</b> reflected on the collection, and vice-versa.<br/>
      * The order of the elements is guaranteed by executing the given
      * {@link java.util.Comparator} before returning the elements.<br/>
      * Changes to any returned object are <b>NOT</b> replicated back to other
@@ -179,7 +180,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *     Set&lt;Map.Entry&lt;K, V>> copy = new HashSet&lt;Map.Entry&lt;K, V>>(entrySet);
      * </pre>
      * Due to the lazy nature of the returned set, changes to the map (addition,
-     * removal, update) might be reflected in the set.<br/>
+     * removal, update) might be reflected on the set.<br/>
+     * Changes on the map are <b>NOT</b> reflected on the set on the <b>CLIENT</b> or vice versa.
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior.<br/>
      * Changes to any returned object are <b>NOT</b> replicated back to other
@@ -212,7 +214,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * </pre>
      * <p/>
      * Due to the lazy nature of the returned set, changes to the map (addition,
-     * removal, update) might be reflected in the set.<br/>
+     * removal, update) might be reflected on the set.<br/>
+     * Changes on the map are <b>NOT</b> reflected on the set on the <b>CLIENT</b> or vice versa.
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior.<br/>
      * Changes to any returned object are <b>NOT</b> replicated back to other
