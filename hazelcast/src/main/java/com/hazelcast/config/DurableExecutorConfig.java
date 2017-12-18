@@ -17,9 +17,11 @@
 package com.hazelcast.config;
 
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
@@ -31,7 +33,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Contains the configuration for an {@link DurableExecutorService}.
  */
 @Beta
-public class DurableExecutorConfig implements IdentifiedDataSerializable {
+public class DurableExecutorConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -56,6 +58,8 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
 
     private int capacity = DEFAULT_RING_BUFFER_CAPACITY;
 
+    private String quorumName;
+
     private transient DurableExecutorConfigReadOnly readOnly;
 
     public DurableExecutorConfig() {
@@ -66,14 +70,19 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
     }
 
     public DurableExecutorConfig(String name, int poolSize, int durability, int capacity) {
+        this(name, poolSize, durability, capacity, null);
+    }
+
+    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity, String quorumName) {
         this.name = name;
         this.poolSize = poolSize;
         this.durability = durability;
         this.capacity = capacity;
+        this.quorumName = quorumName;
     }
 
     public DurableExecutorConfig(DurableExecutorConfig config) {
-        this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity());
+        this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity(), config.getQuorumName());
     }
 
     /**
@@ -157,12 +166,34 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public DurableExecutorConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
+
     @Override
     public String toString() {
         return "ExecutorConfig{"
                 + "name='" + name + '\''
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
+                + ", quorumName=" + quorumName
                 + '}';
     }
 
@@ -189,6 +220,9 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
         out.writeInt(poolSize);
         out.writeInt(durability);
         out.writeInt(capacity);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -197,6 +231,9 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
         poolSize = in.readInt();
         durability = in.readInt();
         capacity = in.readInt();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @Override
@@ -218,6 +255,9 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
         if (capacity != that.capacity) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -227,6 +267,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
         result = 31 * result + poolSize;
         result = 31 * result + durability;
         result = 31 * result + capacity;
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -254,6 +295,11 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable {
 
         @Override
         public DurableExecutorConfig setDurability(int durability) {
+            throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
+        }
+
+        @Override
+        public DurableExecutorConfig setQuorumName(String quorumName) {
             throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
         }
     }

@@ -76,4 +76,9 @@ public class SetConfigReadOnly extends SetConfig {
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }
+
+    @Override
+    public SetConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only set: " + getName());
+    }
 }

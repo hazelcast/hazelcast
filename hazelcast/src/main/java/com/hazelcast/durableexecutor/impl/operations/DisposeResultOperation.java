@@ -22,10 +22,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class DisposeResultOperation extends AbstractDurableExecutorOperation implements BackupAwareOperation {
+public class DisposeResultOperation extends AbstractDurableExecutorOperation implements BackupAwareOperation,
+        MutatingOperation {
 
     int sequence;
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.durableexecutor.impl;
 
+import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -23,24 +24,46 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-public class DistributedDurableExecutorService implements ManagedService, RemoteService, MigrationAwareService {
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
+public class DistributedDurableExecutorService implements ManagedService, RemoteService, MigrationAwareService,
+        QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:durableExecutorService";
+
+    private static final Object NULL_OBJECT = new Object();
 
     private final NodeEngineImpl nodeEngine;
     private final DurableExecutorPartitionContainer[] partitionContainers;
 
     private final Set<String> shutdownExecutors
             = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            DurableExecutorConfig executorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);
+            String quorumName = executorConfig.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public DistributedDurableExecutorService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -129,4 +152,12 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
         DurableExecutorPartitionContainer partitionContainer = partitionContainers[partitionId];
         partitionContainer.clearRingBuffersHavingLesserBackupCountThan(thresholdReplicaIndex);
     }
+
+    @Override
+    public String getQuorumName(final String name) {
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
 }

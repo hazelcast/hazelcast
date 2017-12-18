@@ -76,4 +76,9 @@ public class ListConfigReadOnly extends ListConfig {
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         throw new UnsupportedOperationException("This config is read-only list: " + getName());
     }
+
+    @Override
+    public ListConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only list: " + getName());
+    }
 }

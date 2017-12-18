@@ -20,8 +20,9 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public final class ShutdownOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
+public final class ShutdownOperation extends AbstractNamedOperation implements MutatingOperation, IdentifiedDataSerializable {
 
     public ShutdownOperation() {
     }

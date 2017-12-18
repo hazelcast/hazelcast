@@ -23,11 +23,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class TaskOperation extends AbstractDurableExecutorOperation implements BackupAwareOperation {
+public class TaskOperation extends AbstractDurableExecutorOperation implements BackupAwareOperation, MutatingOperation {
 
     private Data callableData;
     private transient int sequence;

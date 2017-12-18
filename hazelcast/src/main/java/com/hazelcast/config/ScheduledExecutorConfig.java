@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -28,7 +30,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
+public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -53,6 +55,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
+    private String quorumName;
+
     private transient ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
 
     public ScheduledExecutorConfig() {
@@ -63,14 +67,19 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
+        this(name, durability, capacity, poolSize, null);
+    }
+
+    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String quorumName) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
         this.capacity = capacity;
+        this.quorumName = quorumName;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize());
+        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(), config.getQuorumName());
     }
 
     /**
@@ -158,6 +167,27 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public ScheduledExecutorConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
+
     @Override
     public String toString() {
         return "ScheduledExecutorConfig{"
@@ -165,6 +195,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
                 + ", durability=" + durability
                 + ", poolSize-" + poolSize
                 + ", capacity-" + capacity
+                + ", quorumName=" + quorumName
                 + '}';
     }
 
@@ -191,6 +222,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeInt(poolSize);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -199,6 +233,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         durability = in.readInt();
         capacity = in.readInt();
         poolSize = in.readInt();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @Override
@@ -220,6 +257,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         if (poolSize != that.poolSize) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -229,6 +269,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
         result = 31 * result + durability;
         result = 31 * result + capacity;
         result = 31 * result + poolSize;
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -256,6 +297,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
 
         @Override
         public ScheduledExecutorConfig setCapacity(int capacity) {
+            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
+        }
+
+        @Override
+        public ScheduledExecutorConfig setQuorumName(String quorumName) {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
     }

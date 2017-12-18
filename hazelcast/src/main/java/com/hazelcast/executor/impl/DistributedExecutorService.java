@@ -26,11 +26,13 @@ import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.MapUtil;
 
 import java.util.Collections;
@@ -45,10 +47,14 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
 public class DistributedExecutorService implements ManagedService, RemoteService, LiveOperationsTracker,
-        StatisticsAwareService<LocalExecutorStats> {
+        StatisticsAwareService<LocalExecutorStats>, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
+
+    private static final Object NULL_OBJECT = new Object();
 
     // Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
     // object. Using this approach, you don't create that object.
@@ -70,6 +76,19 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             = new ConstructorFunction<String, LocalExecutorStatsImpl>() {
         public LocalExecutorStatsImpl createNew(String key) {
             return new LocalExecutorStatsImpl();
+        }
+    };
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            ExecutorConfig executorConfig = nodeEngine.getConfig().findExecutorConfig(name);
+            String quorumName = executorConfig.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
 
@@ -130,6 +149,14 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             }
         }
         return false;
+    }
+
+    public String getName(String uuid) {
+        CallableProcessor proc = submittedTasks.get(uuid);
+        if (proc != null) {
+            return proc.name;
+        }
+        return null;
     }
 
     public void shutdownExecutor(String name) {
@@ -195,6 +222,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     /**
      * Locate the {@code ExecutorConfig} in local {@link #executorConfigCache} or find it from {@link NodeEngine#getConfig()} and
      * cache it locally.
+     *
      * @param name
      * @return
      */
@@ -207,6 +235,17 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             ExecutorConfig executorConfig = executorConfigCache.putIfAbsent(name, cfg);
             return executorConfig == null ? cfg : executorConfig;
         }
+    }
+
+    @Override
+    public String getQuorumName(final String name) {
+        if (name == null) {
+            // see CancellationOperation#getName()
+            return null;
+        }
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
     private final class CallableProcessor extends FutureTask implements Runnable {
@@ -277,4 +316,5 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             return statisticsEnabled;
         }
     }
+
 }

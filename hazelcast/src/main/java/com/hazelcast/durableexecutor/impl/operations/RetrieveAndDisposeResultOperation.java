@@ -22,8 +22,10 @@ import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class RetrieveAndDisposeResultOperation extends DisposeResultOperation implements BlockingOperation {
+public class RetrieveAndDisposeResultOperation extends DisposeResultOperation implements BlockingOperation,
+        MutatingOperation {
 
     private transient Object result;
 
