@@ -103,7 +103,6 @@ public class SetService extends CollectionService {
 
     @Override
     public String getQuorumName(final String name) {
-        // we use caching here because lock operations are often and we should avoid lock config lookup
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;

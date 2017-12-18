@@ -18,9 +18,10 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 public class ShutdownOperation
-        extends AbstractSchedulerOperation {
+        extends AbstractSchedulerOperation implements MutatingOperation {
 
     public ShutdownOperation() {
     }

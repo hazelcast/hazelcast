@@ -233,6 +233,12 @@
     <!-- Executor -->
     <suppress checks="ClassFanOutComplexity|MethodCount"
               files="com[\\/]hazelcast[\\/]executor[\\/]impl[\\/]ExecutorServiceProxy"/>
+    <suppress checks="NPathComplexity"
+              files="com[\\/]hazelcast[\\/]config[\\/]DurableExecutorConfig"/>
+    <suppress checks="NPathComplexity"
+              files="com[\\/]hazelcast[\\/]config[\\/]ExecutorConfig"/>
+    <suppress checks="NPathComplexity"
+              files="com[\\/]hazelcast[\\/]config[\\/]ScheduledExecutorConfig"/>
 
     <!-- Multimap -->
     <suppress checks="JavadocMethod" files="com[\\/]hazelcast[\\/]multimap[\\/]"/>

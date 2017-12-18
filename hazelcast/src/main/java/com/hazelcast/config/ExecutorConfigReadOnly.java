@@ -46,4 +46,9 @@ public class ExecutorConfigReadOnly extends ExecutorConfig {
     public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw new UnsupportedOperationException("This config is read-only executor: " + getName());
     }
+
+    @Override
+    public ExecutorConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+    }
 }

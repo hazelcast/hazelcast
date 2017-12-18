@@ -19,11 +19,12 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 public class DisposeBackupTaskOperation
-        extends AbstractSchedulerOperation {
+        extends AbstractSchedulerOperation implements MutatingOperation {
 
     private String taskName;
 

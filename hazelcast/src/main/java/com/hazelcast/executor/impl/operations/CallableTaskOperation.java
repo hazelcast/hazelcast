@@ -19,9 +19,10 @@ package com.hazelcast.executor.impl.operations;
 import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 public final class CallableTaskOperation extends AbstractCallableTaskOperation
-        implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable, MutatingOperation {
 
     public CallableTaskOperation() {
     }

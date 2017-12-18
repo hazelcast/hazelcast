@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CallStatus;
+import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -34,7 +35,7 @@ import java.util.concurrent.Callable;
 
 import static com.hazelcast.spi.CallStatus.OFFLOADED;
 
-abstract class AbstractCallableTaskOperation extends Operation implements IdentifiedDataSerializable {
+abstract class AbstractCallableTaskOperation extends Operation implements NamedOperation, IdentifiedDataSerializable {
 
     protected String name;
     protected String uuid;
@@ -75,6 +76,11 @@ abstract class AbstractCallableTaskOperation extends Operation implements Identi
         HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
         SerializationService serializationService = hazelcastInstance.getSerializationService();
         return serializationService.getManagedContext();
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

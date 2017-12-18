@@ -16,16 +16,18 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
  */
-public class ExecutorConfig implements IdentifiedDataSerializable {
+public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -44,6 +46,8 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
     private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
 
     private boolean statisticsEnabled = true;
+
+    private String quorumName;
 
     private transient ExecutorConfigReadOnly readOnly;
 
@@ -64,6 +68,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         this.poolSize = config.poolSize;
         this.queueCapacity = config.queueCapacity;
         this.statisticsEnabled = config.statisticsEnabled;
+        this.quorumName = config.quorumName;
     }
 
     /**
@@ -162,12 +167,34 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public ExecutorConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
+
     @Override
     public String toString() {
         return "ExecutorConfig{"
                 + "name='" + name + '\''
                 + ", poolSize=" + poolSize
                 + ", queueCapacity=" + queueCapacity
+                + ", quorumName=" + quorumName
                 + '}';
     }
 
@@ -187,6 +214,9 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         out.writeInt(poolSize);
         out.writeInt(queueCapacity);
         out.writeBoolean(statisticsEnabled);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -195,6 +225,9 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         poolSize = in.readInt();
         queueCapacity = in.readInt();
         statisticsEnabled = in.readBoolean();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @Override
@@ -217,6 +250,9 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -226,6 +262,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable {
         result = 31 * result + poolSize;
         result = 31 * result + queueCapacity;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 }

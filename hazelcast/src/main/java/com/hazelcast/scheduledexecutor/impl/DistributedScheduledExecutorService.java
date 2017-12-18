@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MembershipAdapter;
@@ -28,9 +29,12 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Properties;
 import java.util.Set;
@@ -39,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.newSetFromMap;
@@ -48,11 +53,13 @@ import static java.util.Collections.synchronizedSet;
  * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
  */
 public class DistributedScheduledExecutorService
-        implements ManagedService, RemoteService, MigrationAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
 
     public static final int MEMBER_BIN = -1;
+
+    private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
 
@@ -69,6 +76,19 @@ public class DistributedScheduledExecutorService
     private final AtomicBoolean migrationMode = new AtomicBoolean();
 
     private String partitionLostRegistration;
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+            String quorumName = executorConfig.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     private String membershipListenerRegistration;
 
@@ -281,4 +301,12 @@ public class DistributedScheduledExecutorService
 
         this.membershipListenerRegistration = null;
     }
+
+    @Override
+    public String getQuorumName(final String name) {
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
 }
