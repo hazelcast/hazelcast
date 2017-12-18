@@ -117,6 +117,7 @@ public final class Sinks {
      *
      * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the entries
      * no matter if they are locked or not.
+     * Use {@link #mapWithEntryProcessor} if you need locking.
      *
      * @param mapName   name of the map
      * @param toKeyFn   function that extracts the key from the input item
@@ -198,6 +199,7 @@ public final class Sinks {
      *
      * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the entries
      * no matter if they are locked or not.
+     * Use {@link #mapWithEntryProcessor} if you need locking.
      *
      * @param mapName   name of the map
      * @param toKeyFn   function that extracts the key from the input item
