@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.listener.EntryExpiredListener;
@@ -39,6 +41,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_CLEANUP_OPERATION_COUNT;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_CLEANUP_PERCENTAGE;
@@ -261,6 +267,104 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
                 assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
             }
         });
+    }
+
+    @Test
+    public void restarts_running_backgroundClearTask_when_lifecycleState_turns_to_STARTED() {
+        Config config = new Config();
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        final AtomicInteger expirationCounter = new AtomicInteger();
+
+        IMap map = node.getMap("test");
+        map.addEntryListener(new EntryExpiredListener() {
+            @Override
+            public void entryExpired(EntryEvent event) {
+                expirationCounter.incrementAndGet();
+            }
+        }, true);
+
+        map.put(1, 1, 3, SECONDS);
+
+        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(SHUTTING_DOWN);
+        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(STARTED);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int expirationCount = expirationCounter.get();
+                assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
+            }
+        });
+    }
+
+    @Test
+    public void stops_running_backgroundClearTask_when_lifecycleState_SHUTTING_DOWN() {
+        backgroundClearTaskStops_whenLifecycleState(SHUTTING_DOWN);
+    }
+
+    @Test
+    public void stops_running_backgroundClearTask_when_lifecycleState_MERGING() {
+        backgroundClearTaskStops_whenLifecycleState(MERGING);
+    }
+
+    @Test
+    public void restarts_running_backgroundClearTask_when_lifecycleState_turns_to_MERGED() {
+        Config config = new Config();
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        final AtomicInteger expirationCounter = new AtomicInteger();
+
+        IMap map = node.getMap("test");
+        map.addEntryListener(new EntryExpiredListener() {
+            @Override
+            public void entryExpired(EntryEvent event) {
+                expirationCounter.incrementAndGet();
+            }
+        }, true);
+
+        map.put(1, 1, 3, TimeUnit.SECONDS);
+
+        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(MERGING);
+        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(MERGED);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int expirationCount = expirationCounter.get();
+                assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
+            }
+        });
+    }
+
+    private void backgroundClearTaskStops_whenLifecycleState(LifecycleEvent.LifecycleState lifecycleState) {
+        Config config = new Config();
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        final AtomicInteger expirationCounter = new AtomicInteger();
+
+        IMap map = node.getMap("test");
+        map.addEntryListener(new EntryExpiredListener() {
+            @Override
+            public void entryExpired(EntryEvent event) {
+                expirationCounter.incrementAndGet();
+            }
+        }, true);
+
+        map.put(1, 1, 3, TimeUnit.SECONDS);
+
+        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(lifecycleState);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                int expirationCount = expirationCounter.get();
+                assertEquals(format("Expecting no expiration but found:%d", expirationCount), 0, expirationCount);
+            }
+        }, 5);
     }
 
     private ExpirationManager newExpirationManager(HazelcastInstance node) {

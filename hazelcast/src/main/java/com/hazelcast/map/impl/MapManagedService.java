@@ -46,7 +46,6 @@ public class MapManagedService implements ManagedService {
                     new ObjectNamespaceLockStoreInfoConstructorFunction());
         }
         mapServiceContext.initPartitionsContainers();
-        mapServiceContext.getExpirationManager().start();
     }
 
     @Override
