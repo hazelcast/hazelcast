@@ -82,10 +82,10 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
-    public void testStatisticsCollectionNonDefaultPeriod() {
+    public void testStatisticsCollectionNonDefaultPeriod() throws InterruptedException {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
-        HazelcastClientInstanceImpl client = createHazelcastClient();
-        ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+        final HazelcastClientInstanceImpl client = createHazelcastClient();
+        final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
         long clientConnectionTime = System.currentTimeMillis();
 
@@ -117,7 +117,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
 
         String lastStatisticsCollectionTimeString = stats.get("lastStatisticsCollectionTime");
-        long lastCollectionTime = Long.parseLong(lastStatisticsCollectionTimeString);
+        final long lastCollectionTime = Long.parseLong(lastStatisticsCollectionTimeString);
 
         // this creates empty map statistics
         client.getMap(MAP_NAME);
@@ -125,29 +125,37 @@ public class ClientStatisticsTest extends ClientTestSupport {
         // wait enough time for statistics collection
         waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
 
-        stats = getStats(client, clientEngine);
-        mapHits = stats.get(MAP_HITS_KEY);
-        assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
-        assertEquals(format("Expected 0 map hits (%s)", stats), "0", mapHits);
-        cacheHits = stats.get(CACHE_HITS_KEY);
-        assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Map<String, String> stats = getStats(client, clientEngine);
+                String mapHits = stats.get(MAP_HITS_KEY);
+                assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
+                assertEquals(format("Expected 0 map hits (%s)", stats), "0", mapHits);
+                String cacheHits = stats.get(CACHE_HITS_KEY);
+                assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
 
-        // verify that collection is periodic
-        lastStatisticsCollectionTimeString = verifyThatCollectionIsPeriodic(stats, lastCollectionTime);
+                // verify that collection is periodic
+                verifyThatCollectionIsPeriodic(stats, lastCollectionTime);
+            }
+        });
 
         // produce map and cache stat
         produceSomeStats(hazelcastInstance, client);
 
-        // wait enough time for statistics collection
-        waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Map<String, String> stats = getStats(client, clientEngine);
+                String mapHits = stats.get(MAP_HITS_KEY);
+                assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
+                assertEquals(format("Expected 1 map hits (%s)", stats), "1", mapHits);
+                String cacheHits = stats.get(CACHE_HITS_KEY);
+                assertNotNull(format("%s should not be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
+                assertEquals(format("Expected 1 cache hits (%s)", stats), "1", cacheHits);
+            }
+        });
 
-        stats = getStats(client, clientEngine);
-        mapHits = stats.get(MAP_HITS_KEY);
-        assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
-        assertEquals(format("Expected 1 map hits (%s)", stats), "1", mapHits);
-        cacheHits = stats.get(CACHE_HITS_KEY);
-        assertNotNull(format("%s should not be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
-        assertEquals(format("Expected 1 cache hits (%s)", stats), "1", cacheHits);
     }
 
     @Test
