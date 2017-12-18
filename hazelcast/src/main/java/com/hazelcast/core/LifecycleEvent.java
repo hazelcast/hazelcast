@@ -41,7 +41,7 @@ public final class LifecycleEvent {
         SHUTTING_DOWN,
         SHUTDOWN,
         /**
-         * Fired on each cluster members just before starting a merge process into another cluster.
+         * Fired on each cluster member just before start of a merge process into another cluster.
          * This is typically used when a split-brain situation is healed.
          *
          */

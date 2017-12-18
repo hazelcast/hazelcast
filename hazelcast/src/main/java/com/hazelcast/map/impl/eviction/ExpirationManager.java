@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapService;
@@ -107,7 +110,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @since 3.3
  */
 @SuppressWarnings("checkstyle:linelength")
-public final class ExpirationManager implements OperationResponseHandler {
+public final class ExpirationManager implements OperationResponseHandler, LifecycleListener {
 
     public static final String PROP_PRIMARY_DRIVES_BACKUP = "hazelcast.internal.map.expiration.primary.drives_backup";
     public static final String PROP_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
@@ -170,9 +173,14 @@ public final class ExpirationManager implements OperationResponseHandler {
         checkPositive(cleanupOperationCount, "cleanupOperationCount should be a positive number");
 
         this.primaryDrivesEviction = properties.getBoolean(PRIMARY_DRIVES_BACKUP);
+        this.nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(this);
     }
 
-    public synchronized void start() {
+    /**
+     * Starts scheduling of the task that clears expired entries.
+     * Calling this method multiple times has same effect.
+     */
+    private synchronized void start() {
         if (expirationTask != null) {
             return;
         }
@@ -182,13 +190,41 @@ public final class ExpirationManager implements OperationResponseHandler {
                 scheduleWithRepetition(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
     }
 
-    public synchronized void stop() {
+    /**
+     * Ends scheduling of the task that clears expired entries.
+     * Calling this method multiple times has same effect.
+     */
+    private synchronized void stop() {
         if (expirationTask == null) {
             return;
         }
 
         expirationTask.cancel(true);
         expirationTask = null;
+    }
+
+    @Override
+    public void stateChanged(LifecycleEvent event) {
+        switch (event.getState()) {
+            case STARTED:
+            case MERGED:
+                start();
+                break;
+            case SHUTTING_DOWN:
+            case MERGING:
+                stop();
+                break;
+            default:
+                return;
+        }
+    }
+
+    public void onClusterStateChange(ClusterState newState) {
+        if (newState == ClusterState.PASSIVE) {
+            stop();
+        } else {
+            start();
+        }
     }
 
     private static int calculateCleanupOperationCount(HazelcastProperties properties, int partitionCount, int partitionThreadCount) {
