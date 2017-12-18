@@ -52,7 +52,7 @@ public class ReplicationOperation
                 ScheduledTaskDescriptor descriptor = descriptorEntry.getValue();
 
                 if (!container.has(taskName)) {
-                    container.stash(descriptor);
+                    container.enqueueSuspended(descriptor, false);
                 }
             }
         }

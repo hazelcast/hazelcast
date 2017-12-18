@@ -663,7 +663,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleScheduledExecutor(Node node) {
-            createAndFillListedBean(node, ScheduledExecutorConfig.class, "name", scheduledExecutorManagedMap);
+            BeanDefinitionBuilder builder = createAndFillListedBean(node, ScheduledExecutorConfig.class,
+                    "name", scheduledExecutorManagedMap, "mergePolicy");
+
+            for (Node n : childElements(node)) {
+                String name = cleanNodeName(n);
+                if ("merge-policy".equals(name)) {
+                    handleMergePolicyConfig(n, builder);
+                }
+            }
         }
 
         public void handleCardinalityEstimator(Node node) {
@@ -698,8 +706,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleTcpIp(Node node, BeanDefinitionBuilder joinConfigBuilder) {
-            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, TcpIpConfig.class, "tcpIpConfig", joinConfigBuilder,
-                    "interface", "member", "members");
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, TcpIpConfig.class,
+                    "tcpIpConfig", joinConfigBuilder, "interface", "member", "members");
             ManagedList<String> members = new ManagedList<String>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);

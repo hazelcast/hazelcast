@@ -229,6 +229,7 @@
                                            pool-size="10"
                                            durability="5">
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="101">PassThroughMergePolicy</hz:merge-policy>
             </hz:scheduled-executor-service>
 
             <hz:cardinality-estimator name="estimator">

@@ -17,13 +17,17 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -32,19 +36,30 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.newSetFromMap;
@@ -54,7 +69,7 @@ import static java.util.Collections.synchronizedSet;
  * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
  */
 public class DistributedScheduledExecutorService
-        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
 
@@ -67,6 +82,8 @@ public class DistributedScheduledExecutorService
     private ScheduledExecutorPartition[] partitions;
 
     private ScheduledExecutorMemberBin memberBin;
+
+    private SplitBrainMergePolicyProvider mergePolicyProvider;
 
     private final ConcurrentMap<String, Boolean> shutdownExecutors
             = new ConcurrentHashMap<String, Boolean>();
@@ -99,6 +116,7 @@ public class DistributedScheduledExecutorService
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.nodeEngine = nodeEngine;
         this.partitions = new ScheduledExecutorPartition[partitionCount];
+        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         reset();
     }
 
@@ -136,7 +154,7 @@ public class DistributedScheduledExecutorService
             if (partitions[partitionId] != null) {
                 partitions[partitionId].destroy();
             }
-            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, partitionId);
+            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, partitionId, mergePolicyProvider);
         }
     }
 
@@ -197,6 +215,23 @@ public class DistributedScheduledExecutorService
     }
 
     @Override
+    public Runnable prepareMergeRunnable() {
+        Map<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> state =
+                new HashMap<Integer, Map<String, Collection<ScheduledTaskDescriptor>>>();
+
+        for (int partition = 0; partition < partitions.length; partition++) {
+            if (nodeEngine.getPartitionService().isPartitionOwner(partition)) {
+                Map<String, Collection<ScheduledTaskDescriptor>> partitionSnapshot = partitions[partition].prepareOwnedSnapshot();
+                if (!partitionSnapshot.isEmpty()) {
+                    state.put(partition, partitionSnapshot);
+                }
+            }
+        }
+
+        return new Merger(state);
+    }
+
+    @Override
     public void beforeMigration(PartitionMigrationEvent event) {
         migrationMode.compareAndSet(false, true);
     }
@@ -205,10 +240,10 @@ public class DistributedScheduledExecutorService
     public void commitMigration(PartitionMigrationEvent event) {
         int partitionId = event.getPartitionId();
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            discardStash(partitionId, event.getNewReplicaIndex());
+            discardReserved(partitionId, event.getNewReplicaIndex());
         } else if (event.getNewReplicaIndex() == 0) {
             ScheduledExecutorPartition partition = partitions[partitionId];
-            partition.promoteStash();
+            partition.promoteSuspended();
         }
         migrationMode.set(false);
     }
@@ -217,15 +252,15 @@ public class DistributedScheduledExecutorService
     public void rollbackMigration(PartitionMigrationEvent event) {
         int partitionId = event.getPartitionId();
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            discardStash(event.getPartitionId(), event.getCurrentReplicaIndex());
+            discardReserved(event.getPartitionId(), event.getCurrentReplicaIndex());
         } else if (event.getCurrentReplicaIndex() == 0) {
             ScheduledExecutorPartition partition = partitions[partitionId];
-            partition.promoteStash();
+            partition.promoteSuspended();
         }
         migrationMode.set(false);
     }
 
-    private void discardStash(int partitionId, int thresholdReplicaIndex) {
+    private void discardReserved(int partitionId, int thresholdReplicaIndex) {
         ScheduledExecutorPartition partition = partitions[partitionId];
         partition.disposeObsoleteReplicas(thresholdReplicaIndex);
     }
@@ -313,4 +348,115 @@ public class DistributedScheduledExecutorService
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
+    private MergePolicyConfig getMergePolicyConfig(String name) {
+        return getNodeEngine().getConfig().getScheduledExecutorConfig(name)
+                              .getMergePolicyConfig();
+    }
+
+    private SplitBrainMergePolicy getMergePolicy(String name) {
+        return mergePolicyProvider.getMergePolicy(
+                getMergePolicyConfig(name).getPolicy());
+    }
+
+    private class Merger implements Runnable {
+
+        private static final int TIMEOUT_FACTOR = 500;
+
+        private Map<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> partitionsSnapshot;
+
+        Merger(Map<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> map) {
+            this.partitionsSnapshot = map;
+        }
+
+        @SuppressWarnings({"checkstyle:methodlength"})
+        @Override
+        public void run() {
+            final ILogger logger = nodeEngine.getLogger(DistributedScheduledExecutorService.class);
+            final Semaphore semaphore = new Semaphore(0);
+
+            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object response) {
+                    semaphore.release(1);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    logger.warning("Error while running merge operation: " + t.getMessage());
+                    semaphore.release(1);
+                }
+            };
+
+            // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
+            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+                logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge scheduled executor instances");
+                return;
+            }
+
+            int size = 0;
+            int operationCount = 0;
+            List<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>> mergeEntries;
+            try {
+                for (Map.Entry<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> partition
+                        : partitionsSnapshot.entrySet()) {
+
+                    int partitionId = partition.getKey();
+                    Map<String, Collection<ScheduledTaskDescriptor>> containers = partition.getValue();
+
+                    for (Map.Entry<String, Collection<ScheduledTaskDescriptor>> container : containers.entrySet()) {
+                        String containerName = container.getKey();
+                        Collection<ScheduledTaskDescriptor> tasks = container.getValue();
+
+                        int batchSize = getMergePolicyConfig(containerName).getBatchSize();
+                        SplitBrainMergePolicy mergePolicy = getMergePolicy(containerName);
+
+                        mergeEntries = new ArrayList<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>>();
+                        for (ScheduledTaskDescriptor descriptor : tasks) {
+                            SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> entryView = createSplitBrainMergeEntryView(
+                                    descriptor);
+                            mergeEntries.add(entryView);
+                            size++;
+
+                            if (mergeEntries.size() == batchSize) {
+                                sendBatch(partitionId, containerName, mergePolicy, mergeEntries, mergeCallback);
+                                mergeEntries = new ArrayList<SplitBrainMergeEntryView<String,
+                                                             ScheduledTaskDescriptor>>(batchSize);
+                                operationCount++;
+                            }
+                        }
+
+                        tasks.clear();
+                        if (mergeEntries.size() > 0) {
+                            sendBatch(partitionId, containerName, mergePolicy, mergeEntries, mergeCallback);
+                            operationCount++;
+                        }
+                    }
+                }
+                partitionsSnapshot.clear();
+
+            } catch (Exception ex) {
+                logger.warning("ScheduledExecutor merging didn't complete successfully.", ex);
+                throw rethrow(ex);
+            }
+
+            try {
+                semaphore.tryAcquire(operationCount, size * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                logger.finest("Interrupted while waiting for merge operation...");
+            }
+        }
+
+        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
+                               List<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>> mergeEntries,
+                               ExecutionCallback<Object> mergeCallback) {
+            MergeOperation operation = new MergeOperation(name, mergePolicy, mergeEntries);
+            try {
+                nodeEngine.getOperationService()
+                          .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                          .andThen(mergeCallback);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        }
+    }
 }

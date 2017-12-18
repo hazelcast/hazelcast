@@ -337,11 +337,14 @@ public class ConfigXmlGenerator {
 
     private static void scheduledExecutorXmlGenerator(XmlGenerator gen, Config config) {
         for (ScheduledExecutorConfig ex : config.getScheduledExecutorConfigs().values()) {
+            MergePolicyConfig mergePolicyConfig = ex.getMergePolicyConfig();
+
             gen.open("scheduled-executor-service", "name", ex.getName())
                     .node("pool-size", ex.getPoolSize())
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
                     .node("quorum-ref", ex.getQuorumName())
+                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
         }
     }

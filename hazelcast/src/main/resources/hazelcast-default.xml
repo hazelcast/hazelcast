@@ -307,4 +307,10 @@
         <async-backup-count>0</async-backup-count>
     </cardinality-estimator>
 
+    <scheduled-executor-service name="default">
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <capacity>100</capacity>
+        <durability>1</durability>
+        <pool-size>16</pool-size>
+    </scheduled-executor-service>
 </hazelcast>

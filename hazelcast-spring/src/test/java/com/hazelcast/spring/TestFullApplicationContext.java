@@ -694,6 +694,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("scheduledExec", testExecConfig.getName());
         assertEquals(10, testExecConfig.getPoolSize());
         assertEquals(5, testExecConfig.getDurability());
+        MergePolicyConfig mergePolicyConfig = testExecConfig.getMergePolicyConfig();
+        assertNotNull(mergePolicyConfig);
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(101, mergePolicyConfig.getBatchSize());
     }
 
     @Test

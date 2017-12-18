@@ -646,8 +646,26 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private void handleScheduledExecutor(Node node) throws Exception {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
-        handleViaReflection(node, config, scheduledExecutorConfig);
+        scheduledExecutorConfig.setName(getTextContent(node.getAttributes().getNamedItem("name")));
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("merge-policy".equals(nodeName)) {
+                scheduledExecutorConfig.setMergePolicyConfig(createMergePolicyConfig(child));
+            } else if ("capacity".equals(nodeName)) {
+                scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
+            } else if ("durability".equals(nodeName)) {
+                scheduledExecutorConfig.setDurability(parseInt(getTextContent(child)));
+            } else if ("pool-size".equals(nodeName)) {
+                scheduledExecutorConfig.setPoolSize(parseInt(getTextContent(child)));
+            } else if ("quorum-ref".equals(nodeName)) {
+                scheduledExecutorConfig.setQuorumName(getTextContent(child));
+            }
+        }
+
+        config.addScheduledExecutorConfig(scheduledExecutorConfig);
     }
+
 
     private void handleCardinalityEstimator(Node node) {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();

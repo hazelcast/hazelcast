@@ -121,7 +121,7 @@
                         </xs:element>
                         <xs:element name="scheduled-executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
-                                <xs:sequence>
+                                <xs:all>
                                     <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -134,7 +134,8 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                </xs:sequence>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+                                </xs:all>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" use="optional" type="xs:string" default="16">
                                     <xs:annotation>

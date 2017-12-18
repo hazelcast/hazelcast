@@ -29,6 +29,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 
 import java.io.IOException;
@@ -130,6 +131,13 @@ public final class SplitBrainEntryViews {
         return new SimpleSplitBrainEntryView<String, HyperLogLog>()
                 .setKey(name)
                 .setValue(item);
+    }
+
+    public static SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> createSplitBrainMergeEntryView(
+            ScheduledTaskDescriptor task) {
+        return new SimpleSplitBrainEntryView<String, ScheduledTaskDescriptor>()
+                .setKey(task.getDefinition().getName())
+                .setValue(task);
     }
 
     /**

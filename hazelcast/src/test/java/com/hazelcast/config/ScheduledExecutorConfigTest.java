@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -76,6 +77,9 @@ public class ScheduledExecutorConfigTest extends HazelcastTestSupport {
                       .withPrefabValues(ScheduledExecutorConfigReadOnly.class,
                               new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("red")),
                               new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
                       .verify();
     }
 }
