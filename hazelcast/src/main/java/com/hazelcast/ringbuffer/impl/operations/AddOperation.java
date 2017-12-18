@@ -25,6 +25,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -36,7 +37,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_OPE
  * the backup operation will put the item under the sequence ID that the master generated. This is to avoid differences
  * in ring buffer data structures.
  */
-public class AddOperation extends AbstractRingBufferOperation implements Notifier, BackupAwareOperation {
+public class AddOperation extends AbstractRingBufferOperation implements Notifier, BackupAwareOperation, MutatingOperation {
 
     private Data item;
     private long resultSequence;

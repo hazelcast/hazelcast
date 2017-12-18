@@ -32,7 +32,6 @@ import static com.hazelcast.config.RingbufferConfig.DEFAULT_SYNC_BACKUP_COUNT;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
@@ -228,20 +227,6 @@ public class RingbufferConfigTest {
         assertEquals(ringbufferStoreConfig, config.getRingbufferStoreConfig());
     }
 
-    // ==================== toString ================================
-
-    @Test
-    public void test_toString() {
-        RingbufferConfig config = new RingbufferConfig(NAME);
-        config.setRingbufferStoreConfig(new RingbufferStoreConfig());
-
-        String s = config.toString();
-
-        assertEquals("RingbufferConfig{name='someRingbuffer', capacity=10000, backupCount=1,"
-                + " asyncBackupCount=0, timeToLiveSeconds=0, inMemoryFormat=BINARY,"
-                + " ringbufferStoreConfig=RingbufferStoreConfig{enabled=true, className='null', properties={}}}", s);
-    }
-
     // =================== getAsReadOnly ============================
 
     @Test
@@ -320,11 +305,11 @@ public class RingbufferConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(RingbufferConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(RingbufferStoreConfigReadOnly.class,
-                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
-                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(RingbufferStoreConfigReadOnly.class,
+                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
+                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                .verify();
     }
 }

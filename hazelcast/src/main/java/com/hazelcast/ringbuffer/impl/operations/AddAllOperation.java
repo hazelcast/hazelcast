@@ -25,6 +25,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_ALL
  * differences in ring buffer data structures.
  */
 public class AddAllOperation extends AbstractRingBufferOperation
-        implements Notifier, BackupAwareOperation {
+        implements Notifier, BackupAwareOperation, MutatingOperation {
 
     private OverflowPolicy overflowPolicy;
     private Data[] items;
