@@ -115,7 +115,7 @@ public final class Sinks {
      *     map.put(key, value);
      * </pre>
      *
-     * <b>Note:</b> This operation is NOT lock-aware, it will process the entries
+     * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the entries
      * no matter if they are locked or not.
      *
      * @param mapName   name of the map
@@ -196,7 +196,7 @@ public final class Sinks {
      *     map.put(key, newValue);
      * </pre>
      *
-     * <b>Note:</b> This operation is NOT lock-aware, it will process the entries
+     * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the entries
      * no matter if they are locked or not.
      *
      * @param mapName   name of the map
@@ -276,8 +276,10 @@ public final class Sinks {
      * avoid blocking the Hazelcast partition thread during large update
      * operations.
      *
-     * <b>Note:</b> This operation is lock-aware, if the key is locked,
+     * <b>Note:</b> Unlike {@link #mapWithUpdating} and {@link #mapWithMerging},
+     * this operation <em>is</em> lock-aware. If the key is locked,
      * the EntryProcessor will wait until it acquires the lock.
+     *
      *
      * @param mapName  name of the map
      * @param toKeyFn  function that extracts the key from the input item

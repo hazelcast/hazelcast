@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -137,6 +138,22 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
+    public void mapWithMerging_when_entryIsLocked_then_entryIsUpdatedRegardlessTheLock() {
+        // Given
+        srcMap.put("key", 1);
+        srcMap.lock("key");
+
+        // When
+        pipeline.drawFrom(Sources.<String, Integer>map(srcName))
+                .drainTo(Sinks.mapWithMerging(srcName, (Integer oldValue, Integer newValue) -> oldValue + 1));
+        execute();
+
+        // Then
+        assertEquals(1, srcMap.size());
+        assertEquals(2, srcMap.get("key").intValue());
+    }
+
+    @Test
     public void mapWithMerging_when_sameKeyMerged_then_returnSum() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
@@ -237,6 +254,23 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
+    public void mapWithUpdating_when_entryIsLocked_then_entryIsUpdatedRegardlessTheLock() {
+        // Given
+        srcMap.put("key", 1);
+        srcMap.lock("key");
+
+        // When
+        pipeline.drawFrom(Sources.<String, Integer>map(srcName))
+                .drainTo(Sinks.mapWithUpdating(srcName,
+                        (Integer value, Entry<String, Integer> item) -> 2));
+        execute();
+
+        // Then
+        assertEquals(1, srcMap.size());
+        assertEquals(2, srcMap.get("key").intValue());
+    }
+
+    @Test
     public void remoteMapWithUpdating() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
@@ -314,6 +348,28 @@ public class SinksTest extends PipelineTestSupport {
         Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
+
+    }
+
+    @Test
+    public void mapWithEntryProcessor_when_entryIsLocked_then_entryIsNotUpdated() {
+        // Given
+        srcMap.put("key", 1);
+        srcMap.lock("key");
+
+        // When
+        pipeline.drawFrom(Sources.<String, Integer>map(srcName))
+                .drainTo(Sinks.mapWithEntryProcessor(srcName, Entry::getKey,
+                        entry -> new IncrementEntryProcessor<>(10)));
+        Job job = jet().newJob(pipeline);
+        spawn(job::join);
+
+        // Then
+        assertTrueEventually(() -> assertEquals(RUNNING, job.getJobStatus()));
+        assertEquals(1, srcMap.size());
+        assertEquals(1, srcMap.get("key").intValue());
+        srcMap.unlock("key");
+        assertEquals(11, srcMap.get("key").intValue());
 
     }
 
