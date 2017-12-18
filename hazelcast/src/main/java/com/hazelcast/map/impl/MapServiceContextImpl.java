@@ -762,11 +762,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void onClusterStateChange(ClusterState newState) {
-        if (newState == ClusterState.PASSIVE) {
-            expirationManager.stop();
-        } else {
-            expirationManager.start();
-        }
+        expirationManager.onClusterStateChange(newState);
     }
 
     @Override
