@@ -37,6 +37,8 @@ import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperatio
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.SplitBrainMergeOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.SplitBrainSyncMergedBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncBackupStateOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 
@@ -86,6 +88,10 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
     public static final int SHUTDOWN = 23;
 
     public static final int TASK_RESOLUTION = 24;
+
+    public static final int SPLIT_BRAIN_MERGE_OP = 27;
+
+    public static final int SPLIT_BRAIN_SYNC_MERGED_OP = 28;
 
     @Override
     public int getFactoryId() {
@@ -150,6 +156,10 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
                         return new GetAllScheduledOnPartitionOperation();
                     case GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY:
                         return new GetAllScheduledOnPartitionOperationFactory();
+                    case SPLIT_BRAIN_MERGE_OP:
+                        return new SplitBrainMergeOperation();
+                    case SPLIT_BRAIN_SYNC_MERGED_OP:
+                        return new SplitBrainSyncMergedBackupOperation();
                     default:
                         throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }

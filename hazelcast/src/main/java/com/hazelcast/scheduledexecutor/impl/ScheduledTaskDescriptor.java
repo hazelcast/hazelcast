@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -140,7 +141,18 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         return future.get();
     }
 
-    void stopForMigration() {
+    /**
+     * Suspended is a task that either has never been scheduled before (aka. backups) or it got suspended
+     * (aka. temporarily stopped) during migration from one member to another.
+     *
+     * When suspended, a task (if ever scheduled before), maintains its statistics and its actual runState,
+     * however its associated {@link java.util.concurrent.Future} is cancelled and nullified. Upon future, rescheduling,
+     * it will acquire be assigned on a different Future.
+     *
+     * Task ownership is also restored to default, which will be fixed when migrations finish and a new master
+     * is selected.
+     */
+    void suspend() {
         // Result is not set, allowing task to get re-scheduled, if/when needed.
         this.isTaskOwner = false;
 
@@ -150,8 +162,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         }
     }
 
-    boolean cancel(boolean mayInterrupt)
-            throws ExecutionException, InterruptedException {
+    boolean cancel(boolean mayInterrupt) {
         if (!resultRef.compareAndSet(null, new ScheduledTaskResult(true)) || future == null) {
             return false;
         }
@@ -168,15 +179,13 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         return future.getDelay(unit);
     }
 
-    boolean isCancelled()
-            throws ExecutionException, InterruptedException {
+    boolean isCancelled() {
         ScheduledTaskResult result = resultRef.get();
         boolean wasCancelled = result != null && result.wasCancelled();
         return wasCancelled || (future != null && future.isCancelled());
     }
 
-    boolean isDone()
-            throws ExecutionException, InterruptedException {
+    boolean isDone() {
         boolean wasDone = resultRef.get() != null;
         return wasDone || (future != null && future.isDone());
     }
@@ -212,6 +221,23 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         state = in.readObject();
         stats = in.readObject();
         resultRef.set((ScheduledTaskResult) in.readObject());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ScheduledTaskDescriptor that = (ScheduledTaskDescriptor) o;
+        return  (definition == that.definition) || (definition != null && definition.equals(that.definition));
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(new TaskDefinition[]{definition});
     }
 
     @Override
