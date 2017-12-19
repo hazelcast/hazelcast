@@ -1,10 +1,10 @@
-package com.hazelcast.client.quorum.semaphore;
+package com.hazelcast.client.quorum.cardinality;
 
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.concurrent.semaphore.SemaphoreQuorumReadTest;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ISemaphore;
+import com.hazelcast.quorum.cardinality.CardinalityEstimatorQuorumReadTest;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -16,7 +16,7 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class ClientSemaphoreQuorumReadTest extends SemaphoreQuorumReadTest {
+public class ClientCardinalityEstimatorQuorumReadTest extends CardinalityEstimatorQuorumReadTest {
 
     private static PartitionedClusterClients clients;
 
@@ -33,8 +33,9 @@ public class ClientSemaphoreQuorumReadTest extends SemaphoreQuorumReadTest {
         clients.terminateAll();
     }
 
-    protected ISemaphore semaphore(int index) {
-        return clients.client(index).getSemaphore(SEMAPHORE + quorumType.name());
+    @Override
+    protected CardinalityEstimator estimator(int index) {
+        return clients.client(index).getCardinalityEstimator(ESTIMATOR_NAME + quorumType.name());
     }
 
 }

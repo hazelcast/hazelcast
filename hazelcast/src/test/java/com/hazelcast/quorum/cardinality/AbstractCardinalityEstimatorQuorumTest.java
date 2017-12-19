@@ -1,9 +1,25 @@
-package com.hazelcast.concurrent.semaphore;
+/*
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+package com.hazelcast.quorum.cardinality;
+
+import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.core.ISemaphore;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumType;
@@ -15,17 +31,11 @@ import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 
-public class AbstractSemaphoreQuorumTest {
+public abstract class AbstractCardinalityEstimatorQuorumTest {
 
-    protected static final String SEMAPHORE = "quorum" + randomString();
+    protected static final String ESTIMATOR_NAME = "quorum" + randomString();
+
     protected static PartitionedCluster cluster;
-
-    protected static SemaphoreConfig newSemaphoreConfig(QuorumType quorumType, String quorumName) {
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
-        semaphoreConfig.setName(SEMAPHORE + quorumType.name());
-        semaphoreConfig.setQuorumName(quorumName);
-        return semaphoreConfig;
-    }
 
     protected static void initTestEnvironment(Config config, TestHazelcastInstanceFactory factory) {
         initCluster(PartitionedCluster.createClusterConfig(config), factory, READ, WRITE, READ_WRITE);
@@ -34,6 +44,12 @@ public class AbstractSemaphoreQuorumTest {
     protected static void shutdownTestEnvironment() {
         HazelcastInstanceFactory.terminateAll();
         cluster = null;
+    }
+
+    protected static CardinalityEstimatorConfig newConfig(QuorumType quorumType, String quorumName) {
+        CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(ESTIMATOR_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
     }
 
     protected static QuorumConfig newQuorumConfig(QuorumType quorumType, String quorumName) {
@@ -53,22 +69,18 @@ public class AbstractSemaphoreQuorumTest {
         for (QuorumType quorumType : types) {
             String quorumName = QUORUM_ID + quorumType.name();
             QuorumConfig quorumConfig = newQuorumConfig(quorumType, quorumName);
-            SemaphoreConfig semaphoreConfig = newSemaphoreConfig(quorumType, quorumName);
+            CardinalityEstimatorConfig cardinalityEstimatorConfig = newConfig(quorumType, quorumName);
             config.addQuorumConfig(quorumConfig);
-            config.addSemaphoreConfig(semaphoreConfig);
+            config.addCardinalityEstimatorConfig(cardinalityEstimatorConfig);
             quorumNames[i++] = quorumName;
         }
 
         cluster.createFiveMemberCluster(config);
-        for (QuorumType quorumType : types) {
-            ISemaphore semaphore = cluster.instance[0].getSemaphore(SEMAPHORE + quorumType.name());
-            semaphore.init(100);
-        }
         cluster.splitFiveMembersThreeAndTwo(quorumNames);
     }
 
-    protected ISemaphore semaphore(int index, QuorumType quorumType) {
-        return cluster.instance[index].getSemaphore(SEMAPHORE + quorumType.name());
+    protected CardinalityEstimator estimator(int index, QuorumType quorumType) {
+        return cluster.instance[index].getCardinalityEstimator(ESTIMATOR_NAME + quorumType.name());
     }
 
 }

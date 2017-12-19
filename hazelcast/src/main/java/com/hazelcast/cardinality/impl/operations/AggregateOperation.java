@@ -20,11 +20,12 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 public class AggregateOperation
-        extends CardinalityEstimatorBackupAwareOperation {
+        extends CardinalityEstimatorBackupAwareOperation implements MutatingOperation {
 
     private long hash;
 

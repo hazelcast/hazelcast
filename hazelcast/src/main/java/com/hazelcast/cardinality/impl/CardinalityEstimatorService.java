@@ -24,10 +24,12 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -37,11 +39,12 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
-        implements ManagedService, RemoteService, MigrationAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
 
@@ -50,6 +53,8 @@ public class CardinalityEstimatorService
      * of an approximate final size.
      */
     private static final double SIZING_FUDGE_FACTOR = 1.3;
+
+    private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
@@ -62,6 +67,19 @@ public class CardinalityEstimatorService
                     return new CardinalityEstimatorContainer(config.getBackupCount(), config.getAsyncBackupCount());
                 }
             };
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
+            String quorumName = config.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public void addCardinalityEstimator(String name, CardinalityEstimatorContainer container) {
         checkNotNull(name, "Name can't be null");
@@ -151,5 +169,12 @@ public class CardinalityEstimatorService
         IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }

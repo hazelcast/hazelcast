@@ -19,23 +19,23 @@ import org.junit.runners.Parameterized;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientSemaphoreQuorumWriteTest extends SemaphoreQuorumWriteTest {
 
-    private static PartitionedClusterClients CLIENTS;
+    private static PartitionedClusterClients clients;
 
     @BeforeClass
     public static void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
         initTestEnvironment(new Config(), factory);
-        CLIENTS = new PartitionedClusterClients(CLUSTER, factory);
+        clients = new PartitionedClusterClients(cluster, factory);
     }
 
     @AfterClass
     public static void tearDown() {
         shutdownTestEnvironment();
-        CLIENTS.terminateAll();
+        clients.terminateAll();
     }
 
     protected ISemaphore semaphore(int index) {
-        return CLIENTS.client(index).getSemaphore(SEMAPHORE + quorumType.name());
+        return clients.client(index).getSemaphore(SEMAPHORE + quorumType.name());
     }
 
 }

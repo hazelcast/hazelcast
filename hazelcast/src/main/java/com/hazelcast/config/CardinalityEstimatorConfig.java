@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -29,7 +31,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
  */
-public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
+public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * The number of sync backups per estimator
@@ -47,6 +49,8 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
 
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
 
+    private String quorumName;
+
     private transient CardinalityEstimatorConfigReadOnly readOnly;
 
     public CardinalityEstimatorConfig() {
@@ -57,13 +61,18 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
     }
 
     public CardinalityEstimatorConfig(String name, int backupCount, int asyncBackupCount) {
+        this(name, backupCount, asyncBackupCount, "");
+    }
+
+    public CardinalityEstimatorConfig(String name, int backupCount, int asyncBackupCount, String quorumName) {
         this.name = name;
         this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
+        this.quorumName = quorumName;
     }
 
     public CardinalityEstimatorConfig(CardinalityEstimatorConfig config) {
-        this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount());
+        this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount(), config.getQuorumName());
     }
 
     /**
@@ -146,10 +155,31 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
         return backupCount + asyncBackupCount;
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public CardinalityEstimatorConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
+
     @Override
     public String toString() {
         return "CardinalityEstimatorConfig{" + "name='" + name + '\'' + ", backupCount=" + backupCount + ", asyncBackupCount="
-                + asyncBackupCount + ", readOnly=" + readOnly + '}';
+                + asyncBackupCount + ", readOnly=" + readOnly + ", quorumName=" + quorumName + '}';
     }
 
     CardinalityEstimatorConfigReadOnly getAsReadOnly() {
@@ -174,6 +204,9 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
         out.writeUTF(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
     }
 
     @Override
@@ -181,6 +214,9 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
         name = in.readUTF();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
     }
 
     @Override
@@ -199,6 +235,9 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
         if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -207,6 +246,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
         int result = name.hashCode();
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -229,6 +269,11 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
 
         @Override
         public CardinalityEstimatorConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
+        }
+
+        @Override
+        public CardinalityEstimatorConfig setQuorumName(String quorumName) {
             throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
         }
     }
