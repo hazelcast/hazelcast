@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -42,10 +41,7 @@ import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 
 
 /**
@@ -96,16 +92,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public Record createRecord(Object value, long ttlMillis, long now) {
-        MapConfig mapConfig = mapContainer.getMapConfig();
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
-        long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
-        long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
-        record.setTtl(ttl);
 
-        long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
-        setExpirationTime(record, maxIdleMillis);
+        setTTLAndUpdateExpiryTime(ttlMillis, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(true, now);
         return record;
     }
