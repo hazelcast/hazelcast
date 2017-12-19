@@ -26,6 +26,8 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * CardinalityEstimator is internally based on a HyperLogLog++ data-structure,
  * and uses P^2 byte registers for storage and computation. (Default P = 14)
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 @Beta
 public interface CardinalityEstimator extends DistributedObject {

@@ -22,6 +22,7 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -29,11 +30,12 @@ import java.io.IOException;
 
 public abstract class AbstractCardinalityEstimatorOperation
         extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
+        implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
-    AbstractCardinalityEstimatorOperation() { }
+    AbstractCardinalityEstimatorOperation() {
+    }
 
     AbstractCardinalityEstimatorOperation(String name) {
         this.name = name;
@@ -47,6 +49,11 @@ public abstract class AbstractCardinalityEstimatorOperation
     @Override
     public int getFactoryId() {
         return CardinalityEstimatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     public CardinalityEstimatorContainer getCardinalityEstimatorContainer() {
