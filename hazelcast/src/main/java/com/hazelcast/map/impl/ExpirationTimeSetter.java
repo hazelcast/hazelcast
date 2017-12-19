@@ -19,9 +19,8 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.record.Record;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Utility methods for setting TTL and max idle seconds.
@@ -92,57 +91,60 @@ public final class ExpirationTimeSetter {
         return expirationTime;
     }
 
-    /**
-     * Picks right TTL value.
-     * <p/>
-     * Decides which TTL to set;
-     * TTL from config or put operation.
-     */
-    public static long pickTTL(long ttlMillis, long ttlMillisFromConfig) {
-
-        if (ttlMillis < 0L && ttlMillisFromConfig > 0L) {
-            return ttlMillisFromConfig;
-        }
-
-        if (ttlMillis > 0L) {
-            return ttlMillis;
-        }
-
-        return 0L;
-    }
-
     public static long calculateMaxIdleMillis(MapConfig mapConfig) {
         final int maxIdleSeconds = mapConfig.getMaxIdleSeconds();
         if (maxIdleSeconds == 0) {
             return Long.MAX_VALUE;
         }
-        return TimeUnit.SECONDS.toMillis(maxIdleSeconds);
-    }
-
-    public static long calculateTTLMillis(MapConfig mapConfig) {
-        final int timeToLiveSeconds = mapConfig.getTimeToLiveSeconds();
-        if (timeToLiveSeconds == 0) {
-            return Long.MAX_VALUE;
-        }
-        return TimeUnit.SECONDS.toMillis(timeToLiveSeconds);
+        return SECONDS.toMillis(maxIdleSeconds);
     }
 
     /**
      * Updates records TTL and expiration time.
+     *
+     * @param operationTTLMillis user provided ttl during operation call like put with ttl
+     * @param record             record to be updated
+     * @param mapConfig          map config object
+     * @param entryCreated       give {@code true} if this is the first creation of entry,
+     *                           otherwise give {@code false} to indicate update.
      */
-    public static void updateExpiryTime(Record record, long ttl, MapConfig mapConfig) {
-
-        // Preserve previously set TTL, if TTL < 0.
-        if (ttl < 0) {
-            ttl = record.getTtl();
-        }
-        // If TTL == 0, convert it to Long.MAX_VALUE.
-        ttl = checkedTime(ttl);
-
-        record.setTtl(ttl);
+    public static void setTTLAndUpdateExpiryTime(long operationTTLMillis, Record record,
+                                                 MapConfig mapConfig, boolean entryCreated) {
+        record.setTtl(pickTTLMillis(operationTTLMillis, record.getTtl(), mapConfig, entryCreated));
 
         long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
         setExpirationTime(record, maxIdleMillis);
+    }
+
+    /**
+     * Decides ttl millis to be set on record
+     *
+     * @param existingTTLMillis  existing ttl on record
+     * @param operationTTLMillis user provided ttl during operation call like put with ttl
+     * @param mapConfig          used to get configured ttl
+     * @param entryCreated       give {@code true} if this is the first creation of entry,
+     *                           otherwise give {@code false} to indicate update.
+     * @return tll value in millis to set to record
+     */
+    private static long pickTTLMillis(long operationTTLMillis, long existingTTLMillis,
+                                      MapConfig mapConfig, boolean entryCreated) {
+        // 1. If user set operationTTLMillis when calling operation, use it
+        if (operationTTLMillis > 0) {
+            return checkedTime(operationTTLMillis);
+        }
+
+        // 2. If this is the first creation of entry, try to get ttl from mapConfig
+        if (entryCreated && operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() > 0) {
+            return checkedTime(SECONDS.toMillis(mapConfig.getTimeToLiveSeconds()));
+        }
+
+        // 3. If operationTTLMillis < 0, keep previously set ttl on record
+        if (operationTTLMillis < 0) {
+            return checkedTime(existingTTLMillis);
+        }
+
+        // 4. If we are here, entry should live forever
+        return Long.MAX_VALUE;
     }
 
     /**

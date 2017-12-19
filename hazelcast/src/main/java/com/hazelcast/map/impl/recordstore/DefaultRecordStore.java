@@ -63,7 +63,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyList;
@@ -711,7 +711,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     record.getKey(), record.getValue());
         } else {
             updateRecord(key, record, value, now);
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
+            setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
 
         saveIndex(record, oldValue);
@@ -787,7 +787,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         update = mapDataStore.add(key, update, now);
         onStore(record);
         updateRecord(key, record, update, now);
-        updateExpiryTime(record, record.getTtl(), mapContainer.getMapConfig());
+        setTTLAndUpdateExpiryTime(record.getTtl(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, oldValue);
         return oldValue;
     }
@@ -810,7 +810,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         update = mapDataStore.add(key, update, now);
         onStore(record);
         updateRecord(key, record, update, now);
-        updateExpiryTime(record, record.getTtl(), mapContainer.getMapConfig());
+        setTTLAndUpdateExpiryTime(record.getTtl(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, current);
         return true;
     }
@@ -833,7 +833,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
             updateRecord(key, record, value, now);
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
+            setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
         saveIndex(record, oldValue);
         mapDataStore.addTransient(key, now);
@@ -879,7 +879,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
             updateRecord(key, record, value, now);
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
+            setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
         if (!backup) {
             saveIndex(record, oldValue);
@@ -935,7 +935,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     record.getKey(), record.getValue());
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
+            setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
         saveIndex(record, oldValue);
         return oldValue;

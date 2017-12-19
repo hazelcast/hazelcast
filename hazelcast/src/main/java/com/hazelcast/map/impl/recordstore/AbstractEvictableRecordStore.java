@@ -234,7 +234,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return false;
         }
         long ttl = record.getTtl();
-        // when ttl is zero or negative or Long.MAX_VALUE, it should remain eternally.
+        // when ttl is zero or negative or Long.MAX_VALUE, entry should live forever.
         if (ttl < 1L || ttl == Long.MAX_VALUE) {
             return false;
         }
