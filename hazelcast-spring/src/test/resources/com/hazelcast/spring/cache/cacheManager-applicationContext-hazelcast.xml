@@ -31,16 +31,13 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:group name="dev" password="dev-pass"/>
-            <hz:network port="5701" port-auto-increment="false">
+            <hz:network port="5101" port-auto-increment="true">
                 <hz:join>
-                    <hz:multicast enabled="true"/>
-                    <hz:tcp-ip enabled="false">
-                        <hz:interface>127.0.0.1:5701</hz:interface>
+                    <hz:multicast enabled="false"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:members>127.0.0.1</hz:members>
                     </hz:tcp-ip>
                 </hz:join>
-                <hz:interfaces enabled="true">
-                    <hz:interface>127.0.0.1</hz:interface>
-                </hz:interfaces>
             </hz:network>
             <hz:map name="default">
                 <hz:map-store enabled="true" write-delay-seconds="0"

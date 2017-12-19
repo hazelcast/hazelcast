@@ -20,6 +20,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.TestLoggingUtils;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -27,6 +29,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.Set;
 
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
+
+    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
 
     static {
         TestLoggingUtils.initializeLogging();
@@ -49,6 +53,17 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
     }
 
     @Override
+    protected void runChild(FrameworkMethod method, RunNotifier notifier) {
+        String testName = testName(method);
+        setThreadLocalTestMethodName(testName);
+        try {
+            super.runChild(method, notifier);
+        } finally {
+            removeThreadLocalTestMethodName();
+        }
+    }
+
+    @Override
     protected Statement withAfterClasses(Statement statement) {
         final Statement originalStatement = super.withAfterClasses(statement);
         return new Statement() {
@@ -65,4 +80,15 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
             }
         };
     }
+
+    static void setThreadLocalTestMethodName(String name) {
+        TestLoggingUtils.setThreadLocalTestMethodName(name);
+        TEST_NAME_THREAD_LOCAL.set(name);
+    }
+
+    static void removeThreadLocalTestMethodName() {
+        TestLoggingUtils.removeThreadLocalTestMethodName();
+        TEST_NAME_THREAD_LOCAL.remove();
+    }
+
 }

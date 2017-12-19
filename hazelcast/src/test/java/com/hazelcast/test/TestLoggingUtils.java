@@ -39,13 +39,13 @@ public final class TestLoggingUtils {
         }
     }
 
-    static void setThreadLocalTestMethodName(String methodName) {
+    public static void setThreadLocalTestMethodName(String methodName) {
         if (IS_LOG4J2_AVAILABLE) {
             ThreadContext.put("test-name", methodName);
         }
     }
 
-    static void removeThreadLocalTestMethodName() {
+    public static void removeThreadLocalTestMethodName() {
         if (IS_LOG4J2_AVAILABLE) {
             ThreadContext.remove("test-name");
         }
