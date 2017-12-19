@@ -54,6 +54,20 @@ The following are the other improvements performed to solve the enhancement issu
 
 3. Fixes
 
+*3.9.2*
+
+Enhancements: 
+- Expiration operations can be stopped/canceled during the SHUTTING_DOWN state. Otherwise it causes graceful shutdowns which take longer, especially on clusters with a large amount of data, e.g., High-Density Memory Store backed maps. It is not necessary to block the shutdown for these operations since it will eventually be handled on the new owner of the entries. [#11919]
+
+Fixes:
+- PartitionPredicate on MapAggregation throws exception when it is called from the client. [#11923]
+- Some client TransactionalMap operations deserializes on the server side, while IMap.values() does not do so. This causes serialization exceptions on a client-member setup when members do not have the serialization information, e.g., in case where portables are used. [#11885]
+- Replicated map's Javadoc contains only member behaviors/requirements which the client cannot meet due to its technical difference. [#11707]
+- Ringbuffer access throws HazelcastInstanceNotActiveException when cluster state is PASSIVE. [#11664]
+
+Coverity Fixes:
+- The method addressTranslator.translate(target) of com.hazelcast.client.connection.nio.ClientConnectionManagerImpl.InitConnectionTask.run() may return null. The returned value is used as an argument for the method createSocketConnection(Address) which uses the value without a null-check. [#11771]
+
 *3.9.1*
 
 New Features:
