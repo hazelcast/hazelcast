@@ -24,9 +24,10 @@ import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.SinkImpl;
 import com.hazelcast.map.EntryProcessor;
+
+import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.mergeMapP;

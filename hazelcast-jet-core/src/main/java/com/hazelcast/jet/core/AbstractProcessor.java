@@ -38,8 +38,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *     and the logger retrieved from the context.
  * </li><li>
  *     {@link #process(int, Inbox) process(n, inbox)} delegates to the matching
- *     {@code tryProcessN()} with each item received in the inbox. If the item
- *     is a watermark, routes it to {@code tryProcessWmN()} instead.
+ *     {@code tryProcessN()} with each item received in the inbox.
  * </li><li>
  *     There is also the general {@link #tryProcess(int, Object)} to which
  *     the {@code tryProcessN} methods delegate by default. It is convenient
@@ -273,58 +272,6 @@ public abstract class AbstractProcessor implements Processor {
     @SuppressWarnings("checkstyle:magicnumber")
     protected boolean tryProcess4(@Nonnull Object item) throws Exception {
         return tryProcess(4, item);
-    }
-
-    /**
-     * Tries to process the supplied watermark, which was received from the
-     * edge with the supplied ordinal. May choose to process only partially
-     * and return {@code false}, in which case it will be called again later
-     * with the same {@code (ordinal, item)} combination.
-     * <p>
-     * The default implementation just emits the watermark downstream
-     * to all ordinals.
-     * <p>
-     * <i>Caution for jobs with at-least-once guarantee</i><br>
-     * In snapshotted jobs with <i>at-least-once</i> processing guarantee it
-     * can happen that the watermarks break the monotonicity requirement when
-     * the job is restarted. This is caused by the fact that watermark, like any
-     * other stream item, can be delivered duplicately after restart. This
-     * means that after a restart, a processor can be asked to process a
-     * watermark older than it already processed.
-     * <p>
-     * <strong>NOTE:</strong> unless the processor doesn't differentiate between
-     * its inbound edges, the first choice should be leaving this method alone
-     * and instead overriding the specific {@code tryProcessWmN()} methods for
-     * each ordinal the processor expects.
-     *
-     * @param ordinal ordinal of the edge that delivered the watermark
-     * @param wm      watermark to be processed
-     * @return {@code true} if this watermark has now been processed,
-     *         {@code false} otherwise.
-     */
-    protected boolean tryProcessWm(int ordinal, @Nonnull Watermark wm) {
-        return tryEmit(wm);
-    }
-
-    protected boolean tryProcessWm0(@Nonnull Watermark wm) {
-        return tryProcessWm(0, wm);
-    }
-
-    protected boolean tryProcessWm1(@Nonnull Watermark wm) {
-        return tryProcessWm(1, wm);
-    }
-
-    protected boolean tryProcessWm2(@Nonnull Watermark wm) {
-        return tryProcessWm(2, wm);
-    }
-
-    protected boolean tryProcessWm3(@Nonnull Watermark wm) {
-        return tryProcessWm(3, wm);
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    protected boolean tryProcessWm4(@Nonnull Watermark wm) {
-        return tryProcessWm(4, wm);
     }
 
     /**
@@ -663,73 +610,37 @@ public abstract class AbstractProcessor implements Processor {
 
 
     void process0(@Nonnull Inbox inbox) throws Exception {
-        for (Object item; (item = inbox.peek()) != null; ) {
-            final boolean doneWithItem = item instanceof Watermark
-                    ? tryProcessWm0((Watermark) item)
-                    : tryProcess0(item);
-            if (!doneWithItem) {
-                return;
-            }
+        for (Object item; (item = inbox.peek()) != null && tryProcess0(item); ) {
             inbox.remove();
         }
     }
 
     void process1(@Nonnull Inbox inbox) throws Exception {
-        for (Object item; (item = inbox.peek()) != null; ) {
-            final boolean doneWithItem = item instanceof Watermark
-                    ? tryProcessWm1((Watermark) item)
-                    : tryProcess1(item);
-            if (!doneWithItem) {
-                return;
-            }
+        for (Object item; (item = inbox.peek()) != null && tryProcess1(item); ) {
             inbox.remove();
         }
     }
 
     void process2(@Nonnull Inbox inbox) throws Exception {
-        for (Object item; (item = inbox.peek()) != null; ) {
-            final boolean doneWithItem = item instanceof Watermark
-                    ? tryProcessWm2((Watermark) item)
-                    : tryProcess2(item);
-            if (!doneWithItem) {
-                return;
-            }
+        for (Object item; (item = inbox.peek()) != null && tryProcess2(item); ) {
             inbox.remove();
         }
     }
 
     void process3(@Nonnull Inbox inbox) throws Exception {
-        for (Object item; (item = inbox.peek()) != null; ) {
-            final boolean doneWithItem = item instanceof Watermark
-                    ? tryProcessWm3((Watermark) item)
-                    : tryProcess3(item);
-            if (!doneWithItem) {
-                return;
-            }
+        for (Object item; (item = inbox.peek()) != null && tryProcess3(item); ) {
             inbox.remove();
         }
     }
 
     void process4(@Nonnull Inbox inbox) throws Exception {
-        for (Object item; (item = inbox.peek()) != null; ) {
-            final boolean doneWithItem = item instanceof Watermark
-                    ? tryProcessWm4((Watermark) item)
-                    : tryProcess4(item);
-            if (!doneWithItem) {
-                return;
-            }
+        for (Object item; (item = inbox.peek()) != null && tryProcess4(item); ) {
             inbox.remove();
         }
     }
 
     void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
-        for (Object item; (item = inbox.peek()) != null; ) {
-            final boolean doneWithItem = item instanceof Watermark
-                    ? tryProcessWm(ordinal, (Watermark) item)
-                    : tryProcess(ordinal, item);
-            if (!doneWithItem) {
-                return;
-            }
+        for (Object item; (item = inbox.peek()) != null && tryProcess(ordinal, item); ) {
             inbox.remove();
         }
     }

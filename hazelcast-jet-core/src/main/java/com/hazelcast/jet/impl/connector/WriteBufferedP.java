@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedIntFunction;
@@ -75,9 +74,7 @@ public final class WriteBufferedP<B, T> implements Processor, Closeable {
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         inbox.drain(item -> {
-            if (!(item instanceof Watermark)) {
-                addToBufferFn.accept(buffer, (T) item);
-            }
+            addToBufferFn.accept(buffer, (T) item);
         });
         flushBufferFn.accept(buffer);
     }

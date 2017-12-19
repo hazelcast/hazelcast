@@ -60,11 +60,17 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  */
 public class TimestampHistory {
 
+    public static final int DEFAULT_NUM_STORED_SAMPLES = 16;
+
     private final long[] samples;
     private final long sampleInterval;
 
     private int tailIndex;
     private long advanceAt = Long.MIN_VALUE;
+
+    public TimestampHistory(long maxDelay) {
+        this(maxDelay, DEFAULT_NUM_STORED_SAMPLES);
+    }
 
     /**
      * @param maxDelay the length of the period over which to keep the {@code sample} history

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.logging.ILogger;
@@ -49,10 +50,13 @@ public class WriteLoggerPTest {
         // When
         inbox.add(1);
         p.process(0, inbox);
+        Watermark wm = new Watermark(2);
+        p.tryProcessWatermark(wm);
 
         // Then
         verifyZeroInteractions(outbox);
         verify(logger).info("1");
+        verify(logger).info(wm.toString());
         verifyZeroInteractions(logger);
     }
 }

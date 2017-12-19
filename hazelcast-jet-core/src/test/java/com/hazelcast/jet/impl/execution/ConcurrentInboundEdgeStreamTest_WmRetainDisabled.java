@@ -20,7 +20,8 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -28,6 +29,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,11 +45,15 @@ import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class ConcurrentInboundEdgeStreamTest {
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class ConcurrentInboundEdgeStreamTest_WmRetainDisabled {
 
     private static final Object senderGone = new Object();
+
+    @Parameter
+    public int maxWatermarkRetainMillis;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -54,6 +63,14 @@ public class ConcurrentInboundEdgeStreamTest {
     private ConcurrentInboundEdgeStream stream;
     private ConcurrentConveyor<Object> conveyor;
 
+    @Parameters(name = "retainMs={0}")
+    public static Iterable<?> parameters() {
+        // -1 is really disabled, 100_000ms is effectively disabled because the test doesn't take
+        // long enough to have any effect. We do this to test the case that the retain logic doesn't
+        // affect the functionality when it has no effect, which is quite common.
+        return Arrays.asList(-1, 100_000);
+    }
+
     @Before
     public void setUp() {
         q1 = new OneToOneConcurrentArrayQueue<>(128);
@@ -61,7 +78,7 @@ public class ConcurrentInboundEdgeStreamTest {
         //noinspection unchecked
         conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
 
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, false);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, false, maxWatermarkRetainMillis);
     }
 
     @Test
@@ -134,7 +151,7 @@ public class ConcurrentInboundEdgeStreamTest {
 
     @Test
     public void when_receivingBarriers_then_waitForBarrier() {
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true, maxWatermarkRetainMillis);
 
         add(q1, barrier(0));
         add(q2, 1);
@@ -150,7 +167,7 @@ public class ConcurrentInboundEdgeStreamTest {
 
     @Test
     public void when_receivingBarriersWhileDone_then_coalesce() {
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true, maxWatermarkRetainMillis);
 
         add(q1, 1, barrier(0));
         add(q2, DONE_ITEM);
@@ -176,6 +193,8 @@ public class ConcurrentInboundEdgeStreamTest {
         add(q1, wm(1));
         add(q2, barrier(0));
         drainAndAssert(MADE_PROGRESS);
+        assertEquals(0, q1.size());
+        assertEquals(0, q2.size());
 
         add(q1, barrier(0));
         add(q2, wm(1));
@@ -215,6 +234,22 @@ public class ConcurrentInboundEdgeStreamTest {
 
         // Then
         drainAndAssert(MADE_PROGRESS, entry, entry);
+    }
+
+    @Test
+    public void when_wmInOneQueueAndTheOtherDoneLater_then_wmEmitted_v1() {
+        add(q1, wm(1));
+        add(q2, DONE_ITEM);
+        drainAndAssert(MADE_PROGRESS, wm(1));
+    }
+
+    @Test
+    public void when_wmInOneQueueAndTheOtherDoneLater_then_wmEmitted_v2() {
+        add(q1, wm(1));
+        drainAndAssert(MADE_PROGRESS);
+
+        add(q2, DONE_ITEM);
+        drainAndAssert(MADE_PROGRESS, wm(1));
     }
 
     private void drainAndAssert(ProgressState expectedState, Object... expectedItems) {

@@ -56,4 +56,9 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     public void init(@Nonnull Context context) {
         wrapped.init(context);
     }
+
+    @Override
+    public void complete(Throwable error) {
+        wrapped.complete(error);
+    }
 }

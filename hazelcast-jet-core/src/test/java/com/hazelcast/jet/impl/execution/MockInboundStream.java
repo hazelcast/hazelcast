@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class MockInboundStream implements InboundEdgeStream {
             if (item == DONE_ITEM) {
                 done = true;
                 break;
-            } else if (item instanceof SnapshotBarrier) {
+            } else if (item instanceof SnapshotBarrier || item instanceof Watermark) {
                 dest.accept(item);
                 dataIndex++;
                 break;

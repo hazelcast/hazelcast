@@ -23,9 +23,9 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WindowDefinition;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
@@ -100,19 +100,18 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         this.isLastStage = isLastStage;
         this.wmFlatMapper = flatMapper(
                 wm -> windowTraverserAndEvictor(wm.timestamp())
-                        .append(wm)
                         .onFirstNull(() -> nextWinToEmit = wDef.higherFrameTs(wm.timestamp()))
         );
         this.emptyAcc = aggrOp.createFn().get();
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
+    protected void init(@Nonnull Context context) {
         processingGuarantee = context.processingGuarantee();
     }
 
     @Override
-    protected boolean tryProcess0(@Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         @SuppressWarnings("unchecked")
         T t = (T) item;
         final long frameTs = getFrameTsFn.applyAsLong(t);
@@ -128,7 +127,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcessWm0(@Nonnull Watermark wm) {
+    public boolean tryProcessWatermark(@Nonnull Watermark wm) {
         return wmFlatMapper.tryProcess(wm);
     }
 

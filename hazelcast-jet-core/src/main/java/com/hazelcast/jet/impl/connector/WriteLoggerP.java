@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 
 import javax.annotation.Nonnull;
@@ -37,6 +38,12 @@ public class WriteLoggerP<T> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         getLogger().info(toStringFn.apply((T) item));
+        return true;
+    }
+
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        getLogger().info(watermark.toString());
         return true;
     }
 

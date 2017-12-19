@@ -117,26 +117,28 @@ public class SessionWindowPTest {
         // The second session will be emitted in complete()
         inbox.add(new Watermark(25));
 
-        List<Object> expectedOutbox = new ArrayList<>();
-        expectedSessions("a").forEach(expectedOutbox::add);
-
         verifyProcessor(supplier)
                 .input(inbox)
-                .expectOutput(expectedOutbox);
+                .expectOutput(asList(
+                        new Session("a", 1, 22, 3),
+                        new Watermark(25),
+                        new Session("a", 30, 50, 3)));
     }
 
     private void assertCorrectness(List<Object> events) {
-        List<Session> expectedSessions = events.stream()
+        List<Object> expectedOutput = events.stream()
                                                .map(e -> ((Entry<String, Long>) e).getKey())
                                                .flatMap(SessionWindowPTest::expectedSessions)
+                                               .distinct()
                                                .collect(toList());
         events.add(new Watermark(100));
+        expectedOutput.add(new Watermark(100));
 
         try {
             verifyProcessor(supplier)
                     .outputChecker((e, a) -> new HashSet(e).equals(new HashSet(a)))
                     .input(events)
-                    .expectOutput(expectedSessions);
+                    .expectOutput(expectedOutput);
         } catch (AssertionError e) {
             System.err.println("Tested with events: " + events);
             throw e;
@@ -170,13 +172,13 @@ public class SessionWindowPTest {
         for (long idx = 0; idx < eventsPerKey; idx++) {
             long timestampBase = idx * timestampStep;
             for (long key = (timestampBase / SESSION_TIMEOUT) % 2; key < keyCount; key += 2) {
-                while (!lastSuppliedProcessor.tryProcess0(entry(key, timestampBase + rnd.nextInt(spread)))) { }
-                while (!lastSuppliedProcessor.tryProcess0(entry(key, timestampBase + rnd.nextInt(spread)))) { }
+                while (!lastSuppliedProcessor.tryProcess(0, entry(key, timestampBase + rnd.nextInt(spread)))) { }
+                while (!lastSuppliedProcessor.tryProcess(0, entry(key, timestampBase + rnd.nextInt(spread)))) { }
             }
             if (idx % wmInterval == 0) {
-                Watermark wm = new Watermark(timestampBase - wmLag);
+                long wm = timestampBase - wmLag;
                 int winCount = 0;
-                while (!lastSuppliedProcessor.tryProcessWm0(wm)) {
+                while (!lastSuppliedProcessor.tryProcessWatermark(new Watermark(wm))) {
                     while (outbox.queueWithOrdinal(0).poll() != null) {
                         winCount++;
                     }

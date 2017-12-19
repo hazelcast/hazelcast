@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.datamodel.Session;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.datamodel.Session;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -99,7 +99,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess0(@Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         final T event = (T) item;
         final long timestamp = getTimestampFn.applyAsLong(event);
         K key = getKeyFn.apply(event);
@@ -109,7 +109,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcessWm0(@Nonnull Watermark wm) {
+    public boolean tryProcessWatermark(@Nonnull Watermark wm) {
         return expiredSessionFlatmapper.tryProcess(wm);
     }
 

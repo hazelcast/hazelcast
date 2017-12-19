@@ -110,6 +110,38 @@ public interface Processor {
     }
 
     /**
+     * Tries to process the supplied watermark. The value is always greater
+     * than in the previous call. The watermark is delivered for processing
+     * after it has been received from all the edges or the {@link
+     * com.hazelcast.jet.config.JobConfig#setMaxWatermarkRetainMillis(int)
+     * maximum retention time} has elapsed.
+     * <p>
+     * The implementation may choose to process only partially and return
+     * {@code false}, in which case it will be called again later with the same
+     * {@code timestamp} before any other processing method is called. When the
+     * method returns {@code true}, the watermark is forwarded to the
+     * downstream processors.
+     * <p>
+     * The default implementation just returns {@code true}.
+     *
+     * <h3>Caution for Jobs With the At-Least-Once Guarantee</h3>
+     * Jet propagates the value of the watermark by sending <em>watermark
+     * items</em> interleaved with the regular stream items. If a job
+     * configured with the <i>at-least-once</i> processing guarantee gets
+     * restarted, the same watermark, like any other stream item, can be
+     * delivered again. Therefore the processor may be asked to process
+     * a watermark older than the one it had already processed before the
+     * restart.
+     *
+     * @param watermark watermark to be processed
+     * @return {@code true} if this watermark has now been processed,
+     *         {@code false} otherwise.
+     */
+    default boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return true;
+    }
+
+    /**
      * This method will be called periodically and only when the current batch
      * of items in the inbox has been exhausted. It can be used to produce
      * output in the absence of input or to do general maintenance work.

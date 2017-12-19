@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestOutbox.MockData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -77,6 +78,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     <li>does snapshot or snapshot+restore each time the {@code complete()}
  *     method returned {@code false} and made a progress
  * </ul>
+ *
+ * <h3>Snapshot & restore</h3>
  * The {@link #disableSnapshots() optional} snapshot+restore test procedure:
  * <ul>
  *     <li>{@code saveToSnapshot()} is called. If we are not doing restore, this
@@ -89,7 +92,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *
  *     <li>{@code finishSnapshotRestore()} is called
  * </ul>
- * <p>
+ *
+ * <h3>Watermark handling</h3>
+ * The input can contain {@link Watermark}s. They will be passed to the
+ * {@link Processor#tryProcessWatermark} method and can be asserted in the
+ * output.
+ *
+ * <h3>Progress assertion</h3>
  * For each call to any processing method the progress is asserted ({@link
  * #disableProgressAssertion() optional}). The processor must do at least one
  * of these:
@@ -99,16 +108,19 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     <li>for boolean-returning methods, returning {@code true} is
  *     considered as making progress
  * </ul>
- * <h4>Outbox rejection</h4>
+ *
+ * <h3>Outbox rejection</h3>
  * A 1-capacity outbox will be provided, which will additionally be full in
  * every other call to {@code process()}. This will test the edge case: the
  * {@code process()} method is called even when the outbox is full to give
  * the processor a chance to process the inbox. The snapshot bucket will
  * also have capacity of 1.
- * <h4>Cooperative processors</h4>
+ *
+ * <h3>Cooperative processors</h3>
  * For cooperative processors, time spent in each call to processing method
  * must not exceed {@link #cooperativeTimeout(long)}.
- * <h4>Not-covered cases</h4>
+ *
+ * <h3>Non-covered cases</h3>
  * This class does not cover these cases:
  * <ul>
  *     <li>Testing of processors which distinguish input or output edges
@@ -119,7 +131,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     <li>This utility never calls {@link Processor#tryProcess()}.
  * </ul>
  * <p>
- * <h4>Example usage</h4>
+ *
+ * <h3>Example usage</h3>
  * This will test one of the jet-provided processors:
  * <pre>{@code
  * TestSupport.verifyProcessor(Processors.map((String s) -> s.toUpperCase()))
@@ -207,6 +220,10 @@ public final class TestSupport {
     /**
      * Sets the input objects for processor.
      * <p>
+     * The {@code input} can contain {@link com.hazelcast.jet.core.Watermark}s;
+     * they will be delivered to the {@link Processor#tryProcessWatermark}
+     * method.
+     * <p>
      * Defaults to empty list.
      *
      * @return {@code this} instance for fluent API.
@@ -218,6 +235,10 @@ public final class TestSupport {
 
     /**
      * Sets the expected output and runs the test.
+     * <p>
+     * The {@code expectedOutput} can contain {@link
+     * com.hazelcast.jet.core.Watermark}s. Each Watermark in the input will be
+     * found in the output, as well as other watermarks the processor emits.
      *
      * @throws AssertionError If some assertion does not hold.
      */
@@ -349,25 +370,34 @@ public final class TestSupport {
 
         // call the process() method
         Iterator<?> inputIterator = input.iterator();
-        while (inputIterator.hasNext() || !inbox.isEmpty()) {
-            if (inbox.isEmpty()) {
+        Watermark[] wmToProcess = {null};
+        while (inputIterator.hasNext() || !inbox.isEmpty() || wmToProcess[0] != null) {
+            if (inbox.isEmpty() && wmToProcess[0] == null && inputIterator.hasNext()) {
                 inbox.add(inputIterator.next());
                 if (logInputOutput) {
                     System.out.println("Input: " + inbox.peek());
                 }
             }
-            checkTime("process", isCooperative, () -> processor[0].process(0, inbox));
+            String methodName;
+            if (wmToProcess[0] != null) {
+                methodName = "offer";
+                if (outbox.offer(wmToProcess[0])) {
+                    wmToProcess[0] = null;
+                }
+            } else {
+                methodName = processInbox(inbox, isCooperative, processor, wmToProcess);
+            }
             boolean madeProgress = inbox.isEmpty() || !outbox.queueWithOrdinal(0).isEmpty();
-            assertTrue("process() call without progress", !assertProgress || madeProgress);
+            assertTrue(methodName + "() call without progress", !assertProgress || madeProgress);
             idleCount = idle(idler, idleCount, madeProgress);
             if (outbox.queueWithOrdinal(0).size() == 1 && !inbox.isEmpty()) {
                 // if the outbox is full, call the process() method again. Cooperative
                 // processor must be able to cope with this situation and not try to put
                 // more items to the outbox.
-                checkTime("process", isCooperative, () -> processor[0].process(0, inbox));
+                processInbox(inbox, isCooperative, processor, wmToProcess);
             }
             drainOutbox(outbox.queueWithOrdinal(0), actualOutput, logInputOutput);
-            if (inbox.isEmpty()) {
+            if (inbox.isEmpty() && wmToProcess[0] == null) {
                 snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestore);
             }
         }
@@ -398,6 +428,22 @@ public final class TestSupport {
         if (!outputChecker.test(expectedOutput, actualOutput)) {
             assertEquals("processor output with doSnapshots=" + doSnapshots + " doesn't match",
                     listToString(expectedOutput), listToString(actualOutput));
+        }
+    }
+
+    private String processInbox(TestInbox inbox, boolean isCooperative, Processor[] processor, Watermark[] wmToEmit) {
+        if (inbox.getFirst() instanceof Watermark) {
+            Watermark wm = ((Watermark) inbox.peek());
+            checkTime("tryProcessWatermark", isCooperative, () -> {
+                if (processor[0].tryProcessWatermark(wm)) {
+                    inbox.remove();
+                    wmToEmit[0] = wm;
+                }
+            });
+            return "tryProcessWatermark";
+        } else {
+            checkTime("process", isCooperative, () -> processor[0].process(0, inbox));
+            return "process";
         }
     }
 

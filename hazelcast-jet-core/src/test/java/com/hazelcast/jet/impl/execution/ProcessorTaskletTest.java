@@ -260,7 +260,7 @@ public class ProcessorTaskletTest {
         }
 
         final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
-                mock(SnapshotContext.class), new MockOutboundCollector(10));
+                mock(SnapshotContext.class), new MockOutboundCollector(10), -1);
         t.init();
         return t;
     }
@@ -322,7 +322,7 @@ public class ProcessorTaskletTest {
     private static void callUntil(Tasklet tasklet, ProgressState expectedState) {
         int iterCount = 0;
         for (ProgressState r; (r = tasklet.call()) != expectedState; ) {
-            assertTrue("Failed to make progress: " + r, r.isMadeProgress());
+            assertEquals("Failed to make progress", MADE_PROGRESS, r);
             assertTrue(String.format(
                     "tasklet.call() invoked %d times without reaching %s. Last state was %s",
                     CALL_COUNT_LIMIT, expectedState, r),

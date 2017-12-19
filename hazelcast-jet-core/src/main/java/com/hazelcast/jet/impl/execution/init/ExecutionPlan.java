@@ -135,7 +135,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
             ConcurrentConveyor<Object> ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext, jobId,
-                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true),
+                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true, -1),
                     nodeEngine, srcVertex.name(), srcVertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
 
@@ -163,7 +163,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, localProcessorIdx, null);
 
                 ProcessorTasklet processorTasklet = new ProcessorTasklet(context, p, inboundStreams, outboundStreams,
-                        snapshotContext, snapshotCollector);
+                        snapshotContext, snapshotCollector, jobConfig.getMaxWatermarkRetainMillis());
                 tasklets.add(processorTasklet);
                 this.processors.add(p);
                 localProcessorIdx++;
@@ -452,7 +452,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private ConcurrentInboundEdgeStream newEdgeStream(EdgeDef inEdge, ConcurrentConveyor<Object> conveyor) {
         return new ConcurrentInboundEdgeStream(conveyor, inEdge.destOrdinal(), inEdge.priority(),
-                lastSnapshotId, jobConfig.getProcessingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE);
+                lastSnapshotId, jobConfig.getProcessingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE,
+                jobConfig.getMaxWatermarkRetainMillis());
     }
 
     public List<Processor> getProcessors() {

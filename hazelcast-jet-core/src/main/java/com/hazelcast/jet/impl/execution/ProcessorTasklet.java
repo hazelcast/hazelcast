@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.CircularListCursor;
@@ -41,8 +42,10 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE_EDGE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_BARRIER;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_DONE_ITEM;
+import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.END;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
+import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Comparator.comparing;
@@ -63,19 +66,22 @@ public class ProcessorTasklet implements Tasklet {
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
+    private final WatermarkCoalescer watermarkCoalescer;
 
     private int numActiveOrdinals; // counter for remaining active ordinals
     private CircularListCursor<InboundEdgeStream> instreamCursor;
     private InboundEdgeStream currInstream;
     private ProcessorState state;
     private long pendingSnapshotId;
+    private Watermark pendingWatermark;
 
     public ProcessorTasklet(@Nonnull ProcCtx context,
                             @Nonnull Processor processor,
                             @Nonnull List<? extends InboundEdgeStream> instreams,
                             @Nonnull List<? extends OutboundEdgeStream> outstreams,
                             @Nonnull SnapshotContext ssContext,
-                            @Nonnull OutboundCollector ssCollector) {
+                            @Nonnull OutboundCollector ssCollector,
+                            int maxWatermarkRetainMillis) {
         Preconditions.checkNotNull(processor, "processor");
         this.context = context;
         this.processor = processor;
@@ -98,6 +104,8 @@ public class ProcessorTasklet implements Tasklet {
         receivedBarriers = new BitSet(instreams.size());
         state = initialProcessingState();
         pendingSnapshotId = ssContext.lastSnapshotId() + 1;
+
+        watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, instreams.size());
     }
 
     private OutboxImpl createOutbox(OutboundCollector ssCollector) {
@@ -120,19 +128,50 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override @Nonnull
     public ProgressState call() {
+        return call(watermarkCoalescer.getTime());
+    }
+
+    // package-visible for testing
+    ProgressState call(long now) {
         progTracker.reset();
         outbox.resetBatch();
-        stateMachineStep();
+        stateMachineStep(now);
         return progTracker.toProgressState();
     }
 
     @SuppressWarnings("checkstyle:returncount")
-    private void stateMachineStep() {
+    private void stateMachineStep(long now) {
         switch (state) {
+            case PROCESS_WATERMARK:
+                progTracker.notDone();
+                if (pendingWatermark == null) {
+                    long wm = watermarkCoalescer.checkWmHistory(now);
+                    if (wm == Long.MIN_VALUE) {
+                        state = PROCESS_INBOX;
+                        stateMachineStep(now); // recursion
+                        break;
+                    }
+                    pendingWatermark = new Watermark(wm);
+                }
+                if (processor.tryProcessWatermark(pendingWatermark)) {
+                    state = EMIT_WATERMARK;
+                    stateMachineStep(now); // recursion
+                }
+                break;
+
+            case EMIT_WATERMARK:
+                progTracker.notDone();
+                if (outbox.offer(pendingWatermark)) {
+                    state = PROCESS_INBOX;
+                    pendingWatermark = null;
+                    stateMachineStep(now); // recursion
+                }
+                break;
+
             case PROCESS_INBOX:
                 progTracker.notDone();
                 if (inbox.isEmpty() && (isSnapshotInbox() || processor.tryProcess())) {
-                    fillInbox();
+                    fillInbox(now);
                 }
                 if (!inbox.isEmpty()) {
                     if (isSnapshotInbox()) {
@@ -154,10 +193,11 @@ public class ProcessorTasklet implements Tasklet {
                         // we have an empty inbox and received the current snapshot barrier from all active ordinals
                         state = SAVE_SNAPSHOT;
                         return;
-                    }
-                    if (numActiveOrdinals == 0) {
+                    } else if (numActiveOrdinals == 0) {
                         progTracker.madeProgress();
                         state = COMPLETE;
+                    } else {
+                        state = PROCESS_WATERMARK;
                     }
                 }
                 return;
@@ -225,7 +265,7 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    private void fillInbox() {
+    private void fillInbox(long now) {
         if (instreamCursor == null) {
             return;
         }
@@ -246,12 +286,21 @@ public class ProcessorTasklet implements Tasklet {
 
             if (result.isDone()) {
                 receivedBarriers.clear(currInstream.ordinal());
+                watermarkCoalescer.queueDone(currInstream.ordinal());
                 instreamCursor.remove();
                 numActiveOrdinals--;
             }
 
-            // check if last item was snapshot
-            if (inbox.peekLast() instanceof SnapshotBarrier) {
+            // check if the last drained item is special
+            Object lastItem = inbox.peekLast();
+            if (lastItem instanceof Watermark) {
+                assert pendingWatermark == null;
+                long newWmValue = ((Watermark) inbox.removeLast()).timestamp();
+                long wm = watermarkCoalescer.observeWm(now, currInstream.ordinal(), newWmValue);
+                if (wm != Long.MIN_VALUE) {
+                    pendingWatermark = new Watermark(wm);
+                }
+            } else if (lastItem instanceof SnapshotBarrier) {
                 SnapshotBarrier barrier = (SnapshotBarrier) inbox.removeLast();
                 observeSnapshot(currInstream.ordinal(), barrier.snapshotId());
             }

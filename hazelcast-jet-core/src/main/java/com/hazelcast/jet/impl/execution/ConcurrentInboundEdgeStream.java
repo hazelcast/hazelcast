@@ -25,11 +25,11 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.util.function.Predicate;
 
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 
 /**
  * {@link InboundEdgeStream} implemented in terms of a {@link ConcurrentConveyor}.
@@ -40,17 +40,14 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     private final int ordinal;
     private final int priority;
+    private final boolean waitForSnapshot;
     private final ConcurrentConveyor<Object> conveyor;
     private final ProgressTracker tracker = new ProgressTracker();
     private final ItemDetector itemDetector = new ItemDetector();
-    private final boolean waitForSnapshot;
-    private final long[] queueWms;
 
+    private final WatermarkCoalescer watermarkCoalescer;
     private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
-
     private long pendingSnapshotId; // next snapshot barrier to emit
-    private long lastEmittedWm = Long.MIN_VALUE;
-
     private long numActiveQueues; // number of active queues remaining
 
     /**
@@ -59,14 +56,13 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      *                        vs. at-least-once, if it is false.
      */
     public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority,
-                                       long lastSnapshotId, boolean waitForSnapshot) {
+                                       long lastSnapshotId, boolean waitForSnapshot, int maxWatermarkRetainMillis) {
         this.conveyor = conveyor;
         this.ordinal = ordinal;
         this.priority = priority;
         this.waitForSnapshot = waitForSnapshot;
 
-        queueWms = new long[conveyor.queueCount()];
-        Arrays.fill(queueWms, Long.MIN_VALUE);
+        watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, conveyor.queueCount());
 
         numActiveQueues = conveyor.queueCount();
         receivedBarriers = new BitSet(conveyor.queueCount());
@@ -85,6 +81,11 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     @Override
     public ProgressState drainTo(Consumer<Object> dest) {
+        return drainTo(watermarkCoalescer.getTime(), dest);
+    }
+
+    // package-visible for testing
+    ProgressState drainTo(long now, Consumer<Object> dest) {
         tracker.reset();
         for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
             final QueuedPipe<Object> q = conveyor.queue(queueIndex);
@@ -102,10 +103,15 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             if (itemDetector.item == DONE_ITEM) {
                 conveyor.removeQueue(queueIndex);
                 receivedBarriers.clear(queueIndex);
-                queueWms[queueIndex] = Long.MAX_VALUE;
                 numActiveQueues--;
+                if (maybeEmitWm(watermarkCoalescer.queueDone(queueIndex), dest)) {
+                    return MADE_PROGRESS;
+                }
             } else if (itemDetector.item instanceof Watermark) {
-                observeWm(queueIndex, ((Watermark) itemDetector.item).timestamp());
+                long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
+                if (maybeEmitWm(watermarkCoalescer.observeWm(now, queueIndex, wmTimestamp), dest)) {
+                    return MADE_PROGRESS;
+                }
             } else if (itemDetector.item instanceof SnapshotBarrier) {
                 observeBarrier(queueIndex, ((SnapshotBarrier) itemDetector.item).snapshotId());
             }
@@ -115,28 +121,33 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             }
 
             if (itemDetector.item != null) {
-                // coalesce WMs received and emit new WM if needed
-                long bottomWm = bottomObservedWm();
-                if (bottomWm > lastEmittedWm) {
-                    lastEmittedWm = bottomWm;
-                    dest.accept(new Watermark(bottomWm));
-                    break;
-                }
-
                 // if we have received the current snapshot from all active queues, forward it
                 if (receivedBarriers.cardinality() == numActiveQueues) {
                     dest.accept(new SnapshotBarrier(pendingSnapshotId));
                     pendingSnapshotId++;
                     receivedBarriers.clear();
-                    break;
+                    return MADE_PROGRESS;
                 }
             }
+        }
+
+        // try to emit WM based on history
+        if (maybeEmitWm(watermarkCoalescer.checkWmHistory(now), dest)) {
+            return MADE_PROGRESS;
         }
 
         if (numActiveQueues > 0) {
             tracker.notDone();
         }
         return tracker.toProgressState();
+    }
+
+    private boolean maybeEmitWm(long timestamp, Consumer<Object> dest) {
+        if (timestamp != Long.MIN_VALUE) {
+            dest.accept(new Watermark(timestamp));
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -166,28 +177,10 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         receivedBarriers.set(queueIndex);
     }
 
-    private void observeWm(int queueIndex, final long wmValue) {
-        if (queueWms[queueIndex] >= wmValue) {
-            throw new JetException("Watermarks not monotonically increasing on queue: " +
-                    "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
-        }
-        queueWms[queueIndex] = wmValue;
-    }
-
-    private long bottomObservedWm() {
-        long min = queueWms[0];
-        for (int i = 1; i < queueWms.length; i++) {
-            if (queueWms[i] < min) {
-                min = queueWms[i];
-            }
-        }
-        return min;
-    }
-
     /**
      * Drains a concurrent conveyor's queue while watching for {@link Watermark}s
      * and {@link SnapshotBarrier}s.
-     * When encountering a either, prevents draining more items.
+     * When encountering either of them it prevents draining more items.
      */
     private static final class ItemDetector implements Predicate<Object> {
         Consumer<Object> dest;

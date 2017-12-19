@@ -72,7 +72,7 @@ public class SlidingWindowP_twoStageSnapshotTest {
     private DistributedSupplier<SlidingWindowP> stage2Supplier;
 
     @Parameters(name = "simulateRestore={0}")
-    public static Collection<Object> data() throws Exception {
+    public static Collection<Object> data() {
         return asList(true, false);
     }
 
@@ -124,8 +124,8 @@ public class SlidingWindowP_twoStageSnapshotTest {
         stage2p.init(stage2Outbox, context);
 
         // process some events in the 1st stage
-        assertTrue(stage1p1.tryProcess0(entry(1L, 1L))); // entry key is time
-        assertTrue(stage1p2.tryProcess0(entry(2L, 2L)));
+        assertTrue(stage1p1.tryProcess(0, entry(1L, 1L))); // entry key is time
+        assertTrue(stage1p2.tryProcess(0, entry(2L, 2L)));
         assertTrue(stage1p1Outbox.queueWithOrdinal(0).isEmpty() && stage2Outbox.queueWithOrdinal(0).isEmpty());
 
         // save state in stage1
@@ -148,15 +148,14 @@ public class SlidingWindowP_twoStageSnapshotTest {
         }
 
         // process some more events in 1st stage
-        assertTrue(stage1p1.tryProcess0(entry(3L, 3L)));
-        assertTrue(stage1p1.tryProcess0(entry(4L, 4L)));
+        assertTrue(stage1p1.tryProcess(0, entry(3L, 3L)));
+        assertTrue(stage1p1.tryProcess(0, entry(4L, 4L)));
 
         // process flushing WM
-        assertTrue(stage1p1.tryProcessWm0(wm(10)));
-        assertTrue(stage1p2.tryProcessWm0(wm(10)));
-        // remove the WM from outbox1, so that it is not duplicated. We don't emulate CIES coalescing.
-        assertTrue(stage1p1Outbox.queueWithOrdinal(0).remove(wm(10)));
+        assertTrue(stage1p1.tryProcessWatermark(wm(10)));
+        assertTrue(stage1p2.tryProcessWatermark(wm(10)));
         processStage2(stage2p, stage1p1Outbox, stage1p2Outbox, inbox);
+        assertTrue(stage2p.tryProcessWatermark(wm(10)));
 
         // Then
         assertEquals(
@@ -167,8 +166,7 @@ public class SlidingWindowP_twoStageSnapshotTest {
                         outboxFrame(5, 10),
                         outboxFrame(6, 9),
                         outboxFrame(7, 7),
-                        outboxFrame(8, 4),
-                        wm(10)
+                        outboxFrame(8, 4)
                 )),
                 collectionToString(stage2Outbox.queueWithOrdinal(0)));
     }

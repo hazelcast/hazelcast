@@ -52,7 +52,6 @@ import static org.mockito.Mockito.mock;
 public class AbstractProcessorTest {
 
     private static final String MOCK_ITEM = "x";
-    private static final Watermark MOCK_WM = new Watermark(17);
     private static final int OUTBOX_BUCKET_COUNT = 4;
     private static final int ORDINAL_0 = 0;
     private static final int ORDINAL_1 = 1;
@@ -74,7 +73,6 @@ public class AbstractProcessorTest {
     public void before() {
         inbox = new TestInbox();
         inbox.add(MOCK_ITEM);
-        inbox.add(MOCK_WM);
         int[] capacities = new int[OUTBOX_BUCKET_COUNT];
         Arrays.fill(capacities, 1);
         outbox = new TestOutbox(capacities);
@@ -247,144 +245,6 @@ public class AbstractProcessorTest {
     }
 
     @Test
-    public void when_tryProcessWm_then_passesOnWm() {
-        // When
-        boolean done = nothingOverriddenP.tryProcessWm(ORDINAL_0, MOCK_WM);
-
-        // Then
-        assertTrue(done);
-        validateReceptionAtOrdinals(MOCK_WM, ALL_ORDINALS);
-    }
-
-    @Test
-    public void when_tryProcessWm0_then_delegatesToTryProcessWm() throws Exception {
-        // When
-        boolean done = p.tryProcessWm0(MOCK_WM);
-
-        // Then
-        assertTrue(done);
-        p.validateReceptionOfWm(ORDINAL_0, MOCK_WM);
-    }
-
-    @Test
-    public void when_tryProcessWm1_then_delegatesToTryProcessWm() throws Exception {
-        // When
-        boolean done = p.tryProcessWm1(MOCK_WM);
-
-        // Then
-        assertTrue(done);
-        p.validateReceptionOfWm(ORDINAL_1, MOCK_WM);
-    }
-
-    @Test
-    public void when_tryProcessWm2_then_delegatesToTryProcessWm() throws Exception {
-        // When
-        boolean done = p.tryProcessWm2(MOCK_WM);
-
-        // Then
-        assertTrue(done);
-        p.validateReceptionOfWm(ORDINAL_2, MOCK_WM);
-    }
-
-    @Test
-    public void when_tryProcessWm3_then_delegatesToTryProcessWm() throws Exception {
-        // When
-        boolean done = p.tryProcessWm3(MOCK_WM);
-
-        // Then
-        assertTrue(done);
-        p.validateReceptionOfWm(ORDINAL_3, MOCK_WM);
-    }
-
-    @Test
-    public void when_tryProcessWm4_then_delegatesToTryProcessWm() throws Exception {
-        // When
-        boolean done = p.tryProcessWm4(MOCK_WM);
-
-        // Then
-        assertTrue(done);
-        p.validateReceptionOfWm(ORDINAL_4, MOCK_WM);
-    }
-
-    @Test
-    public void when_process0ButOutboxFull_then_itemNotRemoved() throws Exception {
-        // Given
-        resetInboxToTwoWms();
-
-        // When
-        nothingOverriddenP.process0(inbox);
-
-        // Then
-        assertEquals(MOCK_WM, inbox.poll());
-    }
-
-    @Test
-    public void when_process1ButOutboxFull_then_itemNotRemoved() throws Exception {
-        // Given
-        resetInboxToTwoWms();
-
-        // When
-        nothingOverriddenP.process1(inbox);
-
-        // Then
-        assertEquals(MOCK_WM, inbox.poll());
-    }
-
-    @Test
-    public void when_process2ButOutboxFull_then_itemNotRemoved() throws Exception {
-        // Given
-        resetInboxToTwoWms();
-
-        // When
-        nothingOverriddenP.process2(inbox);
-
-        // Then
-        assertEquals(MOCK_WM, inbox.poll());
-    }
-
-    @Test
-    public void when_process3ButOutboxFull_then_itemNotRemoved() throws Exception {
-        // Given
-        resetInboxToTwoWms();
-
-        // When
-        nothingOverriddenP.process3(inbox);
-
-        // Then
-        assertEquals(MOCK_WM, inbox.poll());
-    }
-
-    @Test
-    public void when_process4ButOutboxFull_then_itemNotRemoved() throws Exception {
-        // Given
-        resetInboxToTwoWms();
-
-        // When
-        nothingOverriddenP.process4(inbox);
-
-        // Then
-        assertEquals(MOCK_WM, inbox.poll());
-    }
-
-    @Test
-    public void when_processAnyButOutboxFull_then_itemNotRemoved() throws Exception {
-        // Given
-        resetInboxToTwoWms();
-
-        // When
-        nothingOverriddenP.processAny(5, inbox);
-
-        // Then
-        assertEquals(MOCK_WM, inbox.poll());
-    }
-
-    private void resetInboxToTwoWms() {
-        inbox.clear();
-        inbox.add(MOCK_WM);
-        inbox.add(MOCK_WM);
-    }
-
-    @Test
     public void when_tryEmitToAll_then_emittedToAll() {
         // When
         boolean emitted = p.tryEmit(MOCK_ITEM);
@@ -519,7 +379,6 @@ public class AbstractProcessorTest {
     private static class RegisteringMethodCallsP extends AbstractProcessor {
         boolean initCalled;
         Object[] receivedByTryProcessN = new Object[6];
-        Object[] receivedByTryProcessWmN = new Object[6];
 
         @Override
         protected void init(@Nonnull Context context) {
@@ -532,21 +391,9 @@ public class AbstractProcessorTest {
             return true;
         }
 
-        @Override
-        protected boolean tryProcessWm(int ordinal, @Nonnull Watermark wm) {
-            receivedByTryProcessWmN[ordinal] = wm;
-            return true;
-        }
-
         void validateReceptionOfItem(int ordinal, Object item) {
             for (int i = 0; i < receivedByTryProcessN.length; i++) {
                 assertSame(i == ordinal ? item : null, receivedByTryProcessN[i]);
-            }
-        }
-
-        void validateReceptionOfWm(int ordinal, Watermark wm) {
-            for (int i = 0; i < receivedByTryProcessWmN.length; i++) {
-                assertSame(i == ordinal ? wm : null, receivedByTryProcessWmN[i]);
             }
         }
     }

@@ -61,6 +61,8 @@ public class EdgeConfig implements Serializable {
      * and memory usage. The default of {@value #DEFAULT_QUEUE_SIZE} is a good size
      * for simple DAGs and moderate parallelism, but the optimum can be determined only
      * by experiment.
+     *
+     * @return {@code this} instance for fluent API
      */
     public EdgeConfig setQueueSize(int queueSize) {
         this.queueSize = queueSize;
@@ -98,6 +100,8 @@ public class EdgeConfig implements Serializable {
      * <p>
      * The default value is {@value #DEFAULT_RECEIVE_WINDOW_MULTIPLIER}. This
      * setting has no effect on a non-distributed edge.
+     *
+     * @return {@code this} instance for fluent API
      */
     public EdgeConfig setReceiveWindowMultiplier(int receiveWindowMultiplier) {
         this.receiveWindowMultiplier = receiveWindowMultiplier;
@@ -123,6 +127,8 @@ public class EdgeConfig implements Serializable {
      * <p>
      * The default value is {@value #DEFAULT_PACKET_SIZE_LIMIT}. This setting has no effect
      * on a non-distributed edge.
+     *
+     * @return {@code this} instance for fluent API
      */
     public EdgeConfig setPacketSizeLimit(int packetSizeLimit) {
         this.packetSizeLimit = packetSizeLimit;

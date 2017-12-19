@@ -47,6 +47,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
+import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -198,7 +199,7 @@ public class ProcessorTaskletTest_Snapshots {
         snapshotContext = new SnapshotContext(mock(ILogger.class), 0, 0, -1, guarantee);
         snapshotContext.initTaskletCount(1, 0);
         final ProcessorTasklet t = new ProcessorTasklet(context, processor, instreams, outstreams,
-                snapshotContext, snapshotCollector);
+                snapshotContext, snapshotCollector, -1);
         t.init();
         return t;
     }
@@ -216,7 +217,7 @@ public class ProcessorTaskletTest_Snapshots {
     private static void callUntil(Tasklet tasklet, ProgressState expectedState) {
         int iterCount = 0;
         for (ProgressState r; (r = tasklet.call()) != expectedState; ) {
-            assertTrue("Failed to make progress: " + r, r.isMadeProgress());
+            assertEquals("Failed to make progress", MADE_PROGRESS, r);
             assertTrue(String.format(
                     "tasklet.call() invoked %d times without reaching %s. Last state was %s",
                     CALL_COUNT_LIMIT, expectedState, r),

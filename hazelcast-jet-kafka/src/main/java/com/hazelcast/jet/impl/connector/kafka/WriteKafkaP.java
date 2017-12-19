@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.connector.kafka;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.Watermark;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -73,11 +72,9 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     public void process(int ordinal, @Nonnull Inbox inbox) {
         checkError();
         inbox.drain((Object item) -> {
-            if (!(item instanceof Watermark)) {
-                // Note: send() method can block even though it is declared to not. This is true for Kafka 1.0 and probably
-                // will stay so, unless they change API.
-                producer.send(toRecordFn.apply((T) item), callback);
-            }
+            // Note: send() method can block even though it is declared to not. This is true for Kafka 1.0 and probably
+            // will stay so, unless they change API.
+            producer.send(toRecordFn.apply((T) item), callback);
         });
     }
 

@@ -49,8 +49,8 @@ public final class DiagnosticProcessors {
      * Returns a meta-supplier of processors for a sink vertex that logs all
      * the data items it receives. The log category is {@code
      * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
-     * and the level is INFO. It does not log {@link Watermark watermark}
-     * items.
+     * and the level is INFO. {@link Watermark} items are always logged, they
+     * are <em>not</em> passed to {@code toStringFn}.
      * <p>
      * The vertex logs each item on whichever cluster member it happens to
      * receive it. Its primary purpose is for development use, when running Jet
@@ -87,11 +87,13 @@ public final class DiagnosticProcessors {
      * </li><li>
      *     logs the string at the INFO level, the category being
      *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * </ol>
      * <p>
-     * <strong>Note:</strong> {@link Watermark watermark} items are subject to
-     * logging, too, so the functions you supply must be able to handle them.
+     * Note: Watermarks are always logged. {@link Watermark} objects are not
+     * passed to {@code shouldLogFn} and {@code toStringFn}.
      *
-     * @param toStringFn  a function that returns the string representation of the item
+     * @param toStringFn  a function that returns the string representation of the item.
+     *                    You can use {@code Object::toString}.
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
@@ -189,16 +191,18 @@ public final class DiagnosticProcessors {
      * </li><li>
      *     logs the string at the INFO level, the category being
      *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * </ol>
      * <p>
      * Technically speaking, snapshot data is emitted to the same outbox as regular
      * data, but this wrapper only logs the regular data. See {@link
      * #peekSnapshotP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
      * peekSnapshot()}.
      * <p>
-     * <strong>Note:</strong> {@link Watermark watermark} items are subject to
-     * logging, too, so the functions you supply must be able to handle them.
+     * Note: Watermarks are always logged. {@link Watermark} objects are not
+     * passed to {@code shouldLogFn} and {@code toStringFn}.
      *
-     * @param toStringFn  a function that returns the string representation of the item
+     * @param toStringFn  a function that returns the string representation of the item.
+     *                    You can use {@code Object::toString}.
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any
@@ -295,8 +299,10 @@ public final class DiagnosticProcessors {
      * </li><li>
      *     logs the string at the INFO level, the category being
      *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     * </ol>
      *
-     * @param toStringFn  a function that returns the string representation of the item
+     * @param toStringFn  a function that returns the string representation of the item.
+     *                    You can use {@code Object::toString}
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()
      *                    alwaysTrue()} as a pass-through filter when you don't need any

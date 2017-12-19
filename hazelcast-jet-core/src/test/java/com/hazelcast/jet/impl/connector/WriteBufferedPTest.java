@@ -68,8 +68,8 @@ public class WriteBufferedPTest extends JetTestSupport {
         p.process(0, inbox);
         inbox.add(3);
         inbox.add(4);
-        inbox.add(new Watermark(0)); // watermark should not be written
         p.process(0, inbox);
+        p.tryProcessWatermark(new Watermark(0)); // watermark should not be written
         p.process(0, inbox); // empty flush
         p.complete();
 
