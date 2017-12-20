@@ -120,18 +120,25 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     @Override
     public boolean destroyNearCache(String name) {
-        NearCache nearCache = nearCacheMap.remove(name);
+        NearCache nearCache = nearCacheMap.get(name);
         if (nearCache != null) {
-            nearCache.destroy();
+            synchronized (mutex) {
+                nearCache = nearCacheMap.remove(name);
+                if (nearCache != null) {
+                    nearCache.destroy();
+                    return true;
+                }
+                return false;
+            }
         }
-        return nearCache != null;
+        return false;
     }
+
 
     @Override
     public void destroyAllNearCaches() {
         for (NearCache nearCache : new HashSet<NearCache>(nearCacheMap.values())) {
-            nearCacheMap.remove(nearCache.getName());
-            nearCache.destroy();
+            destroyNearCache(nearCache.getName());
         }
         for (ScheduledFuture preloadTaskFuture : preloadTaskFutures) {
             preloadTaskFuture.cancel(true);
