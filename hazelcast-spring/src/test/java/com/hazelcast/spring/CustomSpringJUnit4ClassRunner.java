@@ -30,8 +30,6 @@ import java.util.Set;
 
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
-    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
-
     static {
         TestLoggingUtils.initializeLogging();
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -55,11 +53,11 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
         String testName = testName(method);
-        setThreadLocalTestMethodName(testName);
+        TestLoggingUtils.setThreadLocalTestMethodName(testName);
         try {
             super.runChild(method, notifier);
         } finally {
-            removeThreadLocalTestMethodName();
+            TestLoggingUtils.removeThreadLocalTestMethodName();
         }
     }
 
@@ -80,15 +78,4 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
             }
         };
     }
-
-    static void setThreadLocalTestMethodName(String name) {
-        TestLoggingUtils.setThreadLocalTestMethodName(name);
-        TEST_NAME_THREAD_LOCAL.set(name);
-    }
-
-    static void removeThreadLocalTestMethodName() {
-        TestLoggingUtils.removeThreadLocalTestMethodName();
-        TEST_NAME_THREAD_LOCAL.remove();
-    }
-
 }
