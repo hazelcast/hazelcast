@@ -19,12 +19,13 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class GetAllScheduledOnPartitionOperation
-        extends AbstractGetAllScheduledOperation {
+        extends AbstractGetAllScheduledOperation implements ReadonlyOperation {
 
     private List<ScheduledTaskHandler> response;
 

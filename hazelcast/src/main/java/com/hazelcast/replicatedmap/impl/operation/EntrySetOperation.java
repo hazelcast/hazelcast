@@ -23,6 +23,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class EntrySetOperation extends AbstractSerializableOperation {
+public class EntrySetOperation extends AbstractSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private transient Object response;

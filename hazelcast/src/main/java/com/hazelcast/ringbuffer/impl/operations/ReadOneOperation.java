@@ -21,13 +21,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_ONE_OPERATION;
 
-public class ReadOneOperation extends AbstractRingBufferOperation implements BlockingOperation {
+public class ReadOneOperation extends AbstractRingBufferOperation implements BlockingOperation, ReadonlyOperation {
 
     private long sequence;
     private Data result;

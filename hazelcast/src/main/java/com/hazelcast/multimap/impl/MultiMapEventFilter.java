@@ -27,7 +27,6 @@ import java.io.IOException;
 public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     boolean includeValue;
-
     Data key;
 
     public MultiMapEventFilter() {
@@ -73,14 +72,12 @@ public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializa
         }
 
         MultiMapEventFilter that = (MultiMapEventFilter) o;
-
         if (includeValue != that.includeValue) {
             return false;
         }
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
-
         return true;
     }
 

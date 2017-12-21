@@ -26,7 +26,6 @@ import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JobTrackerConfig;
@@ -42,6 +41,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -55,6 +55,8 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.util.StringUtil;
 
@@ -79,6 +81,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     private final ConfigPatternMatcher configPatternMatcher;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
+    private volatile ClusterService clusterService;
     private volatile DynamicSecurityConfig dynamicSecurityConfig;
 
     public DynamicConfigurationAwareConfig(Config staticConfig) {
@@ -224,14 +227,12 @@ public class DynamicConfigurationAwareConfig extends Config {
         return this;
     }
 
-    private <T> void checkStaticConfigurationDoesNotExist(Map<String, T> staticConfigurations, String configName,
-                                                          T newConfig) {
+    private <T> void checkStaticConfigurationDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
         Object existingConfiguration = staticConfigurations.get(configName);
         if (existingConfiguration != null) {
             throw new ConfigurationException("Cannot add a new dynamic configuration " + newConfig
                     + " as static configuration already contains " + existingConfiguration);
         }
-
     }
 
     @Override
@@ -612,6 +613,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
+        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new ConfigurationException("Cannot add AtomicLongConfig while the cluster is not running version "
+                    + Versions.V3_10);
+        }
+
         checkStaticConfigurationDoesNotExist(staticConfig.getAtomicLongConfigs(), atomicLongConfig.getName(), atomicLongConfig);
         configurationService.broadcastConfig(atomicLongConfig);
         return this;
@@ -655,6 +661,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
+        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new ConfigurationException("Cannot add AtomicReferenceConfig while the cluster is not running version "
+                    + Versions.V3_10);
+        }
+
         checkStaticConfigurationDoesNotExist(staticConfig.getAtomicReferenceConfigs(), atomicReferenceConfig.getName(),
                 atomicReferenceConfig);
         configurationService.broadcastConfig(atomicReferenceConfig);
@@ -1378,6 +1389,10 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     public void setConfigurationService(ConfigurationService configurationService) {
         this.configurationService = configurationService;
+    }
+
+    public void setClusterService(ClusterService clusterService) {
+        this.clusterService = clusterService;
     }
 
     public void onSecurityServiceUpdated(SecurityService securityService) {

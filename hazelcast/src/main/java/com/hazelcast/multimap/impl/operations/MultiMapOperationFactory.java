@@ -28,13 +28,9 @@ import java.io.IOException;
 public class MultiMapOperationFactory implements OperationFactory {
 
     private String name;
-
     private OperationFactoryType operationFactoryType;
-
     private Data key;
-
     private Data value;
-
     private long threadId;
 
     public MultiMapOperationFactory() {
@@ -79,8 +75,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
         out.writeLong(threadId);
@@ -89,8 +84,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
         threadId = in.readLong();

@@ -25,9 +25,10 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class CountOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
+public class CountOperation extends MultiMapKeyBasedOperation implements BlockingOperation, ReadonlyOperation {
 
     public CountOperation() {
     }
@@ -67,5 +68,4 @@ public class CountOperation extends MultiMapKeyBasedOperation implements Blockin
     public void onWaitExpire() {
         sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
-
 }

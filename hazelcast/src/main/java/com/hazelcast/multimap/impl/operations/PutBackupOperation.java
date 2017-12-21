@@ -29,11 +29,9 @@ import java.util.List;
 
 public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
-    long recordId;
-
-    Data value;
-
-    int index;
+    private long recordId;
+    private Data value;
+    private int index;
 
     public PutBackupOperation() {
     }

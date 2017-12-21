@@ -80,13 +80,12 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         if (coll.isEmpty()) {
             delete();
         }
-
     }
 
     @Override
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, System.nanoTime() - startTimeNanos);
-        final MultiMapService service = getService();
+        MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (removed != null) {
             getOrCreateContainer().update();

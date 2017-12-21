@@ -26,9 +26,9 @@ public class DynamicConfigSplitBrain_whenDifferentConfigExistsInBothBrainsTest e
         instanceInBiggerBrain.getConfig().addMapConfig(defaultMapConfig);
 
         HazelcastInstance instanceInSmallerBrain = secondBrain[0];
-        MapConfig mapConfig = new MapConfig(MAP_NAME);
-        mapConfig.setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT);
-        mapConfig.setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);
+        MapConfig mapConfig = new MapConfig(MAP_NAME)
+                .setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT)
+                .setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);
         instanceInSmallerBrain.getConfig().addMapConfig(mapConfig);
     }
 

@@ -107,77 +107,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.logger = logger;
         this.keyLoader = keyLoader;
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
-        this.loadedOnCreate = false;
     }
 
     @Override
-    public void startLoading() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("StartLoading invoked " + getStateMessage());
-        }
-        if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
-            if (!loadedOnPreMigration) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Triggering load " + getStateMessage());
-                }
-                loadedOnCreate = true;
-                loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
-            } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Promoting to loaded on migration " + getStateMessage());
-                }
-                keyLoader.promoteToLoadedOnMigration();
-            }
-        }
-    }
-
-    @Override
-    public void setPreMigrationLoadedStatus(boolean loaded) {
-        loadedOnPreMigration = loaded;
-    }
-
-    @Override
-    public boolean isLoaded() {
-        return FutureUtil.allDone(loadingFutures);
-    }
-
-    @Override
-    public void loadAll(boolean replaceExistingValues) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("loadAll invoked " + getStateMessage());
-        }
-
-        logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
-        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
-        loadingFutures.add(loadingKeysFuture);
-    }
-
-    @Override
-    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
-        if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
-            loadingFutures.add(f);
-        }
-
-        // We should not track key loading here. IT's not key loading but values loading.
-        // Apart from that it's irrelevant for RECEIVER nodes. SENDER and SENDER_BACKUP will track the key-loading anyway.
-        // Fixes https://github.com/hazelcast/hazelcast/issues/9255
-    }
-
-    @Override
-    public void updateLoadStatus(boolean lastBatch, Throwable exception) {
-        keyLoader.trackLoading(lastBatch, exception);
-
-        if (lastBatch) {
-            logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
-        }
-    }
-
-    @Override
-    public void maybeDoInitialLoad() {
-        if (keyLoader.shouldDoInitialLoad()) {
-            loadAll(false);
-        }
+    public MapDataStore<Data, Object> getMapDataStore() {
+        return mapDataStore;
     }
 
     @Override
@@ -185,36 +119,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         clearPartition(false);
         storage.destroy(false);
         eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
-    }
-
-    @Override
-    public boolean isKeyLoadFinished() {
-        return keyLoader.isKeyLoadFinished();
-    }
-
-    @Override
-    public void checkIfLoaded() {
-        if (loadingFutures.isEmpty()) {
-            return;
-        }
-
-        if (isLoaded()) {
-            List<Future> doneFutures = null;
-            try {
-                doneFutures = FutureUtil.getAllDone(loadingFutures);
-                // check all finished loading futures for exceptions
-                FutureUtil.checkAllDone(doneFutures);
-            } catch (Exception e) {
-                logger.severe("Exception while loading map " + name, e);
-                ExceptionUtil.rethrow(e);
-            } finally {
-                loadingFutures.removeAll(doneFutures);
-            }
-        } else {
-            keyLoader.triggerLoadingWithDelay();
-            throw new RetryableHazelcastException("Map " + getName()
-                    + " is still loading data from external store");
-        }
     }
 
     @Override
@@ -278,6 +182,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return record;
     }
 
+    @Override
     public Iterator<Record> iterator() {
         return new ReadOnlyRecordIterator(storage.values());
     }
@@ -411,7 +316,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, ttl);
     }
-
 
     @Override
     public boolean forceUnlock(Data dataKey) {
@@ -1037,12 +941,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return oldValue;
     }
 
-
-    @Override
-    public MapDataStore<Data, Object> getMapDataStore() {
-        return mapDataStore;
-    }
-
     protected Object removeRecord(Data key, Record record, long now) {
         Object oldValue = record.getValue();
         oldValue = mapServiceContext.interceptRemove(name, oldValue);
@@ -1091,6 +989,106 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         for (DelayedEntry delayedEntry : delayedEntries) {
             Record record = getRecordOrNull(toData(delayedEntry.getKey()), now, false);
             onStore(record);
+        }
+    }
+
+    @Override
+    public boolean isKeyLoadFinished() {
+        return keyLoader.isKeyLoadFinished();
+    }
+
+    @Override
+    public void checkIfLoaded() {
+        if (loadingFutures.isEmpty()) {
+            return;
+        }
+
+        if (isLoaded()) {
+            List<Future> doneFutures = null;
+            try {
+                doneFutures = FutureUtil.getAllDone(loadingFutures);
+                // check all finished loading futures for exceptions
+                FutureUtil.checkAllDone(doneFutures);
+            } catch (Exception e) {
+                logger.severe("Exception while loading map " + name, e);
+                ExceptionUtil.rethrow(e);
+            } finally {
+                loadingFutures.removeAll(doneFutures);
+            }
+        } else {
+            keyLoader.triggerLoadingWithDelay();
+            throw new RetryableHazelcastException("Map " + getName()
+                    + " is still loading data from external store");
+        }
+    }
+
+    @Override
+    public void startLoading() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("StartLoading invoked " + getStateMessage());
+        }
+        if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
+            if (!loadedOnPreMigration) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Triggering load " + getStateMessage());
+                }
+                loadedOnCreate = true;
+                loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+            } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Promoting to loaded on migration " + getStateMessage());
+                }
+                keyLoader.promoteToLoadedOnMigration();
+            }
+        }
+    }
+
+    @Override
+    public void setPreMigrationLoadedStatus(boolean loaded) {
+        loadedOnPreMigration = loaded;
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return FutureUtil.allDone(loadingFutures);
+    }
+
+    @Override
+    public void loadAll(boolean replaceExistingValues) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("loadAll invoked " + getStateMessage());
+        }
+
+        logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
+        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
+        loadingFutures.add(loadingKeysFuture);
+    }
+
+    @Override
+    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
+        if (!keys.isEmpty()) {
+            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            loadingFutures.add(f);
+        }
+
+        // We should not track key loading here. IT's not key loading but values loading.
+        // Apart from that it's irrelevant for RECEIVER nodes. SENDER and SENDER_BACKUP will track the key-loading anyway.
+        // Fixes https://github.com/hazelcast/hazelcast/issues/9255
+    }
+
+    @Override
+    public void updateLoadStatus(boolean lastBatch, Throwable exception) {
+        keyLoader.trackLoading(lastBatch, exception);
+
+        if (lastBatch) {
+            logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
+        }
+    }
+
+    @Override
+    public void maybeDoInitialLoad() {
+        if (keyLoader.shouldDoInitialLoad()) {
+            loadAll(false);
         }
     }
 

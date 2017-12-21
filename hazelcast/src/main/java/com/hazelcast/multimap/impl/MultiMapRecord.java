@@ -26,7 +26,6 @@ import java.io.IOException;
 public class MultiMapRecord implements IdentifiedDataSerializable {
 
     private long recordId = -1;
-
     private Object object;
 
     public MultiMapRecord() {
@@ -67,11 +66,9 @@ public class MultiMapRecord implements IdentifiedDataSerializable {
         }
 
         MultiMapRecord record = (MultiMapRecord) o;
-
         if (!object.equals(record.object)) {
             return false;
         }
-
         return true;
     }
 
