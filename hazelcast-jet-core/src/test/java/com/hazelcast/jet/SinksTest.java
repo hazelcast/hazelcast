@@ -362,15 +362,14 @@ public class SinksTest extends PipelineTestSupport {
                 .drainTo(Sinks.mapWithEntryProcessor(srcName, Entry::getKey,
                         entry -> new IncrementEntryProcessor<>(10)));
         Job job = jet().newJob(pipeline);
-        spawn(job::join);
 
         // Then
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getJobStatus()));
+        assertTrueEventually(() -> assertEquals(RUNNING, job.getJobStatus()), 10);
         assertEquals(1, srcMap.size());
         assertEquals(1, srcMap.get("key").intValue());
         srcMap.unlock("key");
-        assertEquals(11, srcMap.get("key").intValue());
-
+        assertTrueEventually(() -> assertEquals(11, srcMap.get("key").intValue()), 10);
+        job.join();
     }
 
     private static class IncrementEntryProcessor<K> extends AbstractEntryProcessor<K, Integer> {
