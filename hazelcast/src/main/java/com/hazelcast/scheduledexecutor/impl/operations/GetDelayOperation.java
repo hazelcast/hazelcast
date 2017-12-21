@@ -20,12 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class GetDelayOperation
-        extends AbstractSchedulerOperation {
+        extends AbstractSchedulerOperation implements ReadonlyOperation {
 
     private String taskName;
 

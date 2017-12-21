@@ -51,11 +51,11 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
-        Iterator<MultiMapRecord> iter = coll.iterator();
-        while (iter.hasNext()) {
-            MultiMapRecord r = iter.next();
+        Iterator<MultiMapRecord> iterator = coll.iterator();
+        while (iterator.hasNext()) {
+            MultiMapRecord r = iterator.next();
             if (r.equals(record)) {
-                iter.remove();
+                iterator.remove();
                 recordId = r.getRecordId();
                 response = true;
                 if (coll.isEmpty()) {

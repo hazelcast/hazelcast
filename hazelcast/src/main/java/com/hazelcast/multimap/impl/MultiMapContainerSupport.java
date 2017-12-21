@@ -21,26 +21,23 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
+import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 
 /**
  * Contains various {@link com.hazelcast.multimap.impl.MultiMapContainer} support methods.
  */
 abstract class MultiMapContainerSupport {
 
+    protected final ConcurrentMap<Data, MultiMapValue> multiMapValues = createConcurrentHashMap(1000);
+
     protected final String name;
-
     protected final NodeEngine nodeEngine;
-
     protected final MultiMapConfig config;
 
-    protected final ConcurrentMap<Data, MultiMapValue> multiMapValues
-            = new ConcurrentHashMap<Data, MultiMapValue>(1000);
-
-    protected MultiMapContainerSupport(String name, NodeEngine nodeEngine) {
+    MultiMapContainerSupport(String name, NodeEngine nodeEngine) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig().findMultiMapConfig(name);

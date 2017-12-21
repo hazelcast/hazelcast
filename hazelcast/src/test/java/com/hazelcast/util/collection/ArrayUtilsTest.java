@@ -192,4 +192,51 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         ArrayUtils.concat(first, second, concatenated);
         fail();
     }
+
+    @Test
+    public void boundsCheck() {
+        ArrayUtils.boundsCheck(100, 0, 10);
+    }
+
+    @Test
+    public void boundsCheck_allZero() {
+        ArrayUtils.boundsCheck(0, 0, 0);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void boundsCheck_whenMoreThanCapacity() {
+        ArrayUtils.boundsCheck(100, 0, 110);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void boundsCheck_whenIndexSmallerThanZero() {
+        ArrayUtils.boundsCheck(100, -1, 110);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void boundsCheck_whenLengthSmallerThanZero() {
+        ArrayUtils.boundsCheck(100, 0, -1);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void boundsCheck_whenCapacitySmallerThanZero() {
+        ArrayUtils.boundsCheck(-1, 0, 0);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void boundsCheck_whenLengthIntegerMax() {
+        //Testing wrapping does not cause false check
+        ArrayUtils.boundsCheck(0, 10, Integer.MAX_VALUE);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void boundsCheck_whenIndexIntegerMax() {
+        //Testing wrapping does not cause false check
+        ArrayUtils.boundsCheck(100, Integer.MAX_VALUE, 1);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void boundsCheck_whenCapacityIntegerMin() {
+        ArrayUtils.boundsCheck(Integer.MIN_VALUE, 0, 100);
+    }
 }

@@ -98,7 +98,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             int collSize = in.readInt();
-            Collection coll = new ArrayList(collSize);
+            Collection<Data> coll = new ArrayList<Data>(collSize);
             for (int j = 0; j < collSize; j++) {
                 coll.add(in.readData());
             }

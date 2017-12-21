@@ -20,16 +20,18 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Collection;
 
-public class GetAllOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
+public class GetAllOperation extends MultiMapKeyBasedOperation implements BlockingOperation, ReadonlyOperation {
 
     public GetAllOperation() {
     }
@@ -42,7 +44,7 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements Blocki
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        Collection coll = null;
+        Collection<MultiMapRecord> coll = null;
         if (multiMapValue != null) {
             multiMapValue.incrementHit();
             coll = multiMapValue.getCollection(executedLocally());

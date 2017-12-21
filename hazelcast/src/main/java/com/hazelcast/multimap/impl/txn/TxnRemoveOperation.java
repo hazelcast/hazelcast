@@ -74,7 +74,7 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
     @Override
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, System.nanoTime() - startTimeNanos);
-        final MultiMapService service = getService();
+        MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
@@ -114,5 +114,4 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
     public int getId() {
         return MultiMapDataSerializerHook.TXN_REMOVE;
     }
-
 }

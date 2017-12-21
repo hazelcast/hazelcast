@@ -211,7 +211,6 @@ public class Node {
             metricsRegistry.collectMetrics(nodeExtension);
             healthMonitor = new HealthMonitor(this);
 
-
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
             discoveryService = createDiscoveryService(
@@ -221,6 +220,8 @@ public class Node {
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             joiner = nodeContext.createJoiner(this);
+
+            config.setClusterService(clusterService);
         } catch (Throwable e) {
             try {
                 serverSocketChannel.close();

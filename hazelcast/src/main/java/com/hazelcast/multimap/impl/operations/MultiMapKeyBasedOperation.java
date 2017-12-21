@@ -84,5 +84,4 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
         threadId = in.readLong();
         dataKey = in.readData();
     }
-
 }

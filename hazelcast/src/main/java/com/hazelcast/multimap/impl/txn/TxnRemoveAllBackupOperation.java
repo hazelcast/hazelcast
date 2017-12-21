@@ -55,11 +55,11 @@ public class TxnRemoveAllBackupOperation extends MultiMapKeyBasedOperation {
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         for (Long recordId : recordIds) {
-            Iterator<MultiMapRecord> iter = coll.iterator();
-            while (iter.hasNext()) {
-                MultiMapRecord record = iter.next();
+            Iterator<MultiMapRecord> iterator = coll.iterator();
+            while (iterator.hasNext()) {
+                MultiMapRecord record = iterator.next();
                 if (record.getRecordId() == recordId) {
-                    iter.remove();
+                    iterator.remove();
                     break;
                 }
             }

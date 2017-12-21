@@ -49,7 +49,6 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -61,9 +60,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -76,26 +76,25 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
     private static final int REPLICA_ADDRESS_TRY_COUNT = 3;
     private static final int REPLICA_ADDRESS_SLEEP_WAIT_MILLIS = 1000;
+
     private final NodeEngine nodeEngine;
     private final MultiMapPartitionContainer[] partitionContainers;
-    private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap =
-            new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(STATS_MAP_INITIAL_CAPACITY);
-    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction =
-            new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
-
-                public LocalMultiMapStatsImpl createNew(String key) {
-                    return new LocalMultiMapStatsImpl();
-                }
-            };
+    private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = createConcurrentHashMap(STATS_MAP_INITIAL_CAPACITY);
+    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
+            = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
+        public LocalMultiMapStatsImpl createNew(String key) {
+            return new LocalMultiMapStatsImpl();
+        }
+    };
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
 
     public MultiMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        partitionContainers = new MultiMapPartitionContainer[partitionCount];
-        dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
-        publisher = new MultiMapEventsPublisher(nodeEngine);
+        this.partitionContainers = new MultiMapPartitionContainer[partitionCount];
+        this.dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
+        this.publisher = new MultiMapEventsPublisher(nodeEngine);
     }
 
     @Override
@@ -104,28 +103,26 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         for (int partition = 0; partition < partitionCount; partition++) {
             partitionContainers[partition] = new MultiMapPartitionContainer(this, partition);
         }
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.registerLockStoreConstructor(SERVICE_NAME,
-                    new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+                @Override
+                public LockStoreInfo createNew(ObjectNamespace key) {
+                    String name = key.getObjectName();
+                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+                    return new LockStoreInfo() {
                         @Override
-                        public LockStoreInfo createNew(final ObjectNamespace key) {
-                            String name = key.getObjectName();
-                            final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-
-                            return new LockStoreInfo() {
-                                @Override
-                                public int getBackupCount() {
-                                    return multiMapConfig.getSyncBackupCount();
-                                }
-
-                                @Override
-                                public int getAsyncBackupCount() {
-                                    return multiMapConfig.getAsyncBackupCount();
-                                }
-                            };
+                        public int getBackupCount() {
+                            return multiMapConfig.getBackupCount();
                         }
-                    });
+
+                        @Override
+                        public int getAsyncBackupCount() {
+                            return multiMapConfig.getAsyncBackupCount();
+                        }
+                    };
+                }
+            });
         }
     }
 
@@ -194,8 +191,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         return nodeEngine;
     }
 
-    public void publishMultiMapEvent(String mapName, EntryEventType eventType,
-                                     int numberOfEntriesAffected) {
+    public void publishMultiMapEvent(String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
         publisher.publishMultiMapEvent(mapName, eventType, numberOfEntriesAffected);
 
     }
@@ -208,7 +204,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     public String addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
-        final MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
+        MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
         if (local) {
             registration = eventService.registerLocalListener(SERVICE_NAME, name, filter, listener);
         } else {
@@ -250,16 +246,14 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
-
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces) {
         MultiMapPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
         if (partitionContainer == null) {
             return null;
         }
 
         int replicaIndex = event.getReplicaIndex();
-        Map<String, Map> map = createHashMap(namespaces.size());
+        Map<String, Map<Data, MultiMapValue>> map = createHashMap(namespaces.size());
 
         for (ServiceNamespace namespace : namespaces) {
             assert isKnownServiceNamespace(namespace) : namespace + " is not a MultiMapService namespace!";
@@ -278,8 +272,8 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         return map.isEmpty() ? null : new MultiMapReplicationOperation(map);
     }
 
-    public void insertMigratedData(int partitionId, Map<String, Map> map) {
-        for (Map.Entry<String, Map> entry : map.entrySet()) {
+    public void insertMigratedData(int partitionId, Map<String, Map<Data, MultiMapValue>> map) {
+        for (Map.Entry<String, Map<Data, MultiMapValue>> entry : map.entrySet()) {
             String name = entry.getKey();
             MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
             Map<Data, MultiMapValue> collections = entry.getValue();
@@ -318,7 +312,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     private void clearMapsHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
-        final MultiMapPartitionContainer partitionContainer = partitionContainers[partitionId];
+        MultiMapPartitionContainer partitionContainer = partitionContainers[partitionId];
         if (partitionContainer == null) {
             return;
         }
@@ -332,12 +326,12 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             return;
         }
 
-        Iterator<MultiMapContainer> iter = containerMap.values().iterator();
-        while (iter.hasNext()) {
-            MultiMapContainer container = iter.next();
+        Iterator<MultiMapContainer> iterator = containerMap.values().iterator();
+        while (iterator.hasNext()) {
+            MultiMapContainer container = iterator.next();
             if (thresholdReplicaIndex > container.getConfig().getTotalBackupCount()) {
                 container.destroy();
-                iter.remove();
+                iterator.remove();
             }
         }
     }
@@ -347,7 +341,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long hits = 0;
-        long misses = 0;
         long lockedEntryCount = 0;
         long lastAccessTime = 0;
         long lastUpdateTime = 0;
@@ -398,10 +391,11 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
+        return getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends TransactionalObject> T createTransactionalObject(String name, Transaction transaction) {
         return (T) new TransactionalMultiMapProxy(nodeEngine, this, name, transaction);
     }
@@ -419,8 +413,8 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
         Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
-        for (int i = 0; i < partitionContainers.length; i++) {
-            for (String name : partitionContainers[i].containerMap.keySet()) {
+        for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
+            for (String name : partitionContainer.containerMap.keySet()) {
                 if (!multiMapStats.containsKey(name)) {
                     multiMapStats.put(name, createStats(name));
                 }

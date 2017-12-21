@@ -35,18 +35,15 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 /**
  * MultiMap container which holds a map of {@link MultiMapValue}.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
     private final DistributedObjectNamespace lockNamespace;
-
     private final LockStore lockStore;
-
     private final int partitionId;
-
     private final long creationTime;
-
     private final ObjectNamespace objectNamespace;
 
     private long idGen;
@@ -59,7 +56,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
         this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
@@ -168,7 +165,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public int clear() {
-        final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
+        Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
         Map<Data, MultiMapValue> lockedKeys = createHashMap(locks.size());
         for (Data key : locks) {
             MultiMapValue multiMapValue = multiMapValues.get(key);
@@ -183,7 +180,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }
