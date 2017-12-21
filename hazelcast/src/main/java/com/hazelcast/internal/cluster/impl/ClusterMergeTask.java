@@ -65,7 +65,6 @@ class ClusterMergeTask implements Runnable {
             resetState();
 
             Collection<Runnable> coreTasks = collectMergeTasks(true);
-
             Collection<Runnable> nonCoreTasks = collectMergeTasks(false);
 
             resetServices();
