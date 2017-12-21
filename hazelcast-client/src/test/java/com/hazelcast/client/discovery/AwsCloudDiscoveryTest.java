@@ -35,8 +35,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.hamcrest.Matchers;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +49,8 @@ import static com.hazelcast.aws.AwsProperties.TAG_KEY;
 import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -84,8 +84,8 @@ public class AwsCloudDiscoveryTest {
             assertNotNull("AWS_ACCESS_KEY_ID is not set", props.get(ACCESS_KEY));
             assertNotNull("AWS_SECRET_ACCESS_KEY is not set", props.get(SECRET_KEY));
         } else {
-            assumeThat("AWS_ACCESS_KEY_ID is not set", props.get(ACCESS_KEY), Matchers.<Comparable>notNullValue());
-            assumeThat("AWS_SECRET_ACCESS_KEY is not set", props.get(SECRET_KEY), Matchers.<Comparable>notNullValue());
+            assumeThat("AWS_ACCESS_KEY_ID is not set", props.get(ACCESS_KEY), is(notNullValue()));
+            assumeThat("AWS_SECRET_ACCESS_KEY is not set", props.get(SECRET_KEY), is(notNullValue()));
         }
 
         ClientConfig config = new ClientConfig();
@@ -114,9 +114,9 @@ public class AwsCloudDiscoveryTest {
             assertNotNull("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp);
             clientAwsConfig.setInsideAws(true);
         } else {
-            assumeThat("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId, Matchers.<String>notNullValue());
-            assumeThat("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey, Matchers.<String>notNullValue());
-            assumeThat("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp, Matchers.<String>notNullValue());
+            assumeThat("AWS_ACCESS_KEY_ID is not set", awsAccessKeyId, is(notNullValue()));
+            assumeThat("AWS_SECRET_ACCESS_KEY is not set", awsSecretAccessKey, is(notNullValue()));
+            assumeThat("HZ_TEST_AWS_INSTANCE_PRIVATE_IP is not set", instancePrivateIp, is(notNullValue()));
             clientAwsConfig.setInsideAws(false);
         }
 
