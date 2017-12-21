@@ -1750,6 +1750,18 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         return config;
     }
 
+    private MergePolicyConfig createMergePolicyConfig(Node node) {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+        String policyString = getTextContent(node).trim();
+        mergePolicyConfig.setPolicy(policyString);
+
+        final String att = getAttribute(node, "batch-size");
+        if (att != null) {
+            mergePolicyConfig.setBatchSize(getIntegerValue("batch-size", att));
+        }
+        return mergePolicyConfig;
+    }
+
     private QueueStoreConfig createQueueStoreConfig(Node node) {
         QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         NamedNodeMap attributes = node.getAttributes();

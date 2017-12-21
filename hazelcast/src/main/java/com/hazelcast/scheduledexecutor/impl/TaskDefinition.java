@@ -133,6 +133,42 @@ public class TaskDefinition<V> implements IdentifiedDataSerializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        TaskDefinition<?> that = (TaskDefinition<?>) o;
+
+        if (initialDelay != that.initialDelay) {
+            return false;
+        }
+        if (period != that.period) {
+            return false;
+        }
+        if (type != that.type) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        return unit == that.unit;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
+        result = 31 * result + name.hashCode();
+        result = 31 * result + (int) (initialDelay ^ (initialDelay >>> 32));
+        result = 31 * result + (int) (period ^ (period >>> 32));
+        result = 31 * result + (unit != null ? unit.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "TaskDefinition{" + "type=" + type + ", name='" + name + '\'' + ", command=" + command + ", initialDelay="
                 + initialDelay + ", period=" + period + ", unit=" + unit + '}';
