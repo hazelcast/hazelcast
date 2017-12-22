@@ -16,6 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+
 /**
  * Contains the configuration for an {@link java.util.concurrent.atomic.AtomicReference}.
  */
@@ -23,11 +28,11 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
 
     private transient AtomicReferenceConfigReadOnly readOnly;
 
-    public AtomicReferenceConfig() {
+    AtomicReferenceConfig() {
     }
 
     public AtomicReferenceConfig(String name) {
-        setName(name);
+        super(name);
     }
 
     public AtomicReferenceConfig(AtomicReferenceConfig config) {
@@ -35,15 +40,49 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
     }
 
     @Override
-    public String toString() {
-        return "AtomicReferenceConfig{"
-                + fieldsToString()
-                + "}";
+    public int getId() {
+        return ConfigDataSerializerHook.ATOMIC_REFERENCE_CONFIG;
     }
 
     @Override
-    public int getId() {
-        return ConfigDataSerializerHook.ATOMIC_REFERENCE_CONFIG;
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(quorumName);
+        out.writeObject(mergePolicyConfig);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        quorumName = in.readUTF();
+        mergePolicyConfig = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AtomicReferenceConfig)) {
+            return false;
+        }
+        AtomicReferenceConfig that = (AtomicReferenceConfig) o;
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (!mergePolicyConfig.equals(that.mergePolicyConfig)) {
+            return false;
+        }
+        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + mergePolicyConfig.hashCode();
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        return result;
     }
 
     /**
@@ -68,6 +107,11 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
 
         @Override
         public AtomicReferenceConfig setName(String name) {
+            throw new UnsupportedOperationException("This is a read-only config!");
+        }
+
+        @Override
+        public AtomicReferenceConfig setQuorumName(String quorumName) {
             throw new UnsupportedOperationException("This is a read-only config!");
         }
 

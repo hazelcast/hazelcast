@@ -16,6 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+
 /**
  * Contains the configuration for an {@link java.util.concurrent.atomic.AtomicLong}.
  */
@@ -23,11 +28,11 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
 
     private transient AtomicLongConfigReadOnly readOnly;
 
-    public AtomicLongConfig() {
+    AtomicLongConfig() {
     }
 
     public AtomicLongConfig(String name) {
-        setName(name);
+        super(name);
     }
 
     public AtomicLongConfig(AtomicLongConfig config) {
@@ -35,15 +40,49 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
     }
 
     @Override
-    public String toString() {
-        return "AtomicLongConfig{"
-                + fieldsToString()
-                + "}";
+    public int getId() {
+        return ConfigDataSerializerHook.ATOMIC_LONG_CONFIG;
     }
 
     @Override
-    public int getId() {
-        return ConfigDataSerializerHook.ATOMIC_LONG_CONFIG;
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(quorumName);
+        out.writeObject(mergePolicyConfig);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        quorumName = in.readUTF();
+        mergePolicyConfig = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AtomicLongConfig)) {
+            return false;
+        }
+        AtomicLongConfig that = (AtomicLongConfig) o;
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (!mergePolicyConfig.equals(that.mergePolicyConfig)) {
+            return false;
+        }
+        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + mergePolicyConfig.hashCode();
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        return result;
     }
 
     /**
@@ -68,6 +107,11 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
 
         @Override
         public AtomicLongConfig setName(String name) {
+            throw new UnsupportedOperationException("This is a read-only config!");
+        }
+
+        @Override
+        public AtomicLongConfig setQuorumName(String quorumName) {
             throw new UnsupportedOperationException("This is a read-only config!");
         }
 

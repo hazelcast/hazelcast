@@ -22,13 +22,14 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 public abstract class AbstractAtomicLongOperation extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
+        implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
@@ -47,6 +48,11 @@ public abstract class AbstractAtomicLongOperation extends Operation
     @Override
     public final String getServiceName() {
         return AtomicLongService.SERVICE_NAME;
+    }
+
+    @Override
+    public final String getName() {
+        return name;
     }
 
     @Override

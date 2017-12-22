@@ -20,10 +20,11 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperation {
+public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperation implements MutatingOperation {
 
     protected IFunction<Long, Long> function;
     protected long response;

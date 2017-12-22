@@ -30,7 +30,7 @@ public class AlterOperation extends AbstractAlterOperation {
         super(name, function);
     }
 
-   @Override
+    @Override
     public void run() throws Exception {
         AtomicLongContainer container = getLongContainer();
 

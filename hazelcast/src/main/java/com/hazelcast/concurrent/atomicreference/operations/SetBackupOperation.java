@@ -21,12 +21,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.SET_BACKUP;
 
-public class SetBackupOperation extends AbstractAtomicReferenceOperation implements BackupOperation {
+public class SetBackupOperation extends AbstractAtomicReferenceOperation implements BackupOperation, MutatingOperation {
 
     private Data newValue;
 

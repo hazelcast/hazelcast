@@ -20,12 +20,13 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.GET_AND_ADD;
 
-public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
+public class GetAndAddOperation extends AtomicLongBackupAwareOperation implements MutatingOperation {
 
     private long delta;
     private long returnValue;

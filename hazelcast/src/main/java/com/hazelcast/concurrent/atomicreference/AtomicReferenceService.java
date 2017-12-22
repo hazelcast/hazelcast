@@ -26,10 +26,12 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,10 +41,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class AtomicReferenceService implements ManagedService, RemoteService, MigrationAwareService {
+public class AtomicReferenceService implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
+
+    private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, AtomicReferenceContainer> containers
@@ -54,6 +59,19 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
                     return new AtomicReferenceContainer(config);
                 }
             };
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            AtomicReferenceConfig config = nodeEngine.getConfig().findAtomicReferenceConfig(name);
+            String quorumName = config.getQuorumName();
+            // The quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public AtomicReferenceService() {
     }
@@ -144,5 +162,12 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }

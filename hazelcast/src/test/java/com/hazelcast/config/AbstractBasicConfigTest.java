@@ -60,6 +60,7 @@ public abstract class AbstractBasicConfigTest<T extends AbstractBasicConfig> ext
     @Test
     public void testSerialization() {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        config.setName("myAtomicLong");
 
         Data data = serializationService.toData(config);
         T clone = serializationService.toObject(data);

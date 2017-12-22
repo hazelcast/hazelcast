@@ -22,13 +22,14 @@ import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 public abstract class AbstractAtomicReferenceOperation extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
+        implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
@@ -37,6 +38,11 @@ public abstract class AbstractAtomicReferenceOperation extends Operation
 
     public AbstractAtomicReferenceOperation(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

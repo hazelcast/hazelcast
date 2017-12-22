@@ -21,12 +21,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.COMPARE_AND_SET;
 
-public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation {
+public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation implements MutatingOperation {
 
     private Data expect;
     private Data update;
