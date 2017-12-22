@@ -101,7 +101,6 @@ public class ScheduledTaskStatisticsImpl
         return unit.convert(totalRunDuration, MEASUREMENT_UNIT);
     }
 
-
     @Override
     public int getFactoryId() {
         return ScheduledExecutorDataSerializerHook.F_ID;

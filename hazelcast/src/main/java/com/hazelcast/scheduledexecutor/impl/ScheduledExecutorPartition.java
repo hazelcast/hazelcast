@@ -23,6 +23,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -73,6 +75,21 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
         return new ReplicationOperation(map);
     }
 
+    public Map<String, Collection<ScheduledTaskDescriptor>> prepareOwnedSnapshot() {
+        Map<String, Collection<ScheduledTaskDescriptor>> containers = new HashMap<String, Collection<ScheduledTaskDescriptor>>();
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("[Partition: " + partitionId + "] Prepare snapshot of partition owned tasks.");
+        }
+
+        for (ScheduledExecutorContainer container : getContainers()) {
+            containers.put(container.getName(),
+                    container.prepareForReplication(true).values());
+        }
+
+        return containers;
+    }
+
     @Override
     public ConstructorFunction<String, ScheduledExecutorContainer> getContainerConstructorFunction() {
         return containerConstructorFunction;
@@ -102,13 +119,13 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
         }
     }
 
-    void promoteStash() {
+    void promoteSuspended() {
         if (logger.isFinestEnabled()) {
             logger.finest("[Partition: " + partitionId + "] " + "Promote stashes");
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {
-            container.promoteStash();
+            container.promoteSuspended();
         }
     }
 }

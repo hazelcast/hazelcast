@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -130,6 +131,27 @@ public class TaskDefinition<V> implements IdentifiedDataSerializable {
         initialDelay = in.readLong();
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readUTF());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TaskDefinition<?> that = (TaskDefinition<?>) o;
+        return initialDelay == that.initialDelay
+                && period == that.period
+                && type == that.type
+                && name.equals(that.name)
+                && unit == that.unit;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(new Object[]{type, name, initialDelay, period, unit});
     }
 
     @Override

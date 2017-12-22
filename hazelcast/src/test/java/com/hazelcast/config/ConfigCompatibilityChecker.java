@@ -182,6 +182,12 @@ class ConfigCompatibilityChecker {
         return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null && nullSafeEqual(c1.isFsync(), c2.isFsync()));
     }
 
+    private static boolean isCompatible(MergePolicyConfig c1, MergePolicyConfig c2) {
+        return c1 == c2 || !(c1 == null || c2 == null)
+                && nullSafeEqual(c1.getBatchSize(), c2.getBatchSize())
+                && nullSafeEqual(c1.getPolicy(), c2.getPolicy());
+    }
+
     private abstract static class ConfigChecker<T> {
 
         abstract boolean check(T t1, T t2);
