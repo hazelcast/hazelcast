@@ -16,11 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -32,14 +28,20 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> implements IdentifiedDataSerializable {
 
-    private String name;
-    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    protected String name;
+    protected String quorumName;
+    protected MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     protected AbstractBasicConfig() {
     }
 
+    protected AbstractBasicConfig(String name) {
+        this.name = name;
+    }
+
     protected AbstractBasicConfig(AbstractBasicConfig config) {
         this.name = config.name;
+        this.quorumName = config.quorumName;
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
@@ -86,52 +88,38 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> impleme
         return (T) this;
     }
 
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public T setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return (T) this;
+    }
+
+    @Override
+    public String toString() {
+        return  getClass().getSimpleName() + "{"
+                + "name='" + name + '\''
+                + ", quorumName=" + quorumName
+                + ", mergePolicyConfig=" + mergePolicyConfig
+                + "}";
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeObject(mergePolicyConfig);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        mergePolicyConfig = in.readObject();
-    }
-
-    @Override
-    @SuppressWarnings("SimplifiableIfStatement")
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof AbstractBasicConfig)) {
-            return false;
-        }
-
-        AbstractBasicConfig<?> that = (AbstractBasicConfig<?>) o;
-        if (name != null ? !name.equals(that.name) : that.name != null) {
-            return false;
-        }
-        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
-        return result;
-    }
-
-    /**
-     * Returns field names with values as concatenated String so it can be used in child classes' toString() methods.
-     */
-    protected String fieldsToString() {
-        return "name='" + name + "'"
-                + ", mergePolicyConfig=" + mergePolicyConfig;
-    }
 }

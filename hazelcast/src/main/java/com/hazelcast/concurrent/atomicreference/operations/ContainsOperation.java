@@ -20,12 +20,13 @@ import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.CONTAINS;
 
-public class ContainsOperation extends AbstractAtomicReferenceOperation {
+public class ContainsOperation extends AbstractAtomicReferenceOperation implements ReadonlyOperation {
 
     private boolean returnValue;
     private Data contains;

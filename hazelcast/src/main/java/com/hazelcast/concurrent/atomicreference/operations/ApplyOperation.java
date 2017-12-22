@@ -22,12 +22,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.APPLY;
 
-public class ApplyOperation extends AbstractAtomicReferenceOperation {
+public class ApplyOperation extends AbstractAtomicReferenceOperation implements MutatingOperation {
 
     protected Data function;
     protected Data returnValue;

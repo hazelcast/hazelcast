@@ -20,10 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareOperation {
+public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareOperation implements MutatingOperation {
 
     protected Data function;
     protected Object response;
