@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.config;
 
-/**
- * An interface that can be implemented by SPI services that want to be able to resolve a split-brain.
- * <p>
- * When the two separate clusters merge, the {@link #prepareMergeRunnable()} method is called to return
- * a {@link Runnable}, that will merge the clusters.
- */
-public interface SplitBrainHandlerService {
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import org.junit.Test;
 
-    /**
-     * When the two separate clusters merge (resolve a split-brain), this method is called to return
-     * a {@link Runnable}, that will merge the clusters.
-     *
-     * @return a {@link Runnable} that will merge the clusters
-     */
-    Runnable prepareMergeRunnable();
+public class MergePolicyReadOnlyConfigTest {
+
+    private MergePolicyConfig getReadOnlyConfig() {
+        return new MergePolicyConfig().getAsReadOnly();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setPolicy() {
+        getReadOnlyConfig().setPolicy(DiscardMergePolicy.class.getName());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setBatchSize() {
+        getReadOnlyConfig().setBatchSize(1234);
+    }
 }

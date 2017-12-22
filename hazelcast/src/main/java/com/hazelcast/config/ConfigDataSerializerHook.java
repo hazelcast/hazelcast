@@ -90,8 +90,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int RELIABLE_ID_GENERATOR_CONFIG = 48;
     public static final int ATOMIC_LONG_CONFIG = 49;
     public static final int ATOMIC_REFERENCE_CONFIG = 50;
+    public static final int MERGE_POLICY_CONFIG = 51;
 
-    private static final int LEN = ATOMIC_REFERENCE_CONFIG + 1;
+    private static final int LEN = MERGE_POLICY_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -413,6 +414,13 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new AtomicReferenceConfig();
+                    }
+                };
+        constructors[MERGE_POLICY_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new MergePolicyConfig();
                     }
                 };
 

@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -289,4 +290,12 @@ public interface NodeEngine {
      * @since 3.8
      */
     MemberVersion getVersion();
+
+    /**
+     * Returns the {@link SplitBrainMergePolicyProvider} for this instance.
+     *
+     * @return the {@link SplitBrainMergePolicyProvider}
+     * @since 3.10
+     */
+    SplitBrainMergePolicyProvider getSplitBrainMergePolicyProvider();
 }

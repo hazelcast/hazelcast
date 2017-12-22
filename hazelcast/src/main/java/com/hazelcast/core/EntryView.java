@@ -17,10 +17,10 @@
 package com.hazelcast.core;
 
 /**
- * EntryView represents a readonly view of a map entry.
+ * Represents a read-only view of a data structure entry.
  *
- * @param <K> key
- * @param <V> value
+ * @param <K> the type of the key
+ * @param <V> the type of the value
  */
 public interface EntryView<K, V> {
 
@@ -40,11 +40,8 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the cost (in bytes) of the entry.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method returns -1 if statistics is not enabled.
-     * </p>
+     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
      *
      * @return the cost in bytes of the entry
      */
@@ -52,11 +49,8 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the creation time of the entry.
-     * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method returns -1 if statistics is not enabled.
-     * </p>
+     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
      *
      * @return the creation time of the entry
      */
@@ -71,11 +65,8 @@ public interface EntryView<K, V> {
 
     /**
      * Returns number of hits of the entry.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>                                                                                      ˆ
-     * This method returns -1 if statistics is not enabled.
-     * </p>
+     * <p>
+     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
      *
      * @return number of hits of the entry
      */
@@ -83,23 +74,17 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the last access time for the entry.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>                                                                                      ˆ
-     * This method returns -1 if statistics is not enabled.
-     * </p>
+     * <p>
+     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
      *
      * @return the last access time for the entry
      */
     long getLastAccessTime();
 
     /**
-     * Returns the last time the value was flushed to mapstore.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>                                                                                      ˆ
-     * This method returns -1 if statistics is not enabled.
-     * </p>
+     * Returns the last time the value was flushed to its store (e.g. {@link MapStore}).
+     * <p>
+     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
      *
      * @return the last store time for the value
      */
@@ -107,18 +92,15 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the last time the value was updated.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>                                                                                      ˆ
-     * This method returns -1 if statistics is not enabled.
-     * </p>
+     * <p>
+     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
      *
      * @return the last time the value was updated
      */
     long getLastUpdateTime();
 
     /**
-     * Returns the version of the entry
+     * Returns the version of the entry.
      *
      * @return the version of the entry
      */
@@ -127,7 +109,7 @@ public interface EntryView<K, V> {
     /**
      * Returns the last set time to live second.
      *
-     * @return the last set time to live second.
+     * @return the last set time to live second
      */
     long getTtl();
 }
