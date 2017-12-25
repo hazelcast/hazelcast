@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -177,23 +178,24 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     @Test
     public void testPartialStoreOperationDone_afterTemporaryMapStoreFailure() throws Exception {
-        final SequentialMapStore<Integer, Integer> mapStore = new SequentialMapStore<Integer, Integer>();
-        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
+        final int numEntriesToStore = 6;
+        final SequentialMapStore<Integer, Integer> mapStore
+                = new SequentialMapStore<Integer, Integer>(5, numEntriesToStore);
+        IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
-                .withWriteDelaySeconds(1)
+                .withWriteDelaySeconds(2)
                 .withPartitionCount(1)
                 .build();
 
-        map.put(1, 2);
-        map.put(2, 3);
-        map.put(3, 4);
-
+        for (int i = 0; i < numEntriesToStore; i++) {
+            map.put(i, i);
+        }
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(3, mapStore.storeCount());
+                assertEquals(numEntriesToStore, mapStore.storeCount());
             }
         });
     }
@@ -204,19 +206,40 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
      */
     static class SequentialMapStore<K, V> extends MapStoreAdapter<K, V> {
 
-        private int cnt = 0;
+        boolean failed;
+        final int failAfterStoreNum;
+        final int numEntriesToStore;
+        final AtomicInteger storeCount = new AtomicInteger(0);
+
+        SequentialMapStore(int failAfterStoreNum, int numEntriesToStore) {
+            this.failAfterStoreNum = failAfterStoreNum;
+            this.numEntriesToStore = numEntriesToStore;
+        }
+
 
         @Override
-        public void storeAll(Map<K, V> entries) {
-            entries.remove(entries.keySet().iterator().next());
-            cnt++;
-            if (entries.size() > 0) {
-                throw new TemporaryMapStoreException();
+        public void storeAll(Map<K, V> map) {
+            for (Map.Entry<K, V> entry : map.entrySet()) {
+                K key = entry.getKey();
+                store(key, entry.getValue());
+                map.remove(key);
             }
         }
 
+        @Override
+        public void store(K key, V value) {
+            int succeededStoreCount = storeCount.get();
+
+            if (!failed && succeededStoreCount == failAfterStoreNum) {
+                failed = true;
+                throw new TemporaryMapStoreException();
+            }
+
+            storeCount.incrementAndGet();
+        }
+
         public int storeCount() {
-            return cnt;
+            return storeCount.get();
         }
     }
 
