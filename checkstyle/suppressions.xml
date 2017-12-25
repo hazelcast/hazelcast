@@ -344,6 +344,9 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]SimpleEntryView"/>
 
+    <!-- PhoneHome -->
+    <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]util[\\/]PhoneHome"/>
+
     <!-- Adopted public domain code with different style -->
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
               files="com[\\/]hazelcast[\\/]util[\\/]ConcurrentReferenceHashMap"/>

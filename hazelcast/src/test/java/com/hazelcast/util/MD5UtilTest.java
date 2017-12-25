@@ -24,6 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -42,8 +43,7 @@ public class MD5UtilTest extends HazelcastTestSupport {
     @Test
     public void testToMD5String_whenNullString() {
         String str = null;
-        String result = MD5Util.toMD5String(str);
-        assertEquals("NULL", result);
+        assertNull(MD5Util.toMD5String(str));
     }
 
 }

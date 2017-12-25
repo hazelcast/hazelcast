@@ -38,7 +38,7 @@ public final class MD5Util {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             if (md == null || str == null) {
-                return "NULL";
+                return null;
             }
             byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
 
