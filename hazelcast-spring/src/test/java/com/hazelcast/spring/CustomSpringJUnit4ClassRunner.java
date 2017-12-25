@@ -20,6 +20,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.TestLoggingUtils;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -46,6 +48,17 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
      */
     public CustomSpringJUnit4ClassRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
+    }
+
+    @Override
+    protected void runChild(FrameworkMethod method, RunNotifier notifier) {
+        String testName = testName(method);
+        TestLoggingUtils.setThreadLocalTestMethodName(testName);
+        try {
+            super.runChild(method, notifier);
+        } finally {
+            TestLoggingUtils.removeThreadLocalTestMethodName();
+        }
     }
 
     @Override
