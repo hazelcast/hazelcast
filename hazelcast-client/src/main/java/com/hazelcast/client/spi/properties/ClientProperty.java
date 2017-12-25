@@ -160,6 +160,45 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.io.balancer.interval.seconds", 20, SECONDS);
 
 
+    /**
+     * If a member should be pinged via icmp or not. If icmp enabled, unavailable members can be detected faster than
+     * heartbeat timeout `"hazelcast.client.heartbeat.timeout"`.
+     */
+    public static final HazelcastProperty ICMP_ENABLED
+            = new HazelcastProperty("hazelcast.client.icmp.enabled", false);
+
+    /**
+     * Enforce ICMP Echo Request mode for ping-detector. If OS is not supported,
+     * or not configured correctly as per reference-manual, hazelcast will fail to start.
+     */
+    public static final HazelcastProperty ICMP_ECHO_FAIL_FAST
+            = new HazelcastProperty("hazelcast.client.icmp.echo.fail.fast.on.startup", false);
+
+    /**
+     * Ping timeout in milliseconds. This cannot be more than the interval value. Should always be smaller.
+     */
+    public static final HazelcastProperty ICMP_TIMEOUT
+            = new HazelcastProperty("hazelcast.client.icmp.timeout", 1000, MILLISECONDS);
+
+    /**
+     * Interval between ping attempts in milliseconds. Default and min allowed, 1 second.
+     */
+    public static final HazelcastProperty ICMP_INTERVAL
+            = new HazelcastProperty("hazelcast.client.icmp.interval", 1000, MILLISECONDS);
+
+    /**
+     * Max ping attempts before suspecting a member
+     */
+    public static final HazelcastProperty ICMP_MAX_ATTEMPTS
+            = new HazelcastProperty("hazelcast.client.icmp.max.attempts", 3);
+
+    /**
+     * Ping TTL, the maximum number of hops the packets should go through or 0 for the default.
+     * Zero in this case means unlimited hops.
+     */
+    public static final HazelcastProperty ICMP_TTL
+            = new HazelcastProperty("hazelcast.client.icmp.ttl", 0);
+
     private ClientProperty() {
     }
 }
