@@ -146,6 +146,10 @@ public final class FactoryIdHelper {
     public static final String SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY = "hazelcast.serialization.ds.split.brain.merge.policy";
     public static final int SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY_ID = -47;
 
+    public static final String DATA_SET_DS_FACTORY = "hazelcast.serialization.ds.dataset";
+    public static final int DATA_SET_DS_FACTORY_ID = -48;
+
+
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";

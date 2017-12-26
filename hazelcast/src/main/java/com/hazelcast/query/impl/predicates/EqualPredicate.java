@@ -49,6 +49,10 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
         this.value = value;
     }
 
+    public Comparable getValue() {
+        return value;
+    }
+
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = getIndex(queryContext);

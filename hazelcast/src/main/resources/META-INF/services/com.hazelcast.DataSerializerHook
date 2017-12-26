@@ -33,3 +33,4 @@ com.hazelcast.config.ConfigDataSerializerHook
 com.hazelcast.journal.EventJournalDataSerializerHook
 com.hazelcast.reliableidgen.impl.ReliableIdGeneratorDataSerializerHook
 com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook
+com.hazelcast.dataset.impl.DataSetDataSerializerHook
