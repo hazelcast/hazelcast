@@ -44,6 +44,7 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
     public BetweenPredicate() {
     }
 
+
     public BetweenPredicate(String attribute, Comparable from, Comparable to) {
         super(attribute);
         if (from == null || to == null) {

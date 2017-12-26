@@ -79,6 +79,7 @@
                 <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="datastream" type="datastream" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -4751,5 +4752,27 @@
                 </xs:annotation>
             </xs:element>
         </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="datastream">
+        <xs:all>
+            <xs:element name="initialRegionSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="maxRegionSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="maxRegionsPerPartition" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="tenuringAgeMillis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="key-class" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="value-class" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="indices" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the queue.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

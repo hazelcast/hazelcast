@@ -26,6 +26,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
+import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -78,8 +79,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -274,6 +277,11 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public DataStreamConfig findDataStreamConfig(String name) {
+        return getDataStreamConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
     public MapConfig getMapConfig(String name) {
         return getMapConfigInternal(name, name);
     }
@@ -293,6 +301,19 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private MapConfig getMapConfigInternal(String name, String fallbackName) {
         return (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+    }
+
+    private DataStreamConfig getDataStreamConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, DataStreamConfig> staticMapConfigs = staticConfig.getDataStreamConfigs();
+        DataStreamConfig dataStreamConfig = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+//        if (dataStreamConfig == null) {
+//            dataStreamConfig = configurationService.findSimpleMapConfig(baseName);
+//        }
+        if (dataStreamConfig == null) {
+            dataStreamConfig = staticConfig.getDataStreamConfig(fallbackName);
+        }
+        return dataStreamConfig;
     }
 
     @Override

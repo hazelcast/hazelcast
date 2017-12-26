@@ -39,6 +39,7 @@ enum ConfigSections {
     MERKLE_TREE("merkle-tree", true),
     QUEUE("queue", true),
     MAP("map", true),
+    DATASTREAM("datastream", true),
     CACHE("cache", true),
     MULTIMAP("multimap", true),
     REPLICATED_MAP("replicatedmap", true),

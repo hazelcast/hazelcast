@@ -66,33 +66,30 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>${maven.animal.sniffer.plugin.version}</version>
-                <configuration>
-                    <annotations>
-                        <annotation>com.hazelcast.internal.RequiresJdk8</annotation>
-                    </annotations>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java16</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                    <ignores>
-                        <ignore>sun.misc.Unsafe</ignore>
-                    </ignores>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>source-java6-check</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.codehaus.mojo</groupId>-->
+                <!--<artifactId>animal-sniffer-maven-plugin</artifactId>-->
+                <!--<version>${maven.animal.sniffer.plugin.version}</version>-->
+                <!--<configuration>-->
+                    <!--<signature>-->
+                        <!--<groupId>org.codehaus.mojo.signature</groupId>-->
+                        <!--<artifactId>java16</artifactId>-->
+                        <!--<version>1.0</version>-->
+                    <!--</signature>-->
+                    <!--<ignores>-->
+                        <!--<ignore>sun.misc.Unsafe</ignore>-->
+                    <!--</ignores>-->
+                <!--</configuration>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>source-java6-check</id>-->
+                        <!--<phase>compile</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>check</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -108,65 +105,61 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${maven.bundle.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                        <configuration>
-                            <instructions>
-                                <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
-                                <Export-Package>
-                                    com.hazelcast.*
-                                </Export-Package>
-                                <Import-Package>
-                                    !org.junit,
-                                    !com.hazelcast.*,
-                                    !com.fasterxml.jackson.*,
-                                    !org.snakeyaml.*,
-                                    sun.misc;resolution:=optional,
-                                    javax.cache;resolution:=optional,
-                                    javax.cache.*;resolution:=optional,
-                                    org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.spi;resolution:=optional,
-                                    org.apache.logging.log4j;resolution:=optional,
-                                    org.apache.logging.log4j.spi;resolution:=optional,
-                                    org.slf4j;resolution:=optional,
-                                    org.codehaus.groovy.jsr223;resolution:=optional,
-                                    org.jruby.embed.jsr223;resolution:=optional,
-                                    *
-                                </Import-Package>
-                            </instructions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.apache.felix</groupId>-->
+                <!--<artifactId>maven-bundle-plugin</artifactId>-->
+                <!--<version>${maven.bundle.plugin.version}</version>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>bundle-manifest</id>-->
+                        <!--<phase>process-classes</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>manifest</goal>-->
+                        <!--</goals>-->
+                        <!--<configuration>-->
+                            <!--<instructions>-->
+                                <!--<Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>-->
+                                <!--<Export-Package>-->
+                                    <!--com.hazelcast.*-->
+                                <!--</Export-Package>-->
+                                <!--<Import-Package>-->
+                                    <!--!org.junit,-->
+                                    <!--!com.hazelcast.*,-->
+                                    <!--!com.eclipsesource.json,-->
+                                    <!--sun.misc;resolution:=optional,-->
+                                    <!--javax.cache;resolution:=optional,-->
+                                    <!--javax.cache.*;resolution:=optional,-->
+                                    <!--org.apache.log4j;resolution:=optional,-->
+                                    <!--org.apache.log4j.spi;resolution:=optional,-->
+                                    <!--org.apache.logging.log4j;resolution:=optional,-->
+                                    <!--org.apache.logging.log4j.spi;resolution:=optional,-->
+                                    <!--org.slf4j;resolution:=optional,-->
+                                    <!--org.codehaus.groovy.jsr223;resolution:=optional,-->
+                                    <!--org.jruby.embed.jsr223;resolution:=optional,-->
+                                    <!--*-->
+                                <!--</Import-Package>-->
+                            <!--</instructions>-->
+                        <!--</configuration>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven.jar.plugin.version}</version>
                 <configuration>
-                    <archive>
-                        <index>true</index>
-                        <compress>true</compress>
-                        <manifest>
-                            <mainClass>${hazelcast.serverMainClass}</mainClass>
-                            <!--<addClasspath>true</addClasspath>-->
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                        </manifest>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                        <manifestEntries>
-                            <Automatic-Module-Name>com.hazelcast.core</Automatic-Module-Name>
-                        </manifestEntries>
-                    </archive>
+                    <!--<archive>-->
+                        <!--<index>true</index>-->
+                        <!--<compress>true</compress>-->
+                        <!--<manifest>-->
+                            <!--<mainClass>${hazelcast.serverMainClass}</mainClass>-->
+                            <!--&lt;!&ndash;<addClasspath>true</addClasspath>&ndash;&gt;-->
+                            <!--<addDefaultImplementationEntries>true</addDefaultImplementationEntries>-->
+                            <!--<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>-->
+                        <!--</manifest>-->
+                        <!--<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>-->
+                    <!--</archive>-->
                     <excludes>
                         <exclude>**/*.html</exclude>
                         <exclude>**/*.sh</exclude>

@@ -24,6 +24,8 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Endpoint;
+import com.hazelcast.datastream.DataStream;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -45,7 +47,6 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
@@ -83,6 +84,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public String getName() {
         return delegatedInstance.getName();
+    }
+
+    @Override
+    public <E> DataStream<E> getDataStream(String name) {
+        return delegatedInstance.getDataStream(name);
     }
 
     @Override

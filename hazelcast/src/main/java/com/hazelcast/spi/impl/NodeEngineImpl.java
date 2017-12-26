@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datastream.impl.DSService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
@@ -150,7 +151,8 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
-                    getJetPacketConsumer(node.getNodeExtension()));
+                    getJetPacketConsumer(node.getNodeExtension()),
+                    new StreamServicePacketConsumer());
             this.quorumService = new QuorumServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
@@ -518,6 +520,21 @@ public class NodeEngineImpl implements NodeEngine {
                     throw new UnsupportedOperationException("Jet is not registered on this node");
                 }
             };
+        }
+    }
+
+    private class StreamServicePacketConsumer implements Consumer<Packet> {
+
+        private volatile Consumer<Packet> consumer;
+
+        @Override
+        public void accept(Packet packet) {
+             // currently service registration is done after the creation of the packet dispatcher,
+            // hence we need to lazily initialize the JetPacketHandler
+            if (consumer == null) {
+                consumer = serviceManager.getService(DSService.SERVICE_NAME);
+            }
+            consumer.accept(packet);
         }
     }
 }
