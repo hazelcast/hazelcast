@@ -149,6 +149,10 @@ public final class FactoryIdHelper {
     public static final String PN_COUNTER_DS_FACTORY = "hazelcast.serialization.ds.pn_counter";
     public static final int PN_COUNTER_DS_FACTORY_ID = -48;
 
+    public static final String DATA_SET_DS_FACTORY = "hazelcast.serialization.ds.dataseries";
+    public static final int DATA_SET_DS_FACTORY_ID = -49;
+
+
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";

@@ -54,6 +54,14 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         this.less = less;
     }
 
+    public boolean isEqual() {
+        return equal;
+    }
+
+    public boolean isLess() {
+        return less;
+    }
+
     @Override
     protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
         if (attributeValue == null) {
@@ -112,5 +120,9 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     @Override
     public int getId() {
         return PredicateDataSerializerHook.GREATERLESS_PREDICATE;
+    }
+
+    public Comparable getValue() {
+        return value;
     }
 }

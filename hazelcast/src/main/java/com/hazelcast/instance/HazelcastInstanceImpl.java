@@ -25,6 +25,8 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.dataseries.DataSeries;
+import com.hazelcast.dataseries.impl.DataSeriesService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -179,6 +181,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public <K, V> DataSeries<K, V> getDataSeries(String name) {
+        checkNotNull(name, "Retrieving a map instance with a null name is not allowed!");
+        return getDistributedObject(DataSeriesService.SERVICE_NAME, name);
     }
 
     @Override

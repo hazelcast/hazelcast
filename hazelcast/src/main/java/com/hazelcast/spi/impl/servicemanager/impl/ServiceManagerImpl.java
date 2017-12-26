@@ -27,6 +27,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.crdt.CRDTReplicationMigrationService;
+import com.hazelcast.dataseries.impl.DataSeriesService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
@@ -168,6 +169,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(PNCounterService.SERVICE_NAME, new PNCounterService());
         registerService(CRDTReplicationMigrationService.SERVICE_NAME, new CRDTReplicationMigrationService());
         registerService(DistributedScheduledExecutorService.SERVICE_NAME, new DistributedScheduledExecutorService());
+        registerService(DataSeriesService.SERVICE_NAME, new DataSeriesService());
         registerCacheServiceIfAvailable();
         readServiceDescriptors();
     }

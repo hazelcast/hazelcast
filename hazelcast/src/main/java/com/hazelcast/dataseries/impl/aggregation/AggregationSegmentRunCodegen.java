@@ -1,0 +1,188 @@
+package com.hazelcast.dataseries.impl.aggregation;
+
+import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.aggregation.impl.CountAggregator;
+import com.hazelcast.aggregation.impl.DoubleSumAggregator;
+import com.hazelcast.aggregation.impl.LongAverageAggregator;
+import com.hazelcast.aggregation.impl.LongSumAggregator;
+import com.hazelcast.aggregation.impl.MaxAggregator;
+import com.hazelcast.aggregation.impl.MinAggregator;
+import com.hazelcast.dataseries.AggregationRecipe;
+import com.hazelcast.dataseries.LinearRegressionAggregator;
+import com.hazelcast.dataseries.impl.RecordModel;
+import com.hazelcast.dataseries.impl.SegmentRunCodegen;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.Set;
+
+public class AggregationSegmentRunCodegen extends SegmentRunCodegen {
+
+    private final Set<Field> extractedFields;
+    private final Class<?> projectionClass;
+    private final Aggregator aggregator;
+    private final AggregationRecipe recipe;
+
+    public AggregationSegmentRunCodegen(String compilationId,
+                                        AggregationRecipe recipe,
+                                        RecordModel recordModel) {
+        super(compilationId, recipe.getPredicate(), recordModel);
+        this.recipe = recipe;
+        try {
+            this.projectionClass = getClass().getClassLoader().loadClass(recipe.getProjectionClassName());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            Class<Aggregator> aggregatorClass = (Class<Aggregator>) getClass()
+                    .getClassLoader().loadClass(recipe.getAggregatorClassName());
+            this.aggregator = aggregatorClass.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        this.extractedFields = extractedFields();
+    }
+
+    @Override
+    public String className() {
+        return "AggregationSegmentRun_" + compilationId;
+    }
+
+    public Field field() {
+        return extractedFields.iterator().next();
+    }
+
+    @Override
+    public void generate() {
+        add("import java.util.*;\n");
+        add("public class " + className() + " extends com.hazelcast.dataseries.impl.aggregation.AggregationSegmentRun {\n\n");
+        addParamFields();
+        addAggregatorField();
+        addBindMethod();
+        addResultMethod();
+        addRunFullScanMethod();
+        addRunWithIndexMethod();
+        add("}\n");
+    }
+
+    private void addAggregatorField() {
+        add("    private final " + aggregator.getClass().getName() + " aggregator = new " + aggregator.getClass().getName() + "();\n\n");
+    }
+
+    private void addResultMethod() {
+        add("    public " + Aggregator.class.getName() + " result(){return aggregator;}\n\n");
+    }
+
+    private void addRunWithIndexMethod() {
+        add("    protected void runWithIndex(){\n");
+        add("    }\n\n");
+    }
+
+    private void addRunFullScanMethod() {
+        add("    protected void runFullScan(){\n");
+
+        if (aggregator instanceof CountAggregator) {
+            add("       long result=0;\n");
+        } else if (aggregator instanceof LongSumAggregator) {
+            add("       long result=0;\n");
+        } else if (aggregator instanceof MinAggregator) {
+            add("       long result=Long.MAX_VALUE;\n");
+        } else if (aggregator instanceof MaxAggregator) {
+            add("       long result=Long.MIN_VALUE;\n");
+        } else if (aggregator instanceof LongAverageAggregator) {
+            add("       long sum=0;\n");
+            add("       long count=0;\n");
+        } else if (aggregator instanceof DoubleSumAggregator) {
+            add("       double result=0;\n");
+        } else if (aggregator instanceof LinearRegressionAggregator) {
+            // no-op
+        } else {
+            throw new RuntimeException("Unhandled type of aggregator:" + aggregator.getClass());
+        }
+
+        add("       long recordAddress=dataAddress;\n");
+        add("       for(int l=0;l<recordCount;l++){\n");
+
+        add("           if(");
+        toCode(query, 0);
+        add("){\n");
+
+        if (aggregator instanceof CountAggregator) {
+            add("               result+=1;\n");
+        } else if (aggregator instanceof LongSumAggregator) {
+            add("               result+=");
+            addGetField(field().getName());
+            add(";\n");
+        } else if (aggregator instanceof LongAverageAggregator) {
+            add("               count+=1;\n");
+            add("               sum+=");
+            addGetField(field().getName());
+            add(";\n");
+        } else if (aggregator instanceof MinAggregator) {
+            add("               long value=");
+            addGetField(field().getName());
+            add(";\n");
+            add("               if(value<result) result=value;\n");
+        } else if (aggregator instanceof MaxAggregator) {
+            add("               long value=");
+            addGetField(field().getName());
+            add(";\n");
+            add("               if(value>result) result=value;\n");
+        } else if (aggregator instanceof DoubleSumAggregator) {
+            add("               result+=");
+            addGetField(field().getName());
+            add(";\n");
+        } else if (aggregator instanceof LinearRegressionAggregator) {
+            add("               aggregator.add(");
+            String xField = (String) recipe.getParameters().get("x");
+            String yField = (String) recipe.getParameters().get("y");
+            addGetField(xField);
+            add(",");
+            addGetField(yField);
+            add(");\n");
+        }
+        add("           }\n");
+        add("           recordAddress+=%s;\n", recordModel.getSize());
+        add("        }\n");
+
+        if (aggregator instanceof LongAverageAggregator) {
+            add("        aggregator.init(sum,count);\n");
+        } else if (aggregator instanceof LinearRegressionAggregator) {
+            //no-op
+        } else {
+            add("        aggregator.accumulate(result);\n");
+        }
+
+        add("    }\n\n");
+    }
+
+    private Set<Field> extractedFields() {
+        Set<Field> fields = new HashSet<Field>();
+
+        for (Field f : projectionClass.getDeclaredFields()) {
+            if (Modifier.isStatic(f.getModifiers())) {
+                continue;
+            }
+
+            Field recordField = recordModel.getField(f.getName());
+            if (recordField == null) {
+                throw new RuntimeException(
+                        "Field '" + projectionClass.getName() + '.' + f.getName()
+                                + "' is not found on value-class '" + recordModel.getRecordClass() + "'");
+            }
+
+            if (!recordField.getType().equals(f.getType())) {
+                throw new RuntimeException(
+                        "Field '" + projectionClass.getName() + '.' + f.getName()
+                                + "' has a different type compared to '" + recordModel.getRecordClass() + "'");
+            }
+
+            fields.add(f);
+        }
+
+        return fields;
+    }
+}

@@ -24,6 +24,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Endpoint;
+import com.hazelcast.dataseries.DataSeries;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -82,6 +83,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public String getName() {
         return delegatedInstance.getName();
+    }
+
+    @Override
+    public <K, V> DataSeries<K, V> getDataSeries(String name) {
+        return delegatedInstance.getDataSeries(name);
     }
 
     @Override

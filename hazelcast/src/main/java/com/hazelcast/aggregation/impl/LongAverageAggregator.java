@@ -37,6 +37,11 @@ public final class LongAverageAggregator<I> extends AbstractAggregator<I, Long, 
         super(attributePath);
     }
 
+    public void init(long sum, long count){
+        this.sum = sum;
+        this.count = count;
+    }
+
     @Override
     public void accumulateExtracted(I entry, Long value) {
         count++;

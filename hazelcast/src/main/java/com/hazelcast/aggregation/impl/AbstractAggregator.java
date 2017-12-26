@@ -54,7 +54,7 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
     }
 
     @Override
-    public final void accumulate(I entry) {
+    public  void accumulate(I entry) {
 
         E extractedValue = extract(entry);
         if (extractedValue instanceof MultiResult) {
@@ -86,6 +86,8 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
         if (attributePath == null) {
             if (input instanceof Map.Entry) {
                 return (T) ((Map.Entry) input).getValue();
+            } else {
+                return (T)input;
             }
         } else if (input instanceof Extractable) {
             return (T) ((Extractable) input).getAttributeValue(attributePath);

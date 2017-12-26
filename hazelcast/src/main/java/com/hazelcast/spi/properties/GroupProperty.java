@@ -748,7 +748,7 @@ public final class GroupProperty {
      * Each Hazelcast member evaluates query predicates using a single thread by default. In most cases the overhead of
      * inter-thread communication overweight benefit of parallel execution.
      * <p/>
-     * When you have a large dataset and/or slow predicate you may benefit from parallel predicate evaluations.
+     * When you have a large dataseries and/or slow predicate you may benefit from parallel predicate evaluations.
      * Set to true if you are using slow predicates or have > 100,000s entries per member.
      * <p/>
      * The default is false.

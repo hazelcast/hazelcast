@@ -102,6 +102,7 @@ import static com.hazelcast.config.XmlElements.SEMAPHORE;
 import static com.hazelcast.config.XmlElements.SERIALIZATION;
 import static com.hazelcast.config.XmlElements.SERVICES;
 import static com.hazelcast.config.XmlElements.SET;
+import static com.hazelcast.config.XmlElements.DATASERIES;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
@@ -335,6 +336,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleQueue(node);
         } else if (MAP.isEqual(nodeName)) {
             handleMap(node);
+        } else if (DATASERIES.isEqual(nodeName)) {
+            handleDataSeries(node);
         } else if (MULTIMAP.isEqual(nodeName)) {
             handleMultiMap(node);
         } else if (REPLICATED_MAP.isEqual(nodeName)) {
@@ -1090,6 +1093,50 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.addLockConfig(lockConfig);
     }
 
+    private void handleDataSeries(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        DataSeriesConfig dataSeriesConfig = new DataSeriesConfig();
+        dataSeriesConfig.setName(name);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            String value = getTextContent(n).trim();
+            if ("tenuringagemillis".equals(nodeName)) {
+                dataSeriesConfig.setTenuringAgeMillis(getIntegerValue("tenuringagemillis", value));
+            } else if ("segmentsperpartition".equals(nodeName)) {
+                dataSeriesConfig.setSegmentsPerPartition(getIntegerValue("segmentsperpartition", value));
+            } else   if ("maxsegmentsize".equals(nodeName)) {
+                dataSeriesConfig.setMaxSegmentSize(getIntegerValue("maxsegmentsize", value));
+            } else if ("initialsegmentsize".equals(nodeName)) {
+                dataSeriesConfig.setInitialSegmentSize(getIntegerValue("initialsegmentsize", value));
+            } else if ("key-class".equals(nodeName)) {
+                ClassLoader classLoader = XmlConfigBuilder.class.getClassLoader();
+                Class keyClass;
+                try {
+                    keyClass = classLoader.loadClass(value);
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                dataSeriesConfig.setKeyClass(keyClass);
+            } else if ("value-class".equals(nodeName)) {
+                ClassLoader classLoader = XmlConfigBuilder.class.getClassLoader();
+                Class valueClass;
+                try {
+                    valueClass = classLoader.loadClass(value);
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                dataSeriesConfig.setValueClass(valueClass);
+            } else if("indices".equals(nodeName)){
+                String[] indices = value.split(",");
+                for(String index: indices){
+                    dataSeriesConfig.addIndexField(index);
+                }
+            }
+        }
+        config.addDataSeriesConfig(dataSeriesConfig);
+    }
+
     private void handleQueue(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
@@ -1279,6 +1326,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
     }
+
 
     @SuppressWarnings("deprecation")
     private void handleMap(Node parentNode) {
