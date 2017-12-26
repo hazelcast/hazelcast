@@ -54,6 +54,8 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.dataseries.DataSeries;
+import com.hazelcast.dataseries.impl.DataSeriesService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -179,6 +181,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public <K, V> DataSeries<K, V> getDataSeries(String name) {
+        checkNotNull(name, "Retrieving a dataseries instance with a null name is not allowed!");
+        return getDistributedObject(DataSeriesService.SERVICE_NAME, name);
     }
 
     @Override

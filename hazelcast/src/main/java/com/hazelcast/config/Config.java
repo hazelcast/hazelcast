@@ -75,6 +75,8 @@ public class Config {
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
+    private final Map<String, DataSeriesConfig> dataSeriesConfigs = new ConcurrentHashMap<String, DataSeriesConfig>();
+
     private final Map<String, CacheSimpleConfig> cacheConfigs = new ConcurrentHashMap<String, CacheSimpleConfig>();
 
     private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
@@ -370,6 +372,58 @@ public class Config {
         this.networkConfig = networkConfig;
         return this;
     }
+
+    // =====
+
+    public DataSeriesConfig findDataSeriesConfig(String name) {
+        name = getBaseName(name);
+        DataSeriesConfig config = lookupByPattern(configPatternMatcher, dataSeriesConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getDataSeriesConfig("default").getAsReadOnly();
+    }
+
+    public DataSeriesConfig getDataSeriesConfigOrNull(String name) {
+        name = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, dataSeriesConfigs, name);
+    }
+    public DataSeriesConfig getDataSeriesConfig(String name) {
+        name = getBaseName(name);
+        DataSeriesConfig config = lookupByPattern(configPatternMatcher, dataSeriesConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        DataSeriesConfig defConfig = dataSeriesConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new DataSeriesConfig();
+            defConfig.setName("default");
+            dataSeriesConfigs.put(defConfig.getName(), defConfig);
+        }
+        config = new DataSeriesConfig(defConfig);
+        config.setName(name);
+        dataSeriesConfigs.put(config.getName(), config);
+        return config;
+    }
+
+    public Config addDataSeriesConfig(DataSeriesConfig dataSeriesConfig) {
+        this.dataSeriesConfigs.put(dataSeriesConfig.getName(), dataSeriesConfig);
+        return this;
+    }
+
+    /**
+     * Returns the map of {@link com.hazelcast.core.IMap} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
+    public Map<String, DataSeriesConfig> getDataSeriesConfigs() {
+        return dataSeriesConfigs;
+    }
+
+
+    // ======
 
     /**
      * Returns a read-only {@link com.hazelcast.core.IMap} configuration for

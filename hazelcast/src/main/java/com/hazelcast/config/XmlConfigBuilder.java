@@ -68,6 +68,7 @@ import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.XmlElements.CRDT_REPLICATION;
+import static com.hazelcast.config.XmlElements.DATASERIES;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -335,6 +336,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleQueue(node);
         } else if (MAP.isEqual(nodeName)) {
             handleMap(node);
+        } else if (DATASERIES.isEqual(nodeName)) {
+            handleDataSeries(node);
         } else if (MULTIMAP.isEqual(nodeName)) {
             handleMultiMap(node);
         } else if (REPLICATED_MAP.isEqual(nodeName)) {
@@ -1149,6 +1152,27 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.addLockConfig(lockConfig);
     }
 
+    private void handleDataSeries(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        DataSeriesConfig dataSeriesConfig = new DataSeriesConfig();
+        dataSeriesConfig.setName(name);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            String value = getTextContent(n).trim();
+            if ("tenuringagemillis".equals(nodeName)) {
+                dataSeriesConfig.setTenuringAgeMillis(getIntegerValue("tenuringagemillis", value));
+            } else if ("segmentsperpartition".equals(nodeName)) {
+                dataSeriesConfig.setSegmentsPerPartition(getIntegerValue("segmentsperpartition", value));
+            } else if ("maxsegmentsize".equals(nodeName)) {
+                dataSeriesConfig.setMaxSegmentSize(getIntegerValue("maxsegmentsize", value));
+            } else if ("initialsegmentsize".equals(nodeName)) {
+                dataSeriesConfig.setInitialSegmentSize(getIntegerValue("initialsegmentsize", value));
+            }
+        }
+        config.addDataSeriesConfig(dataSeriesConfig);
+    }
+
     private void handleQueue(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
@@ -1338,6 +1362,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
     }
+
 
     @SuppressWarnings("deprecation")
     private void handleMap(Node parentNode) {

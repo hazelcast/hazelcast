@@ -34,3 +34,4 @@ com.hazelcast.internal.journal.EventJournalDataSerializerHook
 com.hazelcast.flakeidgen.impl.FlakeIdGeneratorDataSerializerHook
 com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook
 com.hazelcast.crdt.CRDTDataSerializerHook
+com.hazelcast.dataseries.impl.DataSeriesDataSerializerHook

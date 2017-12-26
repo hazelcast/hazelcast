@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
 import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.dataseries.DataSeries;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
@@ -51,6 +52,8 @@ public interface HazelcastInstance {
      * @return name of this Hazelcast instance
      */
     String getName();
+
+    <K, V> DataSeries<K, V> getDataSeries(String name);
 
     /**
      * Returns the distributed queue instance with the specified name.

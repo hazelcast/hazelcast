@@ -25,6 +25,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
+import com.hazelcast.config.DataSeriesConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -238,6 +239,11 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public DataSeriesConfig findDataSeriesConfig(String name) {
+        return getDataSeriesConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
     public MapConfig getMapConfig(String name) {
         return getMapConfigInternal(name, name);
     }
@@ -257,6 +263,19 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private MapConfig getMapConfigInternal(String name, String fallbackName) {
         return (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+    }
+
+    private DataSeriesConfig getDataSeriesConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, DataSeriesConfig> staticMapConfigs = staticConfig.getDataSeriesConfigs();
+        DataSeriesConfig dataseriesConfig = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+//        if (dataseriesConfig == null) {
+//            dataseriesConfig = configurationService.findSimpleMapConfig(baseName);
+//        }
+        if (dataseriesConfig == null) {
+            dataseriesConfig = staticConfig.getDataSeriesConfig(fallbackName);
+        }
+        return dataseriesConfig;
     }
 
     @Override
