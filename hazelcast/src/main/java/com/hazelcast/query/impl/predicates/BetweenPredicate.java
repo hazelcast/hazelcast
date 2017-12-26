@@ -39,6 +39,14 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     public BetweenPredicate() {
     }
 
+    public Comparable getTo() {
+        return to;
+    }
+
+    public Comparable getFrom() {
+        return from;
+    }
+
     public BetweenPredicate(String first, Comparable from, Comparable to) {
         super(first);
         if (from == null || to == null) {

@@ -70,7 +70,7 @@ public final class SimpleMapTest {
         Config cfg = new XmlConfigBuilder().build();
 
         instance = Hazelcast.newHazelcastInstance(cfg);
-        logger = instance.getLoggingService().getLogger("SimpleMapTest");
+        logger = instance.getLoggingService().getLogger("DataSetTest");
         random = new Random();
     }
 

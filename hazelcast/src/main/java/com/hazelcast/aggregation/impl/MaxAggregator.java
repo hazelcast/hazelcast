@@ -37,6 +37,13 @@ public final class MaxAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     @Override
+    public String toString() {
+        return "MaxAggregator{" +
+                "max=" + max +
+                '}';
+    }
+
+    @Override
     public void accumulateExtracted(I entry, R value) {
         if (isCurrentlyLessThan(value)) {
             max = value;

@@ -46,7 +46,7 @@ import static java.util.Collections.singletonList;
 /**
  * Dispatches query operations.
  * Main responsibility is to:
- * - invoke proper query operation (QueryOperation or QueryPartitionOperation)
+ * - invoke proper query operation (ExecPreparedQueryOperation or QueryPartitionOperation)
  * - invoke those operations on the proper member (local, remote, single, all, etc.)
  * <p>
  * Does not contain any query logic. Relies on query operations only.

@@ -40,7 +40,7 @@ import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 /**
  * Native handling only for RU compatibility purposes, can be deleted in 3.10 master
- * An old member may send a QueryOperation (and not HDQueryOperation) to an HD member.
+ * An old member may send a ExecPreparedQueryOperation (and not HDQueryOperation) to an HD member.
  * In this case we want to handle it in the most efficient way.
  */
 public class QueryOperation extends MapOperation implements ReadonlyOperation {

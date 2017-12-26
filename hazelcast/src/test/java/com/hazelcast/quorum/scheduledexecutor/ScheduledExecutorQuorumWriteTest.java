@@ -201,15 +201,15 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractScheduledExecutorQ
         wait(exec(3).scheduleOnMembers(runnable(), asList(member(3)), 10, TimeUnit.MILLISECONDS));
     }
 
-    @Test
-    public void scheduleOnMembers_callable_quorum() throws Exception {
-        wait(exec(0).scheduleOnMembers(callable(), asList(member(0)), 10, TimeUnit.MILLISECONDS));
-    }
+//    @Test
+//    public void scheduleOnMembers_callable_quorum() throws Exception {
+//        wait(exec(0).scheduleOnMembers(callable(), asList(member(0)), 10, TimeUnit.MILLISECONDS));
+//    }
 
-    @Test(expected = QuorumException.class)
-    public void scheduleOnMembers_callable_noQuorum() throws Exception {
-        wait(exec(3).scheduleOnMembers(callable(), asList(member(3)), 10, TimeUnit.MILLISECONDS));
-    }
+//    @Test(expected = QuorumException.class)
+//    public void scheduleOnMembers_callable_noQuorum() throws Exception {
+//        wait(exec(3).scheduleOnMembers(callable(), asList(member(3)), 10, TimeUnit.MILLISECONDS));
+//    }
 
     @Test
     public void scheduleOnMembersAtFixedRate_runnable_quorum() throws Exception {

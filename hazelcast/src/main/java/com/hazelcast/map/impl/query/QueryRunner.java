@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * Runs query operations in the calling thread (thus blocking it)
  * <p>
- * Used by query operations only: QueryOperation & QueryPartitionOperation
+ * Used by query operations only: ExecPreparedQueryOperation & QueryPartitionOperation
  * Should not be used by proxies or any other query related objects.
  */
 public class QueryRunner {
@@ -192,7 +192,7 @@ public class QueryRunner {
         }
         if (!indexes.isGlobal()) {
             // rolling-upgrade compatibility guide, if the index is not global we can't use it in the global scan.
-            // it may happen if the 3.9 EE node receives a QueryOperation from a 3.8 node, in this case we can't
+            // it may happen if the 3.9 EE node receives a ExecPreparedQueryOperation from a 3.8 node, in this case we can't
             // leverage index on this node in a global way.
             return null;
         }

@@ -202,7 +202,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                     Collection<Integer> partitionIds = queryResult.getPartitionIds();
                     if (partitionIds != null && !hasAtLeastOneBitSet(finishedPartitions, partitionIds)) {
                         // Collect results only if there is no overlap with already collected partitions.
-                        // If there is an overlap it means there was a partition migration while QueryOperation(s) were
+                        // If there is an overlap it means there was a partition migration while ExecPreparedQueryOperation(s) were
                         // running. In this case we discard all results from this member and will target the missing
                         // partition separately later.
                         BitSetUtils.setBits(finishedPartitions, partitionIds);
