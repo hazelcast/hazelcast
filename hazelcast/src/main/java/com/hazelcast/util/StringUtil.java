@@ -242,6 +242,7 @@ public final class StringUtil {
      * (4) patch version, eg "0"
      * (5) 1st -qualifier, if exists
      * (6) -SNAPSHOT qualifier, if exists
+     *
      * @param version
      * @return
      */
@@ -316,7 +317,7 @@ public final class StringUtil {
             return null;
         }
         String[] splitWithEmptyValues = trim(input).split("\\s*,\\s*", -1);
-        return allowEmpty ? splitWithEmptyValues : subraction(splitWithEmptyValues, new String[] { "" });
+        return allowEmpty ? splitWithEmptyValues : subraction(splitWithEmptyValues, new String[]{""});
     }
 
     /**
@@ -352,6 +353,10 @@ public final class StringUtil {
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
         return list.toArray(new String[list.size()]);
+    }
+
+    public static String uppercaseFirstLetter(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     /**

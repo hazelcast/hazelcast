@@ -25,6 +25,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.dictionary.Dictionary;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -73,6 +74,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
 
     public HazelcastClientProxy(HazelcastClientInstanceImpl client) {
         this.client = client;
+    }
+
+    @Override
+    public <K, V> Dictionary<K, V> getDictionary(String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

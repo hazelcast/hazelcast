@@ -34,7 +34,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
-import static com.hazelcast.quorum.executor.ExecutorQuorumWriteTest.ExecRunnable.runnable;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 
 /**
@@ -89,16 +88,16 @@ public class QuorumRollingUpgradeTest extends AbstractQuorumTest {
     public void countDownLatch() {
         latch(NO_QUORUM_CLUSTER, TYPE).countDown();
     }
-
-    @Test
-    public void durableExecutor() {
-        durableExec(NO_QUORUM_CLUSTER, TYPE).execute(runnable());
-    }
-
-    @Test
-    public void executor() {
-        exec(NO_QUORUM_CLUSTER, TYPE).execute(runnable());
-    }
+//
+//    @Test
+//    public void durableExecutor() {
+//        durableExec(NO_QUORUM_CLUSTER, TYPE).execute(runnable());
+//    }
+//
+//    @Test
+//    public void executor() {
+//        exec(NO_QUORUM_CLUSTER, TYPE).execute(runnable());
+//    }
 
     @Test
     public void list() {
@@ -143,11 +142,11 @@ public class QuorumRollingUpgradeTest extends AbstractQuorumTest {
     public void ringbuffer() {
         ring(NO_QUORUM_CLUSTER, TYPE).add("123");
     }
-
-    @Test
-    public void scheduledExecutor() {
-        exec(NO_QUORUM_CLUSTER, TYPE).execute(runnable());
-    }
+//
+//    @Test
+//    public void scheduledExecutor() {
+//        exec(NO_QUORUM_CLUSTER, TYPE).execute(runnable());
+//    }
 
     @Test
     public void set() {

@@ -25,6 +25,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
+import com.hazelcast.config.DictionaryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -179,6 +180,11 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public DictionaryConfig findDictionaryConfig(String name) {
+        return getDictionaryConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
     public MapConfig getMapConfig(String name) {
         return getMapConfigInternal(name, name);
     }
@@ -220,6 +226,20 @@ public class DynamicConfigurationAwareConfig extends Config {
             mapConfig = staticConfig.getMapConfig(fallbackName);
         }
         return mapConfig;
+    }
+
+
+    private DictionaryConfig getDictionaryConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, DictionaryConfig> staticConfigs = staticConfig.getDictionaryConfigs();
+        DictionaryConfig dictionaryConfig = lookupByPattern(configPatternMatcher, staticConfigs, baseName);
+//        if (dictionaryConfig == null) {
+//            dictionaryConfig = configurationService.findSimpleMapConfig(baseName);
+//        }
+        if (dictionaryConfig == null) {
+            dictionaryConfig = staticConfig.getDictionaryConfig(fallbackName);
+        }
+        return dictionaryConfig;
     }
 
     @Override

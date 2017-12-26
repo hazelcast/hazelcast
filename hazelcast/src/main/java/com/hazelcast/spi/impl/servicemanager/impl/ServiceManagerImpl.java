@@ -35,6 +35,7 @@ import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.dictionary.impl.DictionaryService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
@@ -171,6 +172,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(PNCounterService.SERVICE_NAME, new PNCounterService());
         registerService(CRDTReplicationMigrationService.SERVICE_NAME, new CRDTReplicationMigrationService());
         registerService(DistributedScheduledExecutorService.SERVICE_NAME, new DistributedScheduledExecutorService());
+        registerService(DictionaryService.SERVICE_NAME, new DictionaryService());
         registerCacheServiceIfAvailable();
         readServiceDescriptors();
     }

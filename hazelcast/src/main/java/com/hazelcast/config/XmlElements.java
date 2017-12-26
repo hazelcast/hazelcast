@@ -33,6 +33,7 @@ enum XmlElements {
     EVENT_JOURNAL("event-journal", true),
     QUEUE("queue", true),
     MAP("map", true),
+    DATASERIES("dataseries", true),
     CACHE("cache", true),
     MULTIMAP("multimap", true),
     REPLICATED_MAP("replicatedmap", true),

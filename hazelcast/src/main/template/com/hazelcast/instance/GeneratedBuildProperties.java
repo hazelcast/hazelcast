@@ -23,7 +23,7 @@ package com.hazelcast.instance;
  * Do not edit by hand as the changes will be overwritten in the next build.
  *
  * We used to have the version info as property file, but this caused issues
- * in on environments with a complicated classloading model. Having the info
+ * in on environments with a complicated classloading entryType. Having the info
  * as a Java class provide a better control when you have multiple version of
  * Hazelcast deployed.
  *

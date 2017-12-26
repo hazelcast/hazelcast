@@ -22,6 +22,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.dictionary.Dictionary;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -91,6 +92,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public <K, V> Dictionary<K, V> getDictionary(String name) {
+        return getOriginal().getDictionary(name);
     }
 
     @Override

@@ -20,3 +20,7 @@ hazelcast/dependency-reduced-pom.xml
 diagnostics*.log
 .attach_pid*
 hazelcast/src/main/java/com/hazelcast/instance/GeneratedBuildProperties.java
+hazelcast/dictionary-src/
+dictionary-src/
+hazelcast/dataseries-src/
+dataseries-src/

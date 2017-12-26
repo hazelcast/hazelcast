@@ -1149,6 +1149,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.addLockConfig(lockConfig);
     }
 
+
     private void handleQueue(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
@@ -1338,6 +1339,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
     }
+
 
     @SuppressWarnings("deprecation")
     private void handleMap(Node parentNode) {

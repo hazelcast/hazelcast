@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Access and manipulate bits, bytes, primitives...
@@ -303,5 +305,37 @@ public final class Bits {
 
     public static int extractInt(long value, boolean lowerBits) {
         return (int) ((lowerBits) ? value : (value >> 32));
+    }
+
+    /**
+     * Determines the size of a field with the given type.
+     *
+     * In case of a reference, the size of the address is returned.
+     *
+     * @param type the type
+     * @return the size in bytes.
+     */
+    public static int fieldSizeInBytes(Class type) {
+        checkNotNull(type);
+
+        if (boolean.class.equals(type)) {
+            return BOOLEAN_SIZE_IN_BYTES;
+        } else if (byte.class.equals(type)) {
+            return BYTE_SIZE_IN_BYTES;
+        } else if (char.class.equals(type)) {
+            return CHAR_SIZE_IN_BYTES;
+        } else if (short.class.equals(type)) {
+            return SHORT_SIZE_IN_BYTES;
+        } else if (int.class.equals(type)) {
+            return INT_SIZE_IN_BYTES;
+        } else if (long.class.equals(type)) {
+            return LONG_SIZE_IN_BYTES;
+        } else if (float.class.equals(type)) {
+            return FLOAT_SIZE_IN_BYTES;
+        } else if (double.class.equals(type)) {
+            return DOUBLE_SIZE_IN_BYTES;
+        } else {
+            return REFERENCE_COST_IN_BYTES;
+        }
     }
 }

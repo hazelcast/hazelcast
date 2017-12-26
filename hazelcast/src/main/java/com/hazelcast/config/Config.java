@@ -126,6 +126,8 @@ public class Config {
 
     private final Map<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
 
+    private final Map<String, DictionaryConfig> dictionaryConfigs = new ConcurrentHashMap<String, DictionaryConfig>();
+
     private final Map<String, AtomicReferenceConfig> atomicReferenceConfigs
             = new ConcurrentHashMap<String, AtomicReferenceConfig>();
 
@@ -370,6 +372,8 @@ public class Config {
         this.networkConfig = networkConfig;
         return this;
     }
+
+    // ======
 
     /**
      * Returns a read-only {@link com.hazelcast.core.IMap} configuration for
@@ -1522,6 +1526,114 @@ public class Config {
         }
         return this;
     }
+
+    /**
+     * Returns a read-only Dictionary configuration for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the Dictionary config
+     * @return the Dictionary configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public DictionaryConfig findDictionaryConfig(String name) {
+        name = getBaseName(name);
+        DictionaryConfig config = lookupByPattern(configPatternMatcher, dictionaryConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        return getDictionaryConfig("default");
+    }
+
+    /**
+     * Returns the DictionaryConfig for the given name, creating one
+     * if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking {@link #addDictionaryConfig(DictionaryConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the Dictionary config
+     * @return the Dictionary configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public DictionaryConfig getDictionaryConfig(String name) {
+        name = getBaseName(name);
+        DictionaryConfig config = lookupByPattern(configPatternMatcher, dictionaryConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        DictionaryConfig defConfig = dictionaryConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new DictionaryConfig("default");
+            addDictionaryConfig(defConfig);
+        }
+        config = new DictionaryConfig(defConfig);
+        config.setName(name);
+        addDictionaryConfig(config);
+        return config;
+    }
+
+    /**
+     * Adds the Dictionary configuration. The configuration is saved under the config
+     * name, which may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param config the Dictionary configuration
+     * @return this config instance
+     */
+    public Config addDictionaryConfig(DictionaryConfig config) {
+        dictionaryConfigs.put(config.getName(), config);
+        return this;
+    }
+
+    /**
+     * Returns the map of Dictionary configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration was initially obtained.
+     *
+     * @return the Dictionary configurations mapped by config name
+     */
+    public Map<String, DictionaryConfig> getDictionaryConfigs() {
+        return dictionaryConfigs;
+    }
+
+    /**
+     * Sets the map of Dictionary configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration will be obtained in the future.
+     *
+     * @param config the Dictionary configuration map to set
+     * @return this config instance
+     */
+    public Config setDictionaryConfigs(Map<String, DictionaryConfig> config) {
+        this.dictionaryConfigs.clear();
+        this.dictionaryConfigs.putAll(config);
+        for (Entry<String, DictionaryConfig> entry : config.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
 
     /**
      * Returns a read-only AtomicReference configuration for the given name.
