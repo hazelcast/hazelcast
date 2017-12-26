@@ -60,4 +60,4 @@ com.hazelcast.cp.internal.datastructures.lock.RaftLockDataSerializerHook
 com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook
 com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook
 com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchDataSerializerHook
-
+com.hazelcast.datastream.impl.DSDataSerializerHook

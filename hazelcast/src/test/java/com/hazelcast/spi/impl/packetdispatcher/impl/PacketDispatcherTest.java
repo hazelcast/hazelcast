@@ -44,11 +44,12 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
     private Consumer<Packet> operationExecutor;
     private Consumer<Packet> eventService;
-//    private Consumer<Packet> connectionManager;
+    //    private Consumer<Packet> connectionManager;
     private Consumer<Packet> responseHandler;
     private Consumer<Packet> invocationMonitor;
     private PacketDispatcher dispatcher;
     private Consumer<Packet> jetService;
+    private Consumer dataStreamService;
 
     @Before
     public void setup() {
@@ -58,6 +59,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         eventService = mock(Consumer.class);
         invocationMonitor = mock(Consumer.class);
         jetService = mock(Consumer.class);
+        dataStreamService = mock(Consumer.class);
 
         dispatcher = new PacketDispatcher(
                 logger,
@@ -65,7 +67,8 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
                 responseHandler,
                 invocationMonitor,
                 eventService,
-                jetService);
+                jetService,
+                dataStreamService);
     }
 
     @Test

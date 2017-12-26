@@ -57,6 +57,10 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
         this.attributeName = canonicalizeAttribute(attributeName);
     }
 
+    public String getAttributeName() {
+        return attributeName;
+    }
+
     @Override
     public boolean apply(Map.Entry<K, V> mapEntry) {
         Object attributeValue = readAttributeValue(mapEntry);

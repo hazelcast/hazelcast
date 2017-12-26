@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.datastream.impl;
+
+import com.hazelcast.datastream.DataStreamConsumer;
+import com.hazelcast.datastream.DataStreamSubscriber;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+
+
+public class DSSubscriberImpl<E> implements DataStreamSubscriber<E> {
+
+    private final InternalSerializationService serializationService;
+    private final DSService service;
+    private final String dataStreamName;
+
+    public DSSubscriberImpl(InternalSerializationService serializationService,
+                            DSService service,
+                            String dataStreamName) {
+        this.serializationService = serializationService;
+        this.service = service;
+        this.dataStreamName = dataStreamName;
+    }
+
+    @Override
+    public void add(DataStreamConsumer<E> consumer) {
+        service.subscribe(dataStreamName, this, null);
+    }
+
+    @Override
+    public void add(DataStreamConsumer<E> consumer, long[] offsets) {
+        service.subscribe(dataStreamName, this, offsets);
+    }
+}

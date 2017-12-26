@@ -68,7 +68,7 @@ public final class SimpleMapTest {
                 .setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "true");
 
         instance = Hazelcast.newHazelcastInstance(cfg);
-        logger = instance.getLoggingService().getLogger("SimpleMapTest");
+        logger = instance.getLoggingService().getLogger("DataSeriesTest");
         random = new Random();
     }
 

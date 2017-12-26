@@ -68,6 +68,8 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.datastream.DataStream;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -102,7 +104,6 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
@@ -148,7 +149,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ServiceLoader;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -466,6 +466,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public String getName() {
         return instanceName;
+    }
+
+    @Override
+    public <E> DataStream<E> getDataStream(String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
