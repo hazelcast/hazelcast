@@ -33,6 +33,9 @@ public class IdentifiedFactory implements DataSerializableFactory {
         if (typeId == CustomComparator.CLASS_ID) {
             return new CustomComparator();
         }
+        if (typeId == DistortInvalidationMetadataEntryProcessor.CLASS_ID) {
+            return new DistortInvalidationMetadataEntryProcessor();
+        }
         return null;
     }
 }
