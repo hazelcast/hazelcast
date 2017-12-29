@@ -49,6 +49,7 @@ public class ClientNetworkConfig {
     private DiscoveryConfig discoveryConfig;
     private Collection<String> outboundPortDefinitions;
     private Collection<Integer> outboundPorts;
+    private ClientIcmpPingConfig clientIcmpPingConfig = new ClientIcmpPingConfig();
 
     /**
      * Returns the configuration of the Hazelcast Discovery SPI and configured discovery providers
@@ -374,6 +375,26 @@ public class ClientNetworkConfig {
             outboundPortDefinitions = new HashSet<String>();
         }
         outboundPortDefinitions.add(portDef);
+        return this;
+    }
+
+    /**
+     * ICMP ping is used to detect if machine that a remote hazelcast member runs on alive or not
+     *
+     * @return current configuration for client icmp ping, returns the default configuration if not set by user
+     */
+    public ClientIcmpPingConfig getClientIcmpPingConfig() {
+        return clientIcmpPingConfig;
+    }
+
+    /**
+     * ICMP ping is used to detect if machine that a remote hazelcast member runs on alive or not
+     *
+     * @param clientIcmpPingConfig configuration for client icmp ping
+     * @return ClientNetworkConfig for chaining
+     */
+    public ClientNetworkConfig setClientIcmpPingConfig(ClientIcmpPingConfig clientIcmpPingConfig) {
+        this.clientIcmpPingConfig = clientIcmpPingConfig;
         return this;
     }
 }

@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -104,6 +105,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "user-code-deployment-test")
     private HazelcastClientProxy userCodeDeploymentTestClient;
+
+    @Resource(name = "client11-icmp-ping")
+    private HazelcastClientProxy icmpPingTestClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -369,6 +373,18 @@ public class TestClientApplicationContext {
         ClientConnectionStrategyConfig connectionStrategyConfig = client8.getClientConfig().getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
         assertEquals(ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
+    }
+
+    @Test
+    public void testClientIcmpConfig() {
+        ClientIcmpPingConfig icmpPingConfig = icmpPingTestClient.getClientConfig()
+                .getNetworkConfig().getClientIcmpPingConfig();
+        assertEquals(false, icmpPingConfig.isEnabled());
+        assertEquals(2000, icmpPingConfig.getTimeoutMilliseconds());
+        assertEquals(3000, icmpPingConfig.getIntervalMilliseconds());
+        assertEquals(50, icmpPingConfig.getTtl());
+        assertEquals(5, icmpPingConfig.getMaxAttempts());
+        assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {
