@@ -16,15 +16,14 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ICMPHelper;
 
@@ -53,20 +52,19 @@ public class ClientICMPManager implements ConnectionListener {
     private final int icmpTtl;
     private final int icmpTimeoutMillis;
     private final int icmpIntervalMillis;
-    private final int icmpMaxAttempts;
 
-    public ClientICMPManager(HazelcastProperties hazelcastProperties, ClientExecutionServiceImpl clientExecutionService,
+    public ClientICMPManager(ClientIcmpPingConfig clientIcmpPingConfig, ClientExecutionServiceImpl clientExecutionService,
                              LoggingService loggingService, ClientConnectionManagerImpl clientConnectionManager,
                              HeartbeatManager heartbeatManager) {
         this.clientExecutionService = clientExecutionService;
         this.clientConnectionManager = clientConnectionManager;
         this.heartbeatManager = heartbeatManager;
         this.logger = loggingService.getLogger(ClientICMPManager.class);
-        this.icmpTtl = hazelcastProperties.getInteger(ClientProperty.ICMP_TTL);
-        this.icmpTimeoutMillis = (int) hazelcastProperties.getMillis(ClientProperty.ICMP_TIMEOUT);
-        this.icmpIntervalMillis = (int) hazelcastProperties.getMillis(ClientProperty.ICMP_INTERVAL);
-        this.icmpMaxAttempts = hazelcastProperties.getInteger(ClientProperty.ICMP_MAX_ATTEMPTS);
-        this.icmpEnabled = hazelcastProperties.getBoolean(ClientProperty.ICMP_ENABLED);
+        this.icmpTtl = clientIcmpPingConfig.getTtl();
+        this.icmpTimeoutMillis = clientIcmpPingConfig.getTimeoutMilliseconds();
+        this.icmpIntervalMillis = clientIcmpPingConfig.getIntervalMilliseconds();
+        this.icmpEnabled = clientIcmpPingConfig.isEnabled();
+        int icmpMaxAttempts = clientIcmpPingConfig.getMaxAttempts();
 
         if (icmpTimeoutMillis > icmpIntervalMillis) {
             throw new IllegalStateException("ICMP timeout is set to a value greater than the ICMP interval, "
@@ -79,7 +77,9 @@ public class ClientICMPManager implements ConnectionListener {
         }
 
         if (icmpEnabled) {
-            echoFailFast(hazelcastProperties);
+            if (clientIcmpPingConfig.isEchoFailFastOnStartup()) {
+                echoFailFast();
+            }
             this.icmpFailureDetector = new PingFailureDetector<Connection>(icmpMaxAttempts);
         } else {
             this.icmpFailureDetector = null;
@@ -87,18 +87,15 @@ public class ClientICMPManager implements ConnectionListener {
 
     }
 
-    private void echoFailFast(HazelcastProperties hazelcastProperties) {
-        boolean icmpEchoFailFast = hazelcastProperties.getBoolean(ClientProperty.ICMP_ECHO_FAIL_FAST);
-        if (icmpEchoFailFast) {
-            logger.info("Checking that ICMP failure-detector is permitted. Attempting to create a raw-socket using JNI.");
+    private void echoFailFast() {
+        logger.info("Checking that ICMP failure-detector is permitted. Attempting to create a raw-socket using JNI.");
 
-            if (!ICMPHelper.isRawSocketPermitted()) {
-                throw new IllegalStateException("ICMP failure-detector can't be used in this environment. "
-                        + "Check Hazelcast Documentation Chapter on the Ping Failure Detector for supported platforms "
-                        + "and how to enable this capability for your operating system");
-            }
-            logger.info("ICMP failure-detector is supported, enabling.");
+        if (!ICMPHelper.isRawSocketPermitted()) {
+            throw new IllegalStateException("ICMP failure-detector can't be used in this environment. "
+                    + "Check Hazelcast Documentation Chapter on the Ping Failure Detector for supported platforms "
+                    + "and how to enable this capability for your operating system");
         }
+        logger.info("ICMP failure-detector is supported, enabling.");
     }
 
     public void start() {

@@ -42,7 +42,8 @@
                 <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0"
+                            maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -86,6 +87,7 @@
             <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
 
@@ -95,6 +97,18 @@
             <xs:element name="discovery-strategy" type="discovery-strategy" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
+
+    <xs:complexType name="icmp-ping">
+        <xs:all>
+            <xs:element name="timeout-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="interval-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="ttl" type="xs:int" minOccurs="0" maxOccurs="1" default="255"/>
+            <xs:element name="max-attempts" type="xs:int" minOccurs="0" maxOccurs="1" default="3"/>
+            <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+    </xs:complexType>
+
     <xs:complexType name="discovery-node-filter">
         <xs:attribute name="class" type="xs:string" use="required"/>
     </xs:complexType>
@@ -597,7 +611,7 @@
         <xs:attribute name="policy-class-name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Fully qualified class name implementing com.hazelcast.nio.ssl.TlsHostVerifier 
+                    Fully qualified class name implementing com.hazelcast.nio.ssl.TlsHostVerifier
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -645,7 +659,7 @@
                 </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="xs:int">
-                        <xs:minInclusive value="1" />
+                        <xs:minInclusive value="1"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
