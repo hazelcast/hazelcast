@@ -58,6 +58,8 @@ The following are the other improvements performed to solve the enhancement issu
 
 Enhancements: 
 - Expiration operations can be stopped/canceled during the SHUTTING_DOWN state. Otherwise it causes graceful shutdowns which take longer, especially on clusters with a large amount of data, e.g., High-Density Memory Store backed maps. It is not necessary to block the shutdown for these operations since it will eventually be handled on the new owner of the entries. [#11919]
+- Changed Hazelcast base images from Debian to Alpine Linux. Hence, the size of the image is reduced. [#48](On Hazelcast-Docker GitHub repo).
+
 
 Fixes:
 - PartitionPredicate on MapAggregation throws exception when it is called from the client. [#11923]
