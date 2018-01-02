@@ -16,77 +16,73 @@
 
 package com.hazelcast.quorum.lock;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.EmptyStatement;
-import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
+import static com.hazelcast.quorum.QuorumType.READ;
+import static com.hazelcast.quorum.QuorumType.READ_WRITE;
+import static com.hazelcast.quorum.QuorumType.WRITE;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 
 public abstract class AbstractLockQuorumTest {
 
-    private static final String LOCK_NAME_PREFIX = "lock";
-    private static final String LOCK_NAME = LOCK_NAME_PREFIX + randomString();
+    protected static final String LOCK_NAME = "quorum" + randomString();
 
     protected static PartitionedCluster cluster;
 
-    static ILock l1;
-    static ILock l2;
-    static ILock l3;
-    static ILock l4;
-    static ILock l5;
-
-    static void initializeFiveMemberCluster(QuorumType type, int quorumSize) {
-        QuorumConfig quorumConfig = new QuorumConfig()
-                .setName(QUORUM_ID)
-                .setType(type)
-                .setEnabled(true)
-                .setSize(quorumSize);
-        LockConfig lockConfig = new LockConfig(LOCK_NAME_PREFIX + "*").setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory());
-        cluster.createFiveMemberCluster(lockConfig, quorumConfig);
-
-        l1 = getLock(cluster.instance[0]);
-        l2 = getLock(cluster.instance[1]);
-        l3 = getLock(cluster.instance[2]);
-        l4 = getLock(cluster.instance[3]);
-        l5 = getLock(cluster.instance[4]);
+    protected static void initTestEnvironment(Config config, TestHazelcastInstanceFactory factory) {
+        initCluster(PartitionedCluster.createClusterConfig(config), factory, READ, WRITE, READ_WRITE);
     }
 
-    protected static ILock getLock(HazelcastInstance instance) {
-        return instance.getLock(LOCK_NAME);
+    protected static void shutdownTestEnvironment() {
+        HazelcastInstanceFactory.terminateAll();
+        cluster = null;
     }
 
-    @Test
-    public void testOperationsSuccessfulWhenQuorumSizeMet() {
-        l1.lock();
-        l2.getRemainingLeaseTime();
-        l1.unlock();
+    protected static LockConfig newConfig(QuorumType quorumType, String quorumName) {
+        LockConfig config = new LockConfig(LOCK_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
+    }
 
-        l2.lock();
-        l3.forceUnlock();
+    protected static QuorumConfig newQuorumConfig(QuorumType quorumType, String quorumName) {
+        QuorumConfig quorumConfig = new QuorumConfig();
+        quorumConfig.setName(quorumName);
+        quorumConfig.setType(quorumType);
+        quorumConfig.setEnabled(true);
+        quorumConfig.setSize(3);
+        return quorumConfig;
+    }
 
-        l3.lock();
-        l3.isLocked();
-        l3.getLockCount();
-        l2.isLockedByCurrentThread();
-        l3.unlock();
+    protected static void initCluster(Config config, TestHazelcastInstanceFactory factory, QuorumType... types) {
+        cluster = new PartitionedCluster(factory);
 
-        l1.tryLock();
-        l1.unlock();
+        String[] quorumNames = new String[types.length];
+        int i = 0;
+        for (QuorumType quorumType : types) {
+            String quorumName = QUORUM_ID + quorumType.name();
+            QuorumConfig quorumConfig = newQuorumConfig(quorumType, quorumName);
+            LockConfig lockConfig = newConfig(quorumType, quorumName);
+            config.addQuorumConfig(quorumConfig);
+            config.addLockConfig(lockConfig);
+            quorumNames[i++] = quorumName;
+        }
 
-        testCondition(l1);
+        cluster.createFiveMemberCluster(config);
+        cluster.splitFiveMembersThreeAndTwo(quorumNames);
     }
 
     void testCondition(ILock lock) {
@@ -116,4 +112,9 @@ public abstract class AbstractLockQuorumTest {
             }
         }).start();
     }
+
+    protected ILock lock(int index, QuorumType quorumType) {
+        return cluster.instance[index].getLock(LOCK_NAME + quorumType.name());
+    }
+
 }

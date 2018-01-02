@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.quorum.queue;
+package com.hazelcast.quorum.cache;
 
+import com.hazelcast.cache.ICache;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.core.IQueue;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumType;
@@ -31,9 +31,9 @@ import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 
-public abstract class AbstractQueueQuorumTest {
+public abstract class AbstractCacheQuorumTest {
 
-    protected static final String QUEUE_NAME = "quorum" + randomString();
+    protected static final String CACHE_NAME = "quorum" + randomString();
 
     protected static PartitionedCluster cluster;
 
@@ -46,8 +46,9 @@ public abstract class AbstractQueueQuorumTest {
         cluster = null;
     }
 
-    protected static QueueConfig newConfig(QuorumType quorumType, String quorumName) {
-        QueueConfig config = new QueueConfig(QUEUE_NAME + quorumType.name());
+    protected static CacheSimpleConfig newConfig(QuorumType quorumType, String quorumName) {
+        CacheSimpleConfig config = new CacheSimpleConfig();
+        config.setName(CACHE_NAME + quorumType.name());
         config.setQuorumName(quorumName);
         return config;
     }
@@ -69,23 +70,18 @@ public abstract class AbstractQueueQuorumTest {
         for (QuorumType quorumType : types) {
             String quorumName = QUORUM_ID + quorumType.name();
             QuorumConfig quorumConfig = newQuorumConfig(quorumType, quorumName);
-            QueueConfig queueConfig = newConfig(quorumType, quorumName);
+            CacheSimpleConfig cacheConfig = newConfig(quorumType, quorumName);
             config.addQuorumConfig(quorumConfig);
-            config.addQueueConfig(queueConfig);
+            config.addCacheConfig(cacheConfig);
             quorumNames[i++] = quorumName;
         }
 
         cluster.createFiveMemberCluster(config);
-        for (QuorumType quorumType : types) {
-            for (int element = 0; element < 5000; element++) {
-                cluster.instance[0].getQueue(QUEUE_NAME + quorumType.name()).offer(element);
-            }
-        }
         cluster.splitFiveMembersThreeAndTwo(quorumNames);
     }
 
-    protected IQueue queue(int index, QuorumType quorumType) {
-        return cluster.instance[index].getQueue(QUEUE_NAME + quorumType.name());
+    protected ICache<Integer, String> cache(int index, QuorumType quorumType) {
+        return cluster.instance[index].getCacheManager().getCache(CACHE_NAME + quorumType.name());
     }
 
 }

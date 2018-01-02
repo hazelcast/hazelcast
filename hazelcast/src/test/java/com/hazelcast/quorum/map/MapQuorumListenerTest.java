@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class QuorumListenerTest extends HazelcastTestSupport {
+public class MapQuorumListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() {

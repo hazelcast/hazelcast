@@ -19,7 +19,7 @@ package com.hazelcast.quorum.lock;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
-import com.hazelcast.quorum.BaseQuorumListenerTest;
+import com.hazelcast.quorum.AbstractQuorumListenerTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,7 +31,7 @@ import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class LockQuorumListenerTest extends BaseQuorumListenerTest {
+public class LockQuorumListenerTest extends AbstractQuorumListenerTest {
 
     @Test
     public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() {
