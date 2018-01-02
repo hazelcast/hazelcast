@@ -19,7 +19,6 @@ package com.hazelcast.collection.impl.set;
 import com.hazelcast.collection.impl.AbstractCollectionBackupTest;
 import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ISet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,27 +26,44 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+
+import static com.hazelcast.collection.impl.CollectionTestUtil.getBackupSet;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class SetBackupTest extends AbstractCollectionBackupTest {
 
-    private static final String SET_NAME = "SetBackupTest";
+    @Test
+    public void testBackupPromotion() {
+        config.getSetConfig("default")
+                .setBackupCount(1)
+                .setAsyncBackupCount(0);
+
+        testBackupPromotionInternal();
+    }
 
     @Test
-    public void testBackups() {
-        config.getSetConfig(SET_NAME)
+    public void testBackupMigration() {
+        config.getSetConfig("default")
                 .setBackupCount(BACKUP_COUNT)
                 .setAsyncBackupCount(0);
 
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
-        ISet<Integer> set = hz.getSet(SET_NAME);
-        for (int i = 0; i < ITEM_COUNT; i++) {
-            set.add(i);
-        }
+        testBackupMigrationInternal();
+    }
 
-        int partitionId = ((AbstractCollectionProxyImpl) set).getPartitionId();
-        LOGGER.info("Set " + SET_NAME + " is stored in partition " + partitionId);
+    @Override
+    protected Collection<Integer> getHazelcastCollection(HazelcastInstance instance, String name) {
+        return instance.getSet(name);
+    }
 
-        testBackups(CollectionType.SET, SET_NAME, partitionId);
+    @Override
+    protected Collection<Integer> getBackupCollection(HazelcastInstance instance, String name) {
+        return getBackupSet(instance, name);
+    }
+
+    @Override
+    protected int getPartitionId(Collection collection) {
+        return ((AbstractCollectionProxyImpl) collection).getPartitionId();
     }
 }

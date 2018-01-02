@@ -37,6 +37,10 @@ import java.util.Set;
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class CollectionContainer implements IdentifiedDataSerializable {
 
+    public static final int INVALID_ITEM_ID = -1;
+
+    public static final int ID_PROMOTION_OFFSET = 100000;
+
     protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
     protected String name;
     protected NodeEngine nodeEngine;
@@ -60,7 +64,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public abstract CollectionConfig getConfig();
 
-    protected abstract Collection<CollectionItem> getCollection();
+    public abstract Collection<CollectionItem> getCollection();
 
     public abstract Map<Long, CollectionItem> getMap();
 
@@ -69,7 +73,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         if (getCollection().add(item)) {
             return item.getItemId();
         }
-        return -1;
+        return INVALID_ITEM_ID;
     }
 
     public void addBackup(long itemId, Data value) {
@@ -101,7 +105,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         final Collection<CollectionItem> coll = getCollection();
         Map<Long, Data> itemIdMap = new HashMap<Long, Data>(coll.size());
         for (CollectionItem item : coll) {
-            itemIdMap.put(item.getItemId(), (Data) item.getValue());
+            itemIdMap.put(item.getItemId(), item.getValue());
         }
         coll.clear();
         return itemIdMap;
@@ -115,7 +119,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public boolean contains(Set<Data> valueSet) {
         Collection<CollectionItem> collection = getCollection();
-        CollectionItem collectionItem = new CollectionItem(-1, null);
+        CollectionItem collectionItem = new CollectionItem(INVALID_ITEM_ID, null);
         for (Data value : valueSet) {
             collectionItem.setValue(value);
             if (!collection.contains(collectionItem)) {
@@ -155,7 +159,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
             final CollectionItem item = iterator.next();
             final boolean contains = valueSet.contains(item.getValue());
             if ((contains && !retain) || (!contains && retain)) {
-                itemIdMap.put(item.getItemId(), (Data) item.getValue());
+                itemIdMap.put(item.getItemId(), item.getValue());
                 iterator.remove();
             }
         }
@@ -163,17 +167,16 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public List<Data> getAll() {
-        ArrayList<Data> sub = new ArrayList<Data>(getCollection().size());
+        ArrayList<Data> sub = new ArrayList<Data>(size());
         for (CollectionItem item : getCollection()) {
-            sub.add((Data) item.getValue());
+            sub.add(item.getValue());
         }
         return sub;
     }
 
     public boolean hasEnoughCapacity(int delta) {
-        return getCollection().size() + delta <= getConfig().getMaxSize();
+        return size() + delta <= getConfig().getMaxSize();
     }
-
 
     /*
      * TX methods
@@ -181,7 +184,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
      */
 
     public Long reserveAdd(String transactionId, Data value) {
-        if (value != null && getCollection().contains(new CollectionItem(-1, value))) {
+        if (value != null && getCollection().contains(new CollectionItem(INVALID_ITEM_ID, value))) {
             return null;
         }
         final long itemId = nextId();
@@ -210,7 +213,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
                 return item;
             }
         }
-        if (reservedItemId != -1) {
+        if (reservedItemId != INVALID_ITEM_ID) {
             return txMap.remove(reservedItemId);
         }
         return null;
@@ -316,7 +319,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         return ++idGenerator;
     }
 
-    void setId(long itemId) {
+    protected void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
 

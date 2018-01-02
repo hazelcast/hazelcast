@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
+
 public class TransactionalSetProxy<E>
         extends AbstractTransactionalCollectionProxy<SetService, E>
         implements TransactionalSet<E> {
@@ -48,7 +50,7 @@ public class TransactionalSetProxy<E>
         checkObjectNotNull(e);
 
         Data value = getNodeEngine().toData(e);
-        if (!getCollection().add(new CollectionItem(-1, value))) {
+        if (!getCollection().add(new CollectionItem(INVALID_ITEM_ID, value))) {
             return false;
         }
 
