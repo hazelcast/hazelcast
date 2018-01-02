@@ -718,12 +718,24 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         public void handleAtomicLong(Node node) {
             BeanDefinitionBuilder atomicLongConfigBuilder = createBeanBuilder(AtomicLongConfig.class);
             fillAttributeValues(node, atomicLongConfigBuilder);
+            for (Node childNode : childElements(node)) {
+                String nodeName = cleanNodeName(childNode);
+                if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, atomicLongConfigBuilder);
+                }
+            }
             atomicLongManagedMap.put(getAttribute(node, "name"), atomicLongConfigBuilder.getBeanDefinition());
         }
 
         public void handleAtomicReference(Node node) {
             BeanDefinitionBuilder atomicReferenceConfigBuilder = createBeanBuilder(AtomicReferenceConfig.class);
             fillAttributeValues(node, atomicReferenceConfigBuilder);
+            for (Node childNode : childElements(node)) {
+                String nodeName = cleanNodeName(childNode);
+                if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, atomicReferenceConfigBuilder);
+                }
+            }
             atomicReferenceManagedMap.put(getAttribute(node, "name"), atomicReferenceConfigBuilder.getBeanDefinition());
         }
 

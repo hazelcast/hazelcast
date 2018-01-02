@@ -19,6 +19,8 @@ package com.hazelcast.config;
 import com.hazelcast.config.ConfigCompatibilityChecker.EventJournalConfigChecker;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -196,7 +198,12 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testAtomicLong() {
-        AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig");
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(DiscardMergePolicy.class.getSimpleName())
+                .setBatchSize(1234);
+
+        AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig")
+                .setMergePolicyConfig(mergePolicyConfig);
 
         Config config = new Config()
                 .addAtomicLongConfig(expectedConfig);
@@ -205,11 +212,20 @@ public class ConfigXmlGeneratorTest {
 
         AtomicLongConfig actualConfig = xmlConfig.getAtomicLongConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
+
+        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
+        assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
+        assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
     }
 
     @Test
     public void testAtomicReference() {
-        AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig");
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(PassThroughMergePolicy.class.getSimpleName())
+                .setBatchSize(4321);
+
+        AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig")
+                .setMergePolicyConfig(mergePolicyConfig);
 
         Config config = new Config()
                 .addAtomicReferenceConfig(expectedConfig);
@@ -218,6 +234,10 @@ public class ConfigXmlGeneratorTest {
 
         AtomicReferenceConfig actualConfig = xmlConfig.getAtomicReferenceConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
+
+        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
+        assertEquals(PassThroughMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
+        assertEquals(4321, xmlMergePolicyConfig.getBatchSize());
     }
 
     @Test

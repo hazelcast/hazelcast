@@ -272,9 +272,13 @@
                 <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
             </hz:ringbuffer>
 
-            <hz:atomic-long name="testAtomicLong"/>
+            <hz:atomic-long name="testAtomicLong">
+                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
+            </hz:atomic-long>
 
-            <hz:atomic-reference name="testAtomicReference"/>
+            <hz:atomic-reference name="testAtomicReference">
+                <hz:merge-policy batch-size="4223">PassThroughMergePolicy</hz:merge-policy>
+            </hz:atomic-reference>
 
             <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10"/>
 

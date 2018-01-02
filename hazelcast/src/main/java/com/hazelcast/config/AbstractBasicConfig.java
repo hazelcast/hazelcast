@@ -25,7 +25,7 @@ import java.io.IOException;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Provides a basic configuration.
+ * Provides a basic configuration for a split-brain aware data structure.
  *
  * @param <T> type of the config
  */
@@ -33,33 +33,55 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> implements IdentifiedDataSerializable {
 
     private String name;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     protected AbstractBasicConfig() {
     }
 
     protected AbstractBasicConfig(AbstractBasicConfig config) {
         this.name = config.name;
+        this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
     abstract T getAsReadOnly();
 
     /**
-     * Gets the name of this collection.
+     * Gets the name of this data structure.
      *
-     * @return the name of this collection
+     * @return the name of this data structure
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Sets the name of this collection.
+     * Sets the name of this data structure.
      *
-     * @param name the name of this collection
-     * @return the updated collection configuration
+     * @param name the name of this data structure
+     * @return the updated configuration
      */
     public T setName(String name) {
         this.name = checkNotNull(name, "name cannot be null");
+        //noinspection unchecked
+        return (T) this;
+    }
+
+    /**
+     * Gets the {@link MergePolicyConfig} of this data structure.
+     *
+     * @return the {@link MergePolicyConfig} of this data structure
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this data structure.
+     *
+     * @return the updated configuration
+     */
+    public T setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
         //noinspection unchecked
         return (T) this;
     }
@@ -72,11 +94,13 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> impleme
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        mergePolicyConfig = in.readObject();
     }
 
     @Override
@@ -90,18 +114,24 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> impleme
         }
 
         AbstractBasicConfig<?> that = (AbstractBasicConfig<?>) o;
-        return name != null ? name.equals(that.name) : that.name == null;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
     }
 
     @Override
     public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
+        return result;
     }
 
     /**
      * Returns field names with values as concatenated String so it can be used in child classes' toString() methods.
      */
     protected String fieldsToString() {
-        return "name='" + name + "'";
+        return "name='" + name + "'"
+                + ", mergePolicyConfig=" + mergePolicyConfig;
     }
 }

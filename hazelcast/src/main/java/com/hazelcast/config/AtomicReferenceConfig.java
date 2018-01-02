@@ -70,5 +70,10 @@ public class AtomicReferenceConfig extends AbstractBasicConfig<AtomicReferenceCo
         public AtomicReferenceConfig setName(String name) {
             throw new UnsupportedOperationException("This is a read-only config!");
         }
+
+        @Override
+        public AtomicReferenceConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+            throw new UnsupportedOperationException("This is a read-only config!");
+        }
     }
 }

@@ -1300,6 +1300,9 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="atomic-long">
+        <xs:all>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
                 <xs:documentation>
@@ -1312,6 +1315,9 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="atomic-reference">
+        <xs:all>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
                 <xs:documentation>

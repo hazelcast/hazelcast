@@ -462,21 +462,33 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readAtomicLong() {
         String xml = HAZELCAST_START_TAG
-                + "    <atomic-long name=\"custom\"/>"
+                + "    <atomic-long name=\"custom\">"
+                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
+                + "    </atomic-long>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
         assertEquals("custom", atomicLongConfig.getName());
+
+        MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(23, mergePolicyConfig.getBatchSize());
     }
 
     @Test
     public void readAtomicReference() {
         String xml = HAZELCAST_START_TAG
-                + "    <atomic-reference name=\"custom\"/>"
+                + "    <atomic-reference name=\"custom\">"
+                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
+                + "    </atomic-reference>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
         assertEquals("custom", atomicReferenceConfig.getName());
+
+        MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(23, mergePolicyConfig.getBatchSize());
     }
 
     @Test

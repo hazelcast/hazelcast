@@ -2007,6 +2007,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         AtomicLongConfig atomicLongConfig = new AtomicLongConfig(name);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                atomicLongConfig.setMergePolicyConfig(mergePolicyConfig);
+            }
+        }
         config.addAtomicLongConfig(atomicLongConfig);
     }
 
@@ -2014,6 +2021,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig(name);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                atomicReferenceConfig.setMergePolicyConfig(mergePolicyConfig);
+            }
+        }
         config.addAtomicReferenceConfig(atomicReferenceConfig);
     }
 

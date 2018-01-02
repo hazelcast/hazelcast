@@ -274,9 +274,13 @@
         <prefetch-validity-millis>10000</prefetch-validity-millis>
     </reliable-id-generator>
 
-    <atomic-long name="default"/>
+    <atomic-long name="default">
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </atomic-long>
 
-    <atomic-reference name="default"/>
+    <atomic-reference name="default">
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </atomic-reference>
 
     <serialization>
         <portable-version>0</portable-version>
