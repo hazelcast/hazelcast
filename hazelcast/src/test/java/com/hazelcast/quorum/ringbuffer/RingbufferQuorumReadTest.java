@@ -114,7 +114,11 @@ public class RingbufferQuorumReadTest extends AbstractRingbufferQuorumTest {
 
     @Test
     public void readOne_quorum() throws InterruptedException {
-        ring(0).readOne(1l);
+        try {
+            ring(0).readOne(1l);
+        } catch (IllegalArgumentException ex) {
+            // sometimes the sequence ends up empty due to cluster-split and migrations in-between, irrelevant for quorum test
+        }
     }
 
     @Test(expected = QuorumException.class)
@@ -124,7 +128,11 @@ public class RingbufferQuorumReadTest extends AbstractRingbufferQuorumTest {
 
     @Test
     public void readManyAsync_quorum() throws Exception {
-        ring(0).readManyAsync(1l, 1, 1, new Filter()).get();
+        try {
+            ring(0).readManyAsync(1l, 1, 1, new Filter()).get();
+        } catch (IllegalArgumentException ex) {
+            // sometimes the sequence ends up empty due to cluster-split and migrations in-between, irrelevant for quorum test
+        }
     }
 
     @Test
