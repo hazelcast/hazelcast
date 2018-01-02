@@ -33,8 +33,11 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.concurrent.ExecutionException;
+
 import static java.util.Arrays.asList;
 import static org.hamcrest.core.Is.isA;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -130,8 +133,11 @@ public class RingbufferQuorumReadTest extends AbstractRingbufferQuorumTest {
     public void readManyAsync_quorum() throws Exception {
         try {
             ring(0).readManyAsync(1l, 1, 1, new Filter()).get();
-        } catch (IllegalArgumentException ex) {
+        } catch (ExecutionException ex) {
             // sometimes the sequence ends up empty due to cluster-split and migrations in-between, irrelevant for quorum test
+            if (!((ex.getCause() instanceof IllegalArgumentException))) {
+                fail();
+            }
         }
     }
 
