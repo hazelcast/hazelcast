@@ -94,6 +94,7 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
         checkCompatibleConfigs("job tracker", c1, c2, c1.getJobTrackerConfigs(), c2.getJobTrackerConfigs(), new JobTrackerConfigChecker());
         checkCompatibleConfigs("reliable id generator", c1, c2, c1.getReliableIdGeneratorConfigs(), c2.getReliableIdGeneratorConfigs(), new ReliableIdGeneratorConfigChecker());
+        checkCompatibleConfigs("count down latch", c1, c2, c1.getCountDownLatchConfigs(), c2.getCountDownLatchConfigs(), new CountDownLatchConfigChecker());
 
         return true;
     }
@@ -322,6 +323,20 @@ class ConfigCompatibilityChecker {
         @Override
         SemaphoreConfig getDefault(Config c) {
             return c.getSemaphoreConfig("default");
+        }
+    }
+
+    private static class CountDownLatchConfigChecker extends ConfigChecker<CountDownLatchConfig> {
+        @Override
+        boolean check(CountDownLatchConfig c1, CountDownLatchConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+        }
+
+        @Override
+        CountDownLatchConfig getDefault(Config c) {
+            return c.getCountDownLatchConfig("default");
         }
     }
 

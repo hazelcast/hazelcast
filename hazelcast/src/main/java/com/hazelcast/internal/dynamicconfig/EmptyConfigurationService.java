@@ -20,6 +20,7 @@ import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -100,6 +101,11 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public CountDownLatchConfig findCountDownLatchConfig(String name) {
         return null;
     }
 
@@ -210,6 +216,11 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
         return emptyMap();
     }
 

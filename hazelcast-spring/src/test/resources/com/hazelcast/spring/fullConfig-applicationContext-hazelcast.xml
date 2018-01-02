@@ -276,6 +276,10 @@
 
             <hz:atomic-reference name="testAtomicReference"/>
 
+            <hz:count-down-latch name="testCountDownLatch">
+                <hz:quorum-ref>my-quorum</hz:quorum-ref>
+            </hz:count-down-latch>
+
             <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10"/>
 
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"

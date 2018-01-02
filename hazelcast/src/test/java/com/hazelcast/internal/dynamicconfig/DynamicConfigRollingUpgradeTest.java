@@ -3,6 +3,7 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.Versions;
@@ -46,4 +47,14 @@ public class DynamicConfigRollingUpgradeTest extends HazelcastTestSupport {
 
         hazelcastInstance.getConfig().addAtomicReferenceConfig(new AtomicReferenceConfig(randomMapName()));
     }
+
+    @Test(expected = ConfigurationException.class)
+    public void testThrowsExceptionWhenAddingCountDownLatchConfigInClusterVersion39() {
+        // system properties are cleared automatically by the Hazelcast Runner
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, Versions.V3_9.toString());
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+
+        hazelcastInstance.getConfig().addCountDownLatchConfig(new CountDownLatchConfig(randomMapName()));
+    }
+
 }

@@ -326,6 +326,14 @@
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="count-down-latch" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="semaphore" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
