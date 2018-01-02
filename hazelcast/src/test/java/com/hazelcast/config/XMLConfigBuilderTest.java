@@ -492,6 +492,19 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void readCountDownLatch() {
+        String xml = HAZELCAST_START_TAG
+                + "    <count-down-latch name=\"custom\">"
+                + "             <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </count-down-latch>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
+        assertEquals("custom", countDownLatchConfig.getName());
+        assertEquals("customQuorumRule", countDownLatchConfig.getQuorumName());
+    }
+
+    @Test
     public void testConfig2Xml2DefaultConfig() {
         testConfig2Xml2Config("hazelcast-default.xml");
     }

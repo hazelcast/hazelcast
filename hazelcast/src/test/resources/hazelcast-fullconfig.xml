@@ -507,6 +507,14 @@
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </lock>
 
+    <atomic-long name="default"/>
+
+    <atomic-reference name="default"/>
+
+    <count-down-latch name="default">
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+    </count-down-latch>
+
     <ringbuffer name="default">
         <capacity>25311</capacity>
         <backup-count>2</backup-count>

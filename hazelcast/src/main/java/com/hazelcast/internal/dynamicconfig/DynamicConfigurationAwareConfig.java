@@ -23,6 +23,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -696,6 +697,55 @@ public class DynamicConfigurationAwareConfig extends Config {
             atomicReferenceConfig = staticConfig.getAtomicReferenceConfig(fallbackName);
         }
         return atomicReferenceConfig;
+    }
+
+    @Override
+    public CountDownLatchConfig findCountDownLatchConfig(String name) {
+        return getCountDownLatchConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public CountDownLatchConfig getCountDownLatchConfig(String name) {
+        return getCountDownLatchConfigInternal(name, name);
+    }
+
+    @Override
+    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
+        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new ConfigurationException("Cannot add CountDownLatchConfig while the cluster is not running version "
+                    + Versions.V3_10);
+        }
+
+        checkStaticConfigurationDoesNotExist(staticConfig.getCountDownLatchConfigs(), countDownLatchConfig.getName(),
+                countDownLatchConfig);
+        configurationService.broadcastConfig(countDownLatchConfig);
+        return this;
+    }
+
+    @Override
+    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
+        Map<String, CountDownLatchConfig> staticConfigs = staticConfig.getCountDownLatchConfigs();
+        Map<String, CountDownLatchConfig> dynamicConfigs = configurationService.getCountDownLatchConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
+    }
+
+    @Override
+    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    private CountDownLatchConfig getCountDownLatchConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, CountDownLatchConfig> countDownLatchConfigs = staticConfig.getCountDownLatchConfigs();
+        CountDownLatchConfig countDownLatchConfig = lookupByPattern(configPatternMatcher, countDownLatchConfigs, baseName);
+        if (countDownLatchConfig == null) {
+            countDownLatchConfig = configurationService.findCountDownLatchConfig(baseName);
+        }
+        if (countDownLatchConfig == null) {
+            countDownLatchConfig = staticConfig.getCountDownLatchConfig(fallbackName);
+        }
+        return countDownLatchConfig;
     }
 
     @Override

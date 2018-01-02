@@ -22,6 +22,7 @@ import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -525,6 +526,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         MergePolicyConfig mergePolicyConfig = testAtomicReference.getMergePolicyConfig();
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(4223, mergePolicyConfig.getBatchSize());
+    }
+
+    @Test
+    public void testCountDownLatchConfig() {
+        CountDownLatchConfig testCountDownLatch = config.getCountDownLatchConfig("testCountDownLatch");
+        assertNotNull(testCountDownLatch);
+        assertEquals("testCountDownLatch", testCountDownLatch.getName());
+        assertEquals("my-quorum", testCountDownLatch.getQuorumName());
     }
 
     @Test

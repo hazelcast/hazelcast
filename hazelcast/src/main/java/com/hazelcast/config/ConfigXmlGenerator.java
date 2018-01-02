@@ -114,6 +114,7 @@ public class ConfigXmlGenerator {
         topicXmlGenerator(gen, config);
         semaphoreXmlGenerator(gen, config);
         lockXmlGenerator(gen, config);
+        countDownLatchXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         atomicLongXmlGenerator(gen, config);
         atomicReferenceXmlGenerator(gen, config);
@@ -353,6 +354,14 @@ public class ConfigXmlGenerator {
                     .node("initial-permits", sc.getInitialPermits())
                     .node("backup-count", sc.getBackupCount())
                     .node("async-backup-count", sc.getAsyncBackupCount())
+                    .close();
+        }
+    }
+
+    private static void countDownLatchXmlGenerator(XmlGenerator gen, Config config) {
+        for (CountDownLatchConfig lc : config.getCountDownLatchConfigs().values()) {
+            gen.open("count-down-latch", "name", lc.getName())
+                    .node("quorum-ref", lc.getQuorumName())
                     .close();
         }
     }

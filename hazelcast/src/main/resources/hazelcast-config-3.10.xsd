@@ -59,6 +59,7 @@
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="atomic-long" type="atomic-long" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="atomic-reference" type="atomic-reference" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="count-down-latch" type="count-down-latch" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -1329,6 +1330,21 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="count-down-latch">
+        <xs:all>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the CountDownLatch. Required.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="merge-policy">
         <xs:annotation>
             <xs:documentation>
@@ -2188,7 +2204,7 @@
         <xs:attribute name="policy-class-name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Fully qualified class name implementing com.hazelcast.nio.ssl.TlsHostVerifier 
+                    Fully qualified class name implementing com.hazelcast.nio.ssl.TlsHostVerifier
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

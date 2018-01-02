@@ -91,8 +91,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int ATOMIC_LONG_CONFIG = 49;
     public static final int ATOMIC_REFERENCE_CONFIG = 50;
     public static final int MERGE_POLICY_CONFIG = 51;
+    public static final int COUNT_DOWN_LATCH_CONFIG = 52;
 
-    private static final int LEN = MERGE_POLICY_CONFIG + 1;
+    private static final int LEN = COUNT_DOWN_LATCH_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -334,11 +335,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         };
         constructors[SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG] =
                 new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheSimpleConfig.ExpiryPolicyFactoryConfig();
-            }
-        };
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new CacheSimpleConfig.ExpiryPolicyFactoryConfig();
+                    }
+                };
         constructors[SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG] =
                 new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
                     @Override
@@ -421,6 +422,13 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new MergePolicyConfig();
+                    }
+                };
+        constructors[COUNT_DOWN_LATCH_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new CountDownLatchConfig();
                     }
                 };
 

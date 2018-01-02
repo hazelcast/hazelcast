@@ -282,6 +282,8 @@
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-reference>
 
+    <count-down-latch name="default"/>
+
     <serialization>
         <portable-version>0</portable-version>
     </serialization>

@@ -66,10 +66,10 @@ import static com.hazelcast.config.XmlElements.ATOMIC_LONG;
 import static com.hazelcast.config.XmlElements.ATOMIC_REFERENCE;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
+import static com.hazelcast.config.XmlElements.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
-import static com.hazelcast.config.XmlElements.RELIABLE_ID_GENERATOR;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.XmlElements.IMPORT;
@@ -90,6 +90,7 @@ import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
 import static com.hazelcast.config.XmlElements.QUORUM;
+import static com.hazelcast.config.XmlElements.RELIABLE_ID_GENERATOR;
 import static com.hazelcast.config.XmlElements.RELIABLE_TOPIC;
 import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
 import static com.hazelcast.config.XmlElements.RINGBUFFER;
@@ -360,6 +361,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleAtomicLong(node);
         } else if (ATOMIC_REFERENCE.isEqual(nodeName)) {
             handleAtomicReference(node);
+        } else if (COUNT_DOWN_LATCH.isEqual(nodeName)) {
+            handleCountDownLatchConfig(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -2029,6 +2032,20 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.addAtomicReferenceConfig(atomicReferenceConfig);
+    }
+
+    private void handleCountDownLatchConfig(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig(name);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            String value = getTextContent(n).trim();
+            if ("quorum-ref".equals(nodeName)) {
+                countDownLatchConfig.setQuorumName(value);
+            }
+        }
+        config.addCountDownLatchConfig(countDownLatchConfig);
     }
 
     private void handleListeners(Node node) {

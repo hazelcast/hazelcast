@@ -241,6 +241,19 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testCountDownLatch() {
+        CountDownLatchConfig expectedConfig = new CountDownLatchConfig("testCountDownLatchConfig");
+
+        Config config = new Config()
+                .addCountDownLatchConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        CountDownLatchConfig actualConfig = xmlConfig.getCountDownLatchConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testCacheMergePolicy() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName("testCache");
