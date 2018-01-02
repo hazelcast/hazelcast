@@ -18,12 +18,13 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.AWAIT_OPERATION;
 import static java.lang.Boolean.TRUE;
 
-public class AwaitOperation extends AbstractCountDownLatchOperation implements BlockingOperation {
+public class AwaitOperation extends AbstractCountDownLatchOperation implements BlockingOperation, ReadonlyOperation {
 
     public AwaitOperation() {
     }
