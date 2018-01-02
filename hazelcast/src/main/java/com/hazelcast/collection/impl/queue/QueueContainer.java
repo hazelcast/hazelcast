@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -60,7 +61,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class QueueContainer implements IdentifiedDataSerializable {
-    private static final int ID_PROMOTION_OFFSET = 100000;
+
     /**
      * Contains item ID to queue item mappings for current transactions
      */

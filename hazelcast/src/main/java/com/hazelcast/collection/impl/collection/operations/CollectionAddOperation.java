@@ -27,10 +27,12 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
+
 public class CollectionAddOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     protected Data value;
-    protected long itemId = -1;
+    protected long itemId = INVALID_ITEM_ID;
 
     public CollectionAddOperation() {
     }
@@ -42,7 +44,7 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation imple
 
     @Override
     public boolean shouldBackup() {
-        return itemId != -1;
+        return itemId != INVALID_ITEM_ID;
     }
 
     @Override
@@ -56,12 +58,12 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation imple
             CollectionContainer collectionContainer = getOrCreateContainer();
             itemId = collectionContainer.add(value);
         }
-        response = itemId != -1;
+        response = itemId != INVALID_ITEM_ID;
     }
 
     @Override
     public void afterRun() throws Exception {
-        if (itemId != -1) {
+        if (itemId != INVALID_ITEM_ID) {
             publishEvent(ItemEventType.ADDED, value);
         }
     }

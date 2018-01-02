@@ -25,13 +25,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static java.util.Collections.sort;
 
 public class ListContainer extends CollectionContainer {
 
@@ -156,7 +156,7 @@ public class ListContainer extends CollectionContainer {
         }
         final ArrayList<Data> sub = new ArrayList<Data>(list.size());
         for (CollectionItem item : list) {
-            sub.add((Data) item.getValue());
+            sub.add(item.getValue());
         }
         return sub;
     }
@@ -166,7 +166,9 @@ public class ListContainer extends CollectionContainer {
         if (itemList == null) {
             if (itemMap != null && !itemMap.isEmpty()) {
                 itemList = new ArrayList<CollectionItem>(itemMap.values());
-                Collections.sort(itemList);
+                sort(itemList);
+                CollectionItem lastItem = itemList.get(itemList.size() - 1);
+                setId(lastItem.getItemId() + ID_PROMOTION_OFFSET);
                 itemMap.clear();
             } else {
                 itemList = new ArrayList<CollectionItem>(INITIAL_CAPACITY);
