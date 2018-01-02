@@ -17,10 +17,11 @@
 package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.GET_COUNT_OPERATION;
 
-public class GetCountOperation extends AbstractCountDownLatchOperation {
+public class GetCountOperation extends AbstractCountDownLatchOperation implements ReadonlyOperation {
 
     private int count;
 
