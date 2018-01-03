@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -27,7 +28,6 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -35,6 +35,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.SSLConfig;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -210,6 +211,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleDiscoveryStrategies(child, clientNetworkConfig);
                 } else if ("outbound-ports".equals(nodeName)) {
                     handleOutboundPorts(child, clientNetworkConfig);
+                } else if ("icmp-ping".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, ClientIcmpPingConfig.class,
+                            "clientIcmpPingConfig", clientNetworkConfig);
                 }
             }
             clientNetworkConfig.addPropertyValue("addresses", members);
@@ -398,4 +402,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             networkConfigBuilder.addPropertyValue("outboundPortDefinitions", outboundPorts);
         }
     }
+
+
 }

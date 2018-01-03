@@ -439,9 +439,36 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 handleDiscoveryStrategies(child, clientNetworkConfig);
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child, clientNetworkConfig);
+            } else if ("icmp-ping".equals(nodeName)) {
+                handleIcmpPing(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleIcmpPing(Node node, ClientNetworkConfig clientNetworkConfig) {
+        ClientIcmpPingConfig icmpPingConfig = clientNetworkConfig.getClientIcmpPingConfig();
+
+        NamedNodeMap atts = node.getAttributes();
+        Node enabledNode = atts.getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
+        icmpPingConfig.setEnabled(enabled);
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("timeout-milliseconds".equals(nodeName)) {
+                icmpPingConfig.setTimeoutMilliseconds(Integer.parseInt(getTextContent(child)));
+            } else if ("interval-milliseconds".equals(nodeName)) {
+                icmpPingConfig.setIntervalMilliseconds(Integer.parseInt(getTextContent(child)));
+            } else if ("ttl".equals(nodeName)) {
+                icmpPingConfig.setTtl(Integer.parseInt(getTextContent(child)));
+            } else if ("max-attempts".equals(nodeName)) {
+                icmpPingConfig.setMaxAttempts(Integer.parseInt(getTextContent(child)));
+            } else if ("echo-fail-fast-on-startup".equals(nodeName)) {
+                icmpPingConfig.setEchoFailFastOnStartup(Boolean.parseBoolean(getTextContent(child)));
+            }
+        }
+        clientNetworkConfig.setClientIcmpPingConfig(icmpPingConfig);
     }
 
     private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
