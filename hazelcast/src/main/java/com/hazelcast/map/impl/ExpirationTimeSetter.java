@@ -110,7 +110,8 @@ public final class ExpirationTimeSetter {
      */
     public static void setTTLAndUpdateExpiryTime(long operationTTLMillis, Record record,
                                                  MapConfig mapConfig, boolean entryCreated) {
-        record.setTtl(pickTTLMillis(operationTTLMillis, record.getTtl(), mapConfig, entryCreated));
+        long ttlMillis = pickTTLMillis(operationTTLMillis, record.getTtl(), mapConfig, entryCreated);
+        record.setTtl(ttlMillis);
 
         long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
         setExpirationTime(record, maxIdleMillis);

@@ -177,6 +177,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (ttl > 0L && ttl < Long.MAX_VALUE) {
             hasEntryWithCustomTTL = true;
         }
+
+        if (isRecordStoreExpirable()) {
+            mapServiceContext.getExpirationManager().scheduleExpirationTask();
+        }
     }
 
     /**

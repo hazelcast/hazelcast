@@ -154,6 +154,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         scheduleWithRepetition(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
     }
 
+    // only used in tests
+    public LoggingScheduledExecutor getScheduledExecutorService() {
+        return scheduledExecutorService;
+    }
+
     @Override
     public ManagedExecutorService register(String name, int defaultPoolSize, int defaultQueueCapacity, ExecutorType type) {
         ExecutorConfig config = nodeEngine.getConfig().getExecutorConfigs().get(name);

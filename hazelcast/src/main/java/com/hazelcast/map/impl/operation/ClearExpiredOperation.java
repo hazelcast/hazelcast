@@ -49,6 +49,12 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
 
     @Override
     public void run() throws Exception {
+        if (getNodeEngine().getLocalMember().isLiteMember()) {
+            // this operation shouldn't run on lite members. This situation can potentially be seen
+            // when converting a data-member to lite-member during merge operations.
+            return;
+        }
+
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
