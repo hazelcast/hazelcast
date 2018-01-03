@@ -20,6 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -32,7 +33,6 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionTimedOutException;
@@ -64,7 +64,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     protected final PartitioningStrategy partitionStrategy;
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService ss;
 
     private final boolean serializeKeys;
     private final RecordComparator recordComparator;
@@ -81,7 +81,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         this.partitionStrategy = mapServiceContext.getPartitioningStrategy(name, mapConfig.getPartitioningStrategyConfig());
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.ss = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.recordComparator = mapServiceContext.getRecordComparator(mapConfig.getInMemoryFormat());
         this.nearCacheEnabled = mapConfig.isNearCacheEnabled();
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
@@ -155,7 +155,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return key;
         }
 
-        return serializeKeys ? serializationService.toData(key, partitionStrategy) : key;
+        return serializeKeys ? ss.toData(key, partitionStrategy) : key;
     }
 
     final void invalidateNearCache(Object nearCacheKey) {
@@ -179,7 +179,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return null;
         }
         mapServiceContext.interceptAfterGet(name, value);
-        return deserializeValue ? serializationService.toObject(value) : value;
+        return deserializeValue ? ss.toObject(value) : value;
     }
 
     Object getForUpdateInternal(Data key) {

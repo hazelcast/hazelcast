@@ -16,15 +16,20 @@
 
 package com.hazelcast.map.impl.tx;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Wrapper for value objects with type information.
  */
-public class TxnValueWrapper {
+class TxnValueWrapper {
 
     Object value;
     Type type;
 
-    public TxnValueWrapper(Object value, Type type) {
+    TxnValueWrapper(@Nullable Object value, @Nonnull Type type) {
+        assert type != null;
+
         this.value = value;
         this.type = type;
     }
