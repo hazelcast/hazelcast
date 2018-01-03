@@ -593,6 +593,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         @Override
         public void onFailure(Throwable t) {
+            multiExecutionCallbackWrapper.onResponse(member, t);
         }
     }
 
