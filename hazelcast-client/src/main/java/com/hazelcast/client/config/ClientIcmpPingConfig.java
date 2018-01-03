@@ -44,7 +44,7 @@ public class ClientIcmpPingConfig {
     /**
      * Default max number of attempts {@link #maxAttempts}
      */
-    public static final int DEFAULT_MAX_ATTEMPT = 3;
+    public static final int DEFAULT_MAX_ATTEMPT = 2;
 
     /**
      * Duration to wait for the response of single icmp package in milliseconds

@@ -2629,7 +2629,7 @@
             <xs:element name="timeout-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
             <xs:element name="interval-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
             <xs:element name="ttl" type="xs:int" minOccurs="0" maxOccurs="1" default="255"/>
-            <xs:element name="max-attempts" type="xs:int" minOccurs="0" maxOccurs="1" default="3"/>
+            <xs:element name="max-attempts" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
             <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="false"/>
