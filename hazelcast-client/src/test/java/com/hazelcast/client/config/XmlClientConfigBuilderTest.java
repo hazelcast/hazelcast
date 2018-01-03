@@ -458,7 +458,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(1000, icmpPingConfig.getTimeoutMilliseconds());
         assertEquals(1000, icmpPingConfig.getIntervalMilliseconds());
         assertEquals(255, icmpPingConfig.getTtl());
-        assertEquals(3, icmpPingConfig.getMaxAttempts());
+        assertEquals(2, icmpPingConfig.getMaxAttempts());
         assertEquals(true, icmpPingConfig.isEchoFailFastOnStartup());
     }
 
