@@ -17,6 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.RingbufferStoreConfig.RingbufferStoreConfigReadOnly;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,6 +52,7 @@ public class RingbufferConfigTest {
         assertEquals(DEFAULT_SYNC_BACKUP_COUNT, config.getBackupCount());
         assertEquals(DEFAULT_ASYNC_BACKUP_COUNT, config.getAsyncBackupCount());
         assertEquals(DEFAULT_CAPACITY, config.getCapacity());
+        assertNotNull(config.getMergePolicyConfig());
     }
 
     @Test
@@ -233,12 +237,17 @@ public class RingbufferConfigTest {
     public void getAsReadOnly() {
         RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig();
 
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(PassThroughMergePolicy.class.getName())
+                .setBatchSize(2342);
+
         RingbufferConfig original = new RingbufferConfig(NAME)
                 .setBackupCount(2)
                 .setAsyncBackupCount(1)
                 .setCapacity(10)
                 .setTimeToLiveSeconds(400)
-                .setRingbufferStoreConfig(ringbufferStoreConfig);
+                .setRingbufferStoreConfig(ringbufferStoreConfig)
+                .setMergePolicyConfig(mergePolicyConfig);
 
         RingbufferConfig readonly = original.getAsReadOnly();
         assertNotNull(readonly);
@@ -252,6 +261,7 @@ public class RingbufferConfigTest {
         assertEquals(original.getRingbufferStoreConfig(), readonly.getRingbufferStoreConfig());
         assertFalse("The read-only RingbufferStoreConfig should not be identity-equal to the original RingbufferStoreConfig",
                 original.getRingbufferStoreConfig() == readonly.getRingbufferStoreConfig());
+        assertEquals(original.getMergePolicyConfig(), readonly.getMergePolicyConfig());
 
         try {
             readonly.setCapacity(10);
@@ -295,6 +305,12 @@ public class RingbufferConfigTest {
         } catch (UnsupportedOperationException expected) {
         }
 
+        try {
+            readonly.setMergePolicyConfig(new MergePolicyConfig());
+            fail();
+        } catch (UnsupportedOperationException expected) {
+        }
+
         original.setRingbufferStoreConfig(null);
         readonly = original.getAsReadOnly();
 
@@ -310,6 +326,9 @@ public class RingbufferConfigTest {
                 .withPrefabValues(RingbufferStoreConfigReadOnly.class,
                         new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
                         new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
                 .verify();
     }
 }

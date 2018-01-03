@@ -2094,6 +2094,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 rbConfig.setRingbufferStoreConfig(ringbufferStoreConfig);
             } else if ("quorum-ref".equals(nodeName)) {
                 rbConfig.setQuorumName(value);
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                rbConfig.setMergePolicyConfig(mergePolicyConfig);
             }
         }
         config.addRingBufferConfig(rbConfig);

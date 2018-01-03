@@ -553,6 +553,7 @@
         <time-to-live-seconds>29</time-to-live-seconds>
         <in-memory-format>OBJECT</in-memory-format>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
     <cache name="default">

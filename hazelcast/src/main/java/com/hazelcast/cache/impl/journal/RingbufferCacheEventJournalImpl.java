@@ -53,6 +53,7 @@ import static java.lang.String.format;
  * Adapts the {@link EventJournalConfig} to the {@link RingbufferConfig} when creating the ringbuffer.
  */
 public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
+
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
@@ -103,7 +104,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
     @Override
     public void destroy(ObjectNamespace namespace, int partitionId) {
-        final RingbufferService service;
+        RingbufferService service;
         try {
             service = getRingbufferService();
         } catch (Exception e) {
@@ -147,8 +148,8 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      * invoking this method.
      *
      * @param namespace the cache namespace, containing the full prefixed cache name
-     * @throws CacheNotExistsException if the cache configuration was not found
      * @return {@code true} if the object has a configured and enabled event journal, {@code false} otherwise
+     * @throws CacheNotExistsException if the cache configuration was not found
      */
     @Override
     public boolean hasEventJournal(ObjectNamespace namespace) {
@@ -168,14 +169,14 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
             return null;
         }
 
-        final String name = namespace.getObjectName();
-        final CacheConfig cacheConfig = getCacheService().getCacheConfig(name);
+        String name = namespace.getObjectName();
+        CacheConfig cacheConfig = getCacheService().getCacheConfig(name);
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        final String cacheSimpleName = cacheConfig.getName();
-        final EventJournalConfig config = nodeEngine.getConfig().findCacheEventJournalConfig(cacheSimpleName);
+        String cacheSimpleName = cacheConfig.getName();
+        EventJournalConfig config = nodeEngine.getConfig().findCacheEventJournalConfig(cacheSimpleName);
         if (config == null || !config.isEnabled()) {
             return null;
         }
@@ -184,7 +185,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
     @Override
     public RingbufferConfig toRingbufferConfig(EventJournalConfig config) {
-        final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new RingbufferConfig()
                 .setAsyncBackupCount(0)
                 .setBackupCount(0)
@@ -201,12 +202,12 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
                 || nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
             return;
         }
-        final RingbufferContainer<InternalEventJournalCacheEvent> eventContainer =
-                getRingbufferOrNull(journalConfig, namespace, partitionId);
+        RingbufferContainer<InternalEventJournalCacheEvent, Object> eventContainer
+                = getRingbufferOrNull(journalConfig, namespace, partitionId);
         if (eventContainer == null) {
             return;
         }
-        final InternalEventJournalCacheEvent event
+        InternalEventJournalCacheEvent event
                 = new InternalEventJournalCacheEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
         getOperationParker().unpark(eventContainer);
@@ -230,17 +231,18 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      * @param partitionId the cache partition ID
      * @return the cache partition event journal
      * @throws CacheNotExistsException if the cache configuration was not found
-     * @throws IllegalStateException if there is no event journal configured for this cache
+     * @throws IllegalStateException   if there is no event journal configured for this cache
      */
-    private RingbufferContainer<InternalEventJournalCacheEvent> getRingbufferOrFail(ObjectNamespace namespace, int partitionId) {
-        final RingbufferService ringbufferService = getRingbufferService();
-        final RingbufferContainer<InternalEventJournalCacheEvent> container =
-                ringbufferService.getContainerOrNull(partitionId, namespace);
+    private RingbufferContainer<InternalEventJournalCacheEvent, Object> getRingbufferOrFail(ObjectNamespace namespace,
+                                                                                            int partitionId) {
+        RingbufferService ringbufferService = getRingbufferService();
+        RingbufferContainer<InternalEventJournalCacheEvent, Object> container
+                = ringbufferService.getContainerOrNull(partitionId, namespace);
         if (container != null) {
             return container;
         }
 
-        final EventJournalConfig config = getEventJournalConfig(namespace);
+        EventJournalConfig config = getEventJournalConfig(namespace);
         if (config == null) {
             throw new IllegalStateException(format(
                     "There is no event journal configured for cache %s or the journal is disabled",
@@ -259,11 +261,11 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      * @return the cache partition event journal or {@code null} if no journal is configured for this cache
      * @see #getEventJournalConfig(ObjectNamespace)
      */
-    private RingbufferContainer<InternalEventJournalCacheEvent> getRingbufferOrNull(EventJournalConfig journalConfig,
-                                                                                    ObjectNamespace namespace, int partitionId) {
-        final RingbufferService ringbufferService = getRingbufferService();
-        final RingbufferContainer<InternalEventJournalCacheEvent> container =
-                ringbufferService.getContainerOrNull(partitionId, namespace);
+    private RingbufferContainer<InternalEventJournalCacheEvent, Object> getRingbufferOrNull(
+            EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId) {
+        RingbufferService ringbufferService = getRingbufferService();
+        RingbufferContainer<InternalEventJournalCacheEvent, Object> container
+                = ringbufferService.getContainerOrNull(partitionId, namespace);
         if (container != null) {
             return container;
         }
@@ -271,10 +273,9 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
         return journalConfig != null ? getOrCreateRingbufferContainer(namespace, partitionId, journalConfig) : null;
     }
 
-    private RingbufferContainer<InternalEventJournalCacheEvent> getOrCreateRingbufferContainer(ObjectNamespace namespace,
-                                                                                               int partitionId,
-                                                                                               EventJournalConfig config) {
-        final RingbufferConfig ringbufferConfig = toRingbufferConfig(config);
+    private RingbufferContainer<InternalEventJournalCacheEvent, Object> getOrCreateRingbufferContainer(
+            ObjectNamespace namespace, int partitionId, EventJournalConfig config) {
+        RingbufferConfig ringbufferConfig = toRingbufferConfig(config);
         return getRingbufferService().getOrCreateContainer(partitionId, namespace, ringbufferConfig);
     }
 

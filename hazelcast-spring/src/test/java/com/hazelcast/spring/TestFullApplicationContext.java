@@ -485,6 +485,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         RingbufferStoreConfig store1 = testRingbuffer.getRingbufferStoreConfig();
         assertNotNull(store1);
         assertEquals(DummyRingbufferStore.class.getName(), store1.getClassName());
+        MergePolicyConfig mergePolicyConfig = testRingbuffer.getMergePolicyConfig();
+        assertNotNull(mergePolicyConfig);
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
 
         RingbufferConfig testRingbuffer2 = config.getRingbufferConfig("testRingbuffer2");
         assertNotNull(testRingbuffer2);

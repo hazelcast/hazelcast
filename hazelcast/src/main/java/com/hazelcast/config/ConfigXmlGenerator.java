@@ -487,7 +487,9 @@ public class ConfigXmlGenerator {
                         .appendProperties(storeConfig.getProperties());
                 gen.close();
             }
-            gen.close();
+            MergePolicyConfig mergePolicyConfig = rbConfig.getMergePolicyConfig();
+            gen.node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .close();
         }
     }
 

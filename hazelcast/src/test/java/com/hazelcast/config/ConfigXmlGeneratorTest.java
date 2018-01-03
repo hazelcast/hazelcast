@@ -209,6 +209,9 @@ public class ConfigXmlGeneratorTest {
                 .setProperty("p1", "v1")
                 .setProperty("p2", "v2")
                 .setProperty("p3", "v3");
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy("PassThroughMergePolicy")
+                .setBatchSize(1234);
         RingbufferConfig rbConfig = new RingbufferConfig("testRbConfig")
                 .setBackupCount(1)
                 .setAsyncBackupCount(2)
@@ -216,7 +219,8 @@ public class ConfigXmlGeneratorTest {
                 .setTimeToLiveSeconds(4)
                 .setInMemoryFormat(InMemoryFormat.BINARY)
                 .setRingbufferStoreConfig(ringbufferStoreConfig)
-                .setQuorumName("quorum");
+                .setQuorumName("quorum")
+                .setMergePolicyConfig(mergePolicyConfig);
 
         Config config = new Config().addRingBufferConfig(rbConfig);
 

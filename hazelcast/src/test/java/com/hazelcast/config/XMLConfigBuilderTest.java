@@ -511,20 +511,27 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "            </properties>"
                 + "        </ringbuffer-store>"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>"
                 + "    </ringbuffer>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         RingbufferConfig ringbufferConfig = config.getRingbufferConfig("custom");
+
         assertEquals(10, ringbufferConfig.getCapacity());
         assertEquals(2, ringbufferConfig.getBackupCount());
         assertEquals(1, ringbufferConfig.getAsyncBackupCount());
         assertEquals(9, ringbufferConfig.getTimeToLiveSeconds());
         assertEquals(InMemoryFormat.OBJECT, ringbufferConfig.getInMemoryFormat());
+
         RingbufferStoreConfig ringbufferStoreConfig = ringbufferConfig.getRingbufferStoreConfig();
         assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
         Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
         assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
         assertEquals("customQuorumRule", ringbufferConfig.getQuorumName());
+
+        MergePolicyConfig mergePolicyConfig = ringbufferConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test

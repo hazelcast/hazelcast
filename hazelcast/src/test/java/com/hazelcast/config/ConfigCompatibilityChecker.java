@@ -213,7 +213,8 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds())
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
-                    && isCompatible(c1.getRingbufferStoreConfig(), c2.getRingbufferStoreConfig());
+                    && isCompatible(c1.getRingbufferStoreConfig(), c2.getRingbufferStoreConfig())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
         private static boolean isCompatible(RingbufferStoreConfig c1, RingbufferStoreConfig c2) {

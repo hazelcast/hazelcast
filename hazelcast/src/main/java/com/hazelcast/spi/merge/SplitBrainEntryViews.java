@@ -37,9 +37,9 @@ public final class SplitBrainEntryViews {
     private SplitBrainEntryViews() {
     }
 
-    public static <V> SplitBrainMergeEntryView<Boolean, V> createSplitBrainMergeEntryView(boolean isExistingContainer, V value) {
-        return new SimpleSplitBrainEntryView<Boolean, V>()
-                .setKey(isExistingContainer)
+    public static <K, V> SplitBrainMergeEntryView<K, V> createSplitBrainMergeEntryView(K key, V value) {
+        return new SimpleSplitBrainEntryView<K, V>()
+                .setKey(key)
                 .setValue(value);
     }
 
