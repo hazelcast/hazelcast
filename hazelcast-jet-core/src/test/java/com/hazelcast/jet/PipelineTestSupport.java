@@ -31,7 +31,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.util.stream.Collectors.toList;
 
-public class PipelineTestSupport extends TestInClusterSupport {
+public abstract class PipelineTestSupport extends TestInClusterSupport {
 
     static final char ITEM_COUNT = 10;
     final String srcName = randomName();

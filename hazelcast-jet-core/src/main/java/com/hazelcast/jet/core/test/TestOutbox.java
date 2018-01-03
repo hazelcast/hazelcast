@@ -159,7 +159,7 @@ public final class TestOutbox implements Outbox {
 
         @Override
         public ManagedContext getManagedContext() {
-            throw new UnsupportedOperationException();
+            return o -> o; // initialize() will do nothing
         }
     }
 

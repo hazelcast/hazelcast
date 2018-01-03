@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class JetTestSupport extends HazelcastTestSupport {
+public abstract class JetTestSupport extends HazelcastTestSupport {
 
     private JetTestInstanceFactory instanceFactory;
 

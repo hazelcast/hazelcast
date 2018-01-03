@@ -18,9 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInputP;
@@ -28,7 +26,6 @@ import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekSnapshotP;
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class PeekingWrapperPreferredParallelismTest {
 

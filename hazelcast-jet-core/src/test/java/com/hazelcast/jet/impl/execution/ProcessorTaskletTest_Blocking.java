@@ -19,13 +19,12 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.test.TestOutbox.MockSerializationService;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -49,14 +47,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class ProcessorTaskletTest_Blocking {
 
     private static final int MOCK_INPUT_SIZE = 10;
     private static final int CALL_COUNT_LIMIT = 10;
     private ProcCtx context;
-    private CompletableFuture<Void> jobFuture;
     private List<Object> mockInput;
     private List<MockInboundStream> instreams;
     private List<OutboundEdgeStream> outstreams;
@@ -66,8 +62,7 @@ public class ProcessorTaskletTest_Blocking {
     @Before
     public void setUp() {
         this.processor = new PassThroughProcessor();
-        this.context = new ProcCtx(null, null, null, null, 0, NONE);
-        this.jobFuture = new CompletableFuture<>();
+        this.context = new ProcCtx(null, new MockSerializationService(), null, null, 0, NONE);
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();

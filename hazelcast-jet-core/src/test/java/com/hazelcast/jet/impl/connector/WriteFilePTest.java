@@ -16,22 +16,20 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.BufferedWriter;
@@ -45,13 +43,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class WriteFilePTest extends JetTestSupport {
 

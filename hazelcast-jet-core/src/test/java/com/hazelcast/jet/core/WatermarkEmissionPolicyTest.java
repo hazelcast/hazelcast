@@ -17,9 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
@@ -28,7 +26,6 @@ import static com.hazelcast.jet.core.WindowDefinition.tumblingWindowDef;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class WatermarkEmissionPolicyTest {
 

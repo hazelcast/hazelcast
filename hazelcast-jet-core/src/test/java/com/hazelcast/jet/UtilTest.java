@@ -17,9 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map.Entry;
@@ -27,7 +25,6 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.Util.entry;
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class UtilTest {
 

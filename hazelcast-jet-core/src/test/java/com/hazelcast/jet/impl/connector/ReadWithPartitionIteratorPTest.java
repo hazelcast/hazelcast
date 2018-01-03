@@ -19,9 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -37,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class ReadWithPartitionIteratorPTest {
 

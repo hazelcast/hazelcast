@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.FilteringClassLoader;

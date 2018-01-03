@@ -25,10 +25,8 @@ import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -46,7 +44,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class ProcessorTaskletTest_Watermarks {
 
@@ -90,7 +87,7 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(400, tasklet, NO_PROGRESS);
 
         // Then
-        assertEquals(asList(0, 1, "wm(123)-0"), outstream1.getBuffer());
+        assertEquals(asList(0, 1, "wm(123)-0", wm(123)), outstream1.getBuffer());
     }
 
     @Test
@@ -123,7 +120,7 @@ public class ProcessorTaskletTest_Watermarks {
         // When watermark in the other queue
         instream2.push(wm(99));
         callUntil(500, tasklet, NO_PROGRESS);
-        assertEquals(singletonList("wm(99)-0"), outstream1.getBuffer());
+        assertEquals(asList("wm(99)-0", wm(99)), outstream1.getBuffer());
     }
 
     @Test
@@ -140,7 +137,7 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(400, tasklet, NO_PROGRESS);
 
         // Then
-        assertEquals(asList("wm(100)-3", "wm(100)-2", "wm(100)-1"), outstream1.getBuffer());
+        assertEquals(asList("wm(100)-3", "wm(100)-2", "wm(100)-1", wm(100)), outstream1.getBuffer());
     }
 
     @Test
@@ -156,7 +153,7 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(400, tasklet, NO_PROGRESS);
 
         // Then
-        assertEquals(asList("wm(100)-0", "wm(101)-0"), outstream1.getBuffer());
+        assertEquals(asList("wm(100)-0", wm(100), "wm(101)-0", wm(101)), outstream1.getBuffer());
     }
 
     @Test
@@ -174,7 +171,7 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(400, tasklet, NO_PROGRESS);
         callUntil(416, tasklet, NO_PROGRESS);
         // Then
-        assertEquals(singletonList("wm(100)-0"), outstream1.getBuffer());
+        assertEquals(asList("wm(100)-0", wm(100)), outstream1.getBuffer());
     }
 
     private ProcessorTasklet createTasklet(int maxWatermarkRetainMillis) {

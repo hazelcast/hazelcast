@@ -18,10 +18,8 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.processor.Processors.noopP;
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class EdgeTest {
     private static final String A = "a";

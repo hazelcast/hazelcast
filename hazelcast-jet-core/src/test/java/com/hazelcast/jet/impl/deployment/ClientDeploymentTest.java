@@ -20,19 +20,16 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
-
-import java.lang.reflect.Method;
 import org.junit.After;
 import org.junit.Rule;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Method;
+
 import static java.util.Collections.singletonList;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class ClientDeploymentTest extends AbstractDeploymentTest {
 

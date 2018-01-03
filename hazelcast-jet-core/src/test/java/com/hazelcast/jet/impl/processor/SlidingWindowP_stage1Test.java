@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.core.TimestampKind;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,15 +34,15 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
+import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertTrue;
 
-@Category({QuickTest.class, ParallelTest.class})
+@Category(ParallelTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class SlidingWindowP_stage1Test {
 
