@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
@@ -39,12 +40,12 @@ import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEO
  */
 public class HeartbeatManager implements Runnable {
 
-    private ClientConnectionManagerImpl clientConnectionManager;
-    private HazelcastClientInstanceImpl client;
+    private final ClientConnectionManagerImpl clientConnectionManager;
+    private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
     private final long heartbeatInterval;
     private final long heartbeatTimeout;
-
+    private final ClientICMPManager clientICMPManager;
     private final Set<ConnectionHeartbeatListener> heartbeatListeners = new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
 
     HeartbeatManager(ClientConnectionManagerImpl clientConnectionManager, HazelcastClientInstanceImpl client) {
@@ -57,12 +58,17 @@ public class HeartbeatManager implements Runnable {
         long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
         this.heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
         this.logger = client.getLoggingService().getLogger(HeartbeatManager.class);
+        ClientIcmpPingConfig icmpPingConfig = client.getClientConfig().getNetworkConfig().getClientIcmpPingConfig();
+        this.clientICMPManager = new ClientICMPManager(icmpPingConfig,
+                (ClientExecutionServiceImpl) client.getClientExecutionService(),
+                client.getLoggingService(), clientConnectionManager, this);
 
     }
 
     public void start() {
-        ClientExecutionServiceImpl es = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        final ClientExecutionServiceImpl es = (ClientExecutionServiceImpl) client.getClientExecutionService();
         es.scheduleWithRepetition(this, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
+        clientICMPManager.start();
     }
 
     @Override
@@ -119,7 +125,7 @@ public class HeartbeatManager implements Runnable {
         }
     }
 
-    private void fireHeartbeatStopped(ClientConnection connection) {
+    void fireHeartbeatStopped(ClientConnection connection) {
         for (ConnectionHeartbeatListener heartbeatListener : heartbeatListeners) {
             heartbeatListener.heartbeatStopped(connection);
         }
@@ -131,6 +137,7 @@ public class HeartbeatManager implements Runnable {
 
     public void shutdown() {
         heartbeatListeners.clear();
+        clientICMPManager.shutdown();
     }
 
 }

@@ -159,7 +159,6 @@ public final class ClientProperty {
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.client.io.balancer.interval.seconds", 20, SECONDS);
 
-
     private ClientProperty() {
     }
 }

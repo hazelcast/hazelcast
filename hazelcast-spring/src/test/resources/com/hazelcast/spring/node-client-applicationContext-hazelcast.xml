@@ -276,6 +276,20 @@
     </hz:client>
 
 
+    <hz:client id="client11-icmp-ping" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:icmp-ping enabled="false">
+                <hz:timeout-milliseconds>2000</hz:timeout-milliseconds>
+                <hz:interval-milliseconds>3000</hz:interval-milliseconds>
+                <hz:ttl>50</hz:ttl>
+                <hz:max-attempts>5</hz:max-attempts>
+                <hz:echo-fail-fast-on-startup>false</hz:echo-fail-fast-on-startup>
+            </hz:icmp-ping>
+        </hz:network>
+    </hz:client>
+
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="username" value="spring-group"/>
         <property name="password" value="spring-group-pass"/>

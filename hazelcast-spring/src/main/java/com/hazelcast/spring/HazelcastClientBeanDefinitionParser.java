@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -206,6 +207,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleDiscoveryStrategies(child, clientNetworkConfig);
                 } else if ("outbound-ports".equals(nodeName)) {
                     handleOutboundPorts(child, clientNetworkConfig);
+                } else if ("icmp-ping".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, ClientIcmpPingConfig.class,
+                            "clientIcmpPingConfig", clientNetworkConfig);
                 }
             }
             clientNetworkConfig.addPropertyValue("addresses", members);

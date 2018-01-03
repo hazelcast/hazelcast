@@ -75,7 +75,13 @@
             <tag-key>type</tag-key>
             <tag-value>hz-nodes</tag-value>
         </aws>
-
+        <icmp-ping enabled="false">
+            <timeout-milliseconds>2000</timeout-milliseconds>
+            <interval-milliseconds>3000</interval-milliseconds>
+            <ttl>100</ttl>
+            <max-attempts>5</max-attempts>
+            <echo-fail-fast-on-startup>false</echo-fail-fast-on-startup>
+        </icmp-ping>
     </network>
 
     <executor-pool-size>40</executor-pool-size>
