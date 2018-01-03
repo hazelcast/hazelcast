@@ -21,11 +21,13 @@ Fixes:
 ==== 3.9.2 RELEASE NOTES ====
 
 Enhancements: 
+
 - Expiration operations can be stopped/canceled during the SHUTTING_DOWN state. Otherwise it causes graceful shutdowns which take longer, especially on clusters with a large amount of data, e.g., High-Density Memory Store backed maps. It is not necessary to block the shutdown for these operations since it will eventually be handled on the new owner of the entries. [#11919]
 - Changed Hazelcast base images from Debian to Alpine Linux. Hence, the size of the image is reduced. [#48](On Hazelcast-Docker GitHub repo).
 
 
 Fixes:
+
 - PartitionPredicate on MapAggregation throws exception when it is called from the client. [#11923]
 - Some client TransactionalMap operations deserializes on the server side, while IMap.values() does not do so. This causes serialization exceptions on a client-member setup when members do not have the serialization information, e.g., in case where portables are used. [#11885]
 - Replicated map's Javadoc contains only member behaviors/requirements which the client cannot meet due to its technical difference. [#11707]
@@ -33,6 +35,7 @@ Fixes:
 
 
 Coverity Fixes:
+
 - The method addressTranslator.translate(target) of com.hazelcast.client.connection.nio.ClientConnectionManagerImpl.InitConnectionTask.run() may return null. The returned value is used as an argument for the method createSocketConnection(Address) which uses the value without a null-check. [#11771]
 
 
@@ -40,9 +43,12 @@ Coverity Fixes:
 ==== 3.9.1 RELEASE NOTES ====
 
 New Features:
+
 - Ping Failure Detector: Ping Failure Detector provides a quicker and more deterministic detection of hardware and other lower level events.
 
+
 Fixes:
+
 - MulticastJoiner may cause OOME because of the self-amplification in SplitBrainJoinMessage sending. [#11836]
 - Dynamic config added on lite member not found after split-brain healing. [#11815]
 - Client Transactions does not respect unisocket behavior. [#11802]
@@ -59,6 +65,7 @@ Fixes:
 - Weird split-brain like issue with Hazelcast 3.8.4. [#11533]
 - Consider logging new HTTP connections with DEBUG or lower level. [#11196]
 - HashSet and HashMaps initialized to too small size. [#9445]
+
 
 Coverity Fixes:
 
