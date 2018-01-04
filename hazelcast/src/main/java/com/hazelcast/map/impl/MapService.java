@@ -93,7 +93,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
-    protected QuorumAwareService quorumAwareService;
+    protected MapQuorumAwareService quorumAwareService;
     protected MapServiceContext mapServiceContext;
     // RU_COMPAT_V38
     protected MapIndexSynchronizer mapIndexSynchronizer;
@@ -170,6 +170,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void destroyDistributedObject(String objectName) {
         remoteService.destroyDistributedObject(objectName);
+        quorumAwareService.onDestroy(objectName);
     }
 
     @Override

@@ -50,8 +50,6 @@ public class ListService extends CollectionService {
         public Object createNew(String name) {
             ListConfig lockConfig = nodeEngine.getConfig().findListConfig(name);
             String quorumName = lockConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -87,6 +85,12 @@ public class ListService extends CollectionService {
     @Override
     public DistributedObject createDistributedObject(String objectId) {
         return new ListProxyImpl(objectId, nodeEngine, this);
+    }
+
+    @Override
+    public void destroyDistributedObject(String name) {
+        super.destroyDistributedObject(name);
+        quorumConfigCache.remove(name);
     }
 
     @Override

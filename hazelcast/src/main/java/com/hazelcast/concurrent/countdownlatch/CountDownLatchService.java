@@ -59,8 +59,6 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         public Object createNew(String name) {
             CountDownLatchConfig countDownLatchConfig = nodeEngine.getConfig().findCountDownLatchConfig(name);
             String quorumName = countDownLatchConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -134,6 +132,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     @Override
     public void destroyDistributedObject(String name) {
         containers.remove(name);
+        quorumConfigCache.remove(name);
     }
 
     @Override

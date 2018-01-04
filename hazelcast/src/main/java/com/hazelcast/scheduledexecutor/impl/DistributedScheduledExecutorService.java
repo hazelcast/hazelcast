@@ -85,8 +85,6 @@ public class DistributedScheduledExecutorService
         public Object createNew(String name) {
             ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
             String quorumName = executorConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -178,6 +176,7 @@ public class DistributedScheduledExecutorService
         }
 
         resetPartitionOrMemberBinContainer(name);
+        quorumConfigCache.remove(name);
     }
 
     public void shutdownExecutor(String name) {

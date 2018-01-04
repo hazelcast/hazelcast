@@ -136,7 +136,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      * @return Creates a new {@link PartitionAwareService} implementation.
      * @see com.hazelcast.spi.PartitionAwareService
      */
-    abstract QuorumAwareService createQuorumAwareService();
+    abstract MapQuorumAwareService createQuorumAwareService();
 
 
     /**
@@ -159,7 +159,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         ReplicationSupportingService replicationSupportingService = createReplicationSupportingService();
         StatisticsAwareService statisticsAwareService = createStatisticsAwareService();
         PartitionAwareService partitionAwareService = createPartitionAwareService();
-        QuorumAwareService quorumAwareService = createQuorumAwareService();
+        MapQuorumAwareService quorumAwareService = createQuorumAwareService();
         ClientAwareService clientAwareService = createClientAwareService();
 
         checkNotNull(nodeEngine, "nodeEngine should not be null");

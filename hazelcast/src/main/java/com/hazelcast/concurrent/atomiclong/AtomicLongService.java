@@ -66,8 +66,6 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         public Object createNew(String name) {
             AtomicLongConfig config = nodeEngine.getConfig().findAtomicLongConfig(name);
             String quorumName = config.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -107,6 +105,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     @Override
     public void destroyDistributedObject(String name) {
         containers.remove(name);
+        quorumConfigCache.remove(name);
     }
 
     @Override

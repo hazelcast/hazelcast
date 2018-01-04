@@ -114,8 +114,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         public Object createNew(String name) {
             ReplicatedMapConfig lockConfig = nodeEngine.getConfig().findReplicatedMapConfig(name);
             String quorumName = lockConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -262,6 +260,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i].destroy(objectName);
         }
+        quorumConfigCache.remove(objectName);
     }
 
     @Override

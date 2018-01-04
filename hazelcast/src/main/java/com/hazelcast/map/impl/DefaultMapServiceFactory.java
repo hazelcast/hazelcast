@@ -22,7 +22,6 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
@@ -108,7 +107,7 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     }
 
     @Override
-    QuorumAwareService createQuorumAwareService() {
+    MapQuorumAwareService createQuorumAwareService() {
         return new MapQuorumAwareService(getMapServiceContext());
     }
 

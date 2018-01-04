@@ -60,8 +60,6 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
         public Object createNew(String name) {
             DurableExecutorConfig executorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);
             String quorumName = executorConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -109,6 +107,7 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
     public void destroyDistributedObject(String name) {
         shutdownExecutors.remove(name);
         nodeEngine.getExecutionService().shutdownDurableExecutor(name);
+        quorumConfigCache.remove(name);
     }
 
     public void shutdownExecutor(String name) {
