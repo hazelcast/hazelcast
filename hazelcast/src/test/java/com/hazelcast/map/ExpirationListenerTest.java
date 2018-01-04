@@ -27,12 +27,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RandomPicker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -41,9 +41,8 @@ import java.util.concurrent.TimeUnit;
 public class ExpirationListenerTest extends HazelcastTestSupport {
 
     private static final int instanceCount = 3;
-    private static final Random rand = new Random();
 
-    private static HazelcastInstance[] instances;
+    private HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
 
     @Before
@@ -51,12 +50,8 @@ public class ExpirationListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         Config config = new Config();
         instances = factory.newInstances(config);
-        HazelcastInstance node = getInstance();
-        map = node.getMap(randomMapName());
-    }
-
-    private HazelcastInstance getInstance() {
-        return instances[rand.nextInt(instanceCount)];
+        HazelcastInstance randomNode = instances[RandomPicker.getInt(instanceCount)];
+        map = randomNode.getMap(randomMapName());
     }
 
     @Test
