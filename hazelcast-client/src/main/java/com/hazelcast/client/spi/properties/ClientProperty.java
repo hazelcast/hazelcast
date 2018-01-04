@@ -28,7 +28,7 @@ public final class ClientProperty {
 
     /**
      * Client shuffles the given member list to prevent all clients to connect to the same node when
-     * this property is set to false. When it is set to true, the client tries to connect to the nodes
+     * this property is set to true. When it is set to false, the client tries to connect to the nodes
      * in the given order.
      */
     public static final HazelcastProperty SHUFFLE_MEMBER_LIST
