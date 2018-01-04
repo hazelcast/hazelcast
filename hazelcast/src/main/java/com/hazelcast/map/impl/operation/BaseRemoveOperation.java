@@ -20,9 +20,10 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
-public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
+public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
     protected transient Data dataOldValue;
 

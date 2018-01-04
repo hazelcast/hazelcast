@@ -38,7 +38,8 @@ import static com.hazelcast.map.impl.operation.EntryOperator.operator;
  *
  * See the javadoc on {@link EntryOperation}
  */
-public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, Notifier {
+public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
+        implements BackupAwareOperation, Notifier {
 
     protected Data newValue;
     protected Data oldValue;

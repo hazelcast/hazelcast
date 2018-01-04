@@ -32,7 +32,7 @@ import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 /**
  * @see EntryOperation for Offloadable support.
  */
-public class EntryBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
+public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private EntryBackupProcessor entryProcessor;
 

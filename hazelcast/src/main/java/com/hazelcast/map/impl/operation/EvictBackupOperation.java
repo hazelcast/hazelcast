@@ -25,7 +25,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public class EvictBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
+public class EvictBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     protected boolean unlockKey;
     protected boolean disableWanReplicationEvent;

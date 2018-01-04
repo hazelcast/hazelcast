@@ -20,10 +20,11 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class ReplaceIfSameOperation extends BasePutOperation {
+public class ReplaceIfSameOperation extends BasePutOperation implements MutatingOperation {
 
     private Data expect;
     private boolean successful;

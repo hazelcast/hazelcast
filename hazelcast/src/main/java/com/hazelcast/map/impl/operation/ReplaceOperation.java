@@ -18,8 +18,9 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ReplaceOperation extends BasePutOperation {
+public class ReplaceOperation extends BasePutOperation implements MutatingOperation {
 
     private boolean successful;
 

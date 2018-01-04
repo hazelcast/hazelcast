@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public abstract class LockAwareOperation extends MutatingKeyBasedMapOperation implements BlockingOperation {
+public abstract class LockAwareOperation extends KeyBasedMapOperation implements BlockingOperation {
 
     protected LockAwareOperation() {
     }

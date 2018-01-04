@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.io.IOException;
 /**
  * An operation to unlock key on the partition owner.
  */
-public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation {
+public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation, MutatingOperation {
 
     private long version;
     private String ownerUuid;

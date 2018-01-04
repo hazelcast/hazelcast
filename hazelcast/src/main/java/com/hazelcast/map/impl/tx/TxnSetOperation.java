@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ import java.io.IOException;
 /**
  * An operation to unlock and set (key,value) on the partition .
  */
-public class TxnSetOperation extends BasePutOperation implements MapTxnOperation {
+public class TxnSetOperation extends BasePutOperation implements MapTxnOperation, MutatingOperation {
 
     private long version;
     private transient boolean shouldBackup;
