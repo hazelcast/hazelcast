@@ -20,6 +20,8 @@ import com.hazelcast.transaction.TransactionalObject;
 
 /**
  * Transactional implementation of {@link ISet}.
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 public interface TransactionalSet<E> extends TransactionalObject {
 

@@ -46,6 +46,8 @@ package com.hazelcast.core;
  * policy to decide which of the {@link IAtomicReference} to use.  When the cluster size are equal, a random winner
  * is chosen.
  *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
  * @see IAtomicLong
  * @since 3.2
  */

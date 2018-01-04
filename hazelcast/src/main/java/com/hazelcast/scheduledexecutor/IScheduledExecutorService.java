@@ -72,6 +72,8 @@ import java.util.concurrent.TimeUnit;
  * <br/><br/>
  * The other difference is this service does not offer an equivalent of
  * {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 @Beta
 public interface IScheduledExecutorService extends DistributedObject {

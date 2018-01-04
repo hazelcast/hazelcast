@@ -46,6 +46,8 @@ package com.hazelcast.core;
  * made to the {@link IAtomicLong} in the smaller clusters will be lost.  Where the merging clusters are the same sizes
  * a winner of the merge will be randomly chosen.
  *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
  * @see IAtomicReference
  */
 public interface IAtomicLong extends DistributedObject {
