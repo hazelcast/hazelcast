@@ -37,8 +37,6 @@ import java.util.AbstractList;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_RESULT_SET;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * A list for the {@link com.hazelcast.ringbuffer.impl.operations.ReadManyOperation}.
@@ -117,9 +115,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
 
     @Override
     public E get(int index) {
-        checkNotNegative(index, "index should not be negative");
-        checkTrue(index < size, "index should not be equal or larger than size");
-
+        rangeCheck(index);
         final Data item = items[index];
         return serializationService.toObject(item);
     }
@@ -129,7 +125,14 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         if (seqs == null) {
             throw new UnsupportedOperationException("Sequence IDs are not available when the cluster version is lower than 3.9");
         }
+        rangeCheck(index);
         return seqs.length > index ? seqs[index] : -1;
+    }
+
+    private void rangeCheck(int index) {
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("index=" + index + ", size=" + size);
+        }
     }
 
     /**
