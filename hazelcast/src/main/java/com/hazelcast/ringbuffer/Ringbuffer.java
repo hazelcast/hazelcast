@@ -53,6 +53,8 @@ import java.util.Collection;
  * The Ringbuffer is the backing data-structure for the reliable {@link com.hazelcast.core.ITopic} implementation. See
  * {@link com.hazelcast.config.ReliableTopicConfig}.
  *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
  * @param <E>
  */
 public interface Ringbuffer<E> extends DistributedObject {

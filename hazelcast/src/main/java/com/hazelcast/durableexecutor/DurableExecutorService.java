@@ -29,6 +29,8 @@ import java.util.concurrent.RejectedExecutionException;
  * DurableExecutor provides additional methods like executing tasks on a member who is owner of a specific key
  * DurableExecutor also provides a way to retrieve the result of an execution with the given taskId.
  * @see ExecutorService
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 public interface DurableExecutorService extends ExecutorService, DistributedObject {
 

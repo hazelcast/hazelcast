@@ -34,6 +34,8 @@ import java.util.concurrent.TimeUnit;
  * <p>When a new node joins the cluster, the new node initially will request existing
  * values from older nodes and replicate them locally.</p>
  *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  * @since 3.2
