@@ -87,8 +87,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         public Object createNew(String name) {
             ExecutorConfig executorConfig = nodeEngine.getConfig().findExecutorConfig(name);
             String quorumName = executorConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -181,6 +179,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         executionService.shutdownExecutor(name);
         statsMap.remove(name);
         executorConfigCache.remove(name);
+        quorumConfigCache.remove(name);
     }
 
     LocalExecutorStatsImpl getLocalExecutorStats(String name) {

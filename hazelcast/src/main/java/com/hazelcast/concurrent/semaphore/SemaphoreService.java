@@ -65,8 +65,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         public Object createNew(String name) {
             SemaphoreConfig semaphoreConfig = nodeEngine.getConfig().findSemaphoreConfig(name);
             String quorumName = semaphoreConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -150,6 +148,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     @Override
     public void destroyDistributedObject(String objectId) {
         containers.remove(objectId);
+        quorumConfigCache.remove(objectId);
     }
 
     @Override

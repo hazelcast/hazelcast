@@ -130,6 +130,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     public void destroyDistributedObject(String name) {
         destroyContainer(getRingbufferPartitionId(name), getRingbufferNamespace(name));
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        quorumConfigCache.remove(name);
     }
 
     public void destroyContainer(int partitionId, ObjectNamespace namespace) {

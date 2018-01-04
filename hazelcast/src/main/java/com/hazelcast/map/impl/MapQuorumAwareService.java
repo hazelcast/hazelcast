@@ -17,13 +17,33 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.spi.QuorumAwareService;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Quorum service will ask map service about whether map has defined quorum or not.
  */
 public class MapQuorumAwareService implements QuorumAwareService {
 
+    private static final Object NULL_OBJECT = new Object();
+
     private final MapServiceContext mapServiceContext;
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+            String quorumName = mapContainer.getQuorumName();
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public MapQuorumAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -31,7 +51,12 @@ public class MapQuorumAwareService implements QuorumAwareService {
 
     @Override
     public String getQuorumName(String name) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        return mapContainer.getQuorumName();
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    public void onDestroy(String name) {
+        quorumConfigCache.remove(name);
     }
 }

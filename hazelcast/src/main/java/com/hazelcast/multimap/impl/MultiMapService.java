@@ -107,8 +107,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         public Object createNew(String name) {
             MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
             String quorumName = multiMapConfig.getQuorumName();
-            // The quorumName will be null if there is no quorum defined for this data structure,
-            // but the QuorumService is active, due to another data structure with a quorum configuration
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
@@ -189,6 +187,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             }
         }
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        quorumConfigCache.remove(name);
     }
 
     public Set<Data> localKeySet(String name) {
