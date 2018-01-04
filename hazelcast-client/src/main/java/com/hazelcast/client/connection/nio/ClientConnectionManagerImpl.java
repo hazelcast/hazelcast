@@ -75,6 +75,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -130,6 +131,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final NioEventLoopGroup eventLoopGroup;
 
     private volatile Address ownerConnectionAddress;
+    private volatile Address previousOwnerConnectionAddress;
 
     private HeartbeatManager heartbeat;
     private volatile ClientPrincipal principal;
@@ -377,6 +379,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void setOwnerConnectionAddress(Address ownerConnectionAddress) {
+        this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
@@ -901,8 +904,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     }
 
-    private Collection<Address> getPossibleMemberAddresses() {
-        final List<Address> addresses = new LinkedList<Address>();
+    Collection<Address> getPossibleMemberAddresses() {
+        LinkedHashSet<Address> addresses = new LinkedHashSet<Address>();
 
         Collection<Member> memberList = client.getClientClusterService().getMemberList();
         for (Member member : memberList) {
@@ -910,21 +913,38 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         }
 
         if (shuffleMemberList) {
-            Collections.shuffle(addresses);
+            shuffle(addresses);
         }
 
-        List<Address> providerAddresses = new ArrayList<Address>();
+        LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
         for (AddressProvider addressProvider : addressProviders) {
             providerAddresses.addAll(addressProvider.loadAddresses());
         }
 
         if (shuffleMemberList) {
-            Collections.shuffle(providerAddresses);
+            shuffle(providerAddresses);
         }
 
         addresses.addAll(providerAddresses);
 
+        if (previousOwnerConnectionAddress != null) {
+            /*
+             * Previous owner address is moved to last item in set so that client will not try to connect to same one immediately.
+             * It could be the case that address is removed because it is healthy(it not responding to heartbeat/pings)
+             * In that case, trying other addresses first to upgrade make more sense.
+             */
+            addresses.remove(previousOwnerConnectionAddress);
+            addresses.add(previousOwnerConnectionAddress);
+        }
         return addresses;
+    }
+
+    private static <T> Set<T> shuffle(Set<T> set) {
+        List<T> shuffleMe = new ArrayList<T>(set);
+        Collections.shuffle(shuffleMe);
+        Set<T> shuffledSet = new LinkedHashSet<T>();
+        shuffledSet.addAll(shuffleMe);
+        return shuffledSet;
     }
 
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
