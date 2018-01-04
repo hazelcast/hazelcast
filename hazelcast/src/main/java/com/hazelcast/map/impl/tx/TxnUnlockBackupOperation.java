@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
+import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * An operation to unlock key on the backup owner.
  */
-public class TxnUnlockBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
+public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private String ownerUuid;
 

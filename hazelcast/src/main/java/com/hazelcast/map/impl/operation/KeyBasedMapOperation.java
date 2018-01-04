@@ -20,41 +20,40 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
-public abstract class MutatingKeyBasedMapOperation extends MapOperation
-        implements PartitionAwareOperation, MutatingOperation {
+public abstract class KeyBasedMapOperation extends MapOperation
+        implements PartitionAwareOperation {
 
     protected Data dataKey;
     protected long threadId;
     protected Data dataValue;
     protected long ttl = DEFAULT_TTL;
 
-    public MutatingKeyBasedMapOperation() {
+    public KeyBasedMapOperation() {
     }
 
-    public MutatingKeyBasedMapOperation(String name, Data dataKey) {
+    public KeyBasedMapOperation(String name, Data dataKey) {
         super(name);
         this.dataKey = dataKey;
     }
 
-    protected MutatingKeyBasedMapOperation(String name, Data dataKey, Data dataValue) {
+    protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue) {
         super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;
     }
 
-    protected MutatingKeyBasedMapOperation(String name, Data dataKey, long ttl) {
+    protected KeyBasedMapOperation(String name, Data dataKey, long ttl) {
         super(name);
         this.dataKey = dataKey;
         this.ttl = ttl;
     }
 
-    protected MutatingKeyBasedMapOperation(String name, Data dataKey, Data dataValue, long ttl) {
+    protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;

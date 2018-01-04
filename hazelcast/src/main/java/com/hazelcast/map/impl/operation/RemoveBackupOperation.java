@@ -25,7 +25,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public class RemoveBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
+public class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     protected boolean unlockKey;
     protected boolean disableWanReplicationEvent;
