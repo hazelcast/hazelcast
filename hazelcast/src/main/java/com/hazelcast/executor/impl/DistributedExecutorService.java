@@ -17,6 +17,7 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
@@ -239,6 +240,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     @Override
     public String getQuorumName(final String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
         if (name == null) {
             // see CancellationOperation#getName()
             return null;

@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -155,6 +156,10 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
 
     @Override
     public String getQuorumName(final String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;

@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchReplicationOperation;
 import com.hazelcast.config.CountDownLatchConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -209,6 +210,10 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
 
     @Override
     public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
