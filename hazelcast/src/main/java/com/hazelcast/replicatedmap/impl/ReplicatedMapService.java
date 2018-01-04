@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -400,6 +401,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;

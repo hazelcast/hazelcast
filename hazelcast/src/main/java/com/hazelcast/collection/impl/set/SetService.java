@@ -22,6 +22,7 @@ import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
 import com.hazelcast.collection.impl.txnset.TransactionalSetProxy;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
@@ -103,6 +104,10 @@ public class SetService extends CollectionService {
 
     @Override
     public String getQuorumName(final String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;

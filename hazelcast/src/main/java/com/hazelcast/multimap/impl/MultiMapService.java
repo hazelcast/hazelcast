@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -465,6 +466,10 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;

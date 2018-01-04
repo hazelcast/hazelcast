@@ -18,6 +18,7 @@ package com.hazelcast.cardinality.impl;
 
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -173,6 +174,10 @@ public class CardinalityEstimatorService
 
     @Override
     public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
