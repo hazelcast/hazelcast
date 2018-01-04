@@ -174,13 +174,22 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void markRecordStoreExpirable(long ttl) {
-        if (ttl > 0L && ttl < Long.MAX_VALUE) {
+        if (!isInfiniteTTL(ttl)) {
             hasEntryWithCustomTTL = true;
         }
 
         if (isRecordStoreExpirable()) {
             mapServiceContext.getExpirationManager().scheduleExpirationTask();
         }
+    }
+
+    /**
+     * @return {@code true} if the supplied ttl doesn't not represent infinity and as a result entry should be
+     * removed after some time, otherwise return {@code false} to indicate entry should live forever.
+     */
+    // this method is overridden on ee
+    protected boolean isInfiniteTTL(long ttl) {
+        return !(ttl > 0L && ttl < Long.MAX_VALUE);
     }
 
     /**

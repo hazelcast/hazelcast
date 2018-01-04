@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -550,49 +551,39 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     @Category(NightlyTest.class)
-    public void testMapRecordIdleEvictionOnMigration() {
-        final String name = "testMapRecordIdleEvictionOnMigration";
+    public void expired_entries_removed_after_migration() {
+        int numOfEntries = 1000;
+        String name = "expired_entries_removed_after_migration";
 
-        Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        Config cfg = this.getConfig();
+        cfg.setProperty(ExpirationManager.PROP_TASK_PERIOD_SECONDS,"1");
         MapConfig mapConfig = cfg.getMapConfig(name);
-        int maxIdleSeconds = 30;
-        int size = 100;
-        final int nsize = size / 5;
-        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        mapConfig.setMaxIdleSeconds(20);
 
-        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-        final IMap<Integer, Integer> map = instance1.getMap(name);
-        final CountDownLatch latch = new CountDownLatch(size - nsize);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance node1 = factory.newHazelcastInstance(cfg);
+
+        IMap<Integer, Integer> map = node1.getMap(name);
+
+        final CountDownLatch latch = new CountDownLatch(numOfEntries);
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
             }
         }, false);
 
-        // put sample data
-        for (int i = 0; i < size; i++) {
+
+        for (int i = 0; i < numOfEntries; ++i) {
             map.put(i, i);
         }
 
-        // wait until some time that is close to eviction
-        sleepSeconds(maxIdleSeconds - 5);
-
-        // touch the ones you dont want to be evicted.
-        for (int i = 0; i < nsize; i++) {
-            map.get(i);
-        }
-
-        factory.newHazelcastInstance(cfg);
+        // data migration will be done to new node
         factory.newHazelcastInstance(cfg);
 
-        //wait until eviction is complete
-        assertOpenEventually(latch, 240);
 
-        assertSizeEventually(nsize, map);
+        assertOpenEventually(latch);
+        assertSizeEventually(0, map);
     }
-
     /**
      * Background task {@link com.hazelcast.map.impl.eviction.ExpirationManager.ClearExpiredRecordsTask}
      * should sweep expired records eventually.
