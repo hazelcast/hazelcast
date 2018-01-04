@@ -928,7 +928,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         addresses.addAll(providerAddresses);
 
         if (previousOwnerConnectionAddress != null) {
-            putPreviousOwnerAddressToLast(addresses);
+            /*
+             * Previous owner address is moved to last item in set so that client will not try to connect to same one immediately.
+             * It could be the case that address is removed because it is healthy(it not responding to heartbeat/pings)
+             * In that case, trying other addresses first to upgrade make more sense.
+             */
+            addresses.remove(previousOwnerConnectionAddress);
+            addresses.add(previousOwnerConnectionAddress);
         }
         return addresses;
     }
@@ -939,11 +945,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         Set<T> shuffledSet = new LinkedHashSet<T>();
         shuffledSet.addAll(shuffleMe);
         return shuffledSet;
-    }
-
-    private void putPreviousOwnerAddressToLast(Set<Address> addresses) {
-        addresses.remove(previousOwnerConnectionAddress);
-        addresses.add(previousOwnerConnectionAddress);
     }
 
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
