@@ -389,7 +389,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 1));
     }
 
-    @Test(timeout = 600000)
+    @Test(timeout = 1800000)
     public void schedule_thenDisposeLeakTest() {
         Config config = new Config()
                 .addScheduledExecutorConfig(new ScheduledExecutorConfig()
