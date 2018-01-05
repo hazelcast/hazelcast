@@ -106,7 +106,7 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         Data valueData = serializationService.toData(mergedValue);
         EntryView<Data, Data> entryView = createSimpleEntryView(keyData, valueData, Mockito.mock(Record.class));
 
-        MergeOperation mergeOperation = new MergeOperation(mapName, keyData, entryView, new PassThroughMergePolicy());
+        MergeOperation mergeOperation = new MergeOperation(mapName, entryView, new PassThroughMergePolicy(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         Future<Object> future = operationService.invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
         future.get();

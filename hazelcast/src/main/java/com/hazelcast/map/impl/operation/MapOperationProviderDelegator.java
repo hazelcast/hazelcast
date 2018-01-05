@@ -165,9 +165,9 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
+    public MapOperation createMergeOperation(String name, EntryView<Data, Data> mergingEntry,
                                              MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        return getDelegate().createMergeOperation(name, dataKey, entryView, policy, disableWanReplicationEvent);
+        return getDelegate().createMergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
     }
 
     @Override

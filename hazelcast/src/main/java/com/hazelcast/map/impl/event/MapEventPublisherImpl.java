@@ -84,7 +84,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     @Override
-    public void publishWanReplicationUpdate(String mapName, EntryView entryView) {
+    public void publishWanReplicationUpdate(String mapName, EntryView<Data, Data> entryView) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         MapReplicationUpdate replicationEvent
                 = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(), entryView);
@@ -173,13 +173,13 @@ public class MapEventPublisherImpl implements MapEventPublisher {
      * @param eventType     the event type
      * @param dataKey       the key of the event map entry
      * @param oldValue      the old value of the map entry
-     * @param newValue         the new value of the map entry
+     * @param newValue      the new value of the map entry
      * @param mergingValue  the value used when performing a merge operation in case of a {@link EntryEventType#MERGED} event.
      *                      This value together with the old value produced the new value.
      */
     private void publishEvent(Collection<EventRegistration> registrations, Address caller, String mapName,
-                                     EntryEventType eventType, Data dataKey, Object oldValue, Object newValue,
-                                     Object mergingValue) {
+                              EntryEventType eventType, Data dataKey, Object oldValue, Object newValue,
+                              Object mergingValue) {
 
         EntryEventDataCache eventDataCache = filteringStrategy.getEntryEventDataCache();
 
