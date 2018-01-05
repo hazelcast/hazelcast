@@ -50,15 +50,16 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
     private final String serviceLabelValue;
     private final String namespace;
     private final Boolean resolveNotReadyAddresses;
-
+    private final int port;
     private final KubernetesClient client;
 
-    ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, String serviceLabelValue,
+    ServiceEndpointResolver(ILogger logger, String serviceName, int port, String serviceLabel, String serviceLabelValue,
                             String namespace, Boolean resolveNotReadyAddresses, String kubernetesMaster, String apiToken) {
 
         super(logger);
 
         this.serviceName = serviceName;
+        this.port = port;
         this.namespace = namespace;
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
@@ -142,7 +143,8 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
         Map<String, Object> properties = endpointAddress.getAdditionalProperties();
         String ip = endpointAddress.getIp();
         InetAddress inetAddress = mapAddress(ip);
-        int port = getServicePort(properties);
+        int port = (this.port > 0) ? this.port : getServicePort(properties);
+        logger.fine("Discovered node: " + ip + " port: " + port);
         Address address = new Address(inetAddress, port);
         discoveredNodes.add(new SimpleDiscoveryNode(address, properties));
     }

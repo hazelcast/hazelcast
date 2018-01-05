@@ -56,25 +56,35 @@ public class DnsEndpointResolverTest {
 
     @Test
     public void testInvalidServiceDns() {
-        DnsEndpointResolver endpointResolver = new DnsEndpointResolver(LOGGER, "http://test", SERVICE_DNS_TIMEOUT);
+        DnsEndpointResolver endpointResolver = new DnsEndpointResolver(LOGGER, "http://test", 0, SERVICE_DNS_TIMEOUT);
         List<DiscoveryNode> nodes = endpointResolver.resolve();
         assertTrue(nodes.isEmpty());
     }
 
     @Test
     public void testValidServiceDns() throws Exception {
-        DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", SERVICE_DNS_TIMEOUT));
+        testValidServiceDns(0, 5701);
+    }
+
+    @Test
+    public void testValidServiceDnsWithCustomPort() throws Exception {
+        testValidServiceDns(333, 333);
+    }
+
+    private void testValidServiceDns(final int port, final int expectedPort) throws Exception {
+        DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", port, SERVICE_DNS_TIMEOUT));
         PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments().thenReturn(lookup);
         when(lookup.getResult()).thenReturn(Lookup.SUCCESSFUL);
         when(lookup.run()).thenReturn(getRecords());
         List<DiscoveryNode> nodes = endpointResolver.resolve();
         assertEquals(1, nodes.size());
         assertEquals("127.0.0.1", nodes.get(0).getPrivateAddress().getHost());
+        assertEquals(expectedPort, nodes.get(0).getPrivateAddress().getPort());
     }
 
     @Test
     public void testDnsFailFlow() throws Exception {
-        DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", SERVICE_DNS_TIMEOUT));
+        DnsEndpointResolver endpointResolver = PowerMockito.spy(new DnsEndpointResolver(LOGGER, "hazelcast.com", 0, SERVICE_DNS_TIMEOUT));
         PowerMockito.when(endpointResolver, MemberMatcher.method(DnsEndpointResolver.class, "buildLookup")).withNoArguments().thenReturn(lookup);
 
         when(lookup.getResult()).thenReturn(Lookup.HOST_NOT_FOUND);

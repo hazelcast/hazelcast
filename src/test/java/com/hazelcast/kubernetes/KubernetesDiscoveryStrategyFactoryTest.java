@@ -50,12 +50,14 @@ public class KubernetesDiscoveryStrategyFactoryTest {
         HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
         Collection<PropertyDefinition> propertyDefinitions = factory.getConfigurationProperties();
         assertTrue(propertyDefinitions.contains(KubernetesProperties.SERVICE_DNS));
+        assertTrue(propertyDefinitions.contains(KubernetesProperties.SERVICE_PORT));
     }
 
     @Test
     public void createDiscoveryStrategy() {
         HashMap<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put(KubernetesProperties.KUBERNETES_API_TOKEN.key(), API_TOKEN);
+        properties.put(String.valueOf(KubernetesProperties.SERVICE_PORT), 333);
         HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
         DiscoveryStrategy strategy   = factory.newDiscoveryStrategy(discoveryNode, LOGGER, properties);
         assertTrue(strategy instanceof  HazelcastKubernetesDiscoveryStrategy);

@@ -37,6 +37,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static com.hazelcast.kubernetes.KubernetesProperties.RESOLVE_NOT_READY_ADDRESSES;
 
 final class HazelcastKubernetesDiscoveryStrategy
@@ -55,6 +56,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         int serviceDnsTimeout
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS_TIMEOUT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS);
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
+        int port = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PORT, 0);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
@@ -66,6 +68,7 @@ final class HazelcastKubernetesDiscoveryStrategy
                 + "service-dns: " + serviceDns + ", "
                 + "service-dns-timeout: " + serviceDnsTimeout + ", "
                 + "service-name: " + serviceName + ", "
+                + "service-port: " + port + ", "
                 + "service-label: " + serviceLabel + ", "
                 + "service-label-value: " + serviceLabelValue + ", "
                 + "namespace: " + namespace + ", "
@@ -74,9 +77,9 @@ final class HazelcastKubernetesDiscoveryStrategy
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
-            endpointResolver = new DnsEndpointResolver(logger, serviceDns, serviceDnsTimeout);
+            endpointResolver = new DnsEndpointResolver(logger, serviceDns, port, serviceDnsTimeout);
         } else {
-            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel, serviceLabelValue,
+            endpointResolver = new ServiceEndpointResolver(logger, serviceName, port, serviceLabel, serviceLabelValue,
                     namespace, resolveNotReadyAddresses, kubernetesMaster, apiToken);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());

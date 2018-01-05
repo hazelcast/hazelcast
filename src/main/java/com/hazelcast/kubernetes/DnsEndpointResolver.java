@@ -41,10 +41,12 @@ final class DnsEndpointResolver
 
     private final String serviceDns;
     private final int serviceDnsTimeout;
+    private final int port;
 
-    DnsEndpointResolver(ILogger logger, String serviceDns, int serviceDnsTimeout) {
+    DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout) {
         super(logger);
         this.serviceDns = serviceDns;
+        this.port = port;
         this.serviceDnsTimeout = serviceDnsTimeout;
     }
 
@@ -74,7 +76,7 @@ final class DnsEndpointResolver
                 //      Address: 10.1.9.33
                 SRVRecord srv = (SRVRecord) record;
                 InetAddress[] inetAddress = getAllAddresses(srv);
-                int port = getHazelcastPort(srv.getPort());
+                int port = (this.port > 0) ? this.port : getHazelcastPort(srv.getPort());
 
                 for (InetAddress i : inetAddress) {
                     Address address = new Address(i, port);
