@@ -18,6 +18,7 @@ package com.hazelcast.quorum.multimap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -43,7 +44,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class TransactionalMultiMapQuorumWriteTest extends AbstractMultiMapQuorumTest {
+public class TransactionalMultiMapQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter(0)
     public static TransactionOptions options;
@@ -82,7 +83,7 @@ public class TransactionalMultiMapQuorumWriteTest extends AbstractMultiMapQuorum
     public void txPut_successful_whenQuorumSize_met() {
         TransactionContext transactionContext = newTransactionContext(0);
         transactionContext.beginTransaction();
-        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MAP_NAME + quorumType.name());
+        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MULTI_MAP_NAME + quorumType.name());
         map.put("123", "456");
         transactionContext.commitTransaction();
     }
@@ -91,7 +92,7 @@ public class TransactionalMultiMapQuorumWriteTest extends AbstractMultiMapQuorum
     public void txPut_failing_whenQuorumSize_notMet() {
         TransactionContext transactionContext = newTransactionContext(3);
         transactionContext.beginTransaction();
-        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MAP_NAME + quorumType.name());
+        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MULTI_MAP_NAME + quorumType.name());
         map.put("123", "456");
         transactionContext.commitTransaction();
     }
@@ -100,7 +101,7 @@ public class TransactionalMultiMapQuorumWriteTest extends AbstractMultiMapQuorum
     public void txRemove_successful_whenQuorumSize_met() {
         TransactionContext transactionContext = newTransactionContext(0);
         transactionContext.beginTransaction();
-        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MAP_NAME + quorumType.name());
+        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MULTI_MAP_NAME + quorumType.name());
         map.remove("123");
         transactionContext.commitTransaction();
     }
@@ -109,7 +110,7 @@ public class TransactionalMultiMapQuorumWriteTest extends AbstractMultiMapQuorum
     public void txRemove_failing_whenQuorumSize_notMet() {
         TransactionContext transactionContext = newTransactionContext(3);
         transactionContext.beginTransaction();
-        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MAP_NAME + quorumType.name());
+        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MULTI_MAP_NAME + quorumType.name());
         map.remove("123");
         transactionContext.commitTransaction();
     }
@@ -118,7 +119,7 @@ public class TransactionalMultiMapQuorumWriteTest extends AbstractMultiMapQuorum
     public void txRemoveSingle_successful_whenQuorumSize_met() {
         TransactionContext transactionContext = newTransactionContext(0);
         transactionContext.beginTransaction();
-        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MAP_NAME + quorumType.name());
+        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MULTI_MAP_NAME + quorumType.name());
         map.remove("123", "456");
         transactionContext.commitTransaction();
     }
@@ -127,7 +128,7 @@ public class TransactionalMultiMapQuorumWriteTest extends AbstractMultiMapQuorum
     public void txRemoveSingle_failing_whenQuorumSize_notMet() {
         TransactionContext transactionContext = newTransactionContext(3);
         transactionContext.beginTransaction();
-        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MAP_NAME + quorumType.name());
+        TransactionalMultiMap<Object, Object> map = transactionContext.getMultiMap(MULTI_MAP_NAME + quorumType.name());
         map.remove("123", "456");
         transactionContext.commitTransaction();
     }

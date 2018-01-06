@@ -34,9 +34,9 @@ public class ClientMultiMapQuorumWriteTest extends MultiMapQuorumWriteTest {
         clients.terminateAll();
     }
 
+    @Override
     protected MultiMap map(int index) {
-        return clients.client(index).getMultiMap(MAP_NAME + quorumType.name());
+        return clients.client(index).getMultiMap(MULTI_MAP_NAME + quorumType.name());
     }
-
 
 }

@@ -19,6 +19,7 @@ package com.hazelcast.quorum.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.TestLoggingEntryProcessor;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -34,7 +35,6 @@ import org.junit.runners.Parameterized;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
@@ -43,7 +43,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class MapQuorumWriteTest extends AbstractMapQuorumTest {
+public class MapQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
@@ -105,14 +105,12 @@ public class MapQuorumWriteTest extends AbstractMapQuorumTest {
 
     @Test
     public void putAsync_successful_whenQuorumSize_met() throws Exception {
-        Future<Object> future = map(0).putAsync("foo", "bar");
-        future.get();
+        map(0).putAsync("foo", "bar").get();
     }
 
     @Test(expected = ExecutionException.class)
     public void putAsync_failing_whenQuorumSize_met() throws Exception {
-        Future<Object> future = map(3).putAsync("foo", "bar");
-        future.get();
+        map(3).putAsync("foo", "bar").get();
     }
 
     @Test
@@ -151,14 +149,12 @@ public class MapQuorumWriteTest extends AbstractMapQuorumTest {
 
     @Test
     public void removeAsync_successful_whenQuorumSize_met() throws Exception {
-        Future<Object> future = map(0).removeAsync("foo");
-        future.get();
+        map(0).removeAsync("foo").get();
     }
 
     @Test(expected = ExecutionException.class)
     public void removeAsync_failing_whenQuorumSize_met() throws Exception {
-        Future<Object> future = map(3).removeAsync("foo");
-        future.get();
+        map(3).removeAsync("foo").get();
     }
 
     @Test
@@ -317,14 +313,12 @@ public class MapQuorumWriteTest extends AbstractMapQuorumTest {
 
     @Test
     public void submitToKey_successful_whenQuorumSize_met() throws Exception {
-        Future future = map(0).submitToKey("foo", new TestLoggingEntryProcessor());
-        future.get();
+        map(0).submitToKey("foo", new TestLoggingEntryProcessor()).get();
     }
 
     @Test(expected = ExecutionException.class)
     public void submitToKey_failing_whenQuorumSize_met() throws Exception {
-        Future future = map(3).submitToKey("foo", new TestLoggingEntryProcessor());
-        future.get();
+        map(3).submitToKey("foo", new TestLoggingEntryProcessor()).get();
     }
 
     protected IMap map(int index) {

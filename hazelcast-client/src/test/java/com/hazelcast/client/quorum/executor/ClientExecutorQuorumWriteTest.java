@@ -34,10 +34,12 @@ public class ClientExecutorQuorumWriteTest extends ExecutorQuorumWriteTest {
         clients.terminateAll();
     }
 
+    @Override
     protected IExecutorService exec(int index, QuorumType quorumType) {
         return exec(index, quorumType, "");
     }
 
+    @Override
     protected IExecutorService exec(int index, QuorumType quorumType, String postfix) {
         return clients.client(index).getExecutorService(EXEC_NAME + quorumType.name() + postfix);
     }

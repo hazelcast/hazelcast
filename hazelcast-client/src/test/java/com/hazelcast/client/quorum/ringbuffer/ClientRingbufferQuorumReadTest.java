@@ -3,8 +3,8 @@ package com.hazelcast.client.quorum.ringbuffer;
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ISemaphore;
 import com.hazelcast.quorum.ringbuffer.RingbufferQuorumReadTest;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -33,8 +33,9 @@ public class ClientRingbufferQuorumReadTest extends RingbufferQuorumReadTest {
         clients.terminateAll();
     }
 
-    protected ISemaphore semaphore(int index) {
-        return clients.client(index).getSemaphore(RINGBUFFER_NAME + quorumType.name());
+    @Override
+    protected Ringbuffer ring(int index) {
+        return clients.client(index).getRingbuffer(RINGBUFFER_NAME + quorumType.name());
     }
 
 }

@@ -18,6 +18,7 @@ package com.hazelcast.quorum.cache;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -50,7 +51,7 @@ import static org.junit.Assert.assertNull;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class CacheQuorumWriteTest extends AbstractCacheQuorumTest {
+public class CacheQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;

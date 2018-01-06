@@ -39,5 +39,4 @@ public class ClientListQuorumWriteTest extends ListQuorumWriteTest {
         return clients.client(index).getList(LIST_NAME + quorumType.name());
     }
 
-
 }

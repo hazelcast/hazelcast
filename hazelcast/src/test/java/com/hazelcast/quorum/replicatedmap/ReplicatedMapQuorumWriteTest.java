@@ -19,6 +19,7 @@ package com.hazelcast.quorum.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -41,7 +42,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class ReplicatedMapQuorumWriteTest extends AbstractReplicatedMapQuorumTest {
+public class ReplicatedMapQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
@@ -128,7 +129,7 @@ public class ReplicatedMapQuorumWriteTest extends AbstractReplicatedMapQuorumTes
     }
 
     protected ReplicatedMap map(int index) {
-        return map(index, quorumType);
+        return replmap(index, quorumType);
     }
 
 }

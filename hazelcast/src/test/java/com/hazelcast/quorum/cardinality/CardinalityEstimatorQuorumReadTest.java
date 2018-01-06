@@ -18,6 +18,7 @@ package com.hazelcast.quorum.cardinality;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -38,7 +39,7 @@ import static org.hamcrest.CoreMatchers.isA;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class CardinalityEstimatorQuorumReadTest extends AbstractCardinalityEstimatorQuorumTest {
+public class CardinalityEstimatorQuorumReadTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;

@@ -18,6 +18,7 @@ package com.hazelcast.quorum.ringbuffer;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -36,13 +37,12 @@ import org.junit.runners.Parameterized;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
-import static org.hamcrest.core.Is.isA;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class RingbufferQuorumReadTest extends AbstractRingbufferQuorumTest {
+public class RingbufferQuorumReadTest extends AbstractQuorumTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -143,8 +143,14 @@ public class RingbufferQuorumReadTest extends AbstractRingbufferQuorumTest {
 
     @Test
     public void readManyAsync_noQuorum() throws Exception {
-        expectedException.expectCause(isA(QuorumException.class));
-        ring(3).readManyAsync(1l, 1, 1, new Filter()).get();
+        try {
+            ring(3).readManyAsync(1l, 1, 1, new Filter()).get();
+        } catch (Exception ex) {
+            if (ex instanceof QuorumException || ex.getCause() instanceof QuorumException) {
+                return;
+            }
+        }
+        fail("Expected QuorumException top-level or as cause");
     }
 
     private static class Filter implements IFunction {

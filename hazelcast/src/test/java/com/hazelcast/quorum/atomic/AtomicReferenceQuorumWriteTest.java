@@ -18,6 +18,7 @@ package com.hazelcast.quorum.atomic;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -32,16 +33,16 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import static com.hazelcast.quorum.AbstractQuorumTest.Objekt.object;
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
-import static com.hazelcast.quorum.atomic.AbstractAtomicQuorumTest.Objekt.object;
 import static java.util.Arrays.asList;
 import static org.hamcrest.core.Is.isA;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class AtomicReferenceQuorumWriteTest extends AbstractAtomicQuorumTest {
+public class AtomicReferenceQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;

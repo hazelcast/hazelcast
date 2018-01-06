@@ -33,6 +33,7 @@ public class ClientSemaphoreQuorumReadTest extends SemaphoreQuorumReadTest {
         clients.terminateAll();
     }
 
+    @Override
     protected ISemaphore semaphore(int index) {
         return clients.client(index).getSemaphore(SEMAPHORE + quorumType.name());
     }

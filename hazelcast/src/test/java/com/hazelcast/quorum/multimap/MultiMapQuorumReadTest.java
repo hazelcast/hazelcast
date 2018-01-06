@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.aggregation.Aggregations;
 import com.hazelcast.mapreduce.aggregation.Supplier;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -37,7 +38,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class MultiMapQuorumReadTest extends AbstractMultiMapQuorumTest {
+public class MultiMapQuorumReadTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
@@ -185,6 +186,6 @@ public class MultiMapQuorumReadTest extends AbstractMultiMapQuorumTest {
     }
 
     protected MultiMap map(int index) {
-        return map(index, quorumType);
+        return multimap(index, quorumType);
     }
 }

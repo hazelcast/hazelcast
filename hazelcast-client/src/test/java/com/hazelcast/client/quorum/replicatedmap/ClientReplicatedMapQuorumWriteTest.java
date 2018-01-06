@@ -33,8 +33,9 @@ public class ClientReplicatedMapQuorumWriteTest extends ReplicatedMapQuorumWrite
         clients.terminateAll();
     }
 
+    @Override
     protected ReplicatedMap map(int index) {
-        return clients.client(index).getReplicatedMap(MAP_NAME + quorumType.name());
+        return clients.client(index).getReplicatedMap(REPLICATED_MAP_NAME + quorumType.name());
     }
 
 }
