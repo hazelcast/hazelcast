@@ -49,6 +49,7 @@ public class ClientTransactionalQueueQuorumReadTest extends TransactionalQueueQu
         clients.terminateAll();
     }
 
+    @Override
     public TransactionContext newTransactionContext(int index) {
         return clients.client(index).newTransactionContext(options);
     }

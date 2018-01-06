@@ -18,6 +18,7 @@ package com.hazelcast.quorum.atomic;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -40,7 +41,7 @@ import static org.hamcrest.core.Is.isA;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class AtomicLongQuorumWriteTest extends AbstractAtomicQuorumTest {
+public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;

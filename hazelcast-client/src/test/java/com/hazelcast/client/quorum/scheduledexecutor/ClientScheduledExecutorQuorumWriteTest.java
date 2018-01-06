@@ -33,12 +33,14 @@ public class ClientScheduledExecutorQuorumWriteTest extends ScheduledExecutorQuo
         clients.terminateAll();
     }
 
+    @Override
     protected IScheduledExecutorService exec(int index) {
-        return exec(index, quorumType);
+        return scheduledExec(index, quorumType);
     }
 
+    @Override
     protected IScheduledExecutorService exec(int index, String postfix) {
-        return exec(index, quorumType, postfix);
+        return clients.client(index).getScheduledExecutorService(SCHEDULED_EXEC_NAME + quorumType.name() + postfix);
     }
 
 }

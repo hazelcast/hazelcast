@@ -19,6 +19,7 @@ package com.hazelcast.quorum.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,7 +45,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class TransactionalMapQuorumReadTest extends AbstractMapQuorumTest {
+public class TransactionalMapQuorumReadTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter(0)
     public static TransactionOptions options;

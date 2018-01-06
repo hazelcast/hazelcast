@@ -17,6 +17,7 @@
 package com.hazelcast.quorum.ringbuffer;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.ringbuffer.OverflowPolicy;
@@ -41,7 +42,7 @@ import static org.hamcrest.core.Is.isA;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class RingbufferQuorumWriteTest extends AbstractRingbufferQuorumTest {
+public class RingbufferQuorumWriteTest extends AbstractQuorumTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();

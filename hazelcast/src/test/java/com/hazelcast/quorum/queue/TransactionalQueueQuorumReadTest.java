@@ -18,6 +18,7 @@ package com.hazelcast.quorum.queue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,7 +45,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class TransactionalQueueQuorumReadTest extends AbstractQueueQuorumTest {
+public class TransactionalQueueQuorumReadTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter(0)
     public static TransactionOptions options;

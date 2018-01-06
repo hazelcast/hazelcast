@@ -83,7 +83,6 @@ public class ScheduledExecutorServiceProxy
         }
     };
 
-
     private final String name;
     private final ILogger logger;
 

@@ -19,6 +19,7 @@ package com.hazelcast.quorum.durableexecutor;
 import com.hazelcast.config.Config;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -50,7 +51,7 @@ import static org.hamcrest.CoreMatchers.isA;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class DurableExecutorQuorumWriteTest extends AbstractDurableExecutorQuorumTest {
+public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -246,11 +247,11 @@ public class DurableExecutorQuorumWriteTest extends AbstractDurableExecutorQuoru
     }
 
     protected DurableExecutorService exec(int index) {
-        return exec(index, quorumType);
+        return durableExec(index, quorumType);
     }
 
     protected DurableExecutorService exec(int index, String postfix) {
-        return exec(index, quorumType, postfix);
+        return durableExec(index, quorumType, postfix);
     }
 
     static class ExecRunnable implements Runnable, Callable, Serializable {

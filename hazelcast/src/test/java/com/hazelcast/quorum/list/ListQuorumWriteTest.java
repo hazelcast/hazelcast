@@ -18,6 +18,7 @@ package com.hazelcast.quorum.list;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IList;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -37,7 +38,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class ListQuorumWriteTest extends AbstractListQuorumTest {
+public class ListQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
@@ -56,15 +57,6 @@ public class ListQuorumWriteTest extends AbstractListQuorumTest {
     public static void tearDown() {
         shutdownTestEnvironment();
     }
-
-    // add(E e);
-    // remove(Object o);
-    // addAll(Collection<? extends E> c);
-    // retainAll(Collection<?> c);
-    // removeAll(Collection<?> c);
-    // clear();
-    // remove();
-    // set();
 
     @Test
     public void addOperation_successful_whenQuorumSize_met() {

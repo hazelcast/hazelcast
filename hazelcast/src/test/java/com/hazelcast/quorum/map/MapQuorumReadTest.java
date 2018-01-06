@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.projection.Projections;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -27,21 +28,22 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.HashSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.isA;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class MapQuorumReadTest extends AbstractMapQuorumTest {
+public class MapQuorumReadTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
@@ -50,6 +52,9 @@ public class MapQuorumReadTest extends AbstractMapQuorumTest {
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.READ}, {QuorumType.READ_WRITE}});
     }
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -73,14 +78,13 @@ public class MapQuorumReadTest extends AbstractMapQuorumTest {
 
     @Test
     public void getAsync_successful_whenQuorumSize_met() throws Exception {
-        Future<Object> future = map(0).getAsync("foo");
-        future.get();
+        map(0).getAsync("foo").get();
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test
     public void getAsync_failing_whenQuorumSize_notMet() throws Exception {
-        Future<Object> future = map(3).getAsync("foo");
-        future.get();
+        expectedException.expectCause(isA(QuorumException.class));
+        map(3).getAsync("foo").get();
     }
 
     @Test

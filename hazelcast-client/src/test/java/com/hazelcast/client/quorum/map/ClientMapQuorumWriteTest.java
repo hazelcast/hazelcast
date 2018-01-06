@@ -22,8 +22,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.quorum.map.MapQuorumWriteTest;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -51,6 +49,7 @@ public class ClientMapQuorumWriteTest extends MapQuorumWriteTest {
         clients.terminateAll();
     }
 
+    @Override
     protected IMap map(int index) {
         return clients.client(index).getMap(MAP_NAME + quorumType.name());
     }

@@ -49,6 +49,7 @@ public class ClientQueueQuorumWriteTest extends QueueQuorumWriteTest {
         clients.terminateAll();
     }
 
+    @Override
     protected IQueue queue(int index) {
         return clients.client(index).getQueue(QUEUE_NAME + quorumType.name());
     }

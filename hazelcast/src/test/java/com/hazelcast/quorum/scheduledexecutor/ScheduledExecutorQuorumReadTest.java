@@ -17,6 +17,7 @@
 package com.hazelcast.quorum.scheduledexecutor;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -37,7 +38,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class ScheduledExecutorQuorumReadTest extends AbstractScheduledExecutorQuorumTest {
+public class ScheduledExecutorQuorumReadTest extends AbstractQuorumTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -71,7 +72,7 @@ public class ScheduledExecutorQuorumReadTest extends AbstractScheduledExecutorQu
     }
 
     protected IScheduledExecutorService exec(int index) {
-        return exec(index, quorumType);
+        return scheduledExec(index, quorumType);
     }
 }
 

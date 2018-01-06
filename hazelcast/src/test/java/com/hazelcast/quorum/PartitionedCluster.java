@@ -16,11 +16,7 @@
 
 package com.hazelcast.quorum;
 
-import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.LockConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MembershipAdapter;
@@ -58,57 +54,6 @@ public class PartitionedCluster {
     public PartitionedCluster createFiveMemberCluster(Config config) {
         createInstances(config);
         return this;
-    }
-
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) {
-        createFiveMemberCluster(mapConfig, quorumConfig);
-        return splitFiveMembersThreeAndTwo(quorumConfig.getName());
-    }
-
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
-        createFiveMemberCluster(cacheSimpleConfig, quorumConfig);
-        return splitFiveMembersThreeAndTwo(quorumConfig.getName());
-    }
-
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(QueueConfig qConfig, QuorumConfig quorumConfig) {
-        createFiveMemberCluster(qConfig, quorumConfig);
-        return splitFiveMembersThreeAndTwo(quorumConfig.getName());
-    }
-
-    public PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
-        Config config = createClusterConfig()
-                .addMapConfig(mapConfig)
-                .addQuorumConfig(quorumConfig);
-        createInstances(config);
-        return this;
-    }
-
-    public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
-        Config config = createClusterConfig()
-                .addCacheConfig(cacheSimpleConfig)
-                .addQuorumConfig(quorumConfig);
-        createInstances(config);
-        return this;
-    }
-
-    public PartitionedCluster createFiveMemberCluster(QueueConfig queueConfig, QuorumConfig quorumConfig) {
-        Config config = createClusterConfig()
-                .addQueueConfig(queueConfig)
-                .addQuorumConfig(quorumConfig);
-        createInstances(config);
-        return this;
-    }
-
-    public PartitionedCluster createFiveMemberCluster(LockConfig lockConfig, QuorumConfig quorumConfig) {
-        Config config = createClusterConfig()
-                .addLockConfig(lockConfig)
-                .addQuorumConfig(quorumConfig);
-        createInstances(config);
-        return this;
-    }
-
-    public static Config createClusterConfig() {
-        return createClusterConfig(new Config());
     }
 
     public static Config createClusterConfig(Config config) {

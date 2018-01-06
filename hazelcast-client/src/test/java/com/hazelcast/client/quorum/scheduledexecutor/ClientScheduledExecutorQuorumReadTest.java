@@ -33,8 +33,9 @@ public class ClientScheduledExecutorQuorumReadTest extends ScheduledExecutorQuor
         clients.terminateAll();
     }
 
+    @Override
     protected IScheduledExecutorService exec(int index) {
-        return exec(index, quorumType);
+        return clients.client(index).getScheduledExecutorService(SCHEDULED_EXEC_NAME + quorumType.name());
     }
 
 }

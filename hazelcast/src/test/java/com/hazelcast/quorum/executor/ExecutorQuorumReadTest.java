@@ -18,6 +18,7 @@ package com.hazelcast.quorum.executor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -38,7 +39,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class ExecutorQuorumReadTest extends AbstractExecutorQuorumTest {
+public class ExecutorQuorumReadTest extends AbstractQuorumTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();

@@ -34,8 +34,9 @@ public class ClientDurableExecutorQuorumWriteTest extends DurableExecutorQuorumW
         clients.terminateAll();
     }
 
-    protected DurableExecutorService exec(int index, QuorumType quorumType) {
-        return clients.client(index).getDurableExecutorService(EXEC_NAME + quorumType.name());
+    @Override
+    protected DurableExecutorService durableExec(int index, QuorumType quorumType) {
+        return clients.client(index).getDurableExecutorService(DURABLE_EXEC_NAME + quorumType.name());
     }
 
 }

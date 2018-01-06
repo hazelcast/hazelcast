@@ -34,6 +34,7 @@ public class ClientExecutorQuorumReadTest extends ExecutorQuorumReadTest {
         clients.terminateAll();
     }
 
+    @Override
     protected IExecutorService exec(int index, QuorumType quorumType) {
         return clients.client(index).getExecutorService(EXEC_NAME + quorumType.name());
     }
