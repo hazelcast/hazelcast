@@ -520,7 +520,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         return exec(index, quorumType, postfix);
     }
 
-    static class ExecRunnable implements Runnable, Callable, Serializable {
+    public static class ExecRunnable implements Runnable, Callable, Serializable {
         @Override
         public Object call() throws Exception {
             return "response";
