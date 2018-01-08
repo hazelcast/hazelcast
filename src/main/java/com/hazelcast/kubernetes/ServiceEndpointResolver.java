@@ -144,7 +144,9 @@ class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.Endpo
         String ip = endpointAddress.getIp();
         InetAddress inetAddress = mapAddress(ip);
         int port = (this.port > 0) ? this.port : getServicePort(properties);
-        logger.fine("Discovered node: " + ip + " port: " + port);
+        if (logger.isFineEnabled()) {
+            logger.fine("Discovered node: " + ip + " port: " + port);
+        }
         Address address = new Address(inetAddress, port);
         discoveredNodes.add(new SimpleDiscoveryNode(address, properties));
     }
