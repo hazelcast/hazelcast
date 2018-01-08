@@ -131,7 +131,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
         Data key = serializationService.toData(1);
         Data value = serializationService.toData(new ClientRegressionWithMockNetworkTest.SamplePortable(1));
         EntryView entryView = EntryViews.createSimpleEntryView(key, value, Mockito.mock(Record.class));
-        MergeOperation op = new MergeOperation(map.getName(), key, entryView, new PassThroughMergePolicy());
+        MergeOperation op = new MergeOperation(map.getName(), entryView, new PassThroughMergePolicy(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
 

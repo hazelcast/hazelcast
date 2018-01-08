@@ -36,7 +36,7 @@ public interface MapEventPublisher {
      * @param mapName   the map name
      * @param entryView the updated entry
      */
-    void publishWanReplicationUpdate(String mapName, EntryView entryView);
+    void publishWanReplicationUpdate(String mapName, EntryView<Data, Data> entryView);
 
     /**
      * Notifies the WAN subsystem of a map entry removal on a replica owner.

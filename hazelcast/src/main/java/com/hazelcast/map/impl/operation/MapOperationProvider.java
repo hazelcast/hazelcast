@@ -105,8 +105,8 @@ public interface MapOperationProvider {
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);
 
-    MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
-                                      MapMergePolicy policy, boolean disableWanReplicationEvent);
+    MapOperation createMergeOperation(String name, EntryView<Data, Data> entryView, MapMergePolicy policy,
+                                      boolean disableWanReplicationEvent);
 
     MapOperation createMapFlushOperation(String name);
 

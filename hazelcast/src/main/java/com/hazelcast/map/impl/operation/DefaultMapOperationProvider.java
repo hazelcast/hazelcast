@@ -184,9 +184,9 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
+    public MapOperation createMergeOperation(String name, EntryView<Data, Data> mergingEntry,
                                              MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        return new MergeOperation(name, dataKey, entryView, policy, disableWanReplicationEvent);
+        return new MergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
     }
 
     @Override

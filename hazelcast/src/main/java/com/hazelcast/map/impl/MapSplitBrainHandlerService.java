@@ -164,7 +164,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                     Data value = mapServiceContext.toData(record.getValue());
                     EntryView<Data, Data> entryView = createSimpleEntryView(key, value, record);
 
-                    Operation operation = operationProvider.createMergeOperation(mapName, key, entryView, mergePolicy, false);
+                    Operation operation = operationProvider.createMergeOperation(mapName, entryView, mergePolicy, false);
                     try {
                         int partitionId = partitionService.getPartitionId(key);
                         operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId)
