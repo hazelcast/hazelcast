@@ -516,7 +516,7 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.jmx.update.interval.seconds", 5, SECONDS);
 
     public static final HazelcastProperty MC_MAX_VISIBLE_INSTANCE_COUNT
-            = new HazelcastProperty("hazelcast.mc.max.visible.instance.count", 100);
+            = new HazelcastProperty("hazelcast.mc.max.visible.instance.count", Integer.MAX_VALUE);
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
     public static final HazelcastProperty MC_URL_CHANGE_ENABLED
