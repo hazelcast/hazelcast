@@ -16,7 +16,9 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -32,15 +34,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheException;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Set;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -192,6 +199,45 @@ public class CachingProviderTest extends HazelcastTestSupport {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 null, null, propertiesByInstanceItself(instance3));
         assertCacheManagerInstance(cacheManager, instance3);
+    }
+
+    @Test
+    public void whenDefaultCacheManager_withUnnamedDefaultInstance_thenNoSharedNameHazelcastInstanceExists() {
+        JsrTestUtil.cleanup();
+        try {
+            System.setProperty(AbstractHazelcastCachingProvider.NAMED_JCACHE_HZ_INSTANCE, "false");
+            CachingProvider defaultCachingProvider = Caching.getCachingProvider();
+            CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
+            Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+            for (HazelcastInstance instance : instances) {
+                if (AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME.equals(instance.getConfig().getInstanceName())) {
+                    fail("The default named HazelcastInstance shouldn't have been started");
+                }
+            }
+            defaultCachingProvider.close();
+        } finally {
+            JsrTestUtil.cleanup();
+        }
+    }
+
+    @Test
+    public void whenDefaultCacheManager_thenSharedNameHazelcastInstanceExists() {
+        JsrTestUtil.cleanup();
+        try {
+            CachingProvider defaultCachingProvider = Caching.getCachingProvider();
+            CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
+            Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+            boolean sharedInstanceStarted = false;
+            for (HazelcastInstance instance : instances) {
+                if (instance.getConfig().getInstanceName().equals(AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME)) {
+                    sharedInstanceStarted = true;
+                }
+            }
+            assertTrue("The default named HazelcastInstance should have been started", sharedInstanceStarted);
+            defaultCachingProvider.close();
+        } finally {
+            JsrTestUtil.cleanup();
+        }
     }
 
     protected void assertCacheManagerInstance(HazelcastCacheManager cacheManager, HazelcastInstance instance) {

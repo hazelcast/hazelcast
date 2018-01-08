@@ -1025,7 +1025,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             // Check that new entry is not already expired, in which case it should
             // not be added to the cache or listeners called or writers called.
-            if (record == null || isExpired) {
+            if (recordNotExistOrExpired(record, isExpired)) {
                 isOnNewPut = true;
                 record = createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId, source);
                 isSaveSucceed = record != null;
@@ -1082,8 +1082,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         boolean saved = false;
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now, source);
+        boolean cacheMiss = recordNotExistOrExpired(record, isExpired);
         try {
-            if (record == null || isExpired) {
+            if (cacheMiss) {
                 saved = createRecordWithExpiry(key, value, expiryPolicy, now,
                         disableWriteThrough, completionId, source) != null;
             } else {
@@ -1092,9 +1093,16 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
             onPutIfAbsent(key, value, expiryPolicy, source, disableWriteThrough, record, isExpired, saved);
-            if (saved && isStatisticsEnabled()) {
-                statistics.increaseCachePuts(1);
-                statistics.addPutTimeNanos(System.nanoTime() - start);
+            if (isStatisticsEnabled()) {
+                if (saved) {
+                    statistics.increaseCachePuts();
+                    statistics.addPutTimeNanos(System.nanoTime() - start);
+                }
+                if (cacheMiss) {
+                    statistics.increaseCacheMisses();
+                } else {
+                    statistics.increaseCacheHits();
+                }
             }
             return saved;
         } catch (Throwable error) {

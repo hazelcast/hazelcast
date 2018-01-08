@@ -21,6 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -145,7 +146,11 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     }
 
     private ClientConfig getDefaultClientConfig() {
-        return new XmlClientConfigBuilder().build();
+        ClientConfig clientConfig = new XmlClientConfigBuilder().build();
+        if (namedDefaultHzInstance && StringUtil.isNullOrEmpty(clientConfig.getInstanceName())) {
+            clientConfig.setInstanceName(SHARED_JCACHE_INSTANCE_NAME);
+        }
+        return clientConfig;
     }
 
     protected ClientConfig getConfigFromLocation(String location, ClassLoader classLoader, String instanceName)

@@ -73,6 +73,7 @@ final class CacheStatsHandler {
     void onPutIfAbsent(long startNanos, boolean saved) {
         if (saved) {
             statistics.increaseCachePuts();
+            statistics.increaseCacheMisses();
             statistics.addPutTimeNanos(System.nanoTime() - startNanos);
         }
     }
