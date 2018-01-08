@@ -47,6 +47,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 /**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
  * <ul>
@@ -57,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class QueueContainer implements IdentifiedDataSerializable {
-    private static final int ID_PROMOTION_OFFSET = 100000;
+
     /**
      * Contains item ID to queue item mappings for current transactions
      */
@@ -468,7 +471,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of item ID and items added
      */
     public Map<Long, Data> addAll(Collection<Data> dataList) {
-        final Map<Long, Data> map = new HashMap<Long, Data>(dataList.size());
+        final Map<Long, Data> map = createHashMap(dataList.size());
         final List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
         for (Data data : dataList) {
             final QueueItem item = new QueueItem(this, nextId(), null);
@@ -910,15 +913,17 @@ public class QueueContainer implements IdentifiedDataSerializable {
      *
      * @return backup replica map from item ID to queue item
      */
-    private Map<Long, QueueItem> getBackupMap() {
+    public Map<Long, QueueItem> getBackupMap() {
         if (backupMap == null) {
-            backupMap = new HashMap<Long, QueueItem>();
             if (itemQueue != null) {
+                backupMap = createHashMap(itemQueue.size());
                 for (QueueItem item : itemQueue) {
                     backupMap.put(item.getItemId(), item);
                 }
                 itemQueue.clear();
                 itemQueue = null;
+            } else {
+                backupMap = new HashMap<Long, QueueItem>();
             }
         }
         return backupMap;

@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -109,7 +110,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
 
         Data value = getNodeEngine().toData(e);
         Iterator<CollectionItem> iterator = getCollection().iterator();
-        long reservedItemId = -1;
+        long reservedItemId = INVALID_ITEM_ID;
         while (iterator.hasNext()) {
             CollectionItem item = iterator.next();
             if (value.equals(item.getValue())) {

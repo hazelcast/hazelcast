@@ -27,10 +27,12 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
+
 public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
     private Data value;
-    private long itemId = -1;
+    private long itemId = INVALID_ITEM_ID;
 
     public CollectionRemoveOperation() {
     }
@@ -53,14 +55,14 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
     @Override
     public void afterRun() throws Exception {
-        if (itemId != -1) {
+        if (itemId != INVALID_ITEM_ID) {
             publishEvent(ItemEventType.REMOVED, value);
         }
     }
 
     @Override
     public boolean shouldBackup() {
-        return itemId != -1;
+        return itemId != INVALID_ITEM_ID;
     }
 
     @Override
