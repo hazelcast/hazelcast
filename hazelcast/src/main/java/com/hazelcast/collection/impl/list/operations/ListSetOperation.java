@@ -29,12 +29,14 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
+
 public class ListSetOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     private int index;
     private Data value;
-    private long itemId = -1;
-    private long oldItemId = -1;
+    private long itemId = INVALID_ITEM_ID;
+    private long oldItemId = INVALID_ITEM_ID;
 
     public ListSetOperation() {
     }

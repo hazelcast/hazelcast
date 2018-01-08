@@ -18,7 +18,6 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.impl.AbstractCollectionBackupTest;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,27 +25,44 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+
+import static com.hazelcast.collection.impl.CollectionTestUtil.getBackupQueue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueueBackupTest extends AbstractCollectionBackupTest {
 
-    private static final String QUEUE_NAME = "QueueBackupTest";
+    @Test
+    public void testBackupPromotion() {
+        config.getQueueConfig("default")
+                .setBackupCount(1)
+                .setAsyncBackupCount(0);
+
+        testBackupPromotionInternal();
+    }
 
     @Test
-    public void testBackups() {
-        config.getQueueConfig(QUEUE_NAME)
+    public void testBackupMigration() {
+        config.getQueueConfig("default")
                 .setBackupCount(BACKUP_COUNT)
                 .setAsyncBackupCount(0);
 
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
-        IQueue<Integer> queue = hz.getQueue(QUEUE_NAME);
-        for (int i = 0; i < ITEM_COUNT; i++) {
-            queue.add(i);
-        }
+        testBackupMigrationInternal();
+    }
 
-        int partitionId = ((QueueProxySupport) queue).getPartitionId();
-        LOGGER.info("Queue " + QUEUE_NAME + " is stored in partition " + partitionId);
+    @Override
+    protected Collection<Integer> getHazelcastCollection(HazelcastInstance instance, String name) {
+        return instance.getQueue(name);
+    }
 
-        testBackups(CollectionType.QUEUE, QUEUE_NAME, partitionId);
+    @Override
+    protected Collection<Integer> getBackupCollection(HazelcastInstance instance, String name) {
+        return getBackupQueue(instance, name);
+    }
+
+    @Override
+    protected int getPartitionId(Collection collection) {
+        return ((QueueProxySupport) collection).getPartitionId();
     }
 }
