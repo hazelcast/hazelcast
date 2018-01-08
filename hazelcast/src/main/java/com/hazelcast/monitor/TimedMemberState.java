@@ -24,9 +24,8 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getBoolean;
@@ -39,7 +38,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;
     MemberStateImpl memberState;
-    Set<String> instanceNames;
+    List<String> instanceNames;
     List<String> memberList;
     boolean master;
     String clusterName;
@@ -79,11 +78,11 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         return time;
     }
 
-    public Set<String> getInstanceNames() {
+    public List<String> getInstanceNames() {
         return instanceNames;
     }
 
-    public void setInstanceNames(Set<String> longInstanceNames) {
+    public void setInstanceNames(List<String> longInstanceNames) {
         this.instanceNames = longInstanceNames;
     }
 
@@ -168,7 +167,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         time = getLong(json, "time");
         master = getBoolean(json, "master");
         clusterName = getString(json, "clusterName");
-        instanceNames = new HashSet<String>();
+        instanceNames = new LinkedList<String>();
         final JsonArray jsonInstanceNames = getArray(json, "instanceNames");
         for (JsonValue instanceName : jsonInstanceNames.values()) {
             instanceNames.add(instanceName.asString());

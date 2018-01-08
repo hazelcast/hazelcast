@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -28,7 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Set;
+import java.util.List;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
@@ -52,7 +53,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         hz.getExecutorService("trial");
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
-        Set<String> instanceNames = timedMemberState.getInstanceNames();
+        List<String> instanceNames = timedMemberState.getInstanceNames();
 
         assertEquals("dev", timedMemberState.clusterName);
         assertContains(instanceNames, "c:trial");
@@ -62,6 +63,26 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         assertContains(instanceNames, "rt:trial");
         assertContains(instanceNames, "r:trial");
         assertContains(instanceNames, "e:trial");
+    }
+
+    @Test
+    public void testMaxVisibleInstanceCount() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT.getName(), "3");
+        HazelcastInstance hz = createHazelcastInstance(config);
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+
+        hz.getMap("trial").put(1, 1);
+        hz.getMultiMap("trial").put(2, 2);
+        hz.getQueue("trial").offer(3);
+        hz.getTopic("trial").publish("Hello");
+        hz.getReliableTopic("trial").publish("Hello");
+
+        TimedMemberState timedMemberState = factory.createTimedMemberState();
+        List<String> instanceNames = timedMemberState.getInstanceNames();
+
+        assertEquals("dev", timedMemberState.clusterName);
+        assertEquals(3, instanceNames.size());
     }
 
     @Test
