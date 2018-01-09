@@ -157,7 +157,7 @@ public interface LockStore {
      * waiters/signals/expired operations.
      *
      * @param dataKey the lock key
-     * @return if the key was unlocked or is already unlocked
+     * @return {@code false} if there is no lock for the given {@code key} and {@code true} otherwise
      */
     boolean forceUnlock(Data dataKey);
 

@@ -167,7 +167,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         container.clearLockStore(namespace);
     }
 
-
     public LockStoreContainer getLockContainer(int partitionId) {
         return containers[partitionId];
     }
