@@ -116,9 +116,15 @@ public final class Sinks {
      *     map.put(key, value);
      * </pre>
      *
-     * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the entries
-     * no matter if they are locked or not.
-     * Use {@link #mapWithEntryProcessor} if you need locking.
+     * This sink supports exactly-once processing only if the
+     * supplied merge function performs <i>idempotent updates</i>, i.e.,
+     * it satisfies the rule
+     * {@code mergeFn.apply(oldValue, toValueFn.apply(e)).equals(oldValue)}
+     * for any {@code e} that was already observed.
+     * <p>
+     * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the
+     * entries no matter if they are locked or not. Use {@link #mapWithEntryProcessor}
+     * if you need locking.
      *
      * @param mapName   name of the map
      * @param toKeyFn   function that extracts the key from the input item
@@ -198,17 +204,22 @@ public final class Sinks {
      *     map.put(key, newValue);
      * </pre>
      *
+     * This sink supports exactly-once processing only if the
+     * supplied update function performs <i>idempotent updates</i>, i.e., it
+     * satisfies the rule {@code updateFn.apply(v, e).equals(v)} for any
+     * {@code e} that was already observed.
+     * <p>
      * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the entries
      * no matter if they are locked or not.
      * Use {@link #mapWithEntryProcessor} if you need locking.
      *
-     * @param mapName   name of the map
-     * @param toKeyFn   function that extracts the key from the input item
-     * @param updateFn  function that receives the existing map value and the item
-     *                  and returns the new map value
-     * @param <E> input item type
-     * @param <K> key type
-     * @param <V> value type
+     * @param mapName  name of the map
+     * @param toKeyFn  function that extracts the key from the input item
+     * @param updateFn function that receives the existing map value and the item
+     *                 and returns the new map value
+     * @param <E>      input item type
+     * @param <K>      key type
+     * @param <V>      value type
      */
     public static <E, K, V> Sink<E> mapWithUpdating(
             @Nonnull String mapName,
@@ -278,11 +289,15 @@ public final class Sinks {
      * using entry processors that implement {@link Offloadable}. This will
      * avoid blocking the Hazelcast partition thread during large update
      * operations.
-     *
+     * <p>
+     * This sink supports exactly-once processing only if the
+     * supplied entry processor performs <i>idempotent updates</i>, i.e.,
+     * the resulting value would be the same if an entry processor
+     * was run on the same entry more than once.
+     * <p>
      * <b>Note:</b> Unlike {@link #mapWithUpdating} and {@link #mapWithMerging},
      * this operation <em>is</em> lock-aware. If the key is locked,
      * the EntryProcessor will wait until it acquires the lock.
-     *
      *
      * @param mapName  name of the map
      * @param toKeyFn  function that extracts the key from the input item
