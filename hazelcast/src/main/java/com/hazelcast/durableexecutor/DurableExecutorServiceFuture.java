@@ -17,7 +17,6 @@
 package com.hazelcast.durableexecutor;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * A Future where one can obtain the task ID for tracking the response.
@@ -25,7 +24,6 @@ import com.hazelcast.spi.annotation.Beta;
  * @param <V>
  * @since 3.7
  */
-@Beta
 public interface DurableExecutorServiceFuture<V> extends ICompletableFuture<V> {
 
     /**

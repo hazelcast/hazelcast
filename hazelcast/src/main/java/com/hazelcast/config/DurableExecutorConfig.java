@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
 
@@ -32,7 +31,6 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Contains the configuration for an {@link DurableExecutorService}.
  */
-@Beta
 public class DurableExecutorConfig implements IdentifiedDataSerializable, Versioned {
 
     /**

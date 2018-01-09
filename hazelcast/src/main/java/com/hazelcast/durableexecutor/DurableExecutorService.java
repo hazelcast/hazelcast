@@ -17,7 +17,6 @@
 package com.hazelcast.durableexecutor;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +30,6 @@ import java.util.concurrent.RejectedExecutionException;
  * DurableExecutor also provides a way to retrieve the result of an execution with the given taskId.
  * @see ExecutorService
  */
-@Beta
 public interface DurableExecutorService extends ExecutorService, DistributedObject {
 
     /**
