@@ -104,6 +104,12 @@ public final class KubernetesProperties {
      */
     public static final PropertyDefinition KUBERNETES_API_TOKEN = property("api-token", STRING);
 
+    /**
+     * <p>Configuration key: <tt>service-port</tt></p>
+     * If specified with a value greater than 0, its value defines the endpoint port of the service (overriding the default).
+     */
+    public static final PropertyDefinition SERVICE_PORT = property("service-port", INTEGER);
+
     // Prevent instantiation
     private KubernetesProperties() {
     }
