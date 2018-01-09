@@ -34,10 +34,10 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -128,6 +128,7 @@ public class ConfigXmlGeneratorTest {
                 .setName("replicated-map-name")
                 .setStatisticsEnabled(false)
                 .setConcurrencyLevel(128)
+                .setQuorumName("quorum")
                 .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
 
         Config config = new Config()
@@ -140,6 +141,7 @@ public class ConfigXmlGeneratorTest {
         assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
         assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
+        assertEquals("quorum", xmlReplicatedMapConfig.getQuorumName());
     }
 
     @Test
@@ -186,7 +188,8 @@ public class ConfigXmlGeneratorTest {
                 .setCapacity(3)
                 .setTimeToLiveSeconds(4)
                 .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setRingbufferStoreConfig(ringbufferStoreConfig);
+                .setRingbufferStoreConfig(ringbufferStoreConfig)
+                .setQuorumName("quorum");
 
         Config config = new Config().addRingBufferConfig(rbConfig);
 
@@ -197,13 +200,143 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testSemaphore() {
+        // TODO -> not full config checked
+        SemaphoreConfig expectedConfig = new SemaphoreConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum");
+
+        Config config = new Config()
+                .addSemaphoreConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        SemaphoreConfig actualConfig = xmlConfig.getSemaphoreConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testSet() {
+        // TODO -> not full config checked
+        SetConfig expectedConfig = new SetConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum");
+
+        Config config = new Config()
+                .addSetConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        SetConfig actualConfig = xmlConfig.getSetConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testList() {
+        // TODO -> not full config checked
+        ListConfig expectedConfig = new ListConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum");
+
+        Config config = new Config()
+                .addListConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ListConfig actualConfig = xmlConfig.getListConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testExecutor() {
+        // TODO -> not full config checked
+        ExecutorConfig expectedConfig = new ExecutorConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum");
+
+        Config config = new Config()
+                .addExecutorConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ExecutorConfig actualConfig = xmlConfig.getExecutorConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testDurableExecutor() {
+        // TODO -> not full config checked
+        DurableExecutorConfig expectedConfig = new DurableExecutorConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum");
+
+        Config config = new Config()
+                .addDurableExecutorConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        DurableExecutorConfig actualConfig = xmlConfig.getDurableExecutorConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testScheduledExecutor() {
+        // TODO -> not full config checked
+        ScheduledExecutorConfig expectedConfig = new ScheduledExecutorConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum");
+
+        Config config = new Config()
+                .addScheduledExecutorConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ScheduledExecutorConfig actualConfig = xmlConfig.getScheduledExecutorConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testCardinalityEstimator() {
+        // TODO -> not full config checked
+        CardinalityEstimatorConfig expectedConfig = new CardinalityEstimatorConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum");
+
+        Config config = new Config()
+                .addCardinalityEstimatorConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        CardinalityEstimatorConfig actualConfig = xmlConfig.getCardinalityEstimatorConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMultiMap() {
+        // TODO -> not full config checked
+        MultiMapConfig expectedConfig = new MultiMapConfig()
+                .setName("testSemaphore")
+                .setQuorumName("quorum")
+                .setEntryListenerConfigs(asList(new EntryListenerConfig("java.Listener", true, true)));
+
+        Config config = new Config()
+                .addMultiMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        MultiMapConfig actualConfig = xmlConfig.getMultiMapConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testAtomicLong() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy(DiscardMergePolicy.class.getSimpleName())
                 .setBatchSize(1234);
 
         AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig")
-                .setMergePolicyConfig(mergePolicyConfig);
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setQuorumName("quorum");
 
         Config config = new Config()
                 .addAtomicLongConfig(expectedConfig);
@@ -225,7 +358,8 @@ public class ConfigXmlGeneratorTest {
                 .setBatchSize(4321);
 
         AtomicReferenceConfig expectedConfig = new AtomicReferenceConfig("testAtomicReferenceConfig")
-                .setMergePolicyConfig(mergePolicyConfig);
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setQuorumName("quorum");
 
         Config config = new Config()
                 .addAtomicReferenceConfig(expectedConfig);
@@ -242,7 +376,9 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testCountDownLatch() {
-        CountDownLatchConfig expectedConfig = new CountDownLatchConfig("testCountDownLatchConfig");
+        CountDownLatchConfig expectedConfig = new CountDownLatchConfig("testCountDownLatchConfig")
+                .setQuorumName("quorum");
+
 
         Config config = new Config()
                 .addCountDownLatchConfig(expectedConfig);

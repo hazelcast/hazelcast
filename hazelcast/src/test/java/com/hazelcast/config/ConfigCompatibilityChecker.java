@@ -90,11 +90,13 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("map event journal", c1, c2, c1.getMapEventJournalConfigs(), c2.getMapEventJournalConfigs(), new MapEventJournalConfigChecker());
         checkCompatibleConfigs("cache event journal", c1, c2, c1.getCacheEventJournalConfigs(), c2.getCacheEventJournalConfigs(), new CacheEventJournalConfigChecker());
         checkCompatibleConfigs("multimap", c1, c2, c1.getMultiMapConfigs(), c2.getMultiMapConfigs(), new MultimapConfigChecker());
+        checkCompatibleConfigs("replicated map", c1, c2, c1.getReplicatedMapConfigs(), c2.getReplicatedMapConfigs(), new ReplicatedMapConfigChecker());
         checkCompatibleConfigs("list", c1, c2, c1.getListConfigs(), c2.getListConfigs(), new ListConfigChecker());
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
         checkCompatibleConfigs("job tracker", c1, c2, c1.getJobTrackerConfigs(), c2.getJobTrackerConfigs(), new JobTrackerConfigChecker());
         checkCompatibleConfigs("reliable id generator", c1, c2, c1.getReliableIdGeneratorConfigs(), c2.getReliableIdGeneratorConfigs(), new ReliableIdGeneratorConfigChecker());
         checkCompatibleConfigs("count down latch", c1, c2, c1.getCountDownLatchConfigs(), c2.getCountDownLatchConfigs(), new CountDownLatchConfigChecker());
+        checkCompatibleConfigs("cardinality estimator", c1, c2, c1.getCardinalityEstimatorConfigs(), c2.getCardinalityEstimatorConfigs(), new CardinalityEstimatorConfigChecker());
 
         return true;
     }
@@ -174,7 +176,8 @@ class ConfigCompatibilityChecker {
                 && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
                 && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
                 && nullSafeEqual(c1.getMaxSize(), c2.getMaxSize())
-                && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
+                && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
+                && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
     }
 
     private static boolean isCompatible(HotRestartConfig c1, HotRestartConfig c2) {
@@ -208,6 +211,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
                     && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds())
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && isCompatible(c1.getRingbufferStoreConfig(), c2.getRingbufferStoreConfig());
         }
 
@@ -258,6 +262,7 @@ class ConfigCompatibilityChecker {
         boolean check(AtomicLongConfig c1, AtomicLongConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
@@ -272,6 +277,7 @@ class ConfigCompatibilityChecker {
         boolean check(AtomicReferenceConfig c1, AtomicReferenceConfig c2) {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
@@ -319,6 +325,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
                     && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.getInitialPermits(), c2.getInitialPermits());
         }
 
@@ -428,6 +435,7 @@ class ConfigCompatibilityChecker {
             return nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
                     && (nullSafeEqual(cap1, cap2) || (Math.min(cap1, cap2) == 0 && Math.max(cap1, cap2) == Integer.MAX_VALUE))
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
         }
 
@@ -444,6 +452,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.getCapacity(), c2.getCapacity());
         }
 
@@ -459,6 +468,7 @@ class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize());
         }
 
@@ -478,12 +488,42 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isBinary(), c2.isBinary())
                     && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
                     && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
         }
 
         @Override
         MultiMapConfig getDefault(Config c) {
             return c.getMultiMapConfig("default");
+        }
+    }
+
+    private static class ReplicatedMapConfigChecker extends ConfigChecker<ReplicatedMapConfig> {
+        @Override
+        boolean check(ReplicatedMapConfig c1, ReplicatedMapConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
+                    && nullSafeEqual(c1.getConcurrencyLevel(), c2.getConcurrencyLevel())
+                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && nullSafeEqual(c1.isAsyncFillup(), c2.isAsyncFillup())
+                    && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
+                    && isCollectionCompatible(c1.getListenerConfigs(), c2.getListenerConfigs(), new ReplicatedMapListenerConfigChecker());
+        }
+
+        @Override
+        ReplicatedMapConfig getDefault(Config c) {
+            return c.getReplicatedMapConfig("default");
+        }
+    }
+
+    private static class ReplicatedMapListenerConfigChecker extends ConfigChecker<ListenerConfig> {
+        @Override
+        boolean check(ListenerConfig c1, ListenerConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation());
         }
     }
 
@@ -511,6 +551,28 @@ class ConfigCompatibilityChecker {
         @Override
         JobTrackerConfig getDefault(Config c) {
             return c.getJobTrackerConfig("default");
+        }
+    }
+
+    private static class CardinalityEstimatorConfigChecker extends ConfigChecker<CardinalityEstimatorConfig> {
+        @Override
+        boolean check(CardinalityEstimatorConfig c1, CardinalityEstimatorConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+            return nullSafeEqual(c1.getName(), c2.getName())
+                    && c1.getBackupCount() == c2.getBackupCount()
+                    && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
+                    && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
+        }
+
+        @Override
+        CardinalityEstimatorConfig getDefault(Config c) {
+            return c.getCardinalityEstimatorConfig("default");
         }
     }
 
@@ -642,6 +704,7 @@ class ConfigCompatibilityChecker {
                     && isCollectionCompatible(c1.getEntryListenerConfigs(), c2.getEntryListenerConfigs(),
                     new EntryListenerConfigChecker())
                     && nullSafeEqual(c1.getPartitionLostListenerConfigs(), c2.getPartitionLostListenerConfigs())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.getPartitioningStrategyConfig(), c2.getPartitioningStrategyConfig());
         }
 

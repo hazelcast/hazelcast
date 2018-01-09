@@ -534,11 +534,15 @@ https://hazelcast.org/documentation/.
         The number of executor threads per member for the executor. Its default value is 8.
         * <queue-capacity>:
         Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <executor-service name="default">
         <statistics-enabled>true</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>0</queue-capacity>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </executor-service>
 
     <!--
@@ -553,11 +557,15 @@ https://hazelcast.org/documentation/.
             Durability of the executor. The default value is 1.
         * <capacity>:
         Capacity of the executor task per partition. The default value is 100.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <durable-executor-service name="default">
         <pool-size>16</pool-size>
         <durability>1</durability>
         <capacity>100</capacity>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </durable-executor-service>
 
     <!--
@@ -573,11 +581,15 @@ https://hazelcast.org/documentation/.
         * <capacity>:
             Capacity of the scheduled executor. The default value is 100.
             This is the maximum number of tasks for a given scheduled executor on a particular partition.
+        * <quorum-ref>:
+            Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+            as the <quorum>'s name.
     -->
     <scheduled-executor-service name="default">
         <pool-size>16</pool-size>
         <durability>1</durability>
         <capacity>100</capacity>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </scheduled-executor-service>
 
     <!--
@@ -594,10 +606,14 @@ https://hazelcast.org/documentation/.
         Number of asynchronous backups. For example, if 1 is set as the backup-count,
        then the cardinality estimation will be copied to one other JVM for
        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+    * <quorum-ref>:
+       Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+       as the <quorum>'s name.
     -->
     <cardinality-estimator name="default">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </cardinality-estimator>
 
     <!--
@@ -644,7 +660,7 @@ https://hazelcast.org/documentation/.
             Size of the bulks loaded from QueueStore when the queue is initialized. Its default
             value is 250.
         * <quorum-ref>:
-            Adds the Split Brain Protection for this queue which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+            Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
             as the <quorum>'s name.
     -->
     <queue name="default">
@@ -1033,6 +1049,10 @@ https://hazelcast.org/documentation/.
         You can specify the type of the value collection using <value-collection-type>. Available values are SET and LIST.
         By default, BINARY in-memory format is used, meaning that the object is stored in a serialized form.
         You can set the element <binary> to false, then, the OBJECT in-memory format is used.
+        It has also the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <multimap name="default">
         <backup-count>1</backup-count>
@@ -1042,6 +1062,7 @@ https://hazelcast.org/documentation/.
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </multimap>
     <!--
         ===== HAZELCAST REPLICATED MAP CONFIGURATION =====
@@ -1078,6 +1099,9 @@ https://hazelcast.org/documentation/.
             Adds listeners (listener classes) for the replicated map entries using the <entry-listener> sub-elements.
             You can also set its attribute "include-value" to true if you want the entry event to contain the item values,
             and you can set its attribute "local" to true if you want to listen to the entries on the local member.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <replicatedmap name="replicatedMap1">
         <in-memory-format>BINARY</in-memory-format>
@@ -1088,6 +1112,7 @@ https://hazelcast.org/documentation/.
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </replicatedmap>
     <!--
         ===== HAZELCAST CACHE CONFIGURATION =====
@@ -1324,6 +1349,9 @@ https://hazelcast.org/documentation/.
         * <item-listeners>:
         Adds listeners (listener classes) for the List items using its sub-element <item-listener>. You can
         also set its attribute "include-value" to true if you want the item event to contain the item values.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <list name="default">
         <statistics-enabled>false</statistics-enabled>
@@ -1333,6 +1361,7 @@ https://hazelcast.org/documentation/.
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </list>
     <!--
         ===== HAZELCAST SET CONFIGURATION =====
@@ -1353,6 +1382,9 @@ https://hazelcast.org/documentation/.
         * <item-listeners>:
         Adds listeners (listener classes) for the Set items using its sub-element <item-listener>. You can
         also set its attribute "include-value" to true if you want the item event to contain the item values.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <set name="default">
         <backup-count>1</backup-count>
@@ -1361,6 +1393,7 @@ https://hazelcast.org/documentation/.
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </set>
     <!--
         ===== HAZELCAST TOPIC CONFIGURATION =====
@@ -1476,12 +1509,30 @@ https://hazelcast.org/documentation/.
             are copied to one other member for fail-safety. Its default value is 1.
         * <async-backup-count>:
         Number of asynchronous backups. Its default value is 0.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <semaphore name="default">
         <initial-permits>0</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </semaphore>
+
+    <!--
+        ===== HAZELCAST COUNT-DOWN-LATCH CONFIGURATION =====
+
+        Configuration element's name is <count-down-latch>. It has the required attribute "name" with which you
+        can specify the name of your CountDownLatch. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <count-down-latch name="default">
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </count-down-latch>
 
     <!--
     ===== HAZELCAST LOCK CONFIGURATION =====
@@ -1527,6 +1578,9 @@ https://hazelcast.org/documentation/.
         * <ringbuffer-store>:
         Includes the Ringbuffer store factory class name and property configurations. The store format is the same as the
             in-memory-format for the Ringbuffer.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <ringbuffer name="default">
         <capacity>10000</capacity>
@@ -1541,6 +1595,7 @@ https://hazelcast.org/documentation/.
                 <property name="prop2">prop2-value</property>
             </properties>
         </ringbuffer-store>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </ringbuffer>
 
     <!--
@@ -1570,9 +1625,14 @@ https://hazelcast.org/documentation/.
 
         Configuration element's name is <atomic-long>. It has the required attribute "name" with which you
         can specify the name of your IAtomicLong. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <atomic-long name="default">
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </atomic-long>
 
     <!--
@@ -1580,9 +1640,14 @@ https://hazelcast.org/documentation/.
 
         Configuration element's name is <atomic-reference>. It has the required attribute "name" with which you
         can specify the name of your IAtomicReference. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
     -->
     <atomic-reference name="default">
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </atomic-reference>
 
     <!--
