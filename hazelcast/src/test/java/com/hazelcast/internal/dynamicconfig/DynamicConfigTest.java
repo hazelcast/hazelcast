@@ -47,6 +47,7 @@ import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -530,6 +531,15 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testReliableIdGeneratorConfig() {
+        ReliableIdGeneratorConfig config = new ReliableIdGeneratorConfig(randomName())
+                .setPrefetchCount(123)
+                .setPrefetchValidityMillis(456);
+        driver.getConfig().addReliableIdGeneratorConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
     public void testSemaphoreConfig() {
         SemaphoreConfig semaphoreConfig = new SemaphoreConfig()
                 .setName(name)
@@ -744,6 +754,13 @@ public class DynamicConfigTest extends HazelcastTestSupport {
             assertEquals(cacheEventJournalConfig, registeredConfig);
             registeredConfig = instance.getConfig().getMapEventJournalConfig(mapName);
             assertEquals(mapEventJournalConfig, registeredConfig);
+        }
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(ReliableIdGeneratorConfig config) {
+        for (HazelcastInstance instance : members) {
+            ReliableIdGeneratorConfig registeredConfig = instance.getConfig().getReliableIdGeneratorConfig(config.getName());
+            assertEquals(config, registeredConfig);
         }
     }
 

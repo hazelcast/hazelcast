@@ -650,7 +650,7 @@
     </xs:complexType>
     <xs:complexType name="reliable-id-generator">
         <xs:all>
-            <xs:element name="prefetch-count" minOccurs="0">
+            <xs:element name="prefetch-count" minOccurs="0" default="100">
                 <xs:annotation>
                     <xs:documentation>
                         How many IDs are pre-fetched on the background when one call to newId() is made.
@@ -663,12 +663,12 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="prefetch-validity-millis" type="xs:long" minOccurs="0">
+            <xs:element name="prefetch-validity-millis" type="xs:long" minOccurs="0" default="600000">
                 <xs:annotation>
                     <xs:documentation>
                         For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
                         Time unit is milliseconds.
-                        If value is &lt;= 0, validity is unlimited. Default value is 10000 (10 seconds).
+                        If value is &lt;= 0, validity is unlimited. Default value is 600,000 (10 minutes).
                         The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
                         is assigned to an event that occurred much later, it will be much out of order.
                         If you don't need ordering, set this value to 0.

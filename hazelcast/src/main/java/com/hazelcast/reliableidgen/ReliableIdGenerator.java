@@ -21,7 +21,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterService;
 
 /**
- * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
+ * A cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
  * and are k-ordered (roughly ordered). IDs are in the range from {@code Long.MIN_VALUE} to
  * {@code Long.MAX_VALUE}. This type of generator is generally known as Flake ID generator.
  * <p>

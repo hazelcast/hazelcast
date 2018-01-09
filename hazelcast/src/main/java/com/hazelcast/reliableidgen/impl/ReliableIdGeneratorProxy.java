@@ -63,7 +63,7 @@ public class ReliableIdGeneratorProxy
     private final ILogger logger;
 
     /**
-     * The highest timestamp|seq value returned so far. The value is not shifted to most significant bits.
+     * The next timestamp|seq value to be returned. The value is not shifted to most significant bits.
      */
     private final AtomicLong generatedValue = new AtomicLong(Long.MIN_VALUE);
 
@@ -89,6 +89,10 @@ public class ReliableIdGeneratorProxy
                         return ReliableIdGeneratorProxy.this.newIdBatch(batchSize);
                     }
                 });
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Created ReliableIdGeneratorProxy, name='" + name + "'");
+        }
     }
 
     @Override
@@ -186,6 +190,9 @@ public class ReliableIdGeneratorProxy
 
         // we ignore possible double initialization
         this.nodeId = nodeId;
+        if (logger.isFineEnabled()) {
+            logger.fine("Node ID assigned to '" + name + "': " + nodeId);
+        }
         return nodeId;
     }
 

@@ -16,8 +16,8 @@
 
 package com.hazelcast.reliableidgen.impl;
 
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -26,21 +26,28 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.function.Supplier;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ReliableIdGenerator_MemberIntegrationTest extends HazelcastTestSupport {
 
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
     private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance[] instances;
 
     @Before
     public void before() {
-        factory = createHazelcastInstanceFactory(1);
-        instances = factory.newInstances();
+        factory = createHazelcastInstanceFactory();
+
     }
 
     @After
@@ -50,12 +57,23 @@ public class ReliableIdGenerator_MemberIntegrationTest extends HazelcastTestSupp
 
     @Test
     public void smokeTest() throws Exception {
-        final ReliableIdGenerator generator = instances[0].getReliableIdGenerator("gen");
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        final ReliableIdGenerator generator = instance.getReliableIdGenerator("gen");
         ReliableIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
             @Override
             public Long get() {
                 return generator.newId();
             }
         });
+    }
+
+    @Test
+    public void when_310MemberJoinsWith39Mode_reliableIdGeneratorDoesNotWork() {
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, V3_9.toString());
+        HazelcastInstance instance = factory.newHazelcastInstance();
+
+        ReliableIdGenerator gen = instance.getReliableIdGenerator("gen");
+        exception.expect(UnsupportedOperationException.class);
+        gen.newId();
     }
 }
