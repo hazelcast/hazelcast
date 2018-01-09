@@ -170,6 +170,8 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         NearCacheTestContext<Integer, String, Data, String> context = createContext();
 
         waitForExpectedClusterSize();
+        waitAllForSafeState(hazelcastFactory.getAllHazelcastInstances());
+
         assertBackingIMapSize(context);
 
         // populate the data structure
