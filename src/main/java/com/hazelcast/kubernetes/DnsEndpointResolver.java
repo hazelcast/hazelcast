@@ -77,9 +77,6 @@ final class DnsEndpointResolver
                 SRVRecord srv = (SRVRecord) record;
                 InetAddress[] inetAddress = getAllAddresses(srv);
                 int port = (this.port > 0) ? this.port : getHazelcastPort(srv.getPort());
-                if (logger.isFineEnabled()) {
-                    logger.fine("DNS record target: " + srv.getTarget() + " port: " + port);
-                }
                 for (InetAddress i : inetAddress) {
                     Address address = new Address(i, port);
 
