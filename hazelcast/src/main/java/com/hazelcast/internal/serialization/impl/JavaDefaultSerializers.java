@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,6 +44,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
 import static com.hazelcast.nio.IOUtil.newObjectInputStream;
+import static java.lang.Math.max;
 
 
 public final class JavaDefaultSerializers {
@@ -67,12 +69,17 @@ public final class JavaDefaultSerializers {
                 final Externalizable ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
                 final ObjectInputStream objectInputStream;
                 final InputStream inputStream = (InputStream) in;
+                ExtendedGZipInputStream gZipInputStream = null;
                 if (gzipEnabled) {
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream));
+                    gZipInputStream = new ExtendedGZipInputStream(inputStream);
+                    objectInputStream = newObjectInputStream(in.getClassLoader(), gZipInputStream);
                 } else {
                     objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
                 }
                 ds.readExternal(objectInputStream);
+                if (gzipEnabled) {
+                    gZipInputStream.pushBackUnconsumedBytes();
+                }
                 return ds;
             } catch (final Exception e) {
                 throw new HazelcastSerializationException("Problem while reading Externalizable class: "
@@ -190,6 +197,7 @@ public final class JavaDefaultSerializers {
 
     public static final class JavaSerializer extends SingletonSerializer<Object> {
 
+
         private final boolean shared;
         private final boolean gzipEnabled;
 
@@ -207,8 +215,10 @@ public final class JavaDefaultSerializers {
         public Object read(final ObjectDataInput in) throws IOException {
             final ObjectInputStream objectInputStream;
             final InputStream inputStream = (InputStream) in;
+            ExtendedGZipInputStream gZipInputStream = null;
             if (gzipEnabled) {
-                objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream));
+                gZipInputStream = new ExtendedGZipInputStream(inputStream);
+                objectInputStream = newObjectInputStream(in.getClassLoader(), gZipInputStream);
             } else {
                 objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
             }
@@ -219,6 +229,9 @@ public final class JavaDefaultSerializers {
                     result = objectInputStream.readObject();
                 } else {
                     result = objectInputStream.readUnshared();
+                }
+                if (gzipEnabled) {
+                    gZipInputStream.pushBackUnconsumedBytes();
                 }
             } catch (ClassNotFoundException e) {
                 throw new HazelcastSerializationException(e);
@@ -288,6 +301,33 @@ public final class JavaDefaultSerializers {
     }
 
     private JavaDefaultSerializers() {
+    }
+
+    /**
+     * Gzip input stream consumes more bytes in the stream than it actually needs.
+     * This class enables us to access internal inflater that keeps consumed buffer.
+     * `pushBackUnconsumedBytes` method adjust the position so that, next data in the stream can be read correctly
+     */
+    private static class ExtendedGZipInputStream extends GZIPInputStream {
+
+        static final int GZIP_TRAILER_SIZE = 8;
+
+        ExtendedGZipInputStream(InputStream in) throws IOException {
+            super(in);
+            assert in instanceof BufferObjectDataInput : "Unexpected input: " + in;
+        }
+
+        private void pushBackUnconsumedBytes() {
+            int remaining = inf.getRemaining();
+            BufferObjectDataInput baodi = (BufferObjectDataInput) in;
+            int position = baodi.position();
+            int rewindBack = max(0, remaining - ExtendedGZipInputStream.GZIP_TRAILER_SIZE);
+            int newPosition = position - rewindBack;
+            baodi.position(newPosition);
+            //GZIPInputStream allocates native resources
+            //via inf.end() these resources are released.
+            inf.end();
+        }
     }
 
 }
