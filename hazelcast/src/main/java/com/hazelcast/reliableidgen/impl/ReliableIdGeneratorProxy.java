@@ -90,7 +90,9 @@ public class ReliableIdGeneratorProxy
                     }
                 });
 
-        logger.finest("Created ReliableIdGeneratorProxy, name='" + name + "'");
+        if (logger.isFinestEnabled()) {
+            logger.finest("Created ReliableIdGeneratorProxy, name='" + name + "'");
+        }
     }
 
     @Override
@@ -188,7 +190,9 @@ public class ReliableIdGeneratorProxy
 
         // we ignore possible double initialization
         this.nodeId = nodeId;
-        logger.fine("Node ID assigned to '" + name + "': " + nodeId);
+        if (logger.isFineEnabled()) {
+            logger.fine("Node ID assigned to '" + name + "': " + nodeId);
+        }
         return nodeId;
     }
 

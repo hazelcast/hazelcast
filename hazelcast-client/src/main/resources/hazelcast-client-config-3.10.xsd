@@ -650,7 +650,7 @@
     </xs:complexType>
     <xs:complexType name="reliable-id-generator">
         <xs:all>
-            <xs:element name="prefetch-count" minOccurs="0">
+            <xs:element name="prefetch-count" minOccurs="0" default="100">
                 <xs:annotation>
                     <xs:documentation>
                         How many IDs are pre-fetched on the background when one call to newId() is made.
@@ -663,7 +663,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="prefetch-validity-millis" type="xs:long" minOccurs="0">
+            <xs:element name="prefetch-validity-millis" type="xs:long" minOccurs="0" default="600000">
                 <xs:annotation>
                     <xs:documentation>
                         For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
