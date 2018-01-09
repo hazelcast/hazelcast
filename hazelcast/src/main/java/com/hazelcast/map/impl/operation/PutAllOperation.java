@@ -128,7 +128,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         if (hasMapListener) {
             return recordStore.put(dataKey, dataValue, DEFAULT_TTL);
         }
-        recordStore.set(dataKey, dataValue, DEFAULT_TTL, true);
+        recordStore.set(dataKey, dataValue, DEFAULT_TTL);
         return null;
     }
 

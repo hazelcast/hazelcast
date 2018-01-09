@@ -68,16 +68,19 @@ public interface RecordStore<R extends Record> extends SplitBrainAwareDataContai
     /**
      * Sets a value associated with the given {@code dataKey} to the new given {@code value}.
      *
-     * @param dataKey       the key to set the value of.
-     * @param value         the new value to store.
-     * @param ttl           the TTL for the new value.
-     * @param countAsAccess the flag to control the access statistics calculation (useful while performing compound operations),
-     *                      provide {@code true} to count the invocation as an access to the underlying record, {@code false} to
-     *                      count the invocation as a pure update operation.
+     * @param dataKey the key to set the value of.
+     * @param value   the new value to store.
+     * @param ttl     the TTL for the new value.
      * @return {@code true} if the key wasn't existent before the operation, {@code false} otherwise.
      * @see com.hazelcast.core.IMap#set(Object, Object)
      */
-    boolean set(Data dataKey, Object value, long ttl, boolean countAsAccess);
+    boolean set(Data dataKey, Object value, long ttl);
+
+    /**
+     * Does exactly the same thing as {@link #set(Data, Object, long)} except the invocation is not counted as
+     * a read access while updating the access statics.
+     */
+    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl);
 
     Object remove(Data dataKey);
 

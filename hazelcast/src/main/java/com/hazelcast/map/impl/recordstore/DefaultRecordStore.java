@@ -954,8 +954,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean set(Data dataKey, Object value, long ttl, boolean countAsAccess) {
-        Object oldValue = putInternal(dataKey, value, ttl, false, countAsAccess);
+    public boolean set(Data dataKey, Object value, long ttl) {
+        Object oldValue = putInternal(dataKey, value, ttl, false, true);
+        return oldValue == null;
+    }
+
+    @Override
+    public boolean setWithUncountedAccess(Data dataKey, Object value, long ttl) {
+        Object oldValue = putInternal(dataKey, value, ttl, false, false);
         return oldValue == null;
     }
 

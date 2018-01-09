@@ -43,7 +43,7 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
 
     @Override
     public void run() {
-        newRecord = recordStore.set(dataKey, dataValue, ttl, true);
+        newRecord = recordStore.set(dataKey, dataValue, ttl);
     }
 
     @Override
