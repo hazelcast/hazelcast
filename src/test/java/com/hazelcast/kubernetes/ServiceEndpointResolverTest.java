@@ -81,7 +81,7 @@ public class ServiceEndpointResolverTest {
 
     @Test
     public void resolveWithNamespaceAndNodeInNamespace() {
-        resolveWithNamespaceAndNodeInNamespace(0, 1);
+        resolveWithNamespaceAndNodeInNamespace(0, 1); // expected port 1 is the kubernetes discovery endpoint port
     }
 
     @Test
