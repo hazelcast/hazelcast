@@ -219,17 +219,25 @@
         <statistics-enabled>false</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>1000</queue-capacity>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </executor-service>
     <durable-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>10</capacity>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </durable-executor-service>
     <scheduled-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>50</capacity>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </scheduled-executor-service>
+    <cardinality-estimator name="dummy">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </cardinality-estimator>
     <queue name="default">
         <statistics-enabled>false</statistics-enabled>
         <!--
@@ -445,6 +453,7 @@
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </multimap>
 
     <replicatedmap name="dummy">
@@ -456,6 +465,7 @@
         <entry-listeners>
             <entry-listener include-value="false" local="true">DummyListener</entry-listener>
         </entry-listeners>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </replicatedmap>
 
     <list name="default">
@@ -466,6 +476,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </list>
 
     <set name="default">
@@ -476,6 +487,7 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </set>
 
     <topic name="default">
@@ -501,15 +513,20 @@
         <initial-permits>10</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </semaphore>
 
     <lock name="default">
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </lock>
 
-    <atomic-long name="default"/>
+    <atomic-long name="default">
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+    </atomic-long>
 
-    <atomic-reference name="default"/>
+    <atomic-reference name="default">
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+    </atomic-reference>
 
     <count-down-latch name="default">
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
@@ -521,6 +538,7 @@
         <async-backup-count>1</async-backup-count>
         <time-to-live-seconds>29</time-to-live-seconds>
         <in-memory-format>OBJECT</in-memory-format>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </ringbuffer>
 
     <cache name="default">

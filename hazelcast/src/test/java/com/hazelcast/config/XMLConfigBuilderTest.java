@@ -324,6 +324,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    </semaphore>"
                 + "    <semaphore name=\"custom\">\n"
                 + "        <initial-permits>10</initial-permits>\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </semaphore>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -331,6 +332,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
         assertEquals(1, defaultConfig.getInitialPermits());
         assertEquals(10, customConfig.getInitialPermits());
+        assertEquals("customQuorumRule", customConfig.getQuorumName());
     }
 
     @Test
@@ -388,10 +390,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG
                 + "  <lock name=\"default\">"
                 + "        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>"
-                + "    </lock>"
+                + "  </lock>"
                 + "  <lock name=\"custom\">"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </lock>"
+                + "       <quorum-ref>customQuorumRule</quorum-ref>"
+                + "  </lock>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -444,6 +446,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "                <property name=\"store-path\">.//tmp//bufferstore</property>"
                 + "            </properties>"
                 + "        </ringbuffer-store>"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </ringbuffer>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -457,6 +460,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
         Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
         assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
+        assertEquals("customQuorumRule", ringbufferConfig.getQuorumName());
     }
 
     @Test
@@ -464,11 +468,13 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG
                 + "    <atomic-long name=\"custom\">"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </atomic-long>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
         assertEquals("custom", atomicLongConfig.getName());
+        assertEquals("customQuorumRule", atomicLongConfig.getQuorumName());
 
         MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -480,11 +486,13 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG
                 + "    <atomic-reference name=\"custom\">"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </atomic-reference>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
         assertEquals("custom", atomicReferenceConfig.getName());
+        assertEquals("customQuorumRule", atomicReferenceConfig.getQuorumName());
 
         MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -495,7 +503,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void readCountDownLatch() {
         String xml = HAZELCAST_START_TAG
                 + "    <count-down-latch name=\"custom\">"
-                + "             <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </count-down-latch>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -1403,6 +1411,39 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
     }
 
+    @Test
+    public void testCacheConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <cache name=\"foobar\">\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </cache>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        CacheSimpleConfig cacheConfig = config.getCacheConfig("foobar");
+
+        // TODO -> not full config checked
+        assertFalse(config.getCacheConfigs().isEmpty());
+        assertEquals("customQuorumRule", cacheConfig.getQuorumName());
+    }
+
+    @Test
+    public void testExecutorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <executor-service name=\"foobar\">\n"
+                + "        <pool-size>2</pool-size>\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </executor-service>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        ExecutorConfig executorConfig = config.getExecutorConfig("foobar");
+
+        // TODO -> not full config checked
+        assertFalse(config.getExecutorConfigs().isEmpty());
+        assertEquals(2, executorConfig.getPoolSize());
+        assertEquals("customQuorumRule", executorConfig.getQuorumName());
+    }
 
     @Test
     public void testDurableExecutorConfig() {
@@ -1411,6 +1452,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <pool-size>2</pool-size>\n"
                 + "        <durability>3</durability>\n"
                 + "        <capacity>4</capacity>\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </durable-executor-service>"
                 + HAZELCAST_END_TAG;
 
@@ -1421,6 +1463,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, durableExecutorConfig.getPoolSize());
         assertEquals(3, durableExecutorConfig.getDurability());
         assertEquals(4, durableExecutorConfig.getCapacity());
+        assertEquals("customQuorumRule", durableExecutorConfig.getQuorumName());
     }
 
     @Test
@@ -1430,6 +1473,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <durability>4</durability>\n"
                 + "        <pool-size>5</pool-size>\n"
                 + "        <capacity>2</capacity>\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </scheduled-executor-service>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1440,6 +1484,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(4, scheduledExecutorConfig.getDurability());
         assertEquals(5, scheduledExecutorConfig.getPoolSize());
         assertEquals(2, scheduledExecutorConfig.getCapacity());
+        assertEquals("customQuorumRule", scheduledExecutorConfig.getQuorumName());
     }
 
     @Test
@@ -1448,6 +1493,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <cardinality-estimator name=\"foobar\">\n"
                 + "        <backup-count>2</backup-count>\n"
                 + "        <async-backup-count>3</async-backup-count>\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </cardinality-estimator>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1457,6 +1503,87 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertFalse(config.getCardinalityEstimatorConfigs().isEmpty());
         assertEquals(2, cardinalityEstimatorConfig.getBackupCount());
         assertEquals(3, cardinalityEstimatorConfig.getAsyncBackupCount());
+        assertEquals("customQuorumRule", cardinalityEstimatorConfig.getQuorumName());
+    }
+
+    @Test
+    public void testMultiMapConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <multimap name=\"foobar\">\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </multimap>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MultiMapConfig multiMapConfig = config.getMultiMapConfig("foobar");
+
+        // TODO -> not full config checked
+        assertFalse(config.getMultiMapConfigs().isEmpty());
+        assertEquals("customQuorumRule", multiMapConfig.getQuorumName());
+    }
+
+    @Test
+    public void testReplicatedMapConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <replicatedmap name=\"foobar\">\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </replicatedmap>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("foobar");
+
+        // TODO -> not full config checked
+        assertFalse(config.getReplicatedMapConfigs().isEmpty());
+        assertEquals("customQuorumRule", replicatedMapConfig.getQuorumName());
+    }
+
+    @Test
+    public void testListConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <list name=\"foobar\">\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </list>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        ListConfig listConfig = config.getListConfig("foobar");
+
+        // TODO -> not full config checked
+        assertFalse(config.getListConfigs().isEmpty());
+        assertEquals("customQuorumRule", listConfig.getQuorumName());
+    }
+
+    @Test
+    public void testSetConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <set name=\"foobar\">\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </set>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        SetConfig setConfig = config.getSetConfig("foobar");
+
+        // TODO -> not full config checked
+        assertFalse(config.getSetConfigs().isEmpty());
+        assertEquals("customQuorumRule", setConfig.getQuorumName());
+    }
+
+    @Test
+    public void testMapConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <map name=\"foobar\">\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("foobar");
+
+        // TODO -> not full config checked
+        assertFalse(config.getMapConfigs().isEmpty());
+        assertEquals("customQuorumRule", mapConfig.getQuorumName());
     }
 
     @Test

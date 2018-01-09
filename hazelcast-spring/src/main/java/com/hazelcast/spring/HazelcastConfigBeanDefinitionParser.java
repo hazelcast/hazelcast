@@ -447,9 +447,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String name = getTextContent(attName);
             fillAttributeValues(node, replicatedMapConfigBuilder);
             for (Node childNode : childElements(node)) {
-                if ("entry-listeners".equals(cleanNodeName(childNode))) {
+                String nodeName = cleanNodeName(childNode);
+                if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     replicatedMapConfigBuilder.addPropertyValue("listenerConfigs", listeners);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    replicatedMapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             replicatedMapManagedMap.put(name, replicatedMapConfigBuilder.getBeanDefinition());
@@ -669,6 +672,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         public void handleSemaphore(Node node) {
             BeanDefinitionBuilder builder = createBeanBuilder(SemaphoreConfig.class);
             fillAttributeValues(node, builder);
+            for (Node childNode : childElements(node)) {
+                String nodeName = cleanNodeName(childNode);
+                if ("quorum-ref".equals(nodeName)) {
+                    builder.addPropertyValue("quorumName", getTextContent(childNode));
+                }
+            }
             semaphoreManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
         }
 
@@ -701,8 +710,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder ringbufferConfigBuilder = createBeanBuilder(RingbufferConfig.class);
             fillAttributeValues(node, ringbufferConfigBuilder);
             for (Node childNode : childElements(node)) {
-                if ("ringbuffer-store".equals(cleanNodeName(childNode))) {
+                String nodeName = cleanNodeName(childNode);
+                if ("ringbuffer-store".equals(nodeName)) {
                     handleRingbufferStoreConfig(childNode, ringbufferConfigBuilder);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    ringbufferConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             ringbufferManagedMap.put(getAttribute(node, "name"), ringbufferConfigBuilder.getBeanDefinition());
@@ -727,6 +739,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String nodeName = cleanNodeName(childNode);
                 if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, atomicLongConfigBuilder);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    atomicLongConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             atomicLongManagedMap.put(getAttribute(node, "name"), atomicLongConfigBuilder.getBeanDefinition());
@@ -739,6 +753,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String nodeName = cleanNodeName(childNode);
                 if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, atomicReferenceConfigBuilder);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    atomicReferenceConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             atomicReferenceManagedMap.put(getAttribute(node, "name"), atomicReferenceConfigBuilder.getBeanDefinition());
@@ -819,9 +835,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String name = getTextContent(attName);
             fillAttributeValues(node, listConfigBuilder);
             for (Node childNode : childElements(node)) {
-                if ("item-listeners".equals(cleanNodeName(childNode))) {
+                String nodeName = cleanNodeName(childNode);
+                if ("item-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
                     listConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    listConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             listManagedMap.put(name, listConfigBuilder.getBeanDefinition());
@@ -833,9 +852,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String name = getTextContent(attName);
             fillAttributeValues(node, setConfigBuilder);
             for (Node childNode : childElements(node)) {
-                if ("item-listeners".equals(cleanNodeName(childNode))) {
+                String nodeName = cleanNodeName(childNode);
+                if ("item-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
                     setConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    setConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             setManagedMap.put(name, setConfigBuilder.getBeanDefinition());
@@ -1278,9 +1300,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String name = getTextContent(attName);
             fillAttributeValues(node, multiMapConfigBuilder);
             for (Node childNode : childElements(node)) {
-                if ("entry-listeners".equals(cleanNodeName(childNode))) {
+                String nodeName = cleanNodeName(childNode);
+                if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    multiMapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             multiMapManagedMap.put(name, multiMapConfigBuilder.getBeanDefinition());

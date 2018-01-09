@@ -160,7 +160,8 @@ public class ConfigXmlGenerator {
                         .node("statistics-enabled", config.isStatisticsEnabled())
                         .node("max-size", config.getMaxSize())
                         .node("backup-count", config.getBackupCount())
-                        .node("async-backup-count", config.getAsyncBackupCount());
+                        .node("async-backup-count", config.getAsyncBackupCount())
+                        .node("quorum-ref", config.getQuorumName());
                 appendItemListenerConfigs(gen, config.getItemListenerConfigs());
                 gen.close();
             }
@@ -175,6 +176,7 @@ public class ConfigXmlGenerator {
                     .node("concurrency-level", r.getConcurrencyLevel())
                     .node("replication-delay-millis", r.getReplicationDelayMillis())
                     .node("async-fillup", r.isAsyncFillup())
+                    .node("quorum-ref", r.getQuorumName())
                     .node("statistics-enabled", r.isStatisticsEnabled());
 
             if (!r.getListenerConfigs().isEmpty()) {
@@ -315,6 +317,7 @@ public class ConfigXmlGenerator {
                     .node("statistics-enabled", ex.isStatisticsEnabled())
                     .node("pool-size", ex.getPoolSize())
                     .node("queue-capacity", ex.getQueueCapacity())
+                    .node("quorum-ref", ex.getQuorumName())
                     .close();
         }
     }
@@ -325,6 +328,7 @@ public class ConfigXmlGenerator {
                     .node("pool-size", ex.getPoolSize())
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
+                    .node("quorum-ref", ex.getQuorumName())
                     .close();
         }
     }
@@ -335,6 +339,7 @@ public class ConfigXmlGenerator {
                     .node("pool-size", ex.getPoolSize())
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
+                    .node("quorum-ref", ex.getQuorumName())
                     .close();
         }
     }
@@ -344,6 +349,7 @@ public class ConfigXmlGenerator {
             gen.open("cardinality-estimator", "name", ex.getName())
                     .node("backup-count", ex.getBackupCount())
                     .node("async-backup-count", ex.getAsyncBackupCount())
+                    .node("quorum-ref", ex.getQuorumName())
                     .close();
         }
     }
@@ -354,6 +360,7 @@ public class ConfigXmlGenerator {
                     .node("initial-permits", sc.getInitialPermits())
                     .node("backup-count", sc.getBackupCount())
                     .node("async-backup-count", sc.getAsyncBackupCount())
+                    .node("quorum-ref", sc.getQuorumName())
                     .close();
         }
     }
@@ -409,6 +416,7 @@ public class ConfigXmlGenerator {
                     .node("async-backup-count", mm.getAsyncBackupCount())
                     .node("statistics-enabled", mm.isStatisticsEnabled())
                     .node("binary", mm.isBinary())
+                    .node("quorum-ref", mm.getQuorumName())
                     .node("value-collection-type", mm.getValueCollectionType());
 
             if (!mm.getEntryListenerConfigs().isEmpty()) {
@@ -463,6 +471,7 @@ public class ConfigXmlGenerator {
                     .node("time-to-live-seconds", rbConfig.getTimeToLiveSeconds())
                     .node("backup-count", rbConfig.getBackupCount())
                     .node("async-backup-count", rbConfig.getAsyncBackupCount())
+                    .node("quorum-ref", rbConfig.getQuorumName())
                     .node("in-memory-format", rbConfig.getInMemoryFormat());
 
             RingbufferStoreConfig storeConfig = rbConfig.getRingbufferStoreConfig();
@@ -483,6 +492,7 @@ public class ConfigXmlGenerator {
             MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
             gen.open("atomic-long", "name", atomicLongConfig.getName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .node("quorum-ref", atomicLongConfig.getQuorumName())
                     .close();
         }
     }
@@ -493,6 +503,7 @@ public class ConfigXmlGenerator {
             MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
             gen.open("atomic-reference", "name", atomicReferenceConfig.getName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .node("quorum-ref", atomicReferenceConfig.getQuorumName())
                     .close();
         }
     }
@@ -577,6 +588,7 @@ public class ConfigXmlGenerator {
                     .node("eviction-percentage", m.getEvictionPercentage())
                     .node("min-eviction-check-millis", m.getMinEvictionCheckMillis())
                     .node("merge-policy", m.getMergePolicy())
+                    .node("quorum-ref", m.getQuorumName())
                     .node("read-backup-data", m.isReadBackupData());
 
             appendHotRestartConfig(gen, m.getHotRestartConfig());

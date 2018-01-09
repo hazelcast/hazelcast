@@ -770,6 +770,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     private static String toPropertyName(String element) {
+        // handle reflection incompatible reference properties
+        String refPropertyName = handleRefProperty(element);
+        if (refPropertyName != null) {
+            return refPropertyName;
+        }
+
         StringBuilder sb = new StringBuilder();
         char[] chars = element.toCharArray();
         boolean upper = true;
@@ -784,6 +790,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         return sb.toString();
+    }
+
+    private static String handleRefProperty(String element) {
+        if (element.equals("quorum-ref")) {
+            return "QuorumName";
+        }
+        return null;
     }
 
     private void handleJoin(Node node) {
@@ -1072,7 +1085,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 lConfig.setStatisticsEnabled(getBooleanValue(value));
+            } else if ("quorum-ref".equals(nodeName)) {
+                lConfig.setQuorumName(value);
             }
+
         }
         config.addListConfig(lConfig);
     }
@@ -1102,6 +1118,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 sConfig.setStatisticsEnabled(getBooleanValue(value));
+            } else if ("quorum-ref".equals(nodeName)) {
+                sConfig.setQuorumName(value);
             }
         }
         config.addSetConfig(sConfig);
@@ -1137,6 +1155,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 multiMapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("binary".equals(nodeName)) {
                 multiMapConfig.setBinary(getBooleanValue(value));
+            } else if ("quorum-ref".equals(nodeName)) {
+                multiMapConfig.setQuorumName(value);
             }
         }
         config.addMultiMapConfig(multiMapConfig);
@@ -1174,6 +1194,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("merge-policy".equals(nodeName)) {
                 replicatedMapConfig.setMergePolicy(value);
+            } else if ("quorum-ref".equals(nodeName)) {
+                replicatedMapConfig.setQuorumName(value);
             }
         }
         config.addReplicatedMapConfig(replicatedMapConfig);
@@ -1965,6 +1987,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("async-backup-count".equals(nodeName)) {
                 sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
                         , value));
+            } else if ("quorum-ref".equals(nodeName)) {
+                sConfig.setQuorumName(value);
             }
         }
         config.addSemaphoreConfig(sConfig);
@@ -2001,6 +2025,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("ringbuffer-store".equals(nodeName)) {
                 RingbufferStoreConfig ringbufferStoreConfig = createRingbufferStoreConfig(n);
                 rbConfig.setRingbufferStoreConfig(ringbufferStoreConfig);
+            } else if ("quorum-ref".equals(nodeName)) {
+                rbConfig.setQuorumName(value);
             }
         }
         config.addRingBufferConfig(rbConfig);
@@ -2012,9 +2038,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         AtomicLongConfig atomicLongConfig = new AtomicLongConfig(name);
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
+            String value = getTextContent(n).trim();
             if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 atomicLongConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("quorum-ref".equals(nodeName)) {
+                atomicLongConfig.setQuorumName(value);
             }
         }
         config.addAtomicLongConfig(atomicLongConfig);
@@ -2026,9 +2055,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         AtomicReferenceConfig atomicReferenceConfig = new AtomicReferenceConfig(name);
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
+            String value = getTextContent(n).trim();
             if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 atomicReferenceConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("quorum-ref".equals(nodeName)) {
+                atomicReferenceConfig.setQuorumName(value);
             }
         }
         config.addAtomicReferenceConfig(atomicReferenceConfig);

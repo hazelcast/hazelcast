@@ -324,7 +324,18 @@
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-lost-listeners" type="partition-lost-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
@@ -561,7 +572,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="partition-lost-listeners" type="partition-lost-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="merge-policy" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -689,7 +711,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -751,6 +784,18 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -811,6 +856,18 @@
                         <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
+            </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
@@ -893,6 +950,18 @@
                 </xs:annotation>
             </xs:element>
             <!--<xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />-->
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -974,6 +1043,18 @@
                         Lets you add listeners (listener classes) for the replicated map entries. You can also set the attribute
                         include-value to true if you want the item event to contain the entry values, and you can set
                         local to true if you want to listen to the entries on the local node.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1195,6 +1276,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1210,7 +1303,18 @@
 
     <xs:complexType name="lock">
         <xs:all>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -1288,6 +1392,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1303,6 +1419,18 @@
     <xs:complexType name="atomic-long">
         <xs:all>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1318,6 +1446,18 @@
     <xs:complexType name="atomic-reference">
         <xs:all>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1332,7 +1472,18 @@
     </xs:complexType>
     <xs:complexType name="count-down-latch">
         <xs:all>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1776,6 +1927,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>
@@ -1806,6 +1969,18 @@
                 <xs:annotation>
                     <xs:documentation>
                         Capacity of the executor task per partition.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1843,6 +2018,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>
@@ -1870,6 +2057,18 @@
                         Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
                         then cardinality estimation will be copied to one other JVM (asynchronously) for
                         fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

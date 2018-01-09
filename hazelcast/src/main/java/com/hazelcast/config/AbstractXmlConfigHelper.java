@@ -25,7 +25,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.util.StringUtil;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -217,6 +216,10 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected String xmlToJavaName(final String name) {
+        String javaRefName = xmlRefToJavaName(name);
+        if (javaRefName != null) {
+            return javaRefName;
+        }
         final StringBuilder builder = new StringBuilder();
         final char[] charArray = name.toCharArray();
         boolean dash = false;
@@ -232,6 +235,13 @@ public abstract class AbstractXmlConfigHelper {
         }
         appendToken(builder, token);
         return builder.toString();
+    }
+
+    private String xmlRefToJavaName(final String name) {
+        if (name.equals("quorum-ref")) {
+            return "quorumName";
+        }
+        return null;
     }
 
     protected void appendToken(final StringBuilder builder, final StringBuilder token) {
