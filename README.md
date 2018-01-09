@@ -70,7 +70,7 @@ partitionGroupConfig.setEnabled( true )
 - Disable join over multicast, TCP/IP and AWS by setting the `enabled` attribute of the related tags to `false`.
 - Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
 
-The following is an example declarative configuration.
+Following are example declarative and programmatic configuration snippets:
 
 ```xml
  <hazelcast>
@@ -103,6 +103,32 @@ The following is an example declarative configuration.
     </join>
   </network>
  </hazelcast>
+```
+
+```java
+        Config config = new Config();
+        config.getProperties().setProperty("hazelcast.discovery.enabled", "true");
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        joinConfig.getTcpIpConfig().setEnabled(false);
+        joinConfig.getMulticastConfig().setEnabled(false);
+        joinConfig.getAwsConfig().setEnabled(false);
+        AwsDiscoveryStrategyFactory awsDiscoveryStrategyFactory = new AwsDiscoveryStrategyFactory();
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("access-key","my-access-key");
+        properties.put("secret-key","my-secret-key");
+        properties.put("iam-role","s3access");
+        properties.put("region","us-west-1");
+        properties.put("host-header","ec2.amazonaws.com");
+        properties.put("security-group-name","hazelcast");
+        properties.put("tag-key","aws-test-cluster");
+        properties.put("tag-value","cluster1");
+        properties.put("hzPort","5701");
+        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
+        joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
+        
+        //if you want to configure multiple discovery strategies at once
+        ArrayList<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
+        joinConfig.getDiscoveryConfig().setDiscoveryStrategyConfigs(discoveryStrategyConfigs);
 ```
 
 Here are the definitions of the properties
@@ -138,7 +164,7 @@ If more than one `subnet` or `custom VPC` is used for cluster, it should be chec
 - Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
 - Enable public/private IP address translation using "hazelcast.discovery.public.ip.enabled" if your Hazelcast Client is not in AWS.
 
-The following is an example declarative configuration.
+Following are example declarative and programmatic configuration snippets:
 
 ```xml
  <hazelcast-client>
@@ -169,6 +195,30 @@ The following is an example declarative configuration.
  </hazelcast-client>
 ```
 
+```java
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getProperties().setProperty("hazelcast.discovery.enabled", "true");
+        //if your Hazelcast Client is not in AWS
+        clientConfig.getProperties().setProperty("hazelcast.discovery.public.ip.enabled", "true");
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("access-key","my-access-key");
+        properties.put("secret-key","my-secret-key");
+        properties.put("iam-role","s3access");
+        properties.put("region","us-west-1");
+        properties.put("host-header","ec2.amazonaws.com");
+        properties.put("security-group-name","hazelcast");
+        properties.put("tag-key","aws-test-cluster");
+        properties.put("tag-value","cluster1");
+        properties.put("hzPort","5701");
+        AwsDiscoveryStrategyFactory awsDiscoveryStrategyFactory = new AwsDiscoveryStrategyFactory();
+        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
+        ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
+        clientNetworkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
+        
+        //if you want to configure multiple discovery strategies at once
+        ArrayList<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
+        clientNetworkConfig.getDiscoveryConfig().setDiscoveryStrategyConfigs(discoveryStrategyConfigs);
+```
 
 
 List of available properties and their documentation can be found at [AwsProperties.java](https://github.com/hazelcast/hazelcast-aws/blob/master/src/main/java/com/hazelcast/aws/AwsProperties.java)
