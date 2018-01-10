@@ -76,7 +76,12 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         return 20;
     }
 
-    final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType) {
+    final protected void stopInstances(List<HazelcastInstance> instances, NodeLeaveType nodeLeaveType) {
+        stopInstances(instances, nodeLeaveType, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType,
+            int timeoutSeconds) {
         assertNotNull(nodeLeaveType);
 
         final List<Thread> threads = new ArrayList<Thread>();
@@ -102,7 +107,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
             t.start();
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, timeoutSeconds);
     }
 
     final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp() {
