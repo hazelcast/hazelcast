@@ -34,8 +34,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.concurrent.ExecutionException;
-
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
@@ -117,11 +115,7 @@ public class RingbufferQuorumReadTest extends AbstractQuorumTest {
 
     @Test
     public void readOne_quorum() throws InterruptedException {
-        try {
-            ring(0).readOne(1l);
-        } catch (IllegalArgumentException ex) {
-            // sometimes the sequence ends up empty due to cluster-split and migrations in-between, irrelevant for quorum test
-        }
+        ring(0).readOne(1l);
     }
 
     @Test(expected = QuorumException.class)
@@ -131,14 +125,7 @@ public class RingbufferQuorumReadTest extends AbstractQuorumTest {
 
     @Test
     public void readManyAsync_quorum() throws Exception {
-        try {
-            ring(0).readManyAsync(1l, 1, 1, new Filter()).get();
-        } catch (ExecutionException ex) {
-            // sometimes the sequence ends up empty due to cluster-split and migrations in-between, irrelevant for quorum test
-            if (!((ex.getCause() instanceof IllegalArgumentException))) {
-                fail();
-            }
-        }
+        ring(0).readManyAsync(1l, 1, 1, new Filter()).get();
     }
 
     @Test
