@@ -18,7 +18,6 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -39,11 +38,12 @@ import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Set;
+import java.util.Collection;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
+import static com.hazelcast.cache.jsr.JsrTestUtil.cleanup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -203,40 +203,40 @@ public class CachingProviderTest extends HazelcastTestSupport {
 
     @Test
     public void whenDefaultCacheManager_withUnnamedDefaultInstance_thenNoSharedNameHazelcastInstanceExists() {
-        JsrTestUtil.cleanup();
+        cleanupForDefaultCacheManagerTest();
         try {
             System.setProperty(AbstractHazelcastCachingProvider.NAMED_JCACHE_HZ_INSTANCE, "false");
             CachingProvider defaultCachingProvider = Caching.getCachingProvider();
             CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
-            Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+            Collection<HazelcastInstance> instances = getStartedInstances();
             for (HazelcastInstance instance : instances) {
-                if (AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME.equals(instance.getConfig().getInstanceName())) {
+                if (AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME.equals(instance.getName())) {
                     fail("The default named HazelcastInstance shouldn't have been started");
                 }
             }
             defaultCachingProvider.close();
         } finally {
-            JsrTestUtil.cleanup();
+            cleanup();
         }
     }
 
     @Test
     public void whenDefaultCacheManager_thenSharedNameHazelcastInstanceExists() {
-        JsrTestUtil.cleanup();
+        cleanupForDefaultCacheManagerTest();
         try {
             CachingProvider defaultCachingProvider = Caching.getCachingProvider();
             CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
-            Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+            Collection<HazelcastInstance> instances = getStartedInstances();
             boolean sharedInstanceStarted = false;
             for (HazelcastInstance instance : instances) {
-                if (instance.getConfig().getInstanceName().equals(AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME)) {
+                if (instance.getName().equals(AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME)) {
                     sharedInstanceStarted = true;
                 }
             }
             assertTrue("The default named HazelcastInstance should have been started", sharedInstanceStarted);
             defaultCachingProvider.close();
         } finally {
-            JsrTestUtil.cleanup();
+            cleanup();
         }
     }
 
@@ -248,5 +248,14 @@ public class CachingProviderTest extends HazelcastTestSupport {
         HazelcastInstance otherInstance = Hazelcast.getHazelcastInstanceByName(instanceName);
         assertNotNull(otherInstance);
         otherInstance.getLifecycleService().terminate();
+    }
+
+    protected Collection<HazelcastInstance> getStartedInstances() {
+        return Hazelcast.getAllHazelcastInstances();
+    }
+
+    // tests for the default cache manager require cleanup before running which must be overridden for client-side tests
+    protected void cleanupForDefaultCacheManagerTest() {
+        cleanup();
     }
 }

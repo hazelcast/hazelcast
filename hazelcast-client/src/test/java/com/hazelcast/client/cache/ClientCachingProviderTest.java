@@ -34,9 +34,12 @@ import org.junit.runner.RunWith;
 import javax.cache.spi.CachingProvider;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
+import static com.hazelcast.cache.jsr.JsrTestUtil.clearSystemProperties;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -62,8 +65,6 @@ public class ClientCachingProviderTest extends CachingProviderTest {
             throw new AssertionError("Could not construct named hazelcast client instance: " +
                     e.getMessage());
         }
-        instances.add(instance1);
-        instances.add(instance2);
         instances.add(instance3);
         cachingProvider = createCachingProvider(instance1);
     }
@@ -89,6 +90,17 @@ public class ClientCachingProviderTest extends CachingProviderTest {
         HazelcastInstance otherInstance = HazelcastClient.getHazelcastClientByName(instanceName);
         assertNotNull(otherInstance);
         otherInstance.getLifecycleService().terminate();
+    }
+
+    @Override
+    protected Collection<HazelcastInstance> getStartedInstances() {
+        return HazelcastClient.getAllHazelcastClients();
+    }
+
+    @Override
+    protected void cleanupForDefaultCacheManagerTest() {
+        clearSystemProperties();
+        clearCachingProviderRegistry();
     }
 
     @After
