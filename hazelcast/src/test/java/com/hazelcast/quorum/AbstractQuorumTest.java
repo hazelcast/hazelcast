@@ -110,9 +110,9 @@ public class AbstractQuorumTest {
     }
 
     protected static CountDownLatchConfig newLatchConfig(QuorumType quorumType, String quorumName) {
-        CountDownLatchConfig countDownLatchConfig = new CountDownLatchConfig(LATCH_NAME + quorumType.name());
-        countDownLatchConfig.setQuorumName(quorumName);
-        return countDownLatchConfig;
+        CountDownLatchConfig config = new CountDownLatchConfig(LATCH_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
     }
 
     protected static DurableExecutorConfig newDurableExecConfig(QuorumType quorumType, String quorumName, String postfix) {
@@ -128,9 +128,9 @@ public class AbstractQuorumTest {
     }
 
     protected static ListConfig newListConfig(QuorumType quorumType, String quorumName) {
-        ListConfig listConfig = new ListConfig(LIST_NAME + quorumType.name());
-        listConfig.setQuorumName(quorumName);
-        return listConfig;
+        ListConfig config = new ListConfig(LIST_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
     }
 
     protected static LockConfig newLockConfig(QuorumType quorumType, String quorumName) {
@@ -140,33 +140,35 @@ public class AbstractQuorumTest {
     }
 
     protected static MapConfig newMapConfig(QuorumType quorumType, String quorumName) {
-        MapConfig mapConfig = new MapConfig(MAP_NAME + quorumType.name());
-        mapConfig.setQuorumName(quorumName);
-        return mapConfig;
+        MapConfig config = new MapConfig(MAP_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
     }
 
     protected static MultiMapConfig newMultiMapConfig(QuorumType quorumType, String quorumName) {
-        MultiMapConfig mapConfig = new MultiMapConfig(MULTI_MAP_NAME + quorumType.name());
-        mapConfig.setQuorumName(quorumName);
-        return mapConfig;
+        MultiMapConfig config = new MultiMapConfig(MULTI_MAP_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
     }
 
     protected static QueueConfig newQueueConfig(QuorumType quorumType, String quorumName) {
         QueueConfig config = new QueueConfig(QUEUE_NAME + quorumType.name());
         config.setQuorumName(quorumName);
+        config.setBackupCount(4);
         return config;
     }
 
     protected static ReplicatedMapConfig newReplicatedMapConfig(QuorumType quorumType, String quorumName) {
-        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig(REPLICATED_MAP_NAME + quorumType.name());
-        replicatedMapConfig.setQuorumName(quorumName);
-        return replicatedMapConfig;
+        ReplicatedMapConfig config = new ReplicatedMapConfig(REPLICATED_MAP_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
     }
 
     protected static RingbufferConfig newRingbufferConfig(QuorumType quorumType, String quorumName) {
-        RingbufferConfig ringbufferConfig = new RingbufferConfig(RINGBUFFER_NAME + quorumType.name());
-        ringbufferConfig.setQuorumName(quorumName);
-        return ringbufferConfig;
+        RingbufferConfig config = new RingbufferConfig(RINGBUFFER_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        config.setBackupCount(4);
+        return config;
     }
 
     protected static ScheduledExecutorConfig newScheduledExecConfig(QuorumType quorumType, String quorumName, String postfix) {
@@ -176,9 +178,9 @@ public class AbstractQuorumTest {
     }
 
     protected static SetConfig newSetConfig(QuorumType quorumType, String quorumName) {
-        SetConfig setConfig = new SetConfig(SET_NAME + quorumType.name());
-        setConfig.setQuorumName(quorumName);
-        return setConfig;
+        SetConfig config = new SetConfig(SET_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
     }
 
     protected static QuorumConfig newQuorumConfig(QuorumType quorumType, String quorumName) {
