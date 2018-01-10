@@ -17,8 +17,11 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicLongConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicReferenceConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCountDownLatchConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
@@ -197,7 +200,7 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(listConfig.getItemListenerConfigs());
         ClientMessage request = DynamicConfigAddListConfigCodec.encodeRequest(listConfig.getName(), listenerConfigs,
                 listConfig.getBackupCount(), listConfig.getAsyncBackupCount(), listConfig.getMaxSize(),
-                listConfig.isStatisticsEnabled());
+                listConfig.isStatisticsEnabled(), listConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -207,7 +210,7 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(setConfig.getItemListenerConfigs());
         ClientMessage request = DynamicConfigAddSetConfigCodec.encodeRequest(setConfig.getName(), listenerConfigs,
                 setConfig.getBackupCount(), setConfig.getAsyncBackupCount(), setConfig.getMaxSize(),
-                setConfig.isStatisticsEnabled());
+                setConfig.isStatisticsEnabled(), setConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -220,7 +223,7 @@ public class ClientDynamicClusterConfig extends Config {
                 multiMapConfig.getName(), multiMapConfig.getValueCollectionType().toString(),
                 listenerConfigHolders,
                 multiMapConfig.isBinary(), multiMapConfig.getBackupCount(), multiMapConfig.getAsyncBackupCount(),
-                multiMapConfig.isStatisticsEnabled());
+                multiMapConfig.isStatisticsEnabled(), multiMapConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -232,7 +235,7 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(
                 replicatedMapConfig.getName(), replicatedMapConfig.getInMemoryFormat().name(),
                 replicatedMapConfig.isAsyncFillup(), replicatedMapConfig.isStatisticsEnabled(),
-                replicatedMapConfig.getMergePolicy(), listenerConfigHolders);
+                replicatedMapConfig.getMergePolicy(), listenerConfigHolders, replicatedMapConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -248,7 +251,7 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddRingbufferConfigCodec.encodeRequest(
                 ringbufferConfig.getName(), ringbufferConfig.getCapacity(), ringbufferConfig.getBackupCount(),
                 ringbufferConfig.getAsyncBackupCount(), ringbufferConfig.getTimeToLiveSeconds(),
-                ringbufferConfig.getInMemoryFormat().name(), ringbufferStoreConfig);
+                ringbufferConfig.getInMemoryFormat().name(), ringbufferStoreConfig, ringbufferConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -280,7 +283,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addExecutorConfig(ExecutorConfig executorConfig) {
         ClientMessage request = DynamicConfigAddExecutorConfigCodec.encodeRequest(
                 executorConfig.getName(), executorConfig.getPoolSize(), executorConfig.getQueueCapacity(),
-                executorConfig.isStatisticsEnabled());
+                executorConfig.isStatisticsEnabled(), executorConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -289,7 +292,8 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addDurableExecutorConfig(DurableExecutorConfig durableExecutorConfig) {
         ClientMessage request = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(
                 durableExecutorConfig.getName(), durableExecutorConfig.getPoolSize(),
-                durableExecutorConfig.getDurability(), durableExecutorConfig.getCapacity());
+                durableExecutorConfig.getDurability(), durableExecutorConfig.getCapacity(),
+                durableExecutorConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -298,7 +302,8 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig) {
         ClientMessage request = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(
                 scheduledExecutorConfig.getName(), scheduledExecutorConfig.getPoolSize(),
-                scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity());
+                scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity(),
+                scheduledExecutorConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -307,7 +312,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addCardinalityEstimatorConfig(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
         ClientMessage request = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(
                 cardinalityEstimatorConfig.getName(), cardinalityEstimatorConfig.getBackupCount(),
-                cardinalityEstimatorConfig.getAsyncBackupCount());
+                cardinalityEstimatorConfig.getAsyncBackupCount(), cardinalityEstimatorConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -316,37 +321,34 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
         ClientMessage request = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(
                 semaphoreConfig.getName(), semaphoreConfig.getInitialPermits(), semaphoreConfig.getBackupCount(),
-                semaphoreConfig.getAsyncBackupCount());
+                semaphoreConfig.getAsyncBackupCount(), semaphoreConfig.getQuorumName());
         invoke(request);
         return this;
     }
 
-    //
-    // TODO -> Uncomment when client-side ready
-    //
-//    @Override
-//    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-//        ClientMessage request = DynamicConfigAddAtomicReferenceCodec.encodeRequest(
-//                atomicReferenceConfig.getName(), atomicReferenceConfig.getQuorumName());
-//        invoke(request);
-//        return this;
-//    }
-//
-//    @Override
-//    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-//        ClientMessage request = DynamicConfigAddAtomicLongCodec.encodeRequest(
-//                atomicLongConfig.getName(), atomicLongConfig.getQuorumName());
-//        invoke(request);
-//        return this;
-//    }
-//
-//    @Override
-//    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-//        ClientMessage request = DynamicConfigAddCountDownLatchConfigCodec.encodeRequest(
-//                countDownLatchConfig.getName(), countDownLatchConfig.getQuorumName());
-//        invoke(request);
-//        return this;
-//    }
+    @Override
+    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
+        ClientMessage request = DynamicConfigAddAtomicReferenceConfigCodec.encodeRequest(
+                atomicReferenceConfig.getName(), atomicReferenceConfig.getQuorumName());
+        invoke(request);
+        return this;
+    }
+
+    @Override
+    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
+        ClientMessage request = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(
+                atomicLongConfig.getName(), atomicLongConfig.getQuorumName());
+        invoke(request);
+        return this;
+    }
+
+    @Override
+    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
+        ClientMessage request = DynamicConfigAddCountDownLatchConfigCodec.encodeRequest(
+                countDownLatchConfig.getName(), countDownLatchConfig.getQuorumName());
+        invoke(request);
+        return this;
+    }
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
