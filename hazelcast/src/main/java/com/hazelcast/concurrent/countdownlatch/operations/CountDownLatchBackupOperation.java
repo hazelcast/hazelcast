@@ -20,7 +20,6 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -28,7 +27,7 @@ import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializ
 import static java.lang.Boolean.TRUE;
 
 public class CountDownLatchBackupOperation extends AbstractCountDownLatchOperation
-        implements BackupOperation, MutatingOperation {
+        implements BackupOperation {
 
     private int count;
 

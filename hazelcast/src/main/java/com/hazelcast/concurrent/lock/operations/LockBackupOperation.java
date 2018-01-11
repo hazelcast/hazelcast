@@ -23,11 +23,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class LockBackupOperation extends AbstractLockOperation implements BackupOperation, MutatingOperation {
+public class LockBackupOperation extends AbstractLockOperation implements BackupOperation {
 
     private String originalCallerUuid;
 

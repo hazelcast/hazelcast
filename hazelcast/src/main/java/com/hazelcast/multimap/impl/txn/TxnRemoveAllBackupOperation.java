@@ -24,14 +24,14 @@ import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class TxnRemoveAllBackupOperation extends MultiMapKeyBasedOperation implements MutatingOperation {
+public class TxnRemoveAllBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     Collection<Long> recordIds;
 

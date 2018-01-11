@@ -25,14 +25,13 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
  * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheClearOperation}.
  * <p>It simply clears the records.</p>
  */
 public class CacheClearBackupOperation extends AbstractNamedOperation
-        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
+        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     private transient ICacheRecordStore cache;
 

@@ -22,13 +22,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation, MutatingOperation {
+public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     private long recordId;
     private Data value;

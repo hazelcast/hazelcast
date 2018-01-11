@@ -20,9 +20,8 @@ import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.impl.MutatingOperation;
 
-public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation, MutatingOperation {
+public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
 
     public SignalBackupOperation() {
     }

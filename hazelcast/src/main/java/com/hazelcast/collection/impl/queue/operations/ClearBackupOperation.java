@@ -21,7 +21,6 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Set;
@@ -31,7 +30,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 /**
  * Store items' ID as set when ClearOperation run.
  */
-public class ClearBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
+public class ClearBackupOperation extends QueueOperation implements BackupOperation {
 
     private Set<Long> itemIdSet;
 

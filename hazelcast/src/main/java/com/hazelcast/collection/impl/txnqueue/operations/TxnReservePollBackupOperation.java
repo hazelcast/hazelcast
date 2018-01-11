@@ -23,7 +23,6 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -33,7 +32,7 @@ import java.io.IOException;
  * @see TransactionalQueue#poll
  * @see TxnPollOperation
  */
-public class TxnReservePollBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
+public class TxnReservePollBackupOperation extends QueueOperation implements BackupOperation {
 
     private long itemId;
     private String transactionId;
