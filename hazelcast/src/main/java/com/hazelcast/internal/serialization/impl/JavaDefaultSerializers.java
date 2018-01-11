@@ -49,6 +49,84 @@ import static java.lang.Math.max;
 
 public final class JavaDefaultSerializers {
 
+    public static final class JavaSerializer extends SingletonSerializer<Object> {
+
+        private final boolean shared;
+        private final boolean gzipEnabled;
+
+        public JavaSerializer(boolean shared, boolean gzipEnabled) {
+            this.shared = shared;
+            this.gzipEnabled = gzipEnabled;
+        }
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_SERIALIZABLE;
+        }
+
+        @Override
+        public Object read(final ObjectDataInput in) throws IOException {
+            if (gzipEnabled) {
+                return readGzipped(((InputStream) in), in.getClassLoader());
+            }
+            return read(((InputStream) in), in.getClassLoader());
+        }
+
+        private Object read(InputStream in, ClassLoader classLoader) throws IOException {
+            try {
+                ObjectInputStream objectInputStream = newObjectInputStream(classLoader, in);
+                if (shared) {
+                    return objectInputStream.readObject();
+                }
+                return objectInputStream.readUnshared();
+            } catch (ClassNotFoundException e) {
+                throw new HazelcastSerializationException(e);
+            }
+        }
+
+        private Object readGzipped(InputStream in, ClassLoader classLoader) throws IOException {
+            ExtendedGZipInputStream gzip = new ExtendedGZipInputStream(in);
+            try {
+                Object obj = read(gzip, classLoader);
+                gzip.pushBackUnconsumedBytes();
+                return obj;
+            } finally {
+                gzip.closeInflater();
+            }
+        }
+
+        @SuppressFBWarnings("OS_OPEN_STREAM")
+        @Override
+        public void write(final ObjectDataOutput out, final Object obj) throws IOException {
+            if (gzipEnabled) {
+                writeGzipped(((OutputStream) out), obj);
+            } else {
+                write((OutputStream) out, obj);
+            }
+        }
+
+        private void write(OutputStream out, Object obj) throws IOException {
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(out);
+            if (shared) {
+                objectOutputStream.writeObject(obj);
+            } else {
+                objectOutputStream.writeUnshared(obj);
+            }
+            // Force flush if not yet written due to internal behavior if pos < 1024
+            objectOutputStream.flush();
+        }
+
+        private void writeGzipped(OutputStream out, Object obj) throws IOException {
+            ExtendedGZipOutputStream gzip = new ExtendedGZipOutputStream(out);
+            try {
+                write(gzip, obj);
+                gzip.finish();
+            } finally {
+                gzip.closeDeflater();
+            }
+        }
+    }
+
     public static final class ExternalizableSerializer extends SingletonSerializer<Externalizable> {
 
         private final boolean gzipEnabled;
@@ -64,47 +142,62 @@ public final class JavaDefaultSerializers {
 
         @Override
         public Externalizable read(final ObjectDataInput in) throws IOException {
-            final String className = in.readUTF();
+            String className = in.readUTF();
             try {
-                final Externalizable ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
-                final ObjectInputStream objectInputStream;
-                final InputStream inputStream = (InputStream) in;
-                ExtendedGZipInputStream gZipInputStream = null;
                 if (gzipEnabled) {
-                    gZipInputStream = new ExtendedGZipInputStream(inputStream);
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), gZipInputStream);
-                } else {
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
+                    return readGzipped(((InputStream) in), className, in.getClassLoader());
                 }
-                ds.readExternal(objectInputStream);
-                if (gzipEnabled) {
-                    gZipInputStream.pushBackUnconsumedBytes();
-                }
-                return ds;
-            } catch (final Exception e) {
+                return read((InputStream) in, className, in.getClassLoader());
+            } catch (Exception e) {
                 throw new HazelcastSerializationException("Problem while reading Externalizable class: "
                         + className + ", exception: " + e);
             }
         }
 
+        private Externalizable readGzipped(InputStream in, String className, ClassLoader classLoader) throws Exception {
+            ExtendedGZipInputStream gzip = new ExtendedGZipInputStream(in);
+            try {
+                Externalizable external = read(gzip, className, classLoader);
+                gzip.pushBackUnconsumedBytes();
+                return external;
+            } finally {
+                gzip.closeInflater();
+            }
+        }
+
+        private Externalizable read(InputStream in, String className, ClassLoader classLoader) throws Exception {
+            Externalizable ds = ClassLoaderUtil.newInstance(classLoader, className);
+            ObjectInputStream objectInputStream = newObjectInputStream(classLoader, in);
+            ds.readExternal(objectInputStream);
+            return ds;
+        }
+
         @Override
         public void write(final ObjectDataOutput out, final Externalizable obj) throws IOException {
             out.writeUTF(obj.getClass().getName());
-            final ObjectOutputStream objectOutputStream;
-            final OutputStream outputStream = (OutputStream) out;
-            GZIPOutputStream gzip = null;
+
             if (gzipEnabled) {
-                gzip = new GZIPOutputStream(outputStream);
-                objectOutputStream = new ObjectOutputStream(gzip);
+                writeGzipped(((OutputStream) out), obj);
             } else {
-                objectOutputStream = new ObjectOutputStream(outputStream);
+                write((OutputStream) out, obj);
             }
+        }
+
+        private void writeGzipped(OutputStream out, Externalizable obj) throws IOException {
+            ExtendedGZipOutputStream gzip = new ExtendedGZipOutputStream(out);
+            try {
+                write(gzip, obj);
+                gzip.finish();
+            } finally {
+                gzip.closeDeflater();
+            }
+        }
+
+        private void write(OutputStream outputStream, Externalizable obj) throws IOException {
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
             obj.writeExternal(objectOutputStream);
             // Force flush if not yet written due to internal behavior if pos < 1024
             objectOutputStream.flush();
-            if (gzipEnabled) {
-                gzip.finish();
-            }
         }
     }
 
@@ -195,75 +288,6 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class JavaSerializer extends SingletonSerializer<Object> {
-
-
-        private final boolean shared;
-        private final boolean gzipEnabled;
-
-        public JavaSerializer(boolean shared, boolean gzipEnabled) {
-            this.shared = shared;
-            this.gzipEnabled = gzipEnabled;
-        }
-
-        @Override
-        public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_SERIALIZABLE;
-        }
-
-        @Override
-        public Object read(final ObjectDataInput in) throws IOException {
-            final ObjectInputStream objectInputStream;
-            final InputStream inputStream = (InputStream) in;
-            ExtendedGZipInputStream gZipInputStream = null;
-            if (gzipEnabled) {
-                gZipInputStream = new ExtendedGZipInputStream(inputStream);
-                objectInputStream = newObjectInputStream(in.getClassLoader(), gZipInputStream);
-            } else {
-                objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
-            }
-
-            final Object result;
-            try {
-                if (shared) {
-                    result = objectInputStream.readObject();
-                } else {
-                    result = objectInputStream.readUnshared();
-                }
-                if (gzipEnabled) {
-                    gZipInputStream.pushBackUnconsumedBytes();
-                }
-            } catch (ClassNotFoundException e) {
-                throw new HazelcastSerializationException(e);
-            }
-            return result;
-        }
-
-        @SuppressFBWarnings("OS_OPEN_STREAM")
-        @Override
-        public void write(final ObjectDataOutput out, final Object obj) throws IOException {
-            final ObjectOutputStream objectOutputStream;
-            final OutputStream outputStream = (OutputStream) out;
-            GZIPOutputStream gzip = null;
-            if (gzipEnabled) {
-                gzip = new GZIPOutputStream(outputStream);
-                objectOutputStream = new ObjectOutputStream(gzip);
-            } else {
-                objectOutputStream = new ObjectOutputStream(outputStream);
-            }
-            if (shared) {
-                objectOutputStream.writeObject(obj);
-            } else {
-                objectOutputStream.writeUnshared(obj);
-            }
-            // Force flush if not yet written due to internal behavior if pos < 1024
-            objectOutputStream.flush();
-            if (gzipEnabled) {
-                gzip.finish();
-            }
-        }
-    }
-
     public static final class EnumSerializer extends SingletonSerializer<Enum> {
 
         @Override
@@ -308,25 +332,47 @@ public final class JavaDefaultSerializers {
      * This class enables us to access internal inflater that keeps consumed buffer.
      * `pushBackUnconsumedBytes` method adjust the position so that, next data in the stream can be read correctly
      */
-    private static class ExtendedGZipInputStream extends GZIPInputStream {
+    private static final class ExtendedGZipInputStream extends GZIPInputStream {
 
-        static final int GZIP_TRAILER_SIZE = 8;
+        private static final int GZIP_TRAILER_SIZE = 8;
 
-        ExtendedGZipInputStream(InputStream in) throws IOException {
+        private ExtendedGZipInputStream(InputStream in) throws IOException {
             super(in);
             assert in instanceof BufferObjectDataInput : "Unexpected input: " + in;
         }
 
         private void pushBackUnconsumedBytes() {
             int remaining = inf.getRemaining();
-            BufferObjectDataInput baodi = (BufferObjectDataInput) in;
-            int position = baodi.position();
+            BufferObjectDataInput bufferedInput = (BufferObjectDataInput) in;
+            int position = bufferedInput.position();
             int rewindBack = max(0, remaining - ExtendedGZipInputStream.GZIP_TRAILER_SIZE);
             int newPosition = position - rewindBack;
-            baodi.position(newPosition);
+            bufferedInput.position(newPosition);
+        }
+
+        /**
+         * Only close inflater, we don't want to close underlying InputStream
+         */
+        private void closeInflater() {
             //GZIPInputStream allocates native resources
             //via inf.end() these resources are released.
             inf.end();
+        }
+    }
+
+    private static final class ExtendedGZipOutputStream extends GZIPOutputStream {
+
+        private ExtendedGZipOutputStream(OutputStream out) throws IOException {
+            super(out);
+        }
+
+        /**
+         * Only close deflater, we don't want to close underlying OutputStream
+         */
+        private void closeDeflater() {
+            //GZIPOutputStream allocates native resources
+            //via def.end() these resources are released.
+            def.end();
         }
     }
 
