@@ -18,10 +18,15 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.concurrent.lock.operations.LocalLockCleanupOperation;
 import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
+import com.hazelcast.concurrent.lock.operations.MergeOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ClientAwareService;
@@ -39,8 +44,10 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -50,15 +57,20 @@ import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
-        FragmentedMigrationAwareService, ClientAwareService, QuorumAwareService {
+        FragmentedMigrationAwareService, ClientAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     private static final Object NULL_OBJECT = new Object();
 
@@ -273,7 +285,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
+                                                 Collection<ServiceNamespace> namespaces) {
         int partitionId = event.getPartitionId();
         LockStoreContainer container = containers[partitionId];
         int replicaIndex = event.getReplicaIndex();
@@ -378,5 +390,104 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        Map<Integer, Map<ObjectNamespace, Map<Data, LockResourceImpl>>> lockStoreMap = createHashMap(containers.length);
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        Address thisAddress = nodeEngine.getClusterService().getThisAddress();
+
+        for (LockStoreContainer container : containers) {
+            int partitionId = container.getPartitionId();
+            if (thisAddress.equals(partitionService.getPartitionOwner(partitionId))) {
+                Map<ObjectNamespace, Map<Data, LockResourceImpl>> map = lockStoreMap.get(partitionId);
+                Collection<LockStoreImpl> lockStores = container.getLockStores();
+                if (map == null) {
+                    map = createHashMap(lockStores.size());
+                    lockStoreMap.put(partitionId, map);
+                }
+                // add your owned entries to the map so they will be merged
+                for (LockStoreImpl lockStore : lockStores) {
+                    map.put(lockStore.getNamespace(), lockStore.getLocksCopy());
+                }
+            }
+
+            // clear all items either owned or backup
+            container.clear();
+        }
+
+        return new Merger(lockStoreMap);
+    }
+
+    private class Merger implements Runnable {
+
+        private static final int TIMEOUT_FACTOR = 500;
+
+        private final Map<Integer, Map<ObjectNamespace, Map<Data, LockResourceImpl>>> lockStoreMap;
+
+        Merger(Map<Integer, Map<ObjectNamespace, Map<Data, LockResourceImpl>>> lockStoreMap) {
+            this.lockStoreMap = lockStoreMap;
+        }
+
+        @Override
+        public void run() {
+            // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
+            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+                return;
+            }
+
+            final ILogger logger = nodeEngine.getLogger(LockService.class);
+            final Semaphore semaphore = new Semaphore(0);
+
+            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object response) {
+                    semaphore.release(1);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    logger.warning("Error while running merge operation: " + t.getMessage());
+                    semaphore.release(1);
+                }
+            };
+
+            int itemCount = 0;
+            for (Map.Entry<Integer, Map<ObjectNamespace, Map<Data, LockResourceImpl>>> entry : lockStoreMap.entrySet()) {
+                int partitionId = entry.getKey();
+                Map<ObjectNamespace, Map<Data, LockResourceImpl>> lockResourceMap = entry.getValue();
+
+                for (Map.Entry<ObjectNamespace, Map<Data, LockResourceImpl>> lockEntry : lockResourceMap.entrySet()) {
+                    ObjectNamespace namespace = lockEntry.getKey();
+                    Map<Data, LockResourceImpl> locks = lockEntry.getValue();
+
+                    for (Map.Entry<Data, LockResourceImpl> lockResourceEntry : locks.entrySet()) {
+                        Data key = lockResourceEntry.getKey();
+                        LockResourceImpl lockResource = lockResourceEntry.getValue();
+                        if (lockResource.isLocal()) {
+                            continue;
+                        }
+                        itemCount++;
+
+                        MergeOperation operation = new MergeOperation(namespace, key, lockResource);
+                        try {
+                            nodeEngine.getOperationService()
+                                    .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                                    .andThen(mergeCallback);
+                        } catch (Throwable t) {
+                            throw rethrow(t);
+                        }
+                    }
+                }
+            }
+            lockStoreMap.clear();
+
+            try {
+                semaphore.tryAcquire(itemCount, itemCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                logger.finest("Interrupted while waiting for merge operation...");
+            }
+        }
     }
 }

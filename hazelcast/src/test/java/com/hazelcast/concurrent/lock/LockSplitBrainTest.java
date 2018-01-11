@@ -25,11 +25,15 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class LockSplitBrainTest extends SplitBrainTestSupport {
+
+    private static final String CONFLICTING_LOCK = "conflictingLock";
+    private static final String NON_CONFLICTING_LOCK = "nonConflictingLock";
 
     private String key;
 
@@ -53,14 +57,38 @@ public class LockSplitBrainTest extends SplitBrainTestSupport {
 
         // release lock on 2nd brain
         secondBrain[0].getLock(key).forceUnlock();
+
+        // create a new lock in both clusters (conflicting, will be skipped in split-brain healing)
+        ILock conflictingLockFirstBrain = firstBrain[0].getLock(CONFLICTING_LOCK);
+        conflictingLockFirstBrain.lock();
+        conflictingLockFirstBrain.lock();
+        conflictingLockFirstBrain.lock();
+
+        ILock conflictingLockSecondBrain = secondBrain[0].getLock(CONFLICTING_LOCK);
+        conflictingLockSecondBrain.lock();
+        conflictingLockSecondBrain.lock();
+
+        // create a new lock in the smaller cluster (non-conflicting, will be merged during split-brain healing)
+        ILock nonConflictingLock = secondBrain[0].getLock(NON_CONFLICTING_LOCK);
+        nonConflictingLock.lock();
+        nonConflictingLock.lock();
     }
 
     @Override
     protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
-        // all instances observe lock as acquired
+        // all instances observe the locks as acquired
         for (HazelcastInstance instance : instances) {
             ILock lock = instance.getLock(key);
             assertTrue(lock.isLocked());
+            assertEquals(1, lock.getLockCount());
+
+            ILock conflictingLock = instance.getLock(CONFLICTING_LOCK);
+            assertTrue(conflictingLock.isLocked());
+            assertEquals(3, conflictingLock.getLockCount());
+
+            ILock nonConflictingLock = instance.getLock(NON_CONFLICTING_LOCK);
+            assertTrue(nonConflictingLock.isLocked());
+            assertEquals(2, nonConflictingLock.getLockCount());
         }
     }
 }

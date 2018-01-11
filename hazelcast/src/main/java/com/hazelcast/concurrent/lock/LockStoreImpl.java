@@ -31,6 +31,7 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -88,6 +89,11 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         // local locks can observe max lease time since they are used internally for EntryProcessor write Offloading
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, false, false, true);
+    }
+
+    public void init(LockResourceImpl lockResource) {
+        LockResourceImpl lock = getLock(lockResource.getKey());
+        lock.init(lockResource);
     }
 
     private long getLeaseTime(long leaseTime) {
@@ -218,6 +224,10 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     public Collection<LockResource> getLocks() {
         return Collections.<LockResource>unmodifiableCollection(locks.values());
+    }
+
+    Map<Data, LockResourceImpl> getLocksCopy() {
+        return new HashMap<Data, LockResourceImpl>(locks);
     }
 
     public void removeLocalLocks() {

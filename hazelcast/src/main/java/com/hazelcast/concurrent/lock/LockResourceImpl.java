@@ -38,7 +38,7 @@ import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
-final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
+public final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
 
     private Data key;
     private String owner;
@@ -65,6 +65,23 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     public LockResourceImpl(Data key, LockStoreImpl lockStore) {
         this.key = key;
         this.lockStore = lockStore;
+    }
+
+    void init(LockResourceImpl lockResource) {
+        owner = lockResource.owner;
+        threadId = lockResource.threadId;
+        referenceId = lockResource.referenceId;
+        lockCount = lockResource.lockCount;
+        expirationTime = lockResource.expirationTime;
+        acquireTime = lockResource.acquireTime;
+        transactional = lockResource.transactional;
+        blockReads = lockResource.blockReads;
+        local = lockResource.local;
+        waiters = lockResource.waiters;
+        conditionKeys = lockResource.conditionKeys;
+        expiredAwaitOps = lockResource.expiredAwaitOps;
+
+        // FIXME: schedule eviction stuff
     }
 
     @Override
@@ -203,12 +220,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     /**
      * Signal a waiter.
      * <p>
-     * We need to pass objectName because the name in {#objectName} is unrealible.
-     *
-     * @param conditionId
-     * @param maxSignalCount
-     * @param objectName
-     * @see InternalLockNamespace
+     * We need to pass objectName because the name in {#objectName} is unreliable.
      */
     public void signal(String conditionId, int maxSignalCount, String objectName) {
         if (waiters == null) {
@@ -236,7 +248,6 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         if (!condition.hasWaiter()) {
             this.waiters.remove(conditionId);
         }
-
     }
 
     private void registerSignalKey(ConditionKey conditionKey) {
@@ -326,7 +337,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
      * Local locks are local to the partition and replicaIndex where they have been acquired.
      * That is the reason they are removed on any partition migration on the destination.
      *
-     * @returns true if the lock is local, false otherwise
+     * @return true if the lock is local, false otherwise
      */
     @Override
     public boolean isLocal() {
