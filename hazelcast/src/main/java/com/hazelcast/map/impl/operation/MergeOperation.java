@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,20 +39,15 @@ public class MergeOperation extends BasePutOperation {
     private transient boolean merged;
     private transient Data mergingValue;
 
-    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
-                          MapMergePolicy policy) {
-        this(name, dataKey, entryView, policy, false);
+    public MergeOperation() {
     }
 
-    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
+    public MergeOperation(String name, EntryView<Data, Data> mergingEntry,
                           MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        super(name, dataKey, null);
-        this.mergingEntry = entryView;
+        super(name, mergingEntry.getKey(), null);
+        this.mergingEntry = mergingEntry;
         this.mergePolicy = policy;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
-    }
-
-    public MergeOperation() {
     }
 
     @Override

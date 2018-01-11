@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ final class DiagnosticsLogFile {
     public void write(DiagnosticsPlugin plugin) {
         try {
             if (file == null) {
-                file = new File(diagnostics.directory, format(fileName, index));
+                file = newFile(index);
                 printWriter = newWriter();
                 renderStaticPlugins();
             }
@@ -93,6 +93,10 @@ final class DiagnosticsLogFile {
         } catch (RuntimeException e) {
             logger.warning("Failed to write file: " + file, e);
         }
+    }
+
+    private File newFile(int index) {
+        return new File(diagnostics.directory, format(fileName, index));
     }
 
     private void renderStaticPlugins() throws IOException {
@@ -119,7 +123,7 @@ final class DiagnosticsLogFile {
         file = null;
         index++;
 
-        File file = new File(format(fileName, index - maxRollingFileCount));
+        File file = newFile(index - maxRollingFileCount);
         deleteQuietly(file);
     }
 }

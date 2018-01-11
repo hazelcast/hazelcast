@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,13 +46,14 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
+import static java.util.Collections.singleton;
 
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
         implements InitializingObject {
@@ -96,6 +97,10 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return name;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     public boolean add(E e) {
         checkObjectNotNull(e);
         final Data value = getNodeEngine().toData(e);
@@ -128,9 +133,8 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public boolean contains(Object o) {
         checkObjectNotNull(o);
 
-        Set<Data> valueSet = new HashSet<Data>(1);
-        valueSet.add(getNodeEngine().toData(o));
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
+        final CollectionContainsOperation operation = new CollectionContainsOperation(name,
+                singleton(getNodeEngine().toData(o)));
         final Boolean result = invoke(operation);
         return result;
     }
@@ -138,7 +142,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public boolean containsAll(Collection<?> c) {
         checkObjectNotNull(c);
 
-        Set<Data> valueSet = new HashSet<Data>(c.size());
+        Set<Data> valueSet = createHashSet(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (Object o : c) {
             checkObjectNotNull(o);
@@ -174,7 +178,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     private boolean compareAndRemove(boolean retain, Collection<?> c) {
         checkObjectNotNull(c);
 
-        Set<Data> valueSet = new HashSet<Data>(c.size());
+        Set<Data> valueSet = createHashSet(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (Object o : c) {
             checkObjectNotNull(o);

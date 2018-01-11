@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,18 +120,25 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     @Override
     public boolean destroyNearCache(String name) {
-        NearCache nearCache = nearCacheMap.remove(name);
+        NearCache nearCache = nearCacheMap.get(name);
         if (nearCache != null) {
-            nearCache.destroy();
+            synchronized (mutex) {
+                nearCache = nearCacheMap.remove(name);
+                if (nearCache != null) {
+                    nearCache.destroy();
+                    return true;
+                }
+                return false;
+            }
         }
-        return nearCache != null;
+        return false;
     }
+
 
     @Override
     public void destroyAllNearCaches() {
         for (NearCache nearCache : new HashSet<NearCache>(nearCacheMap.values())) {
-            nearCacheMap.remove(nearCache.getName());
-            nearCache.destroy();
+            destroyNearCache(nearCache.getName());
         }
         for (ScheduledFuture preloadTaskFuture : preloadTaskFutures) {
             preloadTaskFuture.cancel(true);

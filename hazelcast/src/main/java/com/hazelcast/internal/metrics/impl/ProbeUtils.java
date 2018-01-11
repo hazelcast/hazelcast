@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import com.hazelcast.internal.util.counters.Counter;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * Utility functions for probes.
@@ -43,32 +45,36 @@ final class ProbeUtils {
     static final int TYPE_COUNTER = 7;
     static final int TYPE_SEMAPHORE = 8;
 
-    private static final Map<Class<?>, Integer> TYPES = new HashMap<Class<?>, Integer>();
+    private static final Map<Class<?>, Integer> TYPES;
 
     static {
-        TYPES.put(byte.class, TYPE_PRIMITIVE_LONG);
-        TYPES.put(short.class, TYPE_PRIMITIVE_LONG);
-        TYPES.put(int.class, TYPE_PRIMITIVE_LONG);
-        TYPES.put(long.class, TYPE_PRIMITIVE_LONG);
+        final Map<Class<?>, Integer> types = createHashMap(18);
 
-        TYPES.put(Byte.class, TYPE_LONG_NUMBER);
-        TYPES.put(Short.class, TYPE_LONG_NUMBER);
-        TYPES.put(Integer.class, TYPE_LONG_NUMBER);
-        TYPES.put(Long.class, TYPE_LONG_NUMBER);
-        TYPES.put(AtomicInteger.class, TYPE_LONG_NUMBER);
-        TYPES.put(AtomicLong.class, TYPE_LONG_NUMBER);
+        types.put(byte.class, TYPE_PRIMITIVE_LONG);
+        types.put(short.class, TYPE_PRIMITIVE_LONG);
+        types.put(int.class, TYPE_PRIMITIVE_LONG);
+        types.put(long.class, TYPE_PRIMITIVE_LONG);
 
-        TYPES.put(double.class, TYPE_DOUBLE_PRIMITIVE);
-        TYPES.put(float.class, TYPE_DOUBLE_PRIMITIVE);
+        types.put(Byte.class, TYPE_LONG_NUMBER);
+        types.put(Short.class, TYPE_LONG_NUMBER);
+        types.put(Integer.class, TYPE_LONG_NUMBER);
+        types.put(Long.class, TYPE_LONG_NUMBER);
+        types.put(AtomicInteger.class, TYPE_LONG_NUMBER);
+        types.put(AtomicLong.class, TYPE_LONG_NUMBER);
 
-        TYPES.put(Double.class, TYPE_DOUBLE_NUMBER);
-        TYPES.put(Float.class, TYPE_DOUBLE_NUMBER);
+        types.put(double.class, TYPE_DOUBLE_PRIMITIVE);
+        types.put(float.class, TYPE_DOUBLE_PRIMITIVE);
 
-        TYPES.put(Collection.class, TYPE_COLLECTION);
-        TYPES.put(Map.class, TYPE_MAP);
-        TYPES.put(Counter.class, TYPE_COUNTER);
+        types.put(Double.class, TYPE_DOUBLE_NUMBER);
+        types.put(Float.class, TYPE_DOUBLE_NUMBER);
 
-        TYPES.put(Semaphore.class, TYPE_SEMAPHORE);
+        types.put(Collection.class, TYPE_COLLECTION);
+        types.put(Map.class, TYPE_MAP);
+        types.put(Counter.class, TYPE_COUNTER);
+
+        types.put(Semaphore.class, TYPE_SEMAPHORE);
+
+        TYPES = unmodifiableMap(types);
     }
 
     private ProbeUtils() {

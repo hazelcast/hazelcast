@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -1775,7 +1775,7 @@
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[The unique identifier for a bean.
-                    A bean id may not be used more than once within the same <beans> element.]]>
+                    A bean ID may not be used more than once within the same <beans> element.]]>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2495,6 +2495,7 @@
             <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="icmp-ping" type="icmp-ping-client" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="true"/>
         <xs:attribute name="redo-operation" use="optional" type="parameterized-boolean" default="false"/>
@@ -2515,6 +2516,16 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="icmp-ping-client">
+        <xs:all>
+            <xs:element name="timeout-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="interval-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="ttl" type="xs:int" minOccurs="0" maxOccurs="1" default="255"/>
+            <xs:element name="max-attempts" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
+            <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
     </xs:complexType>
     <xs:complexType name="services">
         <xs:sequence>

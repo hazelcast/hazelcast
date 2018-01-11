@@ -21,15 +21,15 @@ public class DynamicConfigSplitBrain_whenDifferentConfigExistsInBothBrainsTest e
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        HazelcastInstance instanceInSmallerBrain = firstBrain[0];
-        MapConfig mapConfig = new MapConfig(MAP_NAME);
-        mapConfig.setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT);
-        mapConfig.setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);
-        instanceInSmallerBrain.getConfig().addMapConfig(mapConfig);
-
-        HazelcastInstance instanceInBiggerBrain = secondBrain[0];
+        HazelcastInstance instanceInBiggerBrain = firstBrain[0];
         MapConfig defaultMapConfig = new MapConfig(MAP_NAME);
         instanceInBiggerBrain.getConfig().addMapConfig(defaultMapConfig);
+
+        HazelcastInstance instanceInSmallerBrain = secondBrain[0];
+        MapConfig mapConfig = new MapConfig(MAP_NAME)
+                .setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT)
+                .setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);
+        instanceInSmallerBrain.getConfig().addMapConfig(mapConfig);
     }
 
     @Override
@@ -37,8 +37,7 @@ public class DynamicConfigSplitBrain_whenDifferentConfigExistsInBothBrainsTest e
         MapConfig defaultMapConfig = new Config().findMapConfig("default");
 
         for (HazelcastInstance instance : instances) {
-            final Config config = instance.getConfig();
-            MapConfig mapConfig = config.findMapConfig(MAP_NAME);
+            MapConfig mapConfig = instance.getConfig().findMapConfig(MAP_NAME);
             assertEquals(defaultMapConfig.getInMemoryFormat(), mapConfig.getInMemoryFormat());
             assertEquals(defaultMapConfig.getBackupCount(), mapConfig.getBackupCount());
         }

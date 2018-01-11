@@ -108,7 +108,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED));
             }
         });
@@ -150,7 +150,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     }
 
     @Test
-    public void transaction_shouldFail_whenBackupTimeoutOccurs() throws InterruptedException, TimeoutException {
+    public void transaction_shouldFail_whenBackupTimeoutOccurs() {
         setup(true);
 
         dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
@@ -190,7 +190,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(instance2.getUserContext().containsKey(SilentOperation.EXECUTION_STARTED));
             }
         });

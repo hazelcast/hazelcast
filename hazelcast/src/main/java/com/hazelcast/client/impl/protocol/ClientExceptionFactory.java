@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
+import com.hazelcast.reliableidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.DuplicateInstanceNameException;
@@ -635,6 +636,12 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new IndeterminateOperationStateException(message, cause);
+            }
+        });
+        register(ClientProtocolErrorCodes.RELIABLE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION, NodeIdOutOfRangeException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NodeIdOutOfRangeException(message);
             }
         });
     }

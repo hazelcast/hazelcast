@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -221,7 +221,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     @Test(timeout = 60000)
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "5000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(30)));
         final HazelcastInstance hz = createHazelcastInstance(config);
 
         final Lock lock = hz.getLock("testLockInterruption2");
@@ -239,7 +239,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         t.start();
         Thread.sleep(2000);
         t.interrupt();
-        assertOpenEventually("tryLock() is not interrupted!", latch, 30);
+        assertOpenEventually("tryLock() is not interrupted!", latch);
         lock.unlock();
         assertTrue("Could not acquire lock!", lock.tryLock());
     }
@@ -386,7 +386,6 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     @Test
     public void testLockInterruptibly() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "5000");
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         final ILock lock = h1.getLock(randomString());
@@ -404,7 +403,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         t.start();
         sleepMillis(5000);
         t.interrupt();
-        assertOpenEventually(latch, 30);
+        assertOpenEventually(latch);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public final class ClientProperty {
 
     /**
      * Client shuffles the given member list to prevent all clients to connect to the same node when
-     * this property is set to false. When it is set to true, the client tries to connect to the nodes
+     * this property is set to true. When it is set to false, the client tries to connect to the nodes
      * in the given order.
      */
     public static final HazelcastProperty SHUFFLE_MEMBER_LIST
@@ -158,7 +158,6 @@ public final class ClientProperty {
      */
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.client.io.balancer.interval.seconds", 20, SECONDS);
-
 
     private ClientProperty() {
     }

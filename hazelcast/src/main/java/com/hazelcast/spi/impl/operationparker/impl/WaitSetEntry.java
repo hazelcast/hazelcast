@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,17 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
+/**
+ * A simple container for a {@link BlockingOperation} that is added to the {@link WaitSet}.
+ *
+ * Each WaitSetEntry is put in a delay queue (part of the {@link OperationParkerImpl}) based on its expiration time.
+ */
 class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
 
     final Queue<WaitSetEntry> queue;
     final Operation op;
     final BlockingOperation blockingOperation;
-    final long expirationTime;
+    final long expirationTimeMs;
     volatile boolean valid = true;
     volatile Object cancelResponse;
 
@@ -48,12 +53,12 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
         this.op = (Operation) blockingOperation;
         this.blockingOperation = blockingOperation;
         this.queue = queue;
-        this.expirationTime = getExpirationTime(blockingOperation);
+        this.expirationTimeMs = getExpirationTimeMs(blockingOperation);
 
         setPartitionId(op.getPartitionId());
     }
 
-    private long getExpirationTime(BlockingOperation blockingOperation) {
+    private long getExpirationTimeMs(BlockingOperation blockingOperation) {
         long waitTimeout = blockingOperation.getWaitTimeout();
         if (waitTimeout < 0) {
             return -1;
@@ -82,7 +87,7 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
     }
 
     public boolean isExpired() {
-        return expirationTime > 0 && Clock.currentTimeMillis() >= expirationTime;
+        return expirationTimeMs > 0 && Clock.currentTimeMillis() >= expirationTimeMs;
     }
 
     public boolean isCancelled() {
@@ -105,7 +110,7 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(expirationTime - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        return unit.convert(expirationTimeMs - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -198,7 +203,7 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
         super.toString(sb);
 
         sb.append(", op=").append(op);
-        sb.append(", expirationTime=").append(expirationTime);
+        sb.append(", expirationTimeMs=").append(expirationTimeMs);
         sb.append(", valid=").append(valid);
     }
 }

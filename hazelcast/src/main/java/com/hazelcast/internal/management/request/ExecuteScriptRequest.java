@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.Set;
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Request for executing scripts on the nodes from Management Center.
@@ -120,8 +121,9 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         script = getString(json, "script", "");
         engine = getString(json, "engine", "");
-        targets = new HashSet<String>();
-        for (JsonValue target : getArray(json, "targets", new JsonArray())) {
+        final JsonArray array = getArray(json, "targets", new JsonArray());
+        targets = createHashSet(array.size());
+        for (JsonValue target : array) {
             targets.add(target.asString());
         }
         targetAllMembers = getBoolean(json, "targetAllMembers", false);

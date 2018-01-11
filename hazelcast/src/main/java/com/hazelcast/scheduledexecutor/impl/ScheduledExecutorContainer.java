@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorS
 import static com.hazelcast.scheduledexecutor.impl.TaskDefinition.Type.SINGLE_RUN;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ScheduledExecutorContainer {
 
@@ -272,7 +273,7 @@ public class ScheduledExecutorContainer {
     }
 
     Map<String, ScheduledTaskDescriptor> prepareForReplication(boolean migrationMode) {
-        Map<String, ScheduledTaskDescriptor> replicas = new HashMap<String, ScheduledTaskDescriptor>();
+        Map<String, ScheduledTaskDescriptor> replicas = createHashMap(tasks.size());
 
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {

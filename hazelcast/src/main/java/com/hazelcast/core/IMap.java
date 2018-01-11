@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,9 @@ import java.util.concurrent.TimeUnit;
  * use of the {@code equals} method when comparing objects. Instead of the {@code equals} method, this
  * implementation compares the serialized byte version of the objects.</b>
  * <p>
+ * <b>Moreover, stored values are handled as having a value type semantics, while standard Java implementations treat them
+ * as having a reference type semantics.</b>
+ * <p>
  * <b>Gotchas:</b>
  * <ul>
  * <li>Methods, including but not limited to {@code get}, {@code containsKey}, {@code containsValue}, {@code evict},
@@ -61,6 +64,28 @@ import java.util.concurrent.TimeUnit;
  * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return a collection
  * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
  * in the collection, and vice-versa.</li>
+ * <li>Since Hazelcast is compiled with Java 1.6, we can't override default methods introduced in later Java versions,
+ * nor can we add documentation to them. Methods, including but not limited to {@code computeIfPresent}, may behave
+ * incorrectly if the value passed to the update function is modified in-place and returned as a result of the invocation.
+ * You should create a new value instance and return it as a result.
+ * <p>
+ * For example, following code fragment will behave incorrectly and will enter an infinite loop:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -> {
+ *     value.setSomeAttribute("newAttributeValue");
+ *     return value;
+ * });
+ * </pre>
+ * It should be replaced with:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -> {
+ *     return new ObjectWithSomeAttribute("newAttributeValue");
+ * });
+ * </pre>
+ * </li>
+ * <li>Be careful while using default interface method implementations from {@link ConcurrentMap} and {@link Map}. Under
+ * the hood they are typically implemented as a sequence of more primitive map operations, therefore the operations won't
+ * be executed atomically.</li>
  * </ul>
  * <p>
  * This class does <em>not</em> allow {@code null} to be used as a key or value.
@@ -173,6 +198,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
+     * <p>Consider usage of {@link #delete(Object)} if you don't need the returned value. This will trim the serialization
+     * costs.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -198,7 +225,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     V put(K key, V value);
 
     /**
-     * {@inheritDoc}
+     * Removes the mapping for a key from this map if it is present.
+     * <p>
+     * If you don't need the previously mapped value for the removed key, prefer to use
+     * {@link #delete} and avoid the cost of serialization and network transfer.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -212,6 +242,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * previously put into the map.
      *
      * @throws NullPointerException if the specified key is null
+     * @see #delete(Object)
      */
     V remove(Object key);
 
@@ -242,13 +273,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void removeAll(Predicate<K, V> predicate);
 
     /**
-     * Removes the mapping for a key from this map if it is present (optional operation).
+     * Removes the mapping for the key from this map if it is present.
      * <p>
      * Unlike {@link #remove(Object)}, this operation does not return
-     * the removed value, which avoids the serialization cost of the returned value.
-     * <p>
-     * If the removed value will not be used, a delete operation
-     * is preferred over a remove operation for better performance.
+     * the removed value, which avoids the serialization and network transfer cost of the
+     * returned value. If the removed value will not be used, this operation
+     * is preferred over the remove operation for better performance.
      * <p>
      * The map will not contain a mapping for the specified key once the call returns.
      * <p>
@@ -262,6 +292,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for this map (optional)
      * @throws NullPointerException if the specified key is null
+     * @see #remove(Object)
      */
     void delete(Object key);
 
@@ -315,8 +346,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     void loadAll(Set<K> keys, boolean replaceExistingValues);
 
     /**
-     * Clears the map and invokes {@link MapStore#deleteAll}deleteAll on MapStore which,
-     * if connected to a database, will delete the records from that database.
+     * Clears the map and invokes {@link MapStore#deleteAll} which,
+     * if connected to a database, will delete the records from the database.
      * <p>
      * The MAP_CLEARED event is fired for any registered listeners.
      * See {@link com.hazelcast.core.EntryListener#mapCleared(MapEvent)}.
@@ -1697,6 +1728,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #submitToKey(Object, EntryProcessor)} for an async version of this method.
      *
      * @return result of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if the specified key is {@code null}
@@ -1707,6 +1740,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      *
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException     if the specified key is {@code null}
@@ -1753,6 +1789,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
@@ -1804,6 +1842,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+     * <p>
+     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
@@ -1817,12 +1857,18 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * Applies the user defined {@link EntryProcessor} to the all entries in the map.
      * Returns the results mapped by each key in the map.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries in the map which satisfy provided predicate.
      * Returns the results mapped by each key in the map.
+     * <p>
+     * The operation is not lock-aware. The {@code EntryProcessor} will process the entries no matter if the keys are
+     * locked or not. For more details check <b>Entry Processing</b> section on {@link IMap} documentation.
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 

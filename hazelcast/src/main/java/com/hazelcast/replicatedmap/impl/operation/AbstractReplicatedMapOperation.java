@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.Collection;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 
-public abstract class AbstractReplicatedMapOperation extends AbstractSerializableOperation {
+public abstract class AbstractReplicatedMapOperation extends AbstractNamedSerializableOperation {
 
     protected String name;
     protected Data key;
@@ -81,6 +81,11 @@ public abstract class AbstractReplicatedMapOperation extends AbstractSerializabl
                 .createInvocationBuilder(getServiceName(), updateCallerOperation, getCallerAddress())
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .invoke();
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

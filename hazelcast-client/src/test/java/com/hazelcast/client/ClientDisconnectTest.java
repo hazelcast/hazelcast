@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,10 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -28,10 +31,13 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -56,22 +62,40 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final String queueName = "q";
 
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient();
+        final String uuid = clientInstance.getLocalEndpoint().getUuid();
+        final CountDownLatch clientDisconnectedFromNode = new CountDownLatch(1);
+        hazelcastInstance.getClientService().addClientListener(new ClientListener() {
+            @Override
+            public void clientConnected(Client client) {
+
+            }
+
+            @Override
+            public void clientDisconnected(Client client) {
+                if (client.getUuid().equals(uuid)) {
+                    clientDisconnectedFromNode.countDown();
+                }
+            }
+        });
         new Thread(new Runnable() {
             @Override
             public void run() {
-                IQueue<Integer> queue = client.getQueue(queueName);
+                IQueue<Integer> queue = clientInstance.getQueue(queueName);
                 try {
                     queue.take();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                } catch (HazelcastInstanceNotActiveException e) {
+                    EmptyStatement.ignore(e);
                 }
             }
         }).start();
 
         SECONDS.sleep(2);
 
-        client.shutdown();
+        clientInstance.shutdown();
+        assertOpenEventually(clientDisconnectedFromNode);
 
         final IQueue<Integer> queue = hazelcastInstance.getQueue(queueName);
         queue.add(1);
@@ -95,18 +119,39 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         final String key = "key";
         map.lock(key);
 
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient();
+        final CountDownLatch clientDisconnectedFromNode = new CountDownLatch(1);
+        final String uuid = clientInstance.getLocalEndpoint().getUuid();
+        hazelcastInstance.getClientService().addClientListener(new ClientListener() {
+            @Override
+            public void clientConnected(Client client) {
+
+            }
+
+            @Override
+            public void clientDisconnected(Client client) {
+                if (client.getUuid().equals(uuid)) {
+                    clientDisconnectedFromNode.countDown();
+                }
+            }
+        });
         new Thread(new Runnable() {
             @Override
             public void run() {
-                IMap<Object, Object> clientMap = client.getMap(name);
-                clientMap.lock(key);
+                IMap<Object, Object> clientMap = clientInstance.getMap(name);
+                try {
+                    clientMap.lock(key);
+                } catch (Exception e) {
+                    EmptyStatement.ignore(e);
+                }
+
             }
         }).start();
 
         SECONDS.sleep(2);
 
-        client.shutdown();
+        clientInstance.shutdown();
+        assertOpenEventually(clientDisconnectedFromNode);
 
         map.unlock(key);
         //dead client should not be able to acquire the lock.

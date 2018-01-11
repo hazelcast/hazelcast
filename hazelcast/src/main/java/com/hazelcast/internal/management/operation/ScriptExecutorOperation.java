@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,13 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 /**
- *  Operation to execute script on the node.
+ * Operation to execute script on the node.
  */
 public class ScriptExecutorOperation extends AbstractManagementOperation {
 
@@ -97,7 +98,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
         script = in.readUTF();
         int size = in.readInt();
         if (size > 0) {
-            bindings = new HashMap<String, Object>(size);
+            bindings = createHashMap(size);
             for (int i = 0; i < size; i++) {
                 String key = in.readUTF();
                 Object value = in.readObject();

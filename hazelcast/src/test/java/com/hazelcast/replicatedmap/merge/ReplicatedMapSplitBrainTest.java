@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package com.hazelcast.replicatedmap.merge;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -34,7 +32,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -62,12 +59,6 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     private MergeLifecycleListener mergeLifecycleListener;
     private ReplicatedMap<Object, Object> replicatedMap1;
     private ReplicatedMap<Object, Object> replicatedMap2;
-
-    @Override
-    protected int[] brains() {
-        // second half should merge to first 
-        return new int[]{2, 1};
-    }
 
     @Override
     protected Config config() {
@@ -243,26 +234,6 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
                 return mergingEntry.getValue();
             }
             return null;
-        }
-    }
-
-    private static class MergeLifecycleListener implements LifecycleListener {
-
-        private final CountDownLatch latch;
-
-        MergeLifecycleListener(int mergingClusterSize) {
-            latch = new CountDownLatch(mergingClusterSize);
-        }
-
-        @Override
-        public void stateChanged(LifecycleEvent event) {
-            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                latch.countDown();
-            }
-        }
-
-        void await() {
-            assertOpenEventually(latch);
         }
     }
 }

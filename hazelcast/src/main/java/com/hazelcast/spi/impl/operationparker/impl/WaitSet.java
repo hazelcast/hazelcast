@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
 
     private static final long TIMEOUT_UPPER_BOUND = 1500;
 
-    protected final Queue<WaitSetEntry> queue = new ConcurrentLinkedQueue<WaitSetEntry>();
+    private final Queue<WaitSetEntry> queue = new ConcurrentLinkedQueue<WaitSetEntry>();
     private final ILogger logger;
     private final NodeEngine nodeEngine;
     private final Map<WaitNotifyKey, WaitSet> waitSetMap;
@@ -82,9 +82,9 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
-    // Runs in operation thread, we can assume that
-    // here we have an implicit lock for specific WaitNotifyKey.
-    // see javadoc
+    // Runs in partition-thread, and therefor we can assume we have exclusive access to the WaitNotifyKey
+    // (since each WaitNotifyKey is mapped to a single partition). So a park will not be concurrently
+    // executed with an unpark for the same key.
     public void unpark(Notifier notifier, WaitNotifyKey key) {
         WaitSetEntry entry = queue.peek();
         while (entry != null) {
@@ -129,7 +129,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         Iterator<WaitSetEntry> it = queue.iterator();
         int partitionId = migrationInfo.getPartitionId();
         while (it.hasNext()) {
-            if (Thread.interrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
                 return;
             }
             WaitSetEntry entry = it.next();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,5 +245,11 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void whenValueIsUpdated_thenAnotherNearCacheContextShouldBeInvalidated() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/11456")
+    public void whenGetIsUsed_thenNearCacheShouldBePopulated() {
     }
 }

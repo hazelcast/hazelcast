@@ -59,6 +59,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
@@ -150,9 +151,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void parallel_member_join_whenPostJoinOperationPresent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
 
-        final Config config = new Config();
-        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("post-join-service")
-                        .setImplementation(new PostJoinAwareServiceImpl(latch)));
+        final Config config = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
 
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(6);
         for (int i = 0; i < instances.length(); i++) {
@@ -185,7 +184,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void parallel_member_join_whenPreJoinOperationPresent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
-        final Config config = getConfigWithService(service);
+        final Config config = getConfigWithService(service, PreJoinAwareServiceImpl.SERVICE_NAME);
 
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(6);
         for (int i = 0; i < instances.length(); i++) {
@@ -294,20 +293,43 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             }
         });
 
-        instances.get(instances.length() - 1).shutdown();
-        for (int i = 0; i < instances.length() - 1; i++) {
-            HazelcastInstance instance = instances.get(i);
-            assertClusterSizeEventually(instances.length() - 1, instance);
+        for (int i = 0; i < instances.length(); i++) {
+            if (getNode(instances.get(i)).isMaster()) {
+                continue;
+            }
+
+            instances.getAndSet(i, null).shutdown();
+            break;
         }
 
-        MemberMap referenceMemberMap = getMemberMap(instances.get(0));
+        for (int i = 0; i < instances.length(); i++) {
+            HazelcastInstance instance = instances.get(i);
+            if (instance != null) {
+                assertClusterSizeEventually(instances.length() - 1, instance);
+            }
+        }
+
+        HazelcastInstance master = null;
+        for (int i = 0; i < instances.length(); i++) {
+            HazelcastInstance instance = instances.get(i);
+            if (instance != null && getNode(instance).isMaster()) {
+                master = instance;
+                break;
+            }
+        }
+
+        assertNotNull(master);
+
+        MemberMap referenceMemberMap = getMemberMap(master);
         // version = number of started members + 1 removal
         assertEquals(instances.length() + 1, referenceMemberMap.getVersion());
 
-        for (int i = 0; i < instances.length() - 1; i++) {
+        for (int i = 0; i < instances.length(); i++) {
             HazelcastInstance instance = instances.get(i);
-            MemberMap memberMap = getMemberMap(instance);
-            assertMemberViewsAreSame(referenceMemberMap, memberMap);
+            if (instance != null) {
+                MemberMap memberMap = getMemberMap(instance);
+                assertMemberViewsAreSame(referenceMemberMap, memberMap);
+            }
         }
     }
 
@@ -335,15 +357,33 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             }
         });
 
-        instances.get(instances.length() - 1).shutdown();
-        instances.set(instances.length() - 1, factory.newHazelcastInstance());
+        for (int i = 0; i < instances.length(); i++) {
+            if (getNode(instances.get(i)).isMaster()) {
+                continue;
+            }
+
+            instances.get(i).shutdown();
+            instances.set(i, factory.newHazelcastInstance());
+            break;
+        }
 
         for (int i = 0; i < instances.length(); i++) {
             HazelcastInstance instance = instances.get(i);
             assertClusterSizeEventually(instances.length(), instance);
         }
 
-        MemberMap referenceMemberMap = getMemberMap(instances.get(0));
+        HazelcastInstance master = null;
+        for (int i = 0; i < instances.length(); i++) {
+            HazelcastInstance instance = instances.get(i);
+            if (getNode(instances.get(i)).isMaster()) {
+                master = instance;
+                break;
+            }
+        }
+
+        assertNotNull(master);
+
+        MemberMap referenceMemberMap = getMemberMap(master);
         // version = number of started members + 1 removal + 1 start
         assertEquals(instances.length() + 2, referenceMemberMap.getVersion());
 
@@ -631,7 +671,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void noOperationExecuted_beforePreJoinOpIsDone() {
         CountDownLatch latch = new CountDownLatch(1);
         PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
-        final Config config = getConfigWithService(service);
+        final Config config = getConfigWithService(service, PreJoinAwareServiceImpl.SERVICE_NAME);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         final Address instance2Address = factory.nextAddress();
@@ -651,6 +691,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
                     if (currentThread().isInterrupted()) {
                         break;
                     }
+                    LockSupport.parkNanos(1);
                 }
             }
         });
@@ -673,7 +714,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void joiningMemberShouldShutdown_whenExceptionDeserializingPreJoinOp() {
-        Config config = getConfigWithService(new FailingPreJoinOpService());
+        Config config = getConfigWithService(new FailingPreJoinOpService(), FailingPreJoinOpService.SERVICE_NAME);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
 
         // joining member fails while deserializing pre-join op and should shutdown
@@ -688,7 +729,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void joiningMemberShouldShutdown_whenExceptionDeserializingPostJoinOp() {
-        Config config = getConfigWithService(new FailingPostJoinOpService());
+        Config config = getConfigWithService(new FailingPostJoinOpService(), FailingPostJoinOpService.SERVICE_NAME);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
 
         // joining member fails while deserializing post-join op and should shutdown
@@ -701,10 +742,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSize(1, hz1);
     }
 
-    private Config getConfigWithService(Object service) {
+    private Config getConfigWithService(Object service, String serviceName) {
         final Config config = new Config();
-        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("custom-service")
-                                                                       .setImplementation(service));
+        ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
+                .setName(serviceName).setImplementation(service);
+        config.getServicesConfig().addServiceConfig(serviceConfig);
         return config;
     }
 
@@ -841,6 +883,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     private static class FailingPreJoinOpService implements PreJoinAwareService {
+        static final String SERVICE_NAME = "failing-pre-join-service";
         @Override
         public Operation getPreJoinOperation() {
             return new FailsDeserializationOperation();
@@ -848,6 +891,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     private static class FailingPostJoinOpService implements PostJoinAwareService {
+        static final String SERVICE_NAME = "failing-post-join-service";
         @Override
         public Operation getPostJoinOperation() {
             return new FailsDeserializationOperation();

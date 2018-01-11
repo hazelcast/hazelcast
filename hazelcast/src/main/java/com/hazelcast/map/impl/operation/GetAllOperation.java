@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,18 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
+
+    /**
+     * Speculative factor to be used when initialising collections
+     * of an approximate final size.
+     */
+    private static final double SIZING_FUDGE_FACTOR = 1.3;
 
     private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
@@ -48,7 +55,8 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void run() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        Set<Data> partitionKeySet = new HashSet<Data>();
+        final int roughSize = (int) (keys.size() * SIZING_FUDGE_FACTOR / partitionService.getPartitionCount());
+        Set<Data> partitionKeySet = createHashSet(roughSize);
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 partitionKeySet.add(key);

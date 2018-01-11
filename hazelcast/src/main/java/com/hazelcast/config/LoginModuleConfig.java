@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.StringUtil;
 
 import java.util.Properties;
 /**
@@ -60,7 +61,7 @@ public class LoginModuleConfig {
 
         public static LoginModuleUsage get(String v) {
             try {
-                return LoginModuleUsage.valueOf(v.toUpperCase());
+                return LoginModuleUsage.valueOf(v.toUpperCase(StringUtil.LOCALE_INTERNAL));
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }

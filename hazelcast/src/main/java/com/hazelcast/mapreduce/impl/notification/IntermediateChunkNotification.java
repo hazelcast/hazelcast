@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Notification that is fired every time the chunk limit is reached and is send to the reducers
@@ -71,7 +72,7 @@ public class IntermediateChunkNotification<KeyOut, Value>
             throws IOException {
         super.readData(in);
         int size = in.readInt();
-        chunk = new HashMap<KeyOut, Value>();
+        chunk = createHashMap(size);
         for (int i = 0; i < size; i++) {
             KeyOut key = in.readObject();
             Value value = in.readObject();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ package com.hazelcast.query;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 
 class Parser {
@@ -44,27 +45,29 @@ class Parser {
     private static final int AND_PRECEDENCE = 5;
     private static final int OR_PRECEDENCE = 3;
 
-    private static final Map<String, Integer> PRECEDENCE = new HashMap<String, Integer>();
+    private static final Map<String, Integer> PRECEDENCE;
 
     static {
-        PRECEDENCE.put("(", PARENTHESIS_PRECEDENCE);
-        PRECEDENCE.put(")", PARENTHESIS_PRECEDENCE);
-        PRECEDENCE.put("not", NOT_PRECEDENCE);
-        PRECEDENCE.put("=", EQUAL_PRECEDENCE);
-        PRECEDENCE.put(">", GREATER_PRECEDENCE);
-        PRECEDENCE.put("<", LESS_PRECEDENCE);
-        PRECEDENCE.put(">=", GREATER_EQUAL_PRECEDENCE);
-        PRECEDENCE.put("<=", LESS_EQUAL_PRECEDENCE);
-        PRECEDENCE.put("==", ASSIGN_PRECEDENCE);
-        PRECEDENCE.put("!=", NOT_EQUAL_PRECEDENCE);
-        PRECEDENCE.put("<>", NOT_EQUAL_PRECEDENCE);
-        PRECEDENCE.put("between", BETWEEN_PRECEDENCE);
-        PRECEDENCE.put("in", IN_PRECEDENCE);
-        PRECEDENCE.put("like", LIKE_PRECEDENCE);
-        PRECEDENCE.put("ilike", ILIKE_PRECEDENCE);
-        PRECEDENCE.put("regex", REGEX_PRECEDENCE);
-        PRECEDENCE.put("and", AND_PRECEDENCE);
-        PRECEDENCE.put("or", OR_PRECEDENCE);
+        final Map<String, Integer> precedence = createHashMap(18);
+        precedence.put("(", PARENTHESIS_PRECEDENCE);
+        precedence.put(")", PARENTHESIS_PRECEDENCE);
+        precedence.put("not", NOT_PRECEDENCE);
+        precedence.put("=", EQUAL_PRECEDENCE);
+        precedence.put(">", GREATER_PRECEDENCE);
+        precedence.put("<", LESS_PRECEDENCE);
+        precedence.put(">=", GREATER_EQUAL_PRECEDENCE);
+        precedence.put("<=", LESS_EQUAL_PRECEDENCE);
+        precedence.put("==", ASSIGN_PRECEDENCE);
+        precedence.put("!=", NOT_EQUAL_PRECEDENCE);
+        precedence.put("<>", NOT_EQUAL_PRECEDENCE);
+        precedence.put("between", BETWEEN_PRECEDENCE);
+        precedence.put("in", IN_PRECEDENCE);
+        precedence.put("like", LIKE_PRECEDENCE);
+        precedence.put("ilike", ILIKE_PRECEDENCE);
+        precedence.put("regex", REGEX_PRECEDENCE);
+        precedence.put("and", AND_PRECEDENCE);
+        precedence.put("or", OR_PRECEDENCE);
+        PRECEDENCE = Collections.unmodifiableMap(precedence);
     }
 
     private static final List<String> CHAR_OPERATORS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDetachMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -30,10 +31,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,13 +47,27 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService,
-        ClientAwareService {
+        ClientAwareService, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:semaphoreService";
 
+    private static final Object NULL_OBJECT = new Object();
+
     private final ConcurrentMap<String, SemaphoreContainer> containers = new ConcurrentHashMap<String, SemaphoreContainer>();
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            SemaphoreConfig semaphoreConfig = nodeEngine.getConfig().findSemaphoreConfig(name);
+            String quorumName = semaphoreConfig.getQuorumName();
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     private final ConstructorFunction<String, SemaphoreContainer> containerConstructor
             = new ConstructorFunction<String, SemaphoreContainer>() {
@@ -131,6 +148,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     @Override
     public void destroyDistributedObject(String objectId) {
         containers.remove(objectId);
+        quorumConfigCache.remove(objectId);
     }
 
     @Override
@@ -192,4 +210,15 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     public void clientDisconnected(String clientUuid) {
         onOwnerDisconnected(clientUuid);
     }
+
+    @Override
+    public String getQuorumName(final String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
 }

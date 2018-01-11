@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -314,6 +314,30 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="atomic-long" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="atomic-reference" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="count-down-latch" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="semaphore" minOccurs="0" maxOccurs="unbounded">
@@ -631,7 +655,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <!--max-size-policy attribute didn't converted into enumeration to support case-insensitivity-->
+                                <!--max-size-policy attribute wasn't converted to enumeration to support case-insensitivity-->
                                 <xs:attribute name="max-size-policy" use="optional" type="xs:string">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -1449,6 +1473,7 @@
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -1571,6 +1596,7 @@
                         <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
@@ -1736,6 +1762,18 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
+    <xs:element name="reliableIdGenerator" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast ReliableIdGenerator instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IdGenerator"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
     <xs:element name="atomicLong" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
@@ -1805,7 +1843,7 @@
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[The unique identifier for a bean.
-                    A bean id may not be used more than once within the same <beans> element.]]>
+                    A bean ID may not be used more than once within the same <beans> element.]]>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1976,6 +2014,34 @@
         </xs:sequence>
         <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="discovery-strategy-factory" type="non-space-string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="merge-policy">
+        <xs:annotation>
+            <xs:documentation>
+                While recovering from split-brain (network partitioning), data structure entries in the small cluster
+                merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
+                an entry with the same key (or value) might already exist in the cluster.
+                The merge policy resolves these conflicts with different out-of-the-box or custom strategies.
+                The out-of-the-box merge polices can be references by their simple class name.
+                For custom merge policies you have to provide a fully qualified class name.
+                <p>
+                    The out-of-the-box policies are:
+                    <br/>DiscardMergePolicy: the entry from the smaller cluster will be discarded.
+                    <br/>HigherHitsMergePolicy: the entry with the higher number of hits wins.
+                    <br/>LatestAccessMergePolicy: the entry with the latest access wins.
+                    <br/>LatestUpdateMergePolicy: the entry with the latest update wins.
+                    <br/>PassThroughMergePolicy: the entry from the smaller cluster wins.
+                    <br/>PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the cluster.
+                    <br/>The default policy is: PutIfAbsentMergePolicy
+                </p>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="batch-size" default="100" type="xs:positiveInteger" use="optional"/>
+            </xs:extension>
+        </xs:simpleContent>
     </xs:complexType>
 
     <xs:complexType name="merge-policies">
@@ -2162,11 +2228,21 @@
     <xs:complexType name="ssl">
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="host-verification" type="host-verification" minOccurs="0" maxOccurs="1"/>            
         </xs:sequence>
         <xs:attribute name="enabled" default="false" type="xs:string"/>
         <xs:attribute name="factory-class-name" type="xs:string" use="optional"/>
         <xs:attribute name="factory-implementation" type="xs:string" use="optional"/>
     </xs:complexType>
+
+    <xs:complexType name="host-verification">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="policy-class-name"  type="xs:string" use="required"/>
+        <xs:attribute name="enabled-on-server" default="false" type="xs:string"/>
+    </xs:complexType>
+
 
     <xs:complexType name="socket-interceptor">
         <xs:sequence>
@@ -2526,6 +2602,7 @@
             <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="icmp-ping" type="icmp-ping-client" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="true"/>
         <xs:attribute name="redo-operation" use="optional" type="parameterized-boolean" default="false"/>
@@ -2546,6 +2623,16 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="icmp-ping-client">
+        <xs:all>
+            <xs:element name="timeout-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="interval-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="ttl" type="xs:int" minOccurs="0" maxOccurs="1" default="255"/>
+            <xs:element name="max-attempts" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
+            <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
     </xs:complexType>
     <xs:complexType name="services">
         <xs:sequence>
@@ -2812,6 +2899,40 @@
             <xs:annotation>
                 <xs:documentation>
                     True to enable User Code Deployment on this client, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="reliable-id-generator">
+        <xs:attribute name="name" type="xs:string" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the Reliable ID Generator.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefetchCount" default="100" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    How many IDs are pre-fetched on the background when one call to newId() is made.
+                    Value must be >= 1, default is 100.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="prefetchValidityMillis" type="xs:long" default="600000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
+                    Time unit is milliseconds.
+                    If value is &lt;= 0, validity is unlimited. Default value is 600,000 (10 minutes).
+                    The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
+                    is assigned to an event that occurred much later, it will be much out of order.
+                    If you don't need ordering, set this value to 0.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

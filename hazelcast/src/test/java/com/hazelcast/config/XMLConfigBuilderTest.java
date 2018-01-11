@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,39 +156,39 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readAwsConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <group>\n" +
-                "        <name>dev</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>\n" +
-                "    <network>\n" +
-                "        <port auto-increment=\"true\">5701</port>\n" +
-                "        <join>\n" +
-                "            <multicast enabled=\"false\">\n" +
-                "                <multicast-group>224.2.2.3</multicast-group>\n" +
-                "                <multicast-port>54327</multicast-port>\n" +
-                "            </multicast>\n" +
-                "            <tcp-ip enabled=\"false\">\n" +
-                "                <interface>127.0.0.1</interface>\n" +
-                "            </tcp-ip>\n" +
-                "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
-                "                <access-key>sample-access-key</access-key>\n" +
-                "                <secret-key>sample-secret-key</secret-key>\n" +
-                "                <iam-role>sample-role</iam-role>\n" +
-                "                <region>sample-region</region>\n" +
-                "                <host-header>sample-header</host-header>\n" +
-                "                <security-group-name>sample-group</security-group-name>\n" +
-                "                <tag-key>sample-tag-key</tag-key>\n" +
-                "                <tag-value>sample-tag-value</tag-value>\n" +
-                "            </aws>\n" +
-                "        </join>\n" +
-                "        <interfaces enabled=\"false\">\n" +
-                "            <interface>10.10.1.*</interface>\n" +
-                "        </interfaces>\n" +
-                "    </network>"
+                + "   <group>\n"
+                + "        <name>dev</name>\n"
+                + "        <password>dev-pass</password>\n"
+                + "    </group>\n"
+                + "    <network>\n"
+                + "        <port auto-increment=\"true\">5701</port>\n"
+                + "        <join>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "                <multicast-group>224.2.2.3</multicast-group>\n"
+                + "                <multicast-port>54327</multicast-port>\n"
+                + "            </multicast>\n"
+                + "            <tcp-ip enabled=\"false\">\n"
+                + "                <interface>127.0.0.1</interface>\n"
+                + "            </tcp-ip>\n"
+                + "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n"
+                + "                <access-key>sample-access-key</access-key>\n"
+                + "                <secret-key>sample-secret-key</secret-key>\n"
+                + "                <iam-role>sample-role</iam-role>\n"
+                + "                <region>sample-region</region>\n"
+                + "                <host-header>sample-header</host-header>\n"
+                + "                <security-group-name>sample-group</security-group-name>\n"
+                + "                <tag-key>sample-tag-key</tag-key>\n"
+                + "                <tag-value>sample-tag-value</tag-value>\n"
+                + "            </aws>\n"
+                + "        </join>\n"
+                + "        <interfaces enabled=\"false\">\n"
+                + "            <interface>10.10.1.*</interface>\n"
+                + "        </interfaces>\n"
+                + "    </network>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        final AwsConfig aws = config.getNetworkConfig().getJoin().getAwsConfig();
+        AwsConfig aws = config.getNetworkConfig().getJoin().getAwsConfig();
         assertTrue(aws.isEnabled());
         assertAwsConfig(aws);
     }
@@ -196,41 +196,76 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readDiscoveryConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <group>\n" +
-                "        <name>dev</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>\n" +
-                "    <network>\n" +
-                "        <port auto-increment=\"true\">5701</port>\n" +
-                "        <join>\n" +
-                "            <multicast enabled=\"false\">\n" +
-                "                <multicast-group>224.2.2.3</multicast-group>\n" +
-                "                <multicast-port>54327</multicast-port>\n" +
-                "            </multicast>\n" +
-                "            <tcp-ip enabled=\"false\">\n" +
-                "                <interface>127.0.0.1</interface>\n" +
-                "            </tcp-ip>\n" +
-                "            <discovery-strategies>\n" +
-                "                <node-filter class=\"DummyFilterClass\" />\n" +
-                "                <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n" +
-                "                    <properties>\n" +
-                "                        <property name=\"key-string\">foo</property>\n" +
-                "                        <property name=\"key-int\">123</property>\n" +
-                "                        <property name=\"key-boolean\">true</property>\n" +
-                "                    </properties>\n" +
-                "                </discovery-strategy>\n" +
-                "            </discovery-strategies>\n" +
-                "        </join>\n" +
-                "        <interfaces enabled=\"false\">\n" +
-                "            <interface>10.10.1.*</interface>\n" +
-                "        </interfaces>\n" +
-                "    </network>"
+                + "   <group>\n"
+                + "        <name>dev</name>\n"
+                + "        <password>dev-pass</password>\n"
+                + "    </group>\n"
+                + "    <network>\n"
+                + "        <port auto-increment=\"true\">5701</port>\n"
+                + "        <join>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "                <multicast-group>224.2.2.3</multicast-group>\n"
+                + "                <multicast-port>54327</multicast-port>\n"
+                + "            </multicast>\n"
+                + "            <tcp-ip enabled=\"false\">\n"
+                + "                <interface>127.0.0.1</interface>\n"
+                + "            </tcp-ip>\n"
+                + "            <discovery-strategies>\n"
+                + "                <node-filter class=\"DummyFilterClass\" />\n"
+                + "                <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
+                + "                    <properties>\n"
+                + "                        <property name=\"key-string\">foo</property>\n"
+                + "                        <property name=\"key-int\">123</property>\n"
+                + "                        <property name=\"key-boolean\">true</property>\n"
+                + "                    </properties>\n"
+                + "                </discovery-strategy>\n"
+                + "            </discovery-strategies>\n"
+                + "        </join>\n"
+                + "        <interfaces enabled=\"false\">\n"
+                + "            <interface>10.10.1.*</interface>\n"
+                + "        </interfaces>\n"
+                + "    </network>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        final DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
+        DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
         assertTrue(discoveryConfig.isEnabled());
         assertDiscoveryConfig(discoveryConfig);
+    }
+
+    @Test
+    public void testSSLConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <network>\n"
+                + "        <ssl enabled=\"true\">\r\n"
+                + "          <factory-class-name>\r\n"
+                + "              com.hazelcast.nio.ssl.BasicSSLContextFactory\r\n"
+                + "          </factory-class-name>\r\n"
+                + "          <properties>\r\n"
+                + "            <property name=\"protocol\">TLS</property>\r\n"
+                + "          </properties>\r\n"
+                + "          <host-verification policy-class-name=\"com.example.Verifier\"\r\n"
+                + "              enabled-on-server=\"true\">\r\n"
+                + "            <properties>\r\n"
+                + "              <property name=\"host\">127.0.0.1</property>\r\n"
+                + "            </properties>\r\n"
+                + "          </host-verification>\r\n"
+                + "        </ssl>\r\n"
+                + "    </network>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
+        assertTrue(sslConfig.isEnabled());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+
+        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
+        assertEquals("com.example.Verifier", hostVerification.getPolicyClassName());
+        assertTrue(hostVerification.isEnabledOnServer());
+        assertEquals(1, hostVerification.getProperties().size());
+        assertEquals("127.0.0.1", hostVerification.getProperties().get("host"));
     }
 
     @Test
@@ -300,29 +335,30 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void readQueueConfig() {
-        final String xml = HAZELCAST_START_TAG
-                + "      <queue name=\"custom\">" +
-                "        <statistics-enabled>true</statistics-enabled>" +
-                "        <max-size>100</max-size>" +
-                "        <backup-count>1</backup-count>" +
-                "        <async-backup-count>0</async-backup-count>" +
-                "        <empty-queue-ttl>-1</empty-queue-ttl>" +
-                "        <item-listeners>" +
-                "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>" +
-                "        </item-listeners>" +
-                "        <queue-store>" +
-                "            <class-name>com.hazelcast.QueueStoreImpl</class-name>" +
-                "            <properties>" +
-                "                <property name=\"binary\">false</property>" +
-                "                <property name=\"memory-limit\">1000</property>" +
-                "                <property name=\"bulk-load\">500</property>" +
-                "            </properties>" +
-                "        </queue-store>" +
-                "        <quorum-ref>customQuorumRule</quorum-ref>" +
-                "    </queue>"
+        String xml = HAZELCAST_START_TAG
+                + "      <queue name=\"custom\">"
+                + "        <statistics-enabled>true</statistics-enabled>"
+                + "        <max-size>100</max-size>"
+                + "        <backup-count>1</backup-count>"
+                + "        <async-backup-count>0</async-backup-count>"
+                + "        <empty-queue-ttl>-1</empty-queue-ttl>"
+                + "        <item-listeners>"
+                + "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>"
+                + "        </item-listeners>"
+                + "        <queue-store>"
+                + "            <class-name>com.hazelcast.QueueStoreImpl</class-name>"
+                + "            <properties>"
+                + "                <property name=\"binary\">false</property>"
+                + "                <property name=\"memory-limit\">1000</property>"
+                + "                <property name=\"bulk-load\">500</property>"
+                + "            </properties>"
+                + "        </queue-store>"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </queue>"
                 + HAZELCAST_END_TAG;
-        final Config config = buildConfig(xml);
-        final QueueConfig qConfig = config.getQueueConfig("custom");
+
+        Config config = buildConfig(xml);
+        QueueConfig qConfig = config.getQueueConfig("custom");
         assertTrue(qConfig.isStatisticsEnabled());
         assertEquals(100, qConfig.getMaxSize());
         assertEquals(1, qConfig.getBackupCount());
@@ -330,14 +366,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(-1, qConfig.getEmptyQueueTtl());
 
         assertTrue(qConfig.getItemListenerConfigs().size() == 1);
-        final ItemListenerConfig listenerConfig = qConfig.getItemListenerConfigs().iterator().next();
+        ItemListenerConfig listenerConfig = qConfig.getItemListenerConfigs().iterator().next();
         assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
 
-        final QueueStoreConfig storeConfig = qConfig.getQueueStoreConfig();
+        QueueStoreConfig storeConfig = qConfig.getQueueStoreConfig();
         assertNotNull(storeConfig);
         assertTrue(storeConfig.isEnabled());
         assertEquals("com.hazelcast.QueueStoreImpl", storeConfig.getClassName());
-        final Properties storeConfigProperties = storeConfig.getProperties();
+
+        Properties storeConfigProperties = storeConfig.getProperties();
         assertEquals(3, storeConfigProperties.size());
         assertEquals("500", storeConfigProperties.getProperty("bulk-load"));
         assertEquals("1000", storeConfigProperties.getProperty("memory-limit"));
@@ -348,7 +385,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void readLockConfig() {
-        final String xml = HAZELCAST_START_TAG
+        String xml = HAZELCAST_START_TAG
                 + "  <lock name=\"default\">"
                 + "        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>"
                 + "    </lock>"
@@ -356,9 +393,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </lock>"
                 + HAZELCAST_END_TAG;
-        final Config config = buildConfig(xml);
-        final LockConfig defaultConfig = config.getLockConfig("default");
-        final LockConfig customConfig = config.getLockConfig("custom");
+
+        Config config = buildConfig(xml);
+        LockConfig defaultConfig = config.getLockConfig("default");
+        LockConfig customConfig = config.getLockConfig("custom");
         assertEquals("quorumRuleWithThreeNodes", defaultConfig.getQuorumName());
         assertEquals("customQuorumRule", customConfig.getQuorumName());
     }
@@ -419,6 +457,51 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
         Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
         assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
+    }
+
+    @Test
+    public void readAtomicLong() {
+        String xml = HAZELCAST_START_TAG
+                + "    <atomic-long name=\"custom\">"
+                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
+                + "    </atomic-long>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
+        assertEquals("custom", atomicLongConfig.getName());
+
+        MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(23, mergePolicyConfig.getBatchSize());
+    }
+
+    @Test
+    public void readAtomicReference() {
+        String xml = HAZELCAST_START_TAG
+                + "    <atomic-reference name=\"custom\">"
+                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
+                + "    </atomic-reference>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
+        assertEquals("custom", atomicReferenceConfig.getName());
+
+        MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(23, mergePolicyConfig.getBatchSize());
+    }
+
+    @Test
+    public void readCountDownLatch() {
+        String xml = HAZELCAST_START_TAG
+                + "    <count-down-latch name=\"custom\">"
+                + "             <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </count-down-latch>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
+        assertEquals("custom", countDownLatchConfig.getName());
+        assertEquals("customQuorumRule", countDownLatchConfig.getQuorumName());
     }
 
     @Test
@@ -632,18 +715,19 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMapConfig_evictions() {
         String xml = HAZELCAST_START_TAG
-                + "<map name=\"lruMap\">" +
-                "        <eviction-policy>LRU</eviction-policy>\n" +
-                "    </map>\n"
-                + "<map name=\"lfuMap\">" +
-                "        <eviction-policy>LFU</eviction-policy>\n" +
-                "    </map>\n"
-                + "<map name=\"noneMap\">" +
-                "        <eviction-policy>NONE</eviction-policy>\n" +
-                "    </map>\n"
-                + "<map name=\"randomMap\">" +
-                "        <eviction-policy>RANDOM</eviction-policy>\n" +
-                "    </map>\n"
+                + "<map name=\"lruMap\">"
+                + "        <eviction-policy>LRU</eviction-policy>\n"
+                + "    </map>\n"
+                + "<map name=\"lfuMap\">"
+                +
+                "        <eviction-policy>LFU</eviction-policy>\n"
+                + "    </map>\n"
+                + "<map name=\"noneMap\">"
+                + "        <eviction-policy>NONE</eviction-policy>\n"
+                + "    </map>\n"
+                + "<map name=\"randomMap\">"
+                + "        <eviction-policy>RANDOM</eviction-policy>\n"
+                + "    </map>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -959,17 +1043,17 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testMapEventJournalConfig() {
-        final String journalName = "mapName";
-        final String xml = HAZELCAST_START_TAG
-                + "  <event-journal enabled=\"true\">\n" +
-                "        <mapName>" + journalName + "</mapName>\n" +
-                "        <capacity>120</capacity>\n" +
-                "        <time-to-live-seconds>20</time-to-live-seconds>\n" +
-                "    </event-journal>"
+        String journalName = "mapName";
+        String xml = HAZELCAST_START_TAG
+                + "<event-journal enabled=\"true\">\n"
+                + "    <mapName>" + journalName + "</mapName>\n"
+                + "    <capacity>120</capacity>\n"
+                + "    <time-to-live-seconds>20</time-to-live-seconds>\n"
+                + "</event-journal>"
                 + HAZELCAST_END_TAG;
 
-        final Config config = buildConfig(xml);
-        final EventJournalConfig journalConfig = config.getMapEventJournalConfig(journalName);
+        Config config = buildConfig(xml);
+        EventJournalConfig journalConfig = config.getMapEventJournalConfig(journalName);
 
         assertTrue(journalConfig.isEnabled());
         assertEquals(120, journalConfig.getCapacity());
@@ -978,21 +1062,36 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testCacheEventJournalConfig() {
-        final String journalName = "cacheName";
-        final String xml = HAZELCAST_START_TAG
-                + "  <event-journal enabled=\"true\">\n" +
-                "        <cacheName>" + journalName + "</cacheName>\n" +
-                "        <capacity>120</capacity>\n" +
-                "        <time-to-live-seconds>20</time-to-live-seconds>\n" +
-                "    </event-journal>"
+        String journalName = "cacheName";
+        String xml = HAZELCAST_START_TAG
+                + "<event-journal enabled=\"true\">\n"
+                + "    <cacheName>" + journalName + "</cacheName>\n"
+                + "    <capacity>120</capacity>\n"
+                + "    <time-to-live-seconds>20</time-to-live-seconds>\n"
+                + "</event-journal>"
                 + HAZELCAST_END_TAG;
 
-        final Config config = buildConfig(xml);
-        final EventJournalConfig journalConfig = config.getCacheEventJournalConfig(journalName);
+        Config config = buildConfig(xml);
+        EventJournalConfig journalConfig = config.getCacheEventJournalConfig(journalName);
 
         assertTrue(journalConfig.isEnabled());
         assertEquals(120, journalConfig.getCapacity());
         assertEquals(20, journalConfig.getTimeToLiveSeconds());
+    }
+
+    @Test
+    public void testReliableIdGeneratorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<reliable-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
+                + "</reliable-id-generator>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidityMillis());
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -1009,10 +1108,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String mapName = "mapStoreImpObjTest";
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"" + mapName + "\">\n"
-                + "<map-store enabled=\"true\">\n"
-                + "<class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n"
-                + "<write-delay-seconds>5</write-delay-seconds>\n"
-                + "</map-store>\n"
+                + "    <map-store enabled=\"true\">\n"
+                + "        <class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n"
+                + "        <write-delay-seconds>5</write-delay-seconds>\n"
+                + "    </map-store>\n"
                 + "</map>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1060,9 +1159,9 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     private String createMapPartitionLostListenerConfiguredXml(String mapName, String listenerName) {
         return HAZELCAST_START_TAG
                 + "<map name=\"" + mapName + "\">\n"
-                + "<partition-lost-listeners>\n"
-                + "<partition-lost-listener>" + listenerName + "</partition-lost-listener>\n"
-                + "</partition-lost-listeners>\n"
+                + "    <partition-lost-listeners>\n"
+                + "        <partition-lost-listener>" + listenerName + "</partition-lost-listener>\n"
+                + "    </partition-lost-listeners>\n"
                 + "</map>\n"
                 + HAZELCAST_END_TAG;
     }
@@ -1097,16 +1196,16 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     private String createCachePartitionLostListenerConfiguredXml(String cacheName, String listenerName) {
         return HAZELCAST_START_TAG
                 + "<cache name=\"" + cacheName + "\">\n"
-                + "<partition-lost-listeners>\n"
-                + "<partition-lost-listener>" + listenerName + "</partition-lost-listener>\n"
-                + "</partition-lost-listeners>\n"
+                + "    <partition-lost-listeners>\n"
+                + "        <partition-lost-listener>" + listenerName + "</partition-lost-listener>\n"
+                + "    </partition-lost-listeners>\n"
                 + "</cache>\n"
                 + HAZELCAST_END_TAG;
     }
 
     private void testXSDConfigXML(String xmlFileName) throws Exception {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.9.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.10.xsd");
         assertNotNull(schemaResource);
 
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -1166,48 +1265,48 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testWanConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <wan-replication name=\"my-wan-cluster\">\n" +
-                "      <wan-publisher group-name=\"istanbul\">\n" +
-                "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n" +
-                "         <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n" +
-                "         <queue-capacity>21</queue-capacity>\n" +
-                "         <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n" +
-                "            <access-key>sample-access-key</access-key>\n" +
-                "            <secret-key>sample-secret-key</secret-key>\n" +
-                "            <iam-role>sample-role</iam-role>\n" +
-                "            <region>sample-region</region>\n" +
-                "            <host-header>sample-header</host-header>\n" +
-                "            <security-group-name>sample-group</security-group-name>\n" +
-                "            <tag-key>sample-tag-key</tag-key>\n" +
-                "            <tag-value>sample-tag-value</tag-value>\n" +
-                "         </aws>\n" +
-                "         <discovery-strategies>\n" +
-                "            <node-filter class=\"DummyFilterClass\" />\n" +
-                "            <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n" +
-                "               <properties>\n" +
-                "                  <property name=\"key-string\">foo</property>\n" +
-                "                  <property name=\"key-int\">123</property>\n" +
-                "                  <property name=\"key-boolean\">true</property>\n" +
-                "               </properties>\n" +
-                "            </discovery-strategy>\n" +
-                "         </discovery-strategies>\n" +
-                "         <properties>\n" +
-                "            <property name=\"custom.prop.publisher\">prop.publisher</property>\n" +
-                "            <property name=\"discovery.period\">5</property>\n" +
-                "            <property name=\"maxEndpoints\">2</property>\n" +
-                "         </properties>\n" +
-                "      </wan-publisher>\n" +
-                "      <wan-publisher group-name=\"ankara\">\n" +
-                "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n" +
-                "         <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n" +
-                "      </wan-publisher>\n" +
-                "      <wan-consumer>\n" +
-                "         <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n" +
-                "         <properties>\n" +
-                "            <property name=\"custom.prop.consumer\">prop.consumer</property>\n" +
-                "         </properties>\n" +
-                "      </wan-consumer>\n" +
-                "   </wan-replication>"
+                + "   <wan-replication name=\"my-wan-cluster\">\n"
+                + "      <wan-publisher group-name=\"istanbul\">\n"
+                + "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
+                + "         <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
+                + "         <queue-capacity>21</queue-capacity>\n"
+                + "         <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n"
+                + "            <access-key>sample-access-key</access-key>\n"
+                + "            <secret-key>sample-secret-key</secret-key>\n"
+                + "            <iam-role>sample-role</iam-role>\n"
+                + "            <region>sample-region</region>\n"
+                + "            <host-header>sample-header</host-header>\n"
+                + "            <security-group-name>sample-group</security-group-name>\n"
+                + "            <tag-key>sample-tag-key</tag-key>\n"
+                + "            <tag-value>sample-tag-value</tag-value>\n"
+                + "         </aws>\n"
+                + "         <discovery-strategies>\n"
+                + "            <node-filter class=\"DummyFilterClass\" />\n"
+                + "            <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
+                + "               <properties>\n"
+                + "                  <property name=\"key-string\">foo</property>\n"
+                + "                  <property name=\"key-int\">123</property>\n"
+                + "                  <property name=\"key-boolean\">true</property>\n"
+                + "               </properties>\n"
+                + "            </discovery-strategy>\n"
+                + "         </discovery-strategies>\n"
+                + "         <properties>\n"
+                + "            <property name=\"custom.prop.publisher\">prop.publisher</property>\n"
+                + "            <property name=\"discovery.period\">5</property>\n"
+                + "            <property name=\"maxEndpoints\">2</property>\n"
+                + "         </properties>\n"
+                + "      </wan-publisher>\n"
+                + "      <wan-publisher group-name=\"ankara\">\n"
+                + "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
+                + "         <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
+                + "      </wan-publisher>\n"
+                + "      <wan-consumer>\n"
+                + "         <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n"
+                + "         <properties>\n"
+                + "            <property name=\"custom.prop.consumer\">prop.consumer</property>\n"
+                + "         </properties>\n"
+                + "      </wan-consumer>\n"
+                + "   </wan-replication>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -1242,9 +1341,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     private void assertDiscoveryConfig(DiscoveryConfig c) {
         assertEquals("DummyFilterClass", c.getNodeFilterClass());
         assertEquals(1, c.getDiscoveryStrategyConfigs().size());
-        final DiscoveryStrategyConfig config = c.getDiscoveryStrategyConfigs().iterator().next();
+
+        DiscoveryStrategyConfig config = c.getDiscoveryStrategyConfigs().iterator().next();
         assertEquals("DummyDiscoveryStrategy1", config.getClassName());
-        final Map<String, Comparable> props = config.getProperties();
+
+        Map<String, Comparable> props = config.getProperties();
         assertEquals("foo", props.get("key-string"));
         assertEquals("123", props.get("key-int"));
         assertEquals("true", props.get("key-boolean"));
@@ -1306,15 +1407,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testDurableExecutorConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <durable-executor-service name=\"foobar\">\n" +
-                "        <pool-size>2</pool-size>\n" +
-                "        <durability>3</durability>\n" +
-                "        <capacity>4</capacity>\n" +
-                "    </durable-executor-service>"
+                + "    <durable-executor-service name=\"foobar\">\n"
+                + "        <pool-size>2</pool-size>\n"
+                + "        <durability>3</durability>\n"
+                + "        <capacity>4</capacity>\n"
+                + "    </durable-executor-service>"
                 + HAZELCAST_END_TAG;
 
-        final Config config = buildConfig(xml);
-        final DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig("foobar");
+        Config config = buildConfig(xml);
+        DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig("foobar");
 
         assertFalse(config.getDurableExecutorConfigs().isEmpty());
         assertEquals(2, durableExecutorConfig.getPoolSize());
@@ -1656,8 +1757,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String name = randomName();
         String val = "true";
         String xml = HAZELCAST_START_TAG
-                + "<serialization><serializers><global-serializer override-java-serialization=\"" + val + "\">" + name
-                + "</global-serializer></serializers></serialization>"
+                + "  <serialization>\n"
+                + "      <serializers>\n"
+                + "          <global-serializer override-java-serialization=\"" + val + "\">" + name + "</global-serializer>\n"
+                + "      </serializers>\n"
+                + "  </serialization>"
                 + HAZELCAST_END_TAG;
 
         Config config = new InMemoryXmlConfig(xml);
@@ -1668,25 +1772,25 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testHotRestart() {
-        final String dir = "/mnt/hot-restart-root/";
-        final String backupDir = "/mnt/hot-restart-backup/";
-        final int parallelism = 3;
-        final int validationTimeout = 13131;
-        final int dataLoadTimeout = 45454;
-        final HotRestartClusterDataRecoveryPolicy policy = HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
-        final String xml = HAZELCAST_START_TAG
+        String dir = "/mnt/hot-restart-root/";
+        String backupDir = "/mnt/hot-restart-backup/";
+        int parallelism = 3;
+        int validationTimeout = 13131;
+        int dataLoadTimeout = 45454;
+        HotRestartClusterDataRecoveryPolicy policy = HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
+        String xml = HAZELCAST_START_TAG
                 + "<hot-restart-persistence enabled=\"true\">"
-                + "<base-dir>" + dir + "</base-dir>"
-                + "<backup-dir>" + backupDir + "</backup-dir>"
-                + "<parallelism>" + parallelism + "</parallelism>"
-                + "<validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
-                + "<data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
-                + "<cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
+                + "    <base-dir>" + dir + "</base-dir>"
+                + "    <backup-dir>" + backupDir + "</backup-dir>"
+                + "    <parallelism>" + parallelism + "</parallelism>"
+                + "    <validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
+                + "    <data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
+                + "    <cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
                 + "</hot-restart-persistence>\n" +
                 HAZELCAST_END_TAG;
 
-        final Config config = new InMemoryXmlConfig(xml);
-        final HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        Config config = new InMemoryXmlConfig(xml);
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
         assertTrue(hotRestartPersistenceConfig.isEnabled());
         assertEquals(new File(dir).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
@@ -1795,7 +1899,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testMemberAddressProvider_classnameIsMandatory() {
+    public void testMemberAddressProvider_classNameIsMandatory() {
         String xml = HAZELCAST_START_TAG
                 + "<network> "
                 + "  <member-address-provider enabled=\"true\">"
@@ -1858,7 +1962,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertXsdVersion("99.99.99-SNAPSHOT", "99.99");
         assertXsdVersion("99.99.99-Beta", "99.99");
         assertXsdVersion("99.99.99-Beta-SNAPSHOT", "99.99");
-        if (origVersionOverride!=null) {
+        if (origVersionOverride != null) {
             System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, origVersionOverride);
         } else {
             System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);

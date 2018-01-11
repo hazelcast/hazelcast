@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,6 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapConfigTest {
-
-    /**
-     * Test method for {@link ReplicatedMapConfigReadOnly#setStatisticsEnabled(boolean)}
-     */
-    @Test(expected = java.lang.UnsupportedOperationException.class)
-    public void testReadOnlyReplicatedMapConfigSetStatisticsEnabled() {
-        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig()).setStatisticsEnabled(true);
-    }
 
     @Test
     public void testEqualsAndHashCode() {

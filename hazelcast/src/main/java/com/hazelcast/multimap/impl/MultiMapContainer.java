@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,29 +24,26 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * MultiMap container which holds a map of {@link MultiMapValue}.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
     private final DistributedObjectNamespace lockNamespace;
-
     private final LockStore lockStore;
-
     private final int partitionId;
-
     private final long creationTime;
-
     private final ObjectNamespace objectNamespace;
 
     private long idGen;
@@ -59,7 +56,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
         this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
@@ -116,9 +113,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public Set<Data> keySet() {
         Set<Data> keySet = multiMapValues.keySet();
-        Set<Data> keys = new HashSet<Data>(keySet.size());
-        keys.addAll(keySet);
-        return keys;
+        return new HashSet<Data>(keySet);
     }
 
     public Collection<MultiMapRecord> values() {
@@ -152,7 +147,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public Map<Data, Collection<MultiMapRecord>> copyCollections() {
-        Map<Data, Collection<MultiMapRecord>> map = new HashMap<Data, Collection<MultiMapRecord>>(multiMapValues.size());
+        Map<Data, Collection<MultiMapRecord>> map = createHashMap(multiMapValues.size());
         for (Map.Entry<Data, MultiMapValue> entry : multiMapValues.entrySet()) {
             Data key = entry.getKey();
             Collection<MultiMapRecord> col = entry.getValue().getCollection(true);
@@ -170,8 +165,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public int clear() {
-        final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        Map<Data, MultiMapValue> lockedKeys = new HashMap<Data, MultiMapValue>(locks.size());
+        Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
+        Map<Data, MultiMapValue> lockedKeys = createHashMap(locks.size());
         for (Data key : locks) {
             MultiMapValue multiMapValue = multiMapValues.get(key);
             if (multiMapValue != null) {
@@ -185,7 +180,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }

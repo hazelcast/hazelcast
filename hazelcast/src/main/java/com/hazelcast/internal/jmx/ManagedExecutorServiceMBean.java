@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Management bean for {@link com.hazelcast.util.executor.ManagedExecutorService}
@@ -34,7 +35,7 @@ public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorS
                                        ManagementService service) {
         super(executorService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.ManagedExecutorService"));
         properties.put("name", quote(executorService.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

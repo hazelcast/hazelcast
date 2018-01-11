@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,9 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Replication operation for the Queue.
@@ -89,7 +90,7 @@ public class QueueReplicationOperation extends Operation implements IdentifiedDa
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, QueueContainer>(mapSize);
+        migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             QueueContainer container = new QueueContainer(name);

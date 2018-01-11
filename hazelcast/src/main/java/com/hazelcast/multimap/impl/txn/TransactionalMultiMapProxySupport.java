@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionLogRecord logRecord;
+        MultiMapTransactionLogRecord logRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -153,7 +153,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
         Collection<MultiMapRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionLogRecord logRecord;
+        MultiMapTransactionLogRecord logRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -191,7 +191,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
         Collection<MultiMapRecord> coll = txMap.get(key);
-        final MultiMapTransactionLogRecord logRecord;
+        MultiMapTransactionLogRecord logRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {

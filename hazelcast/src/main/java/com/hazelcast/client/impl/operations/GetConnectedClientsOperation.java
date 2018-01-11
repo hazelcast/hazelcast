@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.spi.ReadonlyOperation;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 
 public class GetConnectedClientsOperation extends AbstractClientOperation implements ReadonlyOperation {
@@ -37,8 +39,9 @@ public class GetConnectedClientsOperation extends AbstractClientOperation implem
     @Override
     public void run() throws Exception {
         ClientEngineImpl service = getService();
-        this.clients = new HashMap<String, ClientType>();
-        for (Client clientEndpoint : service.getClients()) {
+        final Collection<Client> serviceClients = service.getClients();
+        this.clients = createHashMap(serviceClients.size());
+        for (Client clientEndpoint : serviceClients) {
             ClientEndpointImpl clientEndpointImpl = (ClientEndpointImpl) clientEndpoint;
             this.clients.put(clientEndpointImpl.getUuid(), clientEndpointImpl.getClientType());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import com.hazelcast.collection.impl.collection.operations.CollectionContainsOpe
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.HashSet;
+
+import static java.util.Collections.singleton;
 
 /**
  * SetContainsMessageTask
@@ -43,9 +43,7 @@ public class SetContainsMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        HashSet<Data> values = new HashSet<Data>(1);
-        values.add(parameters.value);
-        return new CollectionContainsOperation(parameters.name, values);
+        return new CollectionContainsOperation(parameters.name, singleton(parameters.value));
     }
 
     @Override

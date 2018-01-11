@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
@@ -30,12 +31,12 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
 
     String mapName;
     MapMergePolicy mergePolicy;
-    EntryView entryView;
+    EntryView<Data, Data> entryView;
 
     public MapReplicationUpdate() {
     }
 
-    public MapReplicationUpdate(String mapName, MapMergePolicy mergePolicy, EntryView entryView) {
+    public MapReplicationUpdate(String mapName, MapMergePolicy mergePolicy, EntryView<Data, Data> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
         this.entryView = entryView;
@@ -57,7 +58,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
         this.mergePolicy = mergePolicy;
     }
 
-    public EntryView getEntryView() {
+    public EntryView<Data, Data> getEntryView() {
         return entryView;
     }
 

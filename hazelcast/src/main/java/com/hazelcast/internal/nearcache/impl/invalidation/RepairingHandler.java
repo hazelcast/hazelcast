@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static java.lang.String.format;
  * Handler used on Near Cache side. Observes local and remote invalidations and registers relevant
  * data to {@link MetaDataContainer}s.
  * <p>
- * Used to repair Near Cache in the event of missed invalidation events or partition uuid changes.
+ * Used to repair Near Cache in the event of missed invalidation events or partition UUID changes.
  * Here repairing is done by making relevant Near Cache data unreachable.
  * To make stale data unreachable {@link StaleReadDetectorImpl} is used.
  * <p>
@@ -159,7 +159,7 @@ public final class RepairingHandler {
                 metaData.resetStaleSequence();
                 if (logger.isFinestEnabled()) {
                     logger.finest(format("%s:[name=%s,partition=%d,prevUuid=%s,newUuid=%s]",
-                            "Invalid uuid, lost remote partition data unexpectedly", name, partition, prevUuid, newUuid));
+                            "Invalid UUID, lost remote partition data unexpectedly", name, partition, prevUuid, newUuid));
                 }
                 break;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,11 +64,10 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         Map<String, String> parameters = phoneHome.phoneHome(node1, "test_version", false);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
-
         assertEquals(parameters.get("version"), "test_version");
         assertEquals(parameters.get("m"), node1.getLocalMember().getUuid());
         assertEquals(parameters.get("e"), "false");
-        assertEquals(parameters.get("l"), "NULL");
+        assertEquals(parameters.get("l"), "");
         assertEquals(parameters.get("p"), "source");
         assertEquals(parameters.get("crsz"), "A");
         assertEquals(parameters.get("cssz"), "A");
@@ -87,6 +86,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("osv"), osMxBean.getVersion());
         assertEquals(parameters.get("jvmn"), runtimeMxBean.getVmName());
         assertEquals(parameters.get("jvmv"), System.getProperty("java.version"));
+        assertEquals(parameters.get("mcver"), "MC_NOT_CONFIGURED");
+        assertEquals(parameters.get("mclicense"), "MC_NOT_CONFIGURED");
     }
 
     @Test

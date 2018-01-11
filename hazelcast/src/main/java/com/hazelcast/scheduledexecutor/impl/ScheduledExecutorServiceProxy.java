@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -41,7 +42,6 @@ import com.hazelcast.util.function.Supplier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,8 +53,10 @@ import java.util.logging.Level;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.MapUtil.createHashMapAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"unchecked", "checkstyle:methodcount"})
@@ -64,15 +66,31 @@ public class ScheduledExecutorServiceProxy
 
     private static final int SHUTDOWN_TIMEOUT = 10;
 
-    private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
-            logAllExceptions("Exception while ScheduledExecutor Service shutdown", Level.FINEST);
+    private final FutureUtil.ExceptionHandler shutdownExceptionHandler = new FutureUtil.ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable != null) {
+                if (throwable instanceof QuorumException) {
+                    sneakyThrow(throwable);
+                }
+                if (throwable.getCause() instanceof QuorumException) {
+                    sneakyThrow(throwable.getCause());
+                }
+            }
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "Exception while ExecutorService shutdown", throwable);
+            }
+        }
+    };
 
     private final String name;
+    private final ILogger logger;
 
     ScheduledExecutorServiceProxy(String name, NodeEngine nodeEngine,
                                   DistributedScheduledExecutorService service) {
         super(nodeEngine, service);
         this.name = name;
+        this.logger = nodeEngine.getLogger(ScheduledExecutorServiceProxy.class);
     }
 
     @Override
@@ -243,7 +261,7 @@ public class ScheduledExecutorServiceProxy
         initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
-        Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
+        Map<Member, IScheduledFuture<V>> futures = createHashMap(members.size());
         for (Member member : members) {
             TaskDefinition<V> definition = new TaskDefinition<V>(
                     TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
@@ -266,7 +284,7 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
+        Map<Member, IScheduledFuture<?>> futures = createHashMapAdapter(members.size());
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
@@ -303,15 +321,11 @@ public class ScheduledExecutorServiceProxy
         Collection<Future> calls = new LinkedList<Future>();
 
         for (Member member : members) {
-            if (member.localMember()) {
-                getService().shutdownExecutor(name);
-            } else {
-                Operation op = new ShutdownOperation(name);
-                calls.add(operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress()));
-            }
+            Operation op = new ShutdownOperation(name);
+            calls.add(operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress()));
         }
 
-        waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, shutdownExceptionHandler);
     }
 
     private <V> void retrieveAllMemberOwnedScheduled(Map<Member, List<IScheduledFuture<V>>> accumulator) {
@@ -438,7 +452,7 @@ public class ScheduledExecutorServiceProxy
 
     private void initializeManagedContext(Object object) {
         getNodeEngine().getSerializationService()
-                       .getManagedContext().initialize(object);
+                .getManagedContext().initialize(object);
     }
 
     private static class GetAllScheduledOnMemberOperationFactory implements Supplier<Operation> {

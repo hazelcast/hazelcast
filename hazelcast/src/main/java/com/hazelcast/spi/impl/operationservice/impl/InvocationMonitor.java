@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -358,15 +358,15 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
                 // Notify only if invocation's target is left member and invocation's member-list-version
                 // is lower than member-list-version at time of member removal.
                 //
-                // Comparison of invocation's target and left member is done using member uuid.
+                // Comparison of invocation's target and left member is done using member UUID.
                 // Normally Hazelcast does not support crash-recover, a left member cannot rejoin
-                // with the same uuid. Hence uuid comparison is enough.
+                // with the same UUID. Hence UUID comparison is enough.
                 //
                 // But Hot-Restart breaks this limitation and when Hot-Restart is enabled a member
-                // can restore its uuid and it's allowed to rejoin when cluster state is FROZEN or PASSIVE.
+                // can restore its UUID and it's allowed to rejoin when cluster state is FROZEN or PASSIVE.
                 //
                 // That's why another ordering property is needed. Invocation keeps member-list-version before
-                // operation is submitted to the target. If a member restarts with the same identity (uuid),
+                // operation is submitted to the target. If a member restarts with the same identity (UUID),
                 // by comparing member-list-version during member removal with the invocation's member-list-version
                 // we can determine whether invocation is submitted before member left or after restart.
                 if (hasMemberLeft(invocation) && invocation.memberListVersion < memberListVersion) {

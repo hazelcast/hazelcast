@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,6 +153,38 @@ public class CacheStatsTest extends CacheTestSupport {
                 return stats.getCachePuts();
             }
         }, ENTRY_COUNT);
+    }
+
+    @Test
+    public void testPutStat_whenPutIfAbsent_andKeysDoNotExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "Value-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getCachePuts());
+    }
+
+    @Test
+    public void testPutStat_whenPutIfAbsent_andKeysExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "NewValue-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getCachePuts());
     }
 
     @Test
@@ -418,6 +450,38 @@ public class CacheStatsTest extends CacheTestSupport {
                 return stats.getCacheMisses();
             }
         }, GET_COUNT - ENTRY_COUNT);
+    }
+
+    @Test
+    public void testMissStat_whenPutIfAbsent_andKeysDoNotExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "Value-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getCacheMisses());
+    }
+
+    @Test
+    public void testMissStat_whenPutIfAbsent_andKeysAlreadyExist() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.putIfAbsent(i, "NewValue-" + i);
+        }
+
+        assertEquals(0, stats.getCacheMisses());
     }
 
     public void testMissPercentageStat() {

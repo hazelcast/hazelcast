@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
+public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, MutatingOperation {
 
     Collection<Long> recordIds;
     long startTimeNanos = -1;
@@ -80,13 +81,12 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         if (coll.isEmpty()) {
             delete();
         }
-
     }
 
     @Override
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, System.nanoTime() - startTimeNanos);
-        final MultiMapService service = getService();
+        MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (removed != null) {
             getOrCreateContainer().update();

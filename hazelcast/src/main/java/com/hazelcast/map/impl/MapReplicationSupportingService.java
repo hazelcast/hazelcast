@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,13 +69,11 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     private void handleUpdate(MapReplicationUpdate replicationUpdate) {
-        EntryView entryView = replicationUpdate.getEntryView();
+        EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
         MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getMapName();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
-        Data dataKey = mapServiceContext.toData(entryView.getKey(), mapContainer.getPartitioningStrategy());
-        MapOperation operation = operationProvider.createMergeOperation(mapName, dataKey, entryView, mergePolicy, true);
+        MapOperation operation = operationProvider.createMergeOperation(mapName, entryView, mergePolicy, true);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
             Future f = nodeEngine.getOperationService()

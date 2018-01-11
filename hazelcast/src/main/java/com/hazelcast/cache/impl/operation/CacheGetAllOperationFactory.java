@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 /**
  * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheGetAllOperation}.
  * @see com.hazelcast.spi.OperationFactory
@@ -37,10 +39,11 @@ public class CacheGetAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
-    private Set<Data> keys = new HashSet<Data>();
+    private Set<Data> keys;
     private ExpiryPolicy expiryPolicy;
 
     public CacheGetAllOperationFactory() {
+        keys = new HashSet<Data>();
     }
 
     public CacheGetAllOperationFactory(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
@@ -81,6 +84,7 @@ public class CacheGetAllOperationFactory
         name = in.readUTF();
         expiryPolicy = in.readObject();
         int size = in.readInt();
+        keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data data = in.readData();
             keys.add(data);

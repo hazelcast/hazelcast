@@ -21,17 +21,17 @@ public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainOnlyTest exte
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        HazelcastInstance instanceInSmallerBrain = firstBrain[0];
-        MapConfig mapConfig = new MapConfig(MAP_NAME);
-        mapConfig.setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT);
-        mapConfig.setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);
+        HazelcastInstance instanceInSmallerBrain = secondBrain[0];
+        MapConfig mapConfig = new MapConfig(MAP_NAME)
+                .setInMemoryFormat(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT)
+                .setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);
         instanceInSmallerBrain.getConfig().addMapConfig(mapConfig);
     }
 
     @Override
     protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         for (HazelcastInstance instance : instances) {
-            final Config config = instance.getConfig();
+            Config config = instance.getConfig();
             MapConfig mapConfig = config.findMapConfig(MAP_NAME);
             assertEquals(TestConfigUtils.NON_DEFAULT_IN_MEMORY_FORMAT, mapConfig.getInMemoryFormat());
             assertEquals(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT, mapConfig.getBackupCount());

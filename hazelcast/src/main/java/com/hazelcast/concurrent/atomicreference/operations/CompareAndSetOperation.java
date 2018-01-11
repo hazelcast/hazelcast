@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,17 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation {
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.COMPARE_AND_SET;
+
+public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation implements MutatingOperation {
 
     private Data expect;
     private Data update;
@@ -42,8 +44,8 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
-        returnValue = atomicReferenceContainer.compareAndSet(expect, update);
+        AtomicReferenceContainer container = getReferenceContainer();
+        returnValue = container.compareAndSet(expect, update);
         shouldBackup = returnValue;
     }
 
@@ -64,7 +66,7 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.COMPARE_AND_SET;
+        return COMPARE_AND_SET;
     }
 
     @Override

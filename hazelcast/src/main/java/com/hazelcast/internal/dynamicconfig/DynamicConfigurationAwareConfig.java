@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -39,6 +42,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -52,6 +56,8 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.util.StringUtil;
 
@@ -71,10 +77,12 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DynamicConfigurationAwareConfig extends Config {
+
     private final Config staticConfig;
     private final ConfigPatternMatcher configPatternMatcher;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
+    private volatile ClusterService clusterService;
     private volatile DynamicSecurityConfig dynamicSecurityConfig;
 
     public DynamicConfigurationAwareConfig(Config staticConfig) {
@@ -220,14 +228,12 @@ public class DynamicConfigurationAwareConfig extends Config {
         return this;
     }
 
-    private <T> void checkStaticConfigurationDoesNotExist(Map<String, T> staticConfigurations, String configName,
-                                                          T newConfig) {
+    private <T> void checkStaticConfigurationDoesNotExist(Map<String, T> staticConfigurations, String configName, T newConfig) {
         Object existingConfiguration = staticConfigurations.get(configName);
         if (existingConfiguration != null) {
             throw new ConfigurationException("Cannot add a new dynamic configuration " + newConfig
                     + " as static configuration already contains " + existingConfiguration);
         }
-
     }
 
     @Override
@@ -244,6 +250,11 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public CacheSimpleConfig findCacheConfig(String name) {
+        return getCacheConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public CacheSimpleConfig findCacheConfigOrNull(String name) {
         //intentional: as of Hazelcast 3.x we do not use default for JCache!
         CacheSimpleConfig cacheConfig = getCacheConfigInternal(name, null);
         if (cacheConfig == null) {
@@ -589,6 +600,152 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setRingbufferConfigs(Map<String, RingbufferConfig> ringbufferConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public AtomicLongConfig findAtomicLongConfig(String name) {
+        return getAtomicLongConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public AtomicLongConfig getAtomicLongConfig(String name) {
+        return getAtomicLongConfigInternal(name, name);
+    }
+
+    @Override
+    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
+        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new ConfigurationException("Cannot add AtomicLongConfig while the cluster is not running version "
+                    + Versions.V3_10);
+        }
+
+        checkStaticConfigurationDoesNotExist(staticConfig.getAtomicLongConfigs(), atomicLongConfig.getName(), atomicLongConfig);
+        configurationService.broadcastConfig(atomicLongConfig);
+        return this;
+    }
+
+    @Override
+    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
+        Map<String, AtomicLongConfig> staticConfigs = staticConfig.getAtomicLongConfigs();
+        Map<String, AtomicLongConfig> dynamicConfigs = configurationService.getAtomicLongConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
+    }
+
+    @Override
+    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    private AtomicLongConfig getAtomicLongConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, AtomicLongConfig> atomicLongConfigs = staticConfig.getAtomicLongConfigs();
+        AtomicLongConfig atomicLongConfig = lookupByPattern(configPatternMatcher, atomicLongConfigs, baseName);
+        if (atomicLongConfig == null) {
+            atomicLongConfig = configurationService.findAtomicLongConfig(baseName);
+        }
+        if (atomicLongConfig == null) {
+            atomicLongConfig = staticConfig.getAtomicLongConfig(fallbackName);
+        }
+        return atomicLongConfig;
+    }
+
+    @Override
+    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
+        return getAtomicReferenceConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
+        return getAtomicReferenceConfigInternal(name, name);
+    }
+
+    @Override
+    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
+        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new ConfigurationException("Cannot add AtomicReferenceConfig while the cluster is not running version "
+                    + Versions.V3_10);
+        }
+
+        checkStaticConfigurationDoesNotExist(staticConfig.getAtomicReferenceConfigs(), atomicReferenceConfig.getName(),
+                atomicReferenceConfig);
+        configurationService.broadcastConfig(atomicReferenceConfig);
+        return this;
+    }
+
+    @Override
+    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
+        Map<String, AtomicReferenceConfig> staticConfigs = staticConfig.getAtomicReferenceConfigs();
+        Map<String, AtomicReferenceConfig> dynamicConfigs = configurationService.getAtomicReferenceConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
+    }
+
+    @Override
+    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    private AtomicReferenceConfig getAtomicReferenceConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, AtomicReferenceConfig> atomicReferenceConfigs = staticConfig.getAtomicReferenceConfigs();
+        AtomicReferenceConfig atomicReferenceConfig = lookupByPattern(configPatternMatcher, atomicReferenceConfigs, baseName);
+        if (atomicReferenceConfig == null) {
+            atomicReferenceConfig = configurationService.findAtomicReferenceConfig(baseName);
+        }
+        if (atomicReferenceConfig == null) {
+            atomicReferenceConfig = staticConfig.getAtomicReferenceConfig(fallbackName);
+        }
+        return atomicReferenceConfig;
+    }
+
+    @Override
+    public CountDownLatchConfig findCountDownLatchConfig(String name) {
+        return getCountDownLatchConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public CountDownLatchConfig getCountDownLatchConfig(String name) {
+        return getCountDownLatchConfigInternal(name, name);
+    }
+
+    @Override
+    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
+        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new ConfigurationException("Cannot add CountDownLatchConfig while the cluster is not running version "
+                    + Versions.V3_10);
+        }
+
+        checkStaticConfigurationDoesNotExist(staticConfig.getCountDownLatchConfigs(), countDownLatchConfig.getName(),
+                countDownLatchConfig);
+        configurationService.broadcastConfig(countDownLatchConfig);
+        return this;
+    }
+
+    @Override
+    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
+        Map<String, CountDownLatchConfig> staticConfigs = staticConfig.getCountDownLatchConfigs();
+        Map<String, CountDownLatchConfig> dynamicConfigs = configurationService.getCountDownLatchConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
+    }
+
+    @Override
+    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    private CountDownLatchConfig getCountDownLatchConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, CountDownLatchConfig> countDownLatchConfigs = staticConfig.getCountDownLatchConfigs();
+        CountDownLatchConfig countDownLatchConfig = lookupByPattern(configPatternMatcher, countDownLatchConfigs, baseName);
+        if (countDownLatchConfig == null) {
+            countDownLatchConfig = configurationService.findCountDownLatchConfig(baseName);
+        }
+        if (countDownLatchConfig == null) {
+            countDownLatchConfig = staticConfig.getCountDownLatchConfig(fallbackName);
+        }
+        return countDownLatchConfig;
     }
 
     @Override
@@ -1008,6 +1165,48 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
+        Map<String, ReliableIdGeneratorConfig> staticMapConfigs = staticConfig.getReliableIdGeneratorConfigs();
+        Map<String, ReliableIdGeneratorConfig> dynamicMapConfigs = configurationService.getReliableIdGeneratorConfigs();
+        return aggregate(staticMapConfigs, dynamicMapConfigs);
+    }
+
+    @Override
+    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
+        return getReliableIdGeneratorConfigInternal(name, "default").getAsReadOnly();
+    }
+
+    @Override
+    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
+        return getReliableIdGeneratorConfigInternal(name, name);
+    }
+
+    private ReliableIdGeneratorConfig getReliableIdGeneratorConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, ReliableIdGeneratorConfig> staticMapConfigs = staticConfig.getReliableIdGeneratorConfigs();
+        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+        if (config == null) {
+            config = configurationService.findReliableIdGeneratorConfig(baseName);
+        }
+        if (config == null) {
+            config = staticConfig.getReliableIdGeneratorConfig(fallbackName);
+        }
+        return config;
+    }
+
+    @Override
+    public Config addReliableIdGeneratorConfig(ReliableIdGeneratorConfig config) {
+        checkStaticConfigurationDoesNotExist(staticConfig.getReliableIdGeneratorConfigs(), config.getName(), config);
+        configurationService.broadcastConfig(config);
+        return this;
+    }
+
+    @Override
+    public Config setReliableIdGeneratorConfigs(Map<String, ReliableIdGeneratorConfig> map) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
     public WanReplicationConfig getWanReplicationConfig(String name) {
         return staticConfig.getWanReplicationConfig(name);
     }
@@ -1240,6 +1439,10 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     public void setConfigurationService(ConfigurationService configurationService) {
         this.configurationService = configurationService;
+    }
+
+    public void setClusterService(ClusterService clusterService) {
+        this.clusterService = clusterService;
     }
 
     public void onSecurityServiceUpdated(SecurityService securityService) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * SPIAwareMemberGroupFactory is responsible for providing custom MemberGroups
@@ -49,7 +49,7 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
-        Set<MemberGroup> memberGroups = new HashSet<MemberGroup>();
+        Set<MemberGroup> memberGroups = createHashSet(allMembers.size());
 
         for (Member member : allMembers) {
             try {

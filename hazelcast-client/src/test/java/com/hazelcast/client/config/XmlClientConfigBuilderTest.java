@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,17 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -78,19 +81,23 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     static final String HAZELCAST_CLIENT_START_TAG =
             "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
 
-    static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
+    private static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
 
-    private ClientConfig clientConfig;
+    private ClientConfig fullClientConfig;
+    private ClientConfig defaultClientConfig;
 
     @Before
     public void init() throws Exception {
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-full.xml");
-        clientConfig = new XmlClientConfigBuilder(schemaResource).build();
+        fullClientConfig = new XmlClientConfigBuilder(schemaResource).build();
+
+        URL schemaResourceDefault = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-default.xml");
+        defaultClientConfig = new XmlClientConfigBuilder(schemaResourceDefault).build();
     }
 
     @After
     @Before
-    public void after() {
+    public void beforeAndAfter() {
         System.clearProperty("hazelcast.client.config");
     }
 
@@ -158,20 +165,20 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testGroupConfig() {
-        final GroupConfig groupConfig = clientConfig.getGroupConfig();
+        final GroupConfig groupConfig = fullClientConfig.getGroupConfig();
         assertEquals("dev", groupConfig.getName());
         assertEquals("dev-pass", groupConfig.getPassword());
     }
 
     @Test
     public void testProperties() {
-        assertEquals(6, clientConfig.getProperties().size());
-        assertEquals("60000", clientConfig.getProperty("hazelcast.client.heartbeat.timeout"));
+        assertEquals(6, fullClientConfig.getProperties().size());
+        assertEquals("60000", fullClientConfig.getProperty("hazelcast.client.heartbeat.timeout"));
     }
 
     @Test
     public void testNetworkConfig() {
-        final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        final ClientNetworkConfig networkConfig = fullClientConfig.getNetworkConfig();
         assertEquals(2, networkConfig.getConnectionAttemptLimit());
         assertEquals(2, networkConfig.getAddresses().size());
         assertContains(networkConfig.getAddresses(), "127.0.0.1");
@@ -205,7 +212,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testSerializationConfig() {
-        final SerializationConfig serializationConfig = clientConfig.getSerializationConfig();
+        final SerializationConfig serializationConfig = fullClientConfig.getSerializationConfig();
         assertEquals(3, serializationConfig.getPortableVersion());
 
         final Map<Integer, String> dsClasses = serializationConfig.getDataSerializableFactoryClasses();
@@ -236,7 +243,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testProxyFactories() {
-        final List<ProxyFactoryConfig> pfc = clientConfig.getProxyFactoryConfigs();
+        final List<ProxyFactoryConfig> pfc = fullClientConfig.getProxyFactoryConfigs();
         assertEquals(3, pfc.size());
         assertContains(pfc, new ProxyFactoryConfig("com.hazelcast.examples.ProxyXYZ1", "sampleService1"));
         assertContains(pfc, new ProxyFactoryConfig("com.hazelcast.examples.ProxyXYZ2", "sampleService1"));
@@ -245,8 +252,8 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCacheConfigs() {
-        assertEquals(1, clientConfig.getNearCacheConfigMap().size());
-        final NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("asd");
+        assertEquals(1, fullClientConfig.getNearCacheConfigMap().size());
+        final NearCacheConfig nearCacheConfig = fullClientConfig.getNearCacheConfig("asd");
 
         assertEquals(2000, nearCacheConfig.getMaxSize());
         assertEquals(2000, nearCacheConfig.getEvictionConfig().getSize());
@@ -257,6 +264,23 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertTrue(nearCacheConfig.isSerializeKeys());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+    }
+
+    @Test
+    public void testSSLConfigs() {
+        SSLConfig sslConfig = fullClientConfig.getNetworkConfig().getSSLConfig();
+        assertNotNull(sslConfig);
+        assertFalse(sslConfig.isEnabled());
+
+        assertEquals("com.hazelcast.examples.MySslFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+
+        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
+        assertNotNull(hostVerification);
+        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", hostVerification.getPolicyClassName());
+        assertFalse(hostVerification.isEnabledOnServer());
+        assertTrue(hostVerification.getProperties().isEmpty());
     }
 
     @Test
@@ -288,7 +312,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryCacheFullConfig() throws Exception {
-        QueryCacheConfig queryCacheConfig = clientConfig.getQueryCacheConfigs().get("map-name").get("query-cache-name");
+        QueryCacheConfig queryCacheConfig = fullClientConfig.getQueryCacheConfigs().get("map-name").get("query-cache-name");
         EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
 
         assertEquals("query-cache-name", queryCacheConfig.getName());
@@ -314,23 +338,38 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testReliableIdGeneratorConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<reliable-id-generator name='gen'>"
+                + "  <prefetch-count>3</prefetch-count>"
+                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
+                + "</reliable-id-generator>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ReliableIdGeneratorConfig fConfig = config.findReliableIdGeneratorConfig("gen");
+        assertEquals("gen", fConfig.getName());
+        assertEquals(3, fConfig.getPrefetchCount());
+        assertEquals(10L, fConfig.getPrefetchValidityMillis());
+    }
+
+    @Test
     public void testConnectionStrategyConfig() {
-        ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
+        ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
         assertEquals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
     }
 
     @Test
     public void testLeftovers() {
-        assertEquals(40, clientConfig.getExecutorPoolSize());
+        assertEquals(40, fullClientConfig.getExecutorPoolSize());
 
         assertEquals("com.hazelcast.security.UsernamePasswordCredentials",
-                clientConfig.getSecurityConfig().getCredentialsClassname());
-        assertEquals(40, clientConfig.getExecutorPoolSize());
+                fullClientConfig.getSecurityConfig().getCredentialsClassname());
+        assertEquals(40, fullClientConfig.getExecutorPoolSize());
 
-        assertEquals("com.hazelcast.client.util.RandomLB", clientConfig.getLoadBalancer().getClass().getName());
+        assertEquals("com.hazelcast.client.util.RandomLB", fullClientConfig.getLoadBalancer().getClass().getName());
 
-        final List<ListenerConfig> listenerConfigs = clientConfig.getListenerConfigs();
+        final List<ListenerConfig> listenerConfigs = fullClientConfig.getListenerConfigs();
         assertEquals(3, listenerConfigs.size());
         assertContains(listenerConfigs, new ListenerConfig("com.hazelcast.examples.MembershipListener"));
         assertContains(listenerConfigs, new ListenerConfig("com.hazelcast.examples.InstanceListener"));
@@ -367,7 +406,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastClientTagAppearsTwice() {
-        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
+        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/><hazelcast-client/>";
         buildConfig(xml);
     }
 
@@ -436,6 +475,28 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(true, jarPaths.contains("/User/test/test.jar"));
     }
 
+    @Test
+    public void testClientIcmpPingConfig() {
+        ClientIcmpPingConfig icmpPingConfig = fullClientConfig.getNetworkConfig().getClientIcmpPingConfig();
+        assertEquals(false, icmpPingConfig.isEnabled());
+        assertEquals(2000, icmpPingConfig.getTimeoutMilliseconds());
+        assertEquals(3000, icmpPingConfig.getIntervalMilliseconds());
+        assertEquals(100, icmpPingConfig.getTtl());
+        assertEquals(5, icmpPingConfig.getMaxAttempts());
+        assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
+    }
+
+    @Test
+    public void testClientIcmpPingConfig_defaults() {
+        ClientIcmpPingConfig icmpPingConfig = defaultClientConfig.getNetworkConfig().getClientIcmpPingConfig();
+        assertEquals(false, icmpPingConfig.isEnabled());
+        assertEquals(1000, icmpPingConfig.getTimeoutMilliseconds());
+        assertEquals(1000, icmpPingConfig.getIntervalMilliseconds());
+        assertEquals(255, icmpPingConfig.getTtl());
+        assertEquals(2, icmpPingConfig.getMaxAttempts());
+        assertEquals(true, icmpPingConfig.isEchoFailFastOnStartup());
+    }
+
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {
         return clientConfig.getNearCacheConfig(mapName).getEvictionConfig().getEvictionPolicy();
     }
@@ -459,7 +520,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-3.9.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-3.10.xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);

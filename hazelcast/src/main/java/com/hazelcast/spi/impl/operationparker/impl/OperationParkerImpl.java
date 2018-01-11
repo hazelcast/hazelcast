@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,14 +50,12 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     private static final long FIRST_WAIT_TIME = 1000;
 
-    private final ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap =
-            new ConcurrentHashMap<WaitNotifyKey, WaitSet>(100);
+    private final ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap = new ConcurrentHashMap<WaitNotifyKey, WaitSet>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationExecutor;
     private final Future expirationTaskFuture;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-
     private final ConstructorFunction<WaitNotifyKey, WaitSet> waitSetConstructor
             = new ConstructorFunction<WaitNotifyKey, WaitSet>() {
         @Override
@@ -66,15 +64,13 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     };
 
-    public OperationParkerImpl(final NodeEngineImpl nodeEngine) {
+    public OperationParkerImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         Node node = nodeEngine.getNode();
-        this.logger = node.getLogger(OperationParker.class.getName());
-
+        this.logger = node.getLogger(OperationParker.class);
         this.expirationExecutor = Executors.newSingleThreadExecutor(
                 new SingleExecutorThreadFactory(node.getConfigClassLoader(),
                         createThreadName(nodeEngine.getHazelcastInstance().getName(), "operation-parker")));
-
         this.expirationTaskFuture = expirationExecutor.submit(new ExpirationTask());
     }
 
@@ -90,11 +86,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    private void invalidate(WaitSetEntry entry) throws Exception {
-        nodeEngine.getOperationService().execute(entry);
-    }
-
-    // Runs in operation thread, we can assume that
+     // Runs in operation thread, we can assume that
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     @Override
@@ -209,7 +201,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         @Override
         public void run() {
             while (true) {
-                if (Thread.interrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
 
@@ -218,6 +210,8 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                         return;
                     }
                 } catch (InterruptedException e) {
+                    // restore the interrupt
+                    Thread.currentThread().interrupt();
                     return;
                 } catch (Throwable t) {
                     logger.warning(t);
@@ -254,6 +248,10 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                 }
             }
             return false;
+        }
+
+        private void invalidate(WaitSetEntry entry) {
+            nodeEngine.getOperationService().execute(entry);
         }
     }
 }

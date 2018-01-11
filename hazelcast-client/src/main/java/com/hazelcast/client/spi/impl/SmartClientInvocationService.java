@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
-public final class SmartClientInvocationService extends AbstractClientInvocationService {
+public class SmartClientInvocationService extends AbstractClientInvocationService {
 
     private final LoadBalancer loadBalancer;
 
@@ -40,6 +40,9 @@ public final class SmartClientInvocationService extends AbstractClientInvocation
         final Address owner = partitionService.getPartitionOwner(partitionId);
         if (owner == null) {
             throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
+        }
+        if (!isMember(owner)) {
+            throw new TargetNotMemberException("Partition owner '" + owner + "' is not a member.");
         }
         invocation.getClientMessage().setPartitionId(partitionId);
         Connection connection = getOrTriggerConnect(owner);
@@ -87,7 +90,7 @@ public final class SmartClientInvocationService extends AbstractClientInvocation
         return null;
     }
 
-    private boolean isMember(Address target) {
+    boolean isMember(Address target) {
         final Member member = client.getClientClusterService().getMember(target);
         return member != null;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.CONTAINER;
 import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.F_ID;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SemaphoreContainer implements IdentifiedDataSerializable {
 
@@ -185,7 +186,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int size = in.readInt();
-        attachMap = new HashMap<String, Integer>(size);
+        attachMap = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String owner = in.readUTF();
             Integer val = in.readInt();

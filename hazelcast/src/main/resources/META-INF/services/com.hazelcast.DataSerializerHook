@@ -31,3 +31,5 @@ com.hazelcast.aggregation.impl.AggregatorDataSerializerHook
 com.hazelcast.projection.impl.ProjectionDataSerializerHook
 com.hazelcast.config.ConfigDataSerializerHook
 com.hazelcast.journal.EventJournalDataSerializerHook
+com.hazelcast.reliableidgen.impl.ReliableIdGeneratorDataSerializerHook
+com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook

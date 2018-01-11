@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.MemberAddressProviderConfig;
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -31,6 +33,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
@@ -44,8 +47,10 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -55,6 +60,7 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -106,6 +112,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -147,6 +154,7 @@ import static org.junit.Assert.fail;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullConfig-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
+@SuppressWarnings("unused")
 public class TestFullApplicationContext extends HazelcastTestSupport {
 
     private Config config;
@@ -183,6 +191,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
+
+    @Resource(name = "reliableIdGenerator")
+    private ReliableIdGenerator reliableIdGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -399,6 +410,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMemberReliableIdGeneratorConfig() {
+        ReliableIdGeneratorConfig c = instance.getConfig().findReliableIdGeneratorConfig("reliableIdGenerator");
+        assertEquals(3, c.getPrefetchCount());
+        assertEquals(10L, c.getPrefetchValidityMillis());
+        assertEquals("reliableIdGenerator*", c.getName());
+    }
+
+    @Test
     public void testQueueConfig() {
         QueueConfig testQConfig = config.getQueueConfig("testQ");
         assertNotNull(testQConfig);
@@ -485,6 +504,36 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         RingbufferStoreConfig store4 = testRingbuffer4.getRingbufferStoreConfig();
         assertNotNull(store4);
         assertEquals(dummyRingbufferStoreFactory, store4.getFactoryImplementation());
+    }
+
+    @Test
+    public void testAtomicLongConfig() {
+        AtomicLongConfig testAtomicLong = config.getAtomicLongConfig("testAtomicLong");
+        assertNotNull(testAtomicLong);
+        assertEquals("testAtomicLong", testAtomicLong.getName());
+
+        MergePolicyConfig mergePolicyConfig = testAtomicLong.getMergePolicyConfig();
+        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
+    }
+
+    @Test
+    public void testAtomicReferenceConfig() {
+        AtomicReferenceConfig testAtomicReference = config.getAtomicReferenceConfig("testAtomicReference");
+        assertNotNull(testAtomicReference);
+        assertEquals("testAtomicReference", testAtomicReference.getName());
+
+        MergePolicyConfig mergePolicyConfig = testAtomicReference.getMergePolicyConfig();
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(4223, mergePolicyConfig.getBatchSize());
+    }
+
+    @Test
+    public void testCountDownLatchConfig() {
+        CountDownLatchConfig testCountDownLatch = config.getCountDownLatchConfig("testCountDownLatch");
+        assertNotNull(testCountDownLatch);
+        assertEquals("testCountDownLatch", testCountDownLatch.getName());
+        assertEquals("my-quorum", testCountDownLatch.getQuorumName());
     }
 
     @Test
@@ -662,7 +711,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertDiscoveryConfig(networkConfig.getJoin().getDiscoveryConfig());
 
-        final MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
+        MemberAddressProviderConfig memberAddressProviderConfig = networkConfig.getMemberAddressProviderConfig();
         assertFalse(memberAddressProviderConfig.isEnabled());
         assertEquals("com.hazelcast.spring.DummyMemberAddressProvider", memberAddressProviderConfig.getClassName());
         assertFalse(memberAddressProviderConfig.getProperties().isEmpty());
@@ -742,6 +791,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
+        assertNotNull(reliableIdGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -756,8 +806,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicLong", atomicLong.getName());
-        assertEquals("atomicReference", atomicReference.getName());
+        assertEquals("reliableIdGenerator", reliableIdGenerator.getName());
+        assertEquals("testAtomicLong", atomicLong.getName());
+        assertEquals("testAtomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }
@@ -840,6 +891,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(sslConfig.isEnabled());
         assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
+    }
+
+    @Test
+    public void testHostVerification() {
+        HostVerificationConfig hostVerification = config.getNetworkConfig().getSSLConfig().getHostVerificationConfig();
+        assertNotNull(hostVerification);
+        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", hostVerification.getPolicyClassName());
+        assertTrue(hostVerification.isEnabledOnServer());
+        assertEquals(1, hostVerification.getProperties().size());
     }
 
     @Test
@@ -1067,7 +1127,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testMapEventJournalConfigIsWellParsed() {
-        final EventJournalConfig journalConfig = config.getMapEventJournalConfig("mapName");
+        EventJournalConfig journalConfig = config.getMapEventJournalConfig("mapName");
 
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -1076,7 +1136,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testCacheEventJournalConfigIsWellParsed() {
-        final EventJournalConfig journalConfig = config.getCacheEventJournalConfig("cacheName");
+        EventJournalConfig journalConfig = config.getCacheEventJournalConfig("cacheName");
 
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -1086,7 +1146,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testExplicitPortCountConfiguration() {
         int portCount = instance.getConfig().getNetworkConfig().getPortCount();
+
         assertEquals(42, portCount);
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,6 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     private final String name = randomString();
     private final int initialCount = 100;
     private final int finalCount = initialCount + 50;
-
-    @Override
-    protected int[] brains() {
-        // 2nd merges to the 1st
-        return new int[]{2, 1};
-    }
 
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {

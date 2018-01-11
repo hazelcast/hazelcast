@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,17 +24,18 @@ import com.hazelcast.util.AddressUtil;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 
 public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     private final Map<Integer, MemberGroupConfig> memberGroupConfigMap;
 
     public ConfigMemberGroupFactory(Collection<MemberGroupConfig> memberGroupConfigs) {
-        this.memberGroupConfigMap = new LinkedHashMap<Integer, MemberGroupConfig>();
+        this.memberGroupConfigMap = createLinkedHashMap(memberGroupConfigs.size());
         int key = 0;
         for (MemberGroupConfig groupConfig : memberGroupConfigs) {
             memberGroupConfigMap.put(key++, groupConfig);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
-    protected QuorumAwareService quorumAwareService;
+    protected MapQuorumAwareService quorumAwareService;
     protected MapServiceContext mapServiceContext;
     // RU_COMPAT_V38
     protected MapIndexSynchronizer mapIndexSynchronizer;
@@ -170,6 +170,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void destroyDistributedObject(String objectName) {
         remoteService.destroyDistributedObject(objectName);
+        quorumAwareService.onDestroy(objectName);
     }
 
     @Override

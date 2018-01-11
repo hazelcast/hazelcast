@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -38,12 +39,12 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +59,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.FutureUtil.ExceptionHandler;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 
@@ -74,8 +75,22 @@ public class ExecutorServiceProxy
     private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS = AtomicIntegerFieldUpdater
             .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
-    private static final ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
-            logAllExceptions("Exception while ExecutorService shutdown", Level.FINEST);
+    private final ExceptionHandler shutdownExceptionHandler = new ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable != null) {
+                if (throwable instanceof QuorumException) {
+                    sneakyThrow(throwable);
+                }
+                if (throwable.getCause() instanceof QuorumException) {
+                    sneakyThrow(throwable.getCause());
+                }
+            }
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "Exception while ExecutorService shutdown", throwable);
+            }
+        }
+    };
 
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
@@ -312,7 +327,7 @@ public class ExecutorServiceProxy
 
     @Override
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
-        Map<Member, Future<T>> futures = new HashMap<Member, Future<T>>(members.size());
+        Map<Member, Future<T>> futures = createHashMap(members.size());
         for (Member member : members) {
             futures.put(member, submitToMember(task, member));
         }
@@ -552,15 +567,10 @@ public class ExecutorServiceProxy
         Collection<Future> calls = new LinkedList<Future>();
 
         for (Member member : members) {
-            if (member.localMember()) {
-                getService().shutdownExecutor(name);
-            } else {
-                Future f = submitShutdownOperation(operationService, member);
-                calls.add(f);
-            }
+            Future f = submitShutdownOperation(operationService, member);
+            calls.add(f);
         }
-
-        waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, 3, TimeUnit.SECONDS, shutdownExceptionHandler);
     }
 
     private InternalCompletableFuture submitShutdownOperation(OperationService operationService, Member member) {

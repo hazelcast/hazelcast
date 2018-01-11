@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapService;
@@ -25,11 +28,11 @@ import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.recordstore.ExpiredKey;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -46,6 +49,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -107,7 +111,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @since 3.3
  */
 @SuppressWarnings("checkstyle:linelength")
-public final class ExpirationManager implements OperationResponseHandler {
+public final class ExpirationManager implements OperationResponseHandler, LifecycleListener {
 
     public static final String PROP_PRIMARY_DRIVES_BACKUP = "hazelcast.internal.map.expiration.primary.drives_backup";
     public static final String PROP_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
@@ -138,12 +142,22 @@ public final class ExpirationManager implements OperationResponseHandler {
     private final NodeEngine nodeEngine;
     private final ClusterService clusterService;
     private final HazelcastProperties properties;
-    private final ExecutionService executionService;
+    private final TaskScheduler globalTaskScheduler;
     private final IPartitionService partitionService;
-    private final InternalOperationService operationService;
     private final PartitionContainer[] partitionContainers;
+    private final InternalOperationService operationService;
+    /**
+     * @see #rescheduleIfScheduledBefore()
+     */
+    private final AtomicBoolean scheduledOneTime = new AtomicBoolean(false);
+    /**
+     * Used to ensure no concurrent run of {@link ClearExpiredRecordsTask#run()} exists
+     */
+    private final AtomicBoolean singleRunPermit = new AtomicBoolean(false);
+    private final AtomicBoolean scheduled = new AtomicBoolean(false);
+    private final ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
 
-    private ScheduledFuture<?> expirationTask;
+    private volatile ScheduledFuture<?> expirationTask;
 
     @SuppressWarnings("checkstyle:magicnumber")
     @SuppressFBWarnings({"EI_EXPOSE_REP2"})
@@ -152,43 +166,85 @@ public final class ExpirationManager implements OperationResponseHandler {
         this.partitionContainers = partitionContainers;
         this.thisAddress = nodeEngine.getThisAddress();
         this.partitionService = nodeEngine.getPartitionService();
-        this.executionService = nodeEngine.getExecutionService();
+        this.globalTaskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         this.operationService = (InternalOperationService) nodeEngine.getOperationService();
         this.partitionCount = partitionService.getPartitionCount();
         this.clusterService = nodeEngine.getClusterService();
         this.properties = nodeEngine.getProperties();
-
         this.taskPeriodSeconds = properties.getSeconds(TASK_PERIOD_SECONDS);
         checkPositive(taskPeriodSeconds, "taskPeriodSeconds should be a positive number");
-
         this.cleanupPercentage = properties.getInteger(CLEANUP_PERCENTAGE);
         checkTrue(cleanupPercentage > 0 && cleanupPercentage <= 100,
                 "cleanupPercentage should be in range (0,100]");
-
         this.cleanupOperationCount
                 = calculateCleanupOperationCount(properties, partitionCount, operationService.getPartitionThreadCount());
         checkPositive(cleanupOperationCount, "cleanupOperationCount should be a positive number");
-
         this.primaryDrivesEviction = properties.getBoolean(PRIMARY_DRIVES_BACKUP);
+        this.nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(this);
     }
 
-    public synchronized void start() {
-        if (expirationTask != null) {
+    /**
+     * Starts scheduling of the task that clears expired entries.
+     * Calling this method multiple times has same effect.
+     */
+    public void scheduleExpirationTask() {
+        if (scheduled.get() || !scheduled.compareAndSet(false, true)) {
             return;
         }
 
-        ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
-        expirationTask = executionService.getGlobalTaskScheduler().
-                scheduleWithRepetition(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
+        expirationTask = globalTaskScheduler.scheduleWithRepetition(task, taskPeriodSeconds,
+                taskPeriodSeconds, SECONDS);
+        scheduledOneTime.set(true);
     }
 
-    public synchronized void stop() {
-        if (expirationTask == null) {
+    /**
+     * Ends scheduling of the task that clears expired entries.
+     * Calling this method multiple times has same effect.
+     */
+    void unscheduleExpirationTask() {
+        scheduled.set(false);
+        ScheduledFuture<?> scheduledFuture = this.expirationTask;
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(true);
+        }
+    }
+
+    @Override
+    public void stateChanged(LifecycleEvent event) {
+        switch (event.getState()) {
+            case SHUTTING_DOWN:
+            case MERGING:
+                unscheduleExpirationTask();
+                break;
+            case MERGED:
+                rescheduleIfScheduledBefore();
+                break;
+            default:
+                return;
+        }
+    }
+
+    public void onClusterStateChange(ClusterState newState) {
+        if (newState == ClusterState.PASSIVE) {
+            unscheduleExpirationTask();
+        } else {
+            rescheduleIfScheduledBefore();
+        }
+    }
+
+    /**
+     * Re-schedules {@link ClearExpiredRecordsTask}, if it has been scheduled at least one time before.
+     * This info is important for the methods: {@link #stateChanged(LifecycleEvent)}
+     * and {@link #onClusterStateChange(ClusterState)}. Because even if we call these methods, it is still
+     * possible that the {@link ClearExpiredRecordsTask} has not been scheduled before and in this method we
+     * prevent unnecessary scheduling of it.
+     */
+    private void rescheduleIfScheduledBefore() {
+        if (!scheduledOneTime.get()) {
             return;
         }
 
-        expirationTask.cancel(true);
-        expirationTask = null;
+        scheduleExpirationTask();
     }
 
     private static int calculateCleanupOperationCount(HazelcastProperties properties, int partitionCount, int partitionThreadCount) {
@@ -230,6 +286,19 @@ public final class ExpirationManager implements OperationResponseHandler {
 
         @Override
         public void run() {
+            try {
+                if (!singleRunPermit.compareAndSet(false, true)) {
+                    return;
+                }
+
+                runInternal();
+
+            } finally {
+                singleRunPermit.set(false);
+            }
+        }
+
+        private void runInternal() {
             final long now = Clock.currentTimeMillis();
             int inFlightCleanupOperationsCount = 0;
 
@@ -366,6 +435,12 @@ public final class ExpirationManager implements OperationResponseHandler {
             }
             return notExist;
         }
+
+        @Override
+        public String toString() {
+            return ClearExpiredRecordsTask.class.getName();
+        }
+
     }
 
     /**
@@ -466,23 +541,29 @@ public final class ExpirationManager implements OperationResponseHandler {
         return polledKeys;
     }
 
-    // used for testing purposes
+    // only used for testing purposes
     int getTaskPeriodSeconds() {
         return taskPeriodSeconds;
     }
 
-    // used for testing purposes
+    // only used for testing purposes
+    boolean getPrimaryDrivesEviction() {
+        return primaryDrivesEviction;
+    }
+
+    // only used for testing purposes
     int getCleanupPercentage() {
         return cleanupPercentage;
     }
 
-    // used for testing purposes
+    // only used for testing purposes
     int getCleanupOperationCount() {
         return cleanupOperationCount;
     }
 
-    // used for testing purposes
-    boolean isPrimaryDrivesEviction() {
-        return primaryDrivesEviction;
+    // only used for testing purposes
+    boolean isScheduled() {
+        return scheduled.get();
     }
+
 }

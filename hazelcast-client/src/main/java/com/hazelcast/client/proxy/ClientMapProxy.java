@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1355,7 +1355,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
 
         MapExecuteWithPredicateCodec.ResponseParameters resultParameters = MapExecuteWithPredicateCodec.decodeResponse(response);
         return prepareResult(resultParameters.response);
@@ -1379,7 +1379,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         checkNotPagingPredicate(predicate, "aggregate");
 
         ClientMessage request = MapAggregateWithPredicateCodec.encodeRequest(name, toData(aggregator), toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
 
         MapAggregateWithPredicateCodec.ResponseParameters resultParameters =
                 MapAggregateWithPredicateCodec.decodeResponse(response);
@@ -1402,7 +1402,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         checkNotPagingPredicate(predicate, "project");
 
         ClientMessage request = MapProjectWithPredicateCodec.encodeRequest(name, toData(projection), toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
 
         MapProjectWithPredicateCodec.ResponseParameters resultParameters =
                 MapProjectWithPredicateCodec.decodeResponse(response);
@@ -1639,9 +1639,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
                                     Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
-        }
+        checkNotPagingPredicate(predicate, "iterator");
         return new ClientMapQueryPartitionIterator<K, V, R>(this, getContext(), fetchSize, partitionId,
                 predicate, projection);
     }

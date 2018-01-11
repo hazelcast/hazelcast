@@ -25,12 +25,13 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class DynamicConfigSmokeTest extends HazelcastTestSupport {
 
+    private static final int DEFAULT_INITIAL_CLUSTER_SIZE = 3;
+
     @Test
     public void multimap_initialSubmitTest() {
         String mapName = randomMapName();
-        final int initialClusterSize = 3;
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(initialClusterSize);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(DEFAULT_INITIAL_CLUSTER_SIZE);
         HazelcastInstance[] instances = factory.newInstances();
         HazelcastInstance i1 = instances[0];
 
@@ -48,7 +49,9 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
     @Test(expected = HazelcastException.class)
     public void map_testConflictingDynamicConfig() {
         String mapName = randomMapName();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        int initialClusterSize = 2;
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(initialClusterSize);
 
         HazelcastInstance i1 = factory.newHazelcastInstance();
         HazelcastInstance i2 = factory.newHazelcastInstance();
@@ -85,7 +88,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
     public void multimap_withNewMemberJoiningLater() {
         String mapName = randomMapName();
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(DEFAULT_INITIAL_CLUSTER_SIZE);
         HazelcastInstance i1 = factory.newHazelcastInstance();
         HazelcastInstance i2 = factory.newHazelcastInstance();
 
@@ -94,7 +97,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
         Config config = i1.getConfig();
         config.addMultiMapConfig(multiMapConfig);
 
-        //start an instance AFTER the config was already submitted
+        // start an instance AFTER the config was already submitted
         HazelcastInstance i3 = factory.newHazelcastInstance();
 
         multiMapConfig = i3.getConfig().getMultiMapConfig(mapName);
@@ -104,9 +107,8 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
     @Test
     public void map_initialSubmitTest() {
         String mapName = randomMapName();
-        final int initialClusterSize = 3;
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(initialClusterSize);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(DEFAULT_INITIAL_CLUSTER_SIZE);
         HazelcastInstance[] instances = factory.newInstances();
         HazelcastInstance i1 = instances[0];
 
@@ -124,9 +126,8 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
     @Test
     public void map_initialSubmitTest_withWildcards() {
         String prefixWithWildcard = randomMapName() + "*";
-        final int initialClusterSize = 3;
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(initialClusterSize);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(DEFAULT_INITIAL_CLUSTER_SIZE);
         HazelcastInstance[] instances = factory.newInstances();
         HazelcastInstance i1 = instances[0];
 
@@ -145,7 +146,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
     @Test(expected = ConfigurationException.class)
     public void map_whenConflictingWithStaticConfig_thenThrowConfigurationException() {
         String mapName = randomMapName();
-        final int initialClusterSize = 1;
+        int initialClusterSize = 1;
 
         Config config = new Config();
         MapConfig mapConfig = new MapConfig(mapName);
@@ -164,9 +165,8 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
     public void topic_initialSubmitTest() {
         String topicName = randomName();
         String listenerClassName = randomName();
-        final int initialClusterSize = 3;
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(initialClusterSize);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(DEFAULT_INITIAL_CLUSTER_SIZE);
         HazelcastInstance[] instances = factory.newInstances();
         HazelcastInstance i1 = instances[0];
 
@@ -184,7 +184,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
     public void mapConfig_withLiteMemberJoiningLater_isImmediatelyAvailable() {
         String mapName = randomMapName();
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(DEFAULT_INITIAL_CLUSTER_SIZE);
         HazelcastInstance i1 = factory.newHazelcastInstance();
         HazelcastInstance i2 = factory.newHazelcastInstance();
 
@@ -193,7 +193,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
         Config config = i1.getConfig();
         config.addMapConfig(mapConfig);
 
-        //start a lite member after the dynamic config was submitted
+        // start a lite member after the dynamic config was submitted
         Config liteConfig = new Config();
         liteConfig.setLiteMember(true);
         HazelcastInstance i3 = factory.newHazelcastInstance(liteConfig);

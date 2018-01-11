@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ public interface ClientEngine {
      * An e.g. Operating system committedVirtualMemorySize path would be: os.committedVirtualMemorySize
      *
      * The statistics key names can be one of the following (Used IMap named <example.fastmap> and ICache Named
-     * <StatTestCacheName> and assuming that the near cache is configured):
+     * <StatTestCacheName> and assuming that the Near Cache is configured):
      *
      * clientType
      * clusterConnectionTimestamp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ enum ClientXmlElements {
     LICENSE_KEY("license-key", false),
     INSTANCE_NAME("instance-name", false),
     CONNECTION_STRATEGY("connection-strategy", false),
-    USER_CODE_DEPLOYMENT("user-code-deployment", false);
+    USER_CODE_DEPLOYMENT("user-code-deployment", false),
+    RELIABLE_ID_GENERATOR("reliable-id-generator", true);
 
     final String name;
     final boolean multipleOccurrence;

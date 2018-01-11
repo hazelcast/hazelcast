@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,11 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -53,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -67,13 +70,29 @@ public class ClientScheduledExecutorProxy
 
     private static final int SHUTDOWN_TIMEOUT = 10;
 
-    private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
-            logAllExceptions("Exception while ScheduledExecutor Service shutdown", Level.FINEST);
+    private static final ILogger LOGGER = Logger.getLogger(ClientScheduledExecutorProxy.class);
 
     private static final ClientMessageDecoder SUBMIT_DECODER = new ClientMessageDecoder() {
         @Override
         public Void decodeClientMessage(ClientMessage clientMessage) {
             return null;
+        }
+    };
+
+    private final FutureUtil.ExceptionHandler shutdownExceptionHandler = new FutureUtil.ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable != null) {
+                if (throwable instanceof QuorumException) {
+                    sneakyThrow(throwable);
+                }
+                if (throwable.getCause() instanceof QuorumException) {
+                    sneakyThrow(throwable.getCause());
+                }
+            }
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.log(Level.FINEST, "Exception while ExecutorService shutdown", throwable);
+            }
         }
     };
 
@@ -280,7 +299,7 @@ public class ClientScheduledExecutorProxy
             calls.add(doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress()));
         }
 
-        waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, shutdownExceptionHandler);
     }
 
     private <T> ScheduledRunnableAdapter<T> createScheduledRunnableAdapter(Runnable command) {

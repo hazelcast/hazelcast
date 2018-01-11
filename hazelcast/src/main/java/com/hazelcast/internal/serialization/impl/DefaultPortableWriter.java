@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public class DefaultPortableWriter implements PortableWriter {
 
@@ -47,7 +47,7 @@ public class DefaultPortableWriter implements PortableWriter {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
-        this.writtenFields = new HashSet<String>(cd.getFieldCount());
+        this.writtenFields = createHashSet(cd.getFieldCount());
         this.begin = out.position();
 
         // room for final offset

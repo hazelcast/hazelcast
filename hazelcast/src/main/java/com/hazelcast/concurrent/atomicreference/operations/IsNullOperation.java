@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class IsNullOperation extends AbstractAtomicReferenceOperation {
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.IS_NULL;
+
+public class IsNullOperation extends AbstractAtomicReferenceOperation implements ReadonlyOperation {
 
     private boolean returnValue;
 
@@ -32,8 +34,8 @@ public class IsNullOperation extends AbstractAtomicReferenceOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
-        returnValue = atomicReferenceContainer.isNull();
+        AtomicReferenceContainer container = getReferenceContainer();
+        returnValue = container.isNull();
     }
 
     @Override
@@ -43,6 +45,6 @@ public class IsNullOperation extends AbstractAtomicReferenceOperation {
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.IS_NULL;
+        return IS_NULL;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -513,12 +514,13 @@ public class TcpIpJoiner extends AbstractJoiner {
         if (possibleAddresses.isEmpty()) {
             return;
         }
+        SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
         for (Address address : possibleAddresses) {
-            SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
-            if (shouldMerge(response)) {
+            SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(address, request);
+            if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
                 logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
                 setTargetAddress(address);
-                startClusterMerge(address);
+                startClusterMerge(address, request.getMemberListVersion());
                 return;
             }
         }

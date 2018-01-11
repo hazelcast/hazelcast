@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,12 +45,13 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -98,7 +99,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
         List<MapInterceptor> interceptorList = interceptorRegistry.getInterceptors();
         Map<String, MapInterceptor> interceptorMap = interceptorRegistry.getId2InterceptorMap();
-        Map<MapInterceptor, String> revMap = new HashMap<MapInterceptor, String>();
+        Map<MapInterceptor, String> revMap = createHashMap(interceptorMap.size());
         for (Map.Entry<String, MapInterceptor> entry : interceptorMap.entrySet()) {
             revMap.put(entry.getValue(), entry.getKey());
         }

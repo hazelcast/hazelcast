@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    protected IAtomicReference newInstance() {
+    protected <K> IAtomicReference<K> newInstance() {
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
@@ -84,6 +84,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void setAndGet() {
         assertNull(ref.setAndGet(null));
         assertNull(ref.get());
@@ -106,7 +107,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
         ref.set("foo");
         assertEquals("foo", ref.get());
 
-        ref.setAndGet("bar");
+        ref.set("bar");
         assertEquals("bar", ref.get());
 
         ref.set(null);
@@ -289,6 +290,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
     }
 
     private static class AppendFunction implements IFunction<String, String> {
+
         private String add;
 
         private AppendFunction(String add) {

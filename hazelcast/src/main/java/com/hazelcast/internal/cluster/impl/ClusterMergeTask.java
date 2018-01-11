@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -51,40 +50,40 @@ class ClusterMergeTask implements Runnable {
     private static final String MERGE_TASKS_EXECUTOR = "hz:cluster-merge";
 
     private final Node node;
+    private final LifecycleServiceImpl lifecycleService;
 
     ClusterMergeTask(Node node) {
         this.node = node;
+        this.lifecycleService = node.hazelcastInstance.getLifecycleService();
     }
 
     public void run() {
-        LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
         lifecycleService.fireLifecycleEvent(MERGING);
-        LifecycleState finalLifecycleState = MERGE_FAILED;
 
+        boolean joined = false;
         try {
             resetState();
 
             Collection<Runnable> coreTasks = collectMergeTasks(true);
-
             Collection<Runnable> nonCoreTasks = collectMergeTasks(false);
 
             resetServices();
 
             rejoin();
 
-            finalLifecycleState = getFinalLifecycleState();
+            joined = isJoined();
 
-            if (finalLifecycleState == MERGED) {
+            if (joined) {
                 executeMergeTasks(coreTasks);
                 executeMergeTasks(nonCoreTasks);
             }
         } finally {
-            lifecycleService.fireLifecycleEvent(finalLifecycleState);
+            lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
         }
     }
 
-    private LifecycleState getFinalLifecycleState() {
-       return (node.isRunning() && node.getClusterService().isJoined()) ? MERGED : MERGE_FAILED;
+    private boolean isJoined() {
+        return node.isRunning() && node.getClusterService().isJoined();
     }
 
     private void resetState() {

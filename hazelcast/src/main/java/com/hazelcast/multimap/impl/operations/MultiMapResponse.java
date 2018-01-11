@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,18 +33,14 @@ import static com.hazelcast.multimap.impl.ValueCollectionFactory.emptyCollection
 
 public class MultiMapResponse implements IdentifiedDataSerializable {
 
-    private Collection collection;
-
     private long nextRecordId = -1;
-
-    private MultiMapConfig.ValueCollectionType collectionType
-            = MultiMapConfig.DEFAULT_VALUE_COLLECTION_TYPE;
+    private MultiMapConfig.ValueCollectionType collectionType = MultiMapConfig.DEFAULT_VALUE_COLLECTION_TYPE;
+    private Collection collection;
 
     public MultiMapResponse() {
     }
 
-    public MultiMapResponse(Collection collection,
-                            MultiMapConfig.ValueCollectionType collectionType) {
+    public MultiMapResponse(Collection collection, MultiMapConfig.ValueCollectionType collectionType) {
         this.collection = collection;
         this.collectionType = collectionType;
     }
@@ -58,7 +54,6 @@ public class MultiMapResponse implements IdentifiedDataSerializable {
         return this;
     }
 
-
     public Collection getCollection() {
         return collection == null ? emptyCollection(collectionType) : collection;
     }
@@ -67,7 +62,7 @@ public class MultiMapResponse implements IdentifiedDataSerializable {
         if (collection == null) {
             return emptyCollection(collectionType);
         }
-        final Collection newCollection = createCollection(collectionType, collection.size());
+        Collection<Object> newCollection = createCollection(collectionType, collection.size());
         for (Object obj : collection) {
             MultiMapRecord record = nodeEngine.toObject(obj);
             newCollection.add(nodeEngine.toObject(record.getObject()));
@@ -79,8 +74,7 @@ public class MultiMapResponse implements IdentifiedDataSerializable {
         if (collection == null) {
             return emptyCollection(collectionType);
         }
-        final Collection<MultiMapRecord> newCollection
-                = createCollection(collectionType, collection.size());
+        Collection<MultiMapRecord> newCollection = createCollection(collectionType, collection.size());
         for (Object obj : collection) {
             MultiMapRecord record = nodeEngine.toObject(obj);
             newCollection.add(record);

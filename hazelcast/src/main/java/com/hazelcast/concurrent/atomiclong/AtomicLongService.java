@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,20 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,19 +41,34 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
+public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
+
+    private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, AtomicLongContainer> containers = new ConcurrentHashMap<String, AtomicLongContainer>();
     private final ConstructorFunction<String, AtomicLongContainer> atomicLongConstructorFunction =
             new ConstructorFunction<String, AtomicLongContainer>() {
                 public AtomicLongContainer createNew(String key) {
-                    return new AtomicLongContainer();
+                    AtomicLongConfig config = nodeEngine.getConfig().findAtomicLongConfig(key);
+                    return new AtomicLongContainer(config);
                 }
             };
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            AtomicLongConfig config = nodeEngine.getConfig().findAtomicLongConfig(name);
+            String quorumName = config.getQuorumName();
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public AtomicLongService() {
     }
@@ -58,7 +77,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         return getOrPutIfAbsent(containers, name, atomicLongConstructorFunction);
     }
 
-    // need for testing..
+    // need for testing
     public boolean containsAtomicLong(String name) {
         return containers.containsKey(name);
     }
@@ -86,6 +105,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     @Override
     public void destroyDistributedObject(String name) {
         containers.remove(name);
+        quorumConfigCache.remove(name);
     }
 
     @Override
@@ -144,5 +164,16 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
                 iterator.remove();
             }
         }
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }

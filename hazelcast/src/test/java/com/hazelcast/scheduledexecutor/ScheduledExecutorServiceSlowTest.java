@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -389,7 +389,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 1));
     }
 
-    @Test(timeout = 600000)
+    @Test(timeout = 1800000)
     public void schedule_thenDisposeLeakTest() {
         Config config = new Config()
                 .addScheduledExecutorConfig(new ScheduledExecutorConfig()

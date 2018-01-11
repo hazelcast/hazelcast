@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -447,6 +447,15 @@ public final class IOUtil {
         }
     }
 
+    public static InputStream getFileFromResourcesAsStream(String resourceFileName) {
+        try {
+            InputStream resource = IOUtil.class.getClassLoader().getResourceAsStream(resourceFileName);
+            return resource;
+        } catch (Exception e) {
+            throw new HazelcastException("Could not find resource file " + resourceFileName, e);
+        }
+    }
+
     /**
      * Deep copies source to target and creates the target if necessary. Source can be a directory or a file and the target
      * can be a directory or file. If the source is a directory, expects that the target is a directory (or that it doesn't exist)
@@ -465,6 +474,36 @@ public final class IOUtil {
             copyDirectory(source, target);
         } else {
             copyFile(source, target, -1);
+        }
+    }
+
+    /**
+     * Deep copies source to target. If target doesn't exist, this will fail with {@link HazelcastException}.
+     * The source is only accessed here, but not managed. Its the responsibility of the caller to release any resources hold by
+     * the source.
+     *
+     * @param source the source
+     * @param target the destination
+     * @throws HazelcastException       if the target doesn't exist.
+     */
+    public static void copy(InputStream source, File target) {
+        if (!target.exists()) {
+            throw new HazelcastException("The target file doesn't exist " + target);
+        }
+
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(target);
+            byte[] buff = new byte[8192];
+
+            int length;
+            while ((length = source.read(buff)) > 0) {
+                out.write(buff, 0, length);
+            }
+        } catch (Exception e) {
+            throw new HazelcastException("Error occurred while copying", e);
+        } finally {
+            closeResource(out);
         }
     }
 

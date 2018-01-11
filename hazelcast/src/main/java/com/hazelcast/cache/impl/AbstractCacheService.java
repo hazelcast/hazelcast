@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -401,7 +401,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         if (simpleName == null) {
             return null;
         }
-        CacheSimpleConfig cacheSimpleConfig = nodeEngine.getConfig().findCacheConfig(simpleName);
+        CacheSimpleConfig cacheSimpleConfig = nodeEngine.getConfig().findCacheConfigOrNull(simpleName);
         if (cacheSimpleConfig == null) {
             return null;
         }

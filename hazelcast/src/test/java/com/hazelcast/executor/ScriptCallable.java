@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.util.StringUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -49,7 +50,7 @@ class ScriptCallable implements Callable, Serializable, HazelcastInstanceAware {
         e.put("hazelcast", hazelcastInstance);
         try {
             // for new JavaScript engine called Nashorn we need the compatibility script
-            if (e.getFactory().getEngineName().toLowerCase().contains("nashorn")) {
+            if (e.getFactory().getEngineName().toLowerCase(StringUtil.LOCALE_INTERNAL).contains("nashorn")) {
                 e.eval("load('nashorn:mozilla_compat.js');");
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.util.StringUtil;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public final class ExtractorHelper {
 
@@ -32,7 +33,7 @@ public final class ExtractorHelper {
 
     static Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs,
                                                              ClassLoader classLoader) {
-        Map<String, ValueExtractor> extractors = new HashMap<String, ValueExtractor>();
+        Map<String, ValueExtractor> extractors = createHashMap(mapAttributeConfigs.size());
         for (MapAttributeConfig config : mapAttributeConfigs) {
             if (extractors.containsKey(config.getName())) {
                 throw new IllegalArgumentException("Could not add " + config

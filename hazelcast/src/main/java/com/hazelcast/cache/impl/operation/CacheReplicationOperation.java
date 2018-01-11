@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Replication operation is the data migration operation of {@link com.hazelcast.cache.impl.CacheRecordStore}.
@@ -175,7 +177,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         for (int i = 0; i < count; i++) {
             int subCount = in.readInt();
             String name = in.readUTF();
-            Map<Data, CacheRecord> m = new HashMap<Data, CacheRecord>(subCount);
+            Map<Data, CacheRecord> m = createHashMap(subCount);
             data.put(name, m);
             // subCount + 1 because of the DefaultData written as the last entry
             // which adds another Data entry at the end of the stream!

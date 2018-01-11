@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
@@ -43,10 +44,13 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -66,6 +70,7 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -98,7 +103,6 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into
  * a live Hazelcast cluster.
- *
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClientDynamicClusterConfig extends Config {
@@ -317,6 +321,33 @@ public class ClientDynamicClusterConfig extends Config {
         return this;
     }
 
+    //
+    // TODO -> Uncomment when client-side ready
+    //
+//    @Override
+//    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
+//        ClientMessage request = DynamicConfigAddAtomicReferenceCodec.encodeRequest(
+//                atomicReferenceConfig.getName(), atomicReferenceConfig.getQuorumName());
+//        invoke(request);
+//        return this;
+//    }
+//
+//    @Override
+//    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
+//        ClientMessage request = DynamicConfigAddAtomicLongCodec.encodeRequest(
+//                atomicLongConfig.getName(), atomicLongConfig.getQuorumName());
+//        invoke(request);
+//        return this;
+//    }
+//
+//    @Override
+//    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
+//        ClientMessage request = DynamicConfigAddCountDownLatchConfigCodec.encodeRequest(
+//                countDownLatchConfig.getName(), countDownLatchConfig.getQuorumName());
+//        invoke(request);
+//        return this;
+//    }
+
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
         return super.addWanReplicationConfig(wanReplicationConfig);
@@ -347,6 +378,14 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddEventJournalConfigCodec.encodeRequest(eventJournalConfig.getMapName(),
                 eventJournalConfig.getCacheName(), eventJournalConfig.isEnabled(), eventJournalConfig.getCapacity(),
                 eventJournalConfig.getTimeToLiveSeconds());
+        invoke(request);
+        return this;
+    }
+
+    @Override
+    public Config addReliableIdGeneratorConfig(ReliableIdGeneratorConfig reliableIdGeneratorConfig) {
+        ClientMessage request = DynamicConfigAddReliableIdGeneratorConfigCodec.encodeRequest(reliableIdGeneratorConfig.getName(),
+                reliableIdGeneratorConfig.getPrefetchCount(), reliableIdGeneratorConfig.getPrefetchValidityMillis());
         invoke(request);
         return this;
     }
@@ -753,6 +792,66 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public AtomicLongConfig findAtomicLongConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public AtomicLongConfig getAtomicLongConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public CountDownLatchConfig findCountDownLatchConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public CountDownLatchConfig getCountDownLatchConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public WanReplicationConfig getWanReplicationConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
@@ -954,6 +1053,26 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setUserCodeDeploymentConfig(UserCodeDeploymentConfig userCodeDeploymentConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setReliableIdGeneratorConfigs(Map<String, ReliableIdGeneratorConfig> map) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

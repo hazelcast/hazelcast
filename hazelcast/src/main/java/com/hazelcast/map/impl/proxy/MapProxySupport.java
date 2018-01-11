@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,6 +108,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
@@ -758,7 +759,7 @@ abstract class MapProxySupport<K, V>
         int partitions = partitionService.getPartitionCount();
         // TODO: is there better way to estimate the size?
         int capacity = min(partitions, keys.size());
-        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        Set<Integer> partitionIds = createHashSet(capacity);
 
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {

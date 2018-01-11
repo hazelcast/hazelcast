@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
 
@@ -151,10 +152,12 @@ class MockJoiner extends AbstractJoiner {
         Collection<Address> possibleAddresses = new ArrayList<Address>(registry.getJoinAddresses());
         possibleAddresses.remove(node.getThisAddress());
         possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
+        SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
         for (Address address : possibleAddresses) {
-            SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
-            if (shouldMerge(response)) {
-                startClusterMerge(address);
+            SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(address, request);
+            if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
+                startClusterMerge(address, request.getMemberListVersion());
+                return;
             }
         }
     }

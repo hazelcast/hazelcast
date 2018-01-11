@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,8 +104,8 @@ import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptim
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 
 /**
@@ -514,7 +514,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object toObject(Object data) {
-        return nodeEngine.toObject(data);
+        return serializationService.toObject(data);
     }
 
     @Override
@@ -524,7 +524,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Data toData(Object object) {
-        return nodeEngine.toData(object);
+        return serializationService.toData(object);
     }
 
     @Override
@@ -762,11 +762,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void onClusterStateChange(ClusterState newState) {
-        if (newState == ClusterState.PASSIVE) {
-            expirationManager.stop();
-        } else {
-            expirationManager.start();
-        }
+        expirationManager.onClusterStateChange(newState);
     }
 
     @Override
@@ -788,15 +784,6 @@ class MapServiceContextImpl implements MapServiceContext {
     public String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
         EventRegistration registration = getNodeEngine().getEventService().
                 registerListener(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
-        return registration.getId();
-    }
-
-    @Override
-    public String addListenerAdapter(String cacheName, ListenerAdapter listenerAdaptor) {
-        EventService eventService = getNodeEngine().getEventService();
-        EventRegistration registration
-                = eventService.registerListener(MapService.SERVICE_NAME,
-                cacheName, TrueEventFilter.INSTANCE, listenerAdaptor);
         return registration.getId();
     }
 

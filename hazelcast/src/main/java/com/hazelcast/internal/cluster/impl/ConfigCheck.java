@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations
@@ -232,7 +233,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             }
         }
         int propSize = in.readInt();
-        properties = new HashMap<String, String>(propSize);
+        properties = createHashMap(propSize);
         for (int k = 0; k < propSize; k++) {
             String key = in.readUTF();
             String value = in.readUTF();

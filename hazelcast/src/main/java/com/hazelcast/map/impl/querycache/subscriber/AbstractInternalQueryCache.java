@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,14 +53,14 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final String cacheId;
     protected final String cacheName;
     protected final IMap delegate;
+    protected final Indexes indexes;
     protected final QueryCacheContext context;
     protected final QueryCacheRecordStore recordStore;
-    protected final Indexes indexes;
     protected final InternalSerializationService serializationService;
     protected final PartitioningStrategy partitioningStrategy;
 
     /**
-     * Id of registered listener on publisher side.
+     * ID of registered listener on publisher side.
      */
     protected String publisherListenerId;
 

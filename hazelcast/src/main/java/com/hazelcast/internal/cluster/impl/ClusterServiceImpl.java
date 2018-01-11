@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
@@ -69,7 +68,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -78,6 +76,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -241,12 +241,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public MembersView handleMastershipClaim(Address candidateAddress, String candidateUuid) {
-        // verify candidateAddress is not me DONE
-        // verify I am not master DONE
-        // verify candidateAddress is a valid member with its uuid
-        // verify I suspect everyone before the candidateAddress
-        // verify candidateAddress is not suspected.
-
         checkNotNull(candidateAddress);
         checkNotNull(candidateUuid);
         checkFalse(getThisAddress().equals(candidateAddress), "cannot accept my own mastership claim!");
@@ -277,8 +271,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
 
             setMasterAddress(masterCandidate.getAddress());
-            Set<MemberImpl> members = memberMap.tailMemberSet(masterCandidate, true);
-            MembersView response = MembersView.createNew(memberMap.getVersion(), members);
+
+            MembersView response = memberMap.toTailMembersView(masterCandidate, true);
 
             logger.warning("Mastership of " + candidateAddress + " is accepted. Response: " + response);
 
@@ -322,15 +316,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void resetLocalMemberUuid() {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
-        assert !isJoined() : "Cannot reset local member uuid when joined.";
+        assert !isJoined() : "Cannot reset local member UUID when joined.";
 
         Address address = getThisAddress();
         String newUuid = UuidUtil.createMemberUuid(address);
-        logger.warning("Resetting local member uuid. Previous: " + localMember.getUuid() + ", new: " + newUuid);
+        logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
         boolean liteMember = localMember.isLiteMember();
         Map<String, Object> memberAttributes = localMember.getAttributes();
         localMember = new MemberImpl(address, localMember.getVersion(), true, newUuid, memberAttributes,
-                liteMember, node.hazelcastInstance);
+                liteMember, localMember.getMemberListJoinVersion(), node.hazelcastInstance);
         node.loggingService.setThisMember(localMember);
     }
 
@@ -384,7 +378,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
             membershipManager.updateMembers(membersView);
             clusterHeartbeatManager.heartbeat();
-
             setJoined(true);
 
             return true;
@@ -497,26 +490,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return true;
     }
 
-    private static Set<MemberInfo> createMemberInfoSet(Collection<MemberImpl> members) {
-        Set<MemberInfo> memberInfos = new HashSet<MemberInfo>();
-        for (MemberImpl member : members) {
-            memberInfos.add(new MemberInfo(member));
-        }
-        return memberInfos;
-    }
-
     public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, Object value) {
         lock.lock();
         try {
-            for (MemberImpl member : membershipManager.getMembers()) {
-                if (member.getUuid().equals(uuid)) {
-                    if (!member.equals(getLocalMember())) {
-                        member.updateAttribute(operationType, key, value);
-                    }
-                    sendMemberAttributeEvent(member, operationType, key, value);
-                    break;
-                }
+            MemberImpl member = membershipManager.getMember(uuid);
+            if (!member.equals(getLocalMember())) {
+                member.updateAttribute(operationType, key, value);
             }
+            sendMemberAttributeEvent(member, operationType, key, value);
         } finally {
             lock.unlock();
         }
@@ -899,6 +880,29 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 options, partitionStateVersion, false);
     }
 
+    @Override
+    public int getMemberListJoinVersion() {
+        lock.lock();
+        try {
+            if (!isJoined()) {
+                throw new IllegalStateException("Member list join version is not available when not joined");
+            } else if (getClusterVersion().isLessThan(V3_10)) {
+                String msg = "Member list join version is not available with a cluster version less than 3.10";
+                throw new UnsupportedOperationException(msg);
+            }
+
+            int joinVersion = localMember.getMemberListJoinVersion();
+            if (joinVersion == NA_MEMBER_LIST_JOIN_VERSION) {
+                // This can happen when the cluster was just upgraded to 3.10, but this member did not yet learn
+                // its node ID by an async call from master.
+                throw new IllegalStateException("Member list join version is not yet available");
+            }
+            return joinVersion;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     void addMembersRemovedInNotJoinableState(Collection<MemberImpl> members) {
         membershipManager.addMembersRemovedInNotJoinableState(members);
     }
@@ -1007,12 +1011,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 throw new IllegalStateException("Cannot promote to data member! Previous master was: " + master.getAddress()
                     + ", Current master is: " + getMasterAddress());
             }
-
-            localMember = new MemberImpl(member.getAddress(), member.getVersion(), true, member.getUuid(),
-                    member.getAttributes(), false, node.hazelcastInstance);
         } finally {
             lock.unlock();
         }
+    }
+
+    MemberImpl promoteAndGetLocalMember() {
+        MemberImpl member = getLocalMember();
+        assert member.isLiteMember() : "Local member is not lite member!";
+        assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
+
+        localMember = new MemberImpl(member.getAddress(), member.getVersion(), true, member.getUuid(),
+                member.getAttributes(), false, member.getMemberListJoinVersion(), node.hazelcastInstance);
+        node.loggingService.setThisMember(localMember);
+        return localMember;
     }
 
     @Override

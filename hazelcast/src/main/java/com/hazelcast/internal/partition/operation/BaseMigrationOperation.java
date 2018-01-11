@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,12 +116,12 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (localMember.getAddress().equals(migrationInfo.getSource())) {
             if (!localMember.getUuid().equals(migrationInfo.getSourceUuid())) {
                 throw new IllegalStateException(localMember
-                        + " is the migration source but has a different uuid! Migration: " + migrationInfo);
+                        + " is the migration source but has a different UUID! Migration: " + migrationInfo);
             }
         } else if (localMember.getAddress().equals(migrationInfo.getDestination())) {
             if (!localMember.getUuid().equals(migrationInfo.getDestinationUuid())) {
                 throw new IllegalStateException(localMember
-                        + " is the migration destination but has a different uuid! Migration: " + migrationInfo);
+                        + " is the migration destination but has a different UUID! Migration: " + migrationInfo);
             }
         }
     }

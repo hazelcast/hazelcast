@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import com.hazelcast.spi.OperationService;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
@@ -48,6 +47,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Write behind map data store implementation.
@@ -224,7 +224,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
         }
-        Map<Object, Object> map = new HashMap<Object, Object>();
+        Map<Object, Object> map = createHashMap(keys.size());
         Iterator iterator = keys.iterator();
         while (iterator.hasNext()) {
             Object key = iterator.next();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -44,7 +45,8 @@ import java.util.Properties;
 import java.util.Set;
 
 public abstract class CollectionService implements ManagedService, RemoteService,
-        EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
+        EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService,
+        QuorumAwareService {
 
     protected final NodeEngine nodeEngine;
 

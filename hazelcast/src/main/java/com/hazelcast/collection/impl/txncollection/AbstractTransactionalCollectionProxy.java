@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -109,7 +110,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
 
         Data value = getNodeEngine().toData(e);
         Iterator<CollectionItem> iterator = getCollection().iterator();
-        long reservedItemId = -1;
+        long reservedItemId = INVALID_ITEM_ID;
         while (iterator.hasNext()) {
             CollectionItem item = iterator.next();
             if (value.equals(item.getValue())) {

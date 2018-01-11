@@ -23,14 +23,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
+import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.createInstanceName;
 
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 

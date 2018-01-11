@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -168,7 +169,9 @@ public class SmartClientListenerService extends AbstractClientListenerService
             return false;
         }
         boolean successful = true;
-        for (ClientEventRegistration registration : registrationMap.values()) {
+
+        for (Iterator<ClientEventRegistration> iterator = registrationMap.values().iterator(); iterator.hasNext(); ) {
+            ClientEventRegistration registration = iterator.next();
             Connection subscriber = registration.getSubscriber();
             try {
                 ListenerMessageCodec listenerMessageCodec = registration.getCodec();
@@ -176,7 +179,7 @@ public class SmartClientListenerService extends AbstractClientListenerService
                 ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
                 new ClientInvocation(client, request, null, subscriber).invoke().get();
                 removeEventHandler(registration.getCallId());
-                registrationMap.remove(subscriber);
+                iterator.remove();
             } catch (Exception e) {
                 if (subscriber.isAlive()) {
                     successful = false;

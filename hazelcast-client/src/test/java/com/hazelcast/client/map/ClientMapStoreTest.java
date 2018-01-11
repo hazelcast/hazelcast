@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -365,12 +365,12 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue3023_testWithSubStringMapNames() throws Exception {
+    public void testIssue3023_testWithSubStringMapNames() {
         String mapNameWithStore = "MapStore*";
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
         String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
-                "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.9.xsd\"\n" +
+                "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd\"\n" +
                 "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
                 "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                 "\n" +
@@ -414,7 +414,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, store.store.get(1));
             }
         });

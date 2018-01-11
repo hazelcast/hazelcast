@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -36,6 +35,8 @@ import java.util.Set;
 
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
 
@@ -172,7 +173,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
     void addAwait(String conditionId, String caller, long threadId) {
         if (waiters == null) {
-            waiters = new HashMap<String, WaitersInfo>(2);
+            waiters = createHashMap(2);
         }
 
         WaitersInfo condition = waiters.get(conditionId);
@@ -455,7 +456,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
         int len = in.readInt();
         if (len > 0) {
-            waiters = new HashMap<String, WaitersInfo>(len);
+            waiters = createHashMap(len);
             for (int i = 0; i < len; i++) {
                 WaitersInfo condition = new WaitersInfo();
                 condition.readData(in);
@@ -465,7 +466,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
         len = in.readInt();
         if (len > 0) {
-            conditionKeys = new HashSet<ConditionKey>(len);
+            conditionKeys = createHashSet(len);
             for (int i = 0; i < len; i++) {
                 conditionKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF(), in.readUTF(), in.readLong()));
             }

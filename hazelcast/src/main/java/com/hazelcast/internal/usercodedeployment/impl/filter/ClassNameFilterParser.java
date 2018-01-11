@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.internal.util.filter.Filter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public final class ClassNameFilterParser {
 
@@ -55,13 +57,14 @@ public final class ClassNameFilterParser {
     }
 
     private static Set<String> parsePrefixes(String prefixes) {
-        Set<String> blacklistSet = new HashSet<String>();
         if (prefixes == null) {
-            return blacklistSet;
+            return new HashSet<String>();
         }
 
         prefixes = prefixes.trim();
         String[] prefixArray = prefixes.split(",");
+
+        Set<String> blacklistSet = createHashSet(prefixArray.length + BUILTIN_BLACKLIST_PREFIXES.length);
         for (String prefix : prefixArray) {
             blacklistSet.add(prefix.trim());
         }

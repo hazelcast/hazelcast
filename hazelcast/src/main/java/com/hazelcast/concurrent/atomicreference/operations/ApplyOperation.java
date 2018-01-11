@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,18 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class ApplyOperation extends AbstractAtomicReferenceOperation {
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.APPLY;
+
+public class ApplyOperation extends AbstractAtomicReferenceOperation implements MutatingOperation {
 
     protected Data function;
     protected Data returnValue;
@@ -43,9 +45,9 @@ public class ApplyOperation extends AbstractAtomicReferenceOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
+        AtomicReferenceContainer container = getReferenceContainer();
 
-        Object input = nodeEngine.toObject(atomicReferenceContainer.get());
+        Object input = nodeEngine.toObject(container.get());
         //noinspection unchecked
         Object output = f.apply(input);
         returnValue = nodeEngine.toData(output);
@@ -58,7 +60,7 @@ public class ApplyOperation extends AbstractAtomicReferenceOperation {
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.APPLY;
+        return APPLY;
     }
 
     @Override

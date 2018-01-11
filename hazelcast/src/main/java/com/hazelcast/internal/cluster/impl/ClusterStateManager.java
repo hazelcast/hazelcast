@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -312,6 +312,7 @@ public class ClusterStateManager {
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility
                 doSetClusterVersion((Version) stateChange.getNewState());
+                node.getClusterService().getMembershipManager().scheduleMemberListVersionIncrement();
             } else {
                 throw new IllegalArgumentException("Illegal ClusterStateChange of type " + stateChange.getType() + ".");
             }
@@ -435,7 +436,7 @@ public class ClusterStateManager {
         }
     }
 
-    String stateToString() {
+    public String stateToString() {
         return "ClusterState{state=" + state + ", lock=" + stateLockRef.get() + '}';
     }
 

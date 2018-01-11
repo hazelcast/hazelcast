@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import com.hazelcast.util.ThreadUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -50,6 +49,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Holder for raw IMap key-value pairs and their metadata.
@@ -85,8 +86,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     }
 
     void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
-        data = new HashMap<String, Set<RecordReplicationInfo>>(namespaces.size());
-        loaded = new HashMap<String, Boolean>(namespaces.size());
+        data = createHashMap(namespaces.size());
+        loaded = createHashMap(namespaces.size());
         mapIndexInfos = new ArrayList<MapIndexInfo>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
@@ -106,7 +107,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
             loaded.put(mapName, recordStore.isLoaded());
             // now prepare data to migrate records
-            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
+            Set<RecordReplicationInfo> recordSet = createHashSet(recordStore.size());
             final Iterator<Record> iterator = recordStore.iterator();
             while (iterator.hasNext()) {
                 Record record = iterator.next();
@@ -240,11 +241,11 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        data = new HashMap<String, Set<RecordReplicationInfo>>(size);
+        data = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int mapSize = in.readInt();
-            Set<RecordReplicationInfo> recordReplicationInfos = new HashSet<RecordReplicationInfo>(mapSize);
+            Set<RecordReplicationInfo> recordReplicationInfos = createHashSet(mapSize);
             for (int j = 0; j < mapSize; j++) {
                 RecordReplicationInfo recordReplicationInfo = in.readObject();
                 recordReplicationInfos.add(recordReplicationInfo);
@@ -253,7 +254,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
 
         int loadedSize = in.readInt();
-        loaded = new HashMap<String, Boolean>(loadedSize);
+        loaded = createHashMap(loadedSize);
         for (int i = 0; i < loadedSize; i++) {
             loaded.put(in.readUTF(), in.readBoolean());
         }

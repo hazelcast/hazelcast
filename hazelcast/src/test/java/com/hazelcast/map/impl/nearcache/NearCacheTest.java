@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -891,7 +891,7 @@ public class NearCacheTest extends NearCacheTestSupport {
             nodeMap.put(i, i);
         }
 
-        // 3. add client with near cache
+        // 3. add client with Near Cache
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         nearCacheConfig.setCacheLocalEntries(true);
@@ -902,13 +902,13 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         HazelcastInstance client = factory.newHazelcastInstance(nearCachedConfig);
 
-        // 4. populate near cache
+        // 4. populate Near Cache
         final IMap<Integer, Integer> nearCachedMap = client.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
             assertNotNull(nearCachedMap.get(i));
         }
 
-        // 5. assert number of entries in client near cache
+        // 5. assert number of entries in client Near Cache
         assertEquals(mapSize, ((NearCachedMapProxyImpl) nearCachedMap).getNearCache().size());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
 import java.util.EventListener;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -278,7 +278,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     void removeAllInternal(Set<? extends K> keys) {
         Set<Data> keysData = null;
         if (keys != null) {
-            keysData = new HashSet<Data>();
+            keysData = createHashSet(keys.size());
             for (K key : keys) {
                 validateNotNull(key);
                 keysData.add(serializationService.toData(key));

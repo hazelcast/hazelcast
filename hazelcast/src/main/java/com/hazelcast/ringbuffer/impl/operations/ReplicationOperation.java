@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -42,6 +41,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned {
 
@@ -133,7 +133,7 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<ObjectNamespace, RingbufferContainer>(mapSize);
+        migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             final ObjectNamespace namespace = isGreaterOrEqualV39(in)
                     ? (ObjectNamespace) in.readObject()

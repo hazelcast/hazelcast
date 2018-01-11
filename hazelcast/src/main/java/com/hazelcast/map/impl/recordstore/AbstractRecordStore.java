@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -31,6 +30,8 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.monitor.LocalRecordStoreStats;
+import com.hazelcast.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -40,10 +41,7 @@ import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 
 
 /**
@@ -65,10 +63,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapEventJournal eventJournal;
 
     protected Storage<Data, Record> storage;
-
-    private long hits;
-    private long lastAccess;
-    private long lastUpdate;
+    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();
@@ -86,22 +81,22 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
+    public LocalRecordStoreStats getLocalRecordStoreStats() {
+        return stats;
+    }
+
+    @Override
     public void init() {
         this.storage = createStorage(recordFactory, inMemoryFormat);
     }
 
     @Override
     public Record createRecord(Object value, long ttlMillis, long now) {
-        MapConfig mapConfig = mapContainer.getMapConfig();
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
-        final long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
-        final long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
-        record.setTtl(ttl);
 
-        final long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
-        setExpirationTime(record, maxIdleMillis);
+        setTTLAndUpdateExpiryTime(ttlMillis, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(true, now);
         return record;
     }
@@ -145,7 +140,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected void saveIndex(Record record, Object oldValue) {
         Data dataKey = record.getKey();
-        final Indexes indexes = mapContainer.getIndexes(partitionId);
+        Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
@@ -176,7 +171,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected LockStore createLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService == null) {
             return null;
         }
@@ -209,49 +204,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return storage;
     }
 
-    @Override
-    public long getHits() {
-        return hits;
-    }
-
-    @Override
-    public long getLastAccessTime() {
-        return lastAccess;
-    }
-
-    @Override
-    public long getLastUpdateTime() {
-        return lastUpdate;
-    }
-
-    @Override
-    public void increaseHits() {
-        this.hits++;
-    }
-
-    @Override
-    public void increaseHits(long hits) {
-        this.hits += hits;
-    }
-
-    @Override
-    public void decreaseHits(long hits) {
-        this.hits -= hits;
-    }
-
-    @Override
-    public void setLastAccessTime(long time) {
-        this.lastAccess = Math.max(this.lastAccess, time);
-    }
-
-    @Override
-    public void setLastUpdateTime(long time) {
-        this.lastUpdate = Math.max(this.lastUpdate, time);
-    }
-
-
     protected void updateStatsOnPut(boolean newRecord, long now) {
-        setLastUpdateTime(now);
+        stats.setLastUpdateTime(now);
 
         if (!newRecord) {
             updateStatsOnGet(now);
@@ -259,21 +213,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     protected void updateStatsOnPut(long hits) {
-        increaseHits(hits);
+        stats.increaseHits(hits);
     }
 
     protected void updateStatsOnGet(long now) {
-        setLastAccessTime(now);
-        increaseHits();
-    }
-
-    protected void updateStatsOnRemove(long hits) {
-        decreaseHits(hits);
-    }
-
-    protected void resetStats() {
-        this.hits = 0;
-        this.lastAccess = 0;
-        this.lastUpdate = 0;
+        stats.setLastAccessTime(now);
+        stats.increaseHits();
     }
 }

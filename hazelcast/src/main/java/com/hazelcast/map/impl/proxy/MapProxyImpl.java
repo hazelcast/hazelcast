@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,6 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -100,6 +99,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -677,7 +677,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     .build();
             result = queryEngine.execute(query, Target.ALL_NODES);
         }
-        return transformToSet(serializationService, result, predicate, iterationType, uniqueResult);
+        return transformToSet(serializationService, result, predicate, iterationType, uniqueResult, false);
     }
 
     @Override
@@ -698,7 +698,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 .iterationType(IterationType.KEY)
                 .build();
         QueryResult result = queryEngine.execute(query, Target.LOCAL_NODE);
-        return transformToSet(serializationService, result, predicate, IterationType.KEY, false);
+        return transformToSet(serializationService, result, predicate, IterationType.KEY, false, false);
     }
 
     @Override
@@ -718,7 +718,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         if (keys.isEmpty()) {
             return emptyMap();
         }
-        Set<Data> dataKeys = new HashSet<Data>(keys.size());
+        Set<Data> dataKeys = createHashSet(keys.size());
         return executeOnKeysInternal(keys, dataKeys, entryProcessor);
     }
 
@@ -819,7 +819,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 .projection(projection)
                 .build();
         QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
-        return transformToSet(serializationService, result, TruePredicate.INSTANCE, IterationType.VALUE, false);
+        return transformToSet(serializationService, result, TruePredicate.INSTANCE, IterationType.VALUE, false, false);
     }
 
     @Override
@@ -840,7 +840,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 .projection(projection)
                 .build();
         QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
-        return transformToSet(serializationService, result, predicate, IterationType.VALUE, false);
+        return transformToSet(serializationService, result, predicate, IterationType.VALUE, false, false);
     }
 
     @Override
@@ -913,8 +913,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * mutated and the cluster is stable (there are no migrations or membership changes).
      * In other cases, the iterator may not return some entries or may return an entry twice.
      *
-     * @param fetchSize   the size of the batches which will be sent when iterating the data
-     * @param partitionId the partition ID which is being iterated
+     * @param fetchSize      the size of the batches which will be sent when iterating the data
+     * @param partitionId    the partition ID which is being iterated
      * @param prefetchValues whether to send values along with keys (if {@code true}) or
      *                       to fetch them lazily when iterating (if {@code false})
      * @return the iterator for the projected entries

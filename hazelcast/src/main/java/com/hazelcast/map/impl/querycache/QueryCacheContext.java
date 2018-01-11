@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 
@@ -122,6 +123,11 @@ public interface QueryCacheContext {
      * @return partition ID
      */
     int getPartitionId(Object object);
+
+    /**
+     * @return mutex factory for this context. This is mainly intended to use during query-cache create and destroy.
+     */
+    ContextMutexFactory getLifecycleMutexFactory();
 
     /**
      * Destroys everything in this context.

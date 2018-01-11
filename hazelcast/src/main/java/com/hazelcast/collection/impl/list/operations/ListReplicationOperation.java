@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ListReplicationOperation extends CollectionReplicationOperation {
 
@@ -43,7 +44,7 @@ public class ListReplicationOperation extends CollectionReplicationOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, CollectionContainer>(mapSize);
+        migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             ListContainer container = new ListContainer();

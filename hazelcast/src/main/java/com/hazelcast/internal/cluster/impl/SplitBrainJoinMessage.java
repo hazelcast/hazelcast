@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,21 @@ import java.util.Collection;
  * while searching for other clusters for split brain recovery.
  */
 public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
+
+    public enum SplitBrainMergeCheckResult {
+        /**
+         * Denotes that the two endpoints of the SplitBrainJoinMessage cannot merge to each other
+         */
+        CANNOT_MERGE,
+        /**
+         * Denotes that the local node should merge to the other endpoint of the SplitBrainJoinMessage
+         */
+        LOCAL_NODE_SHOULD_MERGE,
+        /**
+         * Denotes that the remote node that sent the SplitBrainJoinMessage should merge
+         */
+        REMOTE_NODE_SHOULD_MERGE
+    }
 
     private Version clusterVersion;
 

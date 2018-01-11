@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ import java.util.List;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_MANY_OPERATION;
 
-public class ReadManyOperation<O> extends AbstractRingBufferOperation implements BlockingOperation {
+public class ReadManyOperation<O> extends AbstractRingBufferOperation implements BlockingOperation, ReadonlyOperation {
     transient long sequence;
 
     private int minSize;

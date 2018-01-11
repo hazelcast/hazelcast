@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
@@ -36,14 +35,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -59,7 +56,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
 
     @BeforeClass
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         Hazelcast.shutdownAll();
     }
 
@@ -77,93 +74,91 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTwoNodes_defaultPartitions() throws InterruptedException {
+    public void testTwoNodes_defaultPartitions() {
         testPartitionDistribution(271, 2, 0);
     }
 
     @Test
-    public void testTwoNodes_withTwoLiteNodes_defaultPartitions() throws InterruptedException {
+    public void testTwoNodes_withTwoLiteNodes_defaultPartitions() {
         testPartitionDistribution(271, 2, 2);
     }
 
     @Test
-    public void testTwoNodes_1111Partitions() throws InterruptedException {
+    public void testTwoNodes_1111Partitions() {
         testPartitionDistribution(1111, 2, 0);
     }
 
     @Test
-    public void testTwoNodes_withTwoLiteNodes_1111Partitions() throws InterruptedException {
+    public void testTwoNodes_withTwoLiteNodes_1111Partitions() {
         testPartitionDistribution(1111, 2, 2);
     }
 
     @Test
-    public void testTwoNodes_defaultPartitions_HostAware() throws InterruptedException {
+    public void testTwoNodes_defaultPartitions_HostAware() {
         testPartitionDistribution(271, 2, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
 
     @Test
-    public void testTwoNodes_withTwoLiteNodes_defaultPartitions_HostAware() throws InterruptedException {
+    public void testTwoNodes_withTwoLiteNodes_defaultPartitions_HostAware() {
         testPartitionDistribution(271, 2, 2, hostAwareConfig, hostAwareLiteMemberConfig);
     }
 
     @Test
-    public void testThreeNodes_defaultPartitions() throws InterruptedException {
+    public void testThreeNodes_defaultPartitions() {
         testPartitionDistribution(271, 3, 0);
     }
 
     @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testThreeNodes_defaultPartitions_HostAware() throws InterruptedException {
+    public void testThreeNodes_defaultPartitions_HostAware() {
         testPartitionDistribution(271, 3, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
 
     @Test
-    public void testFourNodes_defaultPartitions_HostAware() throws InterruptedException {
+    public void testFourNodes_defaultPartitions_HostAware() {
         testPartitionDistribution(271, 4, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
 
     @Test
-    public void testFiveNodes_defaultPartitions() throws InterruptedException {
+    public void testFiveNodes_defaultPartitions() {
         testPartitionDistribution(271, 5, 0);
     }
 
     @Test
-    public void testFiveNodes_1111Partitions() throws InterruptedException {
+    public void testFiveNodes_1111Partitions() {
         testPartitionDistribution(1111, 5, 0);
     }
 
     @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testFiveNodes_defaultPartitions_HostAware() throws InterruptedException {
+    public void testFiveNodes_defaultPartitions_HostAware() {
         testPartitionDistribution(271, 5, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
 
     @Test
-    public void testTenNodes_defaultPartitions() throws InterruptedException {
+    public void testTenNodes_defaultPartitions() {
         testPartitionDistribution(271, 10, 0);
     }
 
     @Test
-    public void testTenNodes_1111Partitions() throws InterruptedException {
+    public void testTenNodes_1111Partitions() {
         testPartitionDistribution(1111, 10, 0);
     }
 
     @Test
-    public void testTenNodes_defaultPartitions_HostAware() throws InterruptedException {
+    public void testTenNodes_defaultPartitions_HostAware() {
         testPartitionDistribution(271, 10, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
 
     @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testFifteenNodes_defaultPartitions_HostAware() throws InterruptedException {
+    public void testFifteenNodes_defaultPartitions_HostAware() {
         testPartitionDistribution(271, 15, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
 
-    private void testPartitionDistribution(int partitionCount, int dataNodeCount, int liteNodeCount) throws InterruptedException {
+    private void testPartitionDistribution(int partitionCount, int dataNodeCount, int liteNodeCount) {
         testPartitionDistribution(partitionCount, dataNodeCount, liteNodeCount, new Config(), new Config().setLiteMember(true));
     }
 
-    private void testPartitionDistribution(int partitionCount, int dataNodeCount, int liteNodeCount, Config config, Config liteConfig) throws InterruptedException {
+    private void testPartitionDistribution(int partitionCount, int dataNodeCount, int liteNodeCount, Config config,
+                                           Config liteConfig) {
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         int nodeCount = dataNodeCount + liteNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
@@ -180,16 +175,18 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
             instances[i] = factory.newHazelcastInstance(liteConfig);
         }
 
-        ExecutorService ex = Executors.newCachedThreadPool();
+        Thread[] threads = new Thread[dataNodeCount];
         try {
             for (int i = 0; i < dataNodeCount; i++) {
                 final int instanceIndex = i;
-                new Thread(new Runnable() {
+                threads[i] = new Thread(new Runnable() {
+                    @Override
                     public void run() {
                         HazelcastInstance instance = instances[instanceIndex];
                         counts.offer(getLocalPartitionsCount(instance));
                     }
-                }).start();
+                });
+                threads[i].start();
             }
 
             ILogger logger = instances[0].getLoggingService().getLogger(getClass());
@@ -214,16 +211,18 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
             assertEqualsStringFormat("Expected sum of local partitions to be %d, but was %d", partitionCount, totalPartitions);
 
             if (firstFailureMessage != null) {
-                fail(format("%s, partition count: %d, nodes: %d, average: %d",
-                        firstFailureMessage, partitionCount, dataNodeCount, average));
+                fail(format("%s, partition count: %d, nodes: %d, average: %d", firstFailureMessage, partitionCount, dataNodeCount,
+                        average));
             }
 
             for (int i = dataNodeCount; i < nodeCount; i++) {
                 assertEquals(0, getLocalPartitionsCount(instances[i]));
             }
-
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw rethrow(e);
         } finally {
-            ex.shutdownNow();
+            assertJoinable(threads);
         }
     }
 

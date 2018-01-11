@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,13 +35,14 @@ import com.hazelcast.util.FutureUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class PartitionServiceProxy implements PartitionService {
 
@@ -64,7 +65,7 @@ public class PartitionServiceProxy implements PartitionService {
         this.partitionService = partitionService;
 
         int partitionCount = partitionService.getPartitionCount();
-        Map<Integer, Partition> map = new HashMap<Integer, Partition>(partitionCount);
+        Map<Integer, Partition> map = createHashMap(partitionCount);
         Set<Partition> set = new TreeSet<Partition>();
         for (int i = 0; i < partitionCount; i++) {
             Partition partition = new PartitionProxy(i);

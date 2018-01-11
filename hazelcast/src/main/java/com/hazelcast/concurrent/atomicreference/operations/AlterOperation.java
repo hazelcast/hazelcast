@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.ALTER;
 
 public class AlterOperation extends AbstractAlterOperation {
 
@@ -35,9 +36,9 @@ public class AlterOperation extends AbstractAlterOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        AtomicReferenceContainer reference = getReferenceContainer();
+        AtomicReferenceContainer container = getReferenceContainer();
 
-        Data originalData = reference.get();
+        Data originalData = container.get();
         Object input = nodeEngine.toObject(originalData);
         //noinspection unchecked
         Object output = f.apply(input);
@@ -45,13 +46,13 @@ public class AlterOperation extends AbstractAlterOperation {
         shouldBackup = !isEquals(originalData, serializedOutput);
         if (shouldBackup) {
             backup = serializedOutput;
-            reference.set(backup);
+            container.set(backup);
         }
     }
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.ALTER;
+        return ALTER;
     }
 }
 

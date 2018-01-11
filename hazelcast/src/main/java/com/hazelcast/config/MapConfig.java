@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -957,7 +957,7 @@ public class MapConfig implements IdentifiedDataSerializable {
 
     @Override
     public final int hashCode() {
-        int result = name.hashCode();
+        int result = (name != null ? name.hashCode() : 0);
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
         result = 31 * result + timeToLiveSeconds;
@@ -973,7 +973,6 @@ public class MapConfig implements IdentifiedDataSerializable {
         result = 31 * result + inMemoryFormat.hashCode();
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + getEntryListenerConfigs().hashCode();
-        result = 31 * result + getPartitioningStrategyConfig().hashCode();
         result = 31 * result + getMapIndexConfigs().hashCode();
         result = 31 * result + getMapAttributeConfigs().hashCode();
         result = 31 * result + getQueryCacheConfigs().hashCode();

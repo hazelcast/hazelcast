@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 /**
  * Inserts the {@link MapEntries} for a single partition to the local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
- * <p/>
+ * <p>
  * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
  */
 public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {

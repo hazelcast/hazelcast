@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,17 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class SetBackupOperation extends AbstractAtomicReferenceOperation implements BackupOperation {
+import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.SET_BACKUP;
+
+public class SetBackupOperation extends AbstractAtomicReferenceOperation implements BackupOperation, MutatingOperation {
 
     private Data newValue;
 
@@ -39,13 +41,13 @@ public class SetBackupOperation extends AbstractAtomicReferenceOperation impleme
 
     @Override
     public void run() throws Exception {
-        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
-        atomicReferenceContainer.set(newValue);
+        AtomicReferenceContainer container = getReferenceContainer();
+        container.set(newValue);
     }
 
     @Override
     public int getId() {
-        return AtomicReferenceDataSerializerHook.SET_BACKUP;
+        return SET_BACKUP;
     }
 
     @Override

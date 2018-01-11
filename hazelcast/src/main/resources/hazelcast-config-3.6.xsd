@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -2642,7 +2642,7 @@
                         entry key.
 
 						4 merge policy implementations for IMap and 2 merge policy implementations for
-						ICache are provided out of the box.
+						ICache are provided out-of-the-box.
 
 						IMap has the following merge policies:
 						com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the

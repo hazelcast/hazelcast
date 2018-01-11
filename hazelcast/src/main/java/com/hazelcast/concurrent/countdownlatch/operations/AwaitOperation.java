@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.AWAIT_OPERATION;
 import static java.lang.Boolean.TRUE;
 
-public class AwaitOperation extends AbstractCountDownLatchOperation implements BlockingOperation {
+public class AwaitOperation extends AbstractCountDownLatchOperation implements BlockingOperation, ReadonlyOperation {
 
     public AwaitOperation() {
     }

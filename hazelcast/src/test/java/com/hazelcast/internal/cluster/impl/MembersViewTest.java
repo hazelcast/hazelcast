@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class MembersViewTest {
         MembersView view =
                 MembersView.cloneAdding(MembersView.createNew(version, Arrays.asList(members)), additionalMembers);
 
-        assertEquals(version + 1, view.getVersion());
+        assertEquals(version + additionalMembers.size(), view.getVersion());
 
         MemberImpl[] newMembers = Arrays.copyOf(members, members.length + additionalMembers.size());
         for (int i = 0; i < additionalMembers.size(); i++) {
