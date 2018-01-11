@@ -23,6 +23,11 @@ import java.util.Collection;
 /**
  * A function that can be used for conclude absence/presence of quorum.
  * This function is triggered when any change happens to member list.
+ *
+ * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+ * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+ * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+ * specified one.
  */
 public interface QuorumFunction {
 

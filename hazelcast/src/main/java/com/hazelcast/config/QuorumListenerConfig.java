@@ -20,6 +20,11 @@ import com.hazelcast.quorum.QuorumListener;
 
 /**
  * Confiquration class for {@link QuorumListener}
+ *
+ * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+ * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+ * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+ * specified one.
  */
 public class QuorumListenerConfig extends ListenerConfig {
 
