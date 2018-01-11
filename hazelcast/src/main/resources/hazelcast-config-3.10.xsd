@@ -2072,6 +2072,24 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        While recovering from split-brain (network partitioning), CardinalityEstimator in the small cluster
+                        merge into the bigger cluster based on the policy set here.
+                        When an estimator merges into the cluster, an estimator with the same name might already exist in the cluster.
+                        The purpose of that estimator might be different for that same name. Which estimator should be kept?
+                        The conflict is resolved by the policy set here.
+                        <p>
+                            <br/>`com.hazelcast.spi.merge.PutIfAbsentMergePolicy` or `PUT_IF_ABSENT`:
+                            The estimator will be added if there is no estimator with the same name.
+                            <br/>'com.hazelcast.cardinality.impl.hyperloglog.HyperLogLogMergePolicy':
+                            The estimator will merge with the existing one, using the algorithmic merge for HyperLogLog
+                            <br/>Default policy is 'com.hazelcast.cardinality.impl.hyperloglog.HyperLogLogMergePolicy'
+                        </p>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>

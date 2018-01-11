@@ -33,13 +33,12 @@ import java.util.TreeMap;
 @SuppressWarnings("checkstyle:magicnumber")
 public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
 
-    private double[] invPowLookup;
-    private byte[] register;
-    private int numOfEmptyRegs;
     private int p;
-    private int m;
-
-    private long pFenseMask;
+    private byte[] register;
+    private transient int numOfEmptyRegs;
+    private transient double[] invPowLookup;
+    private transient int m;
+    private transient long pFenseMask;
 
     public DenseHyperLogLogEncoder() {
     }
@@ -83,6 +82,24 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     public long estimate() {
         final double raw = (1 / computeE()) * alpha() * m * m;
         return applyRangeCorrection(raw);
+    }
+
+    @Override
+    public HyperLogLogEncoder merge(HyperLogLogEncoder encoder) {
+        DenseHyperLogLogEncoder otherDense;
+        if (encoder instanceof SparseHyperLogLogEncoder) {
+            otherDense = (DenseHyperLogLogEncoder) ((SparseHyperLogLogEncoder) encoder).asDense();
+        } else {
+            otherDense = (DenseHyperLogLogEncoder) encoder;
+        }
+
+        for (int i = 0; i < register.length; i++) {
+            if (register[i] < otherDense.register[i]) {
+                register[i] = otherDense.register[i];
+            }
+        }
+
+        return this;
     }
 
     @Override

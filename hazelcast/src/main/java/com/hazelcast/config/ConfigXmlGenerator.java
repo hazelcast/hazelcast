@@ -346,10 +346,13 @@ public class ConfigXmlGenerator {
 
     private static void cardinalityEstimatorXmlGenerator(XmlGenerator gen, Config config) {
         for (CardinalityEstimatorConfig ex : config.getCardinalityEstimatorConfigs().values()) {
+            MergePolicyConfig mergePolicyConfig = ex.getMergePolicyConfig();
+
             gen.open("cardinality-estimator", "name", ex.getName())
                     .node("backup-count", ex.getBackupCount())
                     .node("async-backup-count", ex.getAsyncBackupCount())
                     .node("quorum-ref", ex.getQuorumName())
+                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
         }
     }

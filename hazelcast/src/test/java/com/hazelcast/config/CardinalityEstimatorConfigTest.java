@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -50,6 +51,19 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
         assertEquals(2, config.getBackupCount());
         assertEquals(3, config.getAsyncBackupCount());
         assertEquals(5, config.getTotalBackupCount());
+        assertEquals(CardinalityEstimatorConfig.DEFAULT_MERGE_POLICY_CONFIG, config.getMergePolicyConfig());
+    }
+
+    @Test
+    public void testConstructor_withNameAndBackupCounts_withMergePolicy() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig("TestMe", 1000);
+        config = new CardinalityEstimatorConfig("myEstimator", 2, 3, mergePolicyConfig);
+
+        assertEquals("myEstimator", config.getName());
+        assertEquals(2, config.getBackupCount());
+        assertEquals(3, config.getAsyncBackupCount());
+        assertEquals(5, config.getTotalBackupCount());
+        assertEquals(mergePolicyConfig, config.getMergePolicyConfig());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -134,6 +148,9 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
                       .withPrefabValues(CardinalityEstimatorConfigReadOnly.class,
                               new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("red")),
                               new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
                       .verify();
     }
 }

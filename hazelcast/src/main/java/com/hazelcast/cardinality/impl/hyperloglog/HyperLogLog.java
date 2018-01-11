@@ -53,4 +53,6 @@ public interface HyperLogLog extends IdentifiedDataSerializable {
      * @param hashes the hash values array to aggregate
      */
     void addAll(long[] hashes);
+
+    void merge(HyperLogLog other);
 }

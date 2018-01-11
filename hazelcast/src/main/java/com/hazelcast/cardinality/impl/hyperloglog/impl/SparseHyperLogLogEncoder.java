@@ -85,6 +85,12 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     }
 
     @Override
+    public HyperLogLogEncoder merge(HyperLogLogEncoder encoder) {
+        HyperLogLogEncoder dense = asDense();
+        return dense.merge(encoder);
+    }
+
+    @Override
     public int getFactoryId() {
         return CardinalityEstimatorDataSerializerHook.F_ID;
     }
@@ -127,6 +133,8 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     }
 
     public HyperLogLogEncoder asDense() {
+        mergeAndResetTmp();
+
         byte[] dense = new byte[1 << this.p];
         for (int hash : register.explode()) {
             int index = decodeHashPIndex(hash);

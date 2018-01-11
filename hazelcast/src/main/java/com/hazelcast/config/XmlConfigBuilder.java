@@ -647,9 +647,25 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         handleViaReflection(node, config, scheduledExecutorConfig);
     }
 
-    private void handleCardinalityEstimator(Node node) throws Exception {
+    private void handleCardinalityEstimator(Node node) {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
-        handleViaReflection(node, config, cardinalityEstimatorConfig);
+        cardinalityEstimatorConfig.setName(getTextContent(node.getAttributes().getNamedItem("name")));
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(child);
+                cardinalityEstimatorConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("backup-count".equals(nodeName)) {
+                cardinalityEstimatorConfig.setBackupCount(parseInt(getTextContent(child)));
+            } else if ("async-backup-count".equals(nodeName)) {
+                cardinalityEstimatorConfig.setAsyncBackupCount(parseInt(getTextContent(child)));
+            } else if ("quorum-ref".equals(nodeName)) {
+                cardinalityEstimatorConfig.setQuorumName(getTextContent(child));
+            }
+        }
+
+        config.addCardinalityEstimatorConfig(cardinalityEstimatorConfig);
     }
 
     private void handleFlakeIdGenerator(Node node) {

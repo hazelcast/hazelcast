@@ -617,7 +617,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleCardinalityEstimator(Node node) {
-            createAndFillListedBean(node, CardinalityEstimatorConfig.class, "name", cardinalityEstimatorManagedMap);
+            BeanDefinitionBuilder builder = createAndFillListedBean(node, CardinalityEstimatorConfig.class, "name",
+                    cardinalityEstimatorManagedMap, "mergePolicy");
+
+            for (Node n : childElements(node)) {
+                String name = cleanNodeName(n);
+                if ("merge-policy".equals(name)) {
+                    handleMergePolicyConfig(n, builder);
+                }
+            }
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {

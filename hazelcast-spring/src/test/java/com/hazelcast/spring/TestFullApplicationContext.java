@@ -21,6 +21,7 @@ import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -671,6 +672,16 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("scheduledExec", testExecConfig.getName());
         assertEquals(10, testExecConfig.getPoolSize());
         assertEquals(5, testExecConfig.getDurability());
+    }
+
+    @Test
+    public void testCardinalityEstimatorConfig() {
+        CardinalityEstimatorConfig estimatorConfig = config.getCardinalityEstimatorConfig("estimator");
+        assertNotNull(estimatorConfig);
+        assertEquals("estimator", estimatorConfig.getName());
+        assertEquals(4, estimatorConfig.getBackupCount());
+        assertEquals("PassThroughMergePolicy", estimatorConfig.getMergePolicyConfig().getPolicy());
+        assertEquals(44, estimatorConfig.getMergePolicyConfig().getBatchSize());
     }
 
     @Test

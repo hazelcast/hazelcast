@@ -296,22 +296,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testCardinalityEstimator() {
-        // TODO -> not full config checked
-        CardinalityEstimatorConfig expectedConfig = new CardinalityEstimatorConfig()
-                .setName("testSemaphore")
-                .setQuorumName("quorum");
-
-        Config config = new Config()
-                .addCardinalityEstimatorConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        CardinalityEstimatorConfig actualConfig = xmlConfig.getCardinalityEstimatorConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testMultiMap() {
         // TODO -> not full config checked
         MultiMapConfig expectedConfig = new MultiMapConfig()
@@ -552,6 +536,32 @@ public class ConfigXmlGeneratorTest {
 
     }
 
+    @Test
+    public void testCardinalityEstimator() {
+        Config cfg = new Config();
+        CardinalityEstimatorConfig estimatorConfig =
+                new CardinalityEstimatorConfig()
+                        .setBackupCount(2)
+                        .setAsyncBackupCount(3)
+                        .setName("Existing")
+                        .setQuorumName("quorum")
+                        .setMergePolicyConfig(new MergePolicyConfig("Policy has no name", 14));
+        cfg.addCardinalityEstimatorConfig(estimatorConfig);
+
+        CardinalityEstimatorConfig defaultCardinalityEstConfig = new CardinalityEstimatorConfig();
+        cfg.addCardinalityEstimatorConfig(defaultCardinalityEstConfig);
+
+        CardinalityEstimatorConfig existing = getNewConfigViaXMLGenerator(cfg).getCardinalityEstimatorConfig("Existing");
+        assertEquals(estimatorConfig, existing);
+
+        CardinalityEstimatorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
+                .getCardinalityEstimatorConfig("NotExisting/Default");
+        assertEquals(defaultCardinalityEstConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
+        assertEquals(defaultCardinalityEstConfig.getBackupCount(), fallsbackToDefault.getBackupCount());
+        assertEquals(defaultCardinalityEstConfig.getAsyncBackupCount(), fallsbackToDefault.getAsyncBackupCount());
+        assertEquals(defaultCardinalityEstConfig.getQuorumName(), fallsbackToDefault.getQuorumName());
+    }
+
     private DiscoveryConfig getDummyDiscoveryConfig() {
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig("dummyClass");
         strategyConfig.addProperty("prop1", "val1");
@@ -581,7 +591,7 @@ public class ConfigXmlGeneratorTest {
     private static Config getNewConfigViaXMLGenerator(Config config) {
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
         String xml = configXmlGenerator.generate(config);
-
+        
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();

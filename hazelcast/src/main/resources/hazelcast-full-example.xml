@@ -609,11 +609,15 @@ https://hazelcast.org/documentation/.
     * <quorum-ref>:
        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
        as the <quorum>'s name.
+    * <merge-policy>:
+        The default policy is `com.hazelcast.cardinality.impl.hyperloglog.HyperLogLogMergePolicy` with a batch size of 100.
+        This is the policy used when merging estimators from sub-clusters (after split-brain recovery).
     -->
     <cardinality-estimator name="default">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="102">PutIfAbsentMergePolicy</merge-policy>
     </cardinality-estimator>
 
     <!--

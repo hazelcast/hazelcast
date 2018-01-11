@@ -221,8 +221,11 @@
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
             </hz:scheduled-executor-service>
 
-            <hz:cardinality-estimator name="cardinality">
+            <hz:cardinality-estimator name="estimator">
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:backup-count>4</hz:backup-count>
+                <hz:merge-policy batch-size="44">PassThroughMergePolicy</hz:merge-policy>
+
             </hz:cardinality-estimator>
 
             <hz:queue name="testQ" max-size="1000">

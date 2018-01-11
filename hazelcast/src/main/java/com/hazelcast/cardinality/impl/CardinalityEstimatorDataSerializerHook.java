@@ -16,13 +16,16 @@
 
 package com.hazelcast.cardinality.impl;
 
+import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLogMergePolicy;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.DenseHyperLogLogEncoder;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.SparseHyperLogLogEncoder;
 import com.hazelcast.cardinality.impl.operations.AggregateBackupOperation;
 import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.cardinality.impl.operations.EstimateOperation;
+import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
+import com.hazelcast.cardinality.impl.operations.SyncBackupOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -45,6 +48,9 @@ public final class CardinalityEstimatorDataSerializerHook
     public static final int HLL = 5;
     public static final int HLL_DENSE_ENC = 6;
     public static final int HLL_SPARSE_ENC = 7;
+    public static final int MERGE = 8;
+    public static final int SYNC_BACKUP = 9;
+    public static final int HLL_MERGE_POLICY = 10;
 
     @Override
     public int getFactoryId() {
@@ -73,6 +79,12 @@ public final class CardinalityEstimatorDataSerializerHook
                         return new DenseHyperLogLogEncoder();
                     case HLL_SPARSE_ENC:
                         return new SparseHyperLogLogEncoder();
+                    case MERGE:
+                        return new MergeOperation();
+                    case HLL_MERGE_POLICY:
+                        return new HyperLogLogMergePolicy();
+                    case SYNC_BACKUP:
+                        return new SyncBackupOperation();
                     default:
                         return null;
                 }

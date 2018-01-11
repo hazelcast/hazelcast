@@ -50,4 +50,13 @@ public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
      * @return {@link HyperLogLogEncoding}
      */
     HyperLogLogEncoding getEncodingType();
+
+    /**
+     * Merge the two HyperLogLog structures in one. Estimations from both are taken into consideration
+     * and the unified estimate should be similar to the distinct union set of the two.
+     *
+     * @param encoder The second HLL to be merged into this one
+     * @return {@link HyperLogLogEncoder} the union
+     */
+    HyperLogLogEncoder merge(HyperLogLogEncoder encoder);
 }
