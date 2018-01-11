@@ -21,14 +21,14 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
 /**
  * Provides backup operation during transactional poll operation.
  */
-public class TxnPollBackupOperation extends QueueOperation implements MutatingOperation {
+public class TxnPollBackupOperation extends QueueOperation implements BackupOperation {
 
     private long itemId;
 

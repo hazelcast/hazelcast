@@ -24,12 +24,12 @@ import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnPutBackupOperation extends MultiMapKeyBasedOperation implements MutatingOperation {
+public class TxnPutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     long recordId;
     Data value;

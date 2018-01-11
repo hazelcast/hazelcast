@@ -20,12 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 public class CancelTaskBackupOperation
-        extends AbstractSchedulerOperation implements BackupOperation, MutatingOperation {
+        extends AbstractSchedulerOperation implements BackupOperation {
 
     private String taskName;
 

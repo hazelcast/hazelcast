@@ -21,14 +21,13 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 /**
  * Empties backup write-behind-queues upon {@link IMap#flush()}
  */
-public class MapFlushBackupOperation extends MapOperation implements BackupOperation, MutatingOperation {
+public class MapFlushBackupOperation extends MapOperation implements BackupOperation {
 
     public MapFlushBackupOperation() {
     }

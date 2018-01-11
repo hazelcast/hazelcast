@@ -21,11 +21,10 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class CollectionRemoveBackupOperation extends CollectionOperation implements BackupOperation, MutatingOperation {
+public class CollectionRemoveBackupOperation extends CollectionOperation implements BackupOperation {
 
     private long itemId;
 

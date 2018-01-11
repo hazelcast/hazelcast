@@ -21,13 +21,12 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 public class AggregateBackupOperation
         extends AbstractCardinalityEstimatorOperation
-        implements BackupOperation, MutatingOperation {
+        implements BackupOperation {
 
     private long hash;
 

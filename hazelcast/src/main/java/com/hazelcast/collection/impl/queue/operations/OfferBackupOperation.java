@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -31,7 +30,7 @@ import java.io.IOException;
  * Backup items during offer operation.
  */
 public final class OfferBackupOperation extends QueueOperation
-        implements BackupOperation, IdentifiedDataSerializable, MutatingOperation {
+        implements BackupOperation, IdentifiedDataSerializable {
 
     private Data data;
     private long itemId;

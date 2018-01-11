@@ -21,6 +21,8 @@ import com.hazelcast.spi.annotation.Beta;
 /**
  * Marker interface for operations that changes map state/data.
  * Used for quorum to reject operations if quorum size not satisfied
+ *
+ * Operations implementing {@link com.hazelcast.spi.BackupOperation} should not be marked with this interface.
  */
 @Beta
 public interface MutatingOperation {
