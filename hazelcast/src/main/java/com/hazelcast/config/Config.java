@@ -19,10 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.util.StringUtil;
 
 import java.io.File;
@@ -73,6 +73,8 @@ public class Config {
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
+
+    private final Map<String, DataSetConfig> dataSetConfigs = new ConcurrentHashMap<String, DataSetConfig>();
 
     private final Map<String, CacheSimpleConfig> cacheConfigs = new ConcurrentHashMap<String, CacheSimpleConfig>();
 
@@ -361,6 +363,59 @@ public class Config {
         this.networkConfig = networkConfig;
         return this;
     }
+
+    // =====
+
+    public DataSetConfig findDataSetConfig(String name) {
+        name = getBaseName(name);
+        DataSetConfig config = lookupByPattern(configPatternMatcher, dataSetConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getDataSetConfig("default").getAsReadOnly();
+    }
+
+    public DataSetConfig getDataSetConfigOrNull(String name) {
+        name = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, dataSetConfigs, name);
+    }
+
+    public DataSetConfig getDataSetConfig(String name) {
+        name = getBaseName(name);
+        DataSetConfig config = lookupByPattern(configPatternMatcher, dataSetConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        DataSetConfig defConfig = dataSetConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new DataSetConfig();
+            defConfig.setName("default");
+            dataSetConfigs.put(defConfig.getName(), defConfig);
+        }
+        config = new DataSetConfig(defConfig);
+        config.setName(name);
+        dataSetConfigs.put(config.getName(), config);
+        return config;
+    }
+
+    public Config addDataSetConfig(DataSetConfig dataSetConfig) {
+        dataSetConfigs.put(dataSetConfig.getName(), dataSetConfig);
+        return this;
+    }
+
+    /**
+     * Returns the map of {@link com.hazelcast.core.IMap} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
+    public Map<String, DataSetConfig> getDataSetConfigs() {
+        return dataSetConfigs;
+    }
+
+
+    // ======
 
     /**
      * Returns a read-only {@link com.hazelcast.core.IMap} configuration for

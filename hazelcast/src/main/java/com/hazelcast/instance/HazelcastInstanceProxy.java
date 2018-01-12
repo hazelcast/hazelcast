@@ -22,6 +22,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.dataset.DataSet;
 import com.hazelcast.reliableidgen.ReliableIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -90,6 +91,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public <K, V> DataSet<K, V> getDataSet(String name) {
+        return getOriginal().getDataSet(name);
     }
 
     @Override

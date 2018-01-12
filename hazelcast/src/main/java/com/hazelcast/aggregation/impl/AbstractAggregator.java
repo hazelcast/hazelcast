@@ -86,6 +86,8 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
         if (attributePath == null) {
             if (input instanceof Map.Entry) {
                 return (T) ((Map.Entry) input).getValue();
+            } else if(input instanceof Number){
+                return (T)input;
             }
         } else if (input instanceof Extractable) {
             return (T) ((Extractable) input).getAttributeValue(attributePath);

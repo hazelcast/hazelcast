@@ -37,6 +37,9 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         this.serializationService = serializationService;
         this.iterationType = iterationType;
         this.binary = binary;
+
+        System.out.println("unique:"+unique);
+
         if (unique) {
             rows = new HashSet<QueryResultRow>();
         } else {
@@ -62,6 +65,8 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
 
     public void addAllRows(Collection<QueryResultRow> collection) {
         rows.addAll(collection);
+
+        System.out.println("rows.size:"+rows.size());
     }
 
     @Override

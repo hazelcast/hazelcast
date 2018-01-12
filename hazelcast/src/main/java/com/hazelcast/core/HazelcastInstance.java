@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
+import com.hazelcast.dataset.DataSet;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -50,6 +51,8 @@ public interface HazelcastInstance {
      * @return name of this Hazelcast instance
      */
     String getName();
+
+    <K, V> DataSet<K, V> getDataSet(String name);
 
     /**
      * Returns the distributed queue instance with the specified name.
@@ -260,7 +263,6 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link IdGenerator}
      * @return IdGenerator for the given name
-     *
      * @deprecated The implementation can produce duplicate IDs in case of network split, even
      * with split-brain protection enabled (during short window while split-brain is detected).
      * Use {@link #getReliableIdGenerator(String)} for an alternative implementation which does not

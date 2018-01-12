@@ -25,6 +25,8 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.dataset.DataSet;
+import com.hazelcast.dataset.impl.DataSetService;
 import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
@@ -177,6 +179,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public <K, V> DataSet<K, V> getDataSet(String name) {
+        checkNotNull(name, "Retrieving a map instance with a null name is not allowed!");
+        return getDistributedObject(DataSetService.SERVICE_NAME, name);
     }
 
     @Override
