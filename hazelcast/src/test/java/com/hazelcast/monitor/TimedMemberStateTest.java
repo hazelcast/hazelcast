@@ -30,8 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
@@ -47,7 +47,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Set<String> instanceNames = new HashSet<String>();
+        List<String> instanceNames = new LinkedList<String>();
         instanceNames.add("topicStats");
 
         hz = createHazelcastInstance();
