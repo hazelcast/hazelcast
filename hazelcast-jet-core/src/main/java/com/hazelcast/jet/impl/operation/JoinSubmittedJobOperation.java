@@ -17,20 +17,16 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
-public class JoinSubmittedJobOperation extends AsyncExecutionOperation implements IdentifiedDataSerializable {
-
-    private volatile CompletableFuture<Boolean> executionFuture;
+public class JoinSubmittedJobOperation extends AsyncOperation implements IdentifiedDataSerializable {
 
     public JoinSubmittedJobOperation() {
     }
@@ -43,30 +39,14 @@ public class JoinSubmittedJobOperation extends AsyncExecutionOperation implement
     @Override
     protected void doRun() {
         JetService service = getService();
-        executionFuture = service.joinSubmittedJob(jobId);
+        JobCoordinationService coordinationService = service.getJobCoordinationService();
+        CompletableFuture<Void> executionFuture = coordinationService.joinSubmittedJob(jobId());
         executionFuture.whenComplete(withTryCatch(getLogger(), (r, t) -> doSendResponse(peel(t))));
-    }
-
-    @Override
-    public void cancel() {
-        if (executionFuture != null) {
-            executionFuture.cancel(true);
-        }
     }
 
     @Override
     public int getId() {
         return JetInitDataSerializerHook.JOIN_SUBMITTED_JOB;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
     }
 
 }

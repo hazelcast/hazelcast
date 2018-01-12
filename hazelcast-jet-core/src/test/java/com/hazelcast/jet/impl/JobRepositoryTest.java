@@ -79,68 +79,71 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void when_jobIsCompleted_then_jobIsCleanedUp() {
-        long jobIb = uploadResourcesForNewJob();
+        long jobId = uploadResourcesForNewJob();
         Data dag = createDAGData();
-        JobRecord jobRecord = createJobRecord(jobIb, dag);
+        JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        long executionId1 = jobRepository.newExecutionId(jobIb);
-        long executionId2 = jobRepository.newExecutionId(jobIb);
+        long executionId1 = jobRepository.newExecutionId(jobId);
+        long executionId2 = jobRepository.newExecutionId(jobId);
+        JobResult jobResult = new JobResult(jobId, jobConfig, "uuid", jobRecord.getCreationTime(),
+                System.currentTimeMillis(), null);
+        instance.getMap(JobRepository.JOB_RESULTS_MAP_NAME).put(jobId, jobResult);
 
-        jobRepository.cleanup(singleton(jobIb), emptySet());
+        jobRepository.cleanup(emptySet());
 
-        assertNull(jobRepository.getJob(jobIb));
-        assertTrue(jobRepository.getJobResources(jobIb).isEmpty());
+        assertNull(jobRepository.getJobRecord(jobId));
+        assertTrue(jobRepository.getJobResources(jobId).isEmpty());
         assertFalse(jobIds.containsKey(executionId1));
         assertFalse(jobIds.containsKey(executionId2));
     }
 
     @Test
     public void when_jobIsRunning_then_expiredJobIsNotCleanedUp() {
-        long jobIb = uploadResourcesForNewJob();
+        long jobId = uploadResourcesForNewJob();
         Data dag = createDAGData();
-        JobRecord jobRecord = createJobRecord(jobIb, dag);
+        JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        long executionId1 = jobRepository.newExecutionId(jobIb);
-        long executionId2 = jobRepository.newExecutionId(jobIb);
+        long executionId1 = jobRepository.newExecutionId(jobId);
+        long executionId2 = jobRepository.newExecutionId(jobId);
 
         sleepUntilJobExpires();
 
-        jobRepository.cleanup(emptySet(), singleton(jobIb));
+        jobRepository.cleanup(singleton(jobId));
 
-        assertNotNull(jobRepository.getJob(jobIb));
-        assertFalse(jobRepository.getJobResources(jobIb).isEmpty());
+        assertNotNull(jobRepository.getJobRecord(jobId));
+        assertFalse(jobRepository.getJobResources(jobId).isEmpty());
         assertTrue(jobIds.containsKey(executionId1));
         assertTrue(jobIds.containsKey(executionId2));
     }
 
     @Test
     public void when_jobRecordIsPresentForExpiredJob_then_jobIsNotCleanedUp() {
-        long jobIb = uploadResourcesForNewJob();
+        long jobId = uploadResourcesForNewJob();
         Data dag = createDAGData();
-        JobRecord jobRecord = createJobRecord(jobIb, dag);
+        JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        long executionId1 = jobRepository.newExecutionId(jobIb);
-        long executionId2 = jobRepository.newExecutionId(jobIb);
+        long executionId1 = jobRepository.newExecutionId(jobId);
+        long executionId2 = jobRepository.newExecutionId(jobId);
 
         sleepUntilJobExpires();
 
-        jobRepository.cleanup(emptySet(), emptySet());
+        jobRepository.cleanup(emptySet());
 
-        assertNotNull(jobRepository.getJob(jobIb));
-        assertFalse(jobRepository.getJobResources(jobIb).isEmpty());
+        assertNotNull(jobRepository.getJobRecord(jobId));
+        assertFalse(jobRepository.getJobResources(jobId).isEmpty());
         assertTrue(jobIds.containsKey(executionId1));
         assertTrue(jobIds.containsKey(executionId2));
     }
 
     @Test
     public void when_onlyJobResourcesExist_then_jobResourcesClearedAfterExpiration() {
-        long jobIb = uploadResourcesForNewJob();
+        long jobId = uploadResourcesForNewJob();
 
         sleepUntilJobExpires();
 
-        jobRepository.cleanup(emptySet(), emptySet());
+        jobRepository.cleanup(emptySet());
 
-        assertTrue(jobRepository.getJobResources(jobIb).isEmpty());
+        assertTrue(jobRepository.getJobResources(jobId).isEmpty());
     }
 
     @Test
@@ -156,43 +159,43 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void when_newQuorumSizeIsLargerThanCurrent_then_jobQuorumSizeIsUpdated() {
-        long jobIb = uploadResourcesForNewJob();
+        long jobId = uploadResourcesForNewJob();
         Data dag = createDAGData();
-        JobRecord jobRecord = createJobRecord(jobIb, dag);
+        JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
 
         int newQuorumSize = jobRecord.getQuorumSize() + 1;
-        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobIb, newQuorumSize);
+        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobId, newQuorumSize);
 
         assertTrue(success);
-        jobRecord = jobRepository.getJob(jobIb);
+        jobRecord = jobRepository.getJobRecord(jobId);
         assertEquals(newQuorumSize, jobRecord.getQuorumSize());
     }
 
     @Test
     public void when_newQuorumSizeIsNotLargerThanCurrent_then_jobQuorumSizeIsNotUpdated() {
-        long jobIb = uploadResourcesForNewJob();
+        long jobId = uploadResourcesForNewJob();
         Data dag = createDAGData();
-        JobRecord jobRecord = createJobRecord(jobIb, dag);
+        JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
 
         int currentQuorumSize = jobRecord.getQuorumSize();
         int newQuorumSize = currentQuorumSize - 1;
-        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobIb, newQuorumSize);
+        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobId, newQuorumSize);
 
         assertFalse(success);
-        jobRecord = jobRepository.getJob(jobIb);
+        jobRecord = jobRepository.getJobRecord(jobId);
         assertEquals(currentQuorumSize, jobRecord.getQuorumSize());
     }
 
     @Test
     public void when_jobIsMissing_then_jobQuorumSizeIsNotUpdated() {
-        long jobIb = uploadResourcesForNewJob();
+        long jobId = uploadResourcesForNewJob();
 
-        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobIb, 1);
+        boolean success = jobRepository.updateJobQuorumSizeIfLargerThanCurrent(jobId, 1);
 
         assertFalse(success);
-        assertNull(jobRepository.getJob(jobIb));
+        assertNull(jobRepository.getJobRecord(jobId));
     }
 
     private long uploadResourcesForNewJob() {
@@ -204,8 +207,8 @@ public class JobRepositoryTest extends JetTestSupport {
         return getNodeEngineImpl(instance.getHazelcastInstance()).toData(new DAG());
     }
 
-    private JobRecord createJobRecord(long jobIb, Data dag) {
-        return new JobRecord(jobIb, System.currentTimeMillis(), dag, jobConfig, QUORUM_SIZE);
+    private JobRecord createJobRecord(long jobId, Data dag) {
+        return new JobRecord(jobId, System.currentTimeMillis(), dag, jobConfig, QUORUM_SIZE);
     }
 
     private void sleepUntilJobExpires() {

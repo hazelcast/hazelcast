@@ -17,38 +17,21 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public abstract class AsyncExecutionOperation extends Operation implements IdentifiedDataSerializable {
+public abstract class AsyncOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
 
-    protected long jobId;
-
-    protected AsyncExecutionOperation() {
+    protected AsyncOperation() {
     }
 
-    protected AsyncExecutionOperation(long jobId) {
-        this.jobId = jobId;
+    protected AsyncOperation(long jobId) {
+        super(jobId);
     }
 
-    @Override
-    public final boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
-    public final Object getResponse() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public void beforeRun() throws Exception {
@@ -66,13 +49,16 @@ public abstract class AsyncExecutionOperation extends Operation implements Ident
         }
     }
 
-    public void cancel() {
-    }
-
     protected abstract void doRun() throws Exception;
 
-    public long getJobId() {
-        return jobId;
+    @Override
+    public final boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
+    public final Object getResponse() {
+        throw new UnsupportedOperationException();
     }
 
     public final void doSendResponse(Object value) {
@@ -89,20 +75,4 @@ public abstract class AsyncExecutionOperation extends Operation implements Ident
         return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
-    @Override
-    public final int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(jobId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        jobId = in.readLong();
-    }
 }

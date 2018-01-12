@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -53,6 +54,7 @@ public final class ExceptionUtil {
     public static void registerJetExceptions(@Nonnull ClientExceptionFactory factory) {
         factory.register(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new);
         factory.register(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new);
+        factory.register(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new);
     }
 
     /**

@@ -17,24 +17,24 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
+import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class GetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCodec.RequestParameters> {
-    protected GetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetGetJobIdsCodec::decodeRequest,
-                o -> JetGetJobStatusCodec.encodeResponse((Data) o));
+public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJobConfigCodec.RequestParameters> {
+
+    protected JetGetJobConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection, JetGetJobConfigCodec::decodeRequest,
+                o -> JetGetJobConfigCodec.encodeResponse((Data) o));
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobIdsOperation();
+        return new GetJobConfigOperation(parameters.jobId);
     }
 
     @Override
@@ -45,11 +45,12 @@ public class GetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCod
 
     @Override
     public String getMethodName() {
-        return "getStatus";
+        return "getJobConfig";
     }
 
     @Override
     public Object[] getParameters() {
         return new Object[0];
     }
+
 }

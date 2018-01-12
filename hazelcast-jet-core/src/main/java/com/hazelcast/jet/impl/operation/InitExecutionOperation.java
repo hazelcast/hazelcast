@@ -39,7 +39,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public class InitOperation extends Operation implements IdentifiedDataSerializable {
+public class InitExecutionOperation extends Operation implements IdentifiedDataSerializable {
 
     private long jobId;
     private long executionId;
@@ -47,11 +47,11 @@ public class InitOperation extends Operation implements IdentifiedDataSerializab
     private Set<MemberInfo> participants;
     private Supplier<ExecutionPlan> planSupplier;
 
-    public InitOperation() {
+    public InitExecutionOperation() {
     }
 
-    public InitOperation(long jobId, long executionId, int coordinatorMemberListVersion, Set<MemberInfo> participants,
-                         ExecutionPlan plan) {
+    public InitExecutionOperation(long jobId, long executionId, int coordinatorMemberListVersion,
+                                  Set<MemberInfo> participants, ExecutionPlan plan) {
         this.jobId = jobId;
         this.executionId = executionId;
         this.coordinatorMemberListVersion = coordinatorMemberListVersion;
@@ -85,7 +85,7 @@ public class InitOperation extends Operation implements IdentifiedDataSerializab
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.INIT_OP;
+        return JetInitDataSerializerHook.INIT_EXECUTION_OP;
     }
 
     @Override

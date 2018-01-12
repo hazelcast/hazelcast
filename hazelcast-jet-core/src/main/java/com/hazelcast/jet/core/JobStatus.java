@@ -44,6 +44,11 @@ public enum JobStatus {
     RESTARTING,
 
     /**
+     * The job is currently being completed.
+     */
+    COMPLETING,
+
+    /**
      * The job is failed with an exception.
      */
     FAILED,

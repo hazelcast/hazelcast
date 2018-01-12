@@ -18,20 +18,21 @@ package com.hazelcast.jet.server;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.stream.JetCacheManager;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
 
@@ -151,56 +152,66 @@ public final class JetBootstrap {
             this.instance = instance;
         }
 
-        @Override
+        @Nonnull @Override
         public String getName() {
             return instance.getName();
         }
 
-        @Override
+        @Nonnull @Override
         public HazelcastInstance getHazelcastInstance() {
             return instance.getHazelcastInstance();
         }
 
-        @Override
+        @Nonnull @Override
         public Cluster getCluster() {
             return instance.getCluster();
         }
 
-        @Override
+        @Nonnull @Override
         public JetConfig getConfig() {
             return instance.getConfig();
         }
 
-        @Override
-        public Job newJob(DAG dag) {
+        @Nonnull @Override
+        public Job newJob(@Nonnull DAG dag) {
             return newJob(dag, new JobConfig());
         }
 
-        @Override
-        public Job newJob(DAG dag, JobConfig config) {
+        @Nonnull @Override
+        public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
             if (jarPathname != null) {
                 config.addJar(jarPathname);
             }
             return instance.newJob(dag, config);
         }
 
-        @Override
-        public Collection<Job> getJobs() {
+        @Nonnull @Override
+        public List<Job> getJobs() {
             return instance.getJobs();
         }
 
         @Override
-        public <K, V> IStreamMap<K, V> getMap(String name) {
+        public Job getJob(long jobId) {
+            return instance.getJob(jobId);
+        }
+
+        @Nonnull @Override
+        public List<Job> getJobs(@Nonnull String name) {
+            return instance.getJobs(name);
+        }
+
+        @Nonnull @Override
+        public <K, V> IStreamMap<K, V> getMap(@Nonnull String name) {
             return instance.getMap(name);
         }
 
-        @Override
+        @Nonnull @Override
         public JetCacheManager getCacheManager() {
             return instance.getCacheManager();
         }
 
-        @Override
-        public <E> IStreamList<E> getList(String name) {
+        @Nonnull @Override
+        public <E> IStreamList<E> getList(@Nonnull String name) {
             return instance.getList(name);
         }
 

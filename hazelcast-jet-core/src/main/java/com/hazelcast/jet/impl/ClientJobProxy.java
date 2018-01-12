@@ -19,7 +19,9 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -58,8 +60,8 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Nonnull @Override
-    public JobStatus getJobStatus() {
-        ClientMessage request = JetGetJobStatusCodec.encodeRequest(getJobId(), shouldRetryJobStatus());
+    public JobStatus getStatus() {
+        ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
         return uncheckCall(() -> {
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             Data statusData = JetGetJobStatusCodec.decodeResponse(response).response;
@@ -70,16 +72,39 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     protected ICompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
-        ClientMessage request = JetSubmitJobCodec.encodeRequest(getJobId(), dag, configData);
-        Address target = masterAddress();
-        return new CancellableFuture<>(invocation(request, target).invoke(), target);
+        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData);
+        return new CancellableFuture<>(invocation(request, masterAddress()).invoke());
     }
 
     @Override
     protected ICompletableFuture<Void> invokeJoinJob() {
-        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getJobId());
-        Address target = masterAddress();
-        return new CancellableFuture<>(invocation(request, target).invoke(), target);
+        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId());
+        return new CancellableFuture<>(invocation(request, masterAddress()).invoke());
+    }
+
+    @Override
+    protected ICompletableFuture<Void> invokeCancelJob() {
+        ClientMessage request = JetCancelJobCodec.encodeRequest(getId());
+        return new CancellableFuture<>(invocation(request, masterAddress()).invoke());
+    }
+
+    @Override
+    protected long doGetJobSubmissionTime() {
+        ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
+        return uncheckCall(() -> {
+            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            return JetGetJobSubmissionTimeCodec.decodeResponse(response).response;
+        });
+    }
+
+    @Override
+    protected JobConfig doGetJobConfig() {
+        ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
+        return uncheckCall(() -> {
+            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            Data data = JetGetJobConfigCodec.decodeResponse(response).response;
+            return serializationService().toObject(data);
+        });
     }
 
     @Override
@@ -103,30 +128,23 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     private String jobName() {
-        return "jobId=" + idToString(getJobId());
+        return "jobId=" + idToString(getId());
     }
 
     /**
      * Decorator for execution future which makes it cancellable
      */
-    private class CancellableFuture<T> implements ICompletableFuture<Void> {
+    private static class CancellableFuture<T> implements ICompletableFuture<Void> {
 
         private final ICompletableFuture<T> future;
-        private final Address executionAddress;
 
-        CancellableFuture(ICompletableFuture<T> future, Address invocationTarget) {
+        CancellableFuture(ICompletableFuture<T> future) {
             this.future = future;
-            this.executionAddress = invocationTarget;
         }
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            boolean cancelled = future.cancel(true);
-            if (!cancelled) {
-                return false;
-            }
-            cancelJob();
-            return true;
+            return future.cancel(mayInterruptIfRunning);
         }
 
         @Override
@@ -180,22 +198,6 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
                     callback.onFailure(t);
                 }
             }, executor);
-        }
-
-        private void cancelJob() {
-            invocation(JetCancelJobCodec.encodeRequest(getJobId()), executionAddress)
-                    .invoke()
-                    .andThen(new ExecutionCallback<ClientMessage>() {
-                        @Override
-                        public void onResponse(ClientMessage clientMessage) {
-                            //ignored
-                        }
-
-                        @Override
-                        public void onFailure(Throwable throwable) {
-                            getLogger().warning("Error cancelling job with jobId " + idToString(getJobId()), throwable);
-                        }
-                    });
         }
     }
 }

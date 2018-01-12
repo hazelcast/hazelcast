@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.Cluster;
@@ -25,14 +26,16 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.Collectors.toList;
 
@@ -58,13 +61,13 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     }
 
     @Nonnull @Override
-    public Job newJob(DAG dag, JobConfig config) {
+    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
         long jobId = uploadResourcesAndAssignId(config);
         return new ClientJobProxy(client, jobId, dag, config);
     }
 
     @Nonnull @Override
-    public Collection<Job> getJobs() {
+    public List<Job> getJobs() {
         ClientInvocation invocation = new ClientInvocation(
                 client, JetGetJobIdsCodec.encodeRequest(), null, masterAddress(client.getCluster())
         );
@@ -75,7 +78,39 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         });
     }
 
-    public static Address masterAddress(Cluster cluster) {
+    @Override
+    public Job getJob(long jobId) {
+        try {
+            Job job = new ClientJobProxy(client, jobId);
+            job.getStatus();
+            return job;
+        } catch (Exception e) {
+            if (peel(e) instanceof JobNotFoundException) {
+                return null;
+            }
+
+            throw e;
+        }
+    }
+
+    @Nonnull @Override
+    public List<Job> getJobs(@Nonnull String name) {
+        return getJobIdsByName(name).stream().map(jobId -> new ClientJobProxy(client, jobId)).collect(toList());
+    }
+
+    private List<Long> getJobIdsByName(String name) {
+        ClientInvocation invocation = new ClientInvocation(
+                client, JetGetJobIdsByNameCodec.encodeRequest(name), null, masterAddress(client.getCluster())
+        );
+
+        return uncheckCall(() -> {
+            ClientMessage response = invocation.invoke().get();
+            List<Long> jobs = serializationService.toObject(JetGetJobIdsByNameCodec.decodeResponse(response).response);
+            return jobs;
+        });
+    }
+
+    private static Address masterAddress(Cluster cluster) {
         return cluster.getMembers().stream().findFirst()
                       .orElseThrow(() -> new IllegalStateException("No members found in cluster"))
                       .getAddress();

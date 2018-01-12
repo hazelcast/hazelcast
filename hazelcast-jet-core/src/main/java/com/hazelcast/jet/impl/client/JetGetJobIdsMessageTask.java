@@ -17,33 +17,38 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.serialization.SerializationService;
 
-public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters> {
-    protected JetSubmitJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetSubmitJobCodec::decodeRequest,
-                o -> JetSubmitJobCodec.encodeResponse());
+public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCodec.RequestParameters> {
+    protected JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection, JetGetJobIdsCodec::decodeRequest,
+                o -> JetGetJobIdsCodec.encodeResponse((Data) o));
     }
 
     @Override
     protected Operation prepareOperation() {
-        JobConfig jobConfig = nodeEngine.getSerializationService().toObject(parameters.jobConfig);
-        return new SubmitJobOperation(parameters.jobId, parameters.dag, jobConfig);
+        return new GetJobIdsOperation();
+    }
+
+    @Override
+    public void onResponse(Object response) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        sendResponse(serializationService.toData(response));
     }
 
     @Override
     public String getMethodName() {
-        return "submitJob";
+        return "getJobIds";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{};
+        return new Object[0];
     }
-
 }

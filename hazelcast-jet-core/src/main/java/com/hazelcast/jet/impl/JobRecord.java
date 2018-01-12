@@ -24,10 +24,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
 
 import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 
 public class JobRecord implements IdentifiedDataSerializable {
 
@@ -100,7 +99,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     public String toString() {
         return "JobRecord{" +
                 "jobId=" + idToString(jobId) +
-                ", creationTime=" + Instant.ofEpochMilli(creationTime).atZone(ZoneId.systemDefault()) +
+                ", creationTime=" + toLocalDateTime(creationTime) +
                 ", dag=" + dag +
                 ", config=" + config +
                 ", quorumSize=" + quorumSize +

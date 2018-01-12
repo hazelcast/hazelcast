@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
@@ -29,7 +29,7 @@ import com.hazelcast.spi.Operation;
 public class JetJoinSubmittedJobMessageTask extends AbstractJetMessageTask<JetJoinSubmittedJobCodec.RequestParameters> {
     protected JetJoinSubmittedJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetJoinSubmittedJobCodec::decodeRequest,
-                o -> JetSubmitJobCodec.encodeResponse());
+                o -> JetJoinSubmittedJobCodec.encodeResponse((Data) o));
     }
 
     @Override
@@ -44,13 +44,12 @@ public class JetJoinSubmittedJobMessageTask extends AbstractJetMessageTask<JetJo
         InvocationBuilder builder = getInvocationBuilder(op).setResultDeserialized(false);
 
         InternalCompletableFuture<Object> invocation = builder.invoke();
-        getJetService().getClientInvocationRegistry().register(parameters.jobId, invocation);
         invocation.andThen(this);
     }
 
     @Override
     public String getMethodName() {
-        return "execute";
+        return "joinSubmittedJob";
     }
 
     @Override
@@ -58,13 +57,4 @@ public class JetJoinSubmittedJobMessageTask extends AbstractJetMessageTask<JetJo
         return new Object[]{};
     }
 
-    @Override
-    public void onResponse(Object response) {
-        super.onResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        super.onFailure(t);
-    }
 }

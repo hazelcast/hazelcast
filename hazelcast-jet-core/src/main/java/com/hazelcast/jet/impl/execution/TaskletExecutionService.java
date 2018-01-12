@@ -18,11 +18,11 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -318,7 +318,7 @@ public class TaskletExecutionService {
      */
     private final class ExecutionTracker {
 
-        final ExecutionFuture future = new ExecutionFuture();
+        final NonCompletableFuture future = new NonCompletableFuture();
         List<Future> blockingFutures;
 
         private final AtomicInteger completionLatch;
@@ -358,32 +358,4 @@ public class TaskletExecutionService {
         }
     }
 
-    /**
-     * ExecutionFuture which prevents completion from outside
-     */
-    private static class ExecutionFuture extends CompletableFuture<Void> {
-        @Override
-        public boolean completeExceptionally(Throwable ex) {
-            throw new UnsupportedOperationException("This future can't be completed by an outside caller");
-        }
-
-        @Override
-        public boolean complete(Void value) {
-            throw new UnsupportedOperationException("This future can't be completed by an outside caller");
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            throw new UnsupportedOperationException("This future can't be cancelled by an outside caller");
-        }
-
-        @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
-        void internalComplete() {
-            super.complete(null);
-        }
-
-        void internalCompleteExceptionally(Throwable ex) {
-            super.completeExceptionally(ex);
-        }
-    }
 }

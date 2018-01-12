@@ -18,8 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.impl.execution.BroadcastItem;
 
-import java.time.Instant;
-import java.time.ZoneId;
+import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 
 /**
  * Watermark is an item occasionally inserted into a disordered
@@ -64,6 +63,6 @@ public final class Watermark implements BroadcastItem {
         return "Watermark{ts="
                 + timestamp
                 + ", formattedTs="
-                + Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalTime() + '}';
+                + toLocalDateTime(timestamp) + '}';
     }
 }

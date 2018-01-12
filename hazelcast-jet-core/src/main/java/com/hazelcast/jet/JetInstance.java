@@ -26,7 +26,8 @@ import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.JetCacheManager;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Represents either an instance of a Jet server node or a Jet client
@@ -96,10 +97,33 @@ public interface JetInstance {
     }
 
     /**
-     * Returns all submitted jobs including running and completed ones
+     * Returns all submitted jobs including running and completed ones.
      */
     @Nonnull
-    Collection<Job> getJobs();
+    List<Job> getJobs();
+
+    /**
+     * Returns the job with the given id or {@code null} if no such job could be found
+     */
+    @Nullable
+    Job getJob(long jobId);
+
+    /**
+     * Returns all jobs submitted with the given name, ordered in descending order
+     * by submission time. Empty list will be returned if no job with the given
+     * name exists. The list includes completed jobs.
+     */
+    @Nonnull
+    List<Job> getJobs(@Nonnull String name);
+
+    /**
+     * Returns the last submitted job with the given name or {@code null}
+     * if no such job could be found.
+     **/
+    @Nullable
+    default Job getJob(@Nonnull String name) {
+        return getJobs(name).stream().findFirst().orElse(null);
+    }
 
     /**
      * Returns the distributed map instance with the specified name.

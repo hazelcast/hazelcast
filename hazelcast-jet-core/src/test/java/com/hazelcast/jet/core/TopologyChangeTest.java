@@ -30,12 +30,12 @@ import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobCoordinationService;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.operation.InitOperation;
+import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import org.junit.After;
@@ -58,9 +58,8 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.SHUTDOWN_REQUEST;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
-import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.EXECUTE_OP;
-import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_OP;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_EXECUTION_OP;
+import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.START_EXECUTION_OP;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
@@ -81,8 +80,6 @@ public class TopologyChangeTest extends JetTestSupport {
     private static final int NODE_COUNT = 3;
 
     private static final int PARALLELISM = 4;
-
-    private static final int TIMEOUT_MILLIS = 8000;
 
     @Parameterized.Parameter
     public boolean[] liteMemberFlags;
@@ -124,8 +121,6 @@ public class TopologyChangeTest extends JetTestSupport {
         factory = new JetTestInstanceFactory();
         config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
-        config.getHazelcastConfig().getProperties().put(OPERATION_CALL_TIMEOUT_MILLIS.getName(),
-                Integer.toString(TIMEOUT_MILLIS));
 
         instances = new JetInstance[NODE_COUNT];
 
@@ -133,8 +128,6 @@ public class TopologyChangeTest extends JetTestSupport {
             JetConfig config = new JetConfig();
             config.getHazelcastConfig().setLiteMember(liteMemberFlags[i]);
             config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
-            config.getHazelcastConfig().getProperties().put(OPERATION_CALL_TIMEOUT_MILLIS.getName(),
-                    Integer.toString(TIMEOUT_MILLIS));
 
             instances[i] = factory.newMember(config);
         }
@@ -263,7 +256,7 @@ public class TopologyChangeTest extends JetTestSupport {
         try {
             Job job = instances[0].newJob(dag);
             Future<Void> future = job.getFuture();
-            jobId = job.getJobId();
+            jobId = job.getId();
             StuckProcessor.executionStarted.await();
 
             instances[0].getHazelcastInstance().getLifecycleService().terminate();
@@ -279,12 +272,12 @@ public class TopologyChangeTest extends JetTestSupport {
         assertNotNull(jobId);
         final long completedJobId = jobId;
 
-        JobCoordinationService coordService = getJetService(instances[1]).getJobCoordinationService();
+        JobRepository jobRepository = getJetService(instances[1]).getJobRepository();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                JobResult jobResult = coordService.getJobResult(completedJobId);
+                JobResult jobResult = jobRepository.getJobResult(completedJobId);
                 assertNotNull(jobResult);
                 assertTrue(jobResult.isSuccessful());
             }
@@ -373,7 +366,7 @@ public class TopologyChangeTest extends JetTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(STARTING, job.getJobStatus());
+                assertEquals(STARTING, job.getStatus());
             }
         }, 5);
 
@@ -391,7 +384,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
 
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
-                JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
+                JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_EXECUTION_OP));
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount + 1)));
 
@@ -405,7 +398,7 @@ public class TopologyChangeTest extends JetTestSupport {
             }
         });
 
-        MasterContext masterContext = jetService.getJobCoordinationService().getMasterContext(job.getJobId());
+        MasterContext masterContext = jetService.getJobCoordinationService().getMasterContext(job.getId());
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -441,7 +434,7 @@ public class TopologyChangeTest extends JetTestSupport {
         dropOperationsBetween(instances[2].getHazelcastInstance(), instances[0].getHazelcastInstance(),
                 PartitionDataSerializerHook.F_ID, singletonList(SHUTDOWN_REQUEST));
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
-                JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_OP));
+                JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_EXECUTION_OP));
 
         // When a job participant starts its shutdown after the job is submitted
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount - 1)));
@@ -463,14 +456,14 @@ public class TopologyChangeTest extends JetTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(STARTING, job.getJobStatus());
+                assertEquals(STARTING, job.getStatus());
             }
         });
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(STARTING, job.getJobStatus());
+                assertEquals(STARTING, job.getStatus());
             }
         }, 5);
 
@@ -487,7 +480,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
 
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
-                JetInitDataSerializerHook.FACTORY_ID, singletonList(EXECUTE_OP));
+                JetInitDataSerializerHook.FACTORY_ID, singletonList(START_EXECUTION_OP));
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount - 1)));
 
@@ -496,7 +489,7 @@ public class TopologyChangeTest extends JetTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(RUNNING, job.getJobStatus());
+                assertEquals(RUNNING, job.getStatus());
             }
         });
 
@@ -520,7 +513,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
         ExecutionPlan plan = mock(ExecutionPlan.class);
 
-        InitOperation op = new InitOperation(jobId, executionId, memberListVersion, memberInfos, plan);
+        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, plan);
         Future<Object> future = getOperationService(master)
                 .createInvocationBuilder(JetService.SERVICE_NAME, op, getAddress(master))
                 .invoke();

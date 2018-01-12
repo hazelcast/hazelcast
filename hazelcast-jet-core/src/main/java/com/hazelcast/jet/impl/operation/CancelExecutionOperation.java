@@ -17,72 +17,75 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public class ExecuteOperation extends AsyncExecutionOperation  {
+/**
+ * Operation sent from master to members to cancel their execution.
+ * See also {@link CancelJobOperation}.
+ */
+public class CancelExecutionOperation extends Operation implements IdentifiedDataSerializable {
+
+    private long jobId;
 
     private long executionId;
 
-    public ExecuteOperation() {
+    public CancelExecutionOperation() {
     }
 
-    public ExecuteOperation(long jobId, long executionId) {
-        super(jobId);
+    public CancelExecutionOperation(long jobId, long executionId) {
+        this.jobId = jobId;
         this.executionId = executionId;
     }
 
     @Override
-    protected void doRun() throws Exception {
-        ExecutionContext execCtx = getExecutionCtx();
-        Address coordinator = getCallerAddress();
-        getLogger().info("Start execution of "
-                + jobAndExecutionId(jobId, executionId) + " from coordinator " + coordinator);
-        execCtx.beginExecution().whenComplete(withTryCatch(getLogger(), (i, e) -> {
-            if (e != null) {
-                getLogger().fine("Execution of " + jobAndExecutionId(jobId, executionId)
-                        + " completed with failure", e);
-            } else {
-                getLogger().fine("Execution of " + jobAndExecutionId(jobId, executionId) + " completed");
-            }
-            doSendResponse(e);
-        }));
-    }
-
-    private ExecutionContext getExecutionCtx() {
+    public void run() throws Exception {
         JetService service = getService();
-        return service.getJobExecutionService().assertExecutionContext(
-                getCallerAddress(), jobId, executionId, this
-        );
+        JobExecutionService executionService = service.getJobExecutionService();
+        Address callerAddress = getCallerAddress();
+        ExecutionContext ctx = executionService.assertExecutionContext(callerAddress, jobId, executionId, this);
+        ctx.cancelExecution();
     }
 
     @Override
-    public void cancel() {
-        getExecutionCtx().cancelExecution();
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.EXECUTE_OP;
+        return JetInitDataSerializerHook.CANCEL_EXECUTION_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(jobId);
         out.writeLong(executionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        jobId = in.readLong();
         executionId = in.readLong();
     }
+
 }

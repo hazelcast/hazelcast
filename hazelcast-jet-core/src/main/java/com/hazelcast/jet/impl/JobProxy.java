@@ -20,7 +20,10 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.operation.CancelJobOperation;
+import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
+import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.logging.LoggingService;
@@ -48,22 +51,45 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Nonnull @Override
-    public JobStatus getJobStatus() {
+    public JobStatus getStatus() {
         return uncheckCall(
                 () -> this.<JobStatus>invokeOp(
-                        new GetJobStatusOperation(getJobId(), shouldRetryJobStatus())
+                        new GetJobStatusOperation(getId())
                 ).get()
         );
     }
 
     @Override
     protected ICompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getJobId(), dag, config));
+        return invokeOp(new SubmitJobOperation(getId(), dag, config));
     }
 
     @Override
     protected ICompletableFuture<Void> invokeJoinJob() {
-        return invokeOp(new JoinSubmittedJobOperation(getJobId()));
+        return invokeOp(new JoinSubmittedJobOperation(getId()));
+    }
+
+    @Override
+    protected ICompletableFuture<Void> invokeCancelJob() {
+        return invokeOp(new CancelJobOperation(getId()));
+    }
+
+    @Override
+    protected long doGetJobSubmissionTime() {
+        return uncheckCall(
+                () -> this.<Long>invokeOp(
+                        new GetJobSubmissionTimeOperation(getId())
+                ).get()
+        );
+    }
+
+    @Override
+    protected JobConfig doGetJobConfig() {
+        return uncheckCall(
+                () -> this.<JobConfig>invokeOp(
+                        new GetJobConfigOperation(getId())
+                ).get()
+        );
     }
 
     @Override

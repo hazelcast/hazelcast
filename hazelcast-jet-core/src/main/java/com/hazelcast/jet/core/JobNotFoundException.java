@@ -27,4 +27,8 @@ public class JobNotFoundException extends JetException {
     public JobNotFoundException(long jobId) {
        super("Job with id " + Util.idToString(jobId) + " not found.");
     }
+
+    public JobNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

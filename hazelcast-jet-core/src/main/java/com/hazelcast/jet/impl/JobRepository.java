@@ -23,6 +23,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -42,6 +43,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -51,7 +53,9 @@ import java.util.zip.DeflaterOutputStream;
 
 import static com.hazelcast.jet.Jet.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.util.Util.idToString;
+import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.stream.Collectors.toList;
 
 public class JobRepository {
 
@@ -82,7 +86,8 @@ public class JobRepository {
     private final SnapshotRepository snapshotRepository;
 
     private final IMap<Long, Long> randomIds;
-    private final IMap<Long, JobRecord> jobs;
+    private final IMap<Long, JobRecord> jobRecords;
+    private final IMap<Long, JobResult> jobResults;
     private long jobExpirationDurationInMillis = JOB_EXPIRATION_DURATION_IN_MILLIS;
 
     /**
@@ -93,7 +98,8 @@ public class JobRepository {
         this.snapshotRepository = snapshotRepository;
 
         this.randomIds = instance.getMap(RANDOM_IDS_MAP_NAME);
-        this.jobs = instance.getMap(JOB_RECORDS_MAP_NAME);
+        this.jobRecords = instance.getMap(JOB_RECORDS_MAP_NAME);
+        this.jobResults = instance.getMap(JOB_RESULTS_MAP_NAME);
     }
 
     // for tests
@@ -189,13 +195,13 @@ public class JobRepository {
     }
 
     /**
-     * Puts the given job record into the jobs map.
+     * Puts the given job record into the jobRecords map.
      * If another job record is already put, it checks if it has the same DAG.
      * If it has a different DAG, then the call fails with {@link IllegalStateException}
      */
     void putNewJobRecord(JobRecord jobRecord) {
         long jobId = jobRecord.getJobId();
-        JobRecord prev = jobs.putIfAbsent(jobId, jobRecord);
+        JobRecord prev = jobRecords.putIfAbsent(jobId, jobRecord);
         if (prev != null && !prev.getDag().equals(jobRecord.getDag())) {
             throw new IllegalStateException("Cannot put job record for job " + idToString(jobId)
                     + " because it already exists with a different dag");
@@ -206,7 +212,7 @@ public class JobRepository {
      * Updates the job quorum size if it is only larger than the current quorum size of the given job
      */
     boolean updateJobQuorumSizeIfLargerThanCurrent(long jobId, int newQuorumSize) {
-        return (boolean) jobs.executeOnKey(jobId, new UpdateJobRecordQuorumEntryProcessor(newQuorumSize));
+        return (boolean) jobRecords.executeOnKey(jobId, new UpdateJobRecordQuorumEntryProcessor(newQuorumSize));
     }
 
     /**
@@ -221,12 +227,37 @@ public class JobRepository {
     }
 
     /**
+     * Puts a JobResult for the given job and deletes the JobRecord.
+     * @throws JobNotFoundException if the JobRecord is not found
+     * @throws IllegalStateException if the JobResult is already present
+     */
+    void completeJob(long jobId, String coordinator, long completionTime, Throwable error) {
+        JobRecord jobRecord = getJobRecord(jobId);
+        if (jobRecord == null) {
+            throw new JobNotFoundException(jobId);
+        }
+
+        JobConfig config = jobRecord.getConfig();
+        long creationTime = jobRecord.getCreationTime();
+        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime, error);
+
+        JobResult prev = jobResults.putIfAbsent(jobId, jobResult);
+        if (prev != null) {
+            throw new IllegalStateException("Job result already exists in the " + jobResults.getName() + " map:\n" +
+                    "previous record: " + prev + "\n" +
+                    "new record: " + jobResult);
+        }
+
+        deleteJob(jobId);
+    }
+
+    /**
      * Performs cleanup after job completion. Deletes job record and job resources but keeps the job id
      * so that it will not be used again for a new job submission
      */
-    void deleteJob(long jobId) {
+    private void deleteJob(long jobId) {
         // Delete the job record
-        jobs.remove(jobId);
+        jobRecords.remove(jobId);
         // Delete the execution ids, but keep the job id
         randomIds.removeAll(new FilterExecutionIdByJobIdPredicate(jobId));
 
@@ -237,14 +268,15 @@ public class JobRepository {
     /**
      * Cleans up stale job records, execution ids and job resources.
      */
-    void cleanup(Set<Long> completedJobIds, Set<Long> runningJobIds) {
-        // clean up completed jobs
+    void cleanup(Set<Long> runningJobIds) {
+        // clean up completed jobRecords
+        Set<Long> completedJobIds = jobResults.keySet();
         completedJobIds.forEach(this::deleteJob);
 
         Set<Long> validJobIds = new HashSet<>();
         validJobIds.addAll(completedJobIds);
         validJobIds.addAll(runningJobIds);
-        validJobIds.addAll(jobs.keySet());
+        validJobIds.addAll(jobRecords.keySet());
 
         // Job ids are never cleaned up.
         // We also don't clean up job records here because they might be started in parallel while cleanup is running
@@ -264,30 +296,47 @@ public class JobRepository {
                      // If the job resources are still being uploaded, then the marker will be overwritten, which is ok.
                      if (marker == null) {
                          resources.putIfAbsent(RESOURCE_MARKER, RESOURCE_MARKER);
-                     } else if (isJobExpired(marker.getCreationTime())) {
+                     } else if (isJobRecordExpired(marker.getCreationTime())) {
                          cleanupJobResourcesAndSnapshots(jobId, resources);
                      }
                  });
     }
 
-    private boolean isJobExpired(long creationTime) {
+    List<JobRecord> getJobRecords(String name) {
+        return jobRecords.values(new FilterJobRecordByNamePredicate(name)).stream()
+                         .sorted(comparing(JobRecord::getCreationTime).reversed()).collect(toList());
+    }
+
+    private boolean isJobRecordExpired(long creationTime) {
         return (System.currentTimeMillis() - creationTime) >= jobExpirationDurationInMillis;
     }
 
-    Set<Long> getJobIds() {
-        return jobs.keySet();
+    Set<Long> getAllJobIds() {
+        Set<Long> ids = new HashSet<>();
+        ids.addAll(jobRecords.keySet());
+        ids.addAll(jobResults.keySet());
+        return ids;
     }
 
     Collection<JobRecord> getJobRecords() {
-        return jobs.values();
+        return jobRecords.values();
     }
 
-    public JobRecord getJob(long jobId) {
-       return jobs.get(jobId);
+    public JobRecord getJobRecord(long jobId) {
+       return jobRecords.get(jobId);
     }
 
     <T> IMap<String, T> getJobResources(long jobId) {
         return instance.getMap(RESOURCES_MAP_NAME_PREFIX + idToString(jobId));
+    }
+
+    public JobResult getJobResult(long jobId) {
+        return jobResults.get(jobId);
+    }
+
+    List<JobResult> getJobResults(String name) {
+        return jobResults.values(new FilterJobResultByNamePredicate(name)).stream()
+                  .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
     }
 
     public static class FilterExecutionIdByJobIdPredicate implements Predicate<Long, Long>, IdentifiedDataSerializable {
@@ -457,4 +506,79 @@ public class JobRepository {
         }
     }
 
+    public static class FilterJobRecordByNamePredicate
+            implements Predicate<Long, JobRecord>, IdentifiedDataSerializable {
+
+        private String name;
+
+        public FilterJobRecordByNamePredicate() {
+        }
+
+        public FilterJobRecordByNamePredicate(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public boolean apply(Entry<Long, JobRecord> entry) {
+            return name.equals(entry.getValue().getConfig().getName());
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return JetInitDataSerializerHook.FILTER_JOB_RECORD_BY_NAME;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            name = in.readUTF();
+        }
+    }
+
+    public static class FilterJobResultByNamePredicate
+            implements Predicate<Long, JobResult>, IdentifiedDataSerializable {
+
+        private String name;
+
+        public FilterJobResultByNamePredicate() {
+        }
+
+        public FilterJobResultByNamePredicate(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public boolean apply(Entry<Long, JobResult> entry) {
+            return name.equals(entry.getValue().getJobConfig().getName());
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetInitDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return JetInitDataSerializerHook.FILTER_JOB_RESULT_BY_NAME;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(name);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            name = in.readUTF();
+        }
+    }
 }

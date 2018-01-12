@@ -16,41 +16,47 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
-import java.util.Set;
+import java.io.IOException;
 
-public class GetJobIdsOperation extends Operation implements IdentifiedDataSerializable {
+/**
+ * Base class for {@link GetJobStatusOperation} and others.
+ */
+public abstract class AbstractJobOperation extends Operation implements IdentifiedDataSerializable {
 
-    private Set<Long> response;
+    private long jobId;
 
-    public GetJobIdsOperation() {
+    AbstractJobOperation() {
+    }
+
+    AbstractJobOperation(long jobId) {
+        this.jobId = jobId;
+    }
+
+    protected final long jobId() {
+        return jobId;
     }
 
     @Override
-    public void run() throws Exception {
-        JetService service = getService();
-        JobCoordinationService coordinationService = service.getJobCoordinationService();
-        response = coordinationService.getAllJobIds();
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
-    public int getFactoryId() {
+    public final int getFactoryId() {
         return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
-    public int getId() {
-        return JetInitDataSerializerHook.GET_JOB_IDS;
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(jobId);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        jobId = in.readLong();
     }
 
 }
