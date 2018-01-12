@@ -108,7 +108,7 @@ public abstract class AbstractHazelcastCacheManager
 
     private <K, V, C extends Configuration<K, V>> ICacheInternal<K, V> createCacheInternal(String cacheName,
             C configuration) throws IllegalArgumentException {
-        checkIfManagerNotClosed();
+        ensureOpen();
         checkNotNull(cacheName, "cacheName must not be null");
         checkNotNull(configuration, "configuration must not be null");
 
@@ -180,7 +180,7 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
-        checkIfManagerNotClosed();
+        ensureOpen();
         checkNotNull(keyType, "keyType can not be null");
         checkNotNull(valueType, "valueType can not be null");
         ICacheInternal<?, ?> cache = getCacheUnchecked(cacheName);
@@ -204,7 +204,7 @@ public abstract class AbstractHazelcastCacheManager
     }
 
     public <K, V>  ICache<K, V> getOrCreateCache(String cacheName, CacheConfig<K, V> cacheConfig) {
-        checkIfManagerNotClosed();
+        ensureOpen();
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICacheInternal<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
@@ -215,18 +215,10 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName) {
-        checkIfManagerNotClosed();
+        ensureOpen();
         ICacheInternal<?, ?> cache = getCacheUnchecked(cacheName);
         if (cache != null) {
-            Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
-            if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())) {
-                return ensureOpenIfAvailable((ICacheInternal<K, V>) cache);
-            } else {
-                throw new IllegalArgumentException(
-                        "Cache " + cacheName + " was " + "defined with specific types Cache<" + configuration.getKeyType() + ", "
-                                + configuration.getValueType() + "> "
-                                + "in which case CacheManager.getCache(String, Class, Class) must be used");
-            }
+            return ensureOpenIfAvailable((ICacheInternal<K, V>) cache);
         }
         return null;
     }
@@ -262,17 +254,14 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public Iterable<String> getCacheNames() {
+        ensureOpen();
         Set<String> names;
-        if (isClosed()) {
-            names = Collections.emptySet();
-        } else {
-            names = new LinkedHashSet<String>();
-            for (Map.Entry<String, ICacheInternal<?, ?>> entry : caches.entrySet()) {
-                String nameWithPrefix = entry.getKey();
-                int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();
-                final String name = nameWithPrefix.substring(index);
-                names.add(name);
-            }
+        names = new LinkedHashSet<String>();
+        for (Map.Entry<String, ICacheInternal<?, ?>> entry : caches.entrySet()) {
+            String nameWithPrefix = entry.getKey();
+            int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();
+            final String name = nameWithPrefix.substring(index);
+            names.add(name);
         }
         return Collections.unmodifiableCollection(names);
     }
@@ -284,7 +273,7 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public void removeCache(String cacheName, boolean destroy) {
-        checkIfManagerNotClosed();
+        ensureOpen();
         checkNotNull(cacheName, "cacheName cannot be null");
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICacheInternal<?, ?> cache = caches.remove(cacheNameWithPrefix);
@@ -369,9 +358,9 @@ public abstract class AbstractHazelcastCacheManager
         return isClosed.get() || !hazelcastInstance.getLifecycleService().isRunning();
     }
 
-    protected void checkIfManagerNotClosed() {
+    protected void ensureOpen() {
         if (isClosed()) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("CacheManager " + cacheNamePrefix + " is already closed.");
         }
     }
 

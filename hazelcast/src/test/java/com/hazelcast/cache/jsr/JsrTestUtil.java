@@ -88,7 +88,6 @@ public final class JsrTestUtil {
         setSystemProperty("CacheManagerImpl", "com.hazelcast.cache.HazelcastCacheManager");
         setSystemProperty("javax.cache.Cache", "com.hazelcast.cache.ICache");
         setSystemProperty("javax.cache.Cache.Entry", "com.hazelcast.cache.impl.CacheEntry");
-        setSystemProperty("org.jsr107.tck.management.agentId", "TCKMbeanServer");
         setSystemProperty("javax.cache.annotation.CacheInvocationContext",
                 "javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl");
     }

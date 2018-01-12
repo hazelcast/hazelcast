@@ -80,7 +80,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
-        checkIfManagerNotClosed();
+        ensureOpen();
         checkNotNull(cacheName, "cacheName cannot be null");
         ClientCacheHelper.enableStatisticManagementOnNodes(client, getCacheNameWithPrefix(cacheName),
                 statOrMan, enabled);
