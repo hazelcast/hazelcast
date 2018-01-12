@@ -484,61 +484,57 @@ public final class HazelcastWriters {
         }
     }
 
-    public static class ApplyFnEntryProcessor<K, V, T> implements EntryProcessor<K, V>, EntryBackupProcessor,
+    public static class ApplyFnEntryProcessor<K, V, T> implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>,
             IdentifiedDataSerializable {
-        private Map<K, T> tmpMap;
+        private Map<K, T> keysToUpdate;
         private DistributedBiFunction<V, T, V> updateFn;
 
         public ApplyFnEntryProcessor() {
         }
 
-        public ApplyFnEntryProcessor(Map<K, T> tmpMap, DistributedBiFunction<V, T, V> updateFn) {
-            this.tmpMap = tmpMap;
+        public ApplyFnEntryProcessor(Map<K, T> keysToUpdate, DistributedBiFunction<V, T, V> updateFn) {
+            this.keysToUpdate = keysToUpdate;
             this.updateFn = updateFn;
         }
 
         @Override
         public Object process(Entry<K, V> entry) {
             V oldValue = entry.getValue();
-            T item = tmpMap.get(entry.getKey());
+            T item = keysToUpdate.get(entry.getKey());
             V newValue = updateFn.apply(oldValue, item);
             entry.setValue(newValue);
             return null;
         }
 
-        @Override public EntryBackupProcessor<K, V> getBackupProcessor() {
+        @Override
+        public EntryBackupProcessor<K, V> getBackupProcessor() {
             return this;
         }
 
-        @Override public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(tmpMap.size());
-            for (Entry<K, T> entry : tmpMap.entrySet()) {
-                out.writeObject(entry.getKey());
-                out.writeObject(entry.getValue());
-            }
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(keysToUpdate);
             out.writeObject(updateFn);
         }
 
-        @Override public void readData(ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            tmpMap = new HashMap<>(size);
-            for (int i = 0; i < size; i++) {
-                K key = in.readObject();
-                T value = in.readObject();
-                tmpMap.put(key, value);
-            }
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            keysToUpdate = in.readObject();
             updateFn = in.readObject();
         }
 
-        @Override public void processBackup(Entry entry) {
+        @Override
+        public void processBackup(Entry<K, V> entry) {
             process(entry);
         }
 
-        @Override public int getFactoryId() {
+        @Override
+        public int getFactoryId() {
             return SerializationConstants.FACTORY_ID;
         }
 
-        @Override public int getId() {
+        @Override
+        public int getId() {
             return SerializationConstants.APPLY_FN_ENTRY_PROCESSOR;
         }
     }

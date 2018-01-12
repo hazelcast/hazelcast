@@ -273,10 +273,10 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        List<Entry<String, DataSerializableObject>> expected = input.stream()
-                                                                    .map(i -> entry(String.valueOf(i),
-                                                                            new DataSerializableObject(i * 2)))
-                                                                    .collect(toList());
+        List<Entry<String, DataSerializableObject>> expected = input
+                .stream()
+                .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
+                .collect(toList());
         Set<Entry<Object, Object>> actual = jet().getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -353,10 +353,10 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        List<Entry<String, DataSerializableObject>> expected = input.stream()
-                                                                    .map(i -> entry(String.valueOf(i),
-                                                                            new DataSerializableObject(i * 2)))
-                                                                    .collect(toList());
+        List<Entry<String, DataSerializableObject>> expected = input
+                .stream()
+                .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
+                .collect(toList());
         Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -452,15 +452,18 @@ public class SinksTest extends PipelineTestSupport {
             this.value = value;
         }
 
-        @Override public void writeData(ObjectDataOutput out) throws IOException {
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(value);
         }
 
-        @Override public void readData(ObjectDataInput in) throws IOException {
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
             value = in.readInt();
         }
 
-        @Override public boolean equals(Object o) {
+        @Override
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
@@ -473,7 +476,8 @@ public class SinksTest extends PipelineTestSupport {
             return value == that.value;
         }
 
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             return value;
         }
     }
