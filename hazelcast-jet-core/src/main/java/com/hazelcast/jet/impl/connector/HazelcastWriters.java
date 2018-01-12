@@ -34,8 +34,13 @@ import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedIntFunction;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.jet.impl.SerializationConstants;
+import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -102,16 +107,7 @@ public final class HazelcastWriters {
                 instance -> {
                     IMap map = instance.getMap(name);
                     Map<K, T> tmpMap = new HashMap<>();
-                    AbstractEntryProcessor<K, V> entryProcessor = new AbstractEntryProcessor<K, V>() {
-                        @Override
-                        public Object process(Entry<K, V> entry) {
-                            V oldValue = entry.getValue();
-                            T item = tmpMap.get(entry.getKey());
-                            V newValue = updateFn.apply(oldValue, item);
-                            entry.setValue(newValue);
-                            return null;
-                        }
-                    };
+                    ApplyFnEntryProcessor<K, V, T> entryProcessor = new ApplyFnEntryProcessor<>(tmpMap, updateFn);
 
                     return buffer -> {
                         try {
@@ -487,4 +483,60 @@ public final class HazelcastWriters {
                          .limit(count).collect(toList());
         }
     }
+
+    public static class ApplyFnEntryProcessor<K, V, T> implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>,
+            IdentifiedDataSerializable {
+        private Map<K, T> keysToUpdate;
+        private DistributedBiFunction<V, T, V> updateFn;
+
+        public ApplyFnEntryProcessor() {
+        }
+
+        public ApplyFnEntryProcessor(Map<K, T> keysToUpdate, DistributedBiFunction<V, T, V> updateFn) {
+            this.keysToUpdate = keysToUpdate;
+            this.updateFn = updateFn;
+        }
+
+        @Override
+        public Object process(Entry<K, V> entry) {
+            V oldValue = entry.getValue();
+            T item = keysToUpdate.get(entry.getKey());
+            V newValue = updateFn.apply(oldValue, item);
+            entry.setValue(newValue);
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor<K, V> getBackupProcessor() {
+            return this;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(keysToUpdate);
+            out.writeObject(updateFn);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            keysToUpdate = in.readObject();
+            updateFn = in.readObject();
+        }
+
+        @Override
+        public void processBackup(Entry<K, V> entry) {
+            process(entry);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return SerializationConstants.FACTORY_ID;
+        }
+
+        @Override
+        public int getId() {
+            return SerializationConstants.APPLY_FN_ENTRY_PROCESSOR;
+        }
+    }
+
 }
