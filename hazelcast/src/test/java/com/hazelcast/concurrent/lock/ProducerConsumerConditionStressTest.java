@@ -34,12 +34,13 @@ public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
 
     private static volatile Object object;
 
+    public static final long TEST_TIMEOUT_SECONDS = 10 * 60;
     public static final int ITERATIONS = 1000000;
     public static final int PRODUCER_COUNT = 2;
     public static final int CONSUMER_COUNT = 2;
     public static final int INSTANCE_COUNT = 1;
 
-    @Test
+    @Test(timeout = 2 * TEST_TIMEOUT_SECONDS * 1000)
     public void test() {
         HazelcastInstance[] instances = createHazelcastInstanceFactory(INSTANCE_COUNT).newInstances();
         HazelcastInstance hz = instances[0];
@@ -60,8 +61,8 @@ public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
             producers[k] = thread;
         }
 
-        assertJoinable(600, producers);
-        assertJoinable(600, consumers);
+        assertJoinable(TEST_TIMEOUT_SECONDS, producers);
+        assertJoinable(TEST_TIMEOUT_SECONDS, consumers);
 
         for (TestThread consumer : consumers) {
             assertNull(consumer.throwable);
