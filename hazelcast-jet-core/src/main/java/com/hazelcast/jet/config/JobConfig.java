@@ -18,6 +18,8 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.util.Preconditions;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -35,6 +37,7 @@ public class JobConfig implements Serializable {
 
     private static final int SNAPSHOT_INTERVAL_MILLIS_DEFAULT = 10_000;
 
+    private String name;
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
 
@@ -42,6 +45,26 @@ public class JobConfig implements Serializable {
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
     private boolean autoRestartEnabled = true;
     private int maxWatermarkRetainMillis = -1;
+
+    /**
+     * Returns the name of the job or {@code null} if no name was given.
+     */
+    @Nullable
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Sets the name for the job. Job names do not have to be unique.
+     * Default value is {@code null}.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig setName(@Nullable String name) {
+        this.name = name;
+        return this;
+    }
 
     /**
      * Tells whether {@link #setSplitBrainProtection(boolean) split brain protection}
@@ -78,6 +101,7 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
+    @Nonnull
     public JobConfig setSplitBrainProtection(boolean isEnabled) {
         this.splitBrainProtectionEnabled = isEnabled;
         return this;
@@ -103,6 +127,7 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
+    @Nonnull
     public JobConfig setAutoRestartOnMemberFailure(boolean isEnabled) {
         this.autoRestartEnabled = isEnabled;
         return this;
@@ -112,6 +137,7 @@ public class JobConfig implements Serializable {
      * Returns the configured {@link
      * #setProcessingGuarantee(ProcessingGuarantee) processing guarantee}.
      */
+    @Nonnull
     public ProcessingGuarantee getProcessingGuarantee() {
         return processingGuarantee;
     }
@@ -127,7 +153,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
+    @Nonnull
+    public JobConfig setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         this.processingGuarantee = processingGuarantee;
         return this;
     }
@@ -150,6 +177,7 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
+    @Nonnull
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
         Preconditions.checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
         this.snapshotIntervalMillis = snapshotInterval;
@@ -189,6 +217,7 @@ public class JobConfig implements Serializable {
      *                     or -1 to disable (the default)
      * @return {@code this} instance for fluent API
      */
+    @Nonnull
     public JobConfig setMaxWatermarkRetainMillis(int retainMillis) {
         maxWatermarkRetainMillis = retainMillis;
         return this;
@@ -209,7 +238,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addClass(Class... classes) {
+    @Nonnull
+    public JobConfig addClass(@Nonnull Class... classes) {
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
@@ -225,7 +255,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addJar(URL url) {
+    @Nonnull
+    public JobConfig addJar(@Nonnull URL url) {
         return add(url, null, true);
     }
 
@@ -236,7 +267,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addJar(File file) {
+    @Nonnull
+    public JobConfig addJar(@Nonnull File file) {
         try {
             return addJar(file.toURI().toURL());
         } catch (MalformedURLException e) {
@@ -251,7 +283,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addJar(String path) {
+    @Nonnull
+    public JobConfig addJar(@Nonnull String path) {
         try {
             File file = new File(path);
             return addJar(file.toURI().toURL());
@@ -267,7 +300,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addResource(URL url) {
+    @Nonnull
+    public JobConfig addResource(@Nonnull URL url) {
         return addResource(url, toFilename(url));
     }
 
@@ -278,7 +312,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addResource(URL url, String id) {
+    @Nonnull
+    public JobConfig addResource(@Nonnull URL url, @Nonnull String id) {
         return add(url, id, false);
     }
 
@@ -289,7 +324,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addResource(File file) {
+    @Nonnull
+    public JobConfig addResource(@Nonnull File file) {
         try {
             return addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
@@ -304,7 +340,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addResource(File file, String id) {
+    @Nonnull
+    public JobConfig addResource(@Nonnull File file, @Nonnull String id) {
         try {
             return add(file.toURI().toURL(), id, false);
         } catch (MalformedURLException e) {
@@ -319,7 +356,8 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addResource(String path) {
+    @Nonnull
+    public JobConfig addResource(@Nonnull String path) {
         return addResource(new File(path));
     }
 
@@ -330,13 +368,15 @@ public class JobConfig implements Serializable {
      *
      * @return {@code this} instance for fluent API
      */
-    public JobConfig addResource(String path, String id) {
+    @Nonnull
+    public JobConfig addResource(@Nonnull String path, @Nonnull String id) {
         return addResource(new File(path), id);
     }
 
     /**
      * Returns all the registered resource configurations.
      */
+    @Nonnull
     public List<ResourceConfig> getResourceConfigs() {
         return resourceConfigs;
     }

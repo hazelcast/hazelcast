@@ -18,18 +18,25 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
+import com.hazelcast.jet.impl.JobRepository.FilterJobRecordByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryBackupProcessor;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobRecordQuorumEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
-import com.hazelcast.jet.impl.operation.CompleteOperation;
-import com.hazelcast.jet.impl.operation.ExecuteOperation;
+import com.hazelcast.jet.impl.operation.CancelExecutionOperation;
+import com.hazelcast.jet.impl.operation.CancelJobOperation;
+import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
+import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
+import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
+import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
+import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
-import com.hazelcast.jet.impl.operation.InitOperation;
+import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
@@ -48,9 +55,9 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int EDGE_DEF = 2;
     public static final int JOB_RECORD = 3;
     public static final int JOB_RESULT = 4;
-    public static final int INIT_OP = 5;
-    public static final int EXECUTE_OP = 6;
-    public static final int COMPLETE_OP = 7;
+    public static final int INIT_EXECUTION_OP = 5;
+    public static final int START_EXECUTION_OP = 6;
+    public static final int COMPLETE_EXECUTION_OP = 7;
     public static final int SUBMIT_JOB_OP = 8;
     public static final int GET_JOB_STATUS_OP = 9;
     public static final int SNAPSHOT_OP = 10;
@@ -63,6 +70,13 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int JOIN_SUBMITTED_JOB = 17;
     public static final int UPDATE_JOB_QUORUM = 18;
     public static final int UPDATE_JOB_QUORUM_BACKUP = 19;
+    public static final int CANCEL_JOB_OP = 20;
+    public static final int CANCEL_EXECUTION_OP = 21;
+    public static final int FILTER_JOB_RECORD_BY_NAME = 22;
+    public static final int FILTER_JOB_RESULT_BY_NAME = 23;
+    public static final int GET_JOB_IDS_BY_NAME_OP = 24;
+    public static final int GET_JOB_SUBMISSION_TIME_OP = 25;
+    public static final int GET_JOB_CONFIG_OP = 26;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -92,12 +106,12 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new JobRecord();
                 case JOB_RESULT:
                     return new JobResult();
-                case INIT_OP:
-                    return new InitOperation();
-                case EXECUTE_OP:
-                    return new ExecuteOperation();
-                case COMPLETE_OP:
-                    return new CompleteOperation();
+                case INIT_EXECUTION_OP:
+                    return new InitExecutionOperation();
+                case START_EXECUTION_OP:
+                    return new StartExecutionOperation();
+                case COMPLETE_EXECUTION_OP:
+                    return new CompleteExecutionOperation();
                 case SUBMIT_JOB_OP:
                     return new SubmitJobOperation();
                 case GET_JOB_STATUS_OP:
@@ -122,6 +136,20 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new UpdateJobRecordQuorumEntryProcessor();
                 case UPDATE_JOB_QUORUM_BACKUP:
                     return new UpdateJobRecordQuorumEntryBackupProcessor();
+                case CANCEL_JOB_OP:
+                    return new CancelJobOperation();
+                case CANCEL_EXECUTION_OP:
+                    return new CancelExecutionOperation();
+                case FILTER_JOB_RECORD_BY_NAME:
+                    return new FilterJobRecordByNamePredicate();
+                case FILTER_JOB_RESULT_BY_NAME:
+                    return new FilterJobResultByNamePredicate();
+                case GET_JOB_IDS_BY_NAME_OP:
+                    return new GetJobIdsByNameOperation();
+                case GET_JOB_SUBMISSION_TIME_OP:
+                    return new GetJobSubmissionTimeOperation();
+                case GET_JOB_CONFIG_OP:
+                    return new GetJobConfigOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

@@ -17,9 +17,9 @@
 package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Map;
+
+import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 
 /**
  * A {@code Map.Entry} extended with a {@code long timestamp}, used for
@@ -88,7 +88,7 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
         return "TimestampedEntry{ts="
                 + timestamp
                 + ", formattedTs="
-                + Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
+                + toLocalDateTime(timestamp)
                 + ", key=" + key + ", value=" + value + '}';
     }
 }

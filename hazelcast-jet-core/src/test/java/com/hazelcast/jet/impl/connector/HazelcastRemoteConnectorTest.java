@@ -26,6 +26,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -44,7 +45,6 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
@@ -226,12 +226,12 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
-        Future<Void> future = jet.newJob(dag).getFuture();
+        Job job = jet.newJob(dag);
 
         populateMap(hz.getMap(SOURCE_NAME));
 
         assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
-        future.cancel(true);
+        job.cancel();
     }
 
     @Test
@@ -242,14 +242,14 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
-        Future<Void> future = jet.newJob(dag).getFuture();
+        Job job = jet.newJob(dag);
 
         populateMap(hz.getMap(SOURCE_NAME));
 
         assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
         assertFalse(jet.getList(SINK_NAME).contains(0));
         assertTrue(jet.getList(SINK_NAME).contains(1));
-        future.cancel(true);
+        job.cancel();
     }
 
     @Test
@@ -261,12 +261,12 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
 
-        Future<Void> future = jet.newJob(dag).getFuture();
+        Job job = jet.newJob(dag);
 
         populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
         assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
-        future.cancel(true);
+        job.cancel();
     }
 
     @Test
@@ -278,14 +278,14 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
-        Future<Void> future = jet.newJob(dag).getFuture();
+        Job job = jet.newJob(dag);
 
         populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
         assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
         assertFalse(jet.getList(SINK_NAME).contains(0));
         assertTrue(jet.getList(SINK_NAME).contains(1));
-        future.cancel(true);
+        job.cancel();
     }
 
     private void executeAndWait(DAG dag) {

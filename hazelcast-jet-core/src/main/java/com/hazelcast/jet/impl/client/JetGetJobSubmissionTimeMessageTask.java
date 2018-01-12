@@ -17,33 +17,33 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters> {
-    protected JetSubmitJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetSubmitJobCodec::decodeRequest,
-                o -> JetSubmitJobCodec.encodeResponse());
+public class JetGetJobSubmissionTimeMessageTask
+        extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters> {
+
+    protected JetGetJobSubmissionTimeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection, JetGetJobSubmissionTimeCodec::decodeRequest,
+                o -> JetGetJobSubmissionTimeCodec.encodeResponse((long) o));
     }
 
     @Override
     protected Operation prepareOperation() {
-        JobConfig jobConfig = nodeEngine.getSerializationService().toObject(parameters.jobConfig);
-        return new SubmitJobOperation(parameters.jobId, parameters.dag, jobConfig);
+        return new GetJobSubmissionTimeOperation(parameters.jobId);
     }
 
     @Override
     public String getMethodName() {
-        return "submitJob";
+        return "getJobSubmissionTime";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{};
+        return new Object[0];
     }
 
 }

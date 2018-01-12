@@ -142,7 +142,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
             // wait until the items are consumed and a new snapshot appears
             assertTrueEventually(() -> assertTrue(list.size() == messageCount * 2));
             IStreamMap<Long, Object> snapshotsMap =
-                    instances[0].getMap(SnapshotRepository.snapshotsMapName(job.getJobId()));
+                    instances[0].getMap(SnapshotRepository.snapshotsMapName(job.getId()));
             Long currentMax = maxSuccessfulSnapshot(snapshotsMap);
             assertTrueEventually(() -> {
                 Long newMax = maxSuccessfulSnapshot(snapshotsMap);

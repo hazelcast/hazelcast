@@ -364,7 +364,7 @@ public class SinksTest extends PipelineTestSupport {
         Job job = jet().newJob(pipeline);
 
         // Then
-        assertTrueEventually(() -> assertEquals(RUNNING, job.getJobStatus()), 10);
+        assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()), 10);
         assertEquals(1, srcMap.size());
         assertEquals(1, srcMap.get("key").intValue());
         srcMap.unlock("key");

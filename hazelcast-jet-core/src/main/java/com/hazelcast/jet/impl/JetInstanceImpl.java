@@ -21,16 +21,19 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobNotFoundException;
+import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.Collectors.toList;
 
@@ -53,13 +56,13 @@ public class JetInstanceImpl extends AbstractJetInstance {
     }
 
     @Nonnull @Override
-    public Job newJob(DAG dag, JobConfig config) {
+    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
         long jobId = uploadResourcesAndAssignId(config);
         return new JobProxy((NodeEngineImpl) nodeEngine, jobId, dag, config);
     }
 
     @Nonnull @Override
-    public Collection<Job> getJobs() {
+    public List<Job> getJobs() {
         Address masterAddress = nodeEngine.getMasterAddress();
         Future<Set<Long>> future = nodeEngine
                 .getOperationService()
@@ -68,6 +71,37 @@ public class JetInstanceImpl extends AbstractJetInstance {
         return uncheckCall(() ->
                 future.get().stream().map(jobId -> new JobProxy((NodeEngineImpl) nodeEngine, jobId)).collect(toList())
         );
+    }
+
+    @Override
+    public Job getJob(long jobId) {
+        try {
+            Job job = new JobProxy((NodeEngineImpl) nodeEngine, jobId);
+            job.getStatus();
+            return job;
+        } catch (Exception e) {
+            if (peel(e) instanceof JobNotFoundException) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    @Nonnull @Override
+    public List<Job> getJobs(@Nonnull String name) {
+        return getJobIdsByName(name).stream()
+                                    .map(jobId -> new JobProxy((NodeEngineImpl) nodeEngine, jobId))
+                                    .collect(toList());
+    }
+
+    private List<Long> getJobIdsByName(String name) {
+        Address masterAddress = nodeEngine.getMasterAddress();
+        Future<List<Long>> future = nodeEngine
+                .getOperationService()
+                .createInvocationBuilder(JetService.SERVICE_NAME, new GetJobIdsByNameOperation(name), masterAddress)
+                .invoke();
+
+        return uncheckCall(future::get);
     }
 
 }

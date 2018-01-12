@@ -16,69 +16,68 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 
-public class SnapshotOperation extends AsyncOperation {
+public class StartExecutionOperation extends AsyncOperation {
 
     private long executionId;
-    private long snapshotId;
 
-    // for deserialization
-    public SnapshotOperation() {
+    public StartExecutionOperation() {
     }
 
-    public SnapshotOperation(long jobId, long executionId, long snapshotId) {
+    public StartExecutionOperation(long jobId, long executionId) {
         super(jobId);
         this.executionId = executionId;
-        this.snapshotId = snapshotId;
     }
 
     @Override
     protected void doRun() throws Exception {
+        ExecutionContext execCtx = getExecutionCtx();
+        Address coordinator = getCallerAddress();
+        getLogger().info("Start execution of "
+                + jobAndExecutionId(jobId(), executionId) + " from coordinator " + coordinator);
+        execCtx.beginExecution().whenComplete(withTryCatch(getLogger(), (i, e) -> {
+            if (e != null) {
+                getLogger().fine("Execution of " + jobAndExecutionId(jobId(), executionId)
+                        + " completed with failure", e);
+            } else {
+                getLogger().fine("Execution of " + jobAndExecutionId(jobId(), executionId) + " completed");
+            }
+            doSendResponse(e);
+        }));
+    }
+
+    private ExecutionContext getExecutionCtx() {
         JetService service = getService();
-        ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
+        return service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, this
         );
-        ctx.beginSnapshot(snapshotId).thenAccept(r -> {
-            logFine(getLogger(),
-                    "Snapshot %s for job %s finished successfully on member",
-                    snapshotId, idToString(jobId()));
-            doSendResponse(null);
-        }).exceptionally(e -> {
-            getLogger().warning(String.format("Snapshot %d for job %s finished with error on member",
-                    snapshotId, idToString(jobId())), e);
-            doSendResponse(new JetException("Exception during snapshot: " + e, e));
-            return null;
-        });
-
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.SNAPSHOT_OP;
+        return JetInitDataSerializerHook.START_EXECUTION_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(executionId);
-        out.writeLong(snapshotId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         executionId = in.readLong();
-        snapshotId = in.readLong();
     }
 }

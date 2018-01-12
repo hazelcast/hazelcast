@@ -36,6 +36,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -301,8 +302,12 @@ public final class Util {
         return "job " + idToString(jobId) + ", execution " + idToString(executionId);
     }
 
-    public static LocalDateTime toLocalDateTime(long startTime) {
-        return Instant.ofEpochMilli(startTime).atZone(ZoneId.systemDefault()).toLocalDateTime();
+    public static ZonedDateTime toZonedDateTime(long timestamp) {
+        return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault());
+    }
+
+    public static LocalDateTime toLocalDateTime(long timestamp) {
+        return toZonedDateTime(timestamp).toLocalDateTime();
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -355,6 +360,15 @@ public final class Util {
     @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public static CompletableFuture<Void> completedVoidFuture() {
         return CompletableFuture.completedFuture(null);
+    }
+
+    /**
+     * Returns a void future which is already completed with the supplied exception
+     */
+    public static CompletableFuture<Void> completedVoidFuture(@Nonnull Throwable exception) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        future.completeExceptionally(exception);
+        return future;
     }
 
     /**

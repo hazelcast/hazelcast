@@ -74,7 +74,7 @@ public class PostponedSnapshotTest {
         config.setSnapshotIntervalMillis(100);
         Job job = instance.newJob(dag, config);
 
-        IStreamMap<Object, Object> snapshotsMap = instance.getMap(SnapshotRepository.snapshotsMapName(job.getJobId()));
+        IStreamMap<Object, Object> snapshotsMap = instance.getMap(SnapshotRepository.snapshotsMapName(job.getId()));
 
         // check, that snapshot starts, but stays in ONGOING state
         assertTrueEventually(() -> assertTrue(existsSnapshot(snapshotsMap, ONGOING)), 5);

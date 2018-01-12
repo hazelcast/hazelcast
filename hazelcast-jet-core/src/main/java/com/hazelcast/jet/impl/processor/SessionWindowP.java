@@ -33,8 +33,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.lang.Math.min;
 import static java.lang.System.arraycopy;
 
@@ -312,13 +311,11 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
         public String toString() {
             StringJoiner sj = new StringJoiner(", ", getClass().getSimpleName() + "{", "}");
             for (int i = 0; i < size; i++) {
-                sj.add("[s=" + format(starts[i]) + ", e=" + format(ends[i]) + ", a=" + accs[i] + ']');
+                sj.add("[s=" + toLocalDateTime(starts[i]).toLocalTime()
+                        + ", e=" + toLocalDateTime(ends[i]).toLocalTime()
+                        + ", a=" + accs[i] + ']');
             }
             return sj.toString();
-        }
-
-        private String format(long time) {
-            return Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).toLocalTime().toString();
         }
     }
 }

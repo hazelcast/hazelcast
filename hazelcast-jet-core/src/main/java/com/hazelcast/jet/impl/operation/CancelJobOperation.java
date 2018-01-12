@@ -20,37 +20,30 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
 
-import java.util.Set;
+/**
+ * Operation sent from user to master member to cancel the job. Master then sends
+ * {@link CancelExecutionOperation} to other members.
+ */
+public class CancelJobOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
 
-public class GetJobIdsOperation extends Operation implements IdentifiedDataSerializable {
+    public CancelJobOperation() {
+    }
 
-    private Set<Long> response;
-
-    public GetJobIdsOperation() {
+    public CancelJobOperation(long jobId) {
+        super(jobId);
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
         JobCoordinationService coordinationService = service.getJobCoordinationService();
-        response = coordinationService.getAllJobIds();
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
+        coordinationService.cancelJob(jobId());
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.GET_JOB_IDS;
+        return JetInitDataSerializerHook.CANCEL_JOB_OP;
     }
 
 }

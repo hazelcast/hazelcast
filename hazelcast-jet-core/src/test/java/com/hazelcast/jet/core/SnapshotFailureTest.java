@@ -107,7 +107,7 @@ public class SnapshotFailureTest extends JetTestSupport {
 
         Job job = instance1.newJob(dag, config);
 
-        IMap<Object, Object> snapshotsMap = instance1.getMap(snapshotsMapName(job.getJobId()));
+        IMap<Object, Object> snapshotsMap = instance1.getMap(snapshotsMapName(job.getId()));
 
         SnapshotRecord[] failedRecord = new SnapshotRecord[1];
         while (failedRecord[0] == null && !job.getFuture().isDone()) {

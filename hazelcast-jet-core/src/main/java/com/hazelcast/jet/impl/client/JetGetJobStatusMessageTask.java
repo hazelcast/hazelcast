@@ -34,7 +34,7 @@ public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJob
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobStatusOperation(parameters.jobId, parameters.retryOnNotFound);
+        return new GetJobStatusOperation(parameters.jobId);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJob
 
     @Override
     public String getMethodName() {
-        return "getStatus";
+        return "getJobStatus";
     }
 
     @Override

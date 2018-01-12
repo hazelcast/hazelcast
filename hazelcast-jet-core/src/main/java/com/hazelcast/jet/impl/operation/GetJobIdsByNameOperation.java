@@ -19,23 +19,32 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
-import java.util.Set;
+import java.io.IOException;
+import java.util.List;
 
-public class GetJobIdsOperation extends Operation implements IdentifiedDataSerializable {
+public class GetJobIdsByNameOperation extends Operation implements IdentifiedDataSerializable {
 
-    private Set<Long> response;
+    private String name;
 
-    public GetJobIdsOperation() {
+    private List<Long> response;
+
+    public GetJobIdsByNameOperation() {
+    }
+
+    public GetJobIdsByNameOperation(String name) {
+        this.name = name;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
         JobCoordinationService coordinationService = service.getJobCoordinationService();
-        response = coordinationService.getAllJobIds();
+        response = coordinationService.getJobIds(name);
     }
 
     @Override
@@ -50,7 +59,18 @@ public class GetJobIdsOperation extends Operation implements IdentifiedDataSeria
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.GET_JOB_IDS;
+        return JetInitDataSerializerHook.GET_JOB_IDS_BY_NAME_OP;
     }
 
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(name);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        name = in.readUTF();
+    }
 }

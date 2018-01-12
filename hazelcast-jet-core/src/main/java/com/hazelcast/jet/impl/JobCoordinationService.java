@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -30,6 +29,7 @@ import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -39,24 +39,28 @@ import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.FAILED;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUCCESSFUL;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
+import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 
 public class JobCoordinationService {
 
@@ -70,7 +74,6 @@ public class JobCoordinationService {
     private final JobExecutionService jobExecutionService;
     private final SnapshotRepository snapshotRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
-    private final IMap<Long, JobResult> jobResults;
 
     public JobCoordinationService(NodeEngineImpl nodeEngine, JetConfig config,
                                   JobRepository jobRepository, JobExecutionService jobExecutionService,
@@ -81,7 +84,6 @@ public class JobCoordinationService {
         this.jobRepository = jobRepository;
         this.jobExecutionService = jobExecutionService;
         this.snapshotRepository = snapshotRepository;
-        this.jobResults = nodeEngine.getHazelcastInstance().getMap(JOB_RESULTS_MAP_NAME);
     }
 
     public void init() {
@@ -112,24 +114,9 @@ public class JobCoordinationService {
         return masterContexts.get(jobId);
     }
 
-    // only for testing
-    public JobResult getJobResult(long jobId) {
-        return jobResults.get(jobId);
-    }
-
-    // only for testing
-    public CompletableFuture<Boolean> joinJobIfRunning(long jobId) {
-        MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext == null) {
-            throw new IllegalStateException("job " + idToString(jobId) + " is not running!");
-        }
-
-        return masterContext.completionFuture();
-    }
-
     /**
-     * Scans all job records and updates quorum size of a split-brain protection enabled job with current cluster
-     * quorum size if the current cluster quorum size is larger
+     * Scans all job records and updates quorum size of a split-brain protection enabled
+     * job with current cluster quorum size if the current cluster quorum size is larger
      */
     void updateQuorumValues() {
         if (!shouldCheckQuorumValues()) {
@@ -161,18 +148,19 @@ public class JobCoordinationService {
     }
 
     /**
-     * Starts the job if it is not already started or completed. Returns a future which represents result of the job.
+     * Starts the job if it is not already started or completed. Returns a future
+     * which represents result of the job.
      */
-    public CompletableFuture<Boolean> submitOrJoinJob(long jobId, Data dag, JobConfig config) {
+    public CompletableFuture<Void> submitOrJoinJob(long jobId, Data dag, JobConfig config) {
         if (!isMaster()) {
-            throw new JetException("Job cannot be started here. Master address: "
+            throw new JetException("Cannot submit Job " + idToString(jobId) + ". Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
         // the order of operations is important.
 
         // first, check if the job is already completed
-        JobResult jobResult = jobResults.get(jobId);
+        JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
             logger.fine("Not starting job " + idToString(jobId) + " since already completed with result: " +
                     jobResult);
@@ -198,23 +186,24 @@ public class JobCoordinationService {
         // If there is no master context and job result at the same time, it means this is the first submission
         jobRepository.putNewJobRecord(jobRecord);
 
-        logger.info("Starting job " + idToString(jobId) + " based on join/submit request from client");
-        tryStartJob(masterContext);
+        logger.info("Starting job " + idToString(jobId) + " based on submit request from client");
+        nodeEngine.getExecutionService().execute(COORDINATOR_EXECUTOR_NAME, () -> tryStartJob(masterContext));
+
         return masterContext.completionFuture();
     }
 
-    public CompletableFuture<Boolean> joinSubmittedJob(long jobId) {
+    public CompletableFuture<Void> joinSubmittedJob(long jobId) {
         if (!isMaster()) {
-            throw new JetException("Cannot join to submitted job jere. Master address: "
+            throw new JetException("Cannot join Job " + idToString(jobId) + ". Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
-        JobRecord jobRecord = jobRepository.getJob(jobId);
+        JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
             return submitOrJoinJob(jobId, jobRecord.getDag(), jobRecord.getConfig());
         }
 
-        JobResult jobResult = jobResults.get(jobId);
+        JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
             return jobResult.asCompletableFuture();
         }
@@ -227,7 +216,7 @@ public class JobCoordinationService {
         // the order of operations is important.
 
         long jobId = jobRecord.getJobId();
-        if (jobResults.containsKey(jobId) || masterContexts.containsKey(jobId)) {
+        if (jobRepository.getJobResult(jobId) != null || masterContexts.containsKey(jobId)) {
             return;
         }
 
@@ -251,7 +240,7 @@ public class JobCoordinationService {
     // If a job result is present, it completes the master context using the job result
     private boolean completeMasterContextIfJobAlreadyCompleted(MasterContext masterContext) {
         long jobId = masterContext.getJobId();
-        JobResult jobResult = jobResults.get(jobId);
+        JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
             logger.fine("Completing master context " + idToString(jobId) + " since already completed with result: " +
                     jobResult);
@@ -279,25 +268,49 @@ public class JobCoordinationService {
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).size();
     }
 
+    public void cancelJob(long jobId) {
+        if (!isMaster()) {
+            throw new JetException("Cannot cancel Job " + idToString(jobId) + ". Master address: "
+                    + nodeEngine.getClusterService().getMasterAddress());
+        }
+
+        if (jobRepository.getJobResult(jobId) != null) {
+            logger.fine("Cannot cancel Job " + idToString(jobId) + " because it already has a result");
+            return;
+        }
+
+        MasterContext masterContext = masterContexts.get(jobId);
+        if (masterContext == null) {
+            throw new RetryableHazelcastException("No MasterContext found for Job " + idToString(jobId) + " to cancel");
+        }
+
+        if (!masterContext.isCancelled()) {
+            logger.info("Job " + idToString(jobId) + " cancellation is triggered");
+            masterContext.cancel();
+        } else {
+            logger.info("Job " + idToString(jobId) + " is already cancelling...");
+        }
+    }
+
     public Set<Long> getAllJobIds() {
-        Set<Long> jobIds = new HashSet<>(jobRepository.getJobIds());
+        Set<Long> jobIds = new HashSet<>(jobRepository.getAllJobIds());
         jobIds.addAll(masterContexts.keySet());
-        jobIds.addAll(jobResults.keySet());
         return jobIds;
     }
 
     /**
-     * Returns the job status or fails with {@link JobNotFoundException} if the requested job is not found
+     * Returns the job status or fails with {@link JobNotFoundException}
+     * if the requested job is not found
      */
     public JobStatus getJobStatus(long jobId) {
         if (!isMaster()) {
-            throw new JetException("Job status cannot be queried here. Master address: "
+            throw new JetException("Cannot query status of Job " + idToString(jobId) + ". Master address: "
                     + nodeEngine.getClusterService().getMasterAddress());
         }
 
         // first check if there is a job result present.
         // this map is updated first during completion.
-        JobResult jobResult = jobResults.get(jobId);
+        JobResult jobResult = jobRepository.getJobResult(jobId);
         if (jobResult != null) {
             return jobResult.getJobStatus();
         }
@@ -305,15 +318,20 @@ public class JobCoordinationService {
         // check if there a master context for running job
         MasterContext currentMasterContext = masterContexts.get(jobId);
         if (currentMasterContext != null) {
-            return currentMasterContext.jobStatus();
+            JobStatus jobStatus = currentMasterContext.jobStatus();
+            if (jobStatus == JobStatus.RUNNING) {
+                return currentMasterContext.isCancelled() ? JobStatus.COMPLETING : JobStatus.RUNNING;
+            }
+
+            return jobStatus;
         }
 
         // no master context found, job might be just submitted
-        JobRecord jobRecord = jobRepository.getJob(jobId);
+        JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord == null) {
             // no job record found, but check job results again
             // since job might have been completed meanwhile.
-            jobResult = jobResults.get(jobId);
+            jobResult = jobRepository.getJobResult(jobId);
             if (jobResult != null) {
                 return jobResult.getJobStatus();
             }
@@ -324,26 +342,65 @@ public class JobCoordinationService {
     }
 
     /**
+     * Returns the job submission time or fails with {@link JobNotFoundException}
+     * if the requested job is not found.
+     */
+    public long getJobSubmissionTime(long jobId) {
+        if (!isMaster()) {
+            throw new JetException("Cannot query submission time of Job " + idToString(jobId) + ". Master address: "
+                    + nodeEngine.getClusterService().getMasterAddress());
+        }
+
+        JobRecord jobRecord = jobRepository.getJobRecord(jobId);
+        if (jobRecord != null) {
+            return jobRecord.getCreationTime();
+        }
+
+        JobResult jobResult = jobRepository.getJobResult(jobId);
+        if (jobResult != null) {
+            return jobResult.getCreationTime();
+        }
+
+        throw new JobNotFoundException(jobId);
+    }
+
+    /**
+     * Returns the job config or fails with {@link JobNotFoundException}
+     * if the requested job is not found.
+     */
+    public JobConfig getJobConfig(long jobId) {
+        if (!isMaster()) {
+            throw new JetException("Cannot query config of Job " + idToString(jobId) + ". Master address: "
+                    + nodeEngine.getClusterService().getMasterAddress());
+        }
+
+        JobRecord jobRecord = jobRepository.getJobRecord(jobId);
+        if (jobRecord != null) {
+            return jobRecord.getConfig();
+        }
+
+        JobResult jobResult = jobRepository.getJobResult(jobId);
+        if (jobResult != null) {
+            return jobResult.getJobConfig();
+        }
+
+        throw new JobNotFoundException(jobId);
+    }
+
+    SnapshotRepository snapshotRepository() {
+        return snapshotRepository;
+    }
+
+    /**
      * Completes the job which is coordinated with the given master context object.
      */
     void completeJob(MasterContext masterContext, long executionId, long completionTime, Throwable error) {
         // the order of operations is important.
 
         long jobId = masterContext.getJobId();
-        JobRecord jobRecord = jobRepository.getJob(jobId);
-        if (jobRecord == null) {
-            throw new JobNotFoundException(jobId);
-        }
-
         String coordinator = nodeEngine.getNode().getThisUuid();
-        JobResult jobResult = new JobResult(jobId, coordinator, jobRecord.getCreationTime(), completionTime, error);
 
-        JobResult prev = jobResults.putIfAbsent(jobId, jobResult);
-        if (prev != null) {
-            throw new IllegalStateException(jobResult + " already exists in the " + JOB_RESULTS_MAP_NAME + " map");
-        }
-
-        jobRepository.deleteJob(jobId);
+        jobRepository.completeJob(jobId, coordinator, completionTime, error);
 
         if (masterContexts.remove(masterContext.getJobId(), masterContext)) {
             logger.fine(jobAndExecutionId(jobId, executionId) + " is completed");
@@ -391,7 +448,8 @@ public class JobCoordinationService {
     private void beginSnapshot(long jobId, long executionId) {
         MasterContext masterContext = masterContexts.get(jobId);
         if (masterContext != null) {
-            if (masterContext.completionFuture().isDone() || masterContext.jobStatus() != RUNNING) {
+            if (masterContext.completionFuture().isDone() || masterContext.isCancelled()
+                    || masterContext.jobStatus() != RUNNING) {
                 logger.warning("Not starting snapshot since " + jobAndExecutionId(jobId, executionId) + " is done.");
                 return;
             }
@@ -447,6 +505,26 @@ public class JobCoordinationService {
                 && !partitionService.hasOnGoingMigrationLocal();
     }
 
+    /**
+     * Return the job IDs of jobs with given name, sorted by creation time, newest first.
+     */
+    public List<Long> getJobIds(String name) {
+        Map<Long, Long> jobs = new HashMap<>();
+
+        jobRepository.getJobRecords(name).forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
+
+        masterContexts.values().stream()
+                      .filter(ctx -> name.equals(ctx.getJobConfig().getName()))
+                      .forEach(ctx -> jobs.put(ctx.getJobId(), ctx.getJobRecord().getCreationTime()));
+
+        jobRepository.getJobResults(name)
+                  .forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
+
+        return jobs.entrySet().stream()
+                   .sorted(comparing((Function<Entry<Long, Long>, Long>) Entry::getValue).reversed())
+                   .map(Entry::getKey).collect(toList());
+    }
+
     private InternalPartitionServiceImpl getInternalPartitionService() {
         Node node = nodeEngine.getNode();
         return (InternalPartitionServiceImpl) node.getPartitionService();
@@ -493,15 +571,11 @@ public class JobCoordinationService {
     private void performCleanup() {
         // order is important
         Set<Long> runningJobIds = masterContexts.keySet();
-        Set<Long> completedJobIds = jobResults.keySet();
-        jobRepository.cleanup(completedJobIds, runningJobIds);
+        jobRepository.cleanup(runningJobIds);
     }
 
     private boolean isMaster() {
         return nodeEngine.getClusterService().isMaster();
     }
 
-    public SnapshotRepository snapshotRepository() {
-        return snapshotRepository;
-    }
 }

@@ -21,20 +21,14 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
-import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
@@ -48,19 +42,16 @@ import com.hazelcast.spi.impl.PacketHandler;
 
 import java.io.IOException;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class JetService
-        implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
-        CanCancelOperations, MembershipAwareService {
+        implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, MembershipAwareService,
+        LiveOperationsTracker {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    private final ClientInvocationRegistry clientInvocationRegistry;
     private final LiveOperationRegistry liveOperationRegistry;
 
     private JetConfig config;
@@ -77,7 +68,6 @@ public class JetService
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
-        this.clientInvocationRegistry = new ClientInvocationRegistry();
         this.liveOperationRegistry = new LiveOperationRegistry();
     }
 
@@ -140,29 +130,12 @@ public class JetService
         jobExecutionService.reset("reset", TopologyChangedException::new);
     }
 
-    public void initExecution(
-            long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
-            Set<MemberInfo> participants, ExecutionPlan plan
-    ) {
-        jobExecutionService.initExecution(
-                jobId, executionId, coordinator, coordinatorMemberListVersion, participants, plan
-        );
-    }
-
-    public JobStatus getJobStatus(long jobId) {
-        return jobCoordinationService.getJobStatus(jobId);
-    }
-
     public JetInstance getJetInstance() {
         return jetInstance;
     }
 
     public LiveOperationRegistry getLiveOperationRegistry() {
         return liveOperationRegistry;
-    }
-
-    public ClientInvocationRegistry getClientInvocationRegistry() {
-        return clientInvocationRegistry;
     }
 
     public JobRepository getJobRepository() {
@@ -179,16 +152,6 @@ public class JetService
 
     public ClassLoader getClassLoader(long jobId) {
         return jobCoordinationService.getClassLoader(jobId);
-    }
-
-    @Override
-    public void populate(LiveOperations liveOperations) {
-        liveOperationRegistry.populate(liveOperations);
-    }
-
-    @Override
-    public boolean cancelOperation(Address caller, long callId) {
-        return liveOperationRegistry.cancel(caller, callId);
     }
 
     @Override
@@ -211,19 +174,12 @@ public class JetService
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    public CompletableFuture<Boolean> submitJob(long jobId, Data dag, JobConfig config) {
-        return jobCoordinationService.submitOrJoinJob(jobId, dag, config);
-    }
-
-    public CompletableFuture<Boolean> joinSubmittedJob(long jobId) {
-        return jobCoordinationService.joinSubmittedJob(jobId);
-    }
-
-    public Set<Long> getAllJobIds() {
-        return jobCoordinationService.getAllJobIds();
-    }
-
     public AtomicInteger numConcurrentPutAllOps() {
         return numConcurrentPutAllOps;
+    }
+
+    @Override
+    public void populate(LiveOperations liveOperations) {
+        liveOperationRegistry.populate(liveOperations);
     }
 }

@@ -16,28 +16,27 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.impl.operation.AsyncExecutionOperation;
+import com.hazelcast.jet.impl.operation.AsyncOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.LiveOperations;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LiveOperationRegistry {
     // memberAddress -> callId -> operation
-    final ConcurrentHashMap<Address, Map<Long, AsyncExecutionOperation>> liveOperations = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<Address, Map<Long, AsyncOperation>> liveOperations = new ConcurrentHashMap<>();
 
-    public void register(AsyncExecutionOperation operation) {
-        Map<Long, AsyncExecutionOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
+    public void register(AsyncOperation operation) {
+        Map<Long, AsyncOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
                 (key) -> new ConcurrentHashMap<>());
         if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
             throw new IllegalStateException("Duplicate operation during registration of operation=" + operation);
         }
     }
 
-    public void deregister(AsyncExecutionOperation operation) {
-        Map<Long, AsyncExecutionOperation> operations = liveOperations.get(operation.getCallerAddress());
+    public void deregister(AsyncOperation operation) {
+        Map<Long, AsyncOperation> operations = liveOperations.get(operation.getCallerAddress());
 
         if (operations == null) {
             throw new IllegalStateException("Missing address during de-registration of operation=" + operation);
@@ -50,13 +49,6 @@ public class LiveOperationRegistry {
 
     void populate(LiveOperations liveOperations) {
         this.liveOperations.forEach((key, value) -> value.keySet().forEach(callId -> liveOperations.add(key, callId)));
-    }
-
-    boolean cancel(Address caller, long callId) {
-        Optional<AsyncExecutionOperation> operation =
-                Optional.ofNullable(liveOperations.get(caller)).map(m -> m.get(callId));
-        operation.ifPresent(AsyncExecutionOperation::cancel);
-        return operation.isPresent();
     }
 
 }

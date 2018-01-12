@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,6 +44,7 @@ import static com.hazelcast.jet.core.JobStatus.RESTARTING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -90,23 +92,25 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             assertTrueEventually(() ->
                     assertEquals(clusterSize + firstSubClusterSize, MockPS.initCount.get()));
 
-            long jobId = jobRef[0].getJobId();
+            long jobId = jobRef[0].getId();
 
             assertTrueEventually(() -> {
                 JetService service = getJetService(firstSubCluster[0]);
-                assertEquals(COMPLETED, service.getJobStatus(jobId));
+                assertEquals(COMPLETED, service.getJobCoordinationService().getJobStatus(jobId));
             });
 
             JetService service2 = getJetService(secondSubCluster[0]);
 
             assertTrueEventually(() -> {
-                assertEquals(STARTING, service2.getJobStatus(jobId));
+                assertEquals(STARTING, service2.getJobCoordinationService().getJobStatus(jobId));
             });
 
-            minorityJobFutureRef[0] = service2.getJobCoordinationService().joinJobIfRunning(jobId);
+            MasterContext masterContext = service2.getJobCoordinationService().getMasterContext(jobId);
+            assertNotNull(masterContext);
+            minorityJobFutureRef[0] = masterContext.completionFuture();
 
             assertTrueAllTheTime(() -> {
-                assertEquals(STARTING, service2.getJobStatus(jobId));
+                assertEquals(STARTING, service2.getJobCoordinationService().getJobStatus(jobId));
             }, 20);
         };
 
@@ -149,20 +153,20 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
             StuckProcessor.proceedLatch.countDown();
 
-            long jobId = jobRef[0].getJobId();
+            long jobId = jobRef[0].getId();
 
             assertTrueEventually(() -> {
                 JetService service1 = getJetService(firstSubCluster[0]);
                 JetService service2 = getJetService(secondSubCluster[0]);
-                assertEquals(RESTARTING, service1.getJobStatus(jobId));
-                assertEquals(STARTING, service2.getJobStatus(jobId));
+                assertEquals(RESTARTING, service1.getJobCoordinationService().getJobStatus(jobId));
+                assertEquals(STARTING, service2.getJobCoordinationService().getJobStatus(jobId));
             });
 
             assertTrueAllTheTime(() -> {
                 JetService service1 = getJetService(firstSubCluster[0]);
                 JetService service2 = getJetService(secondSubCluster[0]);
-                assertEquals(RESTARTING, service1.getJobStatus(jobId));
-                assertEquals(STARTING, service2.getJobStatus(jobId));
+                assertEquals(RESTARTING, service1.getJobCoordinationService().getJobStatus(jobId));
+                assertEquals(STARTING, service2.getJobCoordinationService().getJobStatus(jobId));
             }, 20);
         };
 
@@ -197,13 +201,13 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
             StuckProcessor.proceedLatch.countDown();
 
-            long jobId = jobRef[0].getJobId();
+            long jobId = jobRef[0].getId();
 
             assertTrueEventually(() -> {
                 JetService service1 = getJetService(firstSubCluster[0]);
                 JetService service2 = getJetService(secondSubCluster[0]);
-                assertEquals(COMPLETED, service1.getJobStatus(jobId));
-                assertEquals(COMPLETED, service2.getJobStatus(jobId));
+                assertEquals(COMPLETED, service1.getJobCoordinationService().getJobStatus(jobId));
+                assertEquals(COMPLETED, service2.getJobCoordinationService().getJobStatus(jobId));
             });
         };
 
@@ -270,7 +274,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         assertTrueEventually(() -> {
             JobRepository jobRepository = getJetService(instances[0]).getJobRepository();
-            JobRecord jobRecord = jobRepository.getJob(job.getJobId());
+            JobRecord jobRecord = jobRepository.getJobRecord(job.getId());
             assertEquals(3, jobRecord.getQuorumSize());
         });
 
@@ -298,11 +302,11 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         StuckProcessor.proceedLatch.countDown();
 
-        assertTrueEventually(() -> assertEquals(RESTARTING, job.getJobStatus()));
+        assertTrueEventually(() -> assertEquals(RESTARTING, job.getStatus()));
 
         createJetMember(jetConfig);
 
-        assertTrueAllTheTime(() -> assertEquals(RESTARTING, job.getJobStatus()), 5);
+        assertTrueAllTheTime(() -> assertEquals(RESTARTING, job.getStatus()), 5);
     }
 
 }

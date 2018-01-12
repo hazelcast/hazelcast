@@ -32,15 +32,15 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public class CompleteOperation extends Operation implements IdentifiedDataSerializable {
+public class CompleteExecutionOperation extends Operation implements IdentifiedDataSerializable {
 
     private long executionId;
     private Throwable error;
 
-    public CompleteOperation() {
+    public CompleteExecutionOperation() {
     }
 
-    public CompleteOperation(long executionId, Throwable error) {
+    public CompleteExecutionOperation(long executionId, Throwable error) {
         this.executionId = executionId;
         this.error = error;
     }
@@ -75,7 +75,7 @@ public class CompleteOperation extends Operation implements IdentifiedDataSerial
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.COMPLETE_OP;
+        return JetInitDataSerializerHook.COMPLETE_EXECUTION_OP;
     }
 
     @Override

@@ -31,13 +31,16 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.execution.BroadcastEntry;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.operation.CompleteOperation;
-import com.hazelcast.jet.impl.operation.ExecuteOperation;
-import com.hazelcast.jet.impl.operation.InitOperation;
+import com.hazelcast.jet.impl.operation.CancelExecutionOperation;
+import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
+import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
+import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -53,6 +56,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -94,7 +98,8 @@ public class MasterContext {
     private final ILogger logger;
     private final JobRecord jobRecord;
     private final long jobId;
-    private final CompletableFuture<Boolean> completionFuture = new CompletableFuture<>();
+    private final NonCompletableFuture completionFuture = new NonCompletableFuture();
+    private final CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
     private final AtomicReference<JobStatus> jobStatus = new AtomicReference<>(NOT_STARTED);
     private final SnapshotRepository snapshotRepository;
     private volatile Set<Vertex> vertices;
@@ -128,23 +133,28 @@ public class MasterContext {
         return jobRecord.getConfig();
     }
 
-    CompletableFuture<Boolean> completionFuture() {
+    public JobRecord getJobRecord() {
+        return jobRecord;
+    }
+
+    public CompletableFuture<Void> completionFuture() {
         return completionFuture;
     }
 
     boolean cancel() {
-        return completionFuture.cancel(true);
+        return cancellationFuture.cancel(true);
     }
 
     boolean isCancelled() {
-        return completionFuture.isCancelled();
+        return cancellationFuture.isCancelled();
     }
 
     /**
      * Starts execution of the job if it is not already completed, cancelled or failed.
      * If the job is already cancelled, the job completion procedure is triggered.
      * If the job quorum is not satisfied, job restart is rescheduled.
-     * If there was a membership change and the partition table is not completely fixed yet, job restart is rescheduled.
+     * If there was a membership change and the partition table is not completely
+     * fixed yet, job restart is rescheduled.
      */
     void tryStartJob(Function<Long, Long> executionIdSupplier) {
         if (!setJobStatusToStarting()) {
@@ -197,7 +207,7 @@ public class MasterContext {
         logger.fine("Built execution plans for " + jobIdString());
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan ->
-                new InitOperation(jobId, executionId, membersView.getVersion(), participants, plan);
+                new InitExecutionOperation(jobId, executionId, membersView.getVersion(), participants, plan);
         invoke(operationCtor, this::onInitStepCompleted, null);
     }
 
@@ -232,9 +242,9 @@ public class MasterContext {
             return false;
         }
 
-        if (completionFuture.isCancelled()) {
+        if (cancellationFuture.isCancelled()) {
             logger.fine("Skipping init job " + idToString(jobId) + ": is already cancelled.");
-            onCompleteStepCompleted(null);
+            onCompleteStepCompleted(new CancellationException());
             return false;
         }
 
@@ -245,8 +255,6 @@ public class MasterContext {
             }
 
             jobStartTime = System.currentTimeMillis();
-        } else {
-            jobStatus.compareAndSet(RUNNING, RESTARTING);
         }
 
         status = jobStatus();
@@ -308,9 +316,9 @@ public class MasterContext {
         }
 
         if (error == null) {
-            invokeExecute();
+            invokeStartExecution();
         } else {
-            invokeComplete(error);
+            invokeCompleteExecution(error);
         }
     }
 
@@ -321,7 +329,7 @@ public class MasterContext {
      * In that case, TopologyChangeException is returned so that the job will be restarted.
      */
     private Throwable getInitResult(Map<MemberInfo, Object> responses) {
-        if (completionFuture.isCancelled()) {
+        if (cancellationFuture.isCancelled()) {
             logger.fine(jobIdString() + " to be cancelled after init");
             return new CancellationException();
         }
@@ -363,15 +371,45 @@ public class MasterContext {
 
     // If a participant leaves or the execution fails in a participant locally, executions are cancelled
     // on the remaining participants and the callback is completed after all invocations return.
-    private void invokeExecute() {
+    private void invokeStartExecution() {
         jobStatus.set(RUNNING);
         logger.fine("Executing " + jobIdString());
-        Function<ExecutionPlan, Operation> operationCtor = plan -> new ExecuteOperation(jobId, executionId);
-        invoke(operationCtor, this::onExecuteStepCompleted, completionFuture);
+
+        long executionId = this.executionId;
+
+        AtomicBoolean cancellation = new AtomicBoolean();
+        ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (cancellation.compareAndSet(false, true)) {
+                    cancelExecute(jobId, executionId);
+                }
+            }
+        };
+
+        cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
+            if (e instanceof CancellationException) {
+                callback.onFailure(e);
+            }
+        }));
+
+        Function<ExecutionPlan, Operation> operationCtor = plan -> new StartExecutionOperation(jobId, executionId);
+        invoke(operationCtor, this::onExecuteStepCompleted, callback);
 
         if (isSnapshottingEnabled()) {
             coordinationService.scheduleSnapshot(jobId, executionId);
         }
+    }
+
+    private void cancelExecute(long jobId, long executionId) {
+        nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR, () -> {
+            Function<ExecutionPlan, Operation> operationCtor = plan -> new CancelExecutionOperation(jobId, executionId);
+            invoke(operationCtor, responses -> { }, null);
+        });
     }
 
     void beginSnapshot(long executionId) {
@@ -408,17 +446,19 @@ public class MasterContext {
 
     // Called as callback when all ExecuteOperation invocations are done
     private void onExecuteStepCompleted(Map<MemberInfo, Object> responses) {
-        invokeComplete(getExecuteResult(responses));
+        invokeCompleteExecution(getExecuteResult(responses));
     }
 
     /**
-     * If there is no failure, then returns null. If the job is cancelled, then returns CancellationException.
-     * If there is at least one non-restartable failure, such as an exception in user code, then returns that failure.
+     * If there is no failure, then returns null. If the job is cancelled,
+     * then returns CancellationException.
+     * If there is at least one non-restartable failure, such as an exception in
+     * user code, then returns that failure.
      * Otherwise, the failure is because a job participant has left the cluster.
-     * In that case, TopologyChangeException is returned so that the job will be restarted.
+     * In that case, {@code TopologyChangeException} is returned so that the job will be restarted.
      */
     private Throwable getExecuteResult(Map<MemberInfo, Object> responses) {
-        if (completionFuture.isCancelled()) {
+        if (cancellationFuture.isCancelled()) {
             logger.fine(jobIdString() + " to be cancelled after execute");
             return new CancellationException();
         }
@@ -445,7 +485,7 @@ public class MasterContext {
                 .orElse(new TopologyChangedException());
     }
 
-    private void invokeComplete(Throwable error) {
+    private void invokeCompleteExecution(Throwable error) {
         JobStatus status = jobStatus();
 
         Throwable finalError;
@@ -464,7 +504,7 @@ public class MasterContext {
             finalError = new IllegalStateException("Job coordination failed.");
         }
 
-        Function<ExecutionPlan, Operation> operationCtor = plan -> new CompleteOperation(executionId, finalError);
+        Function<ExecutionPlan, Operation> operationCtor = plan -> new CompleteExecutionOperation(executionId, finalError);
         invoke(operationCtor, responses -> onCompleteStepCompleted(error), null);
     }
 
@@ -515,12 +555,14 @@ public class MasterContext {
     }
 
     private void completeVertices(@Nullable Throwable failure) {
-        for (Vertex vertex : vertices) {
-            try {
-                vertex.getMetaSupplier().complete(failure);
-            } catch (Exception e) {
-                logger.severe(jobIdString()
-                        + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
+        if (vertices != null) {
+            for (Vertex vertex : vertices) {
+                try {
+                    vertex.getMetaSupplier().complete(failure);
+                } catch (Exception e) {
+                    logger.severe(jobIdString()
+                            + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
+                }
             }
         }
     }
@@ -528,10 +570,10 @@ public class MasterContext {
     void setFinalResult(Throwable failure) {
         JobStatus status = isSuccess(failure) ? COMPLETED : FAILED;
         jobStatus.set(status);
-        if (status == COMPLETED) {
-            completionFuture.complete(true);
+        if (failure == null) {
+            completionFuture.internalComplete();
         } else {
-            completionFuture.completeExceptionally(failure);
+            completionFuture.internalCompleteExceptionally(failure);
         }
     }
 
@@ -541,7 +583,7 @@ public class MasterContext {
 
     private void invoke(Function<ExecutionPlan, Operation> operationCtor,
                         Consumer<Map<MemberInfo, Object>> completionCallback,
-                        CompletableFuture cancellationFuture) {
+                        ExecutionCallback<Object> callback) {
         CompletableFuture<Void> doneFuture = new CompletableFuture<>();
         Map<MemberInfo, InternalCompletableFuture<Object>> futures = new ConcurrentHashMap<>();
         invokeOnParticipants(futures, doneFuture, operationCtor);
@@ -564,28 +606,7 @@ public class MasterContext {
             completionCallback.accept(responses);
         }));
 
-        boolean cancelOnFailure = (cancellationFuture != null);
-
-        // if cancelOnFailure is true, we should cancel invocations when the future is cancelled or any
-        // of the invocations fails
-        if (cancelOnFailure) {
-            cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
-                if (e instanceof CancellationException) {
-                    futures.values().forEach(f -> f.cancel(true));
-                }
-            }));
-
-            ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    futures.values().forEach(f -> f.cancel(true));
-                }
-            };
-
+        if (callback != null) {
             futures.values().forEach(f -> f.andThen(callback));
         }
     }
@@ -640,4 +661,5 @@ public class MasterContext {
             return SNAPSHOT_RESTORE_EDGE_PRIORITY;
         }
     }
+
 }

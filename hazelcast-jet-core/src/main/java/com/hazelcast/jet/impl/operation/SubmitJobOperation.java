@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,16 +26,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-
-public class SubmitJobOperation extends AsyncExecutionOperation implements IdentifiedDataSerializable {
+public class SubmitJobOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
 
     private Data dag;
     private JobConfig config;
-    private volatile CompletableFuture<Boolean> executionFuture;
 
     public SubmitJobOperation() {
     }
@@ -46,17 +42,10 @@ public class SubmitJobOperation extends AsyncExecutionOperation implements Ident
     }
 
     @Override
-    protected void doRun() {
+    public void run() {
         JetService service = getService();
-        executionFuture = service.submitJob(jobId, dag, config);
-        executionFuture.whenComplete(withTryCatch(getLogger(), (r, t) -> doSendResponse(peel(t))));
-    }
-
-    @Override
-    public void cancel() {
-        if (executionFuture != null) {
-            executionFuture.cancel(true);
-        }
+        JobCoordinationService coordinationService = service.getJobCoordinationService();
+        coordinationService.submitOrJoinJob(jobId(), dag, config);
     }
 
     @Override
