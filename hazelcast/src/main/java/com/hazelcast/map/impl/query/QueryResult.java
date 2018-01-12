@@ -104,7 +104,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
                 value = entry.getValueData();
                 break;
             default:
-                throw new IllegalStateException("Unknown iterationtype:" + iterationType);
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
         }
 
         rows.add(new QueryResultRow(key, value));

@@ -167,7 +167,7 @@ public final class ReflectionHelper {
                 }
                 if (localGetter == null) {
                     throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + baseName + "' on class '" + clazz + "'");
+                            + baseName + "' on class '" + clazz.getName() + "'");
                 }
                 parent = localGetter;
             }

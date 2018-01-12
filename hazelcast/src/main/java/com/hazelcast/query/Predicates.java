@@ -16,6 +16,7 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.BetweenPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
@@ -172,6 +173,20 @@ public final class Predicates {
 
     //we don't want instances. private constructor.
     private Predicates() {
+    }
+
+    /**
+     * Creates an <b>always true</b> predicate that will pass all items.
+     */
+    public static <K, V> Predicate<K, V> alwaysTrue() {
+        return new TruePredicate();
+    }
+
+    /**
+     * Creates an <b>always false</b> predicate that will filter out all items.
+     */
+    public static <K, V> Predicate<K, V> alwaysFalse() {
+        return new FalsePredicate();
     }
 
     /**
