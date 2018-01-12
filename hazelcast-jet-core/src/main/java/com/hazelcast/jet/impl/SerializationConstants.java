@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.connector.HazelcastWriters.ApplyFnEntryProcessor;
 
 /**
  * Constants used for Hazelcast's {@link com.hazelcast.nio.serialization.IdentifiedDataSerializable}
@@ -37,6 +38,8 @@ public final class SerializationConstants {
     public static final int VERTEX = 1;
     /** Serialization ID of the {@link Edge} class. */
     public static final int EDGE = 2;
+    /** Serialization ID of the {@link ApplyFnEntryProcessor} class. */
+    public static final int APPLY_FN_ENTRY_PROCESSOR = 3;
 
     private SerializationConstants() {
 
