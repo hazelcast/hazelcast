@@ -180,6 +180,13 @@ public class ClientICMPManager implements ConnectionListener {
                 }
             } catch (Throwable ignored) {
                 EmptyStatement.ignore(ignored);
+            } finally {
+                //because ping and connection removal runs concurrently,
+                //it could be the case that we created an entry for a dead connection.
+                //if connection closed while we are pinging, remove the related entry
+                if (!connection.isAlive()) {
+                    icmpFailureDetector.remove(connection);
+                }
             }
         }
     }
