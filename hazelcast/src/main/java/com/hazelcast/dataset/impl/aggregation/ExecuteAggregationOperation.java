@@ -6,12 +6,17 @@ import com.hazelcast.dataset.impl.operations.DataSetOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.CallStatus;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.CallStatus.OFFLOADED;
 
 public class ExecuteAggregationOperation extends DataSetOperation {
 
@@ -34,11 +39,21 @@ public class ExecuteAggregationOperation extends DataSetOperation {
     @Override
     public CallStatus call() throws Exception {
         if (forkJoin) {
+            OperationServiceImpl ops = (OperationServiceImpl)getNodeEngine().getOperationService();
+            ops.onStartAsyncOperation(this);
+
+            // bit hackish (probably better to have a single future returned by combining the results)
             AggregateFJResult result = partition.executeAggregateFJ(preparationId, bindings);
-            //todo: we don't want to wait for completion on the operation thread
-            result.aggregator.combine(result.task.join());
-            response = result.aggregator;
-            return DONE_RESPONSE;
+            result.future.thenAccept(aggregator -> {
+                try {
+                    result.aggregator.combine(aggregator);
+                    Aggregator response = result.aggregator;
+                    sendResponse(response);
+                }finally {
+                    ops.onCompletionAsyncOperation(ExecuteAggregationOperation.this);
+                }
+            });
+            return OFFLOADED;
         } else {
             response = partition.executeAggregationPartitionThread(preparationId, bindings);
             return DONE_RESPONSE;

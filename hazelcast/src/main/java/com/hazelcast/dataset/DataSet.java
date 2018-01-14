@@ -14,7 +14,6 @@ import com.hazelcast.util.function.Supplier;
  *
  * todo:
  * - fork join option for queries?
- * - aggregation: waiting on the completion of the tenuredsegments, is done on the partition thread. This isn't needed
  * - primary index
  * - analyzing compilation so multiple members can share the same compilation
  * - option to not partition the data. E.g. when the amount of data is relatively small.
@@ -46,24 +45,7 @@ import com.hazelcast.util.function.Supplier;
  * on 8/9h, even though the time currently might be 13h.
  *
  * done:
- *
- * <h1>Growing</h1>
- *
- * <h2>Infinite</h2>
- * Infinite segment capacity or infinite number of segments with some fixed capacity?
- *
- * Currently the DataSet can grow indefinitely. Currently we have this one.
- *
- * <h2>Bound</h2>
- * There should be an option for a maximum capacity.
- *
- * <h2>Time based</h2>
- * Writes in a single time 'group' get written to some segment and all the time groups together form to total retention.
- * E.g. if there is a 48h retention, one could create 48 1h segments. Old segments gets dropped, and new segments are created
- * when writes are done.
- *
- * <h3>Ring</h3>
- * So overwrite older segments.
+ * - aggregation: waiting on the completion of the tenuredsegments, is done on the partition thread. This isn't needed
  *
  * <h1>String</h1>
  * a string can be fixed max length. So if it is defined as 20 chars, then 20 chars storage is allocated. If only 5 chars are used,

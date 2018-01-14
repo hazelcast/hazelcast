@@ -11,6 +11,7 @@ import com.hazelcast.dataset.ProjectionRecipe;
 import com.hazelcast.dataset.impl.aggregation.AggregateFJResult;
 import com.hazelcast.dataset.impl.aggregation.AggregationSegmentRun;
 import com.hazelcast.dataset.impl.aggregation.AggregationSegmentRunCodegen;
+import com.hazelcast.dataset.impl.aggregation.AggregatorRecursiveTask;
 import com.hazelcast.dataset.impl.entryprocessor.EntryProcessorSegmentRun;
 import com.hazelcast.dataset.impl.entryprocessor.EntryProcessorSegmentRunCodegen;
 import com.hazelcast.dataset.impl.projection.ProjectionSegmentRun;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -312,7 +314,9 @@ public class Partition {
     public AggregateFJResult executeAggregateFJ(String preparationId, Map<String, Object> bindings) {
         Class<AggregationSegmentRun> clazz = compiler.load("AggregationSegmentRun_" + preparationId);
 
-        AggregatorRecursiveTask task = new AggregatorRecursiveTask(youngestTenuredSegment, () -> {
+        CompletableFuture<Aggregator> f = new CompletableFuture<>();
+
+        AggregatorRecursiveTask task = new AggregatorRecursiveTask(f, youngestTenuredSegment, () -> {
             AggregationSegmentRun run = newInstance(clazz);
             run.recordDataSize = recordModel.getSize();
             run.bind(bindings);
@@ -326,7 +330,7 @@ public class Partition {
         edenRun.bind(bindings);
         edenRun.runSingleFullScan(edenSegment);
 
-        return new AggregateFJResult(edenRun.result(), task);
+        return new AggregateFJResult(edenRun.result(), f);
     }
 
     public Aggregator executeAggregationPartitionThread(String preparationId, Map<String, Object> bindings) {
