@@ -23,6 +23,8 @@ public class FillOperation extends DataSetOperation {
 
     @Override
     public void run() {
+        getLogger().info("Executing fill operation:" + getPartitionId() + " count:" + count);
+
         for (long k = 0; k < count; k++) {
             partition.insert(null, supplier.get());
         }

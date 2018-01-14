@@ -6,6 +6,7 @@ import com.hazelcast.config.DataSetConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.dataset.AggregationRecipe;
 import com.hazelcast.dataset.EntryProcessorRecipe;
+import com.hazelcast.dataset.MemoryInfo;
 import com.hazelcast.dataset.ProjectionRecipe;
 import com.hazelcast.dataset.impl.aggregation.AggregateFJResult;
 import com.hazelcast.dataset.impl.aggregation.AggregationSegmentRun;
@@ -252,7 +253,7 @@ public class Partition {
             segment = segment.previous;
         }
 
-        return new MemoryInfo(consumedBytes, allocatedBytes, segmentsUsed);
+        return new MemoryInfo(consumedBytes, allocatedBytes, segmentsUsed, count());
     }
 
     public void prepareQuery(String preparationId, Predicate predicate) {

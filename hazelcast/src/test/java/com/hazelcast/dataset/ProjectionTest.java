@@ -3,7 +3,6 @@ package com.hazelcast.dataset;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataSetConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.dataset.impl.MemoryInfo;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;

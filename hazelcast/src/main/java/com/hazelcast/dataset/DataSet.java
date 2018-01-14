@@ -4,7 +4,6 @@ package com.hazelcast.dataset;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
-import com.hazelcast.dataset.impl.MemoryInfo;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.function.Supplier;
 
@@ -120,4 +119,6 @@ public interface DataSet<K, V> extends DistributedObject {
     long count();
 
     MemoryInfo memoryInfo();
+
+    MemoryInfo memoryInfo(int partitionId);
 }

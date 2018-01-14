@@ -1,4 +1,4 @@
-package com.hazelcast.dataset.impl;
+package com.hazelcast.dataset;
 
 import java.io.Serializable;
 
@@ -6,11 +6,13 @@ public class MemoryInfo implements Serializable {
     private final long consumedBytes;
     private final long allocatedBytes;
     private final int segmentsInUse;
+    private final long count;
 
-    public MemoryInfo(long consumedBytes, long allocatedBytes, int segmentsInUse) {
+    public MemoryInfo(long consumedBytes, long allocatedBytes, int segmentsInUse, long count) {
         this.consumedBytes = consumedBytes;
         this.allocatedBytes = allocatedBytes;
         this.segmentsInUse = segmentsInUse;
+        this.count=count;
     }
 
     public int segmentsInUse() {
@@ -25,10 +27,15 @@ public class MemoryInfo implements Serializable {
         return allocatedBytes;
     }
 
+    public long count() {
+        return count;
+    }
+
     @Override
     public String toString() {
         return "MemoryInfo{" +
-                "consumedBytes=" + consumedBytes +
+                "count=" + count +
+                ", consumedBytes=" + consumedBytes +
                 ", allocatedBytes=" + allocatedBytes +
                 ", allocationEffectiveness=" + ((100d * consumedBytes) / allocatedBytes) + "%" +
                 ", segmentsInUse=" + segmentsInUse +

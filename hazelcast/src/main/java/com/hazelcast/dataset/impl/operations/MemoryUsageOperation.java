@@ -1,7 +1,8 @@
 package com.hazelcast.dataset.impl.operations;
 
+import com.hazelcast.dataset.MemoryInfo;
 import com.hazelcast.dataset.impl.DataSetDataSerializerHook;
-import com.hazelcast.dataset.impl.MemoryInfo;
+
 
 public class MemoryUsageOperation extends DataSetOperation {
 

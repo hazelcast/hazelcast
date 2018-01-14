@@ -5,6 +5,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.dataset.AggregationRecipe;
 import com.hazelcast.dataset.DataSet;
 import com.hazelcast.dataset.EntryProcessorRecipe;
+import com.hazelcast.dataset.MemoryInfo;
 import com.hazelcast.dataset.PreparedAggregation;
 import com.hazelcast.dataset.PreparedEntryProcessor;
 import com.hazelcast.dataset.PreparedProjection;
@@ -14,11 +15,12 @@ import com.hazelcast.dataset.impl.aggregation.FetchAggregateOperationFactory;
 import com.hazelcast.dataset.impl.aggregation.PrepareAggregationOperationFactory;
 import com.hazelcast.dataset.impl.entryprocessor.PrepareEntryProcessorOperationFactory;
 import com.hazelcast.dataset.impl.operations.CountOperationFactory;
+import com.hazelcast.dataset.impl.operations.FillOperation;
 import com.hazelcast.dataset.impl.operations.FreezeOperationFactory;
 import com.hazelcast.dataset.impl.operations.InsertOperation;
+import com.hazelcast.dataset.impl.operations.MemoryUsageOperation;
 import com.hazelcast.dataset.impl.operations.MemoryUsageOperationFactory;
 import com.hazelcast.dataset.impl.operations.PopulateOperationFactory;
-import com.hazelcast.dataset.impl.operations.FillOperation;
 import com.hazelcast.dataset.impl.projection.PrepareProjectionOperationFactory;
 import com.hazelcast.dataset.impl.query.PrepareQueryOperationFactory;
 import com.hazelcast.nio.serialization.Data;
@@ -29,12 +31,14 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.function.Supplier;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -61,12 +65,17 @@ public class DataSetProxy<K, V> extends AbstractDistributedObject<DataSetService
         long countPerPartition = count / partitionCount;
         long remaining = count % partitionCount;
 
+        SerializationService ss = getNodeEngine().getSerializationService();
         List<InternalCompletableFuture> futures = new LinkedList<>();
         for (int k = 0; k < partitionCount; k++) {
             long c = k == partitionCount - 1
                     ? countPerPartition + remaining
                     : countPerPartition;
-            Operation op = new FillOperation(name, supplier, c).setPartitionId(k);
+
+            // we need to clone the supplier
+            Supplier s = ss.toObject(ss.toData(supplier));
+            Operation op = new FillOperation(name, s, c)
+                    .setPartitionId(k);
             InternalCompletableFuture<Object> f = operationService.invokeOnPartition(op);
             futures.add(f);
         }
@@ -233,17 +242,26 @@ public class DataSetProxy<K, V> extends AbstractDistributedObject<DataSetService
 
             long allocated = 0;
             long consumed = 0;
+            long count = 0;
             int segmentsUsed = 0;
             for (Object value : result.values()) {
                 MemoryInfo memoryInfo = (MemoryInfo) value;
                 allocated += memoryInfo.allocatedBytes();
                 consumed += memoryInfo.consumedBytes();
                 segmentsUsed += memoryInfo.segmentsInUse();
+                count+=memoryInfo.count();
             }
-            return new MemoryInfo(consumed, allocated, segmentsUsed);
+            return new MemoryInfo(consumed, allocated, segmentsUsed,count);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public MemoryInfo memoryInfo(int partitionId) {
+        Operation op = new MemoryUsageOperation(name).setPartitionId(partitionId);
+        InternalCompletableFuture<MemoryInfo> f = operationService.invokeOnPartition(op);
+        return f.join();
     }
 
     @Override
