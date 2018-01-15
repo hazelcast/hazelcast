@@ -17,13 +17,13 @@
 package com.hazelcast.config;
 
 /**
- * See {@link ReliableIdGeneratorConfig}
+ * See {@link FlakeIdGeneratorConfig}
  *
  * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
-public class ReliableIdGeneratorConfigReadOnly extends ReliableIdGeneratorConfig {
+public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
 
-    ReliableIdGeneratorConfigReadOnly(ReliableIdGeneratorConfig config) {
+    FlakeIdGeneratorConfigReadOnly(FlakeIdGeneratorConfig config) {
         super(config);
     }
 
@@ -33,12 +33,12 @@ public class ReliableIdGeneratorConfigReadOnly extends ReliableIdGeneratorConfig
     }
 
     @Override
-    public ReliableIdGeneratorConfig setPrefetchCount(int prefetchCount) {
+    public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
         throw throwReadOnly();
     }
 
     @Override
-    public ReliableIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
+    public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
         throw throwReadOnly();
     }
 

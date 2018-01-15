@@ -26,7 +26,7 @@ import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -121,8 +121,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, EventJournalConfig>();
     private final ConcurrentMap<String, EventJournalConfig> mapEventJournalConfigs =
             new ConcurrentHashMap<String, EventJournalConfig>();
-    private final ConcurrentMap<String, ReliableIdGeneratorConfig> reliableIdGeneratorConfigs =
-            new ConcurrentHashMap<String, ReliableIdGeneratorConfig>();
+    private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
+            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     private final ConfigPatternMatcher configPatternMatcher;
     private final ILogger logger;
@@ -150,7 +150,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheSimpleConfigs,
             cacheEventJournalConfigs,
             mapEventJournalConfigs,
-            reliableIdGeneratorConfigs,
+            flakeIdGeneratorConfigs,
     };
 
     private volatile Version version;
@@ -325,9 +325,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof SemaphoreConfig) {
             SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
             currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
-        } else if (newConfig instanceof ReliableIdGeneratorConfig) {
-            ReliableIdGeneratorConfig config = (ReliableIdGeneratorConfig) newConfig;
-            currentConfig = reliableIdGeneratorConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof FlakeIdGeneratorConfig) {
+            FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
+            currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -597,13 +597,13 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, reliableIdGeneratorConfigs, baseName);
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
+        return lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigs, baseName);
     }
 
     @Override
-    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
-        return reliableIdGeneratorConfigs;
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
+        return flakeIdGeneratorConfigs;
     }
 
     @Override

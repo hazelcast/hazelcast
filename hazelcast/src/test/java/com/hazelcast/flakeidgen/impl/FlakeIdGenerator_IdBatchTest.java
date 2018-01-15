@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen.impl;
+package com.hazelcast.flakeidgen.impl;
 
-import com.hazelcast.reliableidgen.impl.IdBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ReliableIdGenerator_IdBatchTest {
+public class FlakeIdGenerator_IdBatchTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();

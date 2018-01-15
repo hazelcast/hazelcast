@@ -269,10 +269,10 @@
         <in-memory-format>BINARY</in-memory-format>
     </ringbuffer>
 
-    <reliable-id-generator name="default">
+    <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
-    </reliable-id-generator>
+    </flake-id-generator>
 
     <atomic-long name="default">
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>

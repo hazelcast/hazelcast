@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -120,8 +120,8 @@ public class Config {
 
     private final Map<String, EventJournalConfig> cacheEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
 
-    private final Map<String, ReliableIdGeneratorConfig> reliableIdGeneratorConfigMap =
-            new ConcurrentHashMap<String, ReliableIdGeneratorConfig>();
+    private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
+            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     private final Map<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
 
@@ -3079,42 +3079,42 @@ public class Config {
     }
 
     /**
-     * Returns the map of {@link ReliableIdGenerator} configurations,
+     * Returns the map of {@link FlakeIdGenerator} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration was initially obtained.
      *
      * @return the map configurations mapped by config name
      */
-    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
-        return reliableIdGeneratorConfigMap;
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
+        return flakeIdGeneratorConfigMap;
     }
 
     /**
-     * Returns a {@link ReliableIdGeneratorConfig} configuration for the given reliable ID generator name.
+     * Returns a {@link FlakeIdGeneratorConfig} configuration for the given flake ID generator name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
      * partition ID qualifier from the given {@code name}.
      * If there is no config found by the name, it will return the configuration
      * with the name {@code "default"}.
      *
-     * @param name name of the reliable ID generator config
-     * @return the reliable ID generator configuration
+     * @param name name of the flake ID generator config
+     * @return the flake ID generator configuration
      * @throws ConfigurationException if ambiguous configurations are found
      * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
-    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
         String baseName = getBaseName(name);
-        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, reliableIdGeneratorConfigMap, baseName);
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
         if (config != null) {
             return config;
         }
-        return getReliableIdGeneratorConfig("default");
+        return getFlakeIdGeneratorConfig("default");
     }
 
     /**
-     * Returns the {@link ReliableIdGeneratorConfig} for the given name, creating
+     * Returns the {@link FlakeIdGeneratorConfig} for the given name, creating
      * one if necessary and adding it to the collection of known configurations.
      * <p>
      * The configuration is found by matching the the configuration name
@@ -3126,62 +3126,62 @@ public class Config {
      * <p>
      * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addReliableIdGeneratorConfig(ReliableIdGeneratorConfig)}.
+     * explicitly adding it by invoking {@link #addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig)}.
      * <p>
      * Because it adds new configurations if they are not already present,
      * this method is intended to be used before this config is used to
      * create a hazelcast instance. Afterwards, newly added configurations
      * may be ignored.
      *
-     * @param name name of the reliable ID generator config
+     * @param name name of the flake ID generator config
      * @return the cache configuration
      * @throws ConfigurationException if ambiguous configurations are found
      * @see com.hazelcast.partition.strategy.StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
      * @see #getConfigPatternMatcher()
      */
-    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
+    public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
         String baseName = getBaseName(name);
-        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, reliableIdGeneratorConfigMap, baseName);
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
         if (config != null) {
             return config;
         }
-        ReliableIdGeneratorConfig defConfig = reliableIdGeneratorConfigMap.get("default");
+        FlakeIdGeneratorConfig defConfig = flakeIdGeneratorConfigMap.get("default");
         if (defConfig == null) {
-            defConfig = new ReliableIdGeneratorConfig("default");
-            reliableIdGeneratorConfigMap.put(defConfig.getName(), defConfig);
+            defConfig = new FlakeIdGeneratorConfig("default");
+            flakeIdGeneratorConfigMap.put(defConfig.getName(), defConfig);
         }
-        config = new ReliableIdGeneratorConfig(defConfig);
+        config = new FlakeIdGeneratorConfig(defConfig);
         config.setName(name);
-        reliableIdGeneratorConfigMap.put(config.getName(), config);
+        flakeIdGeneratorConfigMap.put(config.getName(), config);
         return config;
     }
 
     /**
-     * Adds a reliable ID generator configuration. The configuration is saved under the config
+     * Adds a flake ID generator configuration. The configuration is saved under the config
      * name, which may be a pattern with which the configuration will be
      * obtained in the future.
      *
-     * @param config the reliable ID generator configuration
+     * @param config the flake ID generator configuration
      * @return this config instance
      */
-    public Config addReliableIdGeneratorConfig(ReliableIdGeneratorConfig config) {
-        reliableIdGeneratorConfigMap.put(config.getName(), config);
+    public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig config) {
+        flakeIdGeneratorConfigMap.put(config.getName(), config);
         return this;
     }
 
     /**
-     * Sets the map of {@link ReliableIdGenerator} configurations,
+     * Sets the map of {@link FlakeIdGenerator} configurations,
      * mapped by config name. The config name may be a pattern with which the
      * configuration will be obtained in the future.
      *
-     * @param map the ReliableIdGenerator configuration map to set
+     * @param map the FlakeIdGenerator configuration map to set
      * @return this config instance
      */
-    public Config setReliableIdGeneratorConfigs(Map<String, ReliableIdGeneratorConfig> map) {
-        reliableIdGeneratorConfigMap.clear();
-        reliableIdGeneratorConfigMap.putAll(map);
-        for (Entry<String, ReliableIdGeneratorConfig> entry : map.entrySet()) {
+    public Config setFlakeIdGeneratorConfigs(Map<String, FlakeIdGeneratorConfig> map) {
+        flakeIdGeneratorConfigMap.clear();
+        flakeIdGeneratorConfigMap.putAll(map);
+        for (Entry<String, FlakeIdGeneratorConfig> entry : map.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

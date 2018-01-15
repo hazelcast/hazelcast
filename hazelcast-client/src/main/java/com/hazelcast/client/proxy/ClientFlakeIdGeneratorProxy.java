@@ -17,33 +17,33 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCodec;
-import com.hazelcast.client.impl.protocol.codec.ReliableIdGeneratorNewIdBatchCodec.ResponseParameters;
+import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
+import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.ResponseParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.reliableidgen.impl.AutoBatcher;
-import com.hazelcast.reliableidgen.impl.IdBatch;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.flakeidgen.impl.AutoBatcher;
+import com.hazelcast.flakeidgen.impl.IdBatch;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
 
 /**
  * Proxy implementation of {@link IdGenerator}.
  */
-public class ClientReliableIdGeneratorProxy extends ClientProxy implements ReliableIdGenerator {
+public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdGenerator {
 
     private final AutoBatcher batcher;
 
-    public ClientReliableIdGeneratorProxy(String serviceName, String objectName, ClientContext context) {
+    public ClientFlakeIdGeneratorProxy(String serviceName, String objectName, ClientContext context) {
         super(serviceName, objectName, context);
 
-        ReliableIdGeneratorConfig config = getContext().getClientConfig().findReliableIdGeneratorConfig(getName());
+        FlakeIdGeneratorConfig config = getContext().getClientConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
                 new AutoBatcher.IdBatchSupplier() {
                     @Override
                     public IdBatch newIdBatch(int batchSize) {
-                        return ClientReliableIdGeneratorProxy.this.newIdBatch(batchSize);
+                        return ClientFlakeIdGeneratorProxy.this.newIdBatch(batchSize);
                     }
                 });
     }
@@ -54,15 +54,15 @@ public class ClientReliableIdGeneratorProxy extends ClientProxy implements Relia
     }
 
     private IdBatch newIdBatch(int batchSize) {
-        ClientMessage requestMsg = ReliableIdGeneratorNewIdBatchCodec.encodeRequest(name, batchSize);
+        ClientMessage requestMsg = FlakeIdGeneratorNewIdBatchCodec.encodeRequest(name, batchSize);
         ClientMessage responseMsg = new ClientInvocation(getClient(), requestMsg, getName())
                 .invoke().join();
-        ResponseParameters response = ReliableIdGeneratorNewIdBatchCodec.decodeResponse(responseMsg);
+        ResponseParameters response = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(responseMsg);
         return new IdBatch(response.base, response.increment, response.batchSize);
     }
 
     @Override
     public String toString() {
-        return "ReliableIdGenerator{name='" + name + "'}";
+        return "FlakeIdGenerator{name='" + name + "'}";
     }
 }

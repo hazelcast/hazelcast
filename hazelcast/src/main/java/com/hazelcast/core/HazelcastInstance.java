@@ -22,7 +22,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -263,7 +263,7 @@ public interface HazelcastInstance {
      *
      * @deprecated The implementation can produce duplicate IDs in case of network split, even
      * with split-brain protection enabled (during short window while split-brain is detected).
-     * Use {@link #getReliableIdGenerator(String)} for an alternative implementation which does not
+     * Use {@link #getFlakeIdGenerator(String)} for an alternative implementation which does not
      * suffer from this problem.
      */
     @Deprecated
@@ -279,15 +279,15 @@ public interface HazelcastInstance {
      * members, which makes the generator safe even in split-brain scenario (for caveats,
      * {@link com.hazelcast.internal.cluster.ClusterService#getMemberListJoinVersion() see here}).
      * <p>
-     * For more details and caveats, see class documentation for {@link ReliableIdGenerator}.
+     * For more details and caveats, see class documentation for {@link FlakeIdGenerator}.
      * <p>
      * Note: this implementation doesn't share namespace with {@link #getIdGenerator(String)}.
-     * That is, {@code getIdGenerator("a")} is distinct from {@code getReliableIdGenerator("a")}.
+     * That is, {@code getIdGenerator("a")} is distinct from {@code getFlakeIdGenerator("a")}.
      *
-     * @param name name of the {@link IdGenerator}
-     * @return ReliableIdGenerator for the given name
+     * @param name name of the {@link FlakeIdGenerator}
+     * @return FlakeIdGenerator for the given name
      */
-    ReliableIdGenerator getReliableIdGenerator(String name);
+    FlakeIdGenerator getFlakeIdGenerator(String name);
 
     /**
      * Creates cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed

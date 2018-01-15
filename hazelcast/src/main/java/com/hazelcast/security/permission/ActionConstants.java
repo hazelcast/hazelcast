@@ -24,7 +24,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -143,10 +143,10 @@ public final class ActionConstants {
                 return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(ReliableIdGeneratorService.SERVICE_NAME, new PermissionFactory() {
+        PERMISSION_FACTORY_MAP.put(FlakeIdGeneratorService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
-                return new ReliableIdGeneratorPermission(name, actions);
+                return new FlakeIdGeneratorPermission(name, actions);
             }
         });
         PERMISSION_FACTORY_MAP.put(MapReduceService.SERVICE_NAME, new PermissionFactory() {

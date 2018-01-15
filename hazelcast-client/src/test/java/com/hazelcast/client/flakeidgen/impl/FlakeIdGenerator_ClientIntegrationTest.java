@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.reliableidgen.impl;
+package com.hazelcast.client.flakeidgen.impl;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.reliableidgen.impl.ReliableIdConcurrencyTestUtil;
-import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy;
+import com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ReliableIdGenerator_ClientIntegrationTest {
+public class FlakeIdGenerator_ClientIntegrationTest {
 
     private TestHazelcastFactory factory;
     private HazelcastInstance instance;
@@ -56,8 +56,8 @@ public class ReliableIdGenerator_ClientIntegrationTest {
     @Test
     public void smokeTest() throws Exception {
         before(null);
-        final ReliableIdGenerator generator = instance.getReliableIdGenerator("gen");
-        ReliableIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
+        final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
+        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
             @Override
             public Long get() {
                 return generator.newId();
@@ -68,22 +68,22 @@ public class ReliableIdGenerator_ClientIntegrationTest {
     @Test
     public void configTest() throws Exception {
         int myBatchSize = 3;
-        before(new ClientConfig().addReliableIdGeneratorConfig(new ReliableIdGeneratorConfig("gen")
+        before(new ClientConfig().addFlakeIdGeneratorConfig(new FlakeIdGeneratorConfig("gen")
                 .setPrefetchCount(myBatchSize)
                 .setPrefetchValidityMillis(3000)));
-        final ReliableIdGenerator generator = instance.getReliableIdGenerator("gen");
+        final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
         assertTrue("This test assumes default validity be larger than 3000 by a good margin",
-                ReliableIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY_MILLIS >= 5000);
+                FlakeIdGeneratorConfig.DEFAULT_PREFETCH_VALIDITY_MILLIS >= 5000);
         // this should take a batch of 3 IDs from the member and store it in the auto-batcher
         long id1 = generator.newId();
         // this should take second ID from auto-created batch. It should be exactly next to id1
         long id2 = generator.newId();
-        assertEquals(id1 + ReliableIdGeneratorProxy.INCREMENT, id2);
+        assertEquals(id1 + FlakeIdGeneratorProxy.INCREMENT, id2);
 
         Thread.sleep(3000);
         // this ID should be from a new batch, because the validity elapsed
         long id3 = generator.newId();
-        assertTrue(id1 + ReliableIdGeneratorProxy.INCREMENT * myBatchSize < id3);
+        assertTrue(id1 + FlakeIdGeneratorProxy.INCREMENT * myBatchSize < id3);
     }
 }

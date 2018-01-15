@@ -45,7 +45,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "ringBuffer",
                 "cardinalityEstimator",
                 "idGenerator",
-                "reliableIdGenerator",
+                "flakeIdGenerator",
                 "atomicLong",
                 "atomicReference",
                 "countDownLatch",

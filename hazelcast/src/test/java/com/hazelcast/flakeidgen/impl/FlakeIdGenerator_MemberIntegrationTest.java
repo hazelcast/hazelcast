@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen.impl;
+package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,7 +37,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ReliableIdGenerator_MemberIntegrationTest extends HazelcastTestSupport {
+public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -58,8 +58,8 @@ public class ReliableIdGenerator_MemberIntegrationTest extends HazelcastTestSupp
     @Test
     public void smokeTest() throws Exception {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        final ReliableIdGenerator generator = instance.getReliableIdGenerator("gen");
-        ReliableIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
+        final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
+        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
             @Override
             public Long get() {
                 return generator.newId();
@@ -68,11 +68,11 @@ public class ReliableIdGenerator_MemberIntegrationTest extends HazelcastTestSupp
     }
 
     @Test
-    public void when_310MemberJoinsWith39Mode_reliableIdGeneratorDoesNotWork() {
+    public void when_310MemberJoinsWith39Mode_flakeIdGeneratorDoesNotWork() {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, V3_9.toString());
         HazelcastInstance instance = factory.newHazelcastInstance();
 
-        ReliableIdGenerator gen = instance.getReliableIdGenerator("gen");
+        FlakeIdGenerator gen = instance.getFlakeIdGenerator("gen");
         exception.expect(UnsupportedOperationException.class);
         gen.newId();
     }

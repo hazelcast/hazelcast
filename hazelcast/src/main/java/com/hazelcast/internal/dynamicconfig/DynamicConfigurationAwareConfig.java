@@ -27,6 +27,7 @@ import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JobTrackerConfig;
@@ -42,7 +43,6 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -1165,44 +1165,44 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
-        Map<String, ReliableIdGeneratorConfig> staticMapConfigs = staticConfig.getReliableIdGeneratorConfigs();
-        Map<String, ReliableIdGeneratorConfig> dynamicMapConfigs = configurationService.getReliableIdGeneratorConfigs();
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
+        Map<String, FlakeIdGeneratorConfig> staticMapConfigs = staticConfig.getFlakeIdGeneratorConfigs();
+        Map<String, FlakeIdGeneratorConfig> dynamicMapConfigs = configurationService.getFlakeIdGeneratorConfigs();
         return aggregate(staticMapConfigs, dynamicMapConfigs);
     }
 
     @Override
-    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
-        return getReliableIdGeneratorConfigInternal(name, "default").getAsReadOnly();
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
+        return getFlakeIdGeneratorConfigInternal(name, "default").getAsReadOnly();
     }
 
     @Override
-    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
-        return getReliableIdGeneratorConfigInternal(name, name);
+    public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
+        return getFlakeIdGeneratorConfigInternal(name, name);
     }
 
-    private ReliableIdGeneratorConfig getReliableIdGeneratorConfigInternal(String name, String fallbackName) {
+    private FlakeIdGeneratorConfig getFlakeIdGeneratorConfigInternal(String name, String fallbackName) {
         String baseName = getBaseName(name);
-        Map<String, ReliableIdGeneratorConfig> staticMapConfigs = staticConfig.getReliableIdGeneratorConfigs();
-        ReliableIdGeneratorConfig config = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+        Map<String, FlakeIdGeneratorConfig> staticMapConfigs = staticConfig.getFlakeIdGeneratorConfigs();
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
         if (config == null) {
-            config = configurationService.findReliableIdGeneratorConfig(baseName);
+            config = configurationService.findFlakeIdGeneratorConfig(baseName);
         }
         if (config == null) {
-            config = staticConfig.getReliableIdGeneratorConfig(fallbackName);
+            config = staticConfig.getFlakeIdGeneratorConfig(fallbackName);
         }
         return config;
     }
 
     @Override
-    public Config addReliableIdGeneratorConfig(ReliableIdGeneratorConfig config) {
-        checkStaticConfigurationDoesNotExist(staticConfig.getReliableIdGeneratorConfigs(), config.getName(), config);
+    public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig config) {
+        checkStaticConfigurationDoesNotExist(staticConfig.getFlakeIdGeneratorConfigs(), config.getName(), config);
         configurationService.broadcastConfig(config);
         return this;
     }
 
     @Override
-    public Config setReliableIdGeneratorConfigs(Map<String, ReliableIdGeneratorConfig> map) {
+    public Config setFlakeIdGeneratorConfigs(Map<String, FlakeIdGeneratorConfig> map) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

@@ -131,7 +131,7 @@ public class ConfigXmlGenerator {
         nativeMemoryXmlGenerator(gen, config);
         servicesXmlGenerator(gen, config);
         hotRestartXmlGenerator(gen, config);
-        reliableIdGeneratorXmlGenerator(gen, config);
+        flakeIdGeneratorXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1023,9 +1023,9 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void reliableIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
-        for (ReliableIdGeneratorConfig m : config.getReliableIdGeneratorConfigs().values()) {
-            gen.open("reliable-id-generator", "name", m.getName())
+    private static void flakeIdGeneratorXmlGenerator(XmlGenerator gen, Config config) {
+        for (FlakeIdGeneratorConfig m : config.getFlakeIdGeneratorConfigs().values()) {
+            gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())
                     .node("prefetch-validity-millis", m.getPrefetchValidityMillis());
             gen.close();

@@ -15,8 +15,8 @@
  */
 
 /**
- * This package contains Reliable ID Generator functionality for Hazelcast.
+ * This package contains Flake ID Generator functionality for Hazelcast.
  *
  * @since 3.10
  */
- package com.hazelcast.reliableidgen;
+ package com.hazelcast.flakeidgen;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen.impl;
+package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,7 +25,7 @@ import java.io.IOException;
 
 class NewIdBatchOperation extends Operation implements IdentifiedDataSerializable {
 
-    private String reliableIdGenName;
+    private String flakeIdGenName;
     private int batchSize;
     private long returnValue;
 
@@ -34,14 +34,14 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
     }
 
     public NewIdBatchOperation(String genName, int batchSize) {
-        this.reliableIdGenName = genName;
+        this.flakeIdGenName = genName;
         this.batchSize = batchSize;
     }
 
     @Override
     public void run() throws Exception {
-        ReliableIdGeneratorProxy proxy = (ReliableIdGeneratorProxy) getNodeEngine().getProxyService()
-                .getDistributedObject(getServiceName(), reliableIdGenName);
+        FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) getNodeEngine().getProxyService()
+                .getDistributedObject(getServiceName(), flakeIdGenName);
         returnValue = proxy.newIdBaseLocal(batchSize);
     }
 
@@ -52,28 +52,28 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
 
     @Override
     public String getServiceName() {
-        return ReliableIdGeneratorService.SERVICE_NAME;
+        return FlakeIdGeneratorService.SERVICE_NAME;
     }
 
     @Override
     public int getFactoryId() {
-        return ReliableIdGeneratorDataSerializerHook.F_ID;
+        return FlakeIdGeneratorDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
-        return ReliableIdGeneratorDataSerializerHook.NEW_ID_BATCH_OPERATION;
+        return FlakeIdGeneratorDataSerializerHook.NEW_ID_BATCH_OPERATION;
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        reliableIdGenName = in.readUTF();
+        flakeIdGenName = in.readUTF();
         batchSize = in.readInt();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(reliableIdGenName);
+        out.writeUTF(flakeIdGenName);
         out.writeInt(batchSize);
     }
 
@@ -81,7 +81,7 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", reliableIdGenName=").append(reliableIdGenName);
+        sb.append(", flakeIdGenName=").append(flakeIdGenName);
         sb.append(", batchSize=").append(batchSize);
     }
 }

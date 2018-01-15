@@ -31,6 +31,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
@@ -47,7 +48,6 @@ import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -531,11 +531,11 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReliableIdGeneratorConfig() {
-        ReliableIdGeneratorConfig config = new ReliableIdGeneratorConfig(randomName())
+    public void testFlakeIdGeneratorConfig() {
+        FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(randomName())
                 .setPrefetchCount(123)
                 .setPrefetchValidityMillis(456);
-        driver.getConfig().addReliableIdGeneratorConfig(config);
+        driver.getConfig().addFlakeIdGeneratorConfig(config);
         assertConfigurationsEqualsOnAllMembers(config);
     }
 
@@ -757,9 +757,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(ReliableIdGeneratorConfig config) {
+    private void assertConfigurationsEqualsOnAllMembers(FlakeIdGeneratorConfig config) {
         for (HazelcastInstance instance : members) {
-            ReliableIdGeneratorConfig registeredConfig = instance.getConfig().getReliableIdGeneratorConfig(config.getName());
+            FlakeIdGeneratorConfig registeredConfig = instance.getConfig().getFlakeIdGeneratorConfig(config.getName());
             assertEquals(config, registeredConfig);
         }
     }
