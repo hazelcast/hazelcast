@@ -37,6 +37,7 @@ import java.util.function.Predicate;
  */
 @FunctionalInterface
 public interface Traverser<T> {
+
     /**
      * Returns the next item in the sequence, or {@code null} if there is no next
      * item to return. If this traverser represents a finite sequence, it will
@@ -47,14 +48,22 @@ public interface Traverser<T> {
     T next();
 
     /**
-     * Returns a traverser traverser that will emit the results of applying the
+     * Returns a traverser that will emit the results of applying the
      * mapping function to this traverser's items.
+     * <p>
+     * If the {@code mapFn} returns {@code null}, that item will be filtered
+     * out.
      */
     @Nonnull
     default <R> Traverser<R> map(@Nonnull Function<? super T, ? extends R> mapFn) {
         return () -> {
-            final T t = next();
-            return t != null ? mapFn.apply(t) : null;
+            for (T t; (t = next()) != null;) {
+                R r = mapFn.apply(t);
+                if (r != null) {
+                    return r;
+                }
+            }
+            return null;
         };
     }
 
@@ -89,11 +98,8 @@ public interface Traverser<T> {
                     return null;
                 }
                 T t = Traverser.this.next();
-                predicateSatisfied = pred.test(t);
-                if (!predicateSatisfied) {
-                    return null;
-                }
-                return t;
+                predicateSatisfied = t == null || pred.test(t);
+                return predicateSatisfied ? t : null;
             }
         };
     }
@@ -105,7 +111,7 @@ public interface Traverser<T> {
     @Nonnull
     default Traverser<T> dropWhile(@Nonnull Predicate<? super T> pred) {
         return new Traverser<T>() {
-            boolean predicateSatisfied;
+            boolean predicateSatisfied = true;
 
             @Override
             public T next() {
@@ -171,10 +177,14 @@ public interface Traverser<T> {
      * Returns a traverser traverser that will apply the given mapping function
      * to each item retrieved from this traverser and emit all the items from
      * the resulting traverser(s).
+     * <p>
+     * The traverser returned from the {@code flatMapFn} must be finite. That
+     * is, this operation will not attempt to emit any items after the first
+     * {@code null} item.
      */
     @Nonnull
-    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapFn) {
-        return new FlatMappingTraverser<>(this, mapFn);
+    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> flatMapFn) {
+        return new FlatMappingTraverser<>(this, flatMapFn);
     }
 
     /**

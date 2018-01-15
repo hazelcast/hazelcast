@@ -703,17 +703,21 @@ public final class Processors {
      * item-to-traverser mapping function to each received item and emits all
      * the items from the resulting traverser.
      * <p>
+     * The traverser returned from the {@code flatMapFn} must be finite. That
+     * is, this operation will not attempt to emit any items after the first
+     * {@code null} item.
+     * <p>
      * This processor is stateless.
      *
-     * @param mapper function that maps the received item to a traverser over output items
+     * @param flatMapFn function that maps the received item to a traverser over output items
      * @param <T> received item type
      * @param <R> emitted item type
      */
     @Nonnull
     public static <T, R> DistributedSupplier<Processor> flatMapP(
-            @Nonnull DistributedFunction<T, ? extends Traverser<? extends R>> mapper
+            @Nonnull DistributedFunction<T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return () -> new TransformP<T, R>(mapper);
+        return () -> new TransformP<>(flatMapFn);
     }
 
     /**

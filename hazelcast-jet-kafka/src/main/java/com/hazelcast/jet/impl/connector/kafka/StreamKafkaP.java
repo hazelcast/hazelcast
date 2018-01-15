@@ -41,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
@@ -167,6 +168,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
             traverser = traverseIterable(records)
                     .peek(r -> lastEmittedItem = r)
                     .map(r -> projectionFn.apply((K) r.key(), (V) r.value()))
+                    .filter(Objects::nonNull) // we allow the user-supplied projection to return null
                     .onFirstNull(() -> traverser = null);
         }
 

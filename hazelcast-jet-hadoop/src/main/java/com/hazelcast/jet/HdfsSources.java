@@ -52,13 +52,16 @@ public final class HdfsSources {
      * @param <E> the type of the emitted value
 
      * @param jobConf JobConf for reading files with the appropriate input format and path
-     * @param mapper  mapper which can be used to map the key and value to another value
+     * @param projectionFn function to create output objects from key and value.
+     *                     If the projection returns a {@code null} for an item, that item
+     *                     will be filtered out
      */
     @Nonnull
     public static <K, V, E> Source<E> hdfs(
-            @Nonnull JobConf jobConf, @Nonnull DistributedBiFunction<K, V, E> mapper
+            @Nonnull JobConf jobConf,
+            @Nonnull DistributedBiFunction<K, V, E> projectionFn
     ) {
-        return Sources.fromProcessor("readHdfs", new MetaSupplier<>(asSerializable(jobConf), mapper));
+        return Sources.fromProcessor("readHdfs", new MetaSupplier<>(asSerializable(jobConf), projectionFn));
     }
 
     /**

@@ -92,6 +92,14 @@ public class TraversersTest {
         trav.next();
     }
 
+    @Test
+    public void when_traverseIteratorIgnoringNulls_then_filteredOut() {
+        Traverser<Integer> trav = traverseIterator(asList(null, 1, null, 2, null).iterator(), true);
+        assertEquals(1, (int) trav.next());
+        assertEquals(2, (int) trav.next());
+        assertNull(trav.next());
+    }
+
     @Test(expected = AssertionError.class)
     public void when_traverseSpliteratorWithNull_then_failure() {
         Traverser<Integer> trav = traverseSpliterator(Stream.of(1, null).spliterator());

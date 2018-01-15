@@ -68,17 +68,16 @@ import static java.util.stream.Stream.concat;
 import static org.apache.hadoop.mapred.Reporter.NULL;
 
 /**
- * See {@link com.hazelcast.jet.core.processor.HdfsProcessors#readHdfsP(
- * org.apache.hadoop.mapred.JobConf, DistributedBiFunction)}.
+ * See {@link com.hazelcast.jet.HdfsSources#hdfs}.
  */
 public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
     private final Traverser<R> trav;
-    private final DistributedBiFunction<K, V, R> mapper;
+    private final DistributedBiFunction<K, V, R> projectionFn;
 
-    private ReadHdfsP(@Nonnull List<RecordReader> recordReaders, @Nonnull DistributedBiFunction<K, V, R> mapper) {
+    private ReadHdfsP(@Nonnull List<RecordReader> recordReaders, @Nonnull DistributedBiFunction<K, V, R> projectionFn) {
         this.trav = traverseIterable(recordReaders).flatMap(this::traverseRecordReader);
-        this.mapper = mapper;
+        this.projectionFn = projectionFn;
     }
 
     @Override
@@ -91,8 +90,11 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
             K key = r.createKey();
             V value = r.createValue();
             try {
-                if (r.next(key, value)) {
-                    return mapper.apply(key, value);
+                while (r.next(key, value)) {
+                    R projectedRecord = projectionFn.apply(key, value);
+                    if (projectedRecord != null) {
+                        return projectedRecord;
+                    }
                 }
                 r.close();
                 return null;

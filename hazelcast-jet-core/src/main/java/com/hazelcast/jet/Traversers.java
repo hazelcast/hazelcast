@@ -37,7 +37,7 @@ public final class Traversers {
     }
 
     /**
-     * Returns a traverser that always returns null.
+     * Returns a traverser that always returns {@code null}.
      */
     @Nonnull
     public static <T> Traverser<T> empty() {
@@ -53,6 +53,30 @@ public final class Traversers {
     @Nonnull
     public static <T> Traverser<T> traverseIterator(@Nonnull Iterator<? extends T> iterator) {
         return () -> iterator.hasNext() ? ensureNotNull(iterator.next(), "Iterator returned a null item") : null;
+    }
+
+    /**
+     * Returns an adapter from {@code Iterator} to {@code Traverser}. Each time
+     * its {@code next()} method is called, the traverser will take another
+     * item from the iterator and return it.
+     *
+     * @param ignoreNulls if {@code true}, null elements form the iterator will be
+     *                    filtered out. If {@code false}, error will be thrown on null elements.
+     */
+    @Nonnull
+    public static <T> Traverser<T> traverseIterator(@Nonnull Iterator<? extends T> iterator, boolean ignoreNulls) {
+        if (!ignoreNulls) {
+            return traverseIterator(iterator);
+        }
+        return () -> {
+            while (iterator.hasNext()) {
+                T next = iterator.next();
+                if (next != null) {
+                    return next;
+                }
+            }
+            return null;
+        };
     }
 
     /**

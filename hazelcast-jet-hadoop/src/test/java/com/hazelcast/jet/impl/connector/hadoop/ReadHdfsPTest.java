@@ -44,7 +44,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -65,6 +64,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.HdfsProcessors.readHdfsP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.lang.Integer.parseInt;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -74,35 +74,29 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ReadHdfsPTest extends HdfsTestSupport {
 
-    private static String[] ENTRIES;
+    private static final String[] ENTRIES = range(0, 4)
+            .mapToObj(i -> "key-" + i + " value-" + i + '\n')
+            .toArray(String[]::new);
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter
     public Class<? extends InputFormat> inputFormatClass;
 
     @Parameterized.Parameter(1)
-    public DistributedBiFunction mapper;
-
+    public EMapperType mapperType;
     private JobConf jobConf;
     private JetInstance instance;
     private Set<Path> paths = new HashSet<>();
 
-    @Parameterized.Parameters(name = "Executing: {0} {1}")
+    @Parameterized.Parameters(name = "inputFormatClass={0}, mapper={1}")
     public static Collection<Object[]> parameters() {
-        DistributedBiFunction defaultMapper = Util::entry;
-        DistributedBiFunction mapper = (k, v) -> v.toString();
         return Arrays.asList(
-                new Object[]{TextInputFormat.class, defaultMapper},
-                new Object[]{TextInputFormat.class, mapper},
-                new Object[]{SequenceFileInputFormat.class, defaultMapper},
-                new Object[]{SequenceFileInputFormat.class, mapper}
+                new Object[]{TextInputFormat.class, EMapperType.DEFAULT},
+                new Object[]{TextInputFormat.class, EMapperType.CUSTOM},
+                new Object[]{TextInputFormat.class, EMapperType.CUSTOM_WITH_NULLS},
+                new Object[]{SequenceFileInputFormat.class, EMapperType.DEFAULT},
+                new Object[]{SequenceFileInputFormat.class, EMapperType.CUSTOM},
+                new Object[]{SequenceFileInputFormat.class, EMapperType.CUSTOM_WITH_NULLS}
         );
-    }
-
-    @BeforeClass
-    public static void setupClass() {
-        ENTRIES = range(0, 4)
-                .mapToObj(i -> "key-" + i + " value-" + i + '\n')
-                .toArray(String[]::new);
     }
 
     @Before
@@ -118,10 +112,10 @@ public class ReadHdfsPTest extends HdfsTestSupport {
     }
 
     @Test
-    public void testReadHdfs() throws IOException {
+    public void testReadHdfs() {
         DAG dag = new DAG();
 
-        Vertex source = dag.newVertex("source", readHdfsP(jobConf, mapper))
+        Vertex source = dag.newVertex("source", readHdfsP(jobConf, mapperType.mapper))
                            .localParallelism(4);
         Vertex sink = dag.newVertex("sink", writeListP("sink"))
                          .localParallelism(1);
@@ -130,26 +124,29 @@ public class ReadHdfsPTest extends HdfsTestSupport {
         Future<Void> future = instance.newJob(dag).getFuture();
         assertCompletesEventually(future);
 
-
         IList list = instance.getList("sink");
-        assertEquals(16, list.size());
+        assertEquals(expectedSinkSize(), list.size());
         assertTrue(list.get(0).toString().contains("value"));
     }
 
     @Test
     public void testJus() {
-        IStreamList sink = (IStreamList) DistributedStream
-                .fromSource(instance, readHdfsP(jobConf, mapper))
+        IStreamList sink = DistributedStream
+                .fromSource(instance, readHdfsP(jobConf, mapperType.mapper))
                 .collect(DistributedCollectors.toIList("sink"));
 
-        assertEquals(16, sink.size());
+        assertEquals(expectedSinkSize(), sink.size());
+    }
+
+    private int expectedSinkSize() {
+        return mapperType == EMapperType.CUSTOM_WITH_NULLS ? 8 : 16;
     }
 
     private void writeToFile() throws IOException {
         Configuration conf = new Configuration();
         LocalFileSystem local = FileSystem.getLocal(conf);
 
-        IntStream.range(0, 4).mapToObj(this::createPath).forEach(path -> uncheckRun(() -> {
+        IntStream.range(0, 4).mapToObj(i -> createPath()).forEach(path -> uncheckRun(() -> {
             paths.add(path);
             if (SequenceFileInputFormat.class.equals(inputFormatClass)) {
                 writeToSequenceFile(conf, path);
@@ -183,12 +180,24 @@ public class ReadHdfsPTest extends HdfsTestSupport {
         }
     }
 
-    private Path createPath(int ignored) {
+    private Path createPath() {
         try {
             String fileName = Files.createTempFile(getClass().getName(), null).toString();
             return new Path(fileName);
         } catch (IOException e) {
             throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
+
+    private enum EMapperType {
+        DEFAULT(Util::entry),
+        CUSTOM((k, v) -> v.toString()),
+        CUSTOM_WITH_NULLS((k, v) -> parseInt(v.toString().substring(4, 5)) % 2 == 0 ? v.toString() : null);
+
+        private final DistributedBiFunction<?, Text, ?> mapper;
+
+        EMapperType(DistributedBiFunction<?, Text, ?> mapper) {
+            this.mapper = mapper;
         }
     }
 }

@@ -75,9 +75,12 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         this.outputTraverser = () -> {
             do {
                 final Iterator<T> currIterator = iteratorCursor.value();
-                if (currIterator.hasNext()) {
-                    iteratorCursor.advance();
-                    return currIterator.next();
+                while (currIterator.hasNext()) {
+                    T next = currIterator.next();
+                    if (next != null) {
+                        iteratorCursor.advance();
+                        return next;
+                    }
                 }
                 iteratorCursor.remove();
             } while (iteratorCursor.advance());

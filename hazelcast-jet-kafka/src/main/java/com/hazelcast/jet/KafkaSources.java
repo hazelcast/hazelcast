@@ -80,7 +80,9 @@ public final class KafkaSources {
      * We plan to address this issue in a future release.
      *
      * @param properties consumer properties broker address and key/value deserializers
-     * @param projectionFn function to create output objects from key and value
+     * @param projectionFn function to create output objects from key and value.
+     *                     If the projection returns a {@code null} for an item, that item
+     *                     will be filtered out.
      * @param topics     the list of topics
      */
     public static <K, V, T> Source<T> kafka(

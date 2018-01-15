@@ -43,10 +43,13 @@ public interface ComputeStage<E> extends Stage {
     /**
      * Attaches to this stage a mapping stage, one which applies the supplied
      * function to each input item independently and emits the function's
-     * result as the output item. Returns the newly attached stage.
+     * result as the output item. If the result is {@code null}, it emits
+     * nothing. Therefore this stage can be used to implement filtering
+     * semantics as well.
      *
      * @param mapFn the mapping function
      * @param <R> the result type of the mapping function
+     * @return the newly attached stage
      */
     <R> ComputeStage<R> map(DistributedFunction<? super E, ? extends R> mapFn);
 
@@ -62,11 +65,15 @@ public interface ComputeStage<E> extends Stage {
     /**
      * Attaches to this stage a flat-mapping stage, one which applies the
      * supplied function to each input item independently and emits all items
-     * from the {@link Traverser} it returns as the output items. Returns the
-     * newly attached stage.
+     * from the {@link Traverser} it returns as the output items.
+     * <p>
+     * The traverser returned from the {@code flatMapFn} must be finite. That
+     * is, this operation will not attempt to emit any items after the first
+     * {@code null} item.
      *
      * @param flatMapFn the flatmapping function, whose result type is Jet's {@link Traverser}
      * @param <R> the type of items in the result's traversers
+     * @return the newly attached stage
      */
     <R> ComputeStage<R> flatMap(DistributedFunction<? super E, Traverser<? extends R>> flatMapFn);
 

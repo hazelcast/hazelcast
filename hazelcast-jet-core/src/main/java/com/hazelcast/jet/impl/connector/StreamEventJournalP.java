@@ -60,6 +60,7 @@ import java.util.function.IntConsumer;
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_CURRENT;
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Traversers.traverseIterator;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -197,7 +198,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         if (resultSet == null) {
             return null;
         }
-        Traverser<T> traverser = traverseIterable(resultSet);
+        Traverser<T> traverser = traverseIterator(resultSet.iterator(), true);
         return peekIndex(traverser, i -> pendingItemOffset = resultSet.getSequence(i));
     }
 
