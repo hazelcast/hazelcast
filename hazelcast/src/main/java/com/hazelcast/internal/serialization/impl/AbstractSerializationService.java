@@ -130,11 +130,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash) {
-        return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy);
+        return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy, getByteOrder());
     }
 
     private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy) {
+        return toBytes(obj, leftPadding, writeHash, strategy, BIG_ENDIAN);
+    }
+
+    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy,
+                           ByteOrder serializerTypeIdByteOrder) {
         checkNotNull(obj);
+        checkNotNull(serializerTypeIdByteOrder);
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
@@ -147,7 +153,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 out.writeInt(partitionHash, BIG_ENDIAN);
             }
 
-            out.writeInt(serializer.getTypeId(), BIG_ENDIAN);
+            out.writeInt(serializer.getTypeId(), serializerTypeIdByteOrder);
 
             serializer.write(out, obj);
             return out.toByteArray();
