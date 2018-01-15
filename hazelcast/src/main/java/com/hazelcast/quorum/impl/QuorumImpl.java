@@ -41,6 +41,11 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 
 /**
  * {@link QuorumImpl} can be used to notify quorum service for a particular quorum result that originated externally.
+ *
+ * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+ * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+ * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+ * specified one.
  */
 public class QuorumImpl implements Quorum {
 
@@ -167,7 +172,7 @@ public class QuorumImpl implements Quorum {
             throw new QuorumException("Cluster quorum failed");
         }
         Collection<Member> memberList = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        throw new QuorumException("Cluster quorum failed, quorum minimum size: "
+        throw new QuorumException("Split brain protection exception: There is not enough members in the cluster. Required size: "
                 + size + ", current size: " + memberList.size());
     }
 
