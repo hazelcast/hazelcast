@@ -2,11 +2,10 @@ package com.hazelcast.client.quorum.semaphore;
 
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.concurrent.semaphore.SemaphoreQuorumWriteTest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.quorum.semaphore.SemaphoreQuorumWriteTest;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -16,7 +15,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class})
 public class ClientSemaphoreQuorumWriteTest extends SemaphoreQuorumWriteTest {
 
     private static PartitionedClusterClients clients;

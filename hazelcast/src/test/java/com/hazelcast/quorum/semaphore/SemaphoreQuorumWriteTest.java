@@ -1,7 +1,8 @@
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.quorum.semaphore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -21,7 +22,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class SemaphoreQuorumWriteTest extends AbstractSemaphoreQuorumTest {
+public class SemaphoreQuorumWriteTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
@@ -40,18 +41,6 @@ public class SemaphoreQuorumWriteTest extends AbstractSemaphoreQuorumTest {
     public static void tearDown() {
         shutdownTestEnvironment();
     }
-
-    // init(permits)
-    // acquire()
-    // acquire(permits)
-    // drainPermits()
-    // reducePermits(reduction)
-    // release()
-    // release(permits)
-    // tryAcquire()
-    // tryAcquire(permits)
-    // tryAcquire(timout, timeunits)
-    // tryAcquire(permits, timout, timeunits)
 
     @Test
     public void init_successful_whenQuorumSize_met() throws InterruptedException {

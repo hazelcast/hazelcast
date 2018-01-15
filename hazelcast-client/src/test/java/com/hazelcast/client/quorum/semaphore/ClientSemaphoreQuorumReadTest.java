@@ -2,7 +2,7 @@ package com.hazelcast.client.quorum.semaphore;
 
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.concurrent.semaphore.SemaphoreQuorumReadTest;
+import com.hazelcast.quorum.semaphore.SemaphoreQuorumReadTest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;

@@ -1,7 +1,8 @@
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.quorum.semaphore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -19,7 +20,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class})
-public class SemaphoreQuorumReadTest extends AbstractSemaphoreQuorumTest {
+public class SemaphoreQuorumReadTest extends AbstractQuorumTest {
 
     @Parameterized.Parameter
     public static QuorumType quorumType;
