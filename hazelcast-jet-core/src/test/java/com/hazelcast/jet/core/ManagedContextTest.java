@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 public class ManagedContextTest extends JetTestSupport {
 
-    public static final String INJECTED_VALUE = "injectedValue";
+    static final String INJECTED_VALUE = "injectedValue";
     private JetInstance jet;
 
     @Before
@@ -65,7 +65,7 @@ public class ManagedContextTest extends JetTestSupport {
         @Override
         public Object initialize(Object obj) {
             if (obj instanceof TestProcessor) {
-                return ((TestProcessor) obj).injectedValue = INJECTED_VALUE;
+                ((TestProcessor) obj).injectedValue = INJECTED_VALUE;
             }
             return obj;
         }

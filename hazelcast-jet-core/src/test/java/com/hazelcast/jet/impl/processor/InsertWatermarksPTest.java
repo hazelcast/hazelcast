@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Before;
@@ -35,17 +36,21 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByMinStep;
+import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
 import static com.hazelcast.jet.core.WindowDefinition.tumblingWindowDef;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.WatermarkPolicyUtil.limitingTimestampAndWallClockLag;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -64,7 +69,7 @@ public class InsertWatermarksPTest {
     private TestOutbox outbox;
     private List<Object> resultToCheck = new ArrayList<>();
     private Context context;
-    private WatermarkPolicy wmPolicy = withFixedLag(LAG).get();
+    private DistributedSupplier<WatermarkPolicy> wmPolicy = withFixedLag(LAG);
     private WatermarkEmissionPolicy wmEmissionPolicy = (WatermarkEmissionPolicy) (currentWm, lastEmittedWm) ->
             currentWm > lastEmittedWm;
 
@@ -80,11 +85,11 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_firstEventLate_then_dropped() {
-        wmPolicy = limitingTimestampAndWallClockLag(0, 0, clock::now).get();
+    public void when_firstEventLate_then_notDropped() {
+        wmPolicy = limitingTimestampAndWallClockLag(0, 0, clock::now);
         doTest(
                 singletonList(item(clock.now - 1)),
-                singletonList(wm(100)));
+                asList(wm(clock.now), item(clock.now - 1)));
     }
 
     @Test
@@ -128,14 +133,15 @@ public class InsertWatermarksPTest {
     }
 
     @Test
-    public void when_lateEvent_then_dropped() {
+    public void when_lateEvent_then_notDropped() {
         doTest(
                 asList(
                         item(11),
                         item(7)),
                 asList(
                         wm(8),
-                        item(11))
+                        item(11),
+                        item(7))
         );
     }
 
@@ -155,7 +161,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void when_zeroLag() {
-        wmPolicy = withFixedLag(0).get();
+        wmPolicy = withFixedLag(0);
         doTest(
                 asList(
                         item(10),
@@ -266,9 +272,46 @@ public class InsertWatermarksPTest {
         );
     }
 
-    private void doTest(List<Object> input, List<Object> expectedOutput) {
-        p = new InsertWatermarksP<>(Item::getTimestamp, wmPolicy, wmEmissionPolicy);
+    @Test
+    public void when_idleTimeout_then_idleMessageAfterTimeout() {
+        // We can't inject MockClock to WatermarkSourceUtil inside the InsertWatermarkP, so we use real time.
+        // We send no events and expect, that after 100 ms WM will be emitted.
+        createProcessor(100);
+
+        // let's process some event and expect real WM to be emitted
+        resultToCheck.clear();
+        doAndDrain(() -> p.tryProcess(0, item(10)));
+        assertEquals(asList(wm(10 - LAG), item(10)), resultToCheck);
+
+        // when no more activity occurs, IDLE_MESSAGE should be emitted again
+        resultToCheck.clear();
+
+        long start = System.nanoTime();
+        long elapsedMs;
+        do {
+            assertTrue(p.tryProcess());
+            elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - start);
+            drainOutbox();
+            if (elapsedMs < 99) {
+                assertTrue("outbox should be empty, elapsedMs=" + elapsedMs, resultToCheck.isEmpty());
+            } else if (!resultToCheck.isEmpty()) {
+                System.out.println("WM emitted after " + elapsedMs + "ms (shortly after 100 was expected)");
+                assertEquals(singletonList(IDLE_MESSAGE), resultToCheck);
+                break;
+            }
+            LockSupport.parkNanos(MILLISECONDS.toNanos(1));
+        } while (elapsedMs < 1000);
+    }
+
+    private void createProcessor(long idleTimeoutMillis) {
+        p = new InsertWatermarksP<>(wmGenParams(Item::getTimestamp, wmPolicy, wmEmissionPolicy, idleTimeoutMillis));
         p.init(outbox, context);
+    }
+
+    private void doTest(List<Object> input, List<Object> expectedOutput) {
+        if (p == null) {
+            createProcessor(-1);
+        }
 
         for (Object inputItem : input) {
             if (inputItem instanceof Tick) {
@@ -277,7 +320,7 @@ public class InsertWatermarksPTest {
                 doAndDrain(p::tryProcess);
             } else {
                 assertTrue(inputItem instanceof Item);
-                doAndDrain(() -> uncheckCall(() -> p.tryProcess(0, inputItem)));
+                doAndDrain(() -> p.tryProcess(0, inputItem));
             }
         }
 
@@ -286,9 +329,11 @@ public class InsertWatermarksPTest {
 
     private void doAndDrain(BooleanSupplier action) {
         boolean done;
+        int count = 0;
         do {
             done = action.getAsBoolean();
             drainOutbox();
+            assertTrue("action not done in " + count + " attempts", ++count < 10);
         } while (!done);
     }
 

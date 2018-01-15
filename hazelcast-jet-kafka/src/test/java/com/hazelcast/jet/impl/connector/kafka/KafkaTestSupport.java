@@ -83,6 +83,7 @@ public class KafkaTestSupport extends JetTestSupport {
     }
 
     public final String createKafkaCluster() throws IOException {
+        System.setProperty("zookeeper.preAllocSize", Integer.toString(128));
         zkServer = new EmbeddedZookeeper();
         String zkConnect = ZK_HOST + ':' + zkServer.port();
         ZkClient zkClient = new ZkClient(zkConnect, SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
@@ -95,6 +96,7 @@ public class KafkaTestSupport extends JetTestSupport {
         brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
         brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ':' + brokerPort);
         brokerProps.setProperty("offsets.topic.replication.factor", "1");
+        brokerProps.setProperty("offsets.topic.num.partitions", "1");
         // we need this due to avoid OOME while running tests, see https://issues.apache.org/jira/browse/KAFKA-3872
         brokerProps.setProperty("log.cleaner.dedupe.buffer.size", Long.toString(2 * 1024 * 1024L));
         KafkaConfig config = new KafkaConfig(brokerProps);
@@ -115,6 +117,10 @@ public class KafkaTestSupport extends JetTestSupport {
 
     Future<RecordMetadata> produce(String topic, Integer key, String value) {
         return getProducer().send(new ProducerRecord<>(topic, key, value));
+    }
+
+    Future<RecordMetadata> produce(String topic, int partition, Integer key, String value) {
+        return getProducer().send(new ProducerRecord<>(topic, partition, key, value));
     }
 
     void resetProducer() {

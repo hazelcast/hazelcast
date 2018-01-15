@@ -116,8 +116,16 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         T t = (T) item;
         final long frameTs = getFrameTsFn.applyAsLong(t);
         assert frameTs == wDef.floorFrameTs(frameTs) : "getFrameTsFn returned an invalid frame timestamp";
-        assert frameTs + wDef.windowLength() >= nextWinToEmit : "late event received, it should have been filtered out " +
-                "by InsertWatermarksP: item=" + item + ", nextWinToEmit=" + nextWinToEmit;
+
+        // check if the event is late. We allow "partially late" events: events, which should be aggregated
+        // to some windows that are already emitted, but for which there are still windows that are not emitted.
+        if (frameTs + wDef.windowLength() <= nextWinToEmit) {
+            if (getLogger().isInfoEnabled()) {
+                getLogger().info("Dropped late event: " + item);
+            }
+            return true;
+        }
+
         final Object key = getKeyFn.apply(t);
         A acc = tsToKeyToAcc.computeIfAbsent(frameTs, x -> new HashMap<>())
                             .computeIfAbsent(key, k -> aggrOp.createFn().get());

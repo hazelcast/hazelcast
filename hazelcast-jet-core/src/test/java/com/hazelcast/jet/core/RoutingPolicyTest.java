@@ -178,7 +178,7 @@ public class RoutingPolicyTest extends JetTestSupport {
     }
 
     private static Vertex producer(List<?>... lists) {
-        return new Vertex("producer", new ListProducerSup(4, lists))
+        return new Vertex("producer", new ListProducerSup(lists))
                 .localParallelism(lists.length);
     }
 
@@ -194,10 +194,8 @@ public class RoutingPolicyTest extends JetTestSupport {
     private static class ListProducerSup implements ProcessorSupplier {
 
         private final List<?>[] lists;
-        private final int batchSize;
 
-        ListProducerSup(int batchSize, List<?>... lists) {
-            this.batchSize = batchSize;
+        ListProducerSup(List<?>... lists) {
             this.lists = lists;
         }
 

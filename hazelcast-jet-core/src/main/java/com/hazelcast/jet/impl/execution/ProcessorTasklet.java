@@ -47,6 +47,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.END;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
@@ -122,7 +123,8 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public void init() {
-        context.getSerializationService().getManagedContext().initialize(processor);
+        Object processor2 = context.getSerializationService().getManagedContext().initialize(processor);
+        assert processor2 == processor : "different object returned";
         processor.init(outbox, context);
     }
 
@@ -146,7 +148,7 @@ public class ProcessorTasklet implements Tasklet {
                 progTracker.notDone();
                 if (pendingWatermark == null) {
                     long wm = watermarkCoalescer.checkWmHistory(now);
-                    if (wm == Long.MIN_VALUE) {
+                    if (wm == NO_NEW_WM) {
                         state = PROCESS_INBOX;
                         stateMachineStep(now); // recursion
                         break;
@@ -285,8 +287,12 @@ public class ProcessorTasklet implements Tasklet {
             progTracker.madeProgress(result.isMadeProgress());
 
             if (result.isDone()) {
+                assert pendingWatermark == null;
                 receivedBarriers.clear(currInstream.ordinal());
-                watermarkCoalescer.queueDone(currInstream.ordinal());
+                long wm = watermarkCoalescer.queueDone(currInstream.ordinal());
+                if (wm != NO_NEW_WM) {
+                    pendingWatermark = new Watermark(wm);
+                }
                 instreamCursor.remove();
                 numActiveOrdinals--;
             }
@@ -297,12 +303,14 @@ public class ProcessorTasklet implements Tasklet {
                 assert pendingWatermark == null;
                 long newWmValue = ((Watermark) inbox.removeLast()).timestamp();
                 long wm = watermarkCoalescer.observeWm(now, currInstream.ordinal(), newWmValue);
-                if (wm != Long.MIN_VALUE) {
+                if (wm != NO_NEW_WM) {
                     pendingWatermark = new Watermark(wm);
                 }
             } else if (lastItem instanceof SnapshotBarrier) {
                 SnapshotBarrier barrier = (SnapshotBarrier) inbox.removeLast();
                 observeSnapshot(currInstream.ordinal(), barrier.snapshotId());
+            } else if (lastItem != null && !(lastItem instanceof BroadcastItem)) {
+                watermarkCoalescer.observeEvent(currInstream.ordinal());
             }
 
             // pop current priority group

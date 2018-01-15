@@ -50,6 +50,10 @@ public final class WatermarkPolicies {
         return () -> new WatermarkPolicyBase() {
             @Override
             public long reportEvent(long timestamp) {
+                // avoid overflow
+                if (timestamp < Long.MIN_VALUE + lag) {
+                    return Long.MIN_VALUE;
+                }
                 return makeWmAtLeast(timestamp - lag);
             }
         };

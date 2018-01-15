@@ -39,7 +39,7 @@ import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 
 @Category(ParallelTest.class)
@@ -169,17 +169,14 @@ public class SlidingWindowP_stage1Test {
     }
 
     @Test
-    public void when_lateEvent_then_fail() {
-        exception.expect(AssertionError.class);
-        exception.expectMessage("late");
-
+    public void when_lateEvent_then_ignore() {
         verifyProcessor(processor)
                 .disableSnapshots()
                 .disableCompleteCall()
                 .input(asList(wm(16),
                         entry(7, 1)
                 ))
-                .expectOutput(emptyList());
+                .expectOutput(singletonList(wm(16)));
     }
 
     private static TimestampedEntry<Long, LongAccumulator> frame(long timestamp, long value) {

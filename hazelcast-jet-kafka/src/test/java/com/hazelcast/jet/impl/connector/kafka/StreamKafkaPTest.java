@@ -26,11 +26,13 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestOutbox.MockData;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.stream.IStreamMap;
@@ -47,6 +49,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -60,10 +63,15 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
+import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
+import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
 import static com.hazelcast.jet.core.processor.KafkaProcessors.streamKafkaP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static java.util.Arrays.asList;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.IntStream.range;
@@ -77,6 +85,7 @@ import static org.junit.Assert.assertTrue;
 public class StreamKafkaPTest extends KafkaTestSupport {
 
     private static final int INITIAL_PARTITION_COUNT = 4;
+    private static final long LAG = 3;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -92,7 +101,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
         topic1Name = randomString();
         topic2Name = randomString();
-        createTopic(topic1Name , INITIAL_PARTITION_COUNT);
+        createTopic(topic1Name, INITIAL_PARTITION_COUNT);
         createTopic(topic2Name, INITIAL_PARTITION_COUNT);
     }
 
@@ -113,7 +122,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         DAG dag = new DAG();
 
         Vertex source = dag.newVertex("source",
-                streamKafkaP(properties, topic1Name, topic2Name)).localParallelism(4);
+                streamKafkaP(properties, noWatermarks(), topic1Name, topic2Name)).localParallelism(4);
 
         Vertex sink = dag.newVertex("sink", writeListP("sink"))
                          .localParallelism(1);
@@ -191,8 +200,72 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
+    public void when_eventsInAllPartitions_then_watermarkOutputImmediately() {
+        StreamKafkaP processor = createProcessor(1, 1, Util::entry, 10_000);
+        TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
+        processor.init(outbox, new TestProcessorContext());
+
+        for (int i = 0; i < INITIAL_PARTITION_COUNT; i++) {
+            Entry<Integer, String> event = entry(i + 100, Integer.toString(i));
+            System.out.println("produced event " + event);
+            produce(topic1Name, i, event.getKey(), event.getValue());
+            if (i == INITIAL_PARTITION_COUNT - 1) {
+                assertEquals(new Watermark(100 - LAG), consumeEventually(processor, outbox));
+            }
+            assertEquals(event, consumeEventually(processor, outbox));
+        }
+    }
+
+    @Test
+    public void when_noAssignedPartitionAndAddedLater_then_resumesFromIdle() throws Exception {
+        // we ask to create 5th out of 5 processors, but we have only 4 partitions and 1 topic
+        // --> our processor will have nothing assigned
+        StreamKafkaP processor = createProcessor(INITIAL_PARTITION_COUNT + 1, 1, Util::entry, 10_000);
+        TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
+        processor.init(outbox, new TestProcessorContext().setGlobalProcessorIndex(INITIAL_PARTITION_COUNT));
+
+        assertTrue(processor.currentAssignment.isEmpty());
+        assertEquals(IDLE_MESSAGE, consumeEventually(processor, outbox));
+
+        setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 1);
+        Thread.sleep(1000);
+        resetProducer(); // this allows production to the added partition
+
+        // produce events until the event happens to go to the added partition
+        Entry<Integer, String> event;
+        for (int i = 0; ; i++) {
+            event = entry(i, Integer.toString(i));
+            Future<RecordMetadata> future = produce(topic1Name, event.getKey(), event.getValue());
+            RecordMetadata recordMetadata = future.get();
+            if (recordMetadata.partition() == 4) {
+                break;
+            }
+        }
+
+        assertEquals(new Watermark(event.getKey() - LAG), consumeEventually(processor, outbox));
+        assertEquals(event, consumeEventually(processor, outbox));
+    }
+
+    @Test
+    public void when_eventsInSinglePartition_then_watermarkAfterIdleTime() {
+        // When
+        StreamKafkaP processor = createProcessor(1, 2, Util::entry, 10_000);
+        TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
+        processor.init(outbox, new TestProcessorContext());
+        produce(topic1Name, 10, "foo");
+
+        // Then
+        assertEquals(entry(10, "foo"), consumeEventually(processor, outbox));
+        long time1 = System.nanoTime();
+        assertEquals(new Watermark(10 - LAG), consumeEventually(processor, outbox));
+        long time2 = System.nanoTime();
+        long elapsedMs = NANOSECONDS.toMillis(time2 - time1);
+        assertTrue("elapsed time: " + elapsedMs + " ms, should be larger", elapsedMs > 3000 && elapsedMs <= 10_000);
+    }
+
+    @Test
     public void when_snapshotSaved_then_offsetsRestored() throws Exception {
-        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 1, 60000);
+        StreamKafkaP processor = createProcessor(1, 2, Util::entry, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
@@ -208,7 +281,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
 
         // create new processor and restore snapshot
-        processor = new StreamKafkaP(properties, asList(topic1Name, topic2Name), Util::entry, 1, 60000);
+        processor = createProcessor(1, 2, Util::entry, 10_000);
         outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
@@ -225,12 +298,26 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertNoMoreItems(processor, outbox);
     }
 
+    private <T> StreamKafkaP<Integer, String, T> createProcessor(
+            int globalParallelism,
+            int numTopics,
+            @Nonnull DistributedBiFunction<Integer, String, T> projectionFn,
+            long idleTimeoutMillis
+    ) {
+        assert numTopics == 1 || numTopics == 2;
+        return new StreamKafkaP<>(properties,
+                numTopics == 1 ? singletonList(topic1Name) : Arrays.asList(topic1Name, topic2Name),
+                projectionFn, globalParallelism,
+                wmGenParams(e -> e instanceof Entry ? (int) ((Entry) e).getKey() : System.currentTimeMillis(),
+                withFixedLag(LAG), suppressDuplicates(), idleTimeoutMillis));
+    }
+
     @Test
     public void when_partitionAdded_then_consumedFromBeginning() throws Exception {
         properties.setProperty("metadata.max.age.ms", "100");
-        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), Util::entry, 1, 100);
+        StreamKafkaP processor = createProcessor(1, 2, Util::entry, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
-        processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
+        processor.init(outbox, new TestProcessorContext());
 
         produce(topic1Name, 0, "0");
         assertEquals(entry(0, "0"), consumeEventually(processor, outbox));
@@ -259,40 +346,36 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_notEnoughPartitions_thenFail() throws Exception {
+    public void when_noAssignedPartitions_thenEmitIdleMsgImmediately() {
         // Set global parallelism to higher number than number of partitions
-        StreamKafkaP processor = new StreamKafkaP<>(properties, Arrays.asList(topic1Name, topic2Name), Util::entry,
-                INITIAL_PARTITION_COUNT * 2 + 1, 500);
+        StreamKafkaP processor = createProcessor(INITIAL_PARTITION_COUNT * 2 + 1, 2, Util::entry, 100_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         TestProcessorContext context = new TestProcessorContext()
-                .setGlobalProcessorIndex(1)
-                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+                .setGlobalProcessorIndex(INITIAL_PARTITION_COUNT * 2);
 
-        expectedException.expectMessage("global parallelism");
         processor.init(outbox, context);
+        processor.complete();
+
+        assertEquals(IDLE_MESSAGE, outbox.queueWithOrdinal(0).poll());
     }
 
     @Test
     public void when_customProjection_then_used() {
         // When
-        StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name), (k, v) -> k + "=" + v, 1, 500);
+        StreamKafkaP processor = createProcessor(1, 2, (k, v) -> k + "=" + v, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
         produce(topic1Name, 0, "0");
 
         // Then
-        assertTrueEventually(() -> {
-            assertFalse(processor.complete());
-            assertFalse("no item in outbox", outbox.queueWithOrdinal(0).isEmpty());
-        }, 3);
-        assertEquals("0=0", outbox.queueWithOrdinal(0).poll());
+        assertEquals("0=0", consumeEventually(processor, outbox));
     }
 
     @Test
     public void when_customProjectionToNull_then_filteredOut() {
         // When
         StreamKafkaP processor = new StreamKafkaP(properties, singletonList(topic1Name),
-                (k, v) -> "0".equals(v) ? null : v, 1, 500);
+                (k, v) -> "0".equals(v) ? null : v, 1, noWatermarks());
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
         produce(topic1Name, 0, "0");
@@ -307,12 +390,12 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertNull(outbox.queueWithOrdinal(0).poll());
     }
 
-    private Entry<Integer, String> consumeEventually(Processor processor, TestOutbox outbox) {
+    private <T> T consumeEventually(Processor processor, TestOutbox outbox) {
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
             assertFalse("no item in outbox", outbox.queueWithOrdinal(0).isEmpty());
-        }, 3);
-        return (Entry<Integer, String>) outbox.queueWithOrdinal(0).poll();
+        }, 12);
+        return (T) outbox.queueWithOrdinal(0).poll();
     }
 
     private void assertNoMoreItems(StreamKafkaP processor, TestOutbox outbox) throws InterruptedException {
@@ -321,12 +404,12 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertTrue("unexpected items in outbox: " + outbox.queueWithOrdinal(0), outbox.queueWithOrdinal(0).isEmpty());
     }
 
-    private Set unwrapBroadcastKey(Collection c) {
+    private Set<Entry<TopicPartition, String>> unwrapBroadcastKey(Collection c) {
         // BroadcastKey("x") != BroadcastKey("x") ==> we need to extract the key
-        Set res = new HashSet();
+        Set<Entry<TopicPartition, String>> res = new HashSet<>();
         for (Object o : c) {
-            Entry<BroadcastKey<TopicPartition>, Long> entry = (Entry<BroadcastKey<TopicPartition>, Long>) o;
-            res.add(entry(entry.getKey().key(), entry.getValue()));
+            Entry<BroadcastKey<TopicPartition>, long[]> entry = (Entry<BroadcastKey<TopicPartition>, long[]>) o;
+            res.add(entry(entry.getKey().key(), Arrays.toString(entry.getValue())));
         }
         return res;
     }

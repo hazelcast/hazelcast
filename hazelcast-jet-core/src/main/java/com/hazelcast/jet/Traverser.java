@@ -134,6 +134,11 @@ public interface Traverser<T> {
      * plus an additional item once this one returns {@code null}. After that
      * it continues forwarding the return values of this traverser. It is
      * meant to be used on finite traversers.
+     * <p>
+     * Default implementations always returns a new traverser instance. If you
+     * need to append multiple objects or use this method frequently,
+     * {@link com.hazelcast.jet.core.AppendableTraverser} might be a better
+     * choice.
      */
     @Nonnull
     default Traverser<T> append(@Nonnull T item) {

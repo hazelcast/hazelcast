@@ -30,6 +30,9 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -45,115 +48,144 @@ import com.hazelcast.util.function.Predicate;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_CURRENT;
-import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.Traversers.traverseIterator;
+import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
 
 /**
- * @see SourceProcessors#streamMapP(String, DistributedPredicate, DistributedFunction, JournalInitialPosition)
+ * @see SourceProcessors#streamMapP
  */
 public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     private static final int MAX_FETCH_SIZE = 128;
 
     private final EventJournalReader<E> eventJournalReader;
-    private final Set<Integer> assignedPartitions;
     private final Predicate<E> predicate;
     private final Projection<E, T> projection;
     private final JournalInitialPosition initialPos;
     private final boolean isRemoteReader;
 
+    private final int[] partitionIds;
+    private final WatermarkSourceUtil<T> watermarkSourceUtil;
+
     // keep track of next offset to emit and read separately, as even when the
     // outbox is full we can still poll for new items.
-    private final Map<Integer, Long> emitOffsets = new HashMap<>();
-    private final Map<Integer, Long> readOffsets = new HashMap<>();
+    private final long[] emitOffsets;
+    private final long[] readOffsets;
 
-    private final Map<Integer, ICompletableFuture<ReadResultSet<T>>> readFutures = new HashMap<>();
+    private ICompletableFuture<ReadResultSet<T>>[] readFutures;
 
-    private Traverser<T> eventTraverser;
-    private Traverser<Entry<BroadcastKey<Integer>, Long>> snapshotTraverser;
+    // currently processed resultSet, it's partitionId and iterating position
+    private ReadResultSet<T> resultSet;
+    private int currentPartitionIndex = -1;
+    private int resultSetPosition;
 
-    // keep track of pendingItem's offset and partition
-    private long pendingItemOffset;
-    private int pendingItemPartition;
-
-    // callback which will update the currently pending offset only after the item is emitted
-    private Consumer<T> updateOffsetFn = e -> emitOffsets.put(pendingItemPartition, pendingItemOffset + 1);
-    private Iterator<Entry<Integer, ICompletableFuture<ReadResultSet<T>>>> iterator;
+    private Traverser<Entry<BroadcastKey<Integer>, long[]>> snapshotTraverser;
+    private Watermark pendingWatermark;
 
     StreamEventJournalP(@Nonnull EventJournalReader<E> eventJournalReader,
                         @Nonnull List<Integer> assignedPartitions,
                         @Nonnull DistributedPredicate<E> predicateFn,
                         @Nonnull DistributedFunction<E, T> projectionFn,
                         @Nonnull JournalInitialPosition initialPos,
-                        boolean isRemoteReader) {
+                        boolean isRemoteReader,
+                        WatermarkGenerationParams<T> wmGenParams) {
         this.eventJournalReader = eventJournalReader;
-        this.assignedPartitions = new HashSet<>(assignedPartitions);
         this.predicate = (Serializable & Predicate<E>) predicateFn::test;
         this.projection = toProjection(projectionFn);
         this.initialPos = initialPos;
         this.isRemoteReader = isRemoteReader;
+
+        partitionIds = assignedPartitions.stream().mapToInt(Integer::intValue).toArray();
+        emitOffsets = new long[partitionIds.length];
+        readOffsets = new long[partitionIds.length];
+
+        watermarkSourceUtil = new WatermarkSourceUtil<>(wmGenParams);
+        watermarkSourceUtil.increasePartitionCount(assignedPartitions.size());
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
-        Map<Integer, ICompletableFuture<EventJournalInitialSubscriberState>> futures = assignedPartitions.stream()
-            .map(partition -> entry(partition, eventJournalReader.subscribeToEventJournal(partition)))
-            .collect(toMap(Entry::getKey, Entry::getValue));
-        futures.forEach((partition, future) -> uncheckRun(() -> readOffsets.put(partition, getSequence(future.get()))));
-        emitOffsets.putAll(readOffsets);
+    protected void init(@Nonnull Context context) throws Exception {
+        ICompletableFuture<EventJournalInitialSubscriberState>[] futures = new ICompletableFuture[partitionIds.length];
+        Arrays.setAll(futures, i -> eventJournalReader.subscribeToEventJournal(partitionIds[i]));
+        for (int i = 0; i < futures.length; i++) {
+            emitOffsets[i] = readOffsets[i] = getSequence(futures[i].get());
+        }
     }
 
     @Override
     public boolean complete() {
-        if (readFutures.isEmpty()) {
+        if (readFutures == null) {
             initialRead();
         }
-        if (eventTraverser == null) {
-            Traverser<T> t = nextTraverser();
-            if (t != null) {
-                eventTraverser = t.onFirstNull(() -> eventTraverser = null);
+        if (pendingWatermark != null) {
+            if (!tryEmit(pendingWatermark)) {
+                return false;
             }
+            pendingWatermark = null;
         }
-
-        if (eventTraverser != null) {
-            emitFromTraverser(eventTraverser, updateOffsetFn);
-        }
+        do {
+            tryGetNextResultSet();
+            if (resultSet == null) {
+                break;
+            }
+            emitResultSet();
+        } while (resultSet == null);
         return false;
+    }
+
+    private void emitResultSet() {
+        assert resultSet != null : "null resultSet";
+        while (resultSetPosition < resultSet.size()) {
+            T event = resultSet.get(resultSetPosition);
+            if (event != null) {
+                pendingWatermark = watermarkSourceUtil.handleEvent(currentPartitionIndex, event);
+                if (pendingWatermark != null) {
+                    if (!tryEmit(pendingWatermark)) {
+                        return;
+                    }
+                    pendingWatermark = null;
+                }
+                if (!tryEmit(event)) {
+                    return;
+                }
+            }
+            emitOffsets[currentPartitionIndex] = resultSet.getSequence(resultSetPosition) + 1;
+                resultSetPosition++;
+        }
+        // we're done with current resultSet
+        resultSetPosition = 0;
+        resultSet = null;
     }
 
     @Override
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
-            snapshotTraverser = traverseIterable(emitOffsets.entrySet())
-                    .map(e -> entry(broadcastKey(e.getKey()), e.getValue()))
-                    .onFirstNull(() -> snapshotTraverser = null);
+            snapshotTraverser = traverseStream(IntStream.range(0, partitionIds.length)
+                    .mapToObj(pIdx -> entry(
+                            broadcastKey(partitionIds[pIdx]),
+                            new long[] {emitOffsets[pIdx], watermarkSourceUtil.getWatermark(pIdx)})));
         }
         boolean done = emitFromTraverserToSnapshot(snapshotTraverser);
         if (done) {
@@ -164,11 +196,14 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        int partition = ((BroadcastKey<Integer>) key).key();
-        long offset = (Long) value;
-        if (assignedPartitions.contains(partition)) {
-            readOffsets.put(partition, offset);
-            emitOffsets.put(partition, offset);
+        int partitionId = ((BroadcastKey<Integer>) key).key();
+        int partitionIndex = arrayIndexOf(partitionId, partitionIds);
+        long offset = ((long[]) value)[0];
+        long wm = ((long[]) value)[1];
+        if (partitionIndex >= 0) {
+            readOffsets[partitionIndex] = offset;
+            emitOffsets[partitionIndex] = offset;
+            watermarkSourceUtil.restoreWatermark(partitionIndex, wm);
         }
     }
 
@@ -184,48 +219,39 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     private void initialRead() {
-        readOffsets.forEach((partition, offset) ->
-                readFutures.put(partition, readFromJournal(partition, offset)));
-        iterator = readFutures.entrySet().iterator();
+        readFutures = new ICompletableFuture[partitionIds.length];
+        for (int i = 0; i < readFutures.length; i++) {
+            readFutures[i] = readFromJournal(partitionIds[i], readOffsets[i]);
+        }
     }
 
     private long getSequence(EventJournalInitialSubscriberState state) {
         return initialPos == START_FROM_CURRENT ? state.getNewestSequence() + 1 : state.getOldestSequence();
     }
 
-    private Traverser<T> nextTraverser() {
-        ReadResultSet<T> resultSet = nextResultSet();
-        if (resultSet == null) {
-            return null;
-        }
-        Traverser<T> traverser = traverseIterator(resultSet.iterator(), true);
-        return peekIndex(traverser, i -> pendingItemOffset = resultSet.getSequence(i));
-    }
-
-    private ReadResultSet<T> nextResultSet() {
-        while (iterator.hasNext()) {
-            Entry<Integer, ICompletableFuture<ReadResultSet<T>>> entry = iterator.next();
-            int partition = entry.getKey();
-            if (!entry.getValue().isDone()) {
+    private void tryGetNextResultSet() {
+        while (resultSet == null && ++currentPartitionIndex < partitionIds.length) {
+            ICompletableFuture<ReadResultSet<T>> future = readFutures[currentPartitionIndex];
+            if (!future.isDone()) {
                 continue;
             }
-            ReadResultSet<T> resultSet = toResultSet(partition, entry.getValue());
-            if (resultSet == null || resultSet.size() == 0) {
-                // we got stale sequence or empty response, make another read
-                entry.setValue(readFromJournal(partition, readOffsets.get(partition)));
-                continue;
+            resultSet = toResultSet(currentPartitionIndex, future);
+            if (resultSet != null) {
+                assert resultSet.size() > 0 : "empty resultSet";
+                readOffsets[currentPartitionIndex] += resultSet.readCount();
             }
-            pendingItemPartition = partition;
-            long newOffset = readOffsets.merge(partition, (long) resultSet.readCount(), Long::sum);
             // make another read on the same partition
-            entry.setValue(readFromJournal(partition, newOffset));
-            return resultSet;
+            readFutures[currentPartitionIndex] = readFromJournal(partitionIds[currentPartitionIndex],
+                    readOffsets[currentPartitionIndex]);
         }
-        iterator = readFutures.entrySet().iterator();
-        return null;
+
+        if (currentPartitionIndex == partitionIds.length) {
+            currentPartitionIndex = -1;
+            pendingWatermark = watermarkSourceUtil.handleNoEvent();
+        }
     }
 
-    private ReadResultSet<T> toResultSet(int partition, ICompletableFuture<ReadResultSet<T>> future) {
+    private ReadResultSet<T> toResultSet(int partitionIdx, ICompletableFuture<ReadResultSet<T>> future) {
         try {
             return future.get();
         } catch (ExecutionException e) {
@@ -237,11 +263,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             } else if (ex instanceof StaleSequenceException) {
                 long headSeq = ((StaleSequenceException) e.getCause()).getHeadSeq();
                 // move both read and emitted offsets to the new head
-                long oldOffset = readOffsets.put(partition, headSeq);
-                emitOffsets.put(partition, headSeq);
-                getLogger().warning("Events lost for partition " + partition + " due to journal overflow " +
-                        "when reading from event journal. Increase journal size to avoid this error. " +
-                        "Requested was: " + oldOffset + ", current head is: " + headSeq);
+                long oldOffset = readOffsets[partitionIdx];
+                readOffsets[partitionIdx] = emitOffsets[partitionIdx] = headSeq;
+                getLogger().warning("Events lost for partition " + partitionIds[partitionIdx]
+                        + " due to journal overflow when reading from event journal. Increase journal size to " +
+                        "avoid this error. Requested was: " + oldOffset + ", current head is: " + headSeq);
                 return null;
             } else {
                 throw rethrow(ex);
@@ -255,22 +281,6 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         logFine(getLogger(), "Reading from partition %s and offset %s", partition, offset);
         return eventJournalReader.readFromEventJournal(offset,
                 1, MAX_FETCH_SIZE, partition, predicate, projection);
-    }
-
-    /**
-     * Returns a new traverser, that will return same items as supplied {@code
-     * traverser} and before each item is returned a zero-based index is sent
-     * to the {@code action}.
-     */
-    private static <T> Traverser<T> peekIndex(Traverser<T> traverser, IntConsumer action) {
-        int[] count = {0};
-        return () -> {
-            T t = traverser.next();
-            if (t != null) {
-                action.accept(count[0]++);
-            }
-            return t;
-        };
     }
 
     private static <E, T> Projection<E, T> toProjection(Function<E, T> projectionFn) {
@@ -291,6 +301,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private final DistributedPredicate<E> predicate;
         private final DistributedFunction<E, T> projection;
         private final JournalInitialPosition initialPos;
+        private final WatermarkGenerationParams<T> wmGenParams;
 
         private transient int remotePartitionCount;
         private transient Map<Address, List<Integer>> addrToPartitions;
@@ -300,13 +311,14 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 DistributedFunction<HazelcastInstance, EventJournalReader<E>> eventJournalReaderSupplier,
                 DistributedPredicate<E> predicate,
                 DistributedFunction<E, T> projection,
-                JournalInitialPosition initialPos
-        ) {
+                JournalInitialPosition initialPos,
+                WatermarkGenerationParams<T> wmGenParams) {
             this.serializableConfig = clientConfig == null ? null : new SerializableClientConfig(clientConfig);
             this.eventJournalReaderSupplier = eventJournalReaderSupplier;
             this.predicate = predicate;
             this.projection = projection;
             this.initialPos = initialPos;
+            this.wmGenParams = wmGenParams;
         }
 
         @Override
@@ -349,7 +361,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             }
 
             return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address),
-                    serializableConfig, eventJournalReaderSupplier, predicate, projection, initialPos);
+                    serializableConfig, eventJournalReaderSupplier, predicate, projection, initialPos,
+                    wmGenParams);
         }
 
     }
@@ -364,6 +377,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private final DistributedPredicate<E> predicate;
         private final DistributedFunction<E, T> projection;
         private final JournalInitialPosition initialPos;
+        private final WatermarkGenerationParams<T> wmGenParams;
 
         private transient HazelcastInstance client;
         private transient EventJournalReader<E> eventJournalReader;
@@ -374,13 +388,15 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 DistributedFunction<HazelcastInstance, EventJournalReader<E>> eventJournalReaderSupplier,
                 DistributedPredicate<E> predicate,
                 DistributedFunction<E, T> projection,
-                JournalInitialPosition initialPos) {
+                JournalInitialPosition initialPos,
+                WatermarkGenerationParams<T> wmGenParams) {
             this.ownedPartitions = ownedPartitions;
             this.serializableClientConfig = serializableClientConfig;
             this.eventJournalReaderSupplier = eventJournalReaderSupplier;
             this.predicate = predicate;
             this.projection = projection;
             this.initialPos = initialPos;
+            this.wmGenParams = wmGenParams;
         }
 
         @Override
@@ -412,7 +428,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             return partitions.isEmpty()
                     ? Processors.noopP().get()
                     : new StreamEventJournalP<>(eventJournalReader, partitions, predicate, projection,
-                    initialPos, client != null);
+                    initialPos, client != null, wmGenParams);
         }
     }
 
@@ -421,11 +437,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
-            @Nonnull JournalInitialPosition initialPos
-    ) {
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams) {
         return new ClusterMetaSupplier<>(null,
                 instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
-                predicate, projection, initialPos);
+                predicate, projection, initialPos, wmGenParams);
     }
 
     @SuppressWarnings("unchecked")
@@ -434,11 +450,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
-            @Nonnull JournalInitialPosition initialPos
-    ) {
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams) {
         return new ClusterMetaSupplier<>(clientConfig,
                 instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
-                predicate, projection, initialPos);
+                predicate, projection, initialPos, wmGenParams);
     }
 
     @SuppressWarnings("unchecked")
@@ -446,11 +462,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull String cacheName,
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
-            @Nonnull JournalInitialPosition initialPos
-    ) {
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams) {
         return new ClusterMetaSupplier<>(null,
                 inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
-                predicate, projection, initialPos);
+                predicate, projection, initialPos, wmGenParams);
     }
 
     @SuppressWarnings("unchecked")
@@ -459,10 +475,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicate,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
-            @Nonnull JournalInitialPosition initialPos
-    ) {
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams) {
         return new ClusterMetaSupplier<>(clientConfig,
                 inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
-                predicate, projection, initialPos);
+                predicate, projection, initialPos, wmGenParams);
     }
 }

@@ -16,13 +16,16 @@
 
 package com.hazelcast.jet.impl.connector.kafka;
 
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Preconditions;
@@ -36,12 +39,10 @@ import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
@@ -54,53 +55,58 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.lang.System.arraycopy;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#streamKafkaP(
- *Properties, String...)}.
+ * See {@link com.hazelcast.jet.core.processor.KafkaProcessors#streamKafkaP}.
  */
 public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Closeable {
 
-    private static final long KAFKA_DEFAULT_REFRESH_INTERVAL = 300_000;
+    private static final long METADATA_CHECK_INTERVAL_NANOS = SECONDS.toNanos(5);
     private static final int POLL_TIMEOUT_MS = 50;
 
+    Map<TopicPartition, Integer> currentAssignment = new HashMap<>();
     private final Properties properties;
     private final List<String> topics;
     private final DistributedBiFunction<K, V, T> projectionFn;
     private final int globalParallelism;
+    private final WatermarkSourceUtil<T> watermarkSourceUtil;
     private boolean snapshottingEnabled;
     private KafkaConsumer<Object, Object> consumer;
+    private final AppendableTraverser<Object> appendableTraverser = new AppendableTraverser<>(2);
 
-    private long nextPartitionCheck = Long.MIN_VALUE;
+    private final int[] partitionCounts;
+    private long nextMetadataCheck = Long.MIN_VALUE;
 
     /**
      * Key: topicName<br>
      * Value: partition offsets, at index I is offset for partition I.<br>
-     * Offsets are -1 initially and for unassigned partitions.
+     * Offsets are -1 initially and remain -1 for partitions not assigned to this instance.
      */
     private final Map<String, long[]> offsets = new HashMap<>();
-    private Traverser<Entry<BroadcastKey<TopicPartition>, Long>> snapshotTraverser;
-    private Set<TopicPartition> currentAssignment = new HashSet<>();
-    private long metadataRefreshInterval;
+    private Traverser<Entry<BroadcastKey<TopicPartition>, long[]>> snapshotTraverser;
     private int processorIndex;
-    private Traverser<T> traverser;
+    private Traverser<Object> traverser;
     private ConsumerRecord<Object, Object> lastEmittedItem;
 
-    StreamKafkaP(@Nonnull Properties properties, @Nonnull List<String> topics,
-                 @Nonnull DistributedBiFunction<K, V, T> projectionFn, int globalParallelism,
-                 long metadataRefreshInterval
+    StreamKafkaP(
+            @Nonnull Properties properties,
+            @Nonnull List<String> topics,
+            @Nonnull DistributedBiFunction<K, V, T> projectionFn,
+            int globalParallelism,
+            @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
         this.properties = properties;
         this.topics = topics;
         this.projectionFn = projectionFn;
         this.globalParallelism = globalParallelism;
-        this.metadataRefreshInterval = metadataRefreshInterval;
+
+        watermarkSourceUtil = new WatermarkSourceUtil<>(wmGenParams);
+        partitionCounts = new int[topics.size()];
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
+    protected void init(@Nonnull Context context) {
         processorIndex = context.globalProcessorIndex();
         snapshottingEnabled = context.snapshottingEnabled();
         consumer = new KafkaConsumer<>(properties);
@@ -108,31 +114,44 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     }
 
     private void assignPartitions(boolean seekToBeginning) {
-        List<Integer> partitionCounts = topics.stream().map(t -> consumer.partitionsFor(t).size()).collect(toList());
-        validateEnoughPartitions(topics, partitionCounts, globalParallelism);
+        if (System.nanoTime() < nextMetadataCheck) {
+            return;
+        }
+        boolean allEqual = true;
+        for (int i = 0; i < topics.size(); i++) {
+            int newCount = consumer.partitionsFor(topics.get(i)).size();
+            allEqual &= partitionCounts[i] == newCount;
+            partitionCounts[i] = newCount;
+        }
+        if (allEqual) {
+            return;
+        }
 
         KafkaPartitionAssigner assigner = new KafkaPartitionAssigner(topics, partitionCounts, globalParallelism);
         Set<TopicPartition> newAssignments = assigner.topicPartitionsFor(processorIndex);
         logFinest(getLogger(), "Currently assigned partitions: %s", newAssignments);
 
-        newAssignments.removeAll(currentAssignment);
+        newAssignments.removeAll(currentAssignment.keySet());
         if (!newAssignments.isEmpty()) {
-            getLogger().info("Partition assignments changed, new partitions: " + newAssignments);
-            currentAssignment.addAll(newAssignments);
-            consumer.assign(currentAssignment);
+            getLogger().info("Partition assignments changed, added partitions: " + newAssignments);
+            for (TopicPartition tp : newAssignments) {
+                currentAssignment.put(tp, currentAssignment.size());
+            }
+            watermarkSourceUtil.increasePartitionCount(currentAssignment.size());
+            consumer.assign(currentAssignment.keySet());
             if (seekToBeginning) {
                 // for newly detected partitions, we should always seek to the beginning
                 consumer.seekToBeginning(newAssignments);
             }
         }
 
-        createOrExtendOffsetsArrays(partitionCounts);
-        nextPartitionCheck = System.nanoTime() + MILLISECONDS.toNanos(metadataRefreshInterval);
+        createOrExtendOffsetsArrays();
+        nextMetadataCheck = System.nanoTime() + METADATA_CHECK_INTERVAL_NANOS;
     }
 
-    private void createOrExtendOffsetsArrays(List<Integer> partitionCounts) {
-        for (int topicIdx = 0; topicIdx < partitionCounts.size(); topicIdx++) {
-            int newPartitionCount = partitionCounts.get(topicIdx);
+    private void createOrExtendOffsetsArrays() {
+        for (int topicIdx = 0; topicIdx < partitionCounts.length; topicIdx++) {
+            int newPartitionCount = partitionCounts[topicIdx];
             String topicName = topics.get(topicIdx);
             long[] oldOffsets = offsets.get(topicName);
             if (oldOffsets != null && oldOffsets.length == newPartitionCount) {
@@ -149,31 +168,56 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
 
     @Override
     public boolean complete() {
-        if (System.nanoTime() >= nextPartitionCheck) {
-            assignPartitions(true);
-        }
-
-        assert !currentAssignment.isEmpty() : "No topic partitions assigned to this processor.";
+        assignPartitions(true);
 
         if (traverser == null) {
-            ConsumerRecords<Object, Object> records;
-            try {
-                records = consumer.poll(POLL_TIMEOUT_MS);
-            } catch (InterruptException e) {
-                return true;
+            ConsumerRecords<Object, Object> records = null;
+            if (!currentAssignment.isEmpty()) {
+                try {
+                    records = consumer.poll(POLL_TIMEOUT_MS);
+                } catch (InterruptException e) {
+                    // note this is Kafka's exception, not Java's
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
             }
-            if (records.isEmpty()) {
+            if (records == null || records.isEmpty()) {
+                Watermark wm = watermarkSourceUtil.handleNoEvent();
+                if (wm != null) {
+                    appendableTraverser.append(wm);
+                    traverser = appendableTraverser;
+                }
+            } else {
+                traverser = traverseIterable(records)
+                        .flatMap(r -> {
+                            lastEmittedItem = r;
+                            T projectedRecord = projectionFn.apply((K) r.key(), (V) r.value());
+                            TopicPartition topicPartition = new TopicPartition(lastEmittedItem.topic(),
+                                    lastEmittedItem.partition());
+                            Watermark wm = watermarkSourceUtil.handleEvent(currentAssignment.get(topicPartition),
+                                    projectedRecord);
+                            if (wm != null) {
+                                appendableTraverser.append(wm);
+                            }
+                            if (projectedRecord != null) {
+                                appendableTraverser.append(projectedRecord);
+                            }
+                            return appendableTraverser;
+                        });
+            }
+            if (traverser == null) {
                 return false;
             }
-            traverser = traverseIterable(records)
-                    .peek(r -> lastEmittedItem = r)
-                    .map(r -> projectionFn.apply((K) r.key(), (V) r.value()))
-                    .filter(Objects::nonNull) // we allow the user-supplied projection to return null
-                    .onFirstNull(() -> traverser = null);
+
+            traverser = traverser.onFirstNull(() -> traverser = null);
         }
 
         emitFromTraverser(traverser,
-                e -> offsets.get(lastEmittedItem.topic())[lastEmittedItem.partition()] = lastEmittedItem.offset());
+                e -> {
+                    if (!(e instanceof Watermark)) {
+                        offsets.get(lastEmittedItem.topic())[lastEmittedItem.partition()] = lastEmittedItem.offset();
+                    }
+                });
 
         if (!snapshottingEnabled) {
             consumer.commitSync();
@@ -197,13 +241,16 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     @Override
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
-            Stream<Entry<BroadcastKey<TopicPartition>, Long>> snapshotStream =
+            Stream<Entry<BroadcastKey<TopicPartition>, long[]>> snapshotStream =
                     offsets.entrySet().stream()
                            .flatMap(entry -> IntStream.range(0, entry.getValue().length)
                                   .filter(partition -> entry.getValue()[partition] >= 0)
-                                  .mapToObj(partition -> entry(
-                                          broadcastKey(new TopicPartition(entry.getKey(), partition)),
-                                          entry.getValue()[partition])));
+                                  .mapToObj(partition -> {
+                                      TopicPartition key = new TopicPartition(entry.getKey(), partition);
+                                      long offset = entry.getValue()[partition];
+                                      long watermark = watermarkSourceUtil.getWatermark(currentAssignment.get(key));
+                                      return entry(broadcastKey(key), new long[]{offset, watermark});
+                                  }));
             snapshotTraverser = traverseStream(snapshotStream)
                     .onFirstNull(() -> snapshotTraverser = null);
         }
@@ -213,7 +260,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     @Override
     public void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         TopicPartition topicPartition = ((BroadcastKey<TopicPartition>) key).key();
-        long offset = (long) value;
+        long[] value1 = (long[]) value;
+        long offset = value1[0];
+        long watermark = value1[1];
         long[] topicOffsets = offsets.get(topicPartition.topic());
         if (topicOffsets == null) {
             getLogger().severe("Offset for topic '" + topicPartition.topic()
@@ -224,11 +273,13 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
             getLogger().severe("Offset for partition '" + topicPartition + "' is present in snapshot," +
                     " but that topic currently has only " + topicOffsets.length + " partitions");
         }
-        if (currentAssignment.contains(topicPartition)) {
+        Integer partitionIndex = currentAssignment.get(topicPartition);
+        if (partitionIndex != null) {
             assert topicOffsets[topicPartition.partition()] < 0 : "duplicate offset for topicPartition '" + topicPartition
                     + "' restored, offset1=" + topicOffsets[topicPartition.partition()] + ", offset2=" + offset;
             topicOffsets[topicPartition.partition()] = offset;
             consumer.seek(topicPartition, offset + 1);
+            watermarkSourceUtil.restoreWatermark(partitionIndex, watermark);
         }
     }
 
@@ -237,25 +288,19 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         private final Properties properties;
         private final List<String> topics;
         private final DistributedBiFunction<K, V, T> projectionFn;
-        private final long metadataRefreshInterval;
+        private final WatermarkGenerationParams<T> wmGenParams;
         private int totalParallelism;
 
-        public MetaSupplier(Properties properties, List<String> topics, DistributedBiFunction<K, V, T> projectionFn) {
+        public MetaSupplier(
+                Properties properties,
+                List<String> topics,
+                DistributedBiFunction<K, V, T> projectionFn,
+                @Nonnull WatermarkGenerationParams<T> wmGenParams) {
             this.properties = new Properties();
             this.properties.putAll(properties);
             this.topics = topics;
             this.projectionFn = projectionFn;
-
-            // Save the value of metadata.max.age.ms to a variable and zero it in the properties.
-            // We'll do metadata refresh on our own.
-            if (properties.containsKey("metadata.max.age.ms")) {
-                metadataRefreshInterval = Long.parseLong(properties.getProperty("metadata.max.age.ms"));
-            } else {
-                metadataRefreshInterval = KAFKA_DEFAULT_REFRESH_INTERVAL;
-            }
-            // Set metadata caching to 1 second: we read the metadata for multiple partitions one by one. If we
-            // set this to 0, consumer.partitionsFor(topic) would probably fetch metadata for each topic anew.
-            this.properties.setProperty("metadata.max.age.ms", "1000");
+            this.wmGenParams = wmGenParams;
         }
 
         @Override
@@ -272,7 +317,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new CloseableProcessorSupplier<>(
-                    () -> new StreamKafkaP(properties, topics, projectionFn, totalParallelism, metadataRefreshInterval));
+                    () -> new StreamKafkaP(properties, topics, projectionFn, totalParallelism, wmGenParams));
         }
     }
 
@@ -282,11 +327,11 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     static class KafkaPartitionAssigner {
 
         private final List<String> topics;
-        private final List<Integer> partitionCounts;
+        private final int[] partitionCounts;
         private final int globalParallelism;
 
-        KafkaPartitionAssigner(List<String> topics, List<Integer> partitionCounts, int globalParallelism) {
-            Preconditions.checkTrue(topics.size() == partitionCounts.size(),
+        KafkaPartitionAssigner(List<String> topics, int[] partitionCounts, int globalParallelism) {
+            Preconditions.checkTrue(topics.size() == partitionCounts.length,
                     "Different length between topics and partition counts");
             this.topics = topics;
             this.partitionCounts = partitionCounts;
@@ -296,7 +341,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         Set<TopicPartition> topicPartitionsFor(int processorIndex) {
             Set<TopicPartition> assignments = new LinkedHashSet<>();
             for (int topicIndex = 0; topicIndex < topics.size(); topicIndex++) {
-                for (int partition = 0; partition < partitionCounts.get(topicIndex); partition++) {
+                for (int partition = 0; partition < partitionCounts[topicIndex]; partition++) {
                     if (processorIndexFor(topicIndex, partition) == processorIndex) {
                         assignments.add(new TopicPartition(topics.get(topicIndex), partition));
                     }
@@ -308,25 +353,6 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         private int processorIndexFor(int topicIndex, int partition) {
             int startIndex = topicIndex * Math.max(1, globalParallelism / topics.size());
             return (startIndex + partition) % globalParallelism;
-        }
-    }
-
-    /**
-     * Validate that there are enough Kafka partitions to assign to all processors.
-     * If a processor is generating no events, this can cause watermarks to never advance on one node.
-     */
-    private static void validateEnoughPartitions(
-            List<String> topics, List<Integer> partitionCounts, int globalParallelism
-    ) {
-        int totalPartitionCount = partitionCounts.stream().mapToInt(i -> i).sum();
-        if (totalPartitionCount < globalParallelism) {
-            Map<String, Integer> topicToCount = new HashMap<>();
-            for (int i = 0; i < topics.size(); i++) {
-                topicToCount.put(topics.get(i), partitionCounts.get(i));
-            }
-            throw new JetException("Total number of Kafka topic partitions (" + totalPartitionCount + ")" +
-                    " is less than the global parallelism (" + globalParallelism + ") for this vertex. "
-                    + " The partition counts for individual Kafka topics are " + topicToCount);
         }
     }
 }

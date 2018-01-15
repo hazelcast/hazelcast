@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.connector.kafka.StreamKafkaP;
@@ -27,6 +28,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 /**
@@ -40,24 +42,31 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties, DistributedBiFunction, String...)}.
+     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties,
+     * DistributedBiFunction, WatermarkGenerationParams, String...)}.
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
             @Nonnull DistributedBiFunction<K, V, T> projectionFn,
+            @Nonnull WatermarkGenerationParams<T> wmGenParams,
             @Nonnull String... topics
     ) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         properties.put("enable.auto.commit", false);
-        return new StreamKafkaP.MetaSupplier<>(properties, Arrays.asList(topics), projectionFn);
+        return new StreamKafkaP.MetaSupplier<>(properties, Arrays.asList(topics), projectionFn, wmGenParams);
     }
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties, String...)}.
+     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties,
+     * WatermarkGenerationParams, String...)}.
      */
-    public static ProcessorMetaSupplier streamKafkaP(@Nonnull Properties properties, @Nonnull String... topics) {
-        return streamKafkaP(properties, Util::entry, topics);
+    public static <K, V> ProcessorMetaSupplier streamKafkaP(
+            @Nonnull Properties properties,
+            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams,
+            @Nonnull String... topics
+    ) {
+        return KafkaProcessors.<K, V, Entry<K, V>>streamKafkaP(properties, Util::entry, wmGenParams, topics);
     }
 
     /**

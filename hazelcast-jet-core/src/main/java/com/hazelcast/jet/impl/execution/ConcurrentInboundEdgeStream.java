@@ -29,6 +29,7 @@ import java.util.BitSet;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 
 /**
@@ -98,7 +99,8 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 continue;
             }
 
-            drainQueue(q, dest);
+            ProgressState result = drainQueue(q, dest);
+            tracker.mergeWith(result);
 
             if (itemDetector.item == DONE_ITEM) {
                 conveyor.removeQueue(queueIndex);
@@ -114,6 +116,8 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 }
             } else if (itemDetector.item instanceof SnapshotBarrier) {
                 observeBarrier(queueIndex, ((SnapshotBarrier) itemDetector.item).snapshotId());
+            } else if (result.isMadeProgress()) {
+                watermarkCoalescer.observeEvent(queueIndex);
             }
 
             if (numActiveQueues == 0) {
@@ -143,7 +147,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     private boolean maybeEmitWm(long timestamp, Consumer<Object> dest) {
-        if (timestamp != Long.MIN_VALUE) {
+        if (timestamp != NO_NEW_WM) {
             dest.accept(new Watermark(timestamp));
             return true;
         }
@@ -160,13 +164,13 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      * {@link Watermark} or {@link SnapshotBarrier}. Also updates the {@code tracker} with new status.
      *
      */
-    private void drainQueue(Pipe<Object> queue, Consumer<Object> dest) {
+    private ProgressState drainQueue(Pipe<Object> queue, Consumer<Object> dest) {
         itemDetector.reset(dest);
 
         int drainedCount = queue.drain(itemDetector);
-        tracker.mergeWith(ProgressState.valueOf(drainedCount > 0, itemDetector.item == DONE_ITEM));
 
         itemDetector.dest = null;
+        return ProgressState.valueOf(drainedCount > 0, itemDetector.item == DONE_ITEM);
     }
 
     private void observeBarrier(int queueIndex, long snapshotId) {

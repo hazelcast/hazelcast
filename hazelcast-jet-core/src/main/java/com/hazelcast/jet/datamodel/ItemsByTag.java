@@ -28,7 +28,7 @@ import java.util.Set;
  * can be different for each tag. The value associated with a tag may be
  * {@code null}.
  * <p>
- * This is a less typesafe, but more flexible alternative to a tuple. The
+ * This is a less type-safe, but more flexible alternative to a tuple. The
  * tuple has a fixed number of integer-indexed, statically-typed fields,
  * and {@code ItemsByTag} has a variable number of tag-indexed fields whose
  * whose static type is encoded in the tags.

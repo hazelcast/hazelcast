@@ -284,4 +284,24 @@ public class TestProcessors {
             return dontParallelize(() -> new ListSource(list));
         }
     }
+
+    /**
+     * A processor that maps Watermarks to String (otherwise, they would not be
+     * inserted to sink). It passes other items without change (from all input
+     * edges to all output edges. It can't be done using {@link
+     * com.hazelcast.jet.core.processor.Processors#mapP} because it doesn't
+     * handle watermarks.
+     */
+    public static class MapWatermarksToString extends AbstractProcessor {
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+            return tryEmit(item);
+        }
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return tryEmit("wm(" + watermark.timestamp() + ')');
+        }
+    }
 }

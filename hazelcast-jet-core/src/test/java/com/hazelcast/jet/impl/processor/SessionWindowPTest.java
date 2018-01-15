@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -39,6 +38,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
@@ -133,7 +133,7 @@ public class SessionWindowPTest {
 
         try {
             verifyProcessor(supplier)
-                    .outputChecker((e, a) -> new HashSet(e).equals(new HashSet(a)))
+                    .outputChecker(SAME_ITEMS_ANY_ORDER)
                     .input(events)
                     .expectOutput(expectedOutput);
         } catch (AssertionError e) {

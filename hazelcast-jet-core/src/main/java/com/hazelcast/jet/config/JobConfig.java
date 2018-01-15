@@ -187,7 +187,7 @@ public class JobConfig implements Serializable {
     /**
      * Sets the maximum time to retain the watermarks while coalescing them.
      * A negative value disables the limit and Jet will retain the watermark
-     * as long as needed. With this setting you choose a tradeoff between
+     * as long as needed. With this setting you choose a trade-off between
      * latency and correctness that arises when dealing with stream skew.
      *
      * <h3>Stream Skew</h3>

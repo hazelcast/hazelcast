@@ -30,7 +30,7 @@ import java.util.Set;
  * co-grouped items, where each tag corresponds to one contributing
  * pipeline stage.
  * <p>
- * This is a less typesafe, but more flexible alternative to the {@link
+ * This is a less type-safe, but more flexible alternative to the {@link
  * TwoBags} and {@link ThreeBags} containers, which have a fixed (and
  * limited) number of integer-indexed, statically-typed fields. {@code
  * BagsByTag} has a variable number of tag-indexed fields whose whose

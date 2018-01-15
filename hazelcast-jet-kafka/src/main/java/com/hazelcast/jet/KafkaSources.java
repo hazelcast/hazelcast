@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.processor.KafkaProcessors;
 import com.hazelcast.jet.function.DistributedBiFunction;
 
@@ -33,10 +34,15 @@ public final class KafkaSources {
 
     /**
      * Convenience for {@link #kafka(Properties, DistributedBiFunction,
-     * String...)} wrapping the output in {@code Map.Entry}.
+     * WatermarkGenerationParams, String...)} wrapping the output in {@code
+     * Map.Entry}.
      */
-    public static <K, V> Source<Entry<K, V>> kafka(@Nonnull Properties properties, @Nonnull String... topics) {
-        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, topics));
+    public static <K, V> Source<Entry<K, V>> kafka(
+            @Nonnull Properties properties,
+            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams,
+            @Nonnull String... topics
+    ) {
+        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, wmGenParams, topics));
     }
 
     /**
@@ -54,8 +60,13 @@ public final class KafkaSources {
      * <p>
      * If snapshotting is disabled, the source commits the offsets to Kafka
      * using {@link org.apache.kafka.clients.consumer.KafkaConsumer#commitSync()
-     * commitSync()}. Note however that offsets can be committed before the
-     * event is fully processed.
+     * commitSync()}. Note however that offsets can be committed before or
+     * after the event is fully processed.
+     * <p>
+     * If you add Kafka partitions at run-time, consumption from them will
+     * start after a delay, based on the {@code metadata.max.age.ms} Kafka
+     * property. Note, however, that events from them can be dropped as late if
+     * the allowed lag is not enough.
      * <p>
      * The processor completes only in the case of an error or if the job is
      * cancelled. IO failures are generally handled by Kafka producer and
@@ -67,18 +78,6 @@ public final class KafkaSources {
      * issue of Kafka (KAFKA-1894).
      * Refer to Kafka documentation for details.
      *
-     * <h4>Issue when "catching up"</h4>
-     * The processor reads partitions one by one: it gets events from one
-     * partition and then moves to the next one etc. This adds time disorder to
-     * events: it might emit very recent event from partition1 while not yet
-     * emitting an old event from partition2. If watermarks are added to the
-     * stream later, the allowed event lag should accommodate this disorder.
-     * Most notably, the "catching up" happens after the job is restarted, when
-     * events since the last snapshot are reprocessed in a burst. In order to
-     * not lose any events, the lag should be configured to at least {@code
-     * snapshotInterval + timeToRestart + normalEventLag}.
-     * We plan to address this issue in a future release.
-     *
      * @param properties consumer properties broker address and key/value deserializers
      * @param projectionFn function to create output objects from key and value.
      *                     If the projection returns a {@code null} for an item, that item
@@ -88,8 +87,10 @@ public final class KafkaSources {
     public static <K, V, T> Source<T> kafka(
             @Nonnull Properties properties,
             @Nonnull DistributedBiFunction<K, V, T> projectionFn,
+            @Nonnull WatermarkGenerationParams<T> wmGenParams,
             @Nonnull String... topics
     ) {
-        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, projectionFn, topics));
+        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, projectionFn, wmGenParams,
+                topics));
     }
 }

@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.Arrays.asList;
@@ -133,7 +132,6 @@ public class KafkaPartitionAssignerTest {
 
     private static KafkaPartitionAssigner assigner(int globalParallelism, int... partitionCounts) {
         List<String> topics = IntStream.range(0, partitionCounts.length).mapToObj(i -> "topic-" + i).collect(toList());
-        List<Integer> counts = IntStream.of(partitionCounts).boxed().collect(Collectors.toList());
-        return new KafkaPartitionAssigner(topics, counts, globalParallelism);
+        return new KafkaPartitionAssigner(topics, partitionCounts, globalParallelism);
     }
 }

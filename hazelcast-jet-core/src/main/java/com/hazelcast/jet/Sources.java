@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.SourceImpl;
@@ -190,6 +191,8 @@ public final class Sources {
      *     If the projection returns a {@code null} for an item, that item
      *     will be filtered out.
      * @param initialPos describes which event to start receiving from
+     * @param wmGenParams parameters for watermark generation, see {@link
+     *      WatermarkGenerationParams#wmGenParams}
      * @param <T> type of emitted item
      */
     @Nonnull
@@ -197,25 +200,28 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("mapJournalSource(" + mapName + ')',
-                streamMapP(mapName, predicateFn, projectionFn, initialPos));
+                streamMapP(mapName, predicateFn, projectionFn, initialPos, wmGenParams));
     }
 
     /**
      * Convenience for {@link #mapJournal(String, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)} which will pass only
-     * {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and {@link
-     * com.hazelcast.core.EntryEventType#UPDATED UPDATED} events and will
-     * project the event's key and new value into a {@code Map.Entry}.
+     * DistributedFunction, JournalInitialPosition, WatermarkGenerationParams)}
+     * which will pass only {@link com.hazelcast.core.EntryEventType#ADDED
+     * ADDED} and {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED}
+     * events and will project the event's key and new value into a {@code
+     * Map.Entry}.
      */
     @Nonnull
     public static <K, V> Source<Entry<K, V>> mapJournal(
             @Nonnull String mapName,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
-        return mapJournal(mapName, mapPutEvents(), mapEventToEntry(), initialPos);
+        return mapJournal(mapName, mapPutEvents(), mapEventToEntry(), initialPos, wmGenParams);
     }
 
     /**
@@ -326,6 +332,8 @@ public final class Sources {
      *     If the projection returns a {@code null} for an item, that item
      *     will be filtered out.
      * @param initialPos describes which event to start receiving from
+     * @param wmGenParams parameters for watermark generation, see {@link
+     *      WatermarkGenerationParams#wmGenParams}
      * @param <K> type of key
      * @param <V> type of value
      * @param <T> type of emitted item
@@ -336,16 +344,18 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("remoteMapJournalSource(" + mapName + ')',
-                streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, initialPos));
+                streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams));
     }
 
     /**
-     * Convenience for {@link #remoteMapJournal(String, ClientConfig, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)} which will pass only
-     * {@link com.hazelcast.core.EntryEventType#ADDED ADDED} and {@link
+     * Convenience for {@link #remoteMapJournal(String, ClientConfig,
+     * DistributedPredicate, DistributedFunction, JournalInitialPosition,
+     * WatermarkGenerationParams)} which will pass only {@link
+     * com.hazelcast.core.EntryEventType#ADDED ADDED} and {@link
      * com.hazelcast.core.EntryEventType#UPDATED UPDATED} events and will
      * project the event's key and new value into a {@code Map.Entry}.
      */
@@ -353,9 +363,10 @@ public final class Sources {
     public static <K, V> Source<Entry<K, V>> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
-        return remoteMapJournal(mapName, clientConfig, mapPutEvents(), mapEventToEntry(), initialPos);
+        return remoteMapJournal(mapName, clientConfig, mapPutEvents(), mapEventToEntry(), initialPos, wmGenParams);
     }
 
     /**
@@ -407,6 +418,8 @@ public final class Sources {
      *     If the projection returns a {@code null} for an item, that item
      *     will be filtered out.
      * @param initialPos describes which event to start receiving from
+     * @param wmGenParams parameters for watermark generation, see {@link
+     *      WatermarkGenerationParams#wmGenParams}
      * @param <T> type of emitted item
      */
     @Nonnull
@@ -414,26 +427,29 @@ public final class Sources {
             @Nonnull String cacheName,
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("cacheJournalSource(" + cacheName + ')',
-                streamCacheP(cacheName, predicateFn, projectionFn, initialPos)
+                streamCacheP(cacheName, predicateFn, projectionFn, initialPos, wmGenParams)
         );
     }
 
     /**
      * Convenience for {@link #cacheJournal(String, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)} which will pass only
-     * {@link com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
-     * com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events and will
-     * project the event's key and new value into a {@code Map.Entry}.
+     * DistributedFunction, JournalInitialPosition, WatermarkGenerationParams)}
+     * which will pass only {@link com.hazelcast.cache.CacheEventType#CREATED
+     * CREATED} and {@link com.hazelcast.cache.CacheEventType#UPDATED UPDATED}
+     * events and will project the event's key and new value into a {@code
+     * Map.Entry}.
      */
     @Nonnull
     public static <K, V> Source<Entry<K, V>> cacheJournal(
             @Nonnull String cacheName,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
-        return cacheJournal(cacheName, cachePutEvents(), cacheEventToEntry(), initialPos);
+        return cacheJournal(cacheName, cachePutEvents(), cacheEventToEntry(), initialPos, wmGenParams);
     }
 
     /**
@@ -484,6 +500,8 @@ public final class Sources {
      *     If the projection returns a {@code null} for an item, that item
      *     will be filtered out.
      * @param initialPos describes which event to start receiving from
+     * @param wmGenParams parameters for watermark generation, see {@link
+     *      WatermarkGenerationParams#wmGenParams}
      * @param <T> type of emitted item
      */
     @Nonnull
@@ -492,16 +510,18 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig,
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("remoteCacheJournalSource(" + cacheName + ')',
-                streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, initialPos));
+                streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams));
     }
 
     /**
-     * Convenience for {@link #remoteCacheJournal(String, ClientConfig, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)} which will pass only
-     * {@link com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
+     * Convenience for {@link #remoteCacheJournal(String, ClientConfig,
+     * DistributedPredicate, DistributedFunction, JournalInitialPosition,
+     * WatermarkGenerationParams)} which will pass only {@link
+     * com.hazelcast.cache.CacheEventType#CREATED CREATED} and {@link
      * com.hazelcast.cache.CacheEventType#UPDATED UPDATED} events and will
      * project the event's key and new value into a {@code Map.Entry}.
      */
@@ -509,9 +529,10 @@ public final class Sources {
     public static <K, V> Source<Entry<K, V>> remoteCacheJournal(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull JournalInitialPosition initialPos
+            @Nonnull JournalInitialPosition initialPos,
+            WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
-        return remoteCacheJournal(cacheName, clientConfig, cachePutEvents(), cacheEventToEntry(), initialPos);
+        return remoteCacheJournal(cacheName, clientConfig, cachePutEvents(), cacheEventToEntry(), initialPos, wmGenParams);
     }
 
     /**

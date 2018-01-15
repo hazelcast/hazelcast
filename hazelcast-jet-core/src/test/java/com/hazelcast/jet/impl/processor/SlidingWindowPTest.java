@@ -280,6 +280,22 @@ public class SlidingWindowPTest {
                 ));
     }
 
+    @Test
+    public void when_lateEvent_then_ignored() {
+        verifyProcessor(supplier)
+                .input(asList(
+                        wm(10),
+                        // this one is late
+                        event(7L, 1L),
+                        // this one is "partially late" - it will miss some target windows, but we still can incorporate
+                        // it to window 11 that is due
+                        event(8L, 1L)
+                )).expectOutput(asList(
+                        wm(10),
+                        outboxFrame(11, 1)
+                ));
+    }
+
     private Entry<Long, ?> event(long frameTs, long value) {
         return singleStageProcessor
                 // frameTs is higher than any event timestamp in that frame;

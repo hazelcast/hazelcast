@@ -46,8 +46,11 @@ public final class WatermarkPolicyUtil {
 
             @Override
             public long reportEvent(long timestamp) {
-                updateFromWallClock();
-                return makeWmAtLeast(timestamp - timestampLag);
+                long wm = updateFromWallClock();
+                if (timestamp > Long.MIN_VALUE + timestampLag) {
+                    wm = makeWmAtLeast(timestamp - timestampLag);
+                }
+                return wm;
             }
 
             @Override

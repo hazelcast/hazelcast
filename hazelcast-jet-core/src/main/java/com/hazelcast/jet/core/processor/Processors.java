@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.core.processor;
 
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
@@ -23,13 +26,9 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.core.WatermarkEmissionPolicy;
-import com.hazelcast.jet.core.WatermarkPolicy;
+import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WindowDefinition;
-import com.hazelcast.jet.aggregate.AggregateOperation;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -626,9 +625,9 @@ public final class Processors {
      * Returns a supplier of processors for a vertex that inserts {@link
      * com.hazelcast.jet.core.Watermark watermark items} into the stream. The
      * value of the watermark is determined by the supplied {@link
-     * WatermarkPolicy} instance.
+     * com.hazelcast.jet.core.WatermarkPolicy} instance.
      * <p>
-     * This processor also drops late items. It never allows an event, which is
+     * This processor also drops late items. It never allows an event which is
      * late with regard to already emitted watermark to pass.
      * <p>
      * The processor saves value of the last emitted watermark to snapshot.
@@ -645,12 +644,8 @@ public final class Processors {
      * @param <T> the type of the stream item
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> insertWatermarksP(
-            @Nonnull DistributedToLongFunction<T> getTimestampF,
-            @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyF,
-            @Nonnull WatermarkEmissionPolicy wmEmitPolicy
-    ) {
-        return () -> new InsertWatermarksP<>(getTimestampF, newWmPolicyF.get(), wmEmitPolicy);
+    public static <T> DistributedSupplier<Processor> insertWatermarksP(@Nonnull WatermarkGenerationParams<T> wmGenParams) {
+        return () -> new InsertWatermarksP<>(wmGenParams);
     }
 
     /**

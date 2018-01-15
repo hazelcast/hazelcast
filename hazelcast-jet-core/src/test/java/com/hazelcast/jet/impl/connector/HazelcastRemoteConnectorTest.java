@@ -31,6 +31,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Address;
@@ -49,6 +50,9 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
+import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
@@ -222,7 +226,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     @Test
     public void when_streamRemoteMap() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig, START_FROM_OLDEST));
+        Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig, START_FROM_OLDEST,
+                wmGenParams(Entry<Integer, Integer>::getValue, withFixedLag(0), suppressDuplicates(), 10_000)));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
@@ -237,8 +242,9 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     @Test
     public void when_streamRemoteMap_withPredicateAndProjection() throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig,
-                event -> !event.getKey().equals(0), EventJournalMapEvent::getKey, START_FROM_OLDEST));
+        Vertex source = dag.newVertex(SOURCE_NAME, SourceProcessors.<Integer, Integer, Integer>streamRemoteMapP(
+                SOURCE_NAME, clientConfig, event -> event.getKey() != 0, EventJournalMapEvent::getKey, START_FROM_OLDEST,
+                wmGenParams(i -> i, withFixedLag(0), suppressDuplicates(), 10_000)));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
@@ -256,7 +262,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_streamRemoteCache() throws Exception {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME,
-                streamRemoteCacheP(SOURCE_NAME, clientConfig, START_FROM_OLDEST)
+                streamRemoteCacheP(SOURCE_NAME, clientConfig, START_FROM_OLDEST,
+                        wmGenParams(Entry<Integer, Integer>::getValue, withFixedLag(0), suppressDuplicates(), 10_000))
         ).localParallelism(4);
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
@@ -273,8 +280,10 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_streamRemoteCache_withPredicateAndProjection()
             throws Exception {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteCacheP(SOURCE_NAME, clientConfig,
-                event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey, START_FROM_OLDEST));
+        Vertex source = dag.newVertex(SOURCE_NAME, SourceProcessors.<Integer, Integer, Integer>streamRemoteCacheP(
+                SOURCE_NAME, clientConfig, event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey,
+                START_FROM_OLDEST,
+                wmGenParams(i -> i, withFixedLag(0), suppressDuplicates(), 10_000)));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
