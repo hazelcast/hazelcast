@@ -19,6 +19,7 @@ import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -29,6 +30,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
@@ -56,6 +58,7 @@ import static java.util.Arrays.asList;
  */
 public class AbstractQuorumTest {
 
+    protected static final String SEMAPHORE = "quorum" + randomString();
     protected static final String REFERENCE_NAME = "reference" + "quorum" + randomString();
     protected static final String LONG_NAME = "long" + "quorum" + randomString();
     protected static final String CACHE_NAME = "quorum" + randomString();
@@ -82,6 +85,13 @@ public class AbstractQuorumTest {
     protected static void shutdownTestEnvironment() {
         HazelcastInstanceFactory.terminateAll();
         cluster = null;
+    }
+
+    protected static SemaphoreConfig newSemaphoreConfig(QuorumType quorumType, String quorumName) {
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+        semaphoreConfig.setName(SEMAPHORE + quorumType.name());
+        semaphoreConfig.setQuorumName(quorumName);
+        return semaphoreConfig;
     }
 
     protected static AtomicReferenceConfig newAtomicReferenceConfig(QuorumType quorumType, String quorumName) {
@@ -202,6 +212,7 @@ public class AbstractQuorumTest {
             config.addQuorumConfig(newQuorumConfig(quorumType, quorumName));
             quorumNames[i++] = quorumName;
 
+            config.addSemaphoreConfig(newSemaphoreConfig(quorumType, quorumName));
             config.addAtomicReferenceConfig(newAtomicReferenceConfig(quorumType, quorumName));
             config.addAtomicLongConfig(newAtomicLongConfig(quorumType, quorumName));
             config.addCacheConfig(newCacheConfig(quorumType, quorumName));
@@ -232,12 +243,15 @@ public class AbstractQuorumTest {
             for (int element = 0; element < 10000; element++) {
                 cluster.instance[0].getQueue(QUEUE_NAME + quorumType.name()).offer(element);
             }
-        }
-        for (QuorumType quorumType : types) {
             for (int id = 0; id < 10000; id++) {
                 cluster.instance[0].getRingbuffer(RINGBUFFER_NAME + quorumType.name()).add(String.valueOf(id));
             }
+            cluster.instance[0].getSemaphore(SEMAPHORE + quorumType.name()).init(100);
         }
+    }
+
+    protected ISemaphore semaphore(int index, QuorumType quorumType) {
+        return cluster.instance[index].getSemaphore(SEMAPHORE + quorumType.name());
     }
 
     protected IAtomicReference aref(int index, QuorumType quorumType) {
