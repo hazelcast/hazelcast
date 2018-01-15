@@ -178,6 +178,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             case NODEJS_CLIENT:
                 type = ClientType.NODEJS;
                 break;
+            case GO_CLIENT:
+                type = ClientType.GO;
+                break;
             case BINARY_CLIENT:
                 type = ClientType.OTHER;
                 break;
