@@ -22,16 +22,16 @@ import com.hazelcast.internal.cluster.ClusterService;
 
 /**
  * A cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
- * and are k-ordered (roughly ordered). IDs are in the range from {@code Long.MIN_VALUE} to
- * {@code Long.MAX_VALUE}. This type of generator is generally known as Flake ID generator.
+ * and are k-ordered (roughly ordered). IDs are in the range from {@code 0} to {@code
+ * Long.MAX_VALUE}.
  * <p>
  * The IDs contain timestamp component and a node ID component, which is assigned when the member
  * joins the cluster. This allows the IDs to be ordered and unique without any coordination between
  * members, which makes the generator safe even in split-brain scenario (for caveats,
  * {@link ClusterService#getMemberListJoinVersion() see here}).
  * <p>
- * Timestamp component is in milliseconds since 1.1.2017, 0:00 UTC, and has 42 bits. This caps
- * the useful lifespan of the generator to little less than 140 years. The sequence component is 6 bits.
+ * Timestamp component is in milliseconds since 1.1.2018, 0:00 UTC, and has 41 bits. This caps
+ * the useful lifespan of the generator to little less than 70 years. The sequence component is 6 bits.
  * If more than 64 IDs are requested in single millisecond, IDs will gracefully overflow to next
  * millisecond and uniqueness is guaranteed in this case.
  *

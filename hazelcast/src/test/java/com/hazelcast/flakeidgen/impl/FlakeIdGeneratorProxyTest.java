@@ -31,7 +31,10 @@ import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.util.Date;
+
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_NODE_ID;
+import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_SEQUENCE;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_TIMESTAMP;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.EPOCH_START;
 import static org.junit.Assert.assertEquals;
@@ -46,13 +49,13 @@ public class FlakeIdGeneratorProxyTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private NodeEngine nodeEngine;
     private ILogger logger;
+    private FlakeIdGeneratorProxy gen;
 
     @Before
     public void before() {
         logger = mock(ILogger.class);
-        nodeEngine = mock(NodeEngine.class, new Answer() {
+        NodeEngine nodeEngine = mock(NodeEngine.class, new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) {
                 if (invocation.getMethod().getName().equals("getLogger")) {
@@ -62,30 +65,37 @@ public class FlakeIdGeneratorProxyTest {
             }
         });
         when(nodeEngine.getConfig()).thenReturn(new Config());
+        gen = new FlakeIdGeneratorProxy("foo", nodeEngine, null);
     }
 
     @Test
-    public void test_timeInNegativeRange() {
-        FlakeIdGeneratorProxy gen = createGenerator();
-        assertEquals(-9112343572002110254L, gen.newIdBaseLocal(1509700048830L, 1234, 10));
+    public void test_usedBits() {
+        assertEquals(63, BITS_NODE_ID + BITS_TIMESTAMP + BITS_SEQUENCE);
     }
 
     @Test
-    public void test_timeInPositiveRange() {
-        FlakeIdGeneratorProxy gen = createGenerator();
-        assertEquals(41798522940425426L, gen.newIdBaseLocal(3692217600000L, 1234, 10));
+    public void test_timeMiddle() {
+        assertEquals(5300086112257234L, gen.newIdBaseLocal(1516028439000L, 1234, 10));
+    }
+
+    @Test
+    public void test_timeLowEdge() {
+        assertEquals(1234L, gen.newIdBaseLocal(EPOCH_START, 1234, 10));
+    }
+
+    @Test
+    public void test_timeHighEdge() {
+        assertEquals(9223372036850582738L, gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP) - 1L, 1234, 10));
     }
 
     @Test
     public void test_idsOrdered() {
-        FlakeIdGeneratorProxy gen = createGenerator();
-        long lastId = Long.MIN_VALUE;
-        for (
-                long now = EPOCH_START - (1L << BITS_TIMESTAMP - 1);
-                now < EPOCH_START + (1L << BITS_TIMESTAMP - 1);
+        long lastId = -1;
+        for (long now = EPOCH_START;
+                now < EPOCH_START + (1L << BITS_TIMESTAMP);
                 now += 365L * 24L * 60L * 60L * 1000L) {
             long base = gen.newIdBaseLocal(now, 1234, 1);
-//            System.out.println("at " + new Date(now) + ", id=" + base);
+            System.out.println("at " + new Date(now) + ", id=" + base);
             assertTrue("lastId=" + lastId + ", newId=" + base, lastId < base);
             lastId = base;
         }
@@ -93,32 +103,26 @@ public class FlakeIdGeneratorProxyTest {
 
     @Test
     public void when_currentTimeBeforeAllowedRange_then_fail() {
-        FlakeIdGeneratorProxy gen = createGenerator();
-        gen.newIdBaseLocal(EPOCH_START - (1L << BITS_TIMESTAMP - 1), 0, 1);
+        gen.newIdBaseLocal(EPOCH_START, 0, 1);
         exception.expect(AssertionError.class);
         exception.expectMessage("Current time out of allowed range");
-        gen.newIdBaseLocal(EPOCH_START - (1L << BITS_TIMESTAMP - 1) - 1, 0, 1);
+        gen.newIdBaseLocal(EPOCH_START - 1, 0, 1);
     }
 
     @Test
     public void when_currentTimeAfterAllowedRange_then_fail() {
-        FlakeIdGeneratorProxy gen = createGenerator();
-        gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP - 1) - 1, 0, 1);
+        gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP) - 1, 0, 1);
         exception.expect(AssertionError.class);
         exception.expectMessage("Current time out of allowed range");
-        gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP - 1), 0, 1);
+        gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP), 0, 1);
     }
 
     @Test
     public void when_twoIdsAtTheSameMoment_then_higherSeq() {
-        FlakeIdGeneratorProxy gen = createGenerator();
-        long id1 = gen.newIdBaseLocal(1509700048830L, 1234, 1);
-        long id2 = gen.newIdBaseLocal(1509700048830L, 1234, 1);
-        assertEquals(-9112343572002110254L, id1);
+        long id1 = gen.newIdBaseLocal(1516028439000L, 1234, 1);
+        long id2 = gen.newIdBaseLocal(1516028439000L, 1234, 1);
+        assertEquals(5300086112257234L, id1);
         assertEquals(id1 + (1 << BITS_NODE_ID), id2);
     }
 
-    private FlakeIdGeneratorProxy createGenerator() {
-        return new FlakeIdGeneratorProxy("foo", nodeEngine, null);
-    }
 }

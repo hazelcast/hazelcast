@@ -40,20 +40,18 @@ public class FlakeIdGeneratorProxy
         extends AbstractDistributedObject<FlakeIdGeneratorService>
         implements FlakeIdGenerator {
 
-    public static final int BITS_TIMESTAMP = 42;
+    public static final int BITS_TIMESTAMP = 41;
     public static final int BITS_SEQUENCE = 6;
     public static final int BITS_NODE_ID = 16;
 
     public static final long INCREMENT = 1 << BITS_NODE_ID;
 
     /**
-     * 1.1.2017 0:00 UTC will be MIN_VALUE in the 42-bit signed integer.
-     * <p>
-     * {@code 1483228800000} is the value {@code System.currentTimeMillis()} would return on
-     * 1.1.2017 0:00 UTC.
+     * {@code 1514764800000} is the value {@code System.currentTimeMillis()} would return on
+     * 1.1.2018 0:00 UTC.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    static final long EPOCH_START = 1483228800000L + (1L << (BITS_TIMESTAMP - 1));
+    static final long EPOCH_START = 1514764800000L;
 
     private static final int NODE_ID_NOT_YET_SET = -1;
     private static final int NODE_ID_OUT_OF_RANGE = -2;
@@ -153,7 +151,7 @@ public class FlakeIdGeneratorProxy
         }
         assert (nodeId & -1 << BITS_NODE_ID) == 0  : "nodeId out of range: " + nodeId;
         now -= EPOCH_START;
-        assert now >= -(1L << BITS_TIMESTAMP - 1) && now < (1L << BITS_TIMESTAMP - 1)  : "Current time out of allowed range";
+        assert now >= 0 && now < (1L << BITS_TIMESTAMP)  : "Current time out of allowed range";
         now <<= BITS_SEQUENCE;
         long oldGeneratedValue;
         long base;
