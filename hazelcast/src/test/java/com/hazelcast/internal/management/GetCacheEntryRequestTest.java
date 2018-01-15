@@ -136,6 +136,8 @@ public class GetCacheEntryRequestTest extends CacheTestSupport {
 
     @Test
     public void testGetCacheEntry_missingKey() {
+        // ensure CacheConfig already exists on all members
+        cacheManager.getCache(cacheName);
         String key = generateKeyOwnedBy(instances[1]);
 
         JsonObject result = sendRequestToInstance(instances[0], new GetCacheEntryRequest("string", cacheName, key));
