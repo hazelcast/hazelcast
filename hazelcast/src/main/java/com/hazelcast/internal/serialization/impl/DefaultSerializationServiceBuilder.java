@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.StringUtil;
 import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteOrder;
@@ -45,10 +46,13 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.nio.ByteOrder.nativeOrder;
 
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
+    // System property to override configured byte order for tests
+    private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
 
     protected final Map<Integer, DataSerializableFactory> dataSerializableFactories =
@@ -305,12 +309,26 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     protected InputOutputFactory createInputOutputFactory() {
+        overrideByteOrder();
+
         if (byteOrder == null) {
             byteOrder = useNativeByteOrder ? nativeOrder() : BIG_ENDIAN;
         }
         return byteOrder == nativeOrder() && allowUnsafe && GlobalMemoryAccessorRegistry.MEM_AVAILABLE
                 ? new UnsafeInputOutputFactory()
                 : new ByteArrayInputOutputFactory(byteOrder);
+    }
+
+    protected void overrideByteOrder() {
+        String byteOrderOverride = System.getProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
+        if (StringUtil.isNullOrEmpty(byteOrderOverride)) {
+            return;
+        }
+        if (BIG_ENDIAN.toString().equals(byteOrderOverride)) {
+            byteOrder = BIG_ENDIAN;
+        } else if (LITTLE_ENDIAN.toString().equals(byteOrderOverride)) {
+            byteOrder = LITTLE_ENDIAN;
+        }
     }
 
     private void addConfigDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories,
