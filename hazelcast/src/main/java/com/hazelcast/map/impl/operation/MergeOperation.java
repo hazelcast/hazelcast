@@ -32,10 +32,9 @@ import java.io.IOException;
 
 public class MergeOperation extends BasePutOperation {
 
+    private boolean merged;
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
-    private boolean merged;
-    private Data mergingValue;
     private boolean disableWanReplicationEvent;
 
     public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
@@ -65,9 +64,14 @@ public class MergeOperation extends BasePutOperation {
             Record record = recordStore.getRecord(dataKey);
             if (record != null) {
                 dataValue = mapServiceContext.toData(record.getValue());
-                mergingValue = mapServiceContext.toData(mergingEntry.getValue());
+                dataMergingValue = mapServiceContext.toData(mergingEntry.getValue());
             }
         }
+    }
+
+    @Override
+    protected boolean canThisOpGenerateWANEvent() {
+        return !disableWanReplicationEvent;
     }
 
     @Override
@@ -83,11 +87,8 @@ public class MergeOperation extends BasePutOperation {
     @Override
     public void afterRun() {
         if (merged) {
-            mapServiceContext.interceptAfterPut(name, dataValue);
-            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, dataKey, dataOldValue,
-                    dataValue, mergingValue);
-            invalidateNearCache(dataKey);
-            evict(dataKey);
+            eventType = EntryEventType.MERGED;
+            super.afterRun();
         }
     }
 
