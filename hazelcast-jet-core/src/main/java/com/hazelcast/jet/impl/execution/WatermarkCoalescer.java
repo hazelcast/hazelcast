@@ -70,7 +70,7 @@ public abstract class WatermarkCoalescer {
      * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE}
      * @param systemTime the value obtained from {@link #getTime()}
      * @return the watermark value to emit or {@link #NO_NEW_WM} if no
-     *      watermark should be forwarded
+     *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
      */
     public abstract long observeWm(long systemTime, int queueIndex, long wmValue);
 

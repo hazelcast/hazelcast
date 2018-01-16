@@ -71,9 +71,8 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      *      events.
      * @param newWmPolicyF watermark policy factory
      * @param wmEmitPolicy watermark emission policy
-     * @param idleTimeoutMillis a timeout after which the {@link
-     *      com.hazelcast.jet.impl.execution.WatermarkCoalescer#IDLE_MESSAGE}
-     *      will be sent.
+     * @param idleTimeoutMillis a timeout after which the source partition will
+     *      be marked as <em>idle</em>
      */
     public static <T> WatermarkGenerationParams<T> wmGenParams(
             @Nonnull DistributedToLongFunction<T> getTimestampF,

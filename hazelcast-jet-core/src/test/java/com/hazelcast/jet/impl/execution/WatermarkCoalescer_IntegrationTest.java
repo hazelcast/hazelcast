@@ -243,8 +243,8 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
-        assertEquals("wm(" + IDLE_MESSAGE.timestamp() + ")", sinkList.get(0));
+        // the idle message should not be presented to the processor
+        assertTrueAllTheTime(() -> assertEquals(0, sinkList.size()), 3);
     }
 
     @Test

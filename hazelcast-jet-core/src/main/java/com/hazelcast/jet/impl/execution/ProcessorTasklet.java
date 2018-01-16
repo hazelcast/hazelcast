@@ -47,6 +47,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.END;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Comparator.comparing;
@@ -155,7 +156,7 @@ public class ProcessorTasklet implements Tasklet {
                     }
                     pendingWatermark = new Watermark(wm);
                 }
-                if (processor.tryProcessWatermark(pendingWatermark)) {
+                if (pendingWatermark.equals(IDLE_MESSAGE) || processor.tryProcessWatermark(pendingWatermark)) {
                     state = EMIT_WATERMARK;
                     stateMachineStep(now); // recursion
                 }
