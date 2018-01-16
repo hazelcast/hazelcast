@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.NioPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ItemCounter;
@@ -35,8 +35,8 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
  * Tracks the load of of NioThread(s) and creates a mapping between NioThread -> Handler.
  * <p/>
  * This class is not thread-safe with the exception of
- * {@link #addHandler(MigratableHandler)}   and
- * {@link #removeHandler(MigratableHandler)}
+ * {@link #addHandler(NioPipeline)}   and
+ * {@link #removeHandler(NioPipeline)}
  */
 class LoadTracker {
     final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
@@ -45,18 +45,18 @@ class LoadTracker {
 
     //all known IO ioThreads. we assume no. of ioThreads is constant during a lifespan of a member
     private final NioThread[] ioThreads;
-    private final Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
+    private final Map<NioThread, Set<NioPipeline>> selectorToHandlers;
 
     //no. of events per handler since an instance started
-    private final ItemCounter<MigratableHandler> lastEventCounter = new ItemCounter<MigratableHandler>();
+    private final ItemCounter<NioPipeline> lastEventCounter = new ItemCounter<NioPipeline>();
 
     //no. of events per NioThread since last calculation
     private final ItemCounter<NioThread> selectorEvents = new ItemCounter<NioThread>();
     //no. of events per handler since last calculation
-    private final ItemCounter<MigratableHandler> handlerEventsCounter = new ItemCounter<MigratableHandler>();
+    private final ItemCounter<NioPipeline> handlerEventsCounter = new ItemCounter<NioPipeline>();
 
     //contains all known handlers
-    private final Set<MigratableHandler> handlers = new HashSet<MigratableHandler>();
+    private final Set<NioPipeline> handlers = new HashSet<NioPipeline>();
 
     private final LoadImbalance imbalance;
 
@@ -68,7 +68,7 @@ class LoadTracker {
 
         this.selectorToHandlers = createHashMap(ioThreads.length);
         for (NioThread selector : ioThreads) {
-            selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
+            selectorToHandlers.put(selector, new HashSet<NioPipeline>());
         }
         this.imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
     }
@@ -98,17 +98,17 @@ class LoadTracker {
     }
 
     // just for testing
-    Set<MigratableHandler> getHandlers() {
+    Set<NioPipeline> getHandlers() {
         return handlers;
     }
 
     // just for testing
-    ItemCounter<MigratableHandler> getLastEventCounter() {
+    ItemCounter<NioPipeline> getLastEventCounter() {
         return lastEventCounter;
     }
 
     // just for testing
-    ItemCounter<MigratableHandler> getHandlerEventsCounter() {
+    ItemCounter<NioPipeline> getHandlerEventsCounter() {
         return handlerEventsCounter;
     }
 
@@ -136,33 +136,33 @@ class LoadTracker {
         }
     }
 
-    public void notifyHandlerAdded(MigratableHandler handler) {
+    public void notifyHandlerAdded(NioPipeline handler) {
         AddHandlerTask addHandlerTask = new AddHandlerTask(handler);
         tasks.offer(addHandlerTask);
     }
 
-    public void notifyHandlerRemoved(MigratableHandler handler) {
+    public void notifyHandlerRemoved(NioPipeline handler) {
         RemoveHandlerTask removeHandlerTask = new RemoveHandlerTask(handler);
         tasks.offer(removeHandlerTask);
     }
 
 
     private void updateNewWorkingImbalance() {
-        for (MigratableHandler handler : handlers) {
+        for (NioPipeline handler : handlers) {
             updateHandlerState(handler);
         }
     }
 
-    private void updateHandlerState(MigratableHandler handler) {
+    private void updateHandlerState(NioPipeline handler) {
         long handlerEventCount = getEventCountSinceLastCheck(handler);
         handlerEventsCounter.set(handler, handlerEventCount);
         NioThread owner = handler.getOwner();
         selectorEvents.add(owner, handlerEventCount);
-        Set<MigratableHandler> handlersOwnedBy = selectorToHandlers.get(owner);
+        Set<NioPipeline> handlersOwnedBy = selectorToHandlers.get(owner);
         handlersOwnedBy.add(handler);
     }
 
-    private long getEventCountSinceLastCheck(MigratableHandler handler) {
+    private long getEventCountSinceLastCheck(NioPipeline handler) {
         long eventCount = handler.getLoad();
         Long lastEventCount = lastEventCounter.getAndSet(handler, eventCount);
         return eventCount - lastEventCount;
@@ -171,16 +171,16 @@ class LoadTracker {
     private void clearWorkingImbalance() {
         handlerEventsCounter.reset();
         selectorEvents.reset();
-        for (Set<MigratableHandler> handlerSet : selectorToHandlers.values()) {
+        for (Set<NioPipeline> handlerSet : selectorToHandlers.values()) {
             handlerSet.clear();
         }
     }
 
-    void addHandler(MigratableHandler handler) {
+    void addHandler(NioPipeline handler) {
         handlers.add(handler);
     }
 
-    void removeHandler(MigratableHandler handler) {
+    void removeHandler(NioPipeline handler) {
         handlers.remove(handler);
         handlerEventsCounter.remove(handler);
         lastEventCounter.remove(handler);
@@ -242,12 +242,12 @@ class LoadTracker {
 
     private void appendSelectorInfo(
             NioThread minThread,
-            Map<NioThread, Set<MigratableHandler>> threadHandlers,
+            Map<NioThread, Set<NioPipeline>> threadHandlers,
             StringBuilder sb) {
-        Set<MigratableHandler> handlerSet = threadHandlers.get(minThread);
-        for (MigratableHandler selectionHandler : handlerSet) {
-            Long eventCountPerHandler = handlerEventsCounter.get(selectionHandler);
-            sb.append(selectionHandler)
+        Set<NioPipeline> handlerSet = threadHandlers.get(minThread);
+        for (NioPipeline nioPipeline : handlerSet) {
+            Long eventCountPerHandler = handlerEventsCounter.get(nioPipeline);
+            sb.append(nioPipeline)
                     .append(":  ")
                     .append(eventCountPerHandler)
                     .append(LINE_SEPARATOR);
@@ -257,9 +257,9 @@ class LoadTracker {
 
     class RemoveHandlerTask implements Runnable {
 
-        private final MigratableHandler handler;
+        private final NioPipeline handler;
 
-        public RemoveHandlerTask(MigratableHandler handler) {
+        public RemoveHandlerTask(NioPipeline handler) {
             this.handler = handler;
         }
 
@@ -276,9 +276,9 @@ class LoadTracker {
 
     class AddHandlerTask implements Runnable {
 
-        private final MigratableHandler handler;
+        private final NioPipeline handler;
 
-        public AddHandlerTask(MigratableHandler handler) {
+        public AddHandlerTask(NioPipeline handler) {
             this.handler = handler;
         }
 

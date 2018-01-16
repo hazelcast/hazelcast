@@ -16,9 +16,8 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.NioPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.internal.networking.nio.SelectionHandler;
 import com.hazelcast.util.ItemCounter;
 
 import java.util.Map;
@@ -28,7 +27,7 @@ import java.util.Set;
  * Describes a state of NioThread (im-)balance.
  *
  * It's used by {@link MigrationStrategy} to decide whether and what
- * {@link SelectionHandler} should be migrated.
+ * {@link NioPipeline} should be migrated.
  */
 class LoadImbalance {
     //number of events recorded by the busiest NioThread
@@ -40,11 +39,11 @@ class LoadImbalance {
     //least busy NioThread
     NioThread destinationSelector;
 
-    private final Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
-    private final ItemCounter<MigratableHandler> handlerLoadCounter;
+    private final Map<NioThread, Set<NioPipeline>> selectorToHandlers;
+    private final ItemCounter<NioPipeline> handlerLoadCounter;
 
-    LoadImbalance(Map<NioThread, Set<MigratableHandler>> selectorToHandlers,
-                  ItemCounter<MigratableHandler> handlerLoadCounter) {
+    LoadImbalance(Map<NioThread, Set<NioPipeline>> selectorToHandlers,
+                  ItemCounter<NioPipeline> handlerLoadCounter) {
         this.selectorToHandlers = selectorToHandlers;
         this.handlerLoadCounter = handlerLoadCounter;
     }
@@ -53,7 +52,7 @@ class LoadImbalance {
      * @param selector
      * @return A set of Handlers owned by the selector
      */
-    Set<MigratableHandler> getHandlersOwnerBy(NioThread selector) {
+    Set<NioPipeline> getHandlersOwnerBy(NioThread selector) {
         return selectorToHandlers.get(selector);
     }
 
@@ -61,7 +60,7 @@ class LoadImbalance {
      * @param handler
      * @return number of events recorded by the handler
      */
-    long getLoad(MigratableHandler handler) {
+    long getLoad(NioPipeline handler) {
         return handlerLoadCounter.get(handler);
     }
 }

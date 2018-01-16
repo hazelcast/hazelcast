@@ -16,66 +16,54 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.InitResult;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import static com.hazelcast.nio.IOUtil.newByteBuffer;
-import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
-import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
  * Client side ChannelInitializer. Client in this case is a real client using client protocol etc.
  *
  * It will automatically send the Client Protocol to the server and configure the correct buffers/handlers.
  */
-class ClientChannelInitializer implements ChannelInitializer {
-
-    private final int bufferSize;
-    private final boolean direct;
-
-    ClientChannelInitializer(int bufferSize, boolean direct) {
-        this.bufferSize = bufferSize;
-        this.direct = direct;
-    }
-
-    @Override
-    public InitResult<ChannelInboundHandler> initInbound(final Channel channel) throws IOException {
-        ByteBuffer inputBuffer = newByteBuffer(bufferSize, direct);
-
-        final ClientConnection connection = (ClientConnection) channel.attributeMap().get(ClientConnection.class);
-
-        ChannelInboundHandler inboundHandler = new ClientMessageDecoder(
-                new ClientMessageDecoder.ClientMessageHandler() {
-                    @Override
-                    public void handle(ClientMessage message) {
-                        connection.handleClientMessage(message);
-                    }
-                });
-        return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
-    }
-
-    @Override
-    public InitResult<ChannelOutboundHandler> initOutbound(Channel channel) {
-        ByteBuffer outputBuffer = newByteBuffer(bufferSize, direct);
-
-        // add the protocol-bytes so the client makes itself known to the 'server'
-        outputBuffer.put(stringToBytes(CLIENT_BINARY_NEW));
-
-        ChannelOutboundHandler outboundHandler = new ChannelOutboundHandler<ClientMessage>() {
-            @Override
-            public boolean onWrite(ClientMessage msg, ByteBuffer dst) throws Exception {
-                return msg.writeTo(dst);
-            }
-        };
-
-        return new InitResult<ChannelOutboundHandler>(outputBuffer, outboundHandler);
-    }
+class ClientChannelInitializer {
+//        implements ChannelInitializer {
+//
+//    private final int bufferSize;
+//    private final boolean direct;
+//
+//    ClientChannelInitializer(int bufferSize, boolean direct) {
+//        this.bufferSize = bufferSize;
+//        this.direct = direct;
+//    }
+//
+//    @Override
+//    public InitResult<ChannelInboundHandler> initInbound(final Channel channel) throws IOException {
+//        ByteBuffer inputBuffer = newByteBuffer(bufferSize, direct);
+//
+//        final ClientConnection connection = (ClientConnection) channel.attributeMap().get(ClientConnection.class);
+//
+//        ChannelInboundHandler inboundHandler = new ClientMessageDecoder(
+//                new ClientMessageDecoder.ClientMessageHandler() {
+//                    @Override
+//                    public void handle(ClientMessage message) {
+//                        connection.handleClientMessage(message);
+//                    }
+//                });
+//        return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
+//    }
+//
+//    @Override
+//    public InitResult<ChannelOutboundHandler> initOutbound(Channel channel) {
+//        ByteBuffer outputBuffer = newByteBuffer(bufferSize, direct);
+//
+//        // add the protocol-bytes so the client makes itself known to the 'server'
+//        outputBuffer.put(stringToBytes(CLIENT_BINARY_NEW));
+//
+//        ChannelOutboundHandler outboundHandler = new ChannelOutboundHandler() {
+//            @Override
+//            public void onWrite() throws Exception {
+//                //return msg.writeTo(dst);
+//                throw new RuntimeException();
+//            }
+//        };
+//
+//        return new InitResult<ChannelOutboundHandler>(outputBuffer, outboundHandler);
+//    }
 }

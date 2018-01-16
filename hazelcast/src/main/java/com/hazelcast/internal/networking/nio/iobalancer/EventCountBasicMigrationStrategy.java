@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.NioPipeline;
 
 import java.util.Set;
 
 /**
- * Default {@link MigrationStrategy} for {@link MigratableHandler} instances.
+ * Default {@link MigrationStrategy} for {@link NioPipeline} instances.
  *
  * It attempts to trigger a migration if a ratio between least busy and most busy selectors
  * exceeds {@link #MIN_MAX_RATIO_MIGRATION_THRESHOLD}.
@@ -74,13 +74,13 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
      * @return the handler to migrate to a new NioThread or null if no handler needs to be migrated.
      */
     @Override
-    public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
-        Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
+    public NioPipeline findHandlerToMigrate(LoadImbalance imbalance) {
+        Set<? extends NioPipeline> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
         long migrationThreshold = (long) ((imbalance.maximumEvents - imbalance.minimumEvents)
                 * MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT);
-        MigratableHandler candidate = null;
+        NioPipeline candidate = null;
         long eventCountInSelectedHandler = 0;
-        for (MigratableHandler handler : candidates) {
+        for (NioPipeline handler : candidates) {
             long eventCount = imbalance.getLoad(handler);
             if (eventCount > eventCountInSelectedHandler) {
                 if (eventCount < migrationThreshold) {

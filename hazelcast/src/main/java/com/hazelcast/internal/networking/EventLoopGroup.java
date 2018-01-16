@@ -18,6 +18,8 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 
+import java.nio.channels.SocketChannel;
+
 /**
  * The EventLoopGroup is responsible for processing registered channels. Effectively it is the threading model for the io system.
  *
@@ -40,9 +42,11 @@ public interface EventLoopGroup {
      * Every Channel should be registered at at most 1 EventLoopGroup and it is very unlikely that during the lifespan of the
      * Channel, it will change its EventLoopGroup.
      *
-     * @param channel the channel to register.
+     * @param socketChannel the SocketChannel
+     * @param clientMode    true if the connection is made in 'clientMode', false otherwise.
+     *                      For more information see {@link Channel#isClientMode()}
      */
-    void register(Channel channel);
+    Channel register(SocketChannel socketChannel, boolean clientMode);
 
     /**
      * Starts this EventLoopGroup.

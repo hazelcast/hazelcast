@@ -32,8 +32,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
-import com.hazelcast.internal.networking.ChannelFactory;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -118,11 +116,11 @@ public class DefaultClientExtension implements ClientExtension {
         LOGGER.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
         return null;
     }
-
-    @Override
-    public ChannelFactory createSocketChannelWrapperFactory() {
-        return new NioChannelFactory();
-    }
+//
+//    @Override
+//    public ChannelFactory createSocketChannelWrapperFactory() {
+//        return new NioChannelFactory();
+//    }
 
     @Override
     public <T> ClientProxyFactory createServiceProxyFactory(Class<T> service) {

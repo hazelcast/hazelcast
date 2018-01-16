@@ -17,10 +17,14 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.WriteResult;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
 
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.networking.WriteResult.CLEAN;
+import static com.hazelcast.internal.networking.WriteResult.DIRTY;
 
 /**
  * A {@link ChannelOutboundHandler} that for member to member communication.
@@ -32,12 +36,19 @@ import java.nio.ByteBuffer;
  *
  * @see PacketDecoder
  */
-public class PacketEncoder implements ChannelOutboundHandler<Packet> {
+public class PacketEncoder extends ChannelOutboundHandler<Packet> {
 
     private final PacketIOHelper packetWriter = new PacketIOHelper();
 
     @Override
-    public boolean onWrite(Packet packet, ByteBuffer dst) {
-        return packetWriter.writeTo(packet, dst);
+    public WriteResult onWrite() {
+        System.out.println(channel + " MemberChannelOutboundHandler writing:" + frame);
+
+        if (frame == null || packetWriter.writeTo(frame, dst)) {
+            frame = null;
+            return CLEAN;
+        } else {
+            return DIRTY;
+        }
     }
 }

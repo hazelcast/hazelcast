@@ -18,15 +18,15 @@ package com.hazelcast.nio.ascii;
 
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.WriteResult;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @PrivateApi
-public class TextEncoder implements ChannelOutboundHandler<TextCommand> {
+public class TextEncoder extends ChannelOutboundHandler<TextCommand> {
     private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
     private long currentRequestId;
@@ -60,7 +60,12 @@ public class TextEncoder implements ChannelOutboundHandler<TextCommand> {
     }
 
     @Override
-    public boolean onWrite(TextCommand textCommand, ByteBuffer dst) throws Exception {
-        return textCommand.writeTo(dst);
+    public WriteResult onWrite() throws Exception {
+            throw new RuntimeException();
     }
+//
+//    @Override
+//    public boolean onWrite(TextCommand textCommand, ByteBuffer dst) throws Exception {
+//        return textCommand.writeTo(dst);
+//    }
 }

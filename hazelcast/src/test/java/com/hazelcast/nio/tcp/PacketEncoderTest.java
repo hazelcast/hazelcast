@@ -51,9 +51,11 @@ public class PacketEncoderTest extends HazelcastTestSupport {
     public void test() throws Exception {
         Packet packet = new Packet(serializationService.toBytes("foobar"));
         ByteBuffer bb = ByteBuffer.allocate(1000);
-        boolean result = writeHandler.onWrite(packet, bb);
+        writeHandler.dst = bb;
+        writeHandler.frame = packet;
+        writeHandler.onWrite();
 
-        assertTrue(result);
+        //assertTrue(result);
 
         // now we read out the bb and check if we can find the written packet.
         bb.flip();

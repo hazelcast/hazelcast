@@ -60,7 +60,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 @PrivateApi
-public class TextDecoder implements ChannelInboundHandler {
+public class TextDecoder extends ChannelInboundHandler {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
@@ -124,7 +124,7 @@ public class TextDecoder implements ChannelInboundHandler {
     }
 
     @Override
-    public void onRead(ByteBuffer src) throws Exception {
+    public void onRead() throws Exception {
         while (src.hasRemaining()) {
             doRead(src);
         }

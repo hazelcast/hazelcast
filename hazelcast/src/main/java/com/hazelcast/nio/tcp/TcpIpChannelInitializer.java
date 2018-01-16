@@ -14,17 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOService;
 
-import java.nio.channels.SocketChannel;
+public class TcpIpChannelInitializer implements ChannelInitializer {
+    private final ILogger logger;
+    private final IOService ioService;
 
-public class NioChannelFactory implements ChannelFactory {
+    public TcpIpChannelInitializer(ILogger logger, IOService ioService) {
+        this.logger = logger;
+        this.ioService = ioService;
+    }
 
     @Override
-    public Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) throws Exception {
-        return new NioChannel(channel, clientMode);
+    public void initChannel(Channel channel) {
+        channel.addLast(new ProtocolDecoder(logger, ioService));
+        channel.addLast(new ProtocolEncoder(logger, ioService));
     }
 }

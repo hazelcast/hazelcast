@@ -93,6 +93,18 @@ public class AbstractChannelTest {
         }
 
         @Override
+        public void flushOutboundPipeline() {
+        }
+
+        @Override
+        public void addLast(ChannelInboundHandler handler) {
+        }
+
+        @Override
+        public void addLast(ChannelOutboundHandler handler) {
+        }
+
+        @Override
         public long lastReadTimeMillis() {
             return 0;
         }

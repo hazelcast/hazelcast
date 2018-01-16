@@ -61,6 +61,10 @@ public final class IOUtil {
     private IOUtil() {
     }
 
+    public static String toDebug(String name, ByteBuffer bb) {
+        return name + "{pos=" + bb.position() + " limit=" + bb.limit() + " cap:" + bb.capacity() + "}";
+    }
+
     /**
      * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
      *

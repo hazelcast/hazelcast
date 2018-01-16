@@ -22,7 +22,6 @@ import com.hazelcast.logging.Logger;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,24 +86,6 @@ public abstract class AbstractChannel implements Channel {
     public SocketAddress getLocalSocketAddress() {
         Socket socket = socket();
         return socket == null ? null : socket.getLocalSocketAddress();
-    }
-
-    @Override
-    public int read(ByteBuffer dst) throws IOException {
-        return socketChannel.read(dst);
-    }
-
-    @Override
-    public int write(ByteBuffer src) throws IOException {
-        return socketChannel.write(src);
-    }
-
-    @Override
-    public void closeInbound() throws IOException {
-    }
-
-    @Override
-    public void closeOutbound() throws IOException {
     }
 
     @Override

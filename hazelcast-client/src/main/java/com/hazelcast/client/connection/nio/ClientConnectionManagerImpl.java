@@ -46,7 +46,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -119,7 +118,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
-    private final ChannelFactory channelFactory;
 
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
@@ -166,7 +164,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         this.eventLoopGroup = initEventLoopGroup(client);
 
-        this.channelFactory = client.getClientExtension().createSocketChannelWrapperFactory();
+        //this.channelFactory = client.getClientExtension().createSocketChannelWrapperFactory();
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
         this.credentials = client.getCredentials();
@@ -252,16 +250,29 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             outputThreads = configuredOutputThreads;
         }
 
-        return new NioEventLoopGroup(
-                new NioEventLoopGroup.Context()
-                        .loggingService(client.getLoggingService())
-                        .metricsRegistry(client.getMetricsRegistry())
-                        .threadNamePrefix(client.getName())
-                        .errorHandler(new ClientConnectionChannelErrorHandler())
-                        .inputThreadCount(inputThreads)
-                        .outputThreadCount(outputThreads)
-                        .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .channelInitializer(new ClientChannelInitializer(getBufferSize(), directBuffer)));
+        return null;
+        //
+//        return new NioEventLoopGroup(
+//<<<<<<< HEAD
+//                new NioEventLoopGroup.Context()
+//                        .loggingService(client.getLoggingService())
+//                        .metricsRegistry(client.getMetricsRegistry())
+//                        .threadNamePrefix(client.getName())
+//                        .errorHandler(new ClientConnectionChannelErrorHandler())
+//                        .inputThreadCount(inputThreads)
+//                        .outputThreadCount(outputThreads)
+//                        .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
+//                        .channelInitializer(new ClientChannelInitializer(getBufferSize(), directBuffer)));
+//=======
+//                client.getLoggingService(),
+//                client.getMetricsRegistry(),
+//                client.getName(),
+//                new ClientConnectionChannelErrorHandler(),
+//                inputThreads,
+//                outputThreads,
+//                properties.getInteger(ClientProperty.IO_BALANCER_INTERVAL_SECONDS),
+//                null);
+//>>>>>>> Initial work on cleaning up the pipeline
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
@@ -565,18 +576,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             HazelcastProperties properties = client.getProperties();
             boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
-            Channel channel = channelFactory.create(socketChannel, true, directBuffer);
+            //Channel channel = channelFactory.create(socketChannel, true, directBuffer);
+//
+//            final ClientConnection clientConnection = new ClientConnection(
+//                    client, connectionIdGen.incrementAndGet(), channel);
+//            socketChannel.configureBlocking(true);
+//            if (socketInterceptor != null) {
+//                socketInterceptor.onConnect(socket);
+//            }
+//            socket.setSoTimeout(0);
 
-            final ClientConnection clientConnection = new ClientConnection(
-                    client, connectionIdGen.incrementAndGet(), channel);
-            socketChannel.configureBlocking(true);
-            if (socketInterceptor != null) {
-                socketInterceptor.onConnect(socket);
-            }
-            socket.setSoTimeout(0);
-
-            eventLoopGroup.register(channel);
-            return clientConnection;
+            //eventLoopGroup.register(channel);
+            return null;// clientConnection;
         } catch (Exception e) {
             if (socketChannel != null) {
                 socketChannel.close();

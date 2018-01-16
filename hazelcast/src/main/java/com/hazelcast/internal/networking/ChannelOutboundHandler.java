@@ -26,8 +26,6 @@ import java.nio.ByteBuffer;
  *
  * {@link ChannelOutboundHandler} are not expected to be thread-safe; each channel will gets its own instance(s).
  *
- * A {@link ChannelOutboundHandler} is constructed through a {@link ChannelInitializer}.
- *
  * For more information about the ChannelOutboundHandler (and handlers in generally), have a look at the
  * {@link ChannelInboundHandler}.
  *
@@ -37,23 +35,74 @@ import java.nio.ByteBuffer;
  * @param <F>
  * @see EventLoopGroup
  * @see ChannelInboundHandler
- * @see ChannelInitializer
  * @see ChannelErrorHandler
  * @see Channel
  */
-public interface ChannelOutboundHandler<F extends OutboundFrame> {
+public abstract class ChannelOutboundHandler<F extends OutboundFrame> {
+
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public ByteBuffer dst;
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public F frame;
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public ChannelOutboundHandler next;
+    public ChannelOutboundHandler prev;
+
+    public Channel channel;
+
+    public final void setNext(ChannelOutboundHandler next) {
+        this.next = next;
+        onSetNext();
+    }
+
+    // todo: this method is problematic because we don't want to replace the last handler since that is the socket writer.
+    public void appendLast(ChannelOutboundHandler last) {
+        if (next == null) {
+            last.prev = this;
+            next = last;
+        } else {
+            next.appendLast(last);
+        }
+    }
+
+    public void onSetNext() {
+    }
 
     /**
-     * A callback to indicate that the Frame should be written to the destination ByteBuffer.
+     * Replaces the current handler.
      *
-     * It could be that a Frame is too big to fit into the ByteBuffer in 1 go; in that case this call will be made
-     * for the same Frame multiple times until write returns true.
+     * This method should be used when a handler should be used temporarily, e.g. to deal with protocol or TLS handshaking,
+     * but once its task is complete, it can be replaced by a new handler. In case of protocol; once the protocol is known
+     * the system could decide to e.g. set up a PacketEncoder as handler.
      *
-     * @param frame the Frame to write
-     * @param dst   the destination ByteBuffer
-     * @return true if the Frame is completely written
+     * @param handler
+     */
+    public void replaceBy(ChannelOutboundHandler handler) {
+        // here we remove the protocol handler and replace it by the next handler in line (the MemberChannelOutboundHandler)
+        ChannelOutboundHandler prev = this.prev;
+        ChannelOutboundHandler next = this.next;
+
+        handler.prev = prev;
+        handler.next = next;
+        handler.frame = frame;
+        handler.channel = channel;
+
+        prev.next = handler;
+        if (next != null) {
+            next.prev = handler;
+        }
+    }
+
+    /**
      * @throws Exception if something fails while writing to ByteBuffer. When an exception is thrown, the
      *                   {@link ChannelErrorHandler} is called.
      */
-    boolean onWrite(F frame, ByteBuffer dst) throws Exception;
+    public abstract WriteResult onWrite() throws Exception;
+
+//
+//    public void onWriteDelayed() throws Exception{
+//        if(next !=null){
+//            next.onWriteDelayed();
+//        }
+//    }
 }

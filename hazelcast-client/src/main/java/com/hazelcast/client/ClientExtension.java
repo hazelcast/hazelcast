@@ -19,7 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.memory.MemoryStats;
@@ -58,13 +57,6 @@ public interface ClientExtension {
      * +          otherwise <code>null</code>
      */
     SocketInterceptor createSocketInterceptor();
-
-    /**
-     * Creates a {@link ChannelFactory} instance to be used by this client.
-     *
-     * @return the created {@link ChannelFactory} instance
-     */
-    ChannelFactory createSocketChannelWrapperFactory();
 
     /**
      * Creates a {@link NearCacheManager} instance to be used by this client.

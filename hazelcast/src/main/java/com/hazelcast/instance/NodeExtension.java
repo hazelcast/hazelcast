@@ -25,7 +25,6 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -128,13 +127,6 @@ public interface NodeExtension {
      * @return MemberSocketInterceptor
      */
     MemberSocketInterceptor getMemberSocketInterceptor();
-
-    /**
-     * Returns <tt>ChannelFactory</tt> instance to be used by this <tt>Node</tt>.
-     *
-     * @return ChannelFactory
-     */
-    ChannelFactory getChannelFactory();
 
     /**
      * Creates a <tt>ChannelInboundHandler</tt> for given <tt>Connection</tt> instance.

@@ -54,10 +54,8 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -246,11 +244,6 @@ public class DefaultNodeExtension implements NodeExtension {
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         logger.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
         return null;
-    }
-
-    @Override
-    public ChannelFactory getChannelFactory() {
-        return new NioChannelFactory();
     }
 
     @Override

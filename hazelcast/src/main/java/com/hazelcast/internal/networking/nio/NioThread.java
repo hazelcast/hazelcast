@@ -29,7 +29,6 @@ import com.hazelcast.util.concurrent.IdleStrategy;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -44,6 +43,21 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
+/**
+ * todo:
+ * - migration
+ * - remove abstract handler
+ * - the pipeline isn't the whole pipeline? it is more like head.
+ * - are all the probes copied?
+ * - NioChannel.flushOutboundPipeline has owner problem; it should only be run from the owning io thread. So can cause
+ * problems with migration.
+ *
+ * done
+ * - error handling
+ * - load method implemented
+ * - socket writer is a performance problems because it doesn't buffer request into the buffer; it immediately flushes them
+ * to socket. Meaning that you get a lot more socket interaction if there are many messages that would have fit into the buffer.
+ */
 public class NioThread extends Thread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
@@ -369,8 +383,8 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private NioThread getTargetIOThread(Runnable task) {
-        if (task instanceof MigratableHandler) {
-            return ((MigratableHandler) task).getOwner();
+        if (task instanceof NioPipeline) {
+            return ((NioPipeline) task).getOwner();
         } else {
             return this;
         }
@@ -388,18 +402,25 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private void handleSelectionKey(SelectionKey sk) {
-        SelectionHandler handler = (SelectionHandler) sk.attachment();
+        NioPipeline handler = (NioPipeline) sk.attachment();
         try {
+            // todo: we can read out the ready ops so no additional sk interaction is needed.
+
             if (!sk.isValid()) {
                 // if the selectionKey isn't valid, we throw this exception to feedback the situation into the handler.onFailure
                 throw new CancelledKeyException();
             }
 
-            // we don't need to check for sk.isReadable/sk.isWritable since the handler has only registered
-            // for events it can handle.
             eventCount.inc();
-            handler.handle();
+
+            if (sk.isWritable()) {
+                ((NioOutboundPipeline) handler).onWrite();
+            } else {
+                ((NioInboundPipeline) handler).onRead();
+            }
+
         } catch (Throwable t) {
+            t.printStackTrace();
             handler.onFailure(t);
         }
     }
@@ -431,12 +452,9 @@ public class NioThread extends Thread implements OperationHostileThread {
 
         // reset each handler's selectionKey, cancel the old keys
         for (SelectionKey key : oldSelector.keys()) {
-            AbstractHandler handler = (AbstractHandler) key.attachment();
-            SelectableChannel channel = key.channel();
+            NioPipeline handler = (NioPipeline) key.attachment();
             try {
-                int ops = key.interestOps();
-                SelectionKey newSelectionKey = channel.register(newSelector, ops, handler);
-                handler.setSelectionKey(newSelectionKey);
+                handler.renewSelectionKey();
             } catch (ClosedChannelException e) {
                 logger.info("Channel was closed while trying to register with new selector.");
             } catch (CancelledKeyException e) {
@@ -444,7 +462,6 @@ public class NioThread extends Thread implements OperationHostileThread {
                 // in this case, since the key is already cancelled, just do nothing
                 EmptyStatement.ignore(e);
             }
-            key.cancel();
         }
 
         // close the old selector and substitute with new one

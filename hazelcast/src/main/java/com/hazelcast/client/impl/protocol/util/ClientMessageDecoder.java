@@ -41,6 +41,11 @@ public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters {
     }
 
     @Override
+    public void onRead() throws Exception {
+        //todo
+    }
+
+    //@Override
     public void onRead(ByteBuffer src) throws Exception {
         int messagesCreated = 0;
         while (src.hasRemaining()) {

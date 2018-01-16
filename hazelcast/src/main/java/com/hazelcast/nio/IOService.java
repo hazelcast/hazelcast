@@ -20,7 +20,6 @@ import com.hazelcast.client.ClientEngine;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -125,8 +124,6 @@ public interface IOService {
     Collection<Integer> getOutboundPorts();
 
     InternalSerializationService getSerializationService();
-
-    ChannelFactory getChannelFactory();
 
     MemberSocketInterceptor getMemberSocketInterceptor();
 

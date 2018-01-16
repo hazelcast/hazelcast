@@ -21,10 +21,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.NioInboundPipeline;
+import com.hazelcast.internal.networking.nio.NioPipeline;
 import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioChannelReader;
-import com.hazelcast.internal.networking.nio.NioChannelWriter;
+import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -83,12 +83,12 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private void assertBalanced(HazelcastInstance hz) {
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(hz);
 
-        Map<NioThread, Set<MigratableHandler>> handlersPerSelector = getHandlersPerSelector(connectionManager);
+        Map<NioThread, Set<NioPipeline>> handlersPerSelector = getHandlersPerSelector(connectionManager);
 
         try {
-            for (Map.Entry<NioThread, Set<MigratableHandler>> entry : handlersPerSelector.entrySet()) {
+            for (Map.Entry<NioThread, Set<NioPipeline>> entry : handlersPerSelector.entrySet()) {
                 NioThread selector = entry.getKey();
-                Set<MigratableHandler> handlers = entry.getValue();
+                Set<NioPipeline> handlers = entry.getValue();
                 assertBalanced(selector, handlers);
             }
         } catch (AssertionError e) {
@@ -98,20 +98,20 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
     }
 
-    private Map<NioThread, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
-        Map<NioThread, Set<MigratableHandler>> handlersPerSelector = new HashMap<NioThread, Set<MigratableHandler>>();
+    private Map<NioThread, Set<NioPipeline>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
+        Map<NioThread, Set<NioPipeline>> handlersPerSelector = new HashMap<NioThread, Set<NioPipeline>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
             NioChannel channel = (NioChannel) connection.getChannel();
-            add(handlersPerSelector, channel.getReader());
-            add(handlersPerSelector, channel.getWriter());
+            add(handlersPerSelector, channel.getInboundPipeline());
+            add(handlersPerSelector, channel.getOutboundPipeline());
         }
         return handlersPerSelector;
     }
 
-    private void add(Map<NioThread, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
-        Set<MigratableHandler> handlers = handlersPerSelector.get(handler.getOwner());
+    private void add(Map<NioThread, Set<NioPipeline>> handlersPerSelector, NioPipeline handler) {
+        Set<NioPipeline> handlers = handlersPerSelector.get(handler.getOwner());
         if (handlers == null) {
-            handlers = new HashSet<MigratableHandler>();
+            handlers = new HashSet<NioPipeline>();
             handlersPerSelector.put(handler.getOwner(), handlers);
         }
         handlers.add(handler);
@@ -124,16 +124,16 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
      * <li>potentially 1 dead handler (duplicate connection), so event count should be low</li>
      * </ul>
      */
-    private void assertBalanced(NioThread selector, Set<MigratableHandler> handlers) {
+    private void assertBalanced(NioThread selector, Set<NioPipeline> handlers) {
         assertTrue("no handlers were found for selector:" + selector, handlers.size() > 0);
         assertTrue("too many handlers were found for selector:" + selector, handlers.size() <= 2);
 
-        Iterator<MigratableHandler> iterator = handlers.iterator();
-        MigratableHandler activeHandler = iterator.next();
+        Iterator<NioPipeline> iterator = handlers.iterator();
+        NioPipeline activeHandler = iterator.next();
         if (handlers.size() == 2) {
-            MigratableHandler deadHandler = iterator.next();
+            NioPipeline deadHandler = iterator.next();
             if (activeHandler.getLoad() < deadHandler.getLoad()) {
-                MigratableHandler tmp = deadHandler;
+                NioPipeline tmp = deadHandler;
                 deadHandler = activeHandler;
                 activeHandler = tmp;
             }
@@ -157,7 +157,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioChannelReader socketReader = ((NioChannel) connection.getChannel()).getReader();
+                NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).getInboundPipeline();
                 if (socketReader.getOwner() == in) {
                     sb.append("\t").append(socketReader).append(" eventCount:").append(socketReader.getLoad()).append("\n");
                 }
@@ -168,7 +168,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioChannelWriter socketWriter = ((NioChannel) connection.getChannel()).getWriter();
+                NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).getOutboundPipeline();
                 if (socketWriter.getOwner() == in) {
                     sb.append("\t").append(socketWriter).append(" eventCount:").append(socketWriter.getLoad()).append("\n");
                 }

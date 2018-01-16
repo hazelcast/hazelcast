@@ -17,8 +17,11 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.networking.AbstractChannel;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.OutboundFrame;
 
+import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -29,27 +32,56 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  */
 public class NioChannel extends AbstractChannel {
 
-    private NioChannelReader reader;
-    private NioChannelWriter writer;
+    private NioInboundPipeline inboundPipeline;
+    private NioOutboundPipeline outboundPipeline;
 
     public NioChannel(SocketChannel socketChannel, boolean clientMode) {
         super(socketChannel, clientMode);
     }
 
-    public void setReader(NioChannelReader reader) {
-        this.reader = reader;
+    public void setInboundPipeline(NioInboundPipeline inboundPipeline) {
+        this.inboundPipeline = inboundPipeline;
     }
 
-    public void setWriter(NioChannelWriter writer) {
-        this.writer = writer;
+    public void setOutboundPipeline(NioOutboundPipeline outboundPipeline) {
+        this.outboundPipeline = outboundPipeline;
     }
 
-    public NioChannelReader getReader() {
-        return reader;
+    public NioInboundPipeline getInboundPipeline() {
+        return inboundPipeline;
     }
 
-    public NioChannelWriter getWriter() {
-        return writer;
+    public NioOutboundPipeline getOutboundPipeline() {
+        return outboundPipeline;
+    }
+
+    @Override
+    public void flushOutboundPipeline() {
+        NioThread nioThread = outboundPipeline.getOwner();
+
+        // todo: needs to be fixed in case of migration
+        nioThread.addTaskAndWakeup(new Runnable() {
+            @Override
+            public void run() {
+                outboundPipeline.run();
+            }
+        });
+    }
+
+    @Override
+    public void addLast(ChannelInboundHandler handler) {
+        handler.channel = this;
+
+        inboundPipeline.setNext(handler);
+    }
+
+    @Override
+    public void addLast(ChannelOutboundHandler handler) {
+        handler.channel = this;
+
+        outboundPipeline.appendLast(handler);
+
+        System.out.println(outboundPipeline.pipelineToString());
     }
 
     @Override
@@ -57,33 +89,39 @@ public class NioChannel extends AbstractChannel {
         if (isClosed()) {
             return false;
         }
-        writer.write(frame);
+        outboundPipeline.write(frame);
         return true;
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return reader.lastReadTimeMillis();
+        return inboundPipeline.lastReadTimeMillis();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writer.lastWriteTimeMillis();
+        return outboundPipeline.lastWriteTimeMillis();
     }
 
     @Override
     public void flush() {
-        writer.flush();
+        outboundPipeline.flush();
     }
 
     @Override
     protected void onClose() {
-        closeResource(reader);
-        closeResource(writer);
+        closeResource(inboundPipeline);
+        closeResource(outboundPipeline);
     }
 
     @Override
     public String toString() {
-        return "NioChannel{" + getLocalSocketAddress() + "->" + getRemoteSocketAddress() + '}';
+        InetSocketAddress local = (InetSocketAddress) getLocalSocketAddress();
+        InetSocketAddress remote = (InetSocketAddress) getRemoteSocketAddress();
+        String s = local.getPort() + "->" + remote.getPort();
+        if (!isClientMode()) {
+            s = "                  " + s;
+        }
+        return s;
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.NioPipeline;
 
 import java.util.Iterator;
 import java.util.Random;
@@ -24,7 +24,7 @@ import java.util.Set;
 
 /**
  * IOBalancer Migration Strategy intended to be used by stress tests only. It always tries to
- * select a random {@link MigratableHandler handler} to be migrated.
+ * select a random {@link NioPipeline handler} to be migrated.
  *
  * It stresses the handler migration mechanism increasing a chance to reveal possible race-conditions.
  */
@@ -34,17 +34,17 @@ class MonkeyMigrationStrategy implements MigrationStrategy {
 
     @Override
     public boolean imbalanceDetected(LoadImbalance imbalance) {
-        Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
+        Set<? extends NioPipeline> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
         //only attempts to migrate if at least 1 handler exists
         return (candidates.size() > 0);
     }
 
     @Override
-    public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
-        Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
+    public NioPipeline findHandlerToMigrate(LoadImbalance imbalance) {
+        Set<? extends NioPipeline> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
         int handlerCount = candidates.size();
         int selected = random.nextInt(handlerCount);
-        Iterator<? extends MigratableHandler> iterator = candidates.iterator();
+        Iterator<? extends NioPipeline> iterator = candidates.iterator();
         for (int i = 0; i < selected; i++) {
             iterator.next();
         }

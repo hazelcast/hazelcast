@@ -16,19 +16,6 @@
 
 package com.hazelcast.internal.networking;
 
-import java.nio.channels.SocketChannel;
-
-/**
- * A factory for creating {@link Channel} instances.
- *
- * Currently this interface is suboptimal. It imposes a SocketChanel as a basis. Probably once the TLS is integrated
- * directly in the pipeline of the Channel, this whole factory can be dropped. TLS can then be added through a
- * ChannelInboundHandler/ChannelOutboundHandler.
- */
-public interface ChannelFactory {
-
-    /**
-     * Creates the Channel.
-     */
-    Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) throws Exception;
+public enum WriteResult {
+    CLEAN, DIRTY, BLOCKED
 }

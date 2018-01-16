@@ -21,7 +21,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -55,10 +54,9 @@ public class MockIOService implements IOService {
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
-    private final ChannelFactory channelFactory;
     public volatile PacketHandler packetHandler;
 
-    public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
+    public MockIOService(int port) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
@@ -66,7 +64,6 @@ public class MockIOService implements IOService {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
-        this.channelFactory = channelFactory;
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
@@ -338,11 +335,6 @@ public class MockIOService implements IOService {
     @Override
     public InternalSerializationService getSerializationService() {
         return serializationService;
-    }
-
-    @Override
-    public ChannelFactory getChannelFactory() {
-        return channelFactory;
     }
 
     @Override

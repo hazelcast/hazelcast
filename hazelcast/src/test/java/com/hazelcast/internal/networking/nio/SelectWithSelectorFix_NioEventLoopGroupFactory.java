@@ -17,19 +17,13 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
-import com.hazelcast.nio.tcp.MemberChannelInitializer;
+import com.hazelcast.nio.tcp.TcpIpChannelInitializer;
 import com.hazelcast.nio.tcp.MockIOService;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 
 public class SelectWithSelectorFix_NioEventLoopGroupFactory implements EventLoopGroupFactory {
-
-    @Override
-    public ChannelFactory createChannelFactory() {
-        return new NioChannelFactory();
-    }
 
     @Override
     public NioEventLoopGroup create(MockIOService ioService, MetricsRegistry metricsRegistry) {
@@ -46,8 +40,8 @@ public class SelectWithSelectorFix_NioEventLoopGroupFactory implements EventLoop
                         .outputThreadCount(ioService.getOutputSelectorThreadCount())
                         .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
                         .channelInitializer(
-                                new MemberChannelInitializer(
-                                        loggingService.getLogger(MemberChannelInitializer.class), ioService))
+                                new TcpIpChannelInitializer(
+                                        loggingService.getLogger(TcpIpChannelInitializer.class), ioService))
                         .selectorMode(SelectorMode.SELECT_WITH_FIX)
                         .selectorWorkaroundTest(true));
     }

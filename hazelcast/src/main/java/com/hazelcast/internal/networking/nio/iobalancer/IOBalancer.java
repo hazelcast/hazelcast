@@ -17,9 +17,9 @@
 package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.nio.MigratableHandler;
-import com.hazelcast.internal.networking.nio.NioChannelWriter;
-import com.hazelcast.internal.networking.nio.NioChannelReader;
+import com.hazelcast.internal.networking.nio.NioInboundPipeline;
+import com.hazelcast.internal.networking.nio.NioPipeline;
+import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -38,8 +38,8 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * By default Hazelcast uses 3 threads to read data from TCP connections and 3 threads to write data to connections.
  * We have measured significant fluctuations of performance when the threads are not utilized equally.
  *
- * <code>IOBalancer</code> tries to detect such situations and fix them by moving {@link NioChannelReader} and
- * {@link NioChannelWriter} between {@link NioThread} instances.
+ * <code>IOBalancer</code> tries to detect such situations and fix them by moving {@link NioInboundPipeline} and
+ * {@link NioOutboundPipeline} between {@link NioThread} instances.
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via
@@ -99,7 +99,7 @@ public class IOBalancer {
         return outLoadTracker;
     }
 
-    public void channelAdded(MigratableHandler readHandler, MigratableHandler writeHandler) {
+    public void channelAdded(NioPipeline readHandler, NioPipeline writeHandler) {
         // if not enabled, then don't schedule tasks that will not get processed.
         // See https://github.com/hazelcast/hazelcast/issues/11501
         if (!enabled) {
@@ -110,7 +110,7 @@ public class IOBalancer {
         outLoadTracker.notifyHandlerAdded(writeHandler);
     }
 
-    public void channelRemoved(MigratableHandler readHandler, MigratableHandler writeHandler) {
+    public void channelRemoved(NioPipeline readHandler, NioPipeline writeHandler) {
         // if not enabled, then don't schedule tasks that will not get processed.
         // See https://github.com/hazelcast/hazelcast/issues/11501
         if (!enabled) {
@@ -193,7 +193,7 @@ public class IOBalancer {
     }
 
     private void tryMigrate(LoadImbalance loadImbalance) {
-        MigratableHandler handler = strategy.findHandlerToMigrate(loadImbalance);
+        NioPipeline handler = strategy.findHandlerToMigrate(loadImbalance);
         if (handler == null) {
             logger.finest("I/O imbalance is detected, but no suitable migration candidate is found.");
             return;

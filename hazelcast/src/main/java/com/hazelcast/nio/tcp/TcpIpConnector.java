@@ -179,8 +179,11 @@ public class TcpIpConnector {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
                 }
+
                 Channel channel = connectionManager.createChannel(socketChannel, true);
                 ioService.interceptSocket(socketChannel.socket(), false);
+
+                // todo: this should be moved to the EventLoopGroup
                 socketChannel.configureBlocking(false);
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
                 connectionManager.sendBindRequest(connection, address, true);

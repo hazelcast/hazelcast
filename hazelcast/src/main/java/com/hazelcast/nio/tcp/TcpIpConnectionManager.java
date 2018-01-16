@@ -22,7 +22,6 @@ import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -116,7 +115,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final ChannelFactory channelFactory;
     @Probe
     private final MwCounter openedCount = newMwCounter();
     @Probe
@@ -150,7 +148,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
-        this.channelFactory = ioService.getChannelFactory();
         this.metricsRegistry = metricsRegistry;
         this.connector = new TcpIpConnector(this);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
@@ -370,8 +367,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         //now you can send anything...
     }
 
-    Channel createChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        Channel wrapper = channelFactory.create(socketChannel, client, ioService.useDirectSocketBuffer());
+    Channel createChannel(SocketChannel socketChannel, boolean client) {
+        Channel wrapper = eventLoopGroup.register(socketChannel, client);
         acceptedSockets.add(wrapper);
         return wrapper;
     }
@@ -391,7 +388,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                     + channel.getLocalSocketAddress() + " and " + channel.getRemoteSocketAddress());
             openedCount.inc();
 
-            eventLoopGroup.register(channel);
+            //eventLoopGroup.register(channel);
             return connection;
         } finally {
             acceptedSockets.remove(channel);

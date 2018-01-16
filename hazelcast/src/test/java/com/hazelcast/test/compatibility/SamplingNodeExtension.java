@@ -26,7 +26,6 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -118,11 +117,6 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         return nodeExtension.getMemberSocketInterceptor();
-    }
-
-    @Override
-    public ChannelFactory getChannelFactory() {
-        return nodeExtension.getChannelFactory();
     }
 
     @Override

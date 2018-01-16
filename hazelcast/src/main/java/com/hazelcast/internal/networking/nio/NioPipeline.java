@@ -16,14 +16,23 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import java.nio.channels.ClosedChannelException;
+
 /**
  * A nio event handler that supports migration between {@link NioThread} instances.
  * This API is called by the {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer}.
  */
-public interface MigratableHandler {
+public interface NioPipeline {
+
+    int LOAD_BALANCING_HANDLE = 0;
+    int LOAD_BALANCING_BYTE = 1;
+    int LOAD_BALANCING_FRAME = 2;
+
+    // for the time being we configure using a int until we have decided which load strategy to use.
+    int LOAD_TYPE = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     /**
-     * Requests the MigratableHandler to move to the new NioThread. This call will not wait for the
+     * Requests the NioPipeline to move to the new NioThread. This call will not wait for the
      * migration to complete.
      *
      * This method can be called by any thread, and will probably be called by the
@@ -31,7 +40,7 @@ public interface MigratableHandler {
      *
      * Call is ignored when handler is moving to the same NioThread.
      *
-     * @param newOwner the NioThread that is going to own this MigratableHandler
+     * @param newOwner the NioThread that is going to own this NioPipeline
      */
     void requestMigration(NioThread newOwner);
 
@@ -51,4 +60,8 @@ public interface MigratableHandler {
      * @return total load recorded by this handler
      */
     long getLoad();
+
+    void onFailure(Throwable t);
+
+    void renewSelectionKey() throws ClosedChannelException;
 }

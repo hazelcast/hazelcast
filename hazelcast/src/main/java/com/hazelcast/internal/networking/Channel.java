@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.internal.networking.nio.NioChannel;
+
 import javax.net.ssl.SSLEngine;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
  * work; but there is no dependency of the com.hazelcast.internal.networking to a Connection (no cycles). This means that a
  * Channel can be used perfectly without Connection.
  *
- * The standard channel implementation is the {@link com.hazelcast.internal.networking.nio.NioChannel} that uses TCP in
+ * The standard channel implementation is the {@link NioChannel} that uses TCP in
  * combination with selectors to transport data. In the future also other channel implementations could be added, e.g.
  * UDP based.
  *
@@ -38,7 +39,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * Channel data is written using a {@link ChannelOutboundHandler}. E.g. a packet needs to be converted to bytes.
  *
- * A Channel gets initialized using the {@link ChannelInitializer}.
+ * A Channel is created by the {@link EventLoopGroup}.
  *
  * <h1>Future note</h1>
  * Below you can find some notes about the future of the Channel. This will hopefully act as a guide how to move forward.
@@ -82,6 +83,8 @@ public interface Channel extends Closeable {
     /**
      * @see java.nio.channels.SocketChannel#socket()
      *
+     *
+     * todo: remove this method.
      * This method will be removed from the interface. Only an explicit cast to NioChannel will expose the Socket.
      *
      * It is very important that the socket isn't closed directly; but one goes through the {@link #close()} method so that
@@ -109,48 +112,15 @@ public interface Channel extends Closeable {
     /**
      * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} that a write to the socket completed.
      *
+     * todo: the meaning of this method is questioble because it means when the channel was 'triggered', not when
+     * something was written to a socket buffer.
+     *
      * Writing to the socket doesn't mean that data has been send or received; it means that data was written to the
      * SocketChannel. It could very well be that this data is stuck somewhere in an io-buffer.
      *
      * @return the last time something was written to the socket.
      */
     long lastWriteTimeMillis();
-
-    /**
-     * This method will be removed from the Channel in the near future.
-     *
-     * @see java.nio.channels.SocketChannel#read(ByteBuffer)
-     */
-    int read(ByteBuffer dst) throws IOException;
-
-    /**
-     * This method will be removed from the Channel in the near future.
-     *
-     * @see java.nio.channels.SocketChannel#write(ByteBuffer)
-     */
-    int write(ByteBuffer src) throws IOException;
-
-    /**
-     * Closes inbound.
-     *
-     * <p>Not thread safe. Should be called in channel reader thread.</p>
-     *
-     * Method will be removed once the TLS integration doesn't rely on subclassing this channel.
-     *
-     * @throws IOException
-     */
-    void closeInbound() throws IOException;
-
-    /**
-     * Closes outbound.
-     *
-     * <p>Not thread safe. Should be called in channel writer thread.</p>
-     *
-     * Method will be removed once the TLS integration doesn't rely on subclassing this channel.
-     *
-     * @throws IOException
-     */
-    void closeOutbound() throws IOException;
 
     /**
      * Closes the Channel.
@@ -165,6 +135,25 @@ public interface Channel extends Closeable {
      * @return true if closed, false otherwise.
      */
     boolean isClosed();
+
+    void addLast(ChannelInboundHandler handler);
+
+    void addLast(ChannelOutboundHandler handler);
+
+    /**
+     * Request to flush all pending messages in the outbound pipeline.
+     *
+     * This method is threadsafe and can safely be called from any thread.
+     *
+     * Calling it while there is nothing in the pipeline will not do any damage, apart from consuming cpu cycles.
+     *
+     * This can be used for example, with protocol or handshaking. So imagine there is a handshake decoder (e.g. protocol
+     * or tls), that as soon as it has received some data like 'hello', it wants to send back a message to the other side
+     * as part of the handshake. This can be done by looking up the handshake encoder, queue the message on that encoder
+     * and then call wakeupOutboundPipeline. This will cause the outbound pipeline to get activated and will cause
+     * the pipeline to get triggered.
+     */
+    void flushOutboundPipeline();
 
     /**
      * Adds a ChannelCloseListener.
@@ -197,6 +186,8 @@ public interface Channel extends Closeable {
     boolean write(OutboundFrame frame);
 
     /**
+     * todo: is this method still needed? Probably not.
+     *
      * Flushes whatever needs to be written.
      *
      * Normally this call doesn't need to be made since {@link #write(OutboundFrame)} write the content; but in case of protocol

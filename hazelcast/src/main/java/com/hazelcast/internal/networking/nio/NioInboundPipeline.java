@@ -18,29 +18,28 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOUtil;
 
+import java.io.Closeable;
 import java.io.EOFException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 /**
- * When the {@link NioThread} receives a read event from the {@link java.nio.channels.Selector}, then the
- * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
- * {@link ChannelInboundHandler} to get processed.
+ * This {@link NioOutboundPipeline} is the pipeline when data is received on the socket and requires processing. Once
+ * the data is read from the socket, it will push the data down the pipeline.
  */
-public final class NioChannelReader extends AbstractHandler {
-
-    protected ByteBuffer inputBuffer;
+public final class NioInboundPipeline extends ChannelInboundHandler implements NioPipeline, Closeable {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -48,23 +47,30 @@ public final class NioChannelReader extends AbstractHandler {
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final ChannelInitializer initializer;
-    private ChannelInboundHandler inboundHandler;
-    private volatile long lastReadTime;
+    private final NioThread ioThread;
+    // shows the ID of the ioThread that is currently owning the handler
+    @Probe
+    private volatile int nioThreadId;
+    @Probe
+    private final SwCounter handleCount = newSwCounter();
+    private final SocketChannel socketChannel;
+    private final ILogger logger;
+    private final IOBalancer balancer;
 
+    private volatile long lastReadTime;
     private volatile long bytesReadLastPublish;
     private volatile long normalFramesReadLastPublish;
     private volatile long priorityFramesReadLastPublish;
     private volatile long handleCountLastPublish;
+    private SelectionKey selectionKey;
 
-    public NioChannelReader(
-            NioChannel channel,
-            NioThread ioThread,
-            ILogger logger,
-            IOBalancer balancer,
-            ChannelInitializer initializer) {
-        super(channel, ioThread, OP_READ, logger, balancer);
-        this.initializer = initializer;
+    public NioInboundPipeline(NioChannel channel, NioThread ioThread, ILogger logger, IOBalancer balancer) {
+        this.channel = channel;
+        this.socketChannel = channel.socketChannel();
+        this.balancer = balancer;
+        this.ioThread = ioThread;
+        this.nioThreadId = ioThread.id;
+        this.logger = logger;
     }
 
     @Override
@@ -79,6 +85,31 @@ public final class NioChannelReader extends AbstractHandler {
             default:
                 throw new RuntimeException();
         }
+    }
+
+    @Override
+    public void renewSelectionKey() throws ClosedChannelException {
+        if (selectionKey != null) {
+            selectionKey.cancel();
+        }
+        selectionKey = socketChannel.register(ioThread.getSelector(), OP_READ, this);
+    }
+
+    @Override
+    public NioThread getOwner() {
+        return null;
+    }
+
+    @Probe(level = DEBUG)
+    private long opsInterested() {
+        SelectionKey selectionKey = this.selectionKey;
+        return selectionKey == null ? -1 : selectionKey.interestOps();
+    }
+
+    @Probe(level = DEBUG)
+    private long opsReady() {
+        SelectionKey selectionKey = this.selectionKey;
+        return selectionKey == null ? -1 : selectionKey.readyOps();
     }
 
     @Probe(name = "idleTimeMs")
@@ -114,17 +145,21 @@ public final class NioChannelReader extends AbstractHandler {
     }
 
     @Override
-    public void handle() throws Exception {
+    public void onRead() throws Exception {
+        //Thread.sleep(100);
+
+        System.out.println(channel + " Inbound: First " + IOUtil.toDebug("src", src));
+        //System.out.println(channel + " Inbound: next.class:" + next.getClass());
+
         handleCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
         lastReadTime = currentTimeMillis();
 
-        if (inboundHandler == null && !init()) {
-            return;
-        }
+        int readBytes = socketChannel.read(src);
 
-        int readBytes = channel.read(inputBuffer);
+        //System.out.println(channel + " Inbound: Bytes read:" + readBytes);
+
         if (readBytes <= 0) {
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
@@ -133,31 +168,13 @@ public final class NioChannelReader extends AbstractHandler {
         }
 
         bytesRead.inc(readBytes);
+        src.flip();
 
-        inputBuffer.flip();
-        inboundHandler.onRead(inputBuffer);
-        compactOrClear(inputBuffer);
+        //  System.out.println();
+        next.onRead();
+        compactOrClear(src);
     }
 
-    private boolean init() throws IOException {
-        InitResult<ChannelInboundHandler> init = initializer.initInbound(channel);
-        if (init == null) {
-            // we can't initialize yet
-            return false;
-        }
-        this.inboundHandler = init.getHandler();
-        this.inputBuffer = init.getByteBuffer();
-
-        if (inboundHandler instanceof ChannelInboundHandlerWithCounters) {
-            ChannelInboundHandlerWithCounters withCounters = (ChannelInboundHandlerWithCounters) inboundHandler;
-            withCounters.setNormalPacketsRead(normalFramesRead);
-            withCounters.setPriorityPacketsRead(priorityFramesRead);
-        }
-
-        return true;
-    }
-
-    @Override
     public void publish() {
         if (Thread.currentThread() != ioThread) {
             return;
@@ -176,29 +193,41 @@ public final class NioChannelReader extends AbstractHandler {
 
     @Override
     public void close() {
+        //no-op
+    }
+
+    @Override
+    public String toString() {
+        return channel + ".channelReader";
+    }
+
+    public void start() {
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
-                if (ioThread != Thread.currentThread()) {
-                    // the NioChannelReader has migrated to a different IOThread after the close got called.
-                    // so we need to send the task to the right ioThread. Otherwise multiple ioThreads could be accessing
-                    // the same channel.
-                    ioThread.addTaskAndWakeup(this);
-                    return;
-                }
-
                 try {
-                    channel.closeInbound();
-                } catch (IOException e) {
-                    logger.finest("Error while closing inbound", e);
+                    renewSelectionKey();
+                } catch (Throwable t) {
+                    onFailure(t);
                 }
             }
         });
     }
 
     @Override
-    public String toString() {
-        return channel + ".channelReader";
+    public void onFailure(Throwable e) {
+        if (e instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+        }
+
+        //todo: should this stay here?
+        // can be done in the close
+        //todo: should this be done silently?
+        if (selectionKey != null) {
+            selectionKey.cancel();
+        }
+
+        ioThread.getErrorHandler().onError(channel, e);
     }
 
     private class StartMigrationTask implements Runnable {
@@ -218,7 +247,8 @@ public final class NioChannelReader extends AbstractHandler {
             publish();
 
             try {
-                startMigration(newOwner);
+                //todo
+                //startMigration(newOwner);
             } catch (Throwable t) {
                 onFailure(t);
             }

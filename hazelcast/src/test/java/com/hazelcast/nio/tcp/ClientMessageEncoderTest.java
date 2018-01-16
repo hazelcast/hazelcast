@@ -44,15 +44,17 @@ public class ClientMessageEncoderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         ClientMessage message = ClientMessage.createForEncode(1000)
                 .setPartitionId(10)
                 .setMessageType(1);
 
         ByteBuffer bb = ByteBuffer.allocate(1000);
-        boolean result = encoder.onWrite(message, bb);
+        encoder.dst = bb;
+        encoder.frame = message;
+        encoder.onWrite();
 
-        assertTrue(result);
+       // assertTrue(result);
         bb.flip();
         ClientMessage clone = ClientMessage.createForDecode(new SafeBuffer(bb.array()), 0);
 

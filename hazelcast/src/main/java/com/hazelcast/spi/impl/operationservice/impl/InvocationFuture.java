@@ -142,12 +142,12 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
                     .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
 
             long lastHeartbeatMillis = invocation.lastHeartbeatMillis;
-            sb.append("Last operation heartbeat: ");
+            sb.append("SocketWriter operation heartbeat: ");
             appendHeartbeat(sb, lastHeartbeatMillis);
 
             long lastHeartbeatFromMemberMillis = invocation.context.invocationMonitor
                     .getLastMemberHeartbeatMillis(invocation.invTarget);
-            sb.append("Last operation heartbeat from member: ");
+            sb.append("SocketWriter operation heartbeat from member: ");
             appendHeartbeat(sb, lastHeartbeatFromMemberMillis);
         } else {
             sb.append(invocation.op.getClass().getSimpleName())

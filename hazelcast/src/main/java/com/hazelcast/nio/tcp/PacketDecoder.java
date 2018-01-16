@@ -22,10 +22,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.PacketHandler;
 
-import java.nio.ByteBuffer;
-
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
-
 /**
  * The {@link ChannelInboundHandler} for member to member communication.
  *
@@ -46,7 +42,7 @@ public class PacketDecoder extends ChannelInboundHandlerWithCounters {
     }
 
     @Override
-    public void onRead(ByteBuffer src) throws Exception {
+    public void onRead() throws Exception {
         while (src.hasRemaining()) {
             Packet packet = packetReader.readFrom(src);
             if (packet == null) {
@@ -57,11 +53,13 @@ public class PacketDecoder extends ChannelInboundHandlerWithCounters {
     }
 
     protected void onPacketComplete(Packet packet) throws Exception {
-        if (packet.isFlagRaised(FLAG_URGENT)) {
-            priorityPacketsRead.inc();
-        } else {
-            normalPacketsRead.inc();
-        }
+        System.out.println(channel + " Read packet:" + packet);
+//
+//        if (packet.isFlagRaised(FLAG_URGENT)) {
+//            priorityPacketsRead.inc();
+//        } else {
+//            normalPacketsRead.inc();
+//        }
 
         packet.setConn(connection);
 

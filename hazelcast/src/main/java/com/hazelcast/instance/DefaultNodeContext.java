@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.logging.ILogger;
@@ -28,7 +29,7 @@ import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.MemberChannelInitializer;
+import com.hazelcast.nio.tcp.TcpIpChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.MemberAddressProvider;
@@ -145,8 +146,8 @@ public class DefaultNodeContext implements NodeContext {
     private EventLoopGroup createEventLoopGroup(Node node, NodeIOService ioService) {
         LoggingServiceImpl loggingService = node.loggingService;
 
-        MemberChannelInitializer initializer
-                = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService);
+        ChannelInitializer handlerFactory
+                = new TcpIpChannelInitializer(loggingService.getLogger(TcpIpChannelInitializer.class), ioService);
 
         ChannelErrorHandler errorHandler
                 = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
@@ -160,6 +161,7 @@ public class DefaultNodeContext implements NodeContext {
                         .inputThreadCount(ioService.getInputSelectorThreadCount())
                         .outputThreadCount(ioService.getOutputSelectorThreadCount())
                         .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
-                        .channelInitializer(initializer));
+                        .channelInitializer(handlerFactory));
+
     }
 }

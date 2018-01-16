@@ -26,7 +26,6 @@ import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -304,11 +303,6 @@ public class NodeIOService implements IOService {
     @Override
     public InternalSerializationService getSerializationService() {
         return node.getSerializationService();
-    }
-
-    @Override
-    public ChannelFactory getChannelFactory() {
-        return node.getNodeExtension().getChannelFactory();
     }
 
     @Override
