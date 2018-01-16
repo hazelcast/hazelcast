@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen.impl;
+package com.hazelcast.flakeidgen.impl;
 
-import com.hazelcast.config.ReliableIdGeneratorConfig;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
@@ -36,9 +36,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.Collections.newSetFromMap;
 
-public class ReliableIdGeneratorProxy
-        extends AbstractDistributedObject<ReliableIdGeneratorService>
-        implements ReliableIdGenerator {
+public class FlakeIdGeneratorProxy
+        extends AbstractDistributedObject<FlakeIdGeneratorService>
+        implements FlakeIdGenerator {
 
     public static final int BITS_TIMESTAMP = 42;
     public static final int BITS_SEQUENCE = 6;
@@ -76,22 +76,22 @@ public class ReliableIdGeneratorProxy
      */
     private final Set<String> outOfRangeMembers = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-    ReliableIdGeneratorProxy(String name, NodeEngine nodeEngine, ReliableIdGeneratorService service) {
+    FlakeIdGeneratorProxy(String name, NodeEngine nodeEngine, FlakeIdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.logger = nodeEngine.getLogger(getClass());
 
-        ReliableIdGeneratorConfig config = nodeEngine.getConfig().findReliableIdGeneratorConfig(getName());
+        FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
                 new AutoBatcher.IdBatchSupplier() {
                     @Override
                     public IdBatch newIdBatch(int batchSize) {
-                        return ReliableIdGeneratorProxy.this.newIdBatch(batchSize);
+                        return FlakeIdGeneratorProxy.this.newIdBatch(batchSize);
                     }
                 });
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Created ReliableIdGeneratorProxy, name='" + name + "'");
+            logger.finest("Created FlakeIdGeneratorProxy, name='" + name + "'");
         }
     }
 
@@ -223,6 +223,6 @@ public class ReliableIdGeneratorProxy
 
     @Override
     public String getServiceName() {
-        return ReliableIdGeneratorService.SERVICE_NAME;
+        return FlakeIdGeneratorService.SERVICE_NAME;
     }
 }

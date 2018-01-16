@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen.impl;
+package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.function.Supplier;
@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 
-public class ReliableIdConcurrencyTestUtil {
+public class FlakeIdConcurrencyTestUtil {
     public static final int NUM_THREADS = 4;
     public static final int IDS_IN_THREAD = 100000;
 

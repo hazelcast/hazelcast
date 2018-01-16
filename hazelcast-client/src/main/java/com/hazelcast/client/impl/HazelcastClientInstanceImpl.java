@@ -67,7 +67,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -79,7 +79,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -593,8 +593,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public ReliableIdGenerator getReliableIdGenerator(String name) {
-        return getDistributedObject(ReliableIdGeneratorService.SERVICE_NAME, name);
+    public FlakeIdGenerator getFlakeIdGenerator(String name) {
+        return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
     }
 
     @Override

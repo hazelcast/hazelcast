@@ -42,7 +42,7 @@
                 <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="reliable-id-generator" type="reliable-id-generator" minOccurs="0"
+                <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0"
                             maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
@@ -648,7 +648,7 @@
             <xs:element name="ports" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
-    <xs:complexType name="reliable-id-generator">
+    <xs:complexType name="flake-id-generator">
         <xs:all>
             <xs:element name="prefetch-count" minOccurs="0" default="100">
                 <xs:annotation>

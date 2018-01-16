@@ -30,7 +30,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableIdGeneratorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
@@ -57,6 +57,7 @@ import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JobTrackerConfig;
@@ -73,7 +74,6 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -385,9 +385,9 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Config addReliableIdGeneratorConfig(ReliableIdGeneratorConfig reliableIdGeneratorConfig) {
-        ClientMessage request = DynamicConfigAddReliableIdGeneratorConfigCodec.encodeRequest(reliableIdGeneratorConfig.getName(),
-                reliableIdGeneratorConfig.getPrefetchCount(), reliableIdGeneratorConfig.getPrefetchValidityMillis());
+    public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig flakeIdGeneratorConfig) {
+        ClientMessage request = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(flakeIdGeneratorConfig.getName(),
+                flakeIdGeneratorConfig.getPrefetchCount(), flakeIdGeneratorConfig.getPrefetchValidityMillis());
         invoke(request);
         return this;
     }
@@ -1059,22 +1059,22 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public ReliableIdGeneratorConfig getReliableIdGeneratorConfig(String name) {
+    public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name) {
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs() {
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config setReliableIdGeneratorConfigs(Map<String, ReliableIdGeneratorConfig> map) {
+    public Config setFlakeIdGeneratorConfigs(Map<String, FlakeIdGeneratorConfig> map) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

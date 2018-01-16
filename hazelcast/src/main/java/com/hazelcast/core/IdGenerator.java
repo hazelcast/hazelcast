@@ -52,7 +52,7 @@ package com.hazelcast.core;
  *
  * @deprecated The implementation can produce duplicate IDs in case of network split, even with split-brain
  * protection enabled (during short window while split-brain is detected). Use {@link
- * HazelcastInstance#getReliableIdGenerator(String)} for an alternative implementation which does not suffer
+ * HazelcastInstance#getFlakeIdGenerator(String)} for an alternative implementation which does not suffer
  * from this problem.
  */
 @Deprecated

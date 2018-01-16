@@ -29,7 +29,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -226,12 +226,12 @@ public interface ConfigurationService {
     EventJournalConfig findMapEventJournalConfig(String name);
 
     /**
-     * Finds existing ReliableIdGeneratorConfig config.
+     * Finds existing FlakeIdGeneratorConfig config.
      *
      * @param name name of the config
-     * @return ReliableIdGenerator config or {@code null} when requested ReliableIdGenerator configuration does not exist
+     * @return FlakeIdGenerator config or {@code null} when requested FlakeIdGenerator configuration does not exist
      */
-    ReliableIdGeneratorConfig findReliableIdGeneratorConfig(String name);
+    FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name);
 
     /**
      * Returns all registered map configurations.
@@ -381,9 +381,9 @@ public interface ConfigurationService {
     Map<String, EventJournalConfig> getMapEventJournalConfigs();
 
     /**
-     * Returns all registered ReliableIdGenerator configurations.
+     * Returns all registered FlakeIdGenerator configurations.
      *
-     * @return registered ReliableIdGenerator configurations
+     * @return registered FlakeIdGenerator configurations
      */
-    Map<String, ReliableIdGeneratorConfig> getReliableIdGeneratorConfigs();
+    Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
 }

@@ -25,7 +25,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -192,8 +192,8 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     }
 
     @Override
-    public ReliableIdGenerator getReliableIdGenerator(String name) {
-        return getClient().getReliableIdGenerator(name);
+    public FlakeIdGenerator getFlakeIdGenerator(String name) {
+        return getClient().getFlakeIdGenerator(name);
     }
 
     @Override

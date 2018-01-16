@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen.impl;
+package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,9 +31,9 @@ import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy.BITS_NODE_ID;
-import static com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy.BITS_TIMESTAMP;
-import static com.hazelcast.reliableidgen.impl.ReliableIdGeneratorProxy.EPOCH_START;
+import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_NODE_ID;
+import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_TIMESTAMP;
+import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.EPOCH_START;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -42,7 +41,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ReliableIdGeneratorProxyTest {
+public class FlakeIdGeneratorProxyTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -67,19 +66,19 @@ public class ReliableIdGeneratorProxyTest {
 
     @Test
     public void test_timeInNegativeRange() {
-        ReliableIdGeneratorProxy gen = createGenerator();
+        FlakeIdGeneratorProxy gen = createGenerator();
         assertEquals(-9112343572002110254L, gen.newIdBaseLocal(1509700048830L, 1234, 10));
     }
 
     @Test
     public void test_timeInPositiveRange() {
-        ReliableIdGeneratorProxy gen = createGenerator();
+        FlakeIdGeneratorProxy gen = createGenerator();
         assertEquals(41798522940425426L, gen.newIdBaseLocal(3692217600000L, 1234, 10));
     }
 
     @Test
     public void test_idsOrdered() {
-        ReliableIdGeneratorProxy gen = createGenerator();
+        FlakeIdGeneratorProxy gen = createGenerator();
         long lastId = Long.MIN_VALUE;
         for (
                 long now = EPOCH_START - (1L << BITS_TIMESTAMP - 1);
@@ -94,7 +93,7 @@ public class ReliableIdGeneratorProxyTest {
 
     @Test
     public void when_currentTimeBeforeAllowedRange_then_fail() {
-        ReliableIdGeneratorProxy gen = createGenerator();
+        FlakeIdGeneratorProxy gen = createGenerator();
         gen.newIdBaseLocal(EPOCH_START - (1L << BITS_TIMESTAMP - 1), 0, 1);
         exception.expect(AssertionError.class);
         exception.expectMessage("Current time out of allowed range");
@@ -103,7 +102,7 @@ public class ReliableIdGeneratorProxyTest {
 
     @Test
     public void when_currentTimeAfterAllowedRange_then_fail() {
-        ReliableIdGeneratorProxy gen = createGenerator();
+        FlakeIdGeneratorProxy gen = createGenerator();
         gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP - 1) - 1, 0, 1);
         exception.expect(AssertionError.class);
         exception.expectMessage("Current time out of allowed range");
@@ -112,14 +111,14 @@ public class ReliableIdGeneratorProxyTest {
 
     @Test
     public void when_twoIdsAtTheSameMoment_then_higherSeq() {
-        ReliableIdGeneratorProxy gen = createGenerator();
+        FlakeIdGeneratorProxy gen = createGenerator();
         long id1 = gen.newIdBaseLocal(1509700048830L, 1234, 1);
         long id2 = gen.newIdBaseLocal(1509700048830L, 1234, 1);
         assertEquals(-9112343572002110254L, id1);
         assertEquals(id1 + (1 << BITS_NODE_ID), id2);
     }
 
-    private ReliableIdGeneratorProxy createGenerator() {
-        return new ReliableIdGeneratorProxy("foo", nodeEngine, null);
+    private FlakeIdGeneratorProxy createGenerator() {
+        return new FlakeIdGeneratorProxy("foo", nodeEngine, null);
     }
 }

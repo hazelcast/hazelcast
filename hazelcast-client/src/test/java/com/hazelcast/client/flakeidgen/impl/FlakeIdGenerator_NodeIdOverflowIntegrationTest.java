@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.reliableidgen.impl;
+package com.hazelcast.client.flakeidgen.impl;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ReliableIdGenerator_NodeIdOverflowIntegrationTest {
+public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -65,7 +65,7 @@ public class ReliableIdGenerator_NodeIdOverflowIntegrationTest {
         for (int i = 0; i < 10; i++) {
             System.out.println("Creating client " + i);
             HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-            ReliableIdGenerator gen = client.getReliableIdGenerator("gen");
+            FlakeIdGenerator gen = client.getFlakeIdGenerator("gen");
             for (int j = 0; j < 100; j++) {
                 // call should not fail
                 gen.newId();
@@ -81,7 +81,7 @@ public class ReliableIdGenerator_NodeIdOverflowIntegrationTest {
         assignOverflowedNodeId(instance2);
 
         HazelcastInstance client = factory.newHazelcastClient();
-        ReliableIdGenerator gen = client.getReliableIdGenerator("gen");
+        FlakeIdGenerator gen = client.getFlakeIdGenerator("gen");
 
         exception.expect(HazelcastException.class);
         exception.expectMessage("All members have node ID out of range");

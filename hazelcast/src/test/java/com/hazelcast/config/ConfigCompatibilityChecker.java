@@ -94,7 +94,7 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("list", c1, c2, c1.getListConfigs(), c2.getListConfigs(), new ListConfigChecker());
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
         checkCompatibleConfigs("job tracker", c1, c2, c1.getJobTrackerConfigs(), c2.getJobTrackerConfigs(), new JobTrackerConfigChecker());
-        checkCompatibleConfigs("reliable id generator", c1, c2, c1.getReliableIdGeneratorConfigs(), c2.getReliableIdGeneratorConfigs(), new ReliableIdGeneratorConfigChecker());
+        checkCompatibleConfigs("flake id generator", c1, c2, c1.getFlakeIdGeneratorConfigs(), c2.getFlakeIdGeneratorConfigs(), new FlakeIdGeneratorConfigChecker());
         checkCompatibleConfigs("count down latch", c1, c2, c1.getCountDownLatchConfigs(), c2.getCountDownLatchConfigs(), new CountDownLatchConfigChecker());
         checkCompatibleConfigs("cardinality estimator", c1, c2, c1.getCardinalityEstimatorConfigs(), c2.getCardinalityEstimatorConfigs(), new CardinalityEstimatorConfigChecker());
 
@@ -576,9 +576,9 @@ class ConfigCompatibilityChecker {
         }
     }
 
-    private static class ReliableIdGeneratorConfigChecker extends ConfigChecker<ReliableIdGeneratorConfig> {
+    private static class FlakeIdGeneratorConfigChecker extends ConfigChecker<FlakeIdGeneratorConfig> {
         @Override
-        boolean check(ReliableIdGeneratorConfig c1, ReliableIdGeneratorConfig c2) {
+        boolean check(FlakeIdGeneratorConfig c1, FlakeIdGeneratorConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -591,8 +591,8 @@ class ConfigCompatibilityChecker {
         }
 
         @Override
-        ReliableIdGeneratorConfig getDefault(Config c) {
-            return c.getReliableIdGeneratorConfig("default");
+        FlakeIdGeneratorConfig getDefault(Config c) {
+            return c.getFlakeIdGeneratorConfig("default");
         }
     }
 

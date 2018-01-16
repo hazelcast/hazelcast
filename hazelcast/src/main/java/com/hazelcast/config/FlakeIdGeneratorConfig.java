@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.reliableidgen.ReliableIdGenerator;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,15 +25,15 @@ import com.hazelcast.util.Preconditions;
 import java.io.IOException;
 
 /**
- * The {@code ReliableIdGeneratorConfig} contains the configuration for the member
- * regarding {@link com.hazelcast.core.HazelcastInstance#getReliableIdGenerator(String)
- * Reliable ID Generator}.
+ * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
+ * regarding {@link com.hazelcast.core.HazelcastInstance#getFlakeIdGenerator(String)
+ * Flake ID Generator}.
  * <p>
  * Settings here only apply when ID generator is used from member, not when clients
  * connect to this member to generate IDs - each client has its own settings in {@code
  * ClientConfig}.
  */
-public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
+public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value for {@link #getPrefetchCount()}.
@@ -49,20 +49,20 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
 
-    private transient ReliableIdGeneratorConfigReadOnly readOnly;
+    private transient FlakeIdGeneratorConfigReadOnly readOnly;
 
     // for deserialization
-    ReliableIdGeneratorConfig() {
+    FlakeIdGeneratorConfig() {
     }
 
-    public ReliableIdGeneratorConfig(String name) {
+    public FlakeIdGeneratorConfig(String name) {
         this.name = name;
     }
 
     /**
      * Copy-constructor
      */
-    public ReliableIdGeneratorConfig(ReliableIdGeneratorConfig other) {
+    public FlakeIdGeneratorConfig(FlakeIdGeneratorConfig other) {
         this.name = other.name;
         this.prefetchCount = other.prefetchCount;
         this.prefetchValidityMillis = other.prefetchValidityMillis;
@@ -74,9 +74,9 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
      * @return immutable version of this configuration
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
-    public ReliableIdGeneratorConfigReadOnly getAsReadOnly() {
+    public FlakeIdGeneratorConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
-            readOnly = new ReliableIdGeneratorConfigReadOnly(this);
+            readOnly = new FlakeIdGeneratorConfigReadOnly(this);
         }
         return readOnly;
     }
@@ -106,13 +106,13 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
 
     /**
      * How many IDs are pre-fetched on the background when one call to
-     * {@link ReliableIdGenerator#newId()} is made.
+     * {@link FlakeIdGenerator#newId()} is made.
      * <p>
      * Value must be >= 1, default is 100.
      *
      * @return this instance for fluent API
      */
-    public ReliableIdGeneratorConfig setPrefetchCount(int prefetchCount) {
+    public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
         Preconditions.checkPositive(prefetchCount, "prefetch-count must be >=1, not " + prefetchCount);
         this.prefetchCount = prefetchCount;
         return this;
@@ -138,7 +138,7 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
      *
      * @return this instance for fluent API
      */
-    public ReliableIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
+    public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
         this.prefetchValidityMillis = prefetchValidityMs;
         return this;
     }
@@ -152,7 +152,7 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
             return false;
         }
 
-        ReliableIdGeneratorConfig that = (ReliableIdGeneratorConfig) o;
+        FlakeIdGeneratorConfig that = (FlakeIdGeneratorConfig) o;
 
         if (prefetchCount != that.prefetchCount) {
             return false;
@@ -173,7 +173,7 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "ReliableIdGeneratorConfig{"
+        return "FlakeIdGeneratorConfig{"
                 + "name='" + name + '\''
                 + ", prefetchCount=" + prefetchCount
                 + ", prefetchValidityMillis=" + prefetchValidityMillis
@@ -187,7 +187,7 @@ public class ReliableIdGeneratorConfig implements IdentifiedDataSerializable {
 
     @Override
     public int getId() {
-        return ConfigDataSerializerHook.RELIABLE_ID_GENERATOR_CONFIG;
+        return ConfigDataSerializerHook.FLAKE_ID_GENERATOR_CONFIG;
     }
 
     @Override

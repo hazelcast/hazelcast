@@ -17,32 +17,32 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableIdGeneratorConfigCodec;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class AddReliableIdGeneratorConfigMessageTask
-        extends AbstractAddConfigMessageTask<DynamicConfigAddReliableIdGeneratorConfigCodec.RequestParameters> {
+public class AddFlakeIdGeneratorConfigMessageTask
+        extends AbstractAddConfigMessageTask<DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters> {
 
-    public AddReliableIdGeneratorConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddFlakeIdGeneratorConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected DynamicConfigAddReliableIdGeneratorConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return DynamicConfigAddReliableIdGeneratorConfigCodec.decodeRequest(clientMessage);
+    protected DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DynamicConfigAddFlakeIdGeneratorConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DynamicConfigAddReliableIdGeneratorConfigCodec.encodeResponse();
+        return DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeResponse();
     }
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ReliableIdGeneratorConfig config = new ReliableIdGeneratorConfig(parameters.name);
+        FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(parameters.name);
         config.setPrefetchCount(parameters.prefetchCount);
         config.setPrefetchValidityMillis(parameters.prefetchValidity);
         return config;
@@ -50,6 +50,6 @@ public class AddReliableIdGeneratorConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "addReliableIdGeneratorConfig";
+        return "addFlakeIdGeneratorConfig";
     }
 }

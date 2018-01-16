@@ -157,10 +157,10 @@
         <local-update-policy>INVALIDATE</local-update-policy>
     </near-cache>
 
-    <reliable-id-generator name="default">
+    <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
-    </reliable-id-generator>
+    </flake-id-generator>
 
     <query-caches>
         <query-cache name="query-cache-name" mapName="map-name">

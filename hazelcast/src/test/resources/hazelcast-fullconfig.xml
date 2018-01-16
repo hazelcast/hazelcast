@@ -583,10 +583,10 @@
         </hot-restart>
     </cache>
 
-    <reliable-id-generator name="default">
+    <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>10000</prefetch-validity-millis>
-    </reliable-id-generator>
+    </flake-id-generator>
 
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>

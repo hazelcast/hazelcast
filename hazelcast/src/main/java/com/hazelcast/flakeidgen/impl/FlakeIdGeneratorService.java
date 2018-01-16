@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen.impl;
+package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.ManagedService;
@@ -23,13 +23,13 @@ import com.hazelcast.spi.RemoteService;
 
 import java.util.Properties;
 
-public class ReliableIdGeneratorService implements ManagedService, RemoteService {
+public class FlakeIdGeneratorService implements ManagedService, RemoteService {
 
-    public static final String SERVICE_NAME = "hz:impl:reliableIdGeneratorService";
+    public static final String SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 
     private NodeEngine nodeEngine;
 
-    public ReliableIdGeneratorService(NodeEngine nodeEngine) {
+    public FlakeIdGeneratorService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 
@@ -49,7 +49,7 @@ public class ReliableIdGeneratorService implements ManagedService, RemoteService
 
     @Override
     public DistributedObject createDistributedObject(String name) {
-        return new ReliableIdGeneratorProxy(name, nodeEngine, this);
+        return new FlakeIdGeneratorProxy(name, nodeEngine, this);
     }
 
     @Override

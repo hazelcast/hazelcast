@@ -26,8 +26,8 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HostVerificationConfig;
-import com.hazelcast.config.ReliableIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
@@ -60,7 +60,7 @@ import java.util.Set;
 
 import static com.hazelcast.client.config.ClientXmlElements.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
-import static com.hazelcast.client.config.ClientXmlElements.RELIABLE_ID_GENERATOR;
+import static com.hazelcast.client.config.ClientXmlElements.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
 import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
@@ -259,8 +259,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleConnectionStrategy(node);
         } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
             handleUserCodeDeployment(node);
-        } else if (RELIABLE_ID_GENERATOR.isEqual(nodeName)) {
-            handleReliableIdGenerator(node);
+        } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
+            handleFlakeIdGenerator(node);
         }
     }
 
@@ -346,9 +346,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         clientConfig.addNearCacheConfig(nearCacheConfig);
     }
 
-    private void handleReliableIdGenerator(Node node) {
+    private void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
-        ReliableIdGeneratorConfig config = new ReliableIdGeneratorConfig(name);
+        FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
@@ -358,7 +358,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 config.setPrefetchValidityMillis(Long.parseLong(value));
             }
         }
-        clientConfig.addReliableIdGeneratorConfig(config);
+        clientConfig.addFlakeIdGeneratorConfig(config);
     }
 
     private EvictionConfig getEvictionConfig(Node node) {

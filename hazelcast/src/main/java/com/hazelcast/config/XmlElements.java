@@ -58,7 +58,7 @@ enum XmlElements {
     HOT_RESTART_PERSISTENCE("hot-restart-persistence", false),
     USER_CODE_DEPLOYMENT("user-code-deployment", false),
     CARDINALITY_ESTIMATOR("cardinality-estimator", false),
-    RELIABLE_ID_GENERATOR("reliable-id-generator", true),
+    FLAKE_ID_GENERATOR("flake-id-generator", true),
     ;
 
     final String name;

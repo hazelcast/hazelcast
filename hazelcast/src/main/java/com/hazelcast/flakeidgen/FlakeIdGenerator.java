@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.reliableidgen;
+package com.hazelcast.flakeidgen;
 
-import com.hazelcast.reliableidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.ClusterService;
 
 /**
@@ -39,8 +39,8 @@ import com.hazelcast.internal.cluster.ClusterService;
  * Operation on member is typically local. On client, the {@link #newId()} method goes to a random
  * member and gets a batch of IDs, which will then be returned locally for limited time. The pre-fetch
  * size and the validity time can be configured for each client and member, see {@link
- * com.hazelcast.config.Config#addReliableIdGeneratorConfig(com.hazelcast.config.ReliableIdGeneratorConfig)
- * here} for member config and {@code ClientConfig.addReliableIdGeneratorConfig()} for client config.
+ * com.hazelcast.config.Config#addFlakeIdGeneratorConfig(com.hazelcast.config.FlakeIdGeneratorConfig)
+ * here} for member config and {@code ClientConfig.addFlakeIdGeneratorConfig()} for client config.
  *
  * <h4>Node ID overflow</h4>
  * Node ID component of the ID has 16 bits. Members with member list join version higher than
@@ -52,7 +52,7 @@ import com.hazelcast.internal.cluster.ClusterService;
  *
  * @since 3.10
  */
-public interface ReliableIdGenerator extends DistributedObject {
+public interface FlakeIdGenerator extends DistributedObject {
 
     /**
      * Generates and returns a cluster-wide unique ID.
@@ -65,7 +65,7 @@ public interface ReliableIdGenerator extends DistributedObject {
      * @return new cluster-wide unique ID
      *
      * @throws NodeIdOutOfRangeException if node ID for all members in the cluster is out of valid range.
-     *      See "Node ID overflow" in {@link ReliableIdGenerator class documentation} for more details.
+     *      See "Node ID overflow" in {@link FlakeIdGenerator class documentation} for more details.
      * @throws UnsupportedOperationException if the cluster version is below 3.10
      */
     long newId();
