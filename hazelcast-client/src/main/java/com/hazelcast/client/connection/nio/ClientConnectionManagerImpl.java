@@ -86,8 +86,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
@@ -127,7 +128,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
     private final Credentials credentials;
-    private final AtomicLong correlationIddOfLastAuthentication = new AtomicLong(0);
     private final NioEventLoopGroup eventLoopGroup;
 
     private volatile Address ownerConnectionAddress;
@@ -391,7 +391,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                     return connection;
                 }
                 AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
-                connection = (ClientConnection) firstCallback.get(connectionTimeout);
+                connection = (ClientConnection) firstCallback.get();
 
                 if (!asOwner) {
                     return connection;
@@ -413,13 +413,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             throw new HazelcastException("ConnectionManager is not active!");
         }
 
-        AuthenticationFuture callback = new AuthenticationFuture();
-        AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
-        if (firstCallback == null) {
-            executionService.execute(new InitConnectionTask(target, asOwner, callback));
-            return callback;
+        AuthenticationFuture future = new AuthenticationFuture();
+        AuthenticationFuture oldFuture = connectionsInProgress.putIfAbsent(target, future);
+        if (oldFuture == null) {
+            executionService.execute(new InitConnectionTask(target, asOwner, future));
+            return future;
         }
-        return firstCallback;
+        return oldFuture;
     }
 
     @Override
@@ -623,58 +623,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
-                              final AuthenticationFuture callback) {
+                              final AuthenticationFuture future) {
         final ClientPrincipal principal = getPrincipal();
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
-        ClientInvocationFuture future = clientInvocation.invokeUrgent();
-        if (asOwner && clientInvocation.getSendConnection() != null) {
-            correlationIddOfLastAuthentication.set(clientInvocation.getClientMessage().getCorrelationId());
-        }
-        future.andThen(new ExecutionCallback<ClientMessage>() {
-            @Override
-            public void onResponse(ClientMessage response) {
-                ClientAuthenticationCodec.ResponseParameters result;
-                try {
-                    result = ClientAuthenticationCodec.decodeResponse(response);
-                } catch (HazelcastException e) {
-                    onFailure(e);
-                    return;
-                }
-                AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
-                switch (authenticationStatus) {
-                    case AUTHENTICATED:
-                        connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                        connection.setRemoteEndpoint(result.address);
-                        if (asOwner) {
-                            if (!(correlationIddOfLastAuthentication.get() == response.getCorrelationId())) {
-                                //if not same, client already gave up on this and send another authentication.
-                                onFailure(new AuthenticationException("Owner authentication response from address "
-                                        + target + " is late. Dropping the response. Principal: " + principal));
-                                return;
-                            }
-                            connection.setIsAuthenticatedAsOwner();
-                            ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
-                            setPrincipal(principal);
-                        }
-                        onAuthenticated(target, connection);
-                        callback.onSuccess(connection);
-                        break;
-                    case CREDENTIALS_FAILED:
-                        onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
-                        break;
-                    default:
-                        onFailure(new AuthenticationException("Authentication status code not supported. status: "
-                                + authenticationStatus));
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                onAuthenticationFailed(target, connection, t);
-                callback.onFailure(t);
-            }
-        });
+        ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
+        executionService.schedule(new TimeoutAuthenticationTask(invocationFuture), connectionTimeout, TimeUnit.MILLISECONDS);
+        invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future));
     }
 
     private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, ClientPrincipal principal) {
@@ -751,16 +706,35 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         connectionStrategy.onHeartbeatStopped((ClientConnection) connection);
     }
 
+    private class TimeoutAuthenticationTask implements Runnable {
+
+        private final ClientInvocationFuture future;
+
+        public TimeoutAuthenticationTask(ClientInvocationFuture future) {
+            this.future = future;
+        }
+
+        @Override
+        public void run() {
+            if (future.isDone()) {
+                return;
+            }
+            future.complete(new TimeoutException("Authentication response did not come back in "
+                    + connectionTimeout + " millis"));
+        }
+
+    }
+
     private class InitConnectionTask implements Runnable {
 
         private final Address target;
         private final boolean asOwner;
-        private final AuthenticationFuture callback;
+        private final AuthenticationFuture future;
 
-        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture callback) {
+        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture future) {
             this.target = target;
             this.asOwner = asOwner;
-            this.callback = callback;
+            this.future = future;
         }
 
         @Override
@@ -770,15 +744,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 connection = getConnection(target);
             } catch (Exception e) {
                 logger.finest(e);
-                callback.onFailure(e);
+                future.onFailure(e);
                 connectionsInProgress.remove(target);
                 return;
             }
 
             try {
-                authenticate(target, connection, asOwner, callback);
+                authenticate(target, connection, asOwner, future);
             } catch (Exception e) {
-                callback.onFailure(e);
+                future.onFailure(e);
                 connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
@@ -952,5 +926,57 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         SingleExecutorThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster-");
 
         return Executors.newSingleThreadExecutor(threadFactory);
+    }
+
+    private class AuthCallback implements ExecutionCallback<ClientMessage> {
+        private final ClientConnection connection;
+        private final boolean asOwner;
+        private final Address target;
+        private final AuthenticationFuture future;
+
+        AuthCallback(ClientConnection connection, boolean asOwner, Address target,
+                     AuthenticationFuture future) {
+            this.connection = connection;
+            this.asOwner = asOwner;
+            this.target = target;
+            this.future = future;
+        }
+
+        @Override
+        public void onResponse(ClientMessage response) {
+            ClientAuthenticationCodec.ResponseParameters result;
+            try {
+                result = ClientAuthenticationCodec.decodeResponse(response);
+            } catch (HazelcastException e) {
+                onFailure(e);
+                return;
+            }
+            AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
+            switch (authenticationStatus) {
+                case AUTHENTICATED:
+                    connection.setConnectedServerVersion(result.serverHazelcastVersion);
+                    connection.setRemoteEndpoint(result.address);
+                    if (asOwner) {
+                        connection.setIsAuthenticatedAsOwner();
+                        ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
+                        setPrincipal(principal);
+                    }
+                    onAuthenticated(target, connection);
+                    future.onSuccess(connection);
+                    break;
+                case CREDENTIALS_FAILED:
+                    onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
+                    break;
+                default:
+                    onFailure(new AuthenticationException("Authentication status code not supported. status: "
+                            + authenticationStatus));
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            onAuthenticationFailed(target, connection, t);
+            future.onFailure(t);
+        }
     }
 }
