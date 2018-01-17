@@ -17,6 +17,7 @@
 package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -33,6 +34,7 @@ import org.mockito.stubbing.Answer;
 
 import java.util.Date;
 
+import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.ALLOWED_FUTURE_MILLIS;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_NODE_ID;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_SEQUENCE;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_TIMESTAMP;
@@ -45,6 +47,9 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class FlakeIdGeneratorProxyTest {
+
+    /** Available number of IDs per second from single member */
+    private static final int IDS_PER_SECOND = 1 << BITS_SEQUENCE;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -75,17 +80,20 @@ public class FlakeIdGeneratorProxyTest {
 
     @Test
     public void test_timeMiddle() {
-        assertEquals(5300086112257234L, gen.newIdBaseLocal(1516028439000L, 1234, 10));
+        IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, 10);
+        assertEquals(5300086112257234L, result.idBatch.base());
     }
 
     @Test
     public void test_timeLowEdge() {
-        assertEquals(1234L, gen.newIdBaseLocal(EPOCH_START, 1234, 10));
+        IdBatchAndWaitTime result = gen.newIdBaseLocal(EPOCH_START, 1234, 10);
+        assertEquals(1234L, result.idBatch.base());
     }
 
     @Test
     public void test_timeHighEdge() {
-        assertEquals(9223372036850582738L, gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP) - 1L, 1234, 10));
+        IdBatchAndWaitTime result = gen.newIdBaseLocal(EPOCH_START + (1L << BITS_TIMESTAMP) - 1L, 1234, 10);
+        assertEquals(9223372036850582738L, result.idBatch.base());
     }
 
     @Test
@@ -94,7 +102,7 @@ public class FlakeIdGeneratorProxyTest {
         for (long now = EPOCH_START;
                 now < EPOCH_START + (1L << BITS_TIMESTAMP);
                 now += 365L * 24L * 60L * 60L * 1000L) {
-            long base = gen.newIdBaseLocal(now, 1234, 1);
+            long base = gen.newIdBaseLocal(now, 1234, 1).idBatch.base();
             System.out.println("at " + new Date(now) + ", id=" + base);
             assertTrue("lastId=" + lastId + ", newId=" + base, lastId < base);
             lastId = base;
@@ -119,10 +127,47 @@ public class FlakeIdGeneratorProxyTest {
 
     @Test
     public void when_twoIdsAtTheSameMoment_then_higherSeq() {
-        long id1 = gen.newIdBaseLocal(1516028439000L, 1234, 1);
-        long id2 = gen.newIdBaseLocal(1516028439000L, 1234, 1);
+        long id1 = gen.newIdBaseLocal(1516028439000L, 1234, 1).idBatch.base();
+        long id2 = gen.newIdBaseLocal(1516028439000L, 1234, 1).idBatch.base();
         assertEquals(5300086112257234L, id1);
         assertEquals(id1 + (1 << BITS_NODE_ID), id2);
     }
 
+
+
+    // #### Tests pertaining to wait time ####
+
+    @Test
+    public void when_fewIds_then_noWaitTime() {
+        assertEquals(0, gen.newIdBaseLocal(1516028439000L, 1234, 100).waitTimeMillis);
+    }
+
+    @Test
+    public void when_maximumAllowedFuture_then_noWaitTime() {
+        IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, (int) (IDS_PER_SECOND * ALLOWED_FUTURE_MILLIS));
+        assertEquals(0, result.waitTimeMillis);
+    }
+
+    @Test
+    public void when_maximumAllowedFuturePlusOne_then_1msWaitTime() {
+        int batchSize = (int) (IDS_PER_SECOND * ALLOWED_FUTURE_MILLIS) + IDS_PER_SECOND;
+        IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, batchSize);
+        assertEquals(1, result.waitTimeMillis);
+    }
+
+    @Test
+    public void when_10mIds_then_wait() {
+        int batchSize = 10000000;
+        IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, batchSize);
+        assertEquals(batchSize / IDS_PER_SECOND - ALLOWED_FUTURE_MILLIS, result.waitTimeMillis);
+    }
+
+    @Test
+    public void when_10mIdsInSmallChunks_then_wait() {
+        int batchSize = 100;
+        for (int numIds = 0; numIds < 10000000; numIds += batchSize) {
+            IdBatchAndWaitTime result = gen.newIdBaseLocal(1516028439000L, 1234, batchSize);
+            assertEquals(Math.max(0, (numIds + batchSize) / IDS_PER_SECOND - ALLOWED_FUTURE_MILLIS), result.waitTimeMillis);
+        }
+    }
 }

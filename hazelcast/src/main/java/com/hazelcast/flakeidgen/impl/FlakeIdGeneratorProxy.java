@@ -17,9 +17,9 @@
 package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.Collections.newSetFromMap;
 
@@ -44,7 +45,10 @@ public class FlakeIdGeneratorProxy
     public static final int BITS_SEQUENCE = 6;
     public static final int BITS_NODE_ID = 16;
 
+    /** The difference between two IDs from a sequence on single member */
     public static final long INCREMENT = 1 << BITS_NODE_ID;
+    /** How far to the future is it allowed to go to generate IDs. */
+    static final long ALLOWED_FUTURE_MILLIS = 15000;
 
     /**
      * {@code 1514764800000} is the value {@code System.currentTimeMillis()} would return on
@@ -84,7 +88,15 @@ public class FlakeIdGeneratorProxy
                 new AutoBatcher.IdBatchSupplier() {
                     @Override
                     public IdBatch newIdBatch(int batchSize) {
-                        return FlakeIdGeneratorProxy.this.newIdBatch(batchSize);
+                        IdBatchAndWaitTime result = FlakeIdGeneratorProxy.this.newIdBatch(batchSize);
+                        if (result.waitTimeMillis > 0) {
+                            try {
+                                Thread.sleep(result.waitTimeMillis);
+                            } catch (InterruptedException e) {
+                                throw rethrow(e);
+                            }
+                        }
+                        return result.idBatch;
                     }
                 });
 
@@ -100,13 +112,15 @@ public class FlakeIdGeneratorProxy
         return batcher.newId();
     }
 
-    public IdBatch newIdBatch(int batchSize) {
+    /**
+     * @return array of: {first ID for the batch, wait time until return}
+     */
+    public IdBatchAndWaitTime newIdBatch(int batchSize) {
         int nodeId = getNodeId();
 
         // if we have valid node ID, generate ID locally
         if (nodeId >= 0) {
-            long base = newIdBaseLocal(Clock.currentTimeMillis(), nodeId, batchSize);
-            return new IdBatch(base, INCREMENT, batchSize);
+            return newIdBaseLocal(Clock.currentTimeMillis(), nodeId, batchSize);
         }
 
         // Remote call otherwise. Loop will end when getRandomMember() throws that all members overflowed.
@@ -117,7 +131,7 @@ public class FlakeIdGeneratorProxy
                                                                     .invokeOnTarget(getServiceName(), op, target.getAddress());
             try {
                 long base = future.join();
-                return new IdBatch(base, 1 << BITS_NODE_ID, batchSize);
+                return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), 0);
             } catch (NodeIdOutOfRangeException e) {
                 outOfRangeMembers.add(target.getUuid());
                 randomMember = null;
@@ -125,13 +139,13 @@ public class FlakeIdGeneratorProxy
         }
     }
 
-    long newIdBaseLocal(int batchSize) {
+    IdBatchAndWaitTime newIdBaseLocal(int batchSize) {
         return newIdBaseLocal(Clock.currentTimeMillis(), getNodeId(), batchSize);
     }
 
     /**
      * The layout of the ID is as follows (starting from most significant bits):<ul>
-     *     <li>42 bits timestamp
+     *     <li>41 bits timestamp
      *     <li>6 bits sequence
      *     <li>16 bits node ID
      * </ul>
@@ -141,10 +155,9 @@ public class FlakeIdGeneratorProxy
      * IDs unique.
      *
      * @param now Current time (currentTimeMillis() normally or other value in tests)
-     * @return First ID for the batch.
      */
     // package-private for testing
-    long newIdBaseLocal(long now, int nodeId, int batchSize) {
+    IdBatchAndWaitTime newIdBaseLocal(long now, int nodeId, int batchSize) {
         checkPositive(batchSize, "batchSize");
         if (nodeId == NODE_ID_OUT_OF_RANGE) {
             throw new NodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
@@ -159,7 +172,10 @@ public class FlakeIdGeneratorProxy
             oldGeneratedValue = generatedValue.get();
             base = Math.max(now, oldGeneratedValue);
         } while (!generatedValue.compareAndSet(oldGeneratedValue, base + batchSize));
-        return base << BITS_NODE_ID | nodeId;
+
+        long waitTime = Math.max(0, ((base + batchSize - now) >> BITS_SEQUENCE) - ALLOWED_FUTURE_MILLIS);
+        base = base << BITS_NODE_ID | nodeId;
+        return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), waitTime);
     }
 
     /**
@@ -222,5 +238,15 @@ public class FlakeIdGeneratorProxy
     @Override
     public String getServiceName() {
         return FlakeIdGeneratorService.SERVICE_NAME;
+    }
+
+    public static class IdBatchAndWaitTime {
+        public final IdBatch idBatch;
+        public final long waitTimeMillis;
+
+        IdBatchAndWaitTime(IdBatch idBatch, long waitTimeMillis) {
+            this.idBatch = idBatch;
+            this.waitTimeMillis = waitTimeMillis;
+        }
     }
 }

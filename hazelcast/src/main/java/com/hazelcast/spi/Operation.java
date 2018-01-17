@@ -152,11 +152,17 @@ public abstract class Operation implements DataSerializable {
      * must be called later to finish the operation.
      * <p>
      * In other words, {@code true} is for synchronous operation and {@code false} is for asynchronous one.
+     * <p>
+     * Default implementation is synchronous operation ({@code true}).
      */
     public boolean returnsResponse() {
         return true;
     }
 
+    /**
+     * Called if and only if {@link #returnsResponse()} returned {@code true}, shortly after {@link #run()}
+     * returns.
+     */
     public Object getResponse() {
         return null;
     }

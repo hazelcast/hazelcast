@@ -340,7 +340,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                 }
             } catch (Throwable cause) {
                 logger.severe("Failed asynchronous execution of execution callback: " + callback
-                        + "for call " + caller, cause);
+                        + " for call " + caller, cause);
             }
         }
     }

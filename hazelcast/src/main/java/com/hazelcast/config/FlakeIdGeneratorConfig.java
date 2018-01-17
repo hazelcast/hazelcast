@@ -20,9 +20,10 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.Preconditions;
 
 import java.io.IOException;
+
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
@@ -44,6 +45,16 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * Default value for {@link #getPrefetchValidityMillis()}.
      */
     public static final long DEFAULT_PREFETCH_VALIDITY_MILLIS = 600000;
+
+    /**
+     * Maximum value for prefetch count. The limit is ~10% of the time we allow the IDs to be from the future
+     * (see {@link com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy#ALLOWED_FUTURE_MILLIS}).
+     * <p>
+     * The reason to limit is that a single call to {@link FlakeIdGenerator#newId()} might be blocked if the
+     * future allowance is exceeded. There can be multiple calls from multiple clients to single member, that's
+     * why it's only 10% of the allowance.
+     */
+    private static final int MAXIMUM_PREFETCH_COUNT = 100000;
 
     private String name;
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
@@ -108,12 +119,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * How many IDs are pre-fetched on the background when one call to
      * {@link FlakeIdGenerator#newId()} is made.
      * <p>
-     * Value must be >= 1, default is 100.
+     * Value must be in the range 1..100,000, default is 100.
      *
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
-        Preconditions.checkPositive(prefetchCount, "prefetch-count must be >=1, not " + prefetchCount);
+        checkTrue(prefetchCount > 0 && prefetchCount <= MAXIMUM_PREFETCH_COUNT,
+                "prefetch-count must be 1.." + MAXIMUM_PREFETCH_COUNT + ", not " + prefetchCount);
         this.prefetchCount = prefetchCount;
         return this;
     }
