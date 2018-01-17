@@ -224,14 +224,18 @@ public interface ProcessorMetaSupplier extends Serializable {
         JetInstance jetInstance();
 
         /**
-         * Returns the total number of {@code Processor}s that will be
-         * created across the cluster.
+         * Returns the total number of {@code Processor}s that will be created
+         * across the cluster. This number remains stable for entire job
+         * execution.
          */
         int totalParallelism();
 
         /**
          * Returns the number of processors that each {@code ProcessorSupplier}
-         * will be asked to create once deserialized on each member.
+         * will be asked to create once deserialized on each member. All
+         * members have equal local parallelism; dividing {@link
+         * #totalParallelism} by local parallelism gives you the participating
+         * member count. The count doesn't change unless the job restarts.
          */
         int localParallelism();
 

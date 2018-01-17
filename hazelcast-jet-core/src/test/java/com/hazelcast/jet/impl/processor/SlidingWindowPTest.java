@@ -287,12 +287,19 @@ public class SlidingWindowPTest {
                         wm(10),
                         // this one is late
                         event(7L, 1L),
-                        // this one is "partially late" - it will miss some target windows, but we still can incorporate
-                        // it to window 11 that is due
-                        event(8L, 1L)
+                        // following events are "partially late" - it's still should be dropped, even though we still have
+                        // frame8, where we could accumulate it
+                        event(8L, 1L),
+                        event(9L, 1L),
+                        event(10L, 1L),
+                        // this event is the first one not late
+                        event(11L, 123L)
                 )).expectOutput(asList(
                         wm(10),
-                        outboxFrame(11, 1)
+                        outboxFrame(11L, 123L),
+                        outboxFrame(12L, 123L),
+                        outboxFrame(13L, 123L),
+                        outboxFrame(14L, 123L)
                 ));
     }
 

@@ -70,7 +70,7 @@ public class DoubleAccumulator {
     }
 
     /**
-     * Adds the value of to this objects' value.
+     * Adds the value to this objects' value.
      */
     public  DoubleAccumulator add(double v) {
         value += v;
