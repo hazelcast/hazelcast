@@ -20,8 +20,6 @@ import com.hazelcast.nio.Connection;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 class AuthenticationFuture {
 
@@ -39,10 +37,8 @@ class AuthenticationFuture {
         countDownLatch.countDown();
     }
 
-    Connection get(int timeout) throws Throwable {
-        if (!countDownLatch.await(timeout, TimeUnit.MILLISECONDS)) {
-            throw new TimeoutException("Authentication response did not come back in " + timeout + " millis");
-        }
+    Connection get() throws Throwable {
+        countDownLatch.await();
         if (connection != null) {
             return connection;
         }
