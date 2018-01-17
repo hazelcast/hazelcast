@@ -45,6 +45,11 @@ public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     }
 
     @Override
+    public long peekNextTailSequence() {
+        return tailSequence + 1;
+    }
+
+    @Override
     public void setTailSequence(long sequence) {
         this.tailSequence = sequence;
     }

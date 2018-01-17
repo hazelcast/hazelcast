@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -48,6 +49,7 @@ public class ArrayRingbufferTest {
         rb.checkBlockableReadSequence(rb.headSequence() - 1);
     }
 
+    @Test
     public void testBlockableReadFutureSequenceOk() {
         final ArrayRingbuffer rb = fullRingbuffer();
         rb.checkBlockableReadSequence(rb.tailSequence() + 1);
@@ -61,10 +63,18 @@ public class ArrayRingbufferTest {
 
     @Test
     public void testIsEmpty() {
-        final ArrayRingbuffer rb = new ArrayRingbuffer(5);
+        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<String>(5);
         assertTrue(rb.isEmpty());
         rb.add("");
         assertFalse(rb.isEmpty());
+    }
+
+    @Test
+    public void testPeekNextSequenceNumberReturnsTheNext() {
+        final ArrayRingbuffer<String> rb = new ArrayRingbuffer<String>(5);
+        long nextTailSequence = rb.peekNextTailSequence();
+        long sequenceAdded = rb.add("");
+        assertEquals(sequenceAdded, nextTailSequence);
     }
 
     private static ArrayRingbuffer fullRingbuffer() {

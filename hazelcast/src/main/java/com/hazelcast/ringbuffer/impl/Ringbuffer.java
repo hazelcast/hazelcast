@@ -49,6 +49,15 @@ public interface Ringbuffer<T> {
     long tailSequence();
 
     /**
+     * Returns the next sequence which the tail will be at after the next
+     * item is added. Please note that there is no item in the Ringbuffer
+     * with the returned sequence at the time of the call.
+     *
+     * @return the next sequence of the tail
+     */
+    long peekNextTailSequence();
+
+    /**
      * Sets the tail sequence. The tail sequence cannot be less than {@link #headSequence()} - 1.
      *
      * @param tailSequence the new tail sequence

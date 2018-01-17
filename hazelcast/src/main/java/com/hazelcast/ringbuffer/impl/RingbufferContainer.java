@@ -40,7 +40,6 @@ import static com.hazelcast.config.InMemoryFormat.values;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-
 /**
  * The RingbufferContainer is responsible for creating the actual ring buffer, handling optional ring buffer storage,
  * keeping the wait/notify key for blocking operations, ring buffer item expiration and other things not related to the
@@ -93,6 +92,15 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(namespace, partitionId);
     }
 
+    /**
+     * Constructs a fully initialized ring buffer that can be used immediately. References to other services, the ring buffer
+     * store, expiration policy and the config are all set.
+     *
+     * @param namespace            the namespace of the ring buffer container
+     * @param config               the configuration of the ring buffer
+     * @param serializationService the serialization service
+     * @param configClassLoader    the class loader for which the ring buffer store classes will be loaded
+     */
     public RingbufferContainer(ObjectNamespace namespace, RingbufferConfig config,
                                SerializationService serializationService,
                                ClassLoader configClassLoader, int partitionId) {
@@ -234,15 +242,22 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      *                                         deserialized
      */
     public long add(T item) {
-        final long sequence = addInternal(item);
+        final long nextSequence = ringbuffer.peekNextTailSequence();
         if (store.isEnabled()) {
             try {
-                store.store(sequence, convertToData(item));
+                store.store(nextSequence, convertToData(item));
             } catch (Exception e) {
                 throw new HazelcastException(e);
             }
         }
-        return sequence;
+
+        final long storedSequence = addInternal(item);
+        if (storedSequence != nextSequence) {
+            throw new IllegalStateException("Sequence we stored the item with and Ringbuffer sequence differs. Was the "
+                    + "Ringbuffer mutated from multiple threads?");
+        }
+
+        return storedSequence;
     }
 
     /**
@@ -257,21 +272,19 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      *                                         deserialized
      */
     public long addAll(T[] items) {
-        long firstSequence = -1;
-        long lastSequence = -1;
+        long firstSequence = ringbuffer.peekNextTailSequence();
+        long lastSequence = ringbuffer.peekNextTailSequence();
 
-        for (int i = 0; i < items.length; i++) {
-            lastSequence = addInternal(items[i]);
-            if (i == 0) {
-                firstSequence = lastSequence;
-            }
-        }
         if (store.isEnabled() && items.length != 0) {
             try {
                 store.storeAll(firstSequence, convertToData(items));
             } catch (Exception e) {
                 throw new HazelcastException(e);
             }
+        }
+
+        for (int i = 0; i < items.length; i++) {
+            lastSequence = addInternal(items[i]);
         }
         return lastSequence;
     }
@@ -331,6 +344,10 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
     }
 
     /**
+     * Reads multiple items from the ring buffer and adds them to <code>result</code>
+     * in the stored format. If an item is not available, it will try and
+     * load it from the ringbuffer store.
+     *
      * @param beginSequence the sequence of the first item to read.
      * @param result        the List where the result are stored in.
      * @return returns the sequenceId of the next item to read. This is needed if not all required items are found.
