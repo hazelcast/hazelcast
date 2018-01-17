@@ -565,6 +565,7 @@ public class ConfigXmlGenerator {
         socketInterceptorConfigXmlGenerator(gen, netCfg);
         symmetricEncInterceptorConfigXmlGenerator(gen, netCfg);
         memberAddressProviderConfigXmlGenerator(gen, netCfg);
+        failureDetectorConfigXmlGenerator(gen, netCfg);
         gen.close();
     }
 
@@ -1003,6 +1004,24 @@ public class ConfigXmlGenerator {
                 .node("class-name", className)
                 .appendProperties(memberAddressProviderConfig.getProperties())
                 .close();
+    }
+
+    private static void failureDetectorConfigXmlGenerator(XmlGenerator gen, NetworkConfig networkConfig) {
+        IcmpFailureDetectorConfig icmpFailureDetectorConfig = networkConfig.getIcmpFailureDetectorConfig();
+        if (icmpFailureDetectorConfig == null) {
+            return;
+        }
+
+        gen.open("failure-detector");
+        gen.open("icmp", "enabled", icmpFailureDetectorConfig.isEnabled())
+           .node("ttl", icmpFailureDetectorConfig.getTtl())
+           .node("interval-milliseconds", icmpFailureDetectorConfig.getIntervalMilliseconds())
+           .node("max-attempts", icmpFailureDetectorConfig.getMaxAttempts())
+           .node("timeout-milliseconds", icmpFailureDetectorConfig.getTimeoutMilliseconds())
+           .node("fail-fast-on-startup", icmpFailureDetectorConfig.isFailFastOnStartup())
+           .node("parallel-mode", icmpFailureDetectorConfig.isParallelMode())
+           .close();
+        gen.close();
     }
 
     private static void hotRestartXmlGenerator(XmlGenerator gen, Config config) {

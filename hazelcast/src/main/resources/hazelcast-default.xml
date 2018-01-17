@@ -88,6 +88,9 @@
             <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
+        <failure-detector>
+            <icmp enabled="false"></icmp>
+        </failure-detector>
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">

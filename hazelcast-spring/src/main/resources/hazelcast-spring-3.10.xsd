@@ -2183,6 +2183,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="failure-detector" type="failure-detector" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="public-address" type="xs:string" use="optional"/>
         <xs:attribute name="port" type="xs:string" use="required"/>
@@ -2533,6 +2534,66 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="icmp">
+        <xs:annotation>
+            <xs:documentation>
+                ICMP can be used in addition to the other detectors. It operates at layer 3 detects network
+                and hardware issues more quickly
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="timeout-milliseconds" type="xs:integer" minOccurs="0" maxOccurs="1" default="1000">
+                <xs:annotation>
+                    <xs:documentation>Timeout in Milliseconds before declaring a failed ping</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ttl" type="xs:integer" minOccurs="0" maxOccurs="1" default="255">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of times the IP Datagram (ping) can be forwarded, in most cases
+                        all Hazelcast cluster members would be within one network switch/router therefore
+                        default of 0 is usually sufficient
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="parallel-mode" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>Run ICMP detection in parallel with the Heartbeat failure detector</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
+                        Failure is usually due to OS level restrictions.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-attempts" type="xs:integer" minOccurs="0" maxOccurs="1" default="2">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of consecutive failed attempts before declaring a member suspect
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="interval-milliseconds" type="xs:integer" minOccurs="0" maxOccurs="1" default="1000">
+                <xs:annotation>
+                    <xs:documentation>Time in milliseconds between each ICMP ping</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" default="false">
+            <xs:annotation>
+                <xs:documentation>Enables ICMP Pings to detect and suspect dead members</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="failure-detector">
+        <xs:all>
+            <xs:element name="icmp" type="icmp" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
     </xs:complexType>
 
     <xs:complexType name="hibernate-cache">
