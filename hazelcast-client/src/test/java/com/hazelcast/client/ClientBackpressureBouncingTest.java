@@ -166,7 +166,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         private void assertInFlightInvocationsWereNotGrowing() {
             assertTrue("There are no invocations to be observed!", maxInvocationCountObserved > 0);
 
-            long maximumTolerableInvocationCount = (long) (maxInvocationCountObservedDuringWarmup * 1.2);
+            long maximumTolerableInvocationCount = (long) (maxInvocationCountObservedDuringWarmup * 2);
             assertTrue("Apparently number of in-flight invocations is growing."
                     + " Max. number of in-flight invocation during first fifth of test duration: "
                     + maxInvocationCountObservedDuringWarmup
