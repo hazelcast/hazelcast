@@ -32,8 +32,9 @@ public final class Projections {
 
     /**
      * Returns a projection that does no transformation.
+     * <p>
+     * If you use the returned projection in a 3.9 cluster it may cause a serialization exception.
      *
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if cluster version is less than 3.10
      * @since 3.10
      */
     public static <T> Projection<T, T> identity() {
