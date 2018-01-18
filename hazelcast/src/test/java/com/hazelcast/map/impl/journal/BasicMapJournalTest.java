@@ -59,6 +59,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.projection.Projections.identity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -70,7 +71,7 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final TruePredicate<EventJournalMapEvent<String, Integer>> TRUE_PREDICATE = truePredicate();
-    private static final IdentityProjection<EventJournalMapEvent<String, Integer>> IDENTITY_PROJECTION = identityProjection();
+    private static final Projection<EventJournalMapEvent<String, Integer>, EventJournalMapEvent<String, Integer>> IDENTITY_PROJECTION = identity();
 
     protected HazelcastInstance[] instances;
 
@@ -428,10 +429,6 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
         return new TruePredicate<T>();
     }
 
-    private static <T> IdentityProjection<T> identityProjection() {
-        return new IdentityProjection<T>();
-    }
-
     private static class NewValueIncrementingProjection extends Projection<EventJournalMapEvent<String, Integer>, Integer> {
         private final int delta;
 
@@ -462,13 +459,6 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
         @Override
         public boolean test(T t) {
             return true;
-        }
-    }
-
-    private static class IdentityProjection<I> extends Projection<I, I> implements Serializable {
-        @Override
-        public I transform(I input) {
-            return input;
         }
     }
 }

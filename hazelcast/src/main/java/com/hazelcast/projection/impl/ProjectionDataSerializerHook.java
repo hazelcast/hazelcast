@@ -32,8 +32,9 @@ public final class ProjectionDataSerializerHook implements DataSerializerHook {
 
     public static final int SINGLE_ATTRIBUTE = 0;
     public static final int MULTI_ATTRIBUTE = 1;
+    public static final int IDENTITY_PROJECTION = 2;
 
-    private static final int LEN = MULTI_ATTRIBUTE + 1;
+    private static final int LEN = IDENTITY_PROJECTION + 1;
 
     @Override
     public int getFactoryId() {
@@ -52,6 +53,11 @@ public final class ProjectionDataSerializerHook implements DataSerializerHook {
         constructors[MULTI_ATTRIBUTE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MultiAttributeProjection();
+            }
+        };
+        constructors[IDENTITY_PROJECTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return IdentityProjection.INSTANCE;
             }
         };
 
