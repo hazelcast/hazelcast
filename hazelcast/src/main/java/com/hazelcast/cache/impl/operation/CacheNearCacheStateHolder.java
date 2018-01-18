@@ -58,7 +58,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         MetaDataGenerator metaData = getPartitionMetaDataGenerator(cacheService);
 
         int partitionId = segment.getPartitionId();
-        partitionUuid = metaData.getUuidOrNull(partitionId);
+        partitionUuid = metaData.getOrCreateUuid(partitionId);
 
         cacheNameSequencePairs = new ArrayList(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {

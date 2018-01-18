@@ -68,7 +68,6 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
     private final boolean serializeKeys;
     private final RecordComparator recordComparator;
-    private final NearCache<Object, Object> nearCache;
 
     TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
@@ -85,7 +84,6 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         this.recordComparator = mapServiceContext.getRecordComparator(mapConfig.getInMemoryFormat());
         this.nearCacheEnabled = mapConfig.isNearCacheEnabled();
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
-        this.nearCache = nearCacheEnabled ? mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig) : null;
         this.serializeKeys = nearCacheEnabled && nearCacheConfig.isSerializeKeys();
     }
 
@@ -167,17 +165,31 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return;
         }
 
+        NearCache<Object, Object> nearCache = mapNearCacheManager.getNearCache(name);
+        if (nearCache == null) {
+            return;
+        }
+
         nearCache.remove(nearCacheKey);
     }
 
     private Object getCachedValue(Object nearCacheKey, boolean deserializeValue) {
-        Object value = mapNearCacheManager.getFromNearCache(name, nearCacheKey);
+        NearCache nearCache = mapNearCacheManager.getNearCache(name);
+
+        if (nearCache == null) {
+            return NOT_CACHED;
+        }
+
+        Object value = nearCache.get(nearCacheKey);
+
         if (value == null) {
             return NOT_CACHED;
         }
+
         if (value == CACHED_AS_NULL) {
             return null;
         }
+
         mapServiceContext.interceptAfterGet(name, value);
         return deserializeValue ? ss.toObject(value) : value;
     }

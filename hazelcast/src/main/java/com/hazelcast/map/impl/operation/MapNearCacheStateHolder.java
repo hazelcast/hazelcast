@@ -66,7 +66,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         MetaDataGenerator metaData = getPartitionMetaDataGenerator(mapService);
 
         int partitionId = container.getPartitionId();
-        partitionUuid = metaData.getUuidOrNull(partitionId);
+        partitionUuid = metaData.getOrCreateUuid(partitionId);
 
         for (ServiceNamespace namespace : namespaces) {
             if (mapNameSequencePairs == emptyList()) {
