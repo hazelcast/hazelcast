@@ -66,81 +66,41 @@ import static java.util.logging.Level.INFO;
  * spinning on the selector. This is an experimental feature and will cause the io threads to run hot. For this reason, when
  * this feature is enabled, the number of io threads should be reduced (preferably 1).
  */
-public class NioEventLoopGroup
-        implements EventLoopGroup {
+public class NioEventLoopGroup implements EventLoopGroup {
 
-    private volatile NioThread[] inputThreads;
-    private volatile NioThread[] outputThreads;
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
-    private final String hzName;
+    private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
-    private final int balanceIntervalSeconds;
+    private final int balancerIntervalSeconds;
     private final ChannelInitializer channelInitializer;
     private final int inputThreadCount;
     private final int outputThreadCount;
     private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<NioChannel, Boolean>());
     private final ChannelCloseListener channelCloseListener = new ChannelCloseListenerImpl();
-
-    // The selector mode determines how IO threads will block (or not) on the Selector:
-    //  select:         this is the default mode, uses Selector.select(long timeout)
-    //  selectnow:      use Selector.selectNow()
-    //  selectwithfix:  use Selector.select(timeout) with workaround for bug occurring when
-    //                  SelectorImpl.select returns immediately with no channels selected,
-    //                  resulting in 100% CPU usage while doing no progress.
-    // See issue: https://github.com/hazelcast/hazelcast/issues/7943
-    // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
-    private SelectorMode selectorMode;
-    private BackoffIdleStrategy idleStrategy;
+    private final SelectorMode selectorMode;
+    private final BackoffIdleStrategy idleStrategy;
+    private final boolean selectorWorkaroundTest;
     private volatile IOBalancer ioBalancer;
-    private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
+    private volatile NioThread[] inputThreads;
+    private volatile NioThread[] outputThreads;
 
-    public NioEventLoopGroup(
-            LoggingService loggingService,
-            MetricsRegistry metricsRegistry,
-            String hzName,
-            ChannelErrorHandler errorHandler,
-            int inputThreadCount,
-            int outputThreadCount,
-            int balanceIntervalSeconds,
-            ChannelInitializer channelInitializer) {
-        this.hzName = hzName;
-        this.metricsRegistry = metricsRegistry;
-        this.loggingService = loggingService;
-        this.inputThreadCount = inputThreadCount;
-        this.outputThreadCount = outputThreadCount;
+    public NioEventLoopGroup(Context ctx) {
+        this.threadNamePrefix = ctx.threadNamePrefix;
+        this.metricsRegistry = ctx.metricsRegistry;
+        this.loggingService = ctx.loggingService;
+        this.inputThreadCount = ctx.inputThreadCount;
+        this.outputThreadCount = ctx.outputThreadCount;
         this.logger = loggingService.getLogger(NioEventLoopGroup.class);
-        this.errorHandler = errorHandler;
-        this.balanceIntervalSeconds = balanceIntervalSeconds;
-        this.channelInitializer = channelInitializer;
-    }
-
-    private SelectorMode getSelectorMode() {
-        if (selectorMode == null) {
-            selectorMode = SelectorMode.getConfiguredValue();
-
-            String selectorModeString = SelectorMode.getConfiguredString();
-            if (selectorModeString.startsWith(SELECT_NOW_STRING + ",")) {
-                idleStrategy = createBackoffIdleStrategy(selectorModeString);
-            }
-        }
-        return selectorMode;
-    }
-
-    public void setSelectorMode(SelectorMode mode) {
-        this.selectorMode = mode;
-    }
-
-    /**
-     * Set to {@code true} for Selector CPU-consuming bug workaround tests
-     *
-     * @param selectorWorkaroundTest
-     */
-    void setSelectorWorkaroundTest(boolean selectorWorkaroundTest) {
-        this.selectorWorkaroundTest = selectorWorkaroundTest;
+        this.errorHandler = ctx.errorHandler;
+        this.balancerIntervalSeconds = ctx.balancerIntervalSeconds;
+        this.channelInitializer = ctx.channelInitializer;
+        this.selectorMode = ctx.selectorMode;
+        this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
+        this.idleStrategy = ctx.idleStrategy;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -166,12 +126,12 @@ public class NioEventLoopGroup
         }
 
 
-        logger.log(getSelectorMode() != SELECT ? INFO : FINE, "IO threads selector mode is " + getSelectorMode());
-        this.inputThreads = new NioThread[inputThreadCount];
+        logger.log(selectorMode != SELECT ? INFO : FINE, "IO threads selector mode is " + selectorMode);
 
+        this.inputThreads = new NioThread[inputThreadCount];
         for (int i = 0; i < inputThreads.length; i++) {
             NioThread thread = new NioThread(
-                    createThreadPoolName(hzName, "IO") + "in-" + i,
+                    createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
                     loggingService.getLogger(NioThread.class),
                     errorHandler,
                     selectorMode,
@@ -186,7 +146,7 @@ public class NioEventLoopGroup
         this.outputThreads = new NioThread[outputThreadCount];
         for (int i = 0; i < outputThreads.length; i++) {
             NioThread thread = new NioThread(
-                    createThreadPoolName(hzName, "IO") + "out-" + i,
+                    createThreadPoolName(threadNamePrefix, "IO") + "out-" + i,
                     loggingService.getLogger(NioThread.class),
                     errorHandler,
                     selectorMode,
@@ -197,6 +157,7 @@ public class NioEventLoopGroup
             metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
             thread.start();
         }
+
         startIOBalancer();
 
         if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
@@ -204,37 +165,8 @@ public class NioEventLoopGroup
         }
     }
 
-    private class PublishAllTask implements Runnable {
-        @Override
-        public void run() {
-            for (NioChannel channel : channels) {
-                final NioChannelReader reader = channel.getReader();
-                NioThread inputThread = reader.getOwner();
-                if (inputThread != null) {
-                    inputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            reader.publish();
-                        }
-                    });
-                }
-
-                final NioChannelWriter writer = channel.getWriter();
-                NioThread outputThread = writer.getOwner();
-                if (outputThread != null) {
-                    outputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            writer.publish();
-                        }
-                    });
-                }
-            }
-        }
-    }
-
     private void startIOBalancer() {
-        ioBalancer = new IOBalancer(inputThreads, outputThreads, hzName, balanceIntervalSeconds, loggingService);
+        ioBalancer = new IOBalancer(inputThreads, outputThreads, threadNamePrefix, balancerIntervalSeconds, loggingService);
         ioBalancer.start();
         metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
     }
@@ -333,6 +265,114 @@ public class NioEventLoopGroup
 
             metricsRegistry.deregister(nioChannel.getReader());
             metricsRegistry.deregister(nioChannel.getWriter());
+        }
+    }
+
+    private class PublishAllTask implements Runnable {
+        @Override
+        public void run() {
+            for (NioChannel channel : channels) {
+                final NioChannelReader reader = channel.getReader();
+                NioThread inputThread = reader.getOwner();
+                if (inputThread != null) {
+                    inputThread.addTaskAndWakeup(new Runnable() {
+                        @Override
+                        public void run() {
+                            reader.publish();
+                        }
+                    });
+                }
+
+                final NioChannelWriter writer = channel.getWriter();
+                NioThread outputThread = writer.getOwner();
+                if (outputThread != null) {
+                    outputThread.addTaskAndWakeup(new Runnable() {
+                        @Override
+                        public void run() {
+                            writer.publish();
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    public static class Context {
+        private BackoffIdleStrategy idleStrategy;
+        private LoggingService loggingService;
+        private MetricsRegistry metricsRegistry;
+        private String threadNamePrefix = "hz";
+        private ChannelErrorHandler errorHandler;
+        private int inputThreadCount = 1;
+        private int outputThreadCount = 1;
+        private int balancerIntervalSeconds;
+        // The selector mode determines how IO threads will block (or not) on the Selector:
+        //  select:         this is the default mode, uses Selector.select(long timeout)
+        //  selectnow:      use Selector.selectNow()
+        //  selectwithfix:  use Selector.select(timeout) with workaround for bug occurring when
+        //                  SelectorImpl.select returns immediately with no channels selected,
+        //                  resulting in 100% CPU usage while doing no progress.
+        // See issue: https://github.com/hazelcast/hazelcast/issues/7943
+        // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
+        private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
+        private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
+        private ChannelInitializer channelInitializer;
+
+        public Context() {
+            String selectorModeString = SelectorMode.getConfiguredString();
+            if (selectorModeString.startsWith(SELECT_NOW_STRING + ",")) {
+                idleStrategy = createBackoffIdleStrategy(selectorModeString);
+            }
+        }
+
+        public Context selectorWorkaroundTest(boolean selectorWorkaroundTest) {
+            this.selectorWorkaroundTest = selectorWorkaroundTest;
+            return this;
+        }
+
+        public Context selectorMode(SelectorMode selectorMode) {
+            this.selectorMode = selectorMode;
+            return this;
+        }
+
+        public Context loggingService(LoggingService loggingService) {
+            this.loggingService = loggingService;
+            return this;
+        }
+
+        public Context metricsRegistry(MetricsRegistry metricsRegistry) {
+            this.metricsRegistry = metricsRegistry;
+            return this;
+        }
+
+        public Context threadNamePrefix(String threadNamePrefix) {
+            this.threadNamePrefix = threadNamePrefix;
+            return this;
+        }
+
+        public Context errorHandler(ChannelErrorHandler errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
+        public Context inputThreadCount(int inputThreadCount) {
+            this.inputThreadCount = inputThreadCount;
+            return this;
+        }
+
+        public Context outputThreadCount(int outputThreadCount) {
+            this.outputThreadCount = outputThreadCount;
+            return this;
+        }
+
+        public Context balancerIntervalSeconds(int balancerIntervalSeconds) {
+            this.balancerIntervalSeconds = balancerIntervalSeconds;
+            return this;
+        }
+
+        public Context channelInitializer(ChannelInitializer channelInitializer) {
+            this.channelInitializer = channelInitializer;
+            return this;
         }
     }
 }
