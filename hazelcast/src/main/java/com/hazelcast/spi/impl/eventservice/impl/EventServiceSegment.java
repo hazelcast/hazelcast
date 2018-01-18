@@ -235,4 +235,12 @@ public class EventServiceSegment<S> {
         Collection<Registration> topicRegistrations = registrations.get(topic);
         return !(topicRegistrations == null || topicRegistrations.isEmpty());
     }
+
+    void collectRemoteRegistrations(Collection<Registration> result) {
+        for (Registration registration : registrationIdMap.values()) {
+            if (!registration.isLocalOnly()) {
+                result.add(registration);
+            }
+        }
+    }
 }
