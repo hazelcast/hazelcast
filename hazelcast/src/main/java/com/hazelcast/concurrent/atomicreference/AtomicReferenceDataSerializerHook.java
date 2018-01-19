@@ -26,6 +26,7 @@ import com.hazelcast.concurrent.atomicreference.operations.GetAndAlterOperation;
 import com.hazelcast.concurrent.atomicreference.operations.GetAndSetOperation;
 import com.hazelcast.concurrent.atomicreference.operations.GetOperation;
 import com.hazelcast.concurrent.atomicreference.operations.IsNullOperation;
+import com.hazelcast.concurrent.atomicreference.operations.MergeOperation;
 import com.hazelcast.concurrent.atomicreference.operations.SetAndGetOperation;
 import com.hazelcast.concurrent.atomicreference.operations.SetBackupOperation;
 import com.hazelcast.concurrent.atomicreference.operations.SetOperation;
@@ -54,6 +55,7 @@ public final class AtomicReferenceDataSerializerHook implements DataSerializerHo
     public static final int SET_BACKUP = 10;
     public static final int SET = 11;
     public static final int REPLICATION = 12;
+    public static final int MERGE = 13;
 
     @Override
     public int getFactoryId() {
@@ -92,6 +94,8 @@ public final class AtomicReferenceDataSerializerHook implements DataSerializerHo
                         return new SetOperation();
                     case REPLICATION:
                         return new AtomicReferenceReplicationOperation();
+                    case MERGE:
+                        return new MergeOperation();
                     default:
                         return null;
                 }
