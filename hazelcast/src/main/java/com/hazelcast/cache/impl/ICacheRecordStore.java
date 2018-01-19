@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheEntryView;
+import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntries;
@@ -33,7 +35,7 @@ import java.util.Set;
  * map to a method on this interface through Hazelcast's RPC mechanism. Hazelcast
  * {@link com.hazelcast.spi.Operation} is sent to the relevant partition to be executed and the final
  * results are returned to the callers.
- *
+ * <p>
  * For each partition, there is only one {@link ICacheRecordStore} in the cluster.
  * <p>Implementations of this interface may provide different internal data persistence like on-heap storage.</p>
  * Each expirible cache entry is actually a {@link Data}, {@link CacheRecord} pair.
@@ -44,8 +46,6 @@ import java.util.Set;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface ICacheRecordStore {
-
-    int UNIT_PERCENTAGE = 100;
 
     /**
      * Gets the value to which the specified key is mapped,
@@ -112,7 +112,7 @@ public interface ICacheRecordStore {
      * value <tt>v</tt> such that
      * <code>(key==null ?  k==null : key.equals(k))</code>, that mapping is removed.
      * (The cache can contain at most one such mapping.)
-     *
+     * <p>
      * <p>Returns <tt>true</tt> if this cache previously associated the key,
      * or <tt>false</tt> if the cache contained no mapping for the key.
      * <p>
@@ -156,18 +156,21 @@ public interface ICacheRecordStore {
      * value <tt>v</tt> such that
      * <code>(key==null ?  k==null : key.equals(k))</code>, that mapping is removed.
      * (The cache can contain at most one such mapping.)
-     *
+     * <p>
      * <p>Returns <tt>true</tt> if this cache previously associated the key,
      * or <tt>false</tt> if the cache contained no mapping for the key.
      * <p>
      * The cache will not contain a mapping for the specified key once the
      * call returns.
      *
-     * @param key    key whose mapping is to be removed from the cache.
-     * @param caller UUID of the calling node or client.
+     * @param key          key whose mapping is to be removed from the cache.
+     * @param caller       UUID of the calling node or client.
+     * @param origin       Source of the call
+     * @param completionId User generated id which shall be received as a field of the cache event upon completion of
+     *                     the request in the cluster.
      * @return returns false if there was no matching key.
      */
-    boolean remove(Data key, String caller, int completionId);
+    boolean remove(Data key, String caller, String origin, int completionId);
 
     /**
      * Atomically removes the mapping for a key only if currently mapped to the
@@ -184,12 +187,15 @@ public interface ICacheRecordStore {
      * </code></pre>
      * except that the action is performed atomically.
      *
-     * @param key    key whose mapping is to be removed from the cache.
-     * @param value  value expected to be associated with the specified key.
-     * @param caller UUID of the calling node or client.
+     * @param key          key whose mapping is to be removed from the cache.
+     * @param value        value expected to be associated with the specified key.
+     * @param caller       UUID of the calling node or client.
+     * @param origin       Source of the call
+     * @param completionId User generated id which shall be received as a field of the cache event upon completion of
+     *                     the request in the cluster.
      * @return returns false if there was no matching key.
      */
-    boolean remove(Data key, Object value, String caller, int completionId);
+    boolean remove(Data key, Object value, String caller, String origin, int completionId);
 
     /**
      * Atomically replaces the entry for a key only if currently mapped to some
@@ -468,4 +474,18 @@ public interface ICacheRecordStore {
      * @return ObjectNamespace associated with this record store.
      */
     ObjectNamespace getObjectNamespace();
+
+    /**
+     * Merges given record (inside given {@link CacheEntryView}) with the existing record as given {@link CacheMergePolicy}.
+     *
+     * @param cacheEntryView the {@link CacheEntryView} instance that wraps key/value for merging and existing entry
+     * @param mergePolicy    the {@link CacheMergePolicy} instance for handling merge policy
+     * @param caller
+     * @param completionId   User generated id which shall be received as a field of the cache event upon completion of
+     *                       the request in the cluster.
+     * @param origin         source of the call
+     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
+     */
+    CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
+                      String caller, String origin, int completionId);
 }
