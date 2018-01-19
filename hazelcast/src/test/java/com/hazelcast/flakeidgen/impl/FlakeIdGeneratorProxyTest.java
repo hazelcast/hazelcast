@@ -18,6 +18,7 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,8 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Date;
 
@@ -39,6 +38,7 @@ import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_NODE_ID;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_SEQUENCE;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_TIMESTAMP;
 import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.EPOCH_START;
+import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.NODE_ID_UPDATE_INTERVAL_NS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -54,26 +54,32 @@ public class FlakeIdGeneratorProxyTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private ILogger logger;
     private FlakeIdGeneratorProxy gen;
+    private ClusterService clusterService;
 
     @Before
     public void before() {
-        logger = mock(ILogger.class);
-        NodeEngine nodeEngine = mock(NodeEngine.class, new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) {
-                if (invocation.getMethod().getName().equals("getLogger")) {
-                    return logger;
-                }
-                return null;
-            }
-        });
+        ILogger logger = mock(ILogger.class);
+        clusterService = mock(ClusterService.class);
+        NodeEngine nodeEngine = mock(NodeEngine.class);
+        when(nodeEngine.getLogger(FlakeIdGeneratorProxy.class)).thenReturn(logger);
+        when(nodeEngine.isRunning()).thenReturn(true);
         when(nodeEngine.getConfig()).thenReturn(new Config());
+        when(nodeEngine.getClusterService()).thenReturn(clusterService);
         gen = new FlakeIdGeneratorProxy("foo", nodeEngine, null);
     }
 
     @Test
+    public void when_nodeIdUpdated_then_pickedUpAfterUpdateInterval() {
+        when(clusterService.getMemberListJoinVersion()).thenReturn(20);
+        assertEquals(20, gen.getNodeId(0));
+
+        when(clusterService.getMemberListJoinVersion()).thenReturn(30);
+        assertEquals(20, gen.getNodeId(0));
+        assertEquals(20, gen.getNodeId(NODE_ID_UPDATE_INTERVAL_NS - 1));
+        assertEquals(30, gen.getNodeId(NODE_ID_UPDATE_INTERVAL_NS));
+    }
+
     public void test_usedBits() {
         assertEquals(63, BITS_NODE_ID + BITS_TIMESTAMP + BITS_SEQUENCE);
     }

@@ -82,8 +82,8 @@ public final class SerializationUtil {
         } else if (serializer instanceof ByteArraySerializer) {
             s = new ByteArraySerializerAdapter((ByteArraySerializer) serializer);
         } else {
-            throw new IllegalArgumentException(
-                    "Serializer must be instance of either " + "StreamSerializer or ByteArraySerializer!");
+            throw new IllegalArgumentException("Serializer " + serializer.getClass().getName()
+                    + " must be an instance of either StreamSerializer or ByteArraySerializer");
         }
         return s;
     }

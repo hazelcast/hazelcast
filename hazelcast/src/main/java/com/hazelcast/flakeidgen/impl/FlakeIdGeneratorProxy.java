@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class FlakeIdGeneratorProxy
         extends AbstractDistributedObject<FlakeIdGeneratorService>
@@ -56,11 +57,13 @@ public class FlakeIdGeneratorProxy
      */
     @SuppressWarnings("checkstyle:magicnumber")
     static final long EPOCH_START = 1514764800000L;
+    static final long NODE_ID_UPDATE_INTERVAL_NS = SECONDS.toNanos(2);
 
     private static final int NODE_ID_NOT_YET_SET = -1;
     private static final int NODE_ID_OUT_OF_RANGE = -2;
 
     private volatile int nodeId = NODE_ID_NOT_YET_SET;
+    private volatile long nextNodeIdUpdate = Long.MIN_VALUE;
     private final String name;
     private final ILogger logger;
 
@@ -186,27 +189,37 @@ public class FlakeIdGeneratorProxy
      * </ul>
      */
     private int getNodeId() {
+        return getNodeId(System.nanoTime());
+    }
+
+    // package-visible for tests
+    int getNodeId(long nanoTime) {
+        // Check if it is a time to check for updated nodeId. We need to recheck, because if duplicate node ID
+        // is assigned during a network split, this will be resolved after a cluster merge.
+        // We throttle the calls to avoid contention due to the lock+unlock call in getMemberListJoinVersion().
         int nodeId = this.nodeId;
-        if (nodeId > 0) {
-            return nodeId;
+        if (nodeId != NODE_ID_OUT_OF_RANGE && nextNodeIdUpdate <= nanoTime) {
+            int newNodeId = getNodeEngine().getClusterService().getMemberListJoinVersion();
+            assert newNodeId >= 0 : "newNodeId=" + newNodeId;
+            nextNodeIdUpdate = nanoTime + NODE_ID_UPDATE_INTERVAL_NS;
+            if (newNodeId != nodeId) {
+                // we ignore possible double initialization
+                nodeId = newNodeId;
+                this.nodeId = newNodeId;
+                if (logger.isFineEnabled()) {
+                    logger.fine("Node ID assigned to '" + name + "': " + nodeId);
+                }
+
+                // If our node ID is out of range, assign NODE_ID_OUT_OF_RANGE to nodeId
+                if ((nodeId & -1 << BITS_NODE_ID) != 0) {
+                    outOfRangeMembers.add(getNodeEngine().getClusterService().getLocalMember().getUuid());
+                    logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
+                            + "Cluster restart is recommended.");
+                    nodeId = NODE_ID_OUT_OF_RANGE;
+                }
+            }
         }
 
-        nodeId = getNodeEngine().getClusterService().getMemberListJoinVersion();
-        assert nodeId >= 0 : "nodeId=" + nodeId;
-
-        // If our node ID is out of range, assign NODE_ID_OUT_OF_RANGE to nodeId
-        if ((nodeId & -1 << BITS_NODE_ID) != 0) {
-            outOfRangeMembers.add(getNodeEngine().getClusterService().getLocalMember().getUuid());
-            logger.severe("Node ID is out of range (" + nodeId + "), this member won't be able to generate IDs. "
-                    + "Cluster restart is recommended.");
-            nodeId = NODE_ID_OUT_OF_RANGE;
-        }
-
-        // we ignore possible double initialization
-        this.nodeId = nodeId;
-        if (logger.isFineEnabled()) {
-            logger.fine("Node ID assigned to '" + name + "': " + nodeId);
-        }
         return nodeId;
     }
 
@@ -240,6 +253,7 @@ public class FlakeIdGeneratorProxy
         return FlakeIdGeneratorService.SERVICE_NAME;
     }
 
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     public static class IdBatchAndWaitTime {
         public final IdBatch idBatch;
         public final long waitTimeMillis;
