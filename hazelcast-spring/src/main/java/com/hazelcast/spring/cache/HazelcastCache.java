@@ -55,7 +55,7 @@ public class HazelcastCache implements Cache {
     }
 
     @Override
-    public Object getNativeCache() {
+    public IMap<Object, Object> getNativeCache() {
         return map;
     }
 
