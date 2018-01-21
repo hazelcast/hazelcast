@@ -89,7 +89,7 @@ public class HyperLogLogImpl implements HyperLogLog {
             throw new IllegalStateException("Can't merge " + other + " into " + this);
         }
 
-        encoder.merge(((HyperLogLogImpl) other).encoder);
+        encoder = encoder.merge(((HyperLogLogImpl) other).encoder);
         cachedEstimate = null;
     }
 

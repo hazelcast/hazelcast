@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 public class CardinalityEstimatorSplitBrainTest
         extends SplitBrainTestSupport {
 
-    private final String name = "Actual";
+    private final String name = randomName();
 
     private final int initialCount = 100000;
     private final int extraCount = 10000;
@@ -51,17 +51,15 @@ public class CardinalityEstimatorSplitBrainTest
 
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        int base = initialCount;
         int firstBrainBump = initialCount + extraCount;
 
         CardinalityEstimator estimator1 = firstBrain[0].getCardinalityEstimator(name);
-        for (int i = base; i < firstBrainBump; i++) {
+        for (int i = initialCount; i < firstBrainBump; i++) {
             estimator1.add(String.valueOf(i));
         }
 
-        base = firstBrainBump;
         CardinalityEstimator estimator2 = secondBrain[0].getCardinalityEstimator(name);
-        for (int i = base; i < totalCount; i++) {
+        for (int i = initialCount; i < totalCount; i++) {
             estimator2.add(String.valueOf(i));
         }
     }

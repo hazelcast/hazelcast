@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+import static com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoding.SPARSE;
+
 /**
  * 1. http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
  * 2. http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
@@ -87,16 +89,14 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     @Override
     public HyperLogLogEncoder merge(HyperLogLogEncoder encoder) {
         DenseHyperLogLogEncoder otherDense;
-        if (encoder instanceof SparseHyperLogLogEncoder) {
+        if (SPARSE.equals(encoder.getEncodingType())) {
             otherDense = (DenseHyperLogLogEncoder) ((SparseHyperLogLogEncoder) encoder).asDense();
         } else {
             otherDense = (DenseHyperLogLogEncoder) encoder;
         }
 
         for (int i = 0; i < register.length; i++) {
-            if (register[i] < otherDense.register[i]) {
-                register[i] = otherDense.register[i];
-            }
+            register[i] = (byte) Math.max(register[i], otherDense.register[i]);
         }
 
         return this;

@@ -35,10 +35,10 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
 
     private int p;
     private int pMask;
+    private int pFenseMask;
     private int pPrime;
     private int pPrimeMask;
     private long pDiffMask;
-    private long pDiffEncodedMask;
 
     private VariableLengthDiffArray register;
 
@@ -49,20 +49,19 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
     public SparseHyperLogLogEncoder() {
     }
 
-    public SparseHyperLogLogEncoder(final int p, final int pPrime) {
+    SparseHyperLogLogEncoder(final int p, final int pPrime) {
         init(p, pPrime, new VariableLengthDiffArray());
     }
 
     public void init(int p, int pPrime, VariableLengthDiffArray register) {
         this.p = p;
+        this.pFenseMask = 1 << (64 - p) - 1;
         this.pPrime = pPrime;
         this.pPrimeMask = (1 << pPrime) - 1;
         this.mPrime = 1 << pPrime;
         this.temp = new int[DEFAULT_TEMP_CAPACITY];
-
         this.pMask = ((1 << p) - 1);
         this.pDiffMask = pPrimeMask ^ pMask;
-        this.pDiffEncodedMask = (1L << (pPrime - p)) - 1;
         this.register = register;
     }
 
@@ -132,7 +131,7 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
         return register.mark + (DEFAULT_TEMP_CAPACITY * Bits.INT_SIZE_IN_BYTES);
     }
 
-    public HyperLogLogEncoder asDense() {
+    HyperLogLogEncoder asDense() {
         mergeAndResetTmp();
 
         byte[] dense = new byte[1 << this.p];
@@ -169,17 +168,18 @@ public class SparseHyperLogLogEncoder implements HyperLogLogEncoder  {
         return (int) (hash >>> (32 - pPrime)) & pMask;
     }
 
-    private byte decodeHashRunOfZeros(long hash) {
+    private byte decodeHashRunOfZeros(int hash) {
         if (!hasRunOfZerosEncoded(hash)) {
             // |-25bits-||-1bit-
             // (p - p') || 0
-            int pDiff = (int) ((hash >>> 1) & pDiffEncodedMask);
-            return (byte) (Integer.numberOfTrailingZeros(pDiff) + 1);
+            int stripFlag = hash >>> 1;
+            int pShifted = stripFlag >>> p;
+            return (byte) Integer.numberOfTrailingZeros(pShifted | pFenseMask);
         }
 
         // |-25bits-||-6bits-||-1bit-|
         // (p - p') || p(w') || 1
-        int pW = (int) (hash & ((1 << (32 - pPrime)) - 1)) >>> 1;
+        int pW = (hash & ((1 << (32 - pPrime)) - 1)) >>> 1;
         return (byte) (pW + (pPrime - p) + 1);
     }
 
