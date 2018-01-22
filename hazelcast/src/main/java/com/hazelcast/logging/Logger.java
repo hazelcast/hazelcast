@@ -51,7 +51,25 @@ public final class Logger {
      * @return the obtained logger.
      */
     public static ILogger getLogger(String name) {
-        return getOrCreateLoggerFactory(System.getProperty("hazelcast.logging.type")).getLogger(name);
+        // try the fast path first
+        LoggerFactory existingFactory = loggerFactory;
+        if (existingFactory != null) {
+            return existingFactory.getLogger(name);
+        }
+
+        synchronized (FACTORY_LOCK) {
+            existingFactory = loggerFactory;
+            if (existingFactory != null) {
+                return existingFactory.getLogger(name);
+            }
+
+            final String loggingType = System.getProperty("hazelcast.logging.type");
+            final LoggerFactory createdFactory = createLoggerFactory(loggingType);
+
+            loggerFactory = createdFactory;
+
+            return createdFactory.getLogger(name);
+        }
     }
 
     /**
@@ -62,61 +80,53 @@ public final class Logger {
     }
 
     /**
-     * Obtains a {@link LoggerFactory logger factory} instance of the given preferred type.
+     * Creates a {@link LoggerFactory logger factory} instance of the given preferred type.
      * <p>
-     * Despite its name this method doesn't necessarily return a new instance of logger factory. Also, the type of
-     * the obtained logger factory doesn't necessarily match the given preferred type. For example, if the global
-     * shared logging machinery is already initialized with a different factory type, the existing shared logger
-     * factory instance will be returned.
+     * The type of the created logger factory doesn't necessarily match the given preferred type. For example, if
+     * {@code hazelcast.logging.class} system property is set, the configured logger factory class will be used
+     * despite the given preferred type. Also, if factory instance construction is failed for some reason,
+     * {@link StandardLoggerFactory} instance will be returned instead.
      *
-     * @param preferredType the preferred type of the logger factory to obtain.
-     * @return the obtained logger factory.
+     * @param preferredType the preferred type of the logger factory to create.
+     * @return the created logger factory.
      */
     public static LoggerFactory newLoggerFactory(String preferredType) {
-        return getOrCreateLoggerFactory(preferredType);
-    }
-
-    @SuppressWarnings("checkstyle:npathcomplexity")
-    private static LoggerFactory getOrCreateLoggerFactory(String preferredType) {
-        LoggerFactory existingFactory = loggerFactory;
-        if (existingFactory != null) {
-            return existingFactory;
-        }
-
+        // creation of new logger factory is not a frequent operation, so we can afford doing this under the lock
         synchronized (FACTORY_LOCK) {
-            existingFactory = loggerFactory;
-            if (existingFactory != null) {
-                return existingFactory;
+            final LoggerFactory createdFactory = createLoggerFactory(preferredType);
+
+            // initialize the global shared logger factory as early as possible
+            if (loggerFactory == null) {
+                loggerFactory = createdFactory;
             }
 
-            LoggerFactory createdFactory = null;
-
-            final String factoryClass = System.getProperty("hazelcast.logging.class");
-            if (!StringUtil.isNullOrEmpty(factoryClass)) {
-                createdFactory = tryCreateLoggerFactory(factoryClass);
-            }
-
-            if (createdFactory == null && preferredType != null) {
-                if ("log4j".equals(preferredType)) {
-                    createdFactory = tryCreateLoggerFactory("com.hazelcast.logging.Log4jFactory");
-                } else if ("log4j2".equals(preferredType)) {
-                    createdFactory = tryCreateLoggerFactory("com.hazelcast.logging.Log4j2Factory");
-                } else if ("slf4j".equals(preferredType)) {
-                    createdFactory = tryCreateLoggerFactory("com.hazelcast.logging.Slf4jFactory");
-                } else if ("jdk".equals(preferredType)) {
-                    createdFactory = new StandardLoggerFactory();
-                } else if ("none".equals(preferredType)) {
-                    createdFactory = new NoLogFactory();
-                }
-            }
-
-            if (createdFactory == null) {
-                createdFactory = new StandardLoggerFactory();
-            }
-
-            loggerFactory = createdFactory;
             return createdFactory;
         }
+    }
+
+    private static LoggerFactory createLoggerFactory(String preferredType) {
+        LoggerFactory createdFactory = null;
+
+        final String factoryClass = System.getProperty("hazelcast.logging.class");
+        if (!StringUtil.isNullOrEmpty(factoryClass)) {
+            createdFactory = tryCreateLoggerFactory(factoryClass);
+        }
+
+        if (createdFactory == null && preferredType != null) {
+            if ("log4j".equals(preferredType)) {
+                createdFactory = tryCreateLoggerFactory("com.hazelcast.logging.Log4jFactory");
+            } else if ("log4j2".equals(preferredType)) {
+                createdFactory = tryCreateLoggerFactory("com.hazelcast.logging.Log4j2Factory");
+            } else if ("slf4j".equals(preferredType)) {
+                createdFactory = tryCreateLoggerFactory("com.hazelcast.logging.Slf4jFactory");
+            } else if ("jdk".equals(preferredType)) {
+                createdFactory = new StandardLoggerFactory();
+            } else if ("none".equals(preferredType)) {
+                createdFactory = new NoLogFactory();
+            }
+        }
+
+        return createdFactory == null ? new StandardLoggerFactory() : createdFactory;
     }
 
     private static LoggerFactory tryCreateLoggerFactory(String className) {
