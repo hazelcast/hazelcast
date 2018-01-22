@@ -522,10 +522,12 @@
 
     <atomic-long name="default">
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
 
     <atomic-reference name="default">
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </atomic-reference>
 
     <count-down-latch name="default">
