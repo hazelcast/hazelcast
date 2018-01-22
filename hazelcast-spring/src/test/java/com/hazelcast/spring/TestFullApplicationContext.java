@@ -680,7 +680,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(estimatorConfig);
         assertEquals("estimator", estimatorConfig.getName());
         assertEquals(4, estimatorConfig.getBackupCount());
-        assertEquals("PassThroughMergePolicy", estimatorConfig.getMergePolicyConfig().getPolicy());
+        assertEquals("DiscardMergePolicy", estimatorConfig.getMergePolicyConfig().getPolicy());
         assertEquals(44, estimatorConfig.getMergePolicyConfig().getBatchSize());
     }
 

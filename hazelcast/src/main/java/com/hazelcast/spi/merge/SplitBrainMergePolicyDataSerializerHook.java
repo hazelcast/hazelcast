@@ -47,8 +47,9 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
     public static final int LATEST_UPDATE = 4;
     public static final int PASS_THROUGH = 5;
     public static final int PUT_IF_ABSENT = 6;
+    public static final int HLL = 7;
 
-    private static final int LEN = PUT_IF_ABSENT + 1;
+    private static final int LEN = HLL + 1;
 
     @Override
     public int getFactoryId() {
@@ -93,6 +94,12 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
         constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutIfAbsentMergePolicy();
+            }
+        };
+        constructors[HLL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new HyperLogLogMergePolicy();
             }
         };
 

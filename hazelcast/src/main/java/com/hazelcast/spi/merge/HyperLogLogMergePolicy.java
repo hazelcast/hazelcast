@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cardinality.impl.hyperloglog;
+package com.hazelcast.spi.merge;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import java.io.IOException;
+import static com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook.HLL;
 
-import static com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook.F_ID;
-import static com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook.HLL_MERGE_POLICY;
-
+/**
+ * Only available for HyperLogLog backed {@link com.hazelcast.cardinality.CardinalityEstimator}.
+ *
+ * <p>Uses the default merge algorithm from HyperLogLog research, keeping the max register value of the two given
+ * instances. The result should be the union to the two HyperLogLog estimations.
+ *
+ * @since 3.10
+ */
 public class HyperLogLogMergePolicy
-        implements SplitBrainMergePolicy, IdentifiedDataSerializable {
+        extends AbstractMergePolicy {
 
     public HyperLogLogMergePolicy() {
     }
@@ -49,22 +51,7 @@ public class HyperLogLogMergePolicy
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-    }
-
-    @Override
-    public int getFactoryId() {
-        return F_ID;
-    }
-
-    @Override
     public int getId() {
-        return HLL_MERGE_POLICY;
+        return HLL;
     }
 }

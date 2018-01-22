@@ -54,5 +54,11 @@ public interface HyperLogLog extends IdentifiedDataSerializable {
      */
     void addAll(long[] hashes);
 
+    /**
+     * Merge the two HyperLogLog structures in one. Estimations from both are taken into consideration
+     * and the unified estimate should be similar to the distinct union set of the two.
+     *
+     * @param other The second HLL to be merged into this one
+     */
     void merge(HyperLogLog other);
 }

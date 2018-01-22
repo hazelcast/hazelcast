@@ -162,7 +162,7 @@
                         </xs:element>
                         <xs:element name="cardinality-estimator" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
-                                <xs:sequence>
+                                <xs:all>
                                     <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -197,7 +197,7 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
-                                </xs:sequence>
+                                </xs:all>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default">
                                     <xs:annotation>
                                         <xs:documentation>

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cardinality.impl;
 
-import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLogMergePolicy;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.DenseHyperLogLogEncoder;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.cardinality.impl.hyperloglog.impl.SparseHyperLogLogEncoder;
@@ -50,7 +49,6 @@ public final class CardinalityEstimatorDataSerializerHook
     public static final int HLL_SPARSE_ENC = 7;
     public static final int MERGE = 8;
     public static final int SYNC_BACKUP = 9;
-    public static final int HLL_MERGE_POLICY = 10;
 
     @Override
     public int getFactoryId() {
@@ -81,8 +79,6 @@ public final class CardinalityEstimatorDataSerializerHook
                         return new SparseHyperLogLogEncoder();
                     case MERGE:
                         return new MergeOperation();
-                    case HLL_MERGE_POLICY:
-                        return new HyperLogLogMergePolicy();
                     case SYNC_BACKUP:
                         return new SyncBackupOperation();
                     default:

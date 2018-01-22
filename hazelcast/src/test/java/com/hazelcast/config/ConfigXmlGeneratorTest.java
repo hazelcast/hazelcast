@@ -545,7 +545,7 @@ public class ConfigXmlGeneratorTest {
                         .setAsyncBackupCount(3)
                         .setName("Existing")
                         .setQuorumName("quorum")
-                        .setMergePolicyConfig(new MergePolicyConfig("Policy has no name", 14));
+                        .setMergePolicyConfig(new MergePolicyConfig("DiscardMergePolicy", 14));
         cfg.addCardinalityEstimatorConfig(estimatorConfig);
 
         CardinalityEstimatorConfig defaultCardinalityEstConfig = new CardinalityEstimatorConfig();

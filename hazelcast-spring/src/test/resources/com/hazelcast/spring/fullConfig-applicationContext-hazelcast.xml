@@ -224,7 +224,7 @@
             <hz:cardinality-estimator name="estimator">
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
                 <hz:backup-count>4</hz:backup-count>
-                <hz:merge-policy batch-size="44">PassThroughMergePolicy</hz:merge-policy>
+                <hz:merge-policy batch-size="44">DiscardMergePolicy</hz:merge-policy>
 
             </hz:cardinality-estimator>
 

@@ -567,6 +567,7 @@ class ConfigCompatibilityChecker {
                     && c1.getBackupCount() == c2.getBackupCount()
                     && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
                     && c1.getAsyncBackupCount() == c2.getAsyncBackupCount()
+                    && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
         }
 

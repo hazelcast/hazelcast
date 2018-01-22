@@ -56,7 +56,7 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withNameAndBackupCounts_withMergePolicy() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig("TestMe", 1000);
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig("DiscardMergePolicy", 1000);
         config = new CardinalityEstimatorConfig("myEstimator", 2, 3, mergePolicyConfig);
 
         assertEquals("myEstimator", config.getName());

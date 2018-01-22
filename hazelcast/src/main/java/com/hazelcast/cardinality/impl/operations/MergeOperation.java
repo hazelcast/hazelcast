@@ -58,6 +58,11 @@ public class MergeOperation extends CardinalityEstimatorBackupAwareOperation {
     }
 
     @Override
+    public boolean shouldBackup() {
+        return backupValue != null;
+    }
+
+    @Override
     public Operation getBackupOperation() {
         return new SyncBackupOperation(name, backupValue);
     }
