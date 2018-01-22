@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheRecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,6 +26,9 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 public class CacheMergeOperation
         extends AbstractCacheOperation
@@ -46,7 +48,7 @@ public class CacheMergeOperation
 
     @Override
     public void run() throws Exception {
-        backupRecord = ((CacheRecordStore) cache).merge(mergingEntry, mergePolicy);
+        backupRecord = cache.merge(mergingEntry, mergePolicy, SOURCE_NOT_AVAILABLE, null, IGNORE_COMPLETION);
     }
 
     @Override

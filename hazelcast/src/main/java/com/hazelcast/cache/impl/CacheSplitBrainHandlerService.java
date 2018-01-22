@@ -40,6 +40,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -49,6 +50,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
     private final int partitionCount;
+    private final ILogger logger;
     private final NodeEngine nodeEngine;
     private final CacheService cacheService;
     private final Map<String, CacheConfig> configs;
@@ -68,6 +70,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
         this.cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
         this.serializationService = nodeEngine.getSerializationService();
         this.operationService = nodeEngine.getOperationService();
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -81,10 +84,13 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                 Iterator<ICacheRecordStore> iterator = segment.recordStoreIterator();
                 while (iterator.hasNext()) {
                     ICacheRecordStore cacheRecordStore = iterator.next();
-                    if (!(cacheRecordStore instanceof SplitBrainAwareCacheRecordStore)) {
+                    String cacheName = cacheRecordStore.getName();
+                    if (NATIVE.equals(cacheRecordStore.getConfig().getInMemoryFormat())) {
+                        logger.warning("Split-brain recovery can not be applied NATIVE "
+                                + "in-memory-formatted cache [" + cacheName + ']');
                         continue;
                     }
-                    String cacheName = cacheRecordStore.getName();
+
                     Map<Data, CacheRecord> records = recordMap.get(cacheName);
                     if (records == null) {
                         records = createHashMap(cacheRecordStore.size());
