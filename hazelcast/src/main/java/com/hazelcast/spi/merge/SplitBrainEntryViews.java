@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
@@ -81,6 +82,18 @@ public final class SplitBrainEntryViews {
                 .setLastAccessTime(container.getLastAccessTime())
                 .setLastUpdateTime(container.getLastUpdateTime())
                 .setHits(hits);
+    }
+
+    public static <R extends CacheRecord> SplitBrainMergeEntryView<Data, Data> createSplitBrainMergeEntryView(Data key,
+                                                                                                              Data value,
+                                                                                                              R record) {
+        return new SimpleSplitBrainEntryView<Data, Data>()
+                .setKey(key)
+                .setValue(value)
+                .setCreationTime(record.getCreationTime())
+                .setExpirationTime(record.getExpirationTime())
+                .setHits(record.getAccessHit())
+                .setLastAccessTime(record.getLastAccessTime());
     }
 
     public static SplitBrainMergeEntryView<String, HyperLogLog>

@@ -46,13 +46,10 @@ public abstract class AbstractCacheOperation
     protected Data key;
     protected Object response;
 
-    protected transient ICacheRecordStore cache;
-
-    protected transient CacheRecord backupRecord;
-
     protected transient ICacheService cacheService;
-
+    protected transient ICacheRecordStore cache;
     protected transient CacheWanEventPublisher wanEventPublisher;
+    protected transient CacheRecord backupRecord;
 
     protected AbstractCacheOperation() {
     }
@@ -68,8 +65,7 @@ public abstract class AbstractCacheOperation
     }
 
     @Override
-    public void beforeRun()
-            throws Exception {
+    public void beforeRun() throws Exception {
         cacheService = getService();
         cache = cacheService.getOrCreateRecordStore(name, getPartitionId());
         if (cache.isWanReplicationEnabled()) {
@@ -97,11 +93,11 @@ public abstract class AbstractCacheOperation
     @Override
     public void logError(Throwable e) {
         if (e instanceof CacheNotExistsException) {
-            // Since this exception can be thrown and will be retried, we don't want to log this exception under server,
-            // since it will cause a lot of noise.
+            // since this exception can be thrown and will be retried, we don't want to log this exception under server,
+            // to reduce the logging noise
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("failed to execute:" + this, e);
+                logger.finest("failed to execute: " + this, e);
             }
             return;
         }
@@ -119,15 +115,13 @@ public abstract class AbstractCacheOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeData(key);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         key = in.readData();
     }
@@ -137,7 +131,7 @@ public abstract class AbstractCacheOperation
         return CacheDataSerializerHook.F_ID;
     }
 
-    //region BackupawareOperation will use these
+    // region BackupAwareOperation will use these
     public final int getSyncBackupCount() {
         return cache != null ? cache.getConfig().getBackupCount() : 0;
     }
