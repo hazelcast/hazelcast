@@ -73,6 +73,11 @@ public class SetConfigReadOnly extends SetConfig {
     }
 
     @Override
+    public SetConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw new UnsupportedOperationException("This config is read-only set: " + getName());
+    }
+
+    @Override
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         throw new UnsupportedOperationException("This config is read-only set: " + getName());
     }

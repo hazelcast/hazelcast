@@ -386,6 +386,70 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void readListConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "      <list name=\"myList\">"
+                + "        <statistics-enabled>true</statistics-enabled>"
+                + "        <max-size>100</max-size>"
+                + "        <backup-count>1</backup-count>"
+                + "        <async-backup-count>0</async-backup-count>"
+                + "        <item-listeners>"
+                + "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>"
+                + "        </item-listeners>"
+                + "        <merge-policy batch-size=\"4223\">PassThroughMergePolicy</merge-policy>"
+                + "    </list>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        ListConfig listConfig = config.getListConfig("myList");
+
+        assertEquals("myList", listConfig.getName());
+        assertTrue(listConfig.isStatisticsEnabled());
+        assertEquals(100, listConfig.getMaxSize());
+        assertEquals(1, listConfig.getBackupCount());
+        assertEquals(0, listConfig.getAsyncBackupCount());
+        assertTrue(listConfig.getItemListenerConfigs().size() == 1);
+
+        ItemListenerConfig listenerConfig = listConfig.getItemListenerConfigs().iterator().next();
+        assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
+
+        MergePolicyConfig mergePolicyConfig = listConfig.getMergePolicyConfig();
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(4223, mergePolicyConfig.getBatchSize());
+    }
+
+    @Test
+    public void readSetConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "      <set name=\"mySet\">"
+                + "        <statistics-enabled>true</statistics-enabled>"
+                + "        <max-size>100</max-size>"
+                + "        <backup-count>1</backup-count>"
+                + "        <async-backup-count>0</async-backup-count>"
+                + "        <item-listeners>"
+                + "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>"
+                + "        </item-listeners>"
+                + "        <merge-policy batch-size=\"4223\">PassThroughMergePolicy</merge-policy>"
+                + "    </set>"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        SetConfig setConfig = config.getSetConfig("mySet");
+
+        assertEquals("mySet", setConfig.getName());
+        assertTrue(setConfig.isStatisticsEnabled());
+        assertEquals(100, setConfig.getMaxSize());
+        assertEquals(1, setConfig.getBackupCount());
+        assertEquals(0, setConfig.getAsyncBackupCount());
+        assertTrue(setConfig.getItemListenerConfigs().size() == 1);
+
+        ItemListenerConfig listenerConfig = setConfig.getItemListenerConfigs().iterator().next();
+        assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
+
+        MergePolicyConfig mergePolicyConfig = setConfig.getMergePolicyConfig();
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(4223, mergePolicyConfig.getBatchSize());
+    }
+
+    @Test
     public void readLockConfig() {
         String xml = HAZELCAST_START_TAG
                 + "  <lock name=\"default\">"

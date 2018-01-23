@@ -23,6 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -34,10 +37,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class CollectionContainer implements IdentifiedDataSerializable {
+public abstract class CollectionContainer
+        implements IdentifiedDataSerializable, SplitBrainAwareDataContainer<Long, Data, CollectionItem> {
 
     public static final int INVALID_ITEM_ID = -1;
 
@@ -62,6 +67,10 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     public void init(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
+    }
+
+    public String getName() {
+        return name;
     }
 
     public abstract CollectionConfig getConfig();
@@ -334,6 +343,39 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     protected abstract void onDestroy();
+
+    @Override
+    public CollectionItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
+
+        // try to find an existing item with the same value
+        CollectionItem existingItem = null;
+        for (CollectionItem item : getCollection()) {
+            if (mergingEntry.getValue().equals(item.getValue())) {
+                existingItem = item;
+                break;
+            }
+        }
+
+        CollectionItem mergedItem = null;
+        if (existingItem == null) {
+            Data newValue = mergePolicy.merge(mergingEntry, null);
+            if (newValue != null) {
+                CollectionItem item = new CollectionItem(nextId(), newValue);
+                if (getCollection().add(item)) {
+                    mergedItem = item;
+                }
+            }
+        } else {
+            SplitBrainMergeEntryView<Long, Data> existingEntry = createSplitBrainMergeEntryView(existingItem);
+            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            if (newValue != null && !newValue.equals(existingEntry.getValue())) {
+                existingItem.setValue(newValue);
+                mergedItem = existingItem;
+            }
+        }
+        return mergedItem;
+    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

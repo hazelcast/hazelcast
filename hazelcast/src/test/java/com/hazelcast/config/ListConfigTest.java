@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,7 +39,9 @@ public class ListConfigTest {
                       .withPrefabValues(ListConfigReadOnly.class,
                               new ListConfigReadOnly(new ListConfig("red")),
                               new ListConfigReadOnly(new ListConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
                       .verify();
     }
-
 }

@@ -487,6 +487,7 @@
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </list>
 
     <set name="default">
@@ -498,6 +499,7 @@
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </set>
 
     <topic name="default">

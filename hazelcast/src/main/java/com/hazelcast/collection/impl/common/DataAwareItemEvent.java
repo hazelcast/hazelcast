@@ -29,7 +29,7 @@ import java.io.ObjectOutputStream;
 /**
  * An {@link ItemEvent} that is able to store a {@link Data}.
  */
-public class DataAwareItemEvent extends ItemEvent {
+public class DataAwareItemEvent<E> extends ItemEvent<E> {
 
     private static final long serialVersionUID = 1;
 
@@ -44,7 +44,7 @@ public class DataAwareItemEvent extends ItemEvent {
     }
 
     @Override
-    public Object getItem() {
+    public E getItem() {
         if (item == null && dataItem != null) {
             item = serializationService.toObject(dataItem);
         }

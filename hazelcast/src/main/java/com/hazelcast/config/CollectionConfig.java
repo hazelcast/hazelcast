@@ -30,14 +30,14 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Provides configuration service for Collection.
  *
  * @param <T> Type of Collection such as List, Set
  */
-public abstract class CollectionConfig<T extends CollectionConfig>
-        implements IdentifiedDataSerializable, Versioned {
+public abstract class CollectionConfig<T extends CollectionConfig> implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default maximum size for the Configuration.
@@ -58,8 +58,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize = DEFAULT_MAX_SIZE;
     private boolean statisticsEnabled = true;
-
     private String quorumName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     protected CollectionConfig() {
     }
@@ -72,8 +72,8 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         this.maxSize = config.maxSize;
         this.statisticsEnabled = config.statisticsEnabled;
         this.quorumName = config.quorumName;
+        this.mergePolicyConfig = config.mergePolicyConfig;
     }
-
 
     public abstract T getAsReadOnly();
 
@@ -246,6 +246,25 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         return (T) this;
     }
 
+    /**
+     * Gets the {@link MergePolicyConfig} for the collection.
+     *
+     * @return the {@link MergePolicyConfig} for the collection
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for the collection.
+     *
+     * @return the current CollectionConfig
+     */
+    public T setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return (T) this;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -261,6 +280,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         out.writeBoolean(statisticsEnabled);
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
+            out.writeObject(mergePolicyConfig);
         }
     }
 
@@ -274,6 +294,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         statisticsEnabled = in.readBoolean();
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
+            mergePolicyConfig = in.readObject();
         }
     }
 
@@ -306,6 +327,9 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
+        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
+            return false;
+        }
         return getItemListenerConfigs().equals(that.getItemListenerConfigs());
     }
 
@@ -318,6 +342,7 @@ public abstract class CollectionConfig<T extends CollectionConfig>
         result = 31 * result + getMaxSize();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 
@@ -325,8 +350,13 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      * Returns field names with values as concatenated String so it can be used in child classes' toString() methods.
      */
     protected String fieldsToString() {
-        return "name='" + name + "', listenerConfigs=" + listenerConfigs + ", backupCount=" + backupCount
-                + ", asyncBackupCount=" + asyncBackupCount + ", maxSize=" + maxSize + ", statisticsEnabled=" + statisticsEnabled
-                + ", quorumName=" + quorumName;
+        return "name='" + name
+                + "', listenerConfigs=" + listenerConfigs
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", maxSize=" + maxSize
+                + ", statisticsEnabled=" + statisticsEnabled
+                + ", quorumName='" + quorumName + "'"
+                + ", mergePolicyConfig='" + mergePolicyConfig + "'";
     }
 }

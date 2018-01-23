@@ -493,6 +493,7 @@
                      async-backup-count="1"
                      statistics-enabled="false">
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
             </hz:list>
             <hz:set name="testSet"
                     max-size="7777"
@@ -500,6 +501,7 @@
                     async-backup-count="0"
                     statistics-enabled="false">
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
             </hz:set>
 
             <hz:topic name="testTopic">

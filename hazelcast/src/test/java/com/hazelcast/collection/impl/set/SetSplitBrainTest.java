@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.impl.list;
+package com.hazelcast.collection.impl.set;
 
 import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
+import com.hazelcast.core.ISet;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
@@ -37,16 +37,16 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Set;
 
-import static com.hazelcast.collection.impl.CollectionTestUtil.getBackupList;
+import static com.hazelcast.collection.impl.CollectionTestUtil.getBackupSet;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests different split-brain scenarios for {@link IList}.
+ * Tests different split-brain scenarios for {@link ISet}.
  * <p>
  * The {@link DiscardMergePolicy}, {@link PassThroughMergePolicy} and {@link PutIfAbsentMergePolicy} are also
  * tested with a data structure, which is only created in the smaller cluster.
@@ -56,7 +56,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ListSplitBrainTest extends SplitBrainTestSupport {
+public class SetSplitBrainTest extends SplitBrainTestSupport {
 
     private static final int INITIAL_COUNT = 10;
     private static final int NEW_ITEMS = 15;
@@ -74,13 +74,13 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     @Parameter
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
-    private String listNameA = randomMapName("listA-");
-    private String listNameB = randomMapName("listB-");
-    private IList<Object> listA1;
-    private IList<Object> listA2;
-    private IList<Object> listB1;
-    private IList<Object> listB2;
-    private List<Object> backupList;
+    private String setNameA = randomMapName("setA-");
+    private String setNameB = randomMapName("setB-");
+    private ISet<Object> setA1;
+    private ISet<Object> setA2;
+    private ISet<Object> setB1;
+    private ISet<Object> setB2;
+    private Set<Object> backupSet;
     private MergeLifecycleListener mergeLifecycleListener;
 
     @Override
@@ -90,32 +90,32 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
                 .setBatchSize(10);
 
         Config config = super.config();
-        config.getListConfig(listNameA)
+        config.getSetConfig(setNameA)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setMergePolicyConfig(mergePolicyConfig);
-        config.getListConfig(listNameB)
+        config.getSetConfig(setNameB)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 
+    @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        IList<Object> list = instances[0].getList(listNameA);
+        ISet<Object> set = instances[0].getSet(setNameA);
         for (int i = 0; i < INITIAL_COUNT; i++) {
-            list.add("item" + i);
+            set.add("item" + i);
         }
 
         waitAllForSafeState(instances);
 
-        int partitionId = ((AbstractCollectionProxyImpl) list).getPartitionId();
+        int partitionId = ((AbstractCollectionProxyImpl) set).getPartitionId();
         HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        List<Object> backupList = getBackupList(backupInstance, listNameA);
-
-        assertEquals("backupList should contain " + INITIAL_COUNT + " items", INITIAL_COUNT, backupList.size());
+        backupSet = getBackupSet(backupInstance, setNameA);
+        assertEquals("backupSet should contain " + INITIAL_COUNT + " items", INITIAL_COUNT, backupSet.size());
         for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("backupList should contain item" + i + " " + toString(backupList), backupList.contains("item" + i));
+            assertTrue("backupSet should contain item" + i + " " + toString(backupSet), backupSet.contains("item" + i));
         }
     }
 
@@ -126,12 +126,12 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
             instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
         }
 
-        listA1 = firstBrain[0].getList(listNameA);
-        listA2 = secondBrain[0].getList(listNameA);
+        setA1 = firstBrain[0].getSet(setNameA);
+        setA2 = secondBrain[0].getSet(setNameA);
 
-        listB2 = secondBrain[0].getList(listNameB);
+        setB2 = secondBrain[0].getSet(setNameB);
         for (int i = 0; i < INITIAL_COUNT; i++) {
-            listB2.add("item" + i);
+            setB2.add("item" + i);
         }
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
@@ -153,11 +153,11 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
         // wait until merge completes
         mergeLifecycleListener.await();
 
-        int partitionId = ((AbstractCollectionProxyImpl) listA1).getPartitionId();
+        int partitionId = ((AbstractCollectionProxyImpl) setA1).getPartitionId();
         HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        backupList = getBackupList(backupInstance, listNameA);
+        backupSet = getBackupSet(backupInstance, setNameA);
 
-        listB1 = instances[0].getList(listNameB);
+        setB1 = instances[0].getSet(setNameB);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterMergeDiscardMergePolicy();
@@ -174,105 +174,105 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterSplitDiscardMergePolicy() {
-        // we should have these items in the merged listA, since they are added in both clusters
+        // we should have these items in the merged setA, since they are added in both clusters
         for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
-            listA1.add("item" + i);
-            listA2.add("item" + i);
+            setA1.add("item" + i);
+            setA2.add("item" + i);
         }
 
-        // we should not have these items in the merged lists, since they are in the smaller cluster only
+        // we should not have these items in the merged sets, since they are in the smaller cluster only
         for (int i = 0; i < NEW_ITEMS; i++) {
-            listA2.add("lostItem" + i);
-            listB2.add("lostItem" + i);
+            setA2.add("lostItem" + i);
+            setB2.add("lostItem" + i);
         }
     }
 
     private void afterMergeDiscardMergePolicy() {
-        assertListContent(listA1, false);
-        assertListContent(listA2, false);
-        assertListContent(backupList, false);
+        assertSetContent(setA1, false);
+        assertSetContent(setA2, false);
+        assertSetContent(backupSet, false);
 
-        assertTrue(listB1.isEmpty());
-        assertTrue(listB2.isEmpty());
+        assertTrue(setB1.isEmpty());
+        assertTrue(setB2.isEmpty());
     }
 
     private void afterSplitPassThroughMergePolicy() {
         for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
-            listA1.add("item" + i);
+            setA1.add("item" + i);
         }
 
-        // we should not lose the additional items from listA2 or the new listB2
+        // we should not lose the additional items from setA2 or the new setB2
         for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
-            listA2.add("item" + i);
-            listB2.add("item" + i);
+            setA2.add("item" + i);
+            setB2.add("item" + i);
         }
     }
 
     private void afterMergePassThroughMergePolicy() {
-        assertListContent(listA1, true);
-        assertListContent(listA2, true);
-        assertListContent(backupList, true);
+        assertSetContent(setA1, true);
+        assertSetContent(setA2, true);
+        assertSetContent(backupSet, true);
 
-        assertListContent(listB1, true);
-        assertListContent(listB2, true);
+        assertSetContent(setB1, true);
+        assertSetContent(setB2, true);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
         for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
-            listA1.add("item" + i);
+            setA1.add("item" + i);
         }
 
-        // we should not lose the additional items from listA2 or the new listB2
+        // we should not lose the additional items from setA2 or the new setB2
         for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
-            listA2.add("item" + i);
-            listB2.add("item" + i);
+            setA2.add("item" + i);
+            setB2.add("item" + i);
         }
     }
 
     private void afterMergePutIfAbsentMergePolicy() {
-        assertListContent(listA1, true);
-        assertListContent(listA2, true);
-        assertListContent(backupList, true);
+        assertSetContent(setA1, true);
+        assertSetContent(setA2, true);
+        assertSetContent(backupSet, true);
 
-        assertListContent(listB1, true);
-        assertListContent(listB2, true);
+        assertSetContent(setB1, true);
+        assertSetContent(setB2, true);
     }
 
     private void afterSplitCustomMergePolicy() {
         for (int i = 0; i < NEW_ITEMS; i++) {
-            listA2.add(i);
-            listA2.add("lostItem" + i);
+            setA2.add(i);
+            setA2.add("lostItem" + i);
         }
     }
 
     private void afterMergeCustomMergePolicy() {
         int expectedSize = INITIAL_COUNT + NEW_ITEMS;
-        assertEquals("listA1 should contain " + expectedSize + " items", expectedSize, listA1.size());
-        assertEquals("listA2 should contain " + expectedSize + " items", expectedSize, listA2.size());
-        assertEquals("backupList should contain " + expectedSize + " items " + backupList, expectedSize, backupList.size());
+        assertEquals("set1 should contain " + expectedSize + " items", expectedSize, setA1.size());
+        assertEquals("set2 should contain " + expectedSize + " items", expectedSize, setA2.size());
+        assertEquals("backupSet should contain " + expectedSize + " items " + backupSet, expectedSize, backupSet.size());
 
         for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("listA1 should contain 'item" + i + "' " + toString(listA1), listA1.contains("item" + i));
-            assertTrue("listA2 should contain 'item" + i + "' " + toString(listA2), listA2.contains("item" + i));
-            assertTrue("backupList should contain 'item" + i + "' " + backupList, backupList.contains("item" + i));
+            assertTrue("setA1 should contain 'item" + i + "'", setA1.contains("item" + i));
+            assertTrue("setA2 should contain 'item" + i + "'", setA2.contains("item" + i));
+            assertTrue("backupSet should contain 'item" + i + "' " + backupSet, backupSet.contains("item" + i));
         }
         for (int i = 0; i < NEW_ITEMS; i++) {
-            assertTrue("listA1 should contain '" + i + "'", listA1.contains(i));
-            assertTrue("listA2 should contain '" + i + "'", listA2.contains(i));
-            assertTrue("backupList should contain '" + i + "'", backupList.contains(i));
+            assertTrue("setA1 should contain '" + i + "'", setA1.contains(i));
+            assertTrue("setA2 should contain '" + i + "'", setA2.contains(i));
+            assertTrue("backupSet should contain '" + i + "' " + backupSet, backupSet.contains(i));
 
-            assertFalse("listA1 should not contain 'lostItem" + i + "'", listA1.contains("lostItem" + i));
-            assertFalse("list2A should not contain 'lostItem" + i + "'", listA2.contains("lostItem" + i));
-            assertFalse("backupList should not contain 'lostItem" + i + "'", backupList.contains("lostItem" + i));
+            assertFalse("setA1 should not contain 'lostItem" + i + "'", setA1.contains("lostItem" + i));
+            assertFalse("setA2 should not contain 'lostItem" + i + "'", setA2.contains("lostItem" + i));
+            assertFalse("backupSet should not contain 'lostItem" + i + "'", backupSet.contains("lostItem" + i));
         }
     }
 
-    private static void assertListContent(List<Object> list, boolean hasMergedItems) {
+    private static void assertSetContent(Set<Object> set, boolean hasMergedItems) {
         int expectedSize = INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1);
-        assertEquals("list should contain " + expectedSize + " items " + toString(list), expectedSize, list.size());
+        assertEquals("set should contain " + expectedSize + " items " + toString(set), expectedSize, set.size());
 
         for (int i = 0; i < INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1); i++) {
-            assertTrue("list should contain item" + i + " " + toString(list), list.contains("item" + i));
+            assertTrue("set should contain item" + i + " " + toString(set), set.contains("item" + i));
         }
     }
 }
