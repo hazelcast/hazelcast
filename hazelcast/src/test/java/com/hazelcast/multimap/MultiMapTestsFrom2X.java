@@ -212,6 +212,14 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         map.put("Hello", "World");
         assertTrue(map.containsEntry("Hello", "World"));
     }
+    @Test
+    public void testMultiMapDelete() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        MultiMap<String, String> map = instance.getMultiMap("testMultiMapContainsEntry");
+        map.put("Hello", "World");
+        map.delete("Hello");
+        assertFalse(map.containsEntry("Hello", "World"));
+    }
 
     static class CustomSerializable implements Serializable {
         private long dummy1 = Clock.currentTimeMillis();

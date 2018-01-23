@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
  * @author oztalip
  * @see IMap
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface MultiMap<K, V>
         extends BaseMultiMap<K, V>, DistributedObject {
 
@@ -133,6 +134,18 @@ public interface MultiMap<K, V>
      */
     Collection<V> remove(Object key);
 
+    /**
+     *  Deletes all the entries with the given key.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in the <tt>key</tt>'s class.
+     *
+     * @param key the key of the entry to remove
+     */
+
+    void delete(Object key);
     /**
      * Returns the locally owned set of keys.
      * <p/>

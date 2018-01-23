@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.multimap.impl.operations.CountOperation;
 import com.hazelcast.multimap.impl.operations.GetAllOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
@@ -28,6 +29,7 @@ import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.multimap.impl.operations.PutOperation;
 import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.multimap.impl.operations.RemoveOperation;
+import com.hazelcast.multimap.impl.operations.DeleteOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.DistributedObjectNamespace;
@@ -95,6 +97,19 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    protected void deleteInternal(Data dataKey) {
+        if (getNodeEngine().getClusterService().getClusterVersion().isGreaterThan(Versions.V3_9)) {
+            try {
+                DeleteOperation operation = new DeleteOperation(name, dataKey, getThreadId());
+                invoke(operation, dataKey);
+            } catch (Throwable throwable) {
+                  throw ExceptionUtil.rethrow(throwable);
+            }
+        } else {
+            throw new UnsupportedOperationException("Delete not supported when cluster version less than 3.10");
         }
     }
 
@@ -251,7 +266,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                 if (operation instanceof PutOperation) {
                     // TODO: @ali should we remove statics from operations?
                     getService().getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(System.nanoTime() - startTimeNanos);
-                } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation) {
+                } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation
+                        || operation instanceof DeleteOperation) {
                     getService().getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(System.nanoTime() - startTimeNanos);
                 } else if (operation instanceof GetAllOperation) {
                     getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(System.nanoTime() - startTimeNanos);

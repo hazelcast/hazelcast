@@ -34,9 +34,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -64,6 +63,7 @@ public class ClientMultiMapTest {
 
         assertTrue(mm.put(key, 1));
     }
+
 
     @Test(expected = NullPointerException.class)
     public void testPut_withNullValue() {
@@ -219,6 +219,18 @@ public class ClientMultiMapTest {
             assertTrue(result);
         }
     }
+
+    @Test
+    public void testVoidDelete() {
+        String key = "key";
+        MultiMap mm = client.getMultiMap(randomString());
+        mm.put(key, 4);
+        assertTrue(!mm.get(key).isEmpty());
+        mm.delete(key);
+        assertTrue(mm.get(key).isEmpty());
+    }
+
+
 
     @Test(expected = UnsupportedOperationException.class)
     public void testLocalKeySet() {
