@@ -29,6 +29,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 
@@ -124,6 +125,17 @@ public final class SplitBrainEntryViews {
                 .setExpirationTime(record.getExpirationTime())
                 .setHits(record.getAccessHit())
                 .setLastAccessTime(record.getLastAccessTime());
+    }
+
+    public static SplitBrainMergeEntryView<Object, Object> createSplitBrainMergeEntryView(ReplicatedRecord record) {
+        return new SimpleSplitBrainEntryView<Object, Object>()
+                .setKey(record.getKeyInternal())
+                .setValue(record.getValueInternal())
+                .setCreationTime(record.getCreationTime())
+                .setHits(record.getHits())
+                .setLastAccessTime(record.getLastAccessTime())
+                .setLastUpdateTime(record.getUpdateTime())
+                .setTtl(record.getTtlMillis());
     }
 
     public static SplitBrainMergeEntryView<String, HyperLogLog>

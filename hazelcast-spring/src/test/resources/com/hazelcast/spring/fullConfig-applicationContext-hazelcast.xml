@@ -512,6 +512,7 @@
                     <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
                 </hz:message-listeners>
             </hz:topic>
+
             <hz:replicatedmap name="replicatedMap" replication-delay-millis="200" async-fillup="false"
                               concurrency-level="16" statistics-enabled="false" in-memory-format="OBJECT">
                 <hz:entry-listeners>
@@ -519,7 +520,9 @@
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
             </hz:replicatedmap>
+
             <hz:listeners>
                 <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
                 <hz:listener implementation="dummyMembershipListener"/>

@@ -25,6 +25,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -42,7 +43,6 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
     private String name;
     private ReplicatedMapEntries entries;
 
-    @SuppressWarnings("unused")
     public PutAllOperation() {
     }
 
@@ -80,11 +80,10 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
             if (address.equals(getNodeEngine().getThisAddress())) {
                 continue;
             }
-            ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, 0, response, false,
-                    getCallerAddress());
-            updateOperation.setPartitionId(getPartitionId());
-            updateOperation.setValidateTarget(false);
-            operationService.invokeOnTarget(getServiceName(), updateOperation, address);
+            Operation op = new ReplicateUpdateOperation(name, key, value, 0, response, false, getCallerAddress())
+                    .setPartitionId(getPartitionId())
+                    .setValidateTarget(false);
+            operationService.invokeOnTarget(getServiceName(), op, address);
         }
     }
 

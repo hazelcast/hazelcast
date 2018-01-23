@@ -20,6 +20,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
@@ -34,10 +35,11 @@ public abstract class AbstractReplicatedMapOperation extends AbstractNamedSerial
     protected Data key;
     protected Data value;
     protected long ttl;
+
     protected transient VersionResponsePair response;
 
-    protected void sendReplicationOperation(final boolean isRemove) {
-        final OperationService operationService = getNodeEngine().getOperationService();
+    protected void sendReplicationOperation(boolean isRemove) {
+        OperationService operationService = getNodeEngine().getOperationService();
         Collection<Address> members = getMemberAddresses();
         for (Address address : members) {
             invoke(isRemove, operationService, address, name, key, value, ttl, response);
@@ -60,25 +62,23 @@ public abstract class AbstractReplicatedMapOperation extends AbstractNamedSerial
 
     private void invoke(boolean isRemove, OperationService operationService, Address address, String name, Data key,
                         Data value, long ttl, VersionResponsePair response) {
-        ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, ttl, response,
-                isRemove, getCallerAddress());
-        updateOperation.setPartitionId(getPartitionId());
-        updateOperation.setValidateTarget(false);
+        Operation op = new ReplicateUpdateOperation(name, key, value, ttl, response, isRemove, getCallerAddress())
+                .setPartitionId(getPartitionId())
+                .setValidateTarget(false);
         operationService
-                .createInvocationBuilder(getServiceName(), updateOperation, address)
+                .createInvocationBuilder(getServiceName(), op, address)
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .invoke();
     }
 
     protected void sendUpdateCallerOperation(boolean isRemove) {
         OperationService operationService = getNodeEngine().getOperationService();
-        ReplicateUpdateToCallerOperation updateCallerOperation = new ReplicateUpdateToCallerOperation(name, getCallId(),
-                key, value, response, ttl, isRemove);
-        updateCallerOperation.setPartitionId(getPartitionId());
-        updateCallerOperation.setValidateTarget(false);
-        updateCallerOperation.setServiceName(getServiceName());
+        Operation op = new ReplicateUpdateToCallerOperation(name, getCallId(), key, value, response, ttl, isRemove)
+                .setPartitionId(getPartitionId())
+                .setValidateTarget(false)
+                .setServiceName(getServiceName());
         operationService
-                .createInvocationBuilder(getServiceName(), updateCallerOperation, getCallerAddress())
+                .createInvocationBuilder(getServiceName(), op, getCallerAddress())
                 .setTryCount(INVOCATION_TRY_COUNT)
                 .invoke();
     }

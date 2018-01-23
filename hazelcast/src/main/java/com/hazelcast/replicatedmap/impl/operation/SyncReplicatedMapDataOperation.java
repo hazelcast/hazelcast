@@ -50,15 +50,17 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run() throws Exception {
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
-            logger.fine("Syncing " + recordSet.size() + " records and version: " + version + " for map: " + name + " partitionId="
-                    + getPartitionId() + " from: " + getCallerAddress() + " to: " + getNodeEngine().getThisAddress());
+            logger.fine("Syncing " + recordSet.size() + " records (version " + version
+                    + ") for replicated map '" + name + "' (partitionId " + getPartitionId()
+                    + ") from " + getCallerAddress() + " to " + getNodeEngine().getThisAddress());
         }
         ReplicatedMapService service = getService();
-        AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) service
-                .getReplicatedRecordStore(name, true, getPartitionId());
+        AbstractReplicatedRecordStore store
+                = (AbstractReplicatedRecordStore) service.getReplicatedRecordStore(name, true, getPartitionId());
         InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<K, V>();
         for (RecordMigrationInfo record : recordSet) {
             K key = (K) store.marshall(record.getKey());

@@ -16,67 +16,62 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 
-public class ValuesOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
+/**
+ * Contains a merging entry for split-brain healing with with a {@link ReplicatedMapMergePolicy}.
+ */
+public class LegacyMergeOperation extends AbstractNamedSerializableOperation {
 
     private String name;
+    private Object key;
+    private ReplicatedMapEntryView entryView;
+    private ReplicatedMapMergePolicy policy;
 
-    private transient Object response;
-
-    public ValuesOperation() {
+    public LegacyMergeOperation() {
     }
 
-    public ValuesOperation(String name) {
+    public LegacyMergeOperation(String name, Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy) {
         this.name = name;
+        this.key = key;
+        this.entryView = entryView;
+        this.policy = policy;
     }
 
     @Override
     public void run() throws Exception {
         ReplicatedMapService service = getService();
-        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
-        Collection<ReplicatedRecord> values = new ArrayList<ReplicatedRecord>();
-        for (ReplicatedRecordStore store : stores) {
-            values.addAll(store.values(false));
-        }
-        Collection<Data> dataValues = new ArrayList<Data>(values.size());
-        SerializationService serializationService = getNodeEngine().getSerializationService();
-        for (ReplicatedRecord value : values) {
-            dataValues.add(serializationService.toData(value.getValue()));
-        }
-        response = new ReplicatedMapValueCollection(dataValues);
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
+        ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, key);
+        store.merge(key, entryView, policy);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        IOUtil.writeObject(out, key);
+        out.writeObject(entryView);
+        out.writeObject(policy);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        key = IOUtil.readObject(in);
+        entryView = in.readObject();
+        policy = in.readObject();
     }
 
     @Override
     public int getId() {
-        return ReplicatedMapDataSerializerHook.VALUES;
+        return ReplicatedMapDataSerializerHook.LEGACY_MERGE;
     }
 
     @Override

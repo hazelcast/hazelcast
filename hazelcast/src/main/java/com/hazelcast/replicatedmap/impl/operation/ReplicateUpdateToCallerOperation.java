@@ -33,8 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This operation will update the local record store with the update received from local/remote partition owner.
  */
-public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperation
-        implements PartitionAwareOperation {
+public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
 
     private String name;
     private long callId;
@@ -67,10 +66,9 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
         long updateVersion = response.getVersion();
         if (currentVersion >= updateVersion) {
             if (logger.isFineEnabled()) {
-                logger.fine("Rejecting stale update received for replicated map: " + name + "  partitionId="
-                        + getPartitionId() + " current version: " + currentVersion + " update version: " + updateVersion);
+                logger.fine("Rejecting stale update received for replicated map '" + name + "' (partitionId " + getPartitionId()
+                        + ") (current version " + currentVersion + ") (update version " + updateVersion + ")");
             }
-
             return;
         }
         Object key = store.marshall(dataKey);

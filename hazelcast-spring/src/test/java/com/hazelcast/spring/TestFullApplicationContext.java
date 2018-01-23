@@ -1041,11 +1041,17 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("replicatedMap");
         assertNotNull(replicatedMapConfig);
         assertEquals("replicatedMap", replicatedMapConfig.getName());
+        assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
         assertEquals(200, replicatedMapConfig.getReplicationDelayMillis());
         assertEquals(16, replicatedMapConfig.getConcurrencyLevel());
-        assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
-        assertFalse(replicatedMapConfig.isStatisticsEnabled());
         assertFalse(replicatedMapConfig.isAsyncFillup());
+        assertFalse(replicatedMapConfig.isStatisticsEnabled());
+        assertEquals("my-quorum", replicatedMapConfig.getQuorumName());
+
+        MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
+        assertNotNull(mergePolicyConfig);
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
 
         replicatedMapConfig.getListenerConfigs();
         for (ListenerConfig listener : replicatedMapConfig.getListenerConfigs()) {

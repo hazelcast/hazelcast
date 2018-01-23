@@ -1636,16 +1636,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testReplicatedMapConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <replicatedmap name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <in-memory-format>BINARY</in-memory-format>\n"
+                + "        <async-fillup>false</async-fillup>\n"
+                + "        <statistics-enabled>false</statistics-enabled>\n"
+                + "        <quorum-ref>CustomQuorumRule</quorum-ref>\n"
+                + "        <merge-policy batch-size=\"2342\">CustomMergePolicy</merge-policy>\n"
                 + "    </replicatedmap>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("foobar");
 
-        // TODO -> not full config checked
         assertFalse(config.getReplicatedMapConfigs().isEmpty());
-        assertEquals("customQuorumRule", replicatedMapConfig.getQuorumName());
+        assertEquals(InMemoryFormat.BINARY, replicatedMapConfig.getInMemoryFormat());
+        assertFalse(replicatedMapConfig.isAsyncFillup());
+        assertFalse(replicatedMapConfig.isStatisticsEnabled());
+        assertEquals("CustomQuorumRule", replicatedMapConfig.getQuorumName());
+
+        MergePolicyConfig mergePolicyConfig = replicatedMapConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test

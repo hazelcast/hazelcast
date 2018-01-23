@@ -47,7 +47,7 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int PUT = 6;
     public static final int REMOVE = 7;
     public static final int SIZE = 8;
-    public static final int MERGE = 9;
+    public static final int LEGACY_MERGE = 9;
     public static final int VERSION_RESPONSE_PAIR = 10;
     public static final int GET = 11;
     public static final int CHECK_REPLICA_VERSION = 12;
@@ -68,8 +68,10 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int LATEST_UPDATE_MERGE_POLICY = 27;
     public static final int PASS_THROUGH_MERGE_POLICY = 28;
     public static final int PUT_IF_ABSENT_MERGE_POLICY = 29;
+    public static final int MERGE_FACTORY = 30;
+    public static final int MERGE = 31;
 
-    private static final int LEN = PUT_IF_ABSENT_MERGE_POLICY + 1;
+    private static final int LEN = MERGE + 1;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -133,10 +135,10 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
                 return new SizeOperation();
             }
         };
-        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[LEGACY_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeOperation();
+                return new LegacyMergeOperation();
             }
         };
         constructors[VERSION_RESPONSE_PAIR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -257,6 +259,18 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return PutIfAbsentMapMergePolicy.INSTANCE;
+            }
+        };
+        constructors[MERGE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeOperationFactory();
+            }
+        };
+        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeOperation();
             }
         };
 

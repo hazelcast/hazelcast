@@ -32,7 +32,7 @@ class EntrySetIteratorFactory<K, V> implements IteratorFactory<K, V, Map.Entry<K
     }
 
     @Override
-    public Iterator<Map.Entry<K, V>> create(final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
+    public Iterator<Map.Entry<K, V>> create(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
         return new EntrySetIterator(iterator);
     }
 

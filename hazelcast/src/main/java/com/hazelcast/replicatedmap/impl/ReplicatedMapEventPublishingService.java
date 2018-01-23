@@ -57,11 +57,12 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  */
 public class ReplicatedMapEventPublishingService implements EventPublishingService {
 
+    private final HashMap<String, Boolean> statisticsMap = new HashMap<String, Boolean>();
+
     private final ReplicatedMapService replicatedMapService;
     private final NodeEngine nodeEngine;
     private final Config config;
     private final EventService eventService;
-    private final HashMap<String, Boolean> statisticsMap = new HashMap<String, Boolean>();
 
     public ReplicatedMapEventPublishingService(ReplicatedMapService replicatedMapService) {
         this.replicatedMapService = replicatedMapService;
@@ -122,7 +123,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
                     entryListener.mapCleared(mapEvent);
                     break;
                 default:
-                    throw new IllegalArgumentException("event type " + type + " not supported");
+                    throw new IllegalArgumentException("Unsupported EntryEventType " + type);
             }
         }
     }
@@ -148,8 +149,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
 
     public void fireMapClearedEvent(int deletedEntrySize, String name) {
         EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(
-                SERVICE_NAME, name);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (registrations.isEmpty()) {
             return;
         }
@@ -201,8 +201,8 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
             } else {
                 testValue = value;
             }
-            InternalSerializationService serializationService =
-                    (InternalSerializationService) nodeEngine.getSerializationService();
+            InternalSerializationService serializationService
+                    = (InternalSerializationService) nodeEngine.getSerializationService();
             queryEntry = new QueryEntry(serializationService, key, testValue, null);
         }
         return filter == null || filter.eval(queryEntry != null ? queryEntry : key);

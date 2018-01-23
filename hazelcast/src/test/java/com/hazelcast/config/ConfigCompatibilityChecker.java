@@ -510,10 +510,10 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
                     && nullSafeEqual(c1.getConcurrencyLevel(), c2.getConcurrencyLevel())
-                    && nullSafeEqual(c1.getMergePolicy(), c2.getMergePolicy())
-                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
                     && nullSafeEqual(c1.isAsyncFillup(), c2.isAsyncFillup())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
+                    && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && isCollectionCompatible(c1.getListenerConfigs(), c2.getListenerConfigs(), new ReplicatedMapListenerConfigChecker());
         }
 

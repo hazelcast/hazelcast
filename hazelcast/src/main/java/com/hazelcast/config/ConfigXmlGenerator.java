@@ -173,13 +173,15 @@ public class ConfigXmlGenerator {
     @SuppressWarnings("deprecation")
     private static void replicatedMapConfigXmlGenerator(XmlGenerator gen, Config config) {
         for (ReplicatedMapConfig r : config.getReplicatedMapConfigs().values()) {
+            MergePolicyConfig mergePolicyConfig = r.getMergePolicyConfig();
             gen.open("replicatedmap", "name", r.getName())
                     .node("in-memory-format", r.getInMemoryFormat())
                     .node("concurrency-level", r.getConcurrencyLevel())
                     .node("replication-delay-millis", r.getReplicationDelayMillis())
                     .node("async-fillup", r.isAsyncFillup())
+                    .node("statistics-enabled", r.isStatisticsEnabled())
                     .node("quorum-ref", r.getQuorumName())
-                    .node("statistics-enabled", r.isStatisticsEnabled());
+                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize());
 
             if (!r.getListenerConfigs().isEmpty()) {
                 gen.open("entry-listeners");

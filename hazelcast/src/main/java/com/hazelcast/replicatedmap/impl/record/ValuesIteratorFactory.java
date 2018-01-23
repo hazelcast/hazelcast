@@ -31,7 +31,7 @@ class ValuesIteratorFactory<K, V> implements IteratorFactory<K, V, V> {
     }
 
     @Override
-    public Iterator<V> create(final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
+    public Iterator<V> create(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
         return new ValuesIterator(iterator);
     }
 
