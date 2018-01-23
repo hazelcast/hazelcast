@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.MutatingOperation;
 
@@ -77,14 +78,14 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
     }
 
     private void replicateClearOperation(long version) {
-        final OperationService operationService = getNodeEngine().getOperationService();
+        OperationService operationService = getNodeEngine().getOperationService();
         Collection<Address> members = getMemberAddresses();
         for (Address address : members) {
-            ClearOperation clearOperation = new ClearOperation(mapName, false, version);
-            clearOperation.setPartitionId(getPartitionId());
-            clearOperation.setValidateTarget(false);
+            Operation op = new ClearOperation(mapName, false, version)
+                    .setPartitionId(getPartitionId())
+                    .setValidateTarget(false);
             operationService
-                    .createInvocationBuilder(getServiceName(), clearOperation, address)
+                    .createInvocationBuilder(getServiceName(), op, address)
                     .setTryCount(INVOCATION_TRY_COUNT)
                     .invoke();
         }

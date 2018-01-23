@@ -32,27 +32,21 @@ import java.util.concurrent.TimeUnit;
 /**
  * Replicates the update happened on the partition owner to the other nodes.
  */
-public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
-        implements PartitionAwareOperation {
+public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation implements PartitionAwareOperation {
 
-    VersionResponsePair response;
-    boolean isRemove;
-    String name;
-    Data dataKey;
-    Data dataValue;
-    long ttl;
-    Address origin;
+    private VersionResponsePair response;
+    private boolean isRemove;
+    private String name;
+    private Data dataKey;
+    private Data dataValue;
+    private long ttl;
+    private Address origin;
 
     public ReplicateUpdateOperation() {
     }
 
-    public ReplicateUpdateOperation(String name,
-                                    Data dataKey,
-                                    Data dataValue,
-                                    long ttl,
-                                    VersionResponsePair response,
-                                    boolean isRemove,
-                                    Address origin) {
+    public ReplicateUpdateOperation(String name, Data dataKey, Data dataValue, long ttl, VersionResponsePair response,
+                                    boolean isRemove, Address origin) {
         this.name = name;
         this.dataKey = dataKey;
         this.dataValue = dataValue;
@@ -71,8 +65,8 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
         if (currentVersion >= updateVersion) {
             ILogger logger = getLogger();
             if (logger.isFineEnabled()) {
-                logger.fine("Rejecting stale update received for replicated map: " + name + "  partitionId="
-                        + getPartitionId() + " current version: " + currentVersion + " update version: " + updateVersion);
+                logger.fine("Rejecting stale update received for replicated map '" + name + "' (partitionId " + getPartitionId()
+                        + ") (current version " + currentVersion + ") (update version " + updateVersion + ")");
             }
             return;
         }

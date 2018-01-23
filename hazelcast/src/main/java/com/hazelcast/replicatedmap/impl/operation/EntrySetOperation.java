@@ -36,6 +36,7 @@ import java.util.Map;
 public class EntrySetOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
+
     private transient Object response;
 
     public EntrySetOperation() {

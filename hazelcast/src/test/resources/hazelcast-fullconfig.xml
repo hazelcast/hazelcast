@@ -477,10 +477,11 @@
         <replication-delay-millis>12</replication-delay-millis>
         <async-fillup>false</async-fillup>
         <statistics-enabled>false</statistics-enabled>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <entry-listeners>
             <entry-listener include-value="false" local="true">DummyListener</entry-listener>
         </entry-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </replicatedmap>
 
     <list name="default">

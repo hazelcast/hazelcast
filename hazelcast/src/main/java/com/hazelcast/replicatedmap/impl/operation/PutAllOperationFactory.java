@@ -33,7 +33,6 @@ public class PutAllOperationFactory implements OperationFactory {
     private String name;
     private ReplicatedMapEntries entries;
 
-    @SuppressWarnings("unused")
     public PutAllOperationFactory() {
     }
 
@@ -44,9 +43,8 @@ public class PutAllOperationFactory implements OperationFactory {
 
     @Override
     public Operation createOperation() {
-        PutAllOperation putAllOperation = new PutAllOperation(name, entries);
-        putAllOperation.setServiceName(ReplicatedMapService.SERVICE_NAME);
-        return putAllOperation;
+        return new PutAllOperation(name, entries)
+                .setServiceName(ReplicatedMapService.SERVICE_NAME);
     }
 
     @Override

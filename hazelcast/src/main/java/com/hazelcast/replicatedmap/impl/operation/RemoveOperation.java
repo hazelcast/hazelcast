@@ -49,7 +49,7 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
         service = getService();
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, getPartitionId());
         Object removed = store.remove(key);
-        this.oldValue = getNodeEngine().toData(removed);
+        oldValue = getNodeEngine().toData(removed);
         response = new VersionResponsePair(removed, store.getVersion());
         Address thisAddress = getNodeEngine().getThisAddress();
         if (!getCallerAddress().equals(thisAddress)) {

@@ -28,6 +28,7 @@ import java.util.Collection;
 public class IsEmptyOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
+
     private transient boolean response;
 
     public IsEmptyOperation() {

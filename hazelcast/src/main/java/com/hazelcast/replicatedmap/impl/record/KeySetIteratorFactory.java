@@ -31,7 +31,7 @@ class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
     }
 
     @Override
-    public Iterator<K> create(final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
+    public Iterator<K> create(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
         return new KeySetIterator(iterator);
     }
 

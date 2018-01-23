@@ -237,6 +237,13 @@
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </multimap>
 
+    <replicatedmap name="default">
+        <in-memory-format>OBJECT</in-memory-format>
+        <async-fillup>true</async-fillup>
+        <statistics-enabled>true</statistics-enabled>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </replicatedmap>
+
     <list name="default">
         <backup-count>1</backup-count>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>

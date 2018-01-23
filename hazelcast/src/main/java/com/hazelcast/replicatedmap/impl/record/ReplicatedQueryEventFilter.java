@@ -35,8 +35,8 @@ public class ReplicatedQueryEventFilter extends ReplicatedEntryEventFilter {
     }
 
     public boolean eval(Object arg) {
-        final QueryableEntry entry = (QueryableEntry) arg;
-        final Data keyData = entry.getKeyData();
+        QueryableEntry entry = (QueryableEntry) arg;
+        Data keyData = entry.getKeyData();
         return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
     }
 }

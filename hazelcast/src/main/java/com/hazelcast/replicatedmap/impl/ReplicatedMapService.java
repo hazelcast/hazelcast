@@ -55,6 +55,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
@@ -131,7 +132,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public void init(final NodeEngine nodeEngine, Properties properties) {
+    public void init(NodeEngine nodeEngine, Properties properties) {
         if (config.isLiteMember()) {
             return;
         }
@@ -360,9 +361,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             return null;
         }
 
-        final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        final ReplicationOperation operation = new ReplicationOperation(nodeEngine.getSerializationService(),
-                container, event.getPartitionId());
+        PartitionContainer container = partitionContainers[event.getPartitionId()];
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        ReplicationOperation operation = new ReplicationOperation(serializationService, container, event.getPartitionId());
         operation.setService(this);
         return operation.isEmpty() ? null : operation;
     }
