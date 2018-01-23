@@ -128,9 +128,9 @@ public final class SortingUtil {
         };
     }
 
-    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate) {
-        return new Comparator<Map.Entry>() {
-            public int compare(Map.Entry entry1, Map.Entry entry2) {
+    private static Comparator<QueryableEntry> newComparator(final PagingPredicate pagingPredicate) {
+        return new Comparator<QueryableEntry>() {
+            public int compare(QueryableEntry entry1, QueryableEntry entry2) {
                 return SortingUtil.compare(pagingPredicate.getComparator(),
                         pagingPredicate.getIterationType(), entry1, entry2);
             }
@@ -142,7 +142,7 @@ public final class SortingUtil {
         if (pagingPredicate == null || list.isEmpty()) {
             return list;
         }
-        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate);
+        Comparator<QueryableEntry> comparator = newComparator(pagingPredicate);
         Collections.sort(list, comparator);
         int nearestPage = nearestAnchorEntry.getKey();
         int pageSize = pagingPredicate.getPageSize();

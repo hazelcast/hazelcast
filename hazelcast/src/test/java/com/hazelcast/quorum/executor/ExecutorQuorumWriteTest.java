@@ -456,7 +456,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     @Test
     public void invokeAll_timeout_quorum_short_timeout() throws Exception {
-        List<Future<?>> futures = exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
+        List<? extends Future<?>> futures = exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
 
         // 10s is relatively short timeout -> there is some chance the task will be cancelled before it
         // had a chance to be executed. especially in slow environments -> we have to tolerate the CancellationException
@@ -531,7 +531,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         return exec(index, quorumType, postfix);
     }
 
-    private void wait(Map<Member, Future<?>> futures) throws Exception {
+    private void wait(Map<Member, ? extends Future<?>> futures) throws Exception {
         for (Future f : futures.values()) {
             f.get();
         }
@@ -555,12 +555,12 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         }
     }
 
-    private void expectQuorumException(Collection<Future<?>> futures) {
+    private void expectQuorumException(Collection<? extends Future<?>> futures) {
         assertAllowedException(futures, QuorumException.class);
     }
 
-    private void assertAllowedException(Collection<Future<?>> futures, Class<?> allowedException) {
-        for (Future f : futures) {
+    private void assertAllowedException(Collection<? extends Future<?>> futures, Class<?> allowedException) {
+        for (Future<?> f : futures) {
             try {
                 f.get();
             } catch (Exception e) {
@@ -581,8 +581,8 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         }
     }
 
-    private void wait(Collection<Future<?>> futures) throws ExecutionException, InterruptedException {
-        for (Future f : futures) {
+    private void wait(Collection<? extends Future<?>> futures) throws ExecutionException, InterruptedException {
+        for (Future<?> f : futures) {
             f.get();
         }
     }
@@ -698,4 +698,5 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
             return new MultiCallback();
         }
     }
+
 }
