@@ -57,6 +57,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ObjectMultiMapProxy<K, V>
         extends MultiMapProxySupport
         implements MultiMap<K, V>, InitializingObject {
@@ -137,6 +138,13 @@ public class ObjectMultiMapProxy<K, V>
         Data dataKey = nodeEngine.toData(key);
         MultiMapResponse result = removeInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
+    }
+
+    public void delete(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        NodeEngine nodeEngine = getNodeEngine();
+        Data dataKey = nodeEngine.toData(key);
+        deleteInternal(dataKey);
     }
 
     @Override

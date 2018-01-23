@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsEntryCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapDeleteCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
@@ -147,6 +148,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage response = invoke(request, keyData);
         MultiMapRemoveCodec.ResponseParameters resultParameters = MultiMapRemoveCodec.decodeResponse(response);
         return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+    }
+
+    public void delete(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        Data keyData = toData(key);
+        ClientMessage request = MultiMapDeleteCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
+        invoke(request, keyData);
     }
 
     @Override
