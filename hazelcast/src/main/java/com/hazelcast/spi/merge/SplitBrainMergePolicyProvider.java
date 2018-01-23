@@ -62,7 +62,6 @@ public final class SplitBrainMergePolicyProvider {
             try {
                 return newInstance(nodeEngine.getConfigClassLoader(), className);
             } catch (Exception e) {
-                nodeEngine.getLogger(getClass()).severe(e);
                 throw new InvalidConfigurationException("Invalid SplitBrainMergePolicy: " + className, e);
             }
         }
