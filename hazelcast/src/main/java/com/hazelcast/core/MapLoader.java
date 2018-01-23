@@ -72,6 +72,9 @@ public interface MapLoader<K, V> {
      *
      * The given collection should not contain any <code>null</code> keys.
      * The returned Map should not contain any <code>null</code> keys or values.
+     * <p>
+     * Loading other items than what provided in <code>keys</code>
+     * prevents the map from being filled from the map store.
      *
      * @param keys keys of the values entries to load
      * @return map of loaded key-value pairs.
