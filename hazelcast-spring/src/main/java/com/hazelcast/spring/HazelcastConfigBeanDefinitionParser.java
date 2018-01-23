@@ -37,6 +37,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -125,6 +126,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
 import static org.springframework.util.Assert.isTrue;
 
 /**
@@ -480,6 +483,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleReuseAddress(child, networkConfigBuilder);
                 } else if ("member-address-provider".equals(nodeName)) {
                     handleMemberAddressProvider(child, networkConfigBuilder);
+                } else if ("failure-detector".equals(nodeName)) {
+                    handleFailureDetector(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
@@ -578,6 +583,51 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             networkConfigBuilder.addPropertyValue("memberAddressProviderConfig",
                     memberAddressProviderConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleFailureDetector(Node node, BeanDefinitionBuilder networkConfigBuilder) {
+            if (!node.hasChildNodes()) {
+                return;
+            }
+
+            for (Node child : childElements(node)) {
+                // icmp only
+                if (!cleanNodeName(child).equals("icmp")) {
+                    throw new IllegalStateException("Unsupported child under Failure-Detector");
+                }
+
+                Node enabledNode = child.getAttributes().getNamedItem("enabled");
+                boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+                BeanDefinitionBuilder icmpFailureDetectorConfigBuilder = createBeanBuilder(IcmpFailureDetectorConfig.class);
+
+                icmpFailureDetectorConfigBuilder.addPropertyValue("enabled", enabled);
+                for (Node n : childElements(child)) {
+                    String nodeName = cleanNodeName(n);
+
+                    if (nodeName.equals("ttl")) {
+                        int ttl = parseInt(getTextContent(n));
+                        icmpFailureDetectorConfigBuilder.addPropertyValue("ttl", ttl);
+                    } else if (nodeName.equals("timeout-milliseconds")) {
+                        int timeout = parseInt(getTextContent(n));
+                        icmpFailureDetectorConfigBuilder.addPropertyValue("timeoutMilliseconds", timeout);
+                    } else if (nodeName.equals("parallel-mode")) {
+                        boolean mode = parseBoolean(getTextContent(n));
+                        icmpFailureDetectorConfigBuilder.addPropertyValue("parallelMode", mode);
+                    } else if (nodeName.equals("fail-fast-on-startup")) {
+                        boolean failOnStartup = parseBoolean(getTextContent(n));
+                        icmpFailureDetectorConfigBuilder.addPropertyValue("failFastOnStartup", failOnStartup);
+                    } else if (nodeName.equals("max-attempts")) {
+                        int attempts = parseInt(getTextContent(n));
+                        icmpFailureDetectorConfigBuilder.addPropertyValue("maxAttempts", attempts);
+                    } else if (nodeName.equals("interval-milliseconds")) {
+                        int interval = parseInt(getTextContent(n));
+                        icmpFailureDetectorConfigBuilder.addPropertyValue("intervalMilliseconds", interval);
+                    }
+                }
+
+                networkConfigBuilder.addPropertyValue("icmpFailureDetectorConfig",
+                        icmpFailureDetectorConfigBuilder.getBeanDefinition());
+            }
         }
 
         private void handleSSLConfig(Node node, BeanDefinitionBuilder networkConfigBuilder) {

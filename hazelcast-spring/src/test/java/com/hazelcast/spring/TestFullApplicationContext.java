@@ -31,10 +31,12 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
@@ -60,7 +62,6 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -105,6 +106,7 @@ import com.hazelcast.core.QueueStoreFactory;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -112,7 +114,6 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -717,6 +718,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(memberAddressProviderConfig.getProperties().isEmpty());
         assertEquals("value", memberAddressProviderConfig.getProperties().getProperty("dummy.property"));
         assertEquals("value2", memberAddressProviderConfig.getProperties().getProperty("dummy.property.2"));
+
+        IcmpFailureDetectorConfig icmpFailureDetectorConfig = networkConfig.getIcmpFailureDetectorConfig();
+        assertFalse(icmpFailureDetectorConfig.isEnabled());
+        assertTrue(icmpFailureDetectorConfig.isParallelMode());
+        assertTrue(icmpFailureDetectorConfig.isFailFastOnStartup());
+        assertEquals(500, icmpFailureDetectorConfig.getTimeoutMilliseconds());
+        assertEquals(1002, icmpFailureDetectorConfig.getIntervalMilliseconds());
+        assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
+        assertEquals(1, icmpFailureDetectorConfig.getTtl());
     }
 
     private void assertAwsConfig(AwsConfig aws) {

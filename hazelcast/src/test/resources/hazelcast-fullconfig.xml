@@ -202,6 +202,16 @@
                 <property name="foo">bar</property>
             </properties>
         </member-address-provider>
+        <failure-detector>
+            <icmp enabled="false">
+                <timeout-milliseconds>1000</timeout-milliseconds>
+                <fail-fast-on-startup>true</fail-fast-on-startup>
+                <interval-milliseconds>1000</interval-milliseconds>
+                <max-attempts>2</max-attempts>
+                <parallel-mode>true</parallel-mode>
+                <ttl>255</ttl>
+            </icmp>
+        </failure-detector>
     </network>
     <partition-group enabled="true" group-type="CUSTOM">
         <member-group>

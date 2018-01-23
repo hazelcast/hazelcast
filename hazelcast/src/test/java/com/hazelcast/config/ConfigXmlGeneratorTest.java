@@ -92,6 +92,31 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testFailureDetectorConfigGenerator() {
+        Config cfg = new Config();
+        IcmpFailureDetectorConfig expected = new IcmpFailureDetectorConfig();
+        expected.setEnabled(true)
+                .setIntervalMilliseconds(1001)
+                .setTimeoutMilliseconds(1002)
+                .setMaxAttempts(4)
+                .setTtl(300)
+                .setParallelMode(false) // Defaults to false
+                .setFailFastOnStartup(false); // Defaults to false
+
+        cfg.getNetworkConfig().setIcmpFailureDetectorConfig(expected);
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getIcmpFailureDetectorConfig();
+
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+        assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());
+        assertEquals(expected.getTimeoutMilliseconds(), actual.getTimeoutMilliseconds());
+        assertEquals(expected.getTtl(), actual.getTtl());
+        assertEquals(expected.getMaxAttempts(), actual.getMaxAttempts());
+        assertEquals(expected.isFailFastOnStartup(), actual.isFailFastOnStartup());
+        assertEquals(expected.isParallelMode(), actual.isParallelMode());
+    }
+    @Test
     public void testManagementCenterConfigGenerator() {
         ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
                 .setEnabled(true)

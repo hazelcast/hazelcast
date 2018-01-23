@@ -628,6 +628,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleSocketInterceptorConfig(child);
             } else if ("member-address-provider".equals(nodeName)) {
                 handleMemberAddressProvider(child);
+            } else if ("failure-detector".equals(nodeName)) {
+                handleFailureDetector(child);
             }
         }
     }
@@ -1882,6 +1884,49 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if (nodeName.equals("properties")) {
                 fillProperties(n, memberAddressProviderConfig.getProperties());
             }
+        }
+    }
+
+    private void handleFailureDetector(Node node) {
+        if (!node.hasChildNodes()) {
+            return;
+        }
+
+        for (Node child : childElements(node)) {
+            // icmp only
+            if (!cleanNodeName(child).equals("icmp")) {
+                throw new IllegalStateException("Unsupported child under failure-detector");
+            }
+
+            Node enabledNode = child.getAttributes().getNamedItem("enabled");
+            boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+            IcmpFailureDetectorConfig icmpFailureDetectorConfig = new IcmpFailureDetectorConfig();
+
+            icmpFailureDetectorConfig.setEnabled(enabled);
+            for (Node n : childElements(child)) {
+                String nodeName = cleanNodeName(n);
+
+                if (nodeName.equals("ttl")) {
+                    int ttl = parseInt(getTextContent(n));
+                    icmpFailureDetectorConfig.setTtl(ttl);
+                } else if (nodeName.equals("timeout-milliseconds")) {
+                    int timeout = parseInt(getTextContent(n));
+                    icmpFailureDetectorConfig.setTimeoutMilliseconds(timeout);
+                } else if (nodeName.equals("parallel-mode")) {
+                    boolean mode = parseBoolean(getTextContent(n));
+                    icmpFailureDetectorConfig.setParallelMode(mode);
+                } else if (nodeName.equals("fail-fast-on-startup")) {
+                    boolean failOnStartup = parseBoolean(getTextContent(n));
+                    icmpFailureDetectorConfig.setFailFastOnStartup(failOnStartup);
+                } else if (nodeName.equals("max-attempts")) {
+                    int attempts = parseInt(getTextContent(n));
+                    icmpFailureDetectorConfig.setMaxAttempts(attempts);
+                } else if (nodeName.equals("interval-milliseconds")) {
+                    int interval = parseInt(getTextContent(n));
+                    icmpFailureDetectorConfig.setIntervalMilliseconds(interval);
+                }
+            }
+            config.getNetworkConfig().setIcmpFailureDetectorConfig(icmpFailureDetectorConfig);
         }
     }
 

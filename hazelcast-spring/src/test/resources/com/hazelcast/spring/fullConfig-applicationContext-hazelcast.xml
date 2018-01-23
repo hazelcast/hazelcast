@@ -187,6 +187,16 @@
                         <hz:property name="dummy.property.2">value2</hz:property>
                     </hz:properties>
                 </hz:member-address-provider>
+                <hz:failure-detector>
+                    <hz:icmp enabled="false">
+                        <hz:fail-fast-on-startup>true</hz:fail-fast-on-startup>
+                        <hz:interval-milliseconds>1002</hz:interval-milliseconds>
+                        <hz:max-attempts>2</hz:max-attempts>
+                        <hz:parallel-mode>true</hz:parallel-mode>
+                        <hz:timeout-milliseconds>500</hz:timeout-milliseconds>
+                        <hz:ttl>1</hz:ttl>
+                    </hz:icmp>
+                </hz:failure-detector>
             </hz:network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>
