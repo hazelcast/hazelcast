@@ -3,22 +3,22 @@ package com.hazelcast.raft.impl.service.operation.metadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 import com.hazelcast.raft.impl.service.RaftMetadataManager;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 
 import java.io.IOException;
 
-public class TriggerRemoveEndpointOp extends RaftOperation implements IdentifiedDataSerializable {
+public class TriggerRemoveEndpointOp extends RaftOp implements IdentifiedDataSerializable {
 
-    private RaftEndpoint endpoint;
+    private RaftEndpointImpl endpoint;
 
     public TriggerRemoveEndpointOp() {
     }
 
-    public TriggerRemoveEndpointOp(RaftEndpoint endpoint) {
+    public TriggerRemoveEndpointOp(RaftEndpointImpl endpoint) {
         this.endpoint = endpoint;
     }
 

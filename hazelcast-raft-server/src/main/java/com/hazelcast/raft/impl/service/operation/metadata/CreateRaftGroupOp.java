@@ -4,8 +4,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.service.RaftMetadataManager;
-import com.hazelcast.raft.operation.RaftOperation;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftOp;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
 
@@ -17,18 +17,16 @@ import java.util.Collection;
  * TODO: Javadoc Pending...
  *
  */
-public class CreateRaftGroupOp extends RaftOperation implements IdentifiedDataSerializable {
+public class CreateRaftGroupOp extends RaftOp implements IdentifiedDataSerializable {
 
-    private String serviceName;
-    private String name;
-    private Collection<RaftEndpoint> endpoints;
+    private String groupName;
+    private Collection<RaftEndpointImpl> endpoints;
 
     public CreateRaftGroupOp() {
     }
 
-    public CreateRaftGroupOp(String serviceName, String name, Collection<RaftEndpoint> endpoints) {
-        this.serviceName = serviceName;
-        this.name = name;
+    public CreateRaftGroupOp(String groupName, Collection<RaftEndpointImpl> endpoints) {
+        this.groupName = groupName;
         this.endpoints = endpoints;
     }
 
@@ -36,7 +34,7 @@ public class CreateRaftGroupOp extends RaftOperation implements IdentifiedDataSe
     public Object doRun(long commitIndex) {
         RaftService service = getService();
         RaftMetadataManager metadataManager = service.getMetadataManager();
-        return metadataManager.createRaftGroup(serviceName, name, endpoints, commitIndex);
+        return metadataManager.createRaftGroup(groupName, endpoints, commitIndex);
     }
 
     @Override
@@ -47,10 +45,9 @@ public class CreateRaftGroupOp extends RaftOperation implements IdentifiedDataSe
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(serviceName);
-        out.writeUTF(name);
+        out.writeUTF(groupName);
         out.writeInt(endpoints.size());
-        for (RaftEndpoint endpoint : endpoints) {
+        for (RaftEndpointImpl endpoint : endpoints) {
             out.writeObject(endpoint);
         }
     }
@@ -58,12 +55,11 @@ public class CreateRaftGroupOp extends RaftOperation implements IdentifiedDataSe
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        serviceName = in.readUTF();
-        name = in.readUTF();
+        groupName = in.readUTF();
         int len = in.readInt();
-        endpoints = new ArrayList<RaftEndpoint>(len);
+        endpoints = new ArrayList<RaftEndpointImpl>(len);
         for (int i = 0; i < len; i++) {
-            RaftEndpoint endpoint = in.readObject();
+            RaftEndpointImpl endpoint = in.readObject();
             endpoints.add(endpoint);
         }
     }

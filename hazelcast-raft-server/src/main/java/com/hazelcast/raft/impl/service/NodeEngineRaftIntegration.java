@@ -2,8 +2,11 @@ package com.hazelcast.raft.impl.service;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.raft.RaftGroupId;
+import com.hazelcast.raft.SnapshotAwareService;
 import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 import com.hazelcast.raft.impl.RaftIntegration;
+import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
@@ -20,9 +23,9 @@ import com.hazelcast.raft.impl.service.operation.integration.PreVoteRequestOp;
 import com.hazelcast.raft.impl.service.operation.integration.PreVoteResponseOp;
 import com.hazelcast.raft.impl.service.operation.integration.VoteRequestOp;
 import com.hazelcast.raft.impl.service.operation.integration.VoteResponseOp;
+import com.hazelcast.raft.impl.service.operation.snapshot.RestoreSnapshotOp;
 import com.hazelcast.raft.impl.util.PartitionSpecificRunnableAdaptor;
 import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
-import com.hazelcast.raft.operation.RaftOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.TaskScheduler;
@@ -31,7 +34,10 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -100,7 +106,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     @Override
     public boolean isReachable(RaftEndpoint endpoint) {
-        return nodeEngine.getClusterService().getMember(endpoint.getAddress()) != null;
+        return nodeEngine.getClusterService().getMember(((RaftEndpointImpl) endpoint).getAddress()) != null;
     }
 
     @Override
@@ -144,7 +150,8 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public Object runOperation(RaftOperation operation, long commitIndex) {
+    public Object runOperation(Object op, long commitIndex) {
+        RaftOp operation = (RaftOp) op;
         operation.setCommitIndex(commitIndex).setNodeEngine(nodeEngine);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         try {
@@ -157,7 +164,37 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
         }
     }
 
+    @Override
+    public Object takeSnapshot(long commitIndex) {
+        try {
+            List<RestoreSnapshotOp> snapshotOps = new ArrayList<RestoreSnapshotOp>();
+            for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(SnapshotAwareService.class)) {
+                SnapshotAwareService service = serviceInfo.getService();
+                Object snapshot = service.takeSnapshot(raftGroupId, commitIndex);
+                if (snapshot != null) {
+                    snapshotOps.add(new RestoreSnapshotOp(serviceInfo.getName(), raftGroupId, commitIndex, snapshot));
+                }
+            }
+
+            return snapshotOps;
+        } catch (Throwable t) {
+            return t;
+        }
+    }
+
+    @Override
+    public void restoreSnapshot(Object op, long commitIndex) {
+        ILogger logger = nodeEngine.getLogger(this.getClass());
+        List<RestoreSnapshotOp> snapshotOps = (List<RestoreSnapshotOp>) op;
+        for (RestoreSnapshotOp snapshotOp : snapshotOps) {
+            Object result = runOperation(snapshotOp, commitIndex);
+            if (result instanceof Throwable) {
+                logger.severe("Restore of " + snapshotOp + " failed...", (Throwable) result);
+            }
+        }
+    }
+
     private boolean send(Operation operation, RaftEndpoint target) {
-        return nodeEngine.getOperationService().send(operation.setPartitionId(partitionId), target.getAddress());
+        return nodeEngine.getOperationService().send(operation.setPartitionId(partitionId), ((RaftEndpointImpl) target).getAddress());
     }
 }

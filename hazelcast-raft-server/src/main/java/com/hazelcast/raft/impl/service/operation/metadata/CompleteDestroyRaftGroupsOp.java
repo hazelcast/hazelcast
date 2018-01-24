@@ -4,7 +4,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.service.RaftMetadataManager;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CompleteDestroyRaftGroupsOp extends RaftOperation implements IdentifiedDataSerializable {
+public class CompleteDestroyRaftGroupsOp extends RaftOp implements IdentifiedDataSerializable {
 
     private Set<RaftGroupId> groupIds;
 

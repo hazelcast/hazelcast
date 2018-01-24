@@ -21,7 +21,7 @@ public class LeaderState {
 
     private final Map<RaftEndpoint, Long> matchIndices = new HashMap<RaftEndpoint, Long>();
 
-    public LeaderState(Collection<RaftEndpoint> remoteMembers, long lastLogIndex) {
+    LeaderState(Collection<RaftEndpoint> remoteMembers, long lastLogIndex) {
         for (RaftEndpoint follower : remoteMembers) {
             nextIndices.put(follower, lastLogIndex + 1);
             matchIndices.put(follower, 0L);

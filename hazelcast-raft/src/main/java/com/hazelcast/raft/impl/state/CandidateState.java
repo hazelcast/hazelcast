@@ -13,7 +13,7 @@ public class CandidateState {
     private final int majority;
     private final Set<RaftEndpoint> voters = new HashSet<RaftEndpoint>();
 
-    public CandidateState(int majority) {
+    CandidateState(int majority) {
         this.majority = majority;
     }
 

@@ -3,7 +3,7 @@ package com.hazelcast.raft.impl.service;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,8 +15,8 @@ import java.util.Collection;
  */
 public final class MetadataSnapshot implements IdentifiedDataSerializable {
 
-    private final Collection<RaftEndpoint> endpoints = new ArrayList<RaftEndpoint>();
-    private final Collection<RaftEndpoint> removedEndpoints = new ArrayList<RaftEndpoint>();
+    private final Collection<RaftEndpointImpl> endpoints = new ArrayList<RaftEndpointImpl>();
+    private final Collection<RaftEndpointImpl> removedEndpoints = new ArrayList<RaftEndpointImpl>();
     private final Collection<RaftGroupInfo> raftGroups = new ArrayList<RaftGroupInfo>();
     private LeavingRaftEndpointContext leavingRaftEndpointContext;
 
@@ -24,19 +24,19 @@ public final class MetadataSnapshot implements IdentifiedDataSerializable {
         raftGroups.add(groupInfo);
     }
 
-    public void addEndpoint(RaftEndpoint endpoint) {
+    public void addEndpoint(RaftEndpointImpl endpoint) {
         endpoints.add(endpoint);
     }
 
-    public void addRemovedEndpoint(RaftEndpoint endpoint) {
+    public void addRemovedEndpoint(RaftEndpointImpl endpoint) {
         removedEndpoints.add(endpoint);
     }
 
-    public Collection<RaftEndpoint> getEndpoints() {
+    public Collection<RaftEndpointImpl> getEndpoints() {
         return endpoints;
     }
 
-    public Collection<RaftEndpoint> getRemovedEndpoints() {
+    public Collection<RaftEndpointImpl> getRemovedEndpoints() {
         return removedEndpoints;
     }
 
@@ -65,7 +65,7 @@ public final class MetadataSnapshot implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(endpoints.size());
-        for (RaftEndpoint endpoint : endpoints) {
+        for (RaftEndpointImpl endpoint : endpoints) {
             out.writeObject(endpoint);
         }
         out.writeInt(raftGroups.size());
@@ -73,7 +73,7 @@ public final class MetadataSnapshot implements IdentifiedDataSerializable {
             out.writeObject(group);
         }
         out.writeInt(removedEndpoints.size());
-        for (RaftEndpoint endpoint : removedEndpoints) {
+        for (RaftEndpointImpl endpoint : removedEndpoints) {
             out.writeObject(endpoint);
         }
         out.writeObject(leavingRaftEndpointContext);
@@ -83,7 +83,7 @@ public final class MetadataSnapshot implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         int len = in.readInt();
         for (int i = 0; i < len; i++) {
-            RaftEndpoint endpoint = in.readObject();
+            RaftEndpointImpl endpoint = in.readObject();
             endpoints.add(endpoint);
         }
 
@@ -95,7 +95,7 @@ public final class MetadataSnapshot implements IdentifiedDataSerializable {
 
         len = in.readInt();
         for (int i = 0; i < len; i++) {
-            RaftEndpoint endpoint = in.readObject();
+            RaftEndpointImpl endpoint = in.readObject();
             removedEndpoints.add(endpoint);
         }
         leavingRaftEndpointContext = in.readObject();

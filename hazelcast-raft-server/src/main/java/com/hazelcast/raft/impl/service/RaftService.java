@@ -1,13 +1,14 @@
 package com.hazelcast.raft.impl.service;
 
+import com.hazelcast.config.raft.RaftServiceConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.raft.QueryPolicy;
-import com.hazelcast.raft.RaftConfig;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.SnapshotAwareService;
 import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 import com.hazelcast.raft.impl.RaftIntegration;
 import com.hazelcast.raft.impl.RaftNode;
 import com.hazelcast.raft.impl.RaftNodeImpl;
@@ -24,7 +25,6 @@ import com.hazelcast.raft.impl.service.exception.CannotRemoveEndpointException;
 import com.hazelcast.raft.impl.service.operation.metadata.CheckRemovedEndpointOp;
 import com.hazelcast.raft.impl.service.operation.metadata.GetRaftGroupOp;
 import com.hazelcast.raft.impl.service.operation.metadata.TriggerRemoveEndpointOp;
-import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.GracefulShutdownAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -48,8 +48,8 @@ import static java.util.Collections.singletonList;
 /**
  * TODO: Javadoc Pending...
  */
-public class RaftService implements ManagedService, ConfigurableService<RaftConfig>,
-        SnapshotAwareService<MetadataSnapshot>, GracefulShutdownAwareService {
+public class RaftService implements ManagedService, SnapshotAwareService<MetadataSnapshot>,
+        GracefulShutdownAwareService {
 
     public static final String SERVICE_NAME = "hz:core:raft";
     public static final RaftGroupId METADATA_GROUP_ID = RaftMetadataManager.METADATA_GROUP_ID;
@@ -60,27 +60,22 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
 
     private final Set<RaftGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<RaftGroupId, Boolean>());
 
-    private volatile RaftInvocationManager invocationManager;
-    private volatile RaftMetadataManager metadataManager;
+    private final RaftServiceConfig config;
+    private final RaftInvocationManager invocationManager;
+    private final RaftMetadataManager metadataManager;
 
-    private volatile RaftConfig config;
 
     public RaftService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
-    }
-
-    @Override
-    public void configure(RaftConfig config) {
-        // cloning given RaftConfig to avoid further mutations
-        this.config = new RaftConfig(config);
+        this.config = new RaftServiceConfig(nodeEngine.getConfig().getRaftServiceConfig());
+        this.metadataManager = new RaftMetadataManager(nodeEngine, this, config.getMetadataGroupConfig());
+        this.invocationManager = new RaftInvocationManager(nodeEngine, this, config.getRaftConfig());
     }
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         RaftCleanupHandler cleanupHandler = new RaftCleanupHandler(nodeEngine, this);
-        metadataManager = new RaftMetadataManager(nodeEngine, this, config);
-        invocationManager = new RaftInvocationManager(nodeEngine, this, config);
 
         metadataManager.init();
         invocationManager.init();
@@ -109,8 +104,8 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
     }
 
     @Override
-    public boolean onShutdown(final long timeout, TimeUnit unit) {
-        RaftEndpoint localEndpoint = getLocalEndpoint();
+    public boolean onShutdown(long timeout, TimeUnit unit) {
+        RaftEndpointImpl localEndpoint = getLocalEndpoint();
         if (localEndpoint == null) {
             return true;
         }
@@ -145,7 +140,7 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
         return false;
     }
 
-    private void ensureTriggerShutdown(RaftEndpoint endpoint, long remainingTimeNanos) {
+    private void ensureTriggerShutdown(RaftEndpointImpl endpoint, long remainingTimeNanos) {
         while (remainingTimeNanos > 0) {
             long start = System.nanoTime();
             try {
@@ -250,11 +245,11 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
         return new ArrayList<RaftNode>(nodes.values());
     }
 
-    public RaftNode getRaftNode(final RaftGroupId groupId) {
+    public RaftNode getRaftNode(RaftGroupId groupId) {
         return nodes.get(groupId);
     }
 
-    public RaftNode getOrInitRaftNode(final RaftGroupId groupId) {
+    public RaftNode getOrInitRaftNode(RaftGroupId groupId) {
         RaftNode node = nodes.get(groupId);
         if (node == null && !destroyedGroupIds.contains(groupId)) {
             logger.fine("There is no RaftNode for " + groupId + ". Asking to the metadata group...");
@@ -271,19 +266,19 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
         return destroyedGroupIds.contains(groupId);
     }
 
-    public RaftConfig getConfig() {
+    public RaftServiceConfig getConfig() {
         return config;
     }
 
-    public Collection<RaftEndpoint> getAllEndpoints() {
+    public Collection<RaftEndpointImpl> getAllEndpoints() {
         return metadataManager.getAllEndpoints();
     }
 
-    public RaftEndpoint getLocalEndpoint() {
+    public RaftEndpointImpl getLocalEndpoint() {
         return metadataManager.getLocalEndpoint();
     }
 
-    void createRaftNode(RaftGroupId groupId, String serviceName, Collection<RaftEndpoint> endpoints) {
+    void createRaftNode(RaftGroupId groupId, Collection<RaftEndpoint> endpoints) {
         if (nodes.containsKey(groupId)) {
             logger.info("Not creating RaftNode for " + groupId + " since it is already created...");
             return;
@@ -295,7 +290,7 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
         }
 
         RaftIntegration raftIntegration = new NodeEngineRaftIntegration(nodeEngine, groupId);
-        RaftNodeImpl node = new RaftNodeImpl(serviceName, groupId, getLocalEndpoint(), endpoints, config, raftIntegration);
+        RaftNodeImpl node = new RaftNodeImpl(groupId, getLocalEndpoint(), endpoints, config.getRaftConfig(), raftIntegration);
 
         if (nodes.putIfAbsent(groupId, node) == null) {
             if (destroyedGroupIds.contains(groupId)) {
@@ -310,11 +305,11 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
     }
 
     public void createRaftNode(RaftGroupInfo groupInfo) {
-        RaftEndpoint localEndpoint = getLocalEndpoint();
+        RaftEndpointImpl localEndpoint = getLocalEndpoint();
         if (groupInfo.containsMember(localEndpoint)) {
             Collection<RaftEndpoint> members = groupInfo.isInitialMember(localEndpoint)
-                    ? groupInfo.members() : singletonList(localEndpoint);
-            createRaftNode(groupInfo.id(), groupInfo.serviceName(), members);
+                    ? groupInfo.members() : singletonList((RaftEndpoint) localEndpoint);
+            createRaftNode(groupInfo.id(), members);
         }
     }
 
@@ -327,11 +322,11 @@ public class RaftService implements ManagedService, ConfigurableService<RaftConf
         }
     }
 
-    private ICompletableFuture<RaftGroupId> triggerRemoveEndpointAsync(final RaftEndpoint endpoint) {
+    private ICompletableFuture<RaftGroupId> triggerRemoveEndpointAsync(RaftEndpointImpl endpoint) {
         return invocationManager.invoke(METADATA_GROUP_ID, new TriggerRemoveEndpointOp(endpoint));
     }
 
-    private boolean isRemoved(final RaftEndpoint endpoint) {
+    private boolean isRemoved(RaftEndpointImpl endpoint) {
         ICompletableFuture<Boolean> f = invocationManager.query(METADATA_GROUP_ID, new CheckRemovedEndpointOp(endpoint),
                 QueryPolicy.LEADER_LOCAL);
         try {

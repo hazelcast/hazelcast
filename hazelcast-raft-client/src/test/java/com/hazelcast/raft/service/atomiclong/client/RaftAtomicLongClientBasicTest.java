@@ -7,7 +7,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.Address;
+import com.hazelcast.config.raft.RaftGroupConfig;
 import com.hazelcast.raft.impl.service.HazelcastRaftTestSupport;
+import com.hazelcast.config.raft.RaftAtomicLongConfig;
 import com.hazelcast.raft.service.atomiclong.RaftAtomicLongService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -27,19 +29,19 @@ import static org.junit.Assert.assertTrue;
 public class RaftAtomicLongClientBasicTest extends HazelcastRaftTestSupport {
 
     private IAtomicLong atomicLong;
+    private String name = "id";
+    private int groupSize = 3;
 
     @Before
     public void setup() {
         factory = new TestHazelcastFactory();
         Address[] raftAddresses = createAddresses(5);
-        newInstances(raftAddresses, 3, 2);
+        HazelcastInstance[] instances = newInstances(raftAddresses, groupSize, 2);
 
         TestHazelcastFactory f = (TestHazelcastFactory) factory;
         HazelcastInstance client = f.newHazelcastClient();
 
-        String name = "id";
-        int raftGroupSize = 3;
-        atomicLong = RaftAtomicLong.create(client, name, raftGroupSize);
+        atomicLong = RaftAtomicLongProxy.create(client, name);
     }
 
     @After
@@ -186,6 +188,9 @@ public class RaftAtomicLongClientBasicTest extends HazelcastRaftTestSupport {
 
         Config config = super.createConfig(raftAddresses, metadataGroupSize);
         config.getServicesConfig().addServiceConfig(atomicLongServiceConfig);
+
+        RaftAtomicLongConfig atomicLongConfig = new RaftAtomicLongConfig(name, new RaftGroupConfig(name, groupSize));
+        config.addRaftAtomicLongConfig(atomicLongConfig);
         return config;
     }
 

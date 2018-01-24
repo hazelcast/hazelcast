@@ -1,56 +1,59 @@
 package com.hazelcast.raft.service.atomiclong;
 
+import com.hazelcast.raft.RaftGroupId;
+
 /**
  * TODO: Javadoc Pending...
  *
  */
 public class RaftAtomicLong {
 
+    private final RaftGroupId groupId;
     private final String name;
 
     private long value;
-    private long commitIndex;
 
-    RaftAtomicLong(String name) {
+    RaftAtomicLong(RaftGroupId groupId, String name) {
+        this.groupId = groupId;
         this.name = name;
     }
 
-    RaftAtomicLong(String name, long value, long commitIndex) {
+    RaftAtomicLong(RaftGroupId groupId, String name, long value) {
+        this.groupId = groupId;
         this.name = name;
         this.value = value;
-        this.commitIndex = commitIndex;
     }
 
-    public long addAndGet(long delta, long commitIndex) {
-        this.commitIndex = commitIndex;
+    public RaftGroupId groupId() {
+        return groupId;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public long addAndGet(long delta) {
         return value += delta;
     }
 
-    public long getAndAdd(long delta, long commitIndex) {
-        this.commitIndex = commitIndex;
+    public long getAndAdd(long delta) {
         long v = value;
         value += delta;
         return v;
     }
 
-    public long getAndSet(long value, long commitIndex) {
-        this.commitIndex = commitIndex;
+    public long getAndSet(long value) {
         long v = this.value;
         this.value = value;
         return v;
     }
 
-    public boolean compareAndSet(long currentValue, long newValue, long commitIndex) {
-        this.commitIndex = commitIndex;
+    public boolean compareAndSet(long currentValue, long newValue) {
         if (value == currentValue) {
             value = newValue;
             return true;
         }
         return false;
-    }
-
-    public long commitIndex() {
-        return commitIndex;
     }
 
     public long value() {
@@ -59,6 +62,6 @@ public class RaftAtomicLong {
 
     @Override
     public String toString() {
-        return "AtomicLong{" + "name='" + name + '\'' + ", value=" + value + ", commitIndex=" + commitIndex + '}';
+        return "RaftAtomicLong{" + "groupId=" + groupId + ", name='" + name + '\'' + ", value=" + value + '}';
     }
 }

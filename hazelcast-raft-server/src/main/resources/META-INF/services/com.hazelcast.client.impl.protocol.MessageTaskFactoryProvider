@@ -1,1 +1,2 @@
 com.hazelcast.raft.service.atomiclong.client.AtomicLongMessageTaskFactoryProvider
+com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider

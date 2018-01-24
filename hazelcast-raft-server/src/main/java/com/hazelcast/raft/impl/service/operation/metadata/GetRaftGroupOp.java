@@ -6,11 +6,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 
 import java.io.IOException;
 
-public class GetRaftGroupOp extends RaftOperation implements IdentifiedDataSerializable {
+public class GetRaftGroupOp extends RaftOp implements IdentifiedDataSerializable {
 
     private RaftGroupId groupId;
 

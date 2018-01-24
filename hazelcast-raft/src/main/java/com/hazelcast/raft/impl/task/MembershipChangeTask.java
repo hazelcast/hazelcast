@@ -7,7 +7,7 @@ import com.hazelcast.raft.exception.MemberDoesNotExistException;
 import com.hazelcast.raft.exception.MismatchingGroupMembersCommitIndexException;
 import com.hazelcast.raft.impl.RaftEndpoint;
 import com.hazelcast.raft.impl.RaftNodeImpl;
-import com.hazelcast.raft.impl.operation.ApplyRaftGroupMembersOp;
+import com.hazelcast.raft.impl.command.ApplyRaftGroupMembersCmd;
 import com.hazelcast.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.raft.impl.state.RaftState;
 import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
@@ -24,7 +24,7 @@ import java.util.LinkedHashSet;
  * If membership change type is REMOVE but the member doesn't exist in the group,
  * then future is notified with {@link MemberDoesNotExistException}.
  * <p>
- * {@link ApplyRaftGroupMembersOp} Raft operation is created with members according to the member parameter
+ * {@link ApplyRaftGroupMembersCmd} Raft operation is created with members according to the member parameter
  * and membership change and it's replicated via {@link ReplicateTask}.
  *
  * @see MembershipChangeType
@@ -89,7 +89,7 @@ public class MembershipChangeTask implements Runnable {
                 return;
         }
         logger.info("New members after " + changeType + " -> " + members);
-        new ReplicateTask(raftNode, new ApplyRaftGroupMembersOp(members), resultFuture).run();
+        new ReplicateTask(raftNode, new ApplyRaftGroupMembersCmd(members), resultFuture).run();
     }
 
     private boolean isValidGroupMemberCommitIndex() {

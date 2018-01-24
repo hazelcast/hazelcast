@@ -3,14 +3,15 @@ package com.hazelcast.raft.impl.testing;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.raft.RaftConfig;
+import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.SnapshotAwareService;
 import com.hazelcast.raft.impl.RaftEndpoint;
 import com.hazelcast.raft.impl.RaftIntegration;
 import com.hazelcast.raft.impl.RaftNodeImpl;
+import com.hazelcast.raft.impl.RaftRunnable;
+import com.hazelcast.raft.impl.RaftUtil;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
@@ -19,9 +20,8 @@ import com.hazelcast.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
+import com.hazelcast.raft.impl.service.RestoreSnapshotRaftRunnable;
 import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
-import com.hazelcast.raft.operation.RaftOperation;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Collections;
@@ -48,26 +48,25 @@ import static org.junit.Assert.assertThat;
 public class LocalRaftIntegration implements RaftIntegration {
 
     private final RaftEndpoint localEndpoint;
-    private final RaftConfig raftConfig;
+    private final RaftGroupId raftGroupId;
     private final SnapshotAwareService service;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
     private final ConcurrentMap<RaftEndpoint, RaftNodeImpl> nodes = new ConcurrentHashMap<RaftEndpoint, RaftNodeImpl>();
-    private final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private final LoggingServiceImpl loggingService;
 
     private final Set<EndpointDropEntry> endpointDropRules = Collections.newSetFromMap(new ConcurrentHashMap<EndpointDropEntry, Boolean>());
     private final Set<Class> dropAllRules = Collections.newSetFromMap(new ConcurrentHashMap<Class, Boolean>());
 
-    public LocalRaftIntegration(RaftEndpoint localEndpoint, RaftConfig raftConfig, SnapshotAwareService service) {
+    LocalRaftIntegration(TestRaftEndpoint localEndpoint, RaftGroupId raftGroupId, SnapshotAwareService service) {
         this.localEndpoint = localEndpoint;
-        this.raftConfig = raftConfig;
+        this.raftGroupId = raftGroupId;
         this.service = service;
         this.loggingService = new LoggingServiceImpl("dev", "log4j2", BuildInfoProvider.getBuildInfo());
         loggingService.setThisMember(getThisMember(localEndpoint));
     }
 
-    private MemberImpl getThisMember(RaftEndpoint localEndpoint) {
-        return new MemberImpl(localEndpoint.getAddress(), MemberVersion.of(Versions.CURRENT_CLUSTER_VERSION.toString()), true, localEndpoint.getUid());
+    private MemberImpl getThisMember(TestRaftEndpoint localEndpoint) {
+        return new MemberImpl(RaftUtil.newAddress(localEndpoint.getPort()), MemberVersion.of(Versions.CURRENT_CLUSTER_VERSION.toString()), true, localEndpoint.getUid());
     }
 
     public void discoverNode(RaftNodeImpl node) {
@@ -186,7 +185,6 @@ public class LocalRaftIntegration implements RaftIntegration {
             return true;
         }
 
-        request = serializationService.toObject(serializationService.toData(request));
         node.handleAppendRequest(request);
         return true;
     }
@@ -242,20 +240,32 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public Object runOperation(RaftOperation operation, long commitIndex) {
-        if (operation == null) {
+    public Object runOperation(Object op, long commitIndex) {
+        if (op == null) {
             return null;
         }
-        operation.setService(service);
-        operation.setCommitIndex(commitIndex);
+
         try {
-            operation.beforeRun();
-            operation.run();
-            operation.afterRun();
-            return operation.getResponse();
+            RaftRunnable operation = (RaftRunnable) op;
+            return operation.run(service, commitIndex);
         } catch (Throwable t) {
             return t;
         }
+    }
+
+    @Override
+    public Object takeSnapshot(long commitIndex) {
+        try {
+            Object snapshot = service.takeSnapshot(raftGroupId, commitIndex);
+            return new RestoreSnapshotRaftRunnable(raftGroupId, commitIndex, snapshot);
+        } catch (Throwable t) {
+            return t;
+        }
+    }
+
+    @Override
+    public void restoreSnapshot(Object operation, long commitIndex) {
+        runOperation(operation, commitIndex);
     }
 
     void dropMessagesToEndpoint(RaftEndpoint endpoint, Class messageType) {

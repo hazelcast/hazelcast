@@ -5,11 +5,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 
 import java.io.IOException;
 
-public class GetActiveEndpointsOp extends RaftOperation implements IdentifiedDataSerializable {
+public class GetActiveEndpointsOp extends RaftOp implements IdentifiedDataSerializable {
 
     public GetActiveEndpointsOp() {
     }

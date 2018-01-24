@@ -1,12 +1,12 @@
 package com.hazelcast.raft.impl;
 
-import com.hazelcast.raft.RaftConfig;
+import com.hazelcast.config.raft.RaftConfig;
 import com.hazelcast.raft.exception.CannotReplicateException;
 import com.hazelcast.raft.exception.RaftGroupTerminatedException;
 import com.hazelcast.raft.impl.dto.AppendRequest;
-import com.hazelcast.raft.impl.service.RaftTestApplyOperation;
+import com.hazelcast.raft.impl.service.ApplyRaftRunnable;
 import com.hazelcast.raft.impl.testing.LocalRaftGroup;
-import com.hazelcast.raft.operation.TerminateRaftGroupOp;
+import com.hazelcast.raft.command.TerminateRaftGroupCmd;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -56,10 +56,10 @@ public class TerminateRaftGroupTest extends HazelcastTestSupport {
 
         group.dropAllMessagesToEndpoint(leader.getLocalEndpoint(), follower.getLocalEndpoint());
 
-        leader.replicate(new TerminateRaftGroupOp());
+        leader.replicate(new TerminateRaftGroupCmd());
 
         try {
-            leader.replicate(new RaftTestApplyOperation("val")).get();
+            leader.replicate(new ApplyRaftRunnable("val")).get();
             fail();
         } catch (CannotReplicateException ignored) {
         }
@@ -75,7 +75,7 @@ public class TerminateRaftGroupTest extends HazelcastTestSupport {
 
         group.dropAllMessagesToEndpoint(follower.getLocalEndpoint(), leader.getLocalEndpoint());
 
-        leader.replicate(new TerminateRaftGroupOp());
+        leader.replicate(new TerminateRaftGroupCmd());
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -94,7 +94,7 @@ public class TerminateRaftGroupTest extends HazelcastTestSupport {
         final RaftNodeImpl leader = group.waitUntilLeaderElected();
         final RaftNodeImpl follower = group.getAnyFollowerNode();
 
-        leader.replicate(new TerminateRaftGroupOp()).get();
+        leader.replicate(new TerminateRaftGroupCmd()).get();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -107,14 +107,14 @@ public class TerminateRaftGroupTest extends HazelcastTestSupport {
         });
 
         try {
-            leader.replicate(new RaftTestApplyOperation("val")).get();
+            leader.replicate(new ApplyRaftRunnable("val")).get();
             fail();
         } catch (RaftGroupTerminatedException ignored) {
 
         }
 
         try {
-            follower.replicate(new RaftTestApplyOperation("val")).get();
+            follower.replicate(new ApplyRaftRunnable("val")).get();
             fail();
         } catch (RaftGroupTerminatedException ignored) {
         }
@@ -130,7 +130,7 @@ public class TerminateRaftGroupTest extends HazelcastTestSupport {
 
         group.dropMessagesToAll(leader.getLocalEndpoint(), AppendRequest.class);
 
-        leader.replicate(new TerminateRaftGroupOp());
+        leader.replicate(new TerminateRaftGroupCmd());
 
         group.split(leader.getLocalEndpoint());
 
@@ -148,7 +148,7 @@ public class TerminateRaftGroupTest extends HazelcastTestSupport {
         final RaftNodeImpl newLeader = group.getNode(getLeaderEndpoint(followers[0]));
 
         for (int i = 0; i < 10; i++) {
-            newLeader.replicate(new RaftTestApplyOperation("val" + i)).get();
+            newLeader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
         group.merge();

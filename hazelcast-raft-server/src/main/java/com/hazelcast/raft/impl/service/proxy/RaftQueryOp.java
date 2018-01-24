@@ -13,7 +13,7 @@ import com.hazelcast.raft.exception.RaftGroupTerminatedException;
 import com.hazelcast.raft.impl.RaftNode;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -22,18 +22,18 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class RaftQueryOp extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
+public class RaftQueryOp extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState, ExecutionCallback {
 
     private RaftGroupId raftGroupId;
     private QueryPolicy queryPolicy;
-    private RaftOperation raftOperation;
+    private RaftOp raftOp;
 
     public RaftQueryOp() {
     }
 
-    public RaftQueryOp(RaftGroupId groupId, RaftOperation raftOperation) {
+    public RaftQueryOp(RaftGroupId groupId, RaftOp raftOp) {
         this.raftGroupId = groupId;
-        this.raftOperation = raftOperation;
+        this.raftOp = raftOp;
     }
 
     @Override
@@ -49,23 +49,23 @@ public class RaftQueryOp extends Operation implements IdentifiedDataSerializable
             return;
         }
 
-        ICompletableFuture future = raftNode.query(raftOperation, queryPolicy);
-        future.andThen(new ExecutionCallback() {
-            @Override
-            public void onResponse(Object response) {
-                sendResponse(response);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                sendResponse(t);
-            }
-        });
+        ICompletableFuture future = raftNode.query(raftOp, queryPolicy);
+        future.andThen(this);
     }
 
     public RaftQueryOp setQueryPolicy(QueryPolicy queryPolicy) {
         this.queryPolicy = queryPolicy;
         return this;
+    }
+
+    @Override
+    public void onResponse(Object response) {
+        sendResponse(response);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        sendResponse(t);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class RaftQueryOp extends Operation implements IdentifiedDataSerializable
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(raftGroupId);
-        out.writeObject(raftOperation);
+        out.writeObject(raftOp);
         out.writeUTF(queryPolicy.toString());
     }
 
@@ -105,7 +105,7 @@ public class RaftQueryOp extends Operation implements IdentifiedDataSerializable
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         raftGroupId = in.readObject();
-        raftOperation = in.readObject();
+        raftOp = in.readObject();
         queryPolicy = QueryPolicy.valueOf(in.readUTF());
     }
 

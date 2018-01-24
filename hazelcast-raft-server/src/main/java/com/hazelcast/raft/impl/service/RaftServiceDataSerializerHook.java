@@ -4,6 +4,7 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.raft.impl.RaftGroupIdImpl;
 import com.hazelcast.raft.impl.service.operation.integration.AppendFailureResponseOp;
 import com.hazelcast.raft.impl.service.operation.integration.AppendRequestOp;
 import com.hazelcast.raft.impl.service.operation.integration.AppendSuccessResponseOp;
@@ -24,9 +25,11 @@ import com.hazelcast.raft.impl.service.operation.metadata.GetLeavingEndpointCont
 import com.hazelcast.raft.impl.service.operation.metadata.GetRaftGroupOp;
 import com.hazelcast.raft.impl.service.operation.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.raft.impl.service.operation.metadata.TriggerRemoveEndpointOp;
+import com.hazelcast.raft.impl.service.operation.snapshot.RestoreSnapshotOp;
 import com.hazelcast.raft.impl.service.proxy.ChangeRaftGroupMembershipOp;
-import com.hazelcast.raft.impl.service.proxy.RaftQueryOp;
 import com.hazelcast.raft.impl.service.proxy.DefaultRaftReplicateOp;
+import com.hazelcast.raft.impl.service.proxy.RaftQueryOp;
+import com.hazelcast.raft.impl.service.proxy.TerminateRaftGroupOp;
 
 public final class RaftServiceDataSerializerHook implements DataSerializerHook {
 
@@ -35,18 +38,19 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(RAFT_DS_FACTORY, RAFT_DS_FACTORY_ID);
 
-    public static final int GROUP_INFO = 1;
-    public static final int PRE_VOTE_REQUEST_OP = 2;
-    public static final int PRE_VOTE_RESPONSE_OP = 3;
-    public static final int VOTE_REQUEST_OP = 4;
-    public static final int VOTE_RESPONSE_OP = 5;
-    public static final int APPEND_REQUEST_OP = 6;
-    public static final int APPEND_SUCCESS_RESPONSE_OP = 7;
-    public static final int APPEND_FAILURE_RESPONSE_OP = 8;
-    public static final int METADATA_SNAPSHOT = 9;
-    public static final int INSTALL_SNAPSHOT_OP = 10;
-    public static final int DEFAULT_RAFT_GROUP_REPLICATE_OP = 11;
-    public static final int CREATE_RAFT_GROUP_OP = 12;
+    public static final int GROUP_ID = 1;
+    public static final int GROUP_INFO = 2;
+    public static final int PRE_VOTE_REQUEST_OP = 3;
+    public static final int PRE_VOTE_RESPONSE_OP = 4;
+    public static final int VOTE_REQUEST_OP = 5;
+    public static final int VOTE_RESPONSE_OP = 6;
+    public static final int APPEND_REQUEST_OP = 7;
+    public static final int APPEND_SUCCESS_RESPONSE_OP = 8;
+    public static final int APPEND_FAILURE_RESPONSE_OP = 9;
+    public static final int METADATA_SNAPSHOT = 10;
+    public static final int INSTALL_SNAPSHOT_OP = 11;
+    public static final int DEFAULT_RAFT_GROUP_REPLICATE_OP = 12;
+    public static final int CREATE_RAFT_GROUP_OP = 13;
     public static final int TRIGGER_DESTROY_RAFT_GROUP_OP = 14;
     public static final int COMPLETE_DESTROY_RAFT_GROUPS_OP = 15;
     public static final int TRIGGER_REMOVE_ENDPOINT_OP = 16;
@@ -61,6 +65,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int GET_LEAVING_ENDPOINT_CONTEXT_OP = 25;
     public static final int GET_RAFT_GROUP_OP = 26;
     public static final int CREATE_RAFT_NODE_OP = 27;
+    public static final int TERMINATE_RAFT_GROUP_OP = 28;
+    public static final int RESTORE_SNAPSHOT_OP = 29;
 
     @Override
     public int getFactoryId() {
@@ -73,6 +79,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
+                    case GROUP_ID:
+                        return new RaftGroupIdImpl();
                     case GROUP_INFO:
                         return new RaftGroupInfo();
                     case PRE_VOTE_REQUEST_OP:
@@ -125,7 +133,10 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                         return new GetRaftGroupOp();
                     case CREATE_RAFT_NODE_OP:
                         return new CreateRaftNodeOp();
-
+                    case TERMINATE_RAFT_GROUP_OP:
+                        return new TerminateRaftGroupOp();
+                    case RESTORE_SNAPSHOT_OP:
+                        return new RestoreSnapshotOp();
                 }
                 throw new IllegalArgumentException("Undefined type: " + typeId);
             }

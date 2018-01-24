@@ -12,7 +12,6 @@ import com.hazelcast.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
-import com.hazelcast.raft.operation.RaftOperation;
 
 /**
  * {@code RaftNode} maintains the state of a member for a specific Raft group
@@ -101,18 +100,15 @@ public interface RaftNode {
     void handleInstallSnapshot(InstallSnapshot request);
 
     /**
-     * Replicates the {@code RaftOperation} to the Raft group. Only leader can process replicate requests.
-     * <p>
-     * If operation is replicated and committed, then return value of {@link RaftOperation#doRun(long)}
-     * is set as a result to the future.
+     * Replicates the given operation to the Raft group. Only leader can process replicate requests.
      * <p>
      * Otherwise, if this node is not leader, or leader is demoted before committing the operation,
      * returned future is notified with a related exception.
      *
-     * @param operation RaftOperation to replicate
+     * @param operation operation to replicate
      * @return future to get notified about result of the replication
      */
-    ICompletableFuture replicate(RaftOperation operation);
+    ICompletableFuture replicate(Object operation);
 
     /**
      * Replicates the membership change to the Raft group. Only leader can process membership change requests.
@@ -130,7 +126,7 @@ public interface RaftNode {
      * Replicates the membership change to the Raft group, if expected members commit index is equal to the actual
      * one stored in Raft state. Otherwise fails with {@link com.hazelcast.raft.exception.MismatchingGroupMembersCommitIndexException}.
      * <p>
-     * For more info see {@link #replicate(RaftOperation)}.
+     * For more info see {@link #replicate(Object)}.
      *
      * @param member                  member to add or remove
      * @param change                  type of membership change
@@ -140,13 +136,12 @@ public interface RaftNode {
     ICompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeType change, long groupMembersCommitIndex);
 
     /**
-     * Executes given {@code RaftOperation} on Raft group depending on the {@link QueryPolicy}
-     * and returns the return value of {@link RaftOperation#doRun(long)} if operation is executed successfully.
+     * Executes the given operation on Raft group depending on the {@link QueryPolicy}
      *
-     * @param operation RaftOperation to query
+     * @param operation operation to query
      * @param queryPolicy query policy to decide where to execute operation
      * @return future to get notified about result of the query
      */
-    ICompletableFuture query(RaftOperation operation, QueryPolicy queryPolicy);
+    ICompletableFuture query(Object operation, QueryPolicy queryPolicy);
 
 }

@@ -2,7 +2,7 @@ package com.hazelcast.raft.impl.service.proxy;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
 
@@ -10,19 +10,19 @@ import java.io.IOException;
 
 public class DefaultRaftReplicateOp extends RaftReplicateOp {
 
-    private RaftOperation raftOperation;
+    private RaftOp raftOp;
 
     public DefaultRaftReplicateOp() {
     }
 
-    public DefaultRaftReplicateOp(RaftGroupId groupId, RaftOperation raftOperation) {
+    public DefaultRaftReplicateOp(RaftGroupId groupId, RaftOp raftOp) {
         super(groupId);
-        this.raftOperation = raftOperation;
+        this.raftOp = raftOp;
     }
 
     @Override
-    protected RaftOperation getRaftOperation() {
-        return raftOperation;
+    protected RaftOp getRaftOp() {
+        return raftOp;
     }
 
     @Override
@@ -38,18 +38,18 @@ public class DefaultRaftReplicateOp extends RaftReplicateOp {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(raftOperation);
+        out.writeObject(raftOp);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        raftOperation = in.readObject();
+        raftOp = in.readObject();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-        sb.append(", raftOp=").append(raftOperation);
+        sb.append(", raftOp=").append(raftOp);
     }
 }

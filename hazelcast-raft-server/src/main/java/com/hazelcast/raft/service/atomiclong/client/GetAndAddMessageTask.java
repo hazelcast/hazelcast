@@ -2,7 +2,6 @@ package com.hazelcast.raft.service.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
@@ -19,10 +18,9 @@ public class GetAndAddMessageTask extends AbstractAtomicLongMessageTask {
     }
 
     @Override
-    protected void processMessage() throws Throwable {
+    protected void processMessage() {
         IAtomicLong atomicLong = getProxy();
-        ICompletableFuture<Long> future = atomicLong.getAndAddAsync(delta);
-        future.andThen(this);
+        atomicLong.getAndAddAsync(delta).andThen(this);
     }
 
     @Override

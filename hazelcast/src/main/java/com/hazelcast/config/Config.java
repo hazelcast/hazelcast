@@ -17,6 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
+import com.hazelcast.config.raft.RaftAtomicLongConfig;
+import com.hazelcast.config.raft.RaftLockConfig;
+import com.hazelcast.config.raft.RaftServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -167,6 +170,10 @@ public class Config {
     private String licenseKey;
 
     private boolean liteMember;
+
+    private RaftServiceConfig raftServiceConfig;
+    private final Map<String, RaftAtomicLongConfig> raftAtomicLongConfigs = new ConcurrentHashMap<String, RaftAtomicLongConfig>();
+    private final Map<String, RaftLockConfig> raftLockConfigs = new ConcurrentHashMap<String, RaftLockConfig>();
 
     public Config() {
     }
@@ -3451,6 +3458,35 @@ public class Config {
 
     public Config setAdvancedNetworkConfig(AdvancedNetworkConfig advancedNetworkConfig) {
         this.advancedNetworkConfig = advancedNetworkConfig;
+        return this;
+    }
+
+    public RaftServiceConfig getRaftServiceConfig() {
+        return raftServiceConfig;
+    }
+
+    public Config setRaftServiceConfig(RaftServiceConfig raftServiceConfig) {
+        this.raftServiceConfig = raftServiceConfig;
+        return this;
+    }
+
+    public RaftAtomicLongConfig findRaftAtomicLongConfig(String name) {
+        String baseName = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, raftAtomicLongConfigs, baseName);
+    }
+
+    public Config addRaftAtomicLongConfig(RaftAtomicLongConfig config) {
+        raftAtomicLongConfigs.put(config.getName(), config);
+        return this;
+    }
+
+    public RaftLockConfig findRaftLockConfig(String name) {
+        String baseName = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, raftLockConfigs, baseName);
+    }
+
+    public Config addRaftLockConfig(RaftLockConfig config) {
+        raftLockConfigs.put(config.getName(), config);
         return this;
     }
 

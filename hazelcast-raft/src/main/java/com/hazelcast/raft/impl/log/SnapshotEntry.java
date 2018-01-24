@@ -5,7 +5,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.raft.impl.RaftEndpoint;
-import com.hazelcast.raft.operation.RaftOperation;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -23,8 +22,8 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
     public SnapshotEntry() {
     }
 
-    public SnapshotEntry(int term, long index, RaftOperation operation,
-            long groupMembersLogIndex, Collection<RaftEndpoint> groupMembers) {
+    public SnapshotEntry(int term, long index, Object operation,
+                         long groupMembersLogIndex, Collection<RaftEndpoint> groupMembers) {
         super(term, index, operation);
         this.groupMembersLogIndex = groupMembersLogIndex;
         this.groupMembers = groupMembers;

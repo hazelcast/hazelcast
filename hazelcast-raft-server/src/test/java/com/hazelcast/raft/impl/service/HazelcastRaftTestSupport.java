@@ -2,12 +2,13 @@ package com.hazelcast.raft.impl.service;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.raft.RaftMember;
+import com.hazelcast.config.raft.RaftMetadataGroupConfig;
+import com.hazelcast.config.raft.RaftServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
-import com.hazelcast.raft.RaftConfig;
 import com.hazelcast.raft.RaftGroupId;
-import com.hazelcast.raft.RaftMember;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
@@ -55,7 +56,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
     }
 
     protected HazelcastInstance getRandomFollowerInstance(HazelcastInstance[] instances, RaftNodeImpl leader) {
-        Address address = leader.getLocalEndpoint().getAddress();
+        Address address = ((RaftEndpointImpl) leader.getLocalEndpoint()).getAddress();
         for (HazelcastInstance instance : instances) {
             if (!getAddress(instance).equals(address)) {
                 return instance;
@@ -112,10 +113,14 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         Config config = new Config();
         configureSplitBrainDelay(config);
 
-        RaftConfig raftConfig = new RaftConfig().setMembers(asList(raftMembers)).setMetadataGroupSize(metadataGroupSize);
-        ServiceConfig raftServiceConfig = new ServiceConfig().setEnabled(true).setName(RaftService.SERVICE_NAME)
-                                                             .setClassName(RaftService.class.getName()).setConfigObject(raftConfig);
-        config.getServicesConfig().addServiceConfig(raftServiceConfig);
+        RaftServiceConfig raftServiceConfig = new RaftServiceConfig().setMetadataGroupConfig(
+                new RaftMetadataGroupConfig().setMembers(asList(raftMembers)).setMetadataGroupSize(metadataGroupSize));
+        config.setRaftServiceConfig(raftServiceConfig);
+
+        ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
+                .setName(RaftService.SERVICE_NAME)
+                .setClassName(RaftService.class.getName());
+        config.getServicesConfig().addServiceConfig(serviceConfig);
 
         return config;
     }
@@ -140,7 +145,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
 
         RaftNodeImpl raftNode = getRaftNode(instances[0], groupId);
         waitUntilLeaderElected(raftNode);
-        RaftEndpoint leaderEndpoint = getLeaderEndpoint(raftNode);
+        RaftEndpointImpl leaderEndpoint = getLeaderEndpoint(raftNode);
 
         for (HazelcastInstance instance : instances) {
             if (getAddress(instance).equals(leaderEndpoint.getAddress())) {

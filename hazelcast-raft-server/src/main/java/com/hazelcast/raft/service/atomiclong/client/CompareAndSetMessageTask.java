@@ -2,7 +2,6 @@ package com.hazelcast.raft.service.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
@@ -20,10 +19,9 @@ public class CompareAndSetMessageTask extends AbstractAtomicLongMessageTask {
     }
 
     @Override
-    protected void processMessage() throws Throwable {
+    protected void processMessage() {
         IAtomicLong atomicLong = getProxy();
-        ICompletableFuture<Boolean> future = atomicLong.compareAndSetAsync(expect, current);
-        future.andThen(this);
+        atomicLong.compareAndSetAsync(expect, current).andThen(this);
     }
 
     @Override

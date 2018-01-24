@@ -11,7 +11,7 @@ import com.hazelcast.raft.impl.RaftNode;
 import com.hazelcast.raft.exception.NotLeaderException;
 import com.hazelcast.raft.exception.RaftGroupTerminatedException;
 import com.hazelcast.raft.impl.service.RaftService;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -21,7 +21,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import java.io.IOException;
 
 /**
- * The base class that replicates the given {@link RaftOperation} to the target raft group
+ * The base class that replicates the given {@link RaftOp} to the target raft group
  */
 public abstract class RaftReplicateOp extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
 
@@ -65,11 +65,11 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
     }
 
     ICompletableFuture replicate(RaftNode raftNode) {
-        RaftOperation op = getRaftOperation();
+        RaftOp op = getRaftOp();
         return raftNode.replicate(op);
     }
 
-    protected abstract RaftOperation getRaftOperation();
+    protected abstract RaftOp getRaftOp();
 
     public final RaftGroupId getRaftGroupId() {
         return raftGroupId;

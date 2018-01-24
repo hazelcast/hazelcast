@@ -1,12 +1,13 @@
 package com.hazelcast.raft.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.raft.RaftConfig;
+import com.hazelcast.config.raft.RaftConfig;
 import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.service.RaftDataService;
 import com.hazelcast.raft.impl.state.LeaderState;
 import com.hazelcast.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.raft.impl.testing.LocalRaftGroup;
+import com.hazelcast.raft.impl.testing.TestRaftEndpoint;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.net.InetAddress;
@@ -31,14 +32,14 @@ public class RaftUtil {
         return readRaftState(node, task);
     }
 
-    public static RaftEndpoint getLeaderEndpoint(final RaftNodeImpl node) {
+    public static <T extends RaftEndpoint> T getLeaderEndpoint(final RaftNodeImpl node) {
         Callable<RaftEndpoint> task = new Callable<RaftEndpoint>() {
             @Override
             public RaftEndpoint call() {
                 return node.state().leader();
             }
         };
-        return readRaftState(node, task);
+        return (T) readRaftState(node, task);
     }
 
     public static LogEntry getLastLogOrSnapshotEntry(final RaftNodeImpl node) {
@@ -158,8 +159,8 @@ public class RaftUtil {
         }
     }
 
-    public static RaftEndpoint newRaftEndpoint(int port) {
-        return new RaftEndpoint(randomString(), newAddress(port));
+    public static TestRaftEndpoint newRaftEndpoint(int port) {
+        return new TestRaftEndpoint(randomString(), port);
     }
 
     public static Address newAddress(int port) {

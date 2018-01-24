@@ -1,6 +1,5 @@
 package com.hazelcast.raft.impl.log;
 
-import com.hazelcast.raft.operation.RaftOperation;
 import com.hazelcast.raft.impl.RaftEndpoint;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -19,9 +18,7 @@ import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -383,8 +380,8 @@ public class RaftLogTest {
     public void setSnapshotAtLastLogIndex_forSingleEntryLog() {
         LogEntry[] entries = new LogEntry[] { new LogEntry(1, 1, null) };
         log.appendEntries(entries);
-        RaftOperation snapshotOp = mock(RaftOperation.class);
-        log.setSnapshot(new SnapshotEntry(1, 1, snapshotOp, 0, Collections.<RaftEndpoint>emptySet()));
+        Object snapshot = new Object();
+        log.setSnapshot(new SnapshotEntry(1, 1, snapshot, 0, Collections.<RaftEndpoint>emptySet()));
 
         LogEntry lastLogEntry = log.lastLogOrSnapshotEntry();
         assertEquals(1, lastLogEntry.index());
@@ -393,10 +390,10 @@ public class RaftLogTest {
         assertEquals(log.lastLogOrSnapshotTerm(), 1);
         assertEquals(log.snapshotIndex(), 1);
 
-        LogEntry snapshot = log.snapshot();
-        assertEquals(1, snapshot.index());
-        assertEquals(1, snapshot.term());
-        assertSame(snapshotOp, snapshot.operation());
+        LogEntry snapshotEntry = log.snapshot();
+        assertEquals(1, snapshotEntry.index());
+        assertEquals(1, snapshotEntry.term());
+        assertEquals(snapshot, snapshotEntry.operation());
 
     }
 
@@ -463,8 +460,8 @@ public class RaftLogTest {
         log.appendEntries(entries);
 
         log.setSnapshot(new SnapshotEntry(1, 2, null, 0, Collections.<RaftEndpoint>emptySet()));
-        RaftOperation snapshotOp = mock(RaftOperation.class);
-        log.setSnapshot(new SnapshotEntry(1, 4, snapshotOp, 0, Collections.<RaftEndpoint>emptySet()));
+        Object snapshot = new Object();
+        log.setSnapshot(new SnapshotEntry(1, 4, snapshot, 0, Collections.<RaftEndpoint>emptySet()));
 
         LogEntry lastLogEntry = log.lastLogOrSnapshotEntry();
         assertEquals(5, lastLogEntry.index());
@@ -474,10 +471,10 @@ public class RaftLogTest {
         assertEquals(log.lastLogOrSnapshotTerm(), 1);
         assertEquals(log.snapshotIndex(), 4);
 
-        LogEntry snapshot = log.snapshot();
-        assertEquals(4, snapshot.index());
-        assertEquals(1, snapshot.term());
-        assertSame(snapshot.operation(), snapshotOp);
+        LogEntry snapshotEntry = log.snapshot();
+        assertEquals(4, snapshotEntry.index());
+        assertEquals(1, snapshotEntry.term());
+        assertEquals(snapshotEntry.operation(), snapshot);
     }
 
 }

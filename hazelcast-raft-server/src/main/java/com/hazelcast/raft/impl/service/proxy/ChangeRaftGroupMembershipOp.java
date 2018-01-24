@@ -6,9 +6,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.raft.MembershipChangeType;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftNode;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.impl.RaftOp;
 
 import java.io.IOException;
 
@@ -17,13 +17,13 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp {
     public static final int NAN_MEMBERS_COMMIT_INDEX = -1;
 
     private long membersCommitIndex;
-    private RaftEndpoint endpoint;
+    private RaftEndpointImpl endpoint;
     private MembershipChangeType changeType;
 
     public ChangeRaftGroupMembershipOp() {
     }
 
-    public ChangeRaftGroupMembershipOp(RaftGroupId groupId, long membersCommitIndex, RaftEndpoint endpoint,
+    public ChangeRaftGroupMembershipOp(RaftGroupId groupId, long membersCommitIndex, RaftEndpointImpl endpoint,
                                        MembershipChangeType changeType) {
         super(groupId);
         this.membersCommitIndex = membersCommitIndex;
@@ -41,7 +41,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp {
     }
 
     @Override
-    protected RaftOperation getRaftOperation() {
+    protected RaftOp getRaftOp() {
         throw new UnsupportedOperationException();
     }
 

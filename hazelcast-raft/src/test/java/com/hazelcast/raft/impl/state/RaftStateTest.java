@@ -2,10 +2,11 @@ package com.hazelcast.raft.impl.state;
 
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftEndpoint;
-import com.hazelcast.raft.impl.RaftGroupIdImpl;
 import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.log.RaftLog;
+import com.hazelcast.raft.impl.testing.TestRaftEndpoint;
+import com.hazelcast.raft.impl.testing.TestRaftGroupId;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -19,7 +20,6 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import static com.hazelcast.raft.impl.RaftUtil.majority;
-import static com.hazelcast.raft.impl.RaftUtil.newAddress;
 import static com.hazelcast.raft.impl.RaftUtil.newRaftEndpoint;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -37,12 +37,12 @@ public class RaftStateTest {
     private RaftState state;
     private String name = randomName();
     private RaftGroupId groupId;
-    private RaftEndpoint localEndpoint;
+    private TestRaftEndpoint localEndpoint;
     private Collection<RaftEndpoint> endpoints;
 
     @Before
     public void setup() {
-        groupId = new RaftGroupIdImpl(name, 1);
+        groupId = new TestRaftGroupId(name);
         localEndpoint = newRaftEndpoint(5000);
         endpoints = new HashSet<RaftEndpoint>(asList(
                 localEndpoint,
@@ -55,7 +55,7 @@ public class RaftStateTest {
     }
 
     @Test
-    public void test_initialState() throws Exception {
+    public void test_initialState() {
         assertEquals(name, state.name());
         assertEquals(groupId, state.groupId());
         assertEquals(endpoints.size(), state.memberCount());
@@ -83,34 +83,34 @@ public class RaftStateTest {
     }
 
     @Test
-    public void incrementTerm() throws Exception {
+    public void incrementTerm() {
         int term = state.incrementTerm();
         assertEquals(1, term);
         assertEquals(term, state.term());
     }
 
     @Test
-    public void test_Leader() throws Exception {
+    public void test_Leader() {
         state.leader(localEndpoint);
         assertEquals(localEndpoint, state.leader());
     }
 
     @Test
-    public void test_commitIndex() throws Exception {
+    public void test_commitIndex() {
         int ix = 123;
         state.commitIndex(ix);
         assertEquals(ix, state.commitIndex());
     }
 
     @Test
-    public void test_lastApplied() throws Exception {
+    public void test_lastApplied() {
         int last = 123;
         state.lastApplied(last);
         assertEquals(last, state.lastApplied());
     }
 
     @Test
-    public void persistVote() throws Exception {
+    public void persistVote() {
         int term = 13;
         state.persistVote(term, localEndpoint);
 
@@ -119,7 +119,7 @@ public class RaftStateTest {
     }
 
     @Test
-    public void toFollower_fromCandidate() throws Exception {
+    public void toFollower_fromCandidate() {
         state.toCandidate();
 
         int term = 23;
@@ -133,7 +133,7 @@ public class RaftStateTest {
     }
 
     @Test
-    public void toFollower_fromLeader() throws Exception {
+    public void toFollower_fromLeader() {
         state.toLeader();
 
         int term = 23;
@@ -147,7 +147,7 @@ public class RaftStateTest {
     }
 
     @Test
-    public void toCandidate_fromFollower() throws Exception {
+    public void toCandidate_fromFollower() {
         int term = 23;
         state.toFollower(term);
 
@@ -165,7 +165,7 @@ public class RaftStateTest {
     }
 
     @Test
-    public void toLeader_fromCandidate() throws Exception {
+    public void toLeader_fromCandidate() {
         state.toCandidate();
 
         int term = state.term();
@@ -195,23 +195,23 @@ public class RaftStateTest {
     }
 
     @Test
-    public void isKnownEndpoint() throws Exception {
+    public void isKnownEndpoint() {
         for (RaftEndpoint endpoint : endpoints) {
             assertTrue(state.isKnownEndpoint(endpoint));
         }
 
         assertFalse(state.isKnownEndpoint(newRaftEndpoint(1234)));
-        assertFalse(state.isKnownEndpoint(new RaftEndpoint(randomString(), localEndpoint.getAddress())));
-        assertFalse(state.isKnownEndpoint(new RaftEndpoint(localEndpoint.getUid(), newAddress(1234))));
+        assertFalse(state.isKnownEndpoint(new TestRaftEndpoint(randomString(), localEndpoint.getPort())));
+        assertFalse(state.isKnownEndpoint(new TestRaftEndpoint(localEndpoint.getUid(), 1234)));
     }
 
     @Test
-    public void test_majority_withOddMemberGroup() throws Exception {
+    public void test_majority_withOddMemberGroup() {
         test_majority(7);
     }
 
     @Test
-    public void test_majority_withEvenMemberGroup() throws Exception {
+    public void test_majority_withEvenMemberGroup() {
         test_majority(8);
     }
 
@@ -220,7 +220,7 @@ public class RaftStateTest {
         endpoints.add(localEndpoint);
 
         for (int i = 1; i < count; i++) {
-            endpoints.add(new RaftEndpoint(randomString(), newAddress(1000 + i)));
+            endpoints.add(newRaftEndpoint(1000 + i));
         }
 
         state = new RaftState(groupId, localEndpoint, endpoints);

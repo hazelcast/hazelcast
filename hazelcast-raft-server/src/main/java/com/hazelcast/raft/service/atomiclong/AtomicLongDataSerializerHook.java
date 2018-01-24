@@ -4,13 +4,13 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.service.atomiclong.operation.AddAndGetOperation;
-import com.hazelcast.raft.service.atomiclong.operation.AlterOperation;
-import com.hazelcast.raft.service.atomiclong.operation.ApplyOperation;
-import com.hazelcast.raft.service.atomiclong.operation.CompareAndSetOperation;
-import com.hazelcast.raft.service.atomiclong.operation.GetAndAddOperation;
-import com.hazelcast.raft.service.atomiclong.operation.GetAndSetOperation;
-import com.hazelcast.raft.service.atomiclong.operation.LocalGetOperation;
+import com.hazelcast.raft.service.atomiclong.operation.AddAndGetOp;
+import com.hazelcast.raft.service.atomiclong.operation.AlterOp;
+import com.hazelcast.raft.service.atomiclong.operation.ApplyOp;
+import com.hazelcast.raft.service.atomiclong.operation.CompareAndSetOp;
+import com.hazelcast.raft.service.atomiclong.operation.GetAndAddOp;
+import com.hazelcast.raft.service.atomiclong.operation.GetAndSetOp;
+import com.hazelcast.raft.service.atomiclong.operation.LocalGetOp;
 
 public final class AtomicLongDataSerializerHook implements DataSerializerHook {
 
@@ -39,19 +39,19 @@ public final class AtomicLongDataSerializerHook implements DataSerializerHook {
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
                     case ADD_AND_GET_OP:
-                        return new AddAndGetOperation();
+                        return new AddAndGetOp();
                     case COMPARE_AND_SET_OP:
-                        return new CompareAndSetOperation();
+                        return new CompareAndSetOp();
                     case GET_AND_ADD_OP:
-                        return new GetAndAddOperation();
+                        return new GetAndAddOp();
                     case GET_AND_SET_OP:
-                        return new GetAndSetOperation();
+                        return new GetAndSetOp();
                     case ALTER_OP:
-                        return new AlterOperation();
+                        return new AlterOp();
                     case APPLY_OP:
-                        return new ApplyOperation();
+                        return new ApplyOp();
                     case LOCAL_GET_OP:
-                        return new LocalGetOperation();
+                        return new LocalGetOp();
                 }
                 throw new IllegalArgumentException("Undefined type: " + typeId);
             }

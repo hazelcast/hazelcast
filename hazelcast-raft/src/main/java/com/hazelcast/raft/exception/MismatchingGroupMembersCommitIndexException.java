@@ -37,7 +37,7 @@ public class MismatchingGroupMembersCommitIndexException extends RaftException {
         out.writeLong(commitIndex);
         out.writeInt(members.size());
         for (RaftEndpoint endpoint : members) {
-            writeEndpoint(endpoint, out);
+            out.writeObject(endpoint);
         }
     }
 
@@ -47,7 +47,7 @@ public class MismatchingGroupMembersCommitIndexException extends RaftException {
         int count = in.readInt();
         members = new HashSet<RaftEndpoint>(count);
         for (int i = 0; i < count; i++) {
-            members.add(readEndpoint(in));
+            members.add((RaftEndpoint) in.readObject());
         }
     }
 }

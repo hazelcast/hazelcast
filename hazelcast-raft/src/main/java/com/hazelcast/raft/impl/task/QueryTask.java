@@ -9,23 +9,22 @@ import com.hazelcast.raft.impl.RaftNodeStatus;
 import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.state.RaftState;
 import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
-import com.hazelcast.raft.operation.RaftCommandOperation;
-import com.hazelcast.raft.operation.RaftOperation;
+import com.hazelcast.raft.command.RaftGroupCmd;
 
 /**
  * QueryTask is executed to query/read Raft state without appending log entry. It's scheduled by
- * {@link RaftNodeImpl#query(RaftOperation, QueryPolicy)}.
+ * {@link RaftNodeImpl#query(Object, QueryPolicy)}.
  *
  * @see QueryPolicy
  */
 public class QueryTask implements Runnable {
     private final RaftNodeImpl raftNode;
-    private final RaftOperation operation;
+    private final Object operation;
     private final QueryPolicy queryPolicy;
     private final SimpleCompletableFuture resultFuture;
     private final ILogger logger;
 
-    public QueryTask(RaftNodeImpl raftNode, RaftOperation operation, QueryPolicy policy, SimpleCompletableFuture resultFuture) {
+    public QueryTask(RaftNodeImpl raftNode, Object operation, QueryPolicy policy, SimpleCompletableFuture resultFuture) {
         this.raftNode = raftNode;
         this.operation = operation;
         this.logger = raftNode.getLogger(getClass());
@@ -82,14 +81,8 @@ public class QueryTask implements Runnable {
     }
 
     private boolean verifyOperation() {
-        if (!(raftNode.getServiceName().equals(operation.getServiceName()))) {
-            resultFuture.setResult(new IllegalArgumentException("operation: " + operation + "  service name: "
-                    + operation.getServiceName() + " is different than expected service name: " + raftNode.getServiceName()));
-            return false;
-        }
-
-        if (operation instanceof RaftCommandOperation) {
-            resultFuture.setResult(new IllegalArgumentException(operation + " cannot query " + raftNode.getServiceName()));
+        if (operation instanceof RaftGroupCmd) {
+            resultFuture.setResult(new IllegalArgumentException("cannot run query: " + operation));
             return false;
         }
 

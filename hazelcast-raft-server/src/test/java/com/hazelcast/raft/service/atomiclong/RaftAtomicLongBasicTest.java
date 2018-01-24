@@ -2,12 +2,14 @@ package com.hazelcast.raft.service.atomiclong;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.raft.RaftAtomicLongConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.raft.QueryPolicy;
+import com.hazelcast.config.raft.RaftGroupConfig;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.service.HazelcastRaftTestSupport;
 import com.hazelcast.raft.impl.service.RaftServiceUtil;
@@ -38,6 +40,7 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
 
     private HazelcastInstance[] instances;
     private IAtomicLong atomicLong;
+    private String name = "id";
     private final int raftGroupSize = 3;
 
     @Before
@@ -45,8 +48,7 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
         Address[] raftAddresses = createAddresses(5);
         instances = newInstances(raftAddresses, 3, 2);
 
-        String name = "id";
-        atomicLong = create(instances[RandomPicker.getInt(instances.length)], name, raftGroupSize);
+        atomicLong = create(instances[RandomPicker.getInt(instances.length)], name);
         assertNotNull(atomicLong);
     }
 
@@ -228,6 +230,10 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
 
         Config config = super.createConfig(raftAddresses, metadataGroupSize);
         config.getServicesConfig().addServiceConfig(atomicLongServiceConfig);
+
+        RaftAtomicLongConfig atomicLongConfig = new RaftAtomicLongConfig(name, new RaftGroupConfig(name, raftGroupSize));
+        config.addRaftAtomicLongConfig(atomicLongConfig);
+
         return config;
     }
 

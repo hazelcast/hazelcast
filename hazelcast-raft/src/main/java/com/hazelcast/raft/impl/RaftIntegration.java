@@ -9,8 +9,8 @@ import com.hazelcast.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
+import com.hazelcast.raft.impl.log.SnapshotEntry;
 import com.hazelcast.raft.impl.util.SimpleCompletableFuture;
-import com.hazelcast.raft.operation.RaftOperation;
 
 import java.util.concurrent.TimeUnit;
 
@@ -109,13 +109,29 @@ public interface RaftIntegration {
 
     /**
      * Executes the operation on underlying operation execution mechanism
-     * and returns the return value of {@link RaftOperation#doRun(long)}.
+     * and returns its return value.
      *
      * @param operation   raft operation
      * @param commitIndex commit index
      * @return operation execution result
      */
-    Object runOperation(RaftOperation operation, long commitIndex);
+    Object runOperation(Object operation, long commitIndex);
+
+    /**
+     * Take a snapshot for the given commit index which is the current commit index
+     *
+     * @param commitIndex commit index
+     * @return snapshot operation to put into the {@link SnapshotEntry}
+     */
+    Object takeSnapshot(long commitIndex);
+
+    /**
+     * Restores the snapshot with the given operation for the given commit index
+     *
+     * @param operation snapshot operation provided by {@link #takeSnapshot(long)}
+     * @param commitIndex commit index of the snapshot
+     */
+    void restoreSnapshot(Object operation, long commitIndex);
 
     /**
      * Executes the task on underlying task execution mechanism.

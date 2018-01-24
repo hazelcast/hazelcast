@@ -2,6 +2,7 @@ package com.hazelcast.raft.impl.service;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
+import com.hazelcast.raft.impl.RaftEndpointImpl;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.test.AssertTask;
@@ -23,13 +24,13 @@ import static org.junit.Assert.assertEquals;
 public class HazelcastRaftTest extends HazelcastRaftTestSupport {
 
     @Test
-    public void crashedLeader_cannotRecoverAndRejoinRaftGroup() throws Exception {
+    public void crashedLeader_cannotRecoverAndRejoinRaftGroup() {
         Address[] raftAddresses = createAddresses(2);
         HazelcastInstance[] instances = newInstances(raftAddresses);
 
         RaftNodeImpl leader = waitAllForLeaderElection(instances, METADATA_GROUP_ID);
 
-        HazelcastInstance leaderInstance = factory.getInstance(leader.getLocalEndpoint().getAddress());
+        HazelcastInstance leaderInstance = factory.getInstance(((RaftEndpointImpl) leader.getLocalEndpoint()).getAddress());
         final HazelcastInstance followerInstance = getRandomFollowerInstance(instances, leader);
 
         leaderInstance.shutdown();
@@ -42,7 +43,7 @@ public class HazelcastRaftTest extends HazelcastRaftTestSupport {
             }
         }, 3);
 
-        final HazelcastInstance newInstance = factory.newHazelcastInstance(leader.getLocalEndpoint().getAddress(),
+        final HazelcastInstance newInstance = factory.newHazelcastInstance(((RaftEndpointImpl) leader.getLocalEndpoint()).getAddress(),
                 createConfig(raftAddresses, raftAddresses.length));
         assertClusterSizeEventually(2, followerInstance);
 
@@ -59,13 +60,13 @@ public class HazelcastRaftTest extends HazelcastRaftTestSupport {
     }
 
     @Test
-    public void crashedFollower_cannotRecoverAndRejoinRaftGroup() throws Exception {
+    public void crashedFollower_cannotRecoverAndRejoinRaftGroup() {
         Address[] raftAddresses = createAddresses(2);
         HazelcastInstance[] instances = newInstances(raftAddresses);
 
         final RaftNodeImpl leader = waitAllForLeaderElection(instances, METADATA_GROUP_ID);
 
-        final HazelcastInstance leaderInstance = factory.getInstance(leader.getLocalEndpoint().getAddress());
+        final HazelcastInstance leaderInstance = factory.getInstance(((RaftEndpointImpl) leader.getLocalEndpoint()).getAddress());
         HazelcastInstance followerInstance = getRandomFollowerInstance(instances, leader);
 
         Address restartingAddress = getAddress(followerInstance);
