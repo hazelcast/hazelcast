@@ -35,6 +35,10 @@ interface RecordStoreLoader {
         public Future loadValues(List<Data> keys, boolean replaceExistingValues) {
             return null;
         }
+
+        @Override
+        public void destroy() {
+        }
     };
 
     /**
@@ -50,4 +54,10 @@ interface RecordStoreLoader {
      * @return future representing the pending completion for the value loading task
      */
     Future<?> loadValues(List<Data> keys, boolean replaceExistingValues);
+
+    /**
+     * Destroys the loader and gracefully cancels the background tasks.
+     * Does not wait for the tasks to finish.
+     */
+    void destroy();
 }
