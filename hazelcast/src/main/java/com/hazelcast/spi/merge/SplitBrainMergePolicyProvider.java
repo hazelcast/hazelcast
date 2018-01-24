@@ -48,6 +48,7 @@ public final class SplitBrainMergePolicyProvider {
         addPolicy(LatestUpdateMergePolicy.class, new LatestUpdateMergePolicy());
         addPolicy(PassThroughMergePolicy.class, new PassThroughMergePolicy());
         addPolicy(PutIfAbsentMergePolicy.class, new PutIfAbsentMergePolicy());
+        addPolicy(HyperLogLogMergePolicy.class, new HyperLogLogMergePolicy());
     }
 
     private final NodeEngine nodeEngine;

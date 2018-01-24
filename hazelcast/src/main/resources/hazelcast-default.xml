@@ -297,4 +297,10 @@
 
     <lite-member enabled="false"/>
 
+    <cardinality-estimator name="default">
+        <backup-count>1</backup-count>
+        <merge-policy batch-size="100">HyperLogLogMergePolicy</merge-policy>
+        <async-backup-count>0</async-backup-count>
+    </cardinality-estimator>
+
 </hazelcast>

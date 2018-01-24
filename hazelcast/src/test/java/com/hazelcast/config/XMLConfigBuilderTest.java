@@ -1558,6 +1558,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <backup-count>2</backup-count>\n"
                 + "        <async-backup-count>3</async-backup-count>\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <merge-policy>com.hazelcast.spi.merge.HyperLogLogMergePolicy</merge-policy>"
                 + "    </cardinality-estimator>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1567,7 +1568,24 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertFalse(config.getCardinalityEstimatorConfigs().isEmpty());
         assertEquals(2, cardinalityEstimatorConfig.getBackupCount());
         assertEquals(3, cardinalityEstimatorConfig.getAsyncBackupCount());
+        assertEquals("com.hazelcast.spi.merge.HyperLogLogMergePolicy",
+                cardinalityEstimatorConfig.getMergePolicyConfig().policy);
         assertEquals("customQuorumRule", cardinalityEstimatorConfig.getQuorumName());
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testCardinalityEstimatorConfigWithInvalidMergePolicy() {
+        String xml = HAZELCAST_START_TAG
+                + "    <cardinality-estimator name=\"foobar\">\n"
+                + "        <backup-count>2</backup-count>\n"
+                + "        <async-backup-count>3</async-backup-count>\n"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <merge-policy>CustomMergePolicy</merge-policy>"
+                + "    </cardinality-estimator>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+        fail();
     }
 
     @Test
