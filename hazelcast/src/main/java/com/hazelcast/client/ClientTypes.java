@@ -59,6 +59,11 @@ public final class ClientTypes {
      */
     public static final String NODEJS = "NJS";
 
+    /**
+     * Go client protocol ID
+     */
+    public static final String GO = "GOO";
+
     private ClientTypes() {
     }
 }
