@@ -16,8 +16,21 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.nio.serialization.Data;
+
 /**
- * Marker interface for WAN replication messages
+ * Interface for all WAN replication messages
  */
 public interface ReplicationEventObject {
+    /**
+     * Increments the count for the related event in the {@code eventCounter}
+     *
+     * @param eventCounter the WAN event counter
+     */
+    void incrementEventCount(WanEventCounter eventCounter);
+
+    /**
+     * Returns the key for the entry on which the event occurred.
+     */
+    Data getKey();
 }

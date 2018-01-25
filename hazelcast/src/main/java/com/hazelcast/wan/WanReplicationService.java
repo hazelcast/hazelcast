@@ -111,4 +111,19 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * Returns current status of WAN sync operation
      */
     WanSyncState getWanSyncState();
+
+    /**
+     * Returns a counter of received and processed WAN replication events.
+     */
+    WanEventCounter getReceivedEventCounter(String serviceName);
+
+    /**
+     * Returns a counter of received and processed WAN replication events.
+     */
+    WanEventCounter getSentEventCounter(String serviceName);
+
+    /**
+     * Removes the WAN event counter for the given {@code dataStructureName}.
+     */
+    void removeWanEventCounters(String serviceName, String dataStructureName);
 }

@@ -23,6 +23,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.wan.WanEventCounter;
+import com.hazelcast.wan.WanEventCounterContainer;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
@@ -40,6 +42,12 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 public class WanReplicationServiceImpl implements WanReplicationService {
 
     private final Node node;
+
+    /** WAN event counters for all services and only received events */
+    private final WanEventCounterContainer receivedWanEventCounters = new WanEventCounterContainer();
+
+    /** WAN event counters for all services and only sent events */
+    private final WanEventCounterContainer sentWanEventCounters = new WanEventCounterContainer();
 
     private final ConcurrentHashMap<String, WanReplicationPublisherDelegate> wanReplications
             = initializeWanReplicationPublisherMapping();
@@ -147,5 +155,21 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     @Override
     public WanSyncState getWanSyncState() {
         return null;
+    }
+
+    @Override
+    public WanEventCounter getReceivedEventCounter(String serviceName) {
+        return receivedWanEventCounters.getWanEventCounter(serviceName);
+    }
+
+    @Override
+    public WanEventCounter getSentEventCounter(String serviceName) {
+        return sentWanEventCounters.getWanEventCounter(serviceName);
+    }
+
+    @Override
+    public void removeWanEventCounters(String serviceName, String dataStructureName) {
+        receivedWanEventCounters.removeCounter(serviceName, dataStructureName);
+        sentWanEventCounters.removeCounter(serviceName, dataStructureName);
     }
 }

@@ -20,22 +20,30 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanEventCounter;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
 
+/**
+ * WAN replication object for map update operations.
+ */
 public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedDataSerializable {
-
-    String mapName;
-    MapMergePolicy mergePolicy;
-    EntryView entryView;
+    private String mapName;
+    /** The policy how to merge the entry on the receiving cluster */
+    private MapMergePolicy mergePolicy;
+    /** The updated entry */
+    private EntryView<Data, Data> entryView;
 
     public MapReplicationUpdate() {
     }
 
-    public MapReplicationUpdate(String mapName, MapMergePolicy mergePolicy, EntryView entryView) {
+    public MapReplicationUpdate(String mapName,
+                                MapMergePolicy mergePolicy,
+                                EntryView<Data, Data> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
         this.entryView = entryView;
@@ -61,7 +69,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
         return entryView;
     }
 
-    public void setEntryView(EntryView entryView) {
+    public void setEntryView(EntryView<Data, Data> entryView) {
         this.entryView = entryView;
     }
 
@@ -87,5 +95,15 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     @Override
     public int getId() {
         return WanDataSerializerHook.MAP_REPLICATION_UPDATE;
+    }
+
+    @Override
+    public void incrementEventCount(WanEventCounter eventCounter) {
+        eventCounter.incrementUpdate(mapName);
+    }
+
+    @Override
+    public Data getKey() {
+        return entryView.getKey();
     }
 }
