@@ -86,7 +86,7 @@ public final class KubernetesProperties {
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
 
     /**
-     *  <p>Configuration key: <tt>resolve-notready-addresses</tt></p>
+     *  <p>Configuration key: <tt>resolve-not-ready-addresses</tt></p>
      *  Defines if not ready addresses should be evaluated to be discovered on startup.
      */
     public static final PropertyDefinition RESOLVE_NOT_READY_ADDRESSES = property("resolve-not-ready-addresses", BOOLEAN);
