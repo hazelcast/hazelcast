@@ -32,7 +32,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class OperatingSystemMetricSet {
 
-    private static final double PERCENTAGE_MULTIPLIER = 100d;
+    private static final long PERCENTAGE_MULTIPLIER = 100;
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     private OperatingSystemMetricSet() {
@@ -56,14 +56,14 @@ public final class OperatingSystemMetricSet {
         registerMethod(metricsRegistry, mxBean, "getTotalSwapSpaceSize", "os.totalSwapSpaceSize");
         registerMethod(metricsRegistry, mxBean, "getMaxFileDescriptorCount", "os.maxFileDescriptorCount");
         registerMethod(metricsRegistry, mxBean, "getOpenFileDescriptorCount", "os.openFileDescriptorCount");
-        registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", "os.processCpuLoad");
-        registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad");
+        registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", "os.processCpuLoad", PERCENTAGE_MULTIPLIER);
+        registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
 
         metricsRegistry.register(mxBean, "os.systemLoadAverage", MANDATORY,
                 new DoubleProbeFunction<OperatingSystemMXBean>() {
                     @Override
                     public double get(OperatingSystemMXBean bean) {
-                        return PERCENTAGE_MULTIPLIER * bean.getSystemLoadAverage();
+                        return bean.getSystemLoadAverage();
                     }
                 }
         );
@@ -72,6 +72,11 @@ public final class OperatingSystemMetricSet {
     // This method doesn't depend on the OperatingSystemMXBean so it can be tested. Due to not knowing
     // the exact OperatingSystemMXBean class it is very difficult to get this class tested.
     static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name) {
+        registerMethod(metricsRegistry, osBean, methodName, name, 1);
+    }
+
+    private static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName,
+            String name, final long multiplier) {
         final Method method = getMethod(osBean, methodName);
 
         if (method == null) {
@@ -83,7 +88,7 @@ public final class OperatingSystemMetricSet {
                     new LongProbeFunction() {
                         @Override
                         public long get(Object bean) throws Exception {
-                            return (Long) method.invoke(bean, EMPTY_ARGS);
+                            return (Long) method.invoke(bean, EMPTY_ARGS) * multiplier;
                         }
                     });
         } else {
@@ -91,7 +96,7 @@ public final class OperatingSystemMetricSet {
                     new DoubleProbeFunction() {
                         @Override
                         public double get(Object bean) throws Exception {
-                            return (Double) method.invoke(bean, EMPTY_ARGS);
+                            return (Double) method.invoke(bean, EMPTY_ARGS) * multiplier;
                         }
                     });
         }
