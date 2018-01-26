@@ -19,7 +19,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalWanPublisherStats;
-import com.hazelcast.wan.WanEventCounter.EventCounter;
+import com.hazelcast.wan.impl.WanEventCounter.EventCounter;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;

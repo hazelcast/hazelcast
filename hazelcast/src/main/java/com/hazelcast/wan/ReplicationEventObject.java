@@ -17,6 +17,7 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.wan.impl.WanEventCounter;
 
 /**
  * Interface for all WAN replication messages

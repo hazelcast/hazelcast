@@ -23,8 +23,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.wan.WanEventCounter;
-import com.hazelcast.wan.WanEventCounterContainer;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;

@@ -18,7 +18,7 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.wan.WanEventCounter.EventCounter;
+import com.hazelcast.wan.impl.WanEventCounter.EventCounter;
 
 import java.util.Map;
 
