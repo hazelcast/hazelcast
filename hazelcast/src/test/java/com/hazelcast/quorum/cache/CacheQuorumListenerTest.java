@@ -27,7 +27,7 @@ import com.hazelcast.quorum.QuorumEvent;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumListener;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheQuorumListenerTest extends HazelcastTestSupport {
 

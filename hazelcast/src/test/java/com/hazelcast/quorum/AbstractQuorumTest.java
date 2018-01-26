@@ -51,12 +51,15 @@ import static java.util.Arrays.asList;
 
 /**
  * Base class for all quorum tests.
- *
+ * <p>
  * It defines quorum and data-structures that use it. Then it initialises and splits the cluster into two parts:
- * - 3 nodes -> this sub-cluster matches the quorum requirements
- * - 2 nodes -> this sub-cluster DOES NOT match the quorum requirements
+ * <ul>
+ * <li>3 nodes -> this sub-cluster matches the quorum requirements</li>
+ * <li>2 nodes -> this sub-cluster DOES NOT match the quorum requirements</li>
+ * </ul>
  */
-public class AbstractQuorumTest {
+@SuppressWarnings("WeakerAccess")
+public abstract class AbstractQuorumTest {
 
     protected static final String SEMAPHORE = "quorum" + randomString();
     protected static final String REFERENCE_NAME = "reference" + "quorum" + randomString();
@@ -254,7 +257,7 @@ public class AbstractQuorumTest {
         return cluster.instance[index].getSemaphore(SEMAPHORE + quorumType.name());
     }
 
-    protected IAtomicReference aref(int index, QuorumType quorumType) {
+    protected IAtomicReference<QuorumTestClass> aref(int index, QuorumType quorumType) {
         return cluster.instance[index].getAtomicReference(REFERENCE_NAME + quorumType.name());
     }
 
@@ -330,14 +333,8 @@ public class AbstractQuorumTest {
         return cluster.instance[index].getSet(SET_NAME + quorumType.name());
     }
 
-    public static class Objekt implements Serializable {
-        public static Objekt object() {
-            return new Objekt();
-        }
-    }
-
     protected static IFunction function() {
-        return new IFunction() {
+        return new IFunction<Object, Object>() {
             @Override
             public Object apply(Object input) {
                 return input;
@@ -345,4 +342,10 @@ public class AbstractQuorumTest {
         };
     }
 
+    public static class QuorumTestClass implements Serializable {
+
+        public static QuorumTestClass object() {
+            return new QuorumTestClass();
+        }
+    }
 }

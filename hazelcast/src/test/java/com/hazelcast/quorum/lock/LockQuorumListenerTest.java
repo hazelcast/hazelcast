@@ -33,6 +33,11 @@ import java.util.concurrent.CountDownLatch;
 @Category({QuickTest.class, ParallelTest.class})
 public class LockQuorumListenerTest extends AbstractQuorumListenerTest {
 
+    @Override
+    protected void addQuorumConfig(Config config, String distributedObjectName, String quorumName) {
+        config.getLockConfig(distributedObjectName).setQuorumName(quorumName);
+    }
+
     @Test
     public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() {
         CountDownLatch quorumNotPresent = new CountDownLatch(1);
@@ -46,10 +51,5 @@ public class LockQuorumListenerTest extends AbstractQuorumListenerTest {
             expected.printStackTrace();
         }
         assertOpenEventually(quorumNotPresent, 15);
-    }
-
-    @Override
-    protected void addQuorumConfig(Config config, String distributedObjectName, String quorumName) {
-        config.getLockConfig(distributedObjectName).setQuorumName(quorumName);
     }
 }

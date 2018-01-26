@@ -22,8 +22,9 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -31,6 +32,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -40,17 +44,17 @@ import static com.hazelcast.quorum.QuorumType.WRITE;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
 
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{WRITE}, {READ_WRITE}});
     }
+
+    @Parameter
+    public static QuorumType quorumType;
 
     @BeforeClass
     public static void setUp() {
@@ -61,7 +65,6 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     public static void tearDown() {
         shutdownTestEnvironment();
     }
-
 
     @Test
     public void put_successful_whenQuorumSize_met() {
@@ -74,32 +77,32 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void lock_successful_whenQuorumSize_met() throws InterruptedException {
+    public void lock_successful_whenQuorumSize_met() {
         map(0).lock(UUID.randomUUID().toString());
     }
 
     @Test(expected = QuorumException.class)
-    public void lock_failing_whenQuorumSize_notMet() throws InterruptedException {
+    public void lock_failing_whenQuorumSize_notMet() {
         map(3).lock(UUID.randomUUID().toString());
     }
 
     @Test
-    public void lockWithTime_successful_whenQuorumSize_met() throws InterruptedException {
+    public void lockWithTime_successful_whenQuorumSize_met() {
         map(0).lock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS);
     }
 
     @Test(expected = QuorumException.class)
-    public void lockWithTime_failing_whenQuorumSize_notMet() throws InterruptedException {
+    public void lockWithTime_failing_whenQuorumSize_notMet() {
         map(3).lock(UUID.randomUUID().toString(), 5, TimeUnit.SECONDS);
     }
 
     @Test
-    public void tryLock_successful_whenQuorumSize_met() throws InterruptedException {
+    public void tryLock_successful_whenQuorumSize_met() {
         map(0).tryLock(UUID.randomUUID().toString());
     }
 
     @Test(expected = QuorumException.class)
-    public void tryLock_failing_whenQuorumSize_notMet() throws InterruptedException {
+    public void tryLock_failing_whenQuorumSize_notMet() {
         map(3).tryLock(UUID.randomUUID().toString());
     }
 
@@ -124,7 +127,7 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void unlock_successful_whenQuorumSize_met() throws InterruptedException {
+    public void unlock_successful_whenQuorumSize_met() {
         try {
             map(0).unlock("foo");
         } catch (IllegalMonitorStateException ex) {
@@ -133,7 +136,7 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void unlock_failing_whenQuorumSize_notMet() throws InterruptedException {
+    public void unlock_failing_whenQuorumSize_notMet() {
         try {
             map(3).unlock("foo");
         } catch (IllegalMonitorStateException ex) {
@@ -142,12 +145,12 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void forceUnlock_successful_whenQuorumSize_met() throws InterruptedException {
+    public void forceUnlock_successful_whenQuorumSize_met() {
         map(0).forceUnlock("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void forceUnlock_failing_whenQuorumSize_notMet() throws InterruptedException {
+    public void forceUnlock_failing_whenQuorumSize_notMet() {
         map(3).forceUnlock("foo");
     }
 
@@ -185,7 +188,7 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     public void addLocalEntryListener_successful_whenQuorumSize_met() {
         try {
             map(0).addLocalEntryListener(new EntryAdapter());
-        } catch (UnsupportedOperationException ex) {
+        } catch (UnsupportedOperationException ignored) {
         }
     }
 
@@ -193,7 +196,7 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     public void addLocalEntryListener_successful_whenQuorumSize_notMet() {
         try {
             map(3).addLocalEntryListener(new EntryAdapter());
-        } catch (UnsupportedOperationException ex) {
+        } catch (UnsupportedOperationException ignored) {
         }
     }
 
@@ -230,5 +233,4 @@ public class MultiMapQuorumWriteTest extends AbstractQuorumTest {
     protected MultiMap map(int index) {
         return multimap(index, quorumType);
     }
-
 }

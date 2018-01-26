@@ -47,6 +47,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
+/**
+ * Tests quorum related configurations.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QuorumTest extends HazelcastTestSupport {
@@ -80,7 +83,7 @@ public class QuorumTest extends HazelcastTestSupport {
         final Quorum quorum2 = hazelcastInstance.getQuorumService().getQuorum(quorumName2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(quorum1.isPresent());
                 assertFalse(quorum2.isPresent());
             }
@@ -105,7 +108,7 @@ public class QuorumTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(function.wasCalled);
             }
         });
