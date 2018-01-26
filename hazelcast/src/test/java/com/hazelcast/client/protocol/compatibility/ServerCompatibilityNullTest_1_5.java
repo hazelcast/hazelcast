@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6059,8 +6059,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.backupCount));
             assertTrue(isEqual(anInt, params.asyncBackupCount));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddMultiMapConfigCodec.encodeResponse( );
@@ -6081,8 +6079,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.timeToLiveSeconds));
             assertTrue(isEqual(aString, params.inMemoryFormat));
             assertTrue(isEqual(null, params.ringbufferStoreConfig));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddRingbufferConfigCodec.encodeResponse( );
@@ -6099,8 +6095,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.backupCount));
             assertTrue(isEqual(anInt, params.asyncBackupCount));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeResponse( );
@@ -6135,8 +6129,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.asyncBackupCount));
             assertTrue(isEqual(anInt, params.maxSize));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddListConfigCodec.encodeResponse( );
@@ -6156,8 +6148,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.asyncBackupCount));
             assertTrue(isEqual(anInt, params.maxSize));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddSetConfigCodec.encodeResponse( );
@@ -6177,8 +6167,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
             assertTrue(isEqual(aString, params.mergePolicy));
             assertTrue(isEqual(null, params.listenerConfigs));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddReplicatedMapConfigCodec.encodeResponse( );
@@ -6214,8 +6202,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.poolSize));
             assertTrue(isEqual(anInt, params.queueCapacity));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddExecutorConfigCodec.encodeResponse( );
@@ -6233,8 +6219,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.poolSize));
             assertTrue(isEqual(anInt, params.durability));
             assertTrue(isEqual(anInt, params.capacity));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddDurableExecutorConfigCodec.encodeResponse( );
@@ -6252,8 +6236,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.poolSize));
             assertTrue(isEqual(anInt, params.durability));
             assertTrue(isEqual(anInt, params.capacity));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddScheduledExecutorConfigCodec.encodeResponse( );
@@ -6271,8 +6253,6 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(anInt, params.initialPermits));
             assertTrue(isEqual(anInt, params.backupCount));
             assertTrue(isEqual(anInt, params.asyncBackupCount));
-            assertTrue(isEqual(true, params.quorumNameExist));
-            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddSemaphoreConfigCodec.encodeResponse( );
@@ -6281,56 +6261,6 @@ public class ServerCompatibilityNullTest_1_5 {
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
-
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddAtomicLongConfigCodec.RequestParameters params = DynamicConfigAddAtomicLongConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-    assertTrue(isEqual(aString, params.name));
-    assertTrue(isEqual(aString, params.quorumName));
-}
-{
-    ClientMessage clientMessage = DynamicConfigAddAtomicLongConfigCodec.encodeResponse( );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddAtomicReferenceConfigCodec.RequestParameters params = DynamicConfigAddAtomicReferenceConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-    assertTrue(isEqual(aString, params.name));
-    assertTrue(isEqual(aString, params.quorumName));
-}
-{
-    ClientMessage clientMessage = DynamicConfigAddAtomicReferenceConfigCodec.encodeResponse( );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddCountDownLatchConfigCodec.RequestParameters params = DynamicConfigAddCountDownLatchConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-    assertTrue(isEqual(aString, params.name));
-    assertTrue(isEqual(aString, params.quorumName));
-}
-{
-    ClientMessage clientMessage = DynamicConfigAddCountDownLatchConfigCodec.encodeResponse( );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-
-
 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];

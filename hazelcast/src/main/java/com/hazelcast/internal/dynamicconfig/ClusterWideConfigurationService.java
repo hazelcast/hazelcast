@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,13 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
@@ -78,7 +74,6 @@ import static java.util.Collections.singleton;
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements PreJoinAwareService,
         CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
-
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
 
@@ -95,11 +90,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
-    private final ConcurrentMap<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
-    private final ConcurrentMap<String, AtomicReferenceConfig> atomicReferenceConfigs
-            = new ConcurrentHashMap<String, AtomicReferenceConfig>();
-    private final ConcurrentMap<String, CountDownLatchConfig> countDownLatchConfigs
-            = new ConcurrentHashMap<String, CountDownLatchConfig>();
     private final ConcurrentMap<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
@@ -121,8 +111,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, EventJournalConfig>();
     private final ConcurrentMap<String, EventJournalConfig> mapEventJournalConfigs =
             new ConcurrentHashMap<String, EventJournalConfig>();
-    private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
-            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     private final ConfigPatternMatcher configPatternMatcher;
     private final ILogger logger;
@@ -136,9 +124,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             lockConfigs,
             listConfigs,
             setConfigs,
-            atomicLongConfigs,
-            atomicReferenceConfigs,
-            countDownLatchConfigs,
             replicatedMapConfigs,
             topicConfigs,
             executorConfigs,
@@ -150,7 +135,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheSimpleConfigs,
             cacheEventJournalConfigs,
             mapEventJournalConfigs,
-            flakeIdGeneratorConfigs,
     };
 
     private volatile Version version;
@@ -249,10 +233,10 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
      * Register a dynamic configuration in a local member. When a dynamic configuration with the same name already
      * exists then this call has no effect.
      *
-     * @param newConfig       Configuration to register.
+     * @param newConfig Configuration to register.
      * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
-     * @throws ConfigurationException        when conflict is detected and configCheckMode is on THROW_EXCEPTION
+     * @throws ConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
@@ -277,15 +261,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof LockConfig) {
             LockConfig lockConfig = (LockConfig) newConfig;
             currentConfig = lockConfigs.putIfAbsent(lockConfig.getName(), lockConfig);
-        } else if (newConfig instanceof AtomicLongConfig) {
-            AtomicLongConfig atomicLongConfig = (AtomicLongConfig) newConfig;
-            currentConfig = atomicLongConfigs.putIfAbsent(atomicLongConfig.getName(), atomicLongConfig);
-        } else if (newConfig instanceof AtomicReferenceConfig) {
-            AtomicReferenceConfig atomicReferenceConfig = (AtomicReferenceConfig) newConfig;
-            currentConfig = atomicReferenceConfigs.putIfAbsent(atomicReferenceConfig.getName(), atomicReferenceConfig);
-        } else if (newConfig instanceof CountDownLatchConfig) {
-            CountDownLatchConfig countDownLatchConfig = (CountDownLatchConfig) newConfig;
-            currentConfig = countDownLatchConfigs.putIfAbsent(countDownLatchConfig.getName(), countDownLatchConfig);
         } else if (newConfig instanceof ListConfig) {
             ListConfig listConfig = (ListConfig) newConfig;
             currentConfig = listConfigs.putIfAbsent(listConfig.getName(), listConfig);
@@ -325,9 +300,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof SemaphoreConfig) {
             SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
             currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
-        } else if (newConfig instanceof FlakeIdGeneratorConfig) {
-            FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
-            currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -477,36 +449,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        return lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
-    }
-
-    @Override
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        return atomicLongConfigs;
-    }
-
-    @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        return lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
-    }
-
-    @Override
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
-        return lookupByPattern(configPatternMatcher, countDownLatchConfigs, name);
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        return atomicReferenceConfigs;
-    }
-
-    @Override
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        return countDownLatchConfigs;
-    }
-
-    @Override
     public LockConfig findLockConfig(String name) {
         return lookupByPattern(configPatternMatcher, lockConfigs, name);
     }
@@ -594,16 +536,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
         return mapEventJournalConfigs;
-    }
-
-    @Override
-    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigs, baseName);
-    }
-
-    @Override
-    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
-        return flakeIdGeneratorConfigs;
     }
 
     @Override

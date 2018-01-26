@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
@@ -70,7 +69,7 @@ public class ObjectMultiMapProxy<K, V>
 
     @Override
     public void initialize() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         List<EntryListenerConfig> listenerConfigs = config.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
@@ -102,7 +101,7 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
         return putInternal(dataKey, dataValue, -1);
@@ -112,7 +111,7 @@ public class ObjectMultiMapProxy<K, V>
     public Collection<V> get(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         MultiMapResponse result = getAllInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
@@ -123,7 +122,7 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
         return removeInternal(dataKey, dataValue);
@@ -133,7 +132,7 @@ public class ObjectMultiMapProxy<K, V>
     public Collection<V> remove(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         MultiMapResponse result = removeInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
@@ -141,7 +140,6 @@ public class ObjectMultiMapProxy<K, V>
 
     @Override
     public Set<K> localKeySet() {
-        ensureQuorumPresent(QuorumType.READ);
         Set<Data> dataKeySet = localKeySetInternal();
         return toObjectSet(dataKeySet);
     }
@@ -154,7 +152,7 @@ public class ObjectMultiMapProxy<K, V>
 
     @Override
     public Collection<V> values() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Map map = valuesInternal();
         Collection values = new LinkedList();
         for (Object obj : map.values()) {
@@ -169,7 +167,7 @@ public class ObjectMultiMapProxy<K, V>
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Map map = entrySetInternal();
         Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
         for (Object obj : map.values()) {
@@ -187,7 +185,7 @@ public class ObjectMultiMapProxy<K, V>
     public boolean containsKey(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return containsInternal(dataKey, null);
     }
@@ -196,7 +194,7 @@ public class ObjectMultiMapProxy<K, V>
     public boolean containsValue(Object value) {
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data valueKey = nodeEngine.toData(value);
         return containsInternal(null, valueKey);
     }
@@ -206,7 +204,7 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         Data valueKey = nodeEngine.toData(value);
         return containsInternal(dataKey, valueKey);
@@ -216,7 +214,7 @@ public class ObjectMultiMapProxy<K, V>
     public int valueCount(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return countInternal(dataKey);
     }
@@ -238,7 +236,7 @@ public class ObjectMultiMapProxy<K, V>
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return getService().addListener(name, listener, dataKey, includeValue, false);
     }
@@ -247,7 +245,7 @@ public class ObjectMultiMapProxy<K, V>
     public void lock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         lockSupport.lock(nodeEngine, dataKey);
     }
@@ -257,7 +255,7 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkPositive(leaseTime, "leaseTime should be positive");
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         lockSupport.lock(nodeEngine, dataKey, timeUnit.toMillis(leaseTime));
     }
@@ -266,7 +264,7 @@ public class ObjectMultiMapProxy<K, V>
     public boolean isLocked(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return lockSupport.isLocked(nodeEngine, dataKey);
     }
@@ -303,7 +301,7 @@ public class ObjectMultiMapProxy<K, V>
     public void unlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         lockSupport.unlock(nodeEngine, dataKey);
     }
@@ -312,19 +310,21 @@ public class ObjectMultiMapProxy<K, V>
     public void forceUnlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         lockSupport.forceUnlock(nodeEngine, dataKey);
     }
 
     @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
-        return getService().createStats(name);
+        return (LocalMultiMapStats) getService().createStats(name);
     }
 
     @Override
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation) {
+
+
         HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
         JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-multimap-" + getName());
         return aggregate(supplier, aggregation, jobTracker);
@@ -334,6 +334,7 @@ public class ObjectMultiMapProxy<K, V>
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation,
                                                     JobTracker jobTracker) {
+
         try {
             isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
@@ -359,7 +360,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Set<K> keySet = createHashSet(dataSet.size());
         for (Data dataKey : dataSet) {
             keySet.add((K) nodeEngine.toObject(dataKey));
@@ -367,7 +368,4 @@ public class ObjectMultiMapProxy<K, V>
         return keySet;
     }
 
-    private void ensureQuorumPresent(QuorumType requiredQuorumPermissionType) {
-        getService().ensureQuorumPresent(name, requiredQuorumPermissionType);
-    }
 }

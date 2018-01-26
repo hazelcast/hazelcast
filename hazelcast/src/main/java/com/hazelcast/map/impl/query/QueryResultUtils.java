@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,12 @@ public final class QueryResultUtils {
     }
 
     public static Set transformToSet(
-            SerializationService ss, QueryResult queryResult, Predicate predicate,
-            IterationType iterationType, boolean unique, boolean binary) {
+            SerializationService ss, QueryResult queryResult, Predicate predicate, IterationType iterationType, boolean unique) {
         if (predicate instanceof PagingPredicate) {
-            Set result = new QueryResultCollection(ss, IterationType.ENTRY, binary, unique, queryResult);
+            Set result = new QueryResultCollection(ss, IterationType.ENTRY, false, unique, queryResult);
             return getSortedQueryResultSet(new ArrayList(result), (PagingPredicate) predicate, iterationType);
         } else {
-            return new QueryResultCollection(ss, iterationType, binary, unique, queryResult);
+            return new QueryResultCollection(ss, iterationType, false, unique, queryResult);
         }
     }
 }

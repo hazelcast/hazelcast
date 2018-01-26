@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
+                            <mainClass>com.hazelcast.core.server.StartServer</mainClass>
                             <addClasspath>false</addClasspath>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
@@ -88,7 +89,7 @@
                             <transformers>
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
-                                    <mainClass>${hazelcast.serverMainClass}</mainClass>
+                                    <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
                                     <overrideInstructions>
                                         <Import-Package>
                                             sun.misc;resolution:=optional,

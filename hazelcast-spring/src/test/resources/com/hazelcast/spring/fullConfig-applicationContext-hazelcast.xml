@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@
        xmlns:s="http://www.hazelcast.com/schema/sample"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-        http://www.springframework.org/schema/beans/spring-beans.xsd
-        http://www.hazelcast.com/schema/sample
-        hazelcast-sample-service.xsd
-        http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.hazelcast.com/schema/spring
+		hazelcast-spring-3.10.xsd
+		http://www.hazelcast.com/schema/sample
+		hazelcast-sample-service.xsd">
+
+    <!--xmlns="http://www.hazelcast.com/schema/config"-->
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -166,13 +168,7 @@
 
 
                 <hz:ssl enabled="false" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
-                        factory-implementation="dummySSLContextFactory">
-                    <hz:host-verification policy-class-name="com.hazelcast.nio.ssl.BasicHostVerifier" enabled-on-server="true">
-                        <hz:properties>
-                            <hz:property name="testProperty">testValue</hz:property>
-                        </hz:properties>
-                    </hz:host-verification>
-                </hz:ssl>
+                        factory-implementation="dummySSLContextFactory"/>
                 <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
                                        implementation="dummySocketInterceptor"/>
                 <hz:symmetric-encryption enabled="true"
@@ -187,16 +183,6 @@
                         <hz:property name="dummy.property.2">value2</hz:property>
                     </hz:properties>
                 </hz:member-address-provider>
-                <hz:failure-detector>
-                    <hz:icmp enabled="false">
-                        <hz:fail-fast-on-startup>true</hz:fail-fast-on-startup>
-                        <hz:interval-milliseconds>1002</hz:interval-milliseconds>
-                        <hz:max-attempts>2</hz:max-attempts>
-                        <hz:parallel-mode>true</hz:parallel-mode>
-                        <hz:timeout-milliseconds>500</hz:timeout-milliseconds>
-                        <hz:ttl>1</hz:ttl>
-                    </hz:icmp>
-                </hz:failure-detector>
             </hz:network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>
@@ -210,9 +196,8 @@
             </hz:partition-group>
             <hz:executor-service name="testExec"
                                  pool-size="2"
-                                 queue-capacity="100">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-            </hz:executor-service>
+                                 queue-capacity="100"
+            />
             <hz:executor-service name="testExec2"
                                  pool-size="5"
                                  queue-capacity="300"
@@ -221,23 +206,11 @@
             <hz:durable-executor-service name="durableExec"
                                          pool-size="10"
                                          durability="5"
-                                         capacity="200">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-            </hz:durable-executor-service>
+                                         capacity="200"/>
 
             <hz:scheduled-executor-service name="scheduledExec"
                                            pool-size="10"
-                                           durability="5">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-            </hz:scheduled-executor-service>
-
-            <hz:cardinality-estimator name="estimator">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:backup-count>4</hz:backup-count>
-                <hz:merge-policy batch-size="44">DiscardMergePolicy</hz:merge-policy>
-
-            </hz:cardinality-estimator>
-
+                                           durability="5"/>
             <hz:queue name="testQ" max-size="1000">
                 <hz:item-listeners>
                     <hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true"/>
@@ -276,7 +249,6 @@
                            async-backup-count="1"
                            time-to-live-seconds="20">
                 <hz:ringbuffer-store enabled="true" class-name="com.hazelcast.spring.DummyRingbufferStore"/>
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
             </hz:ringbuffer>
 
             <hz:ringbuffer name="testRingbuffer2">
@@ -296,23 +268,7 @@
                 <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
             </hz:ringbuffer>
 
-            <hz:atomic-long name="testAtomicLong">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
-            </hz:atomic-long>
-
-            <hz:atomic-reference name="testAtomicReference">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:merge-policy batch-size="4223">PassThroughMergePolicy</hz:merge-policy>
-            </hz:atomic-reference>
-
-            <hz:count-down-latch name="testCountDownLatch">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-            </hz:count-down-latch>
-
-            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-            </hz:semaphore>
+            <hz:semaphore name="testSemaphore" async-backup-count="1" backup-count="1" initial-permits="10"/>
 
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
                                statistics-enabled="false">
@@ -474,7 +430,6 @@
                         <hz:filter-impl>com.example.SampleFilter</hz:filter-impl>
                     </hz:filters>
                 </hz:wan-replication-ref>
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
                 <hz:hot-restart enabled="true" fsync="true"/>
             </hz:cache>
 
@@ -483,29 +438,25 @@
 
             <hz:multimap name="testMultimap"
                          value-collection-type="LIST" binary="false" statistics-enabled="false">
+
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
             </hz:multimap>
 
             <hz:list name="testList"
                      max-size="9999"
                      backup-count="1"
                      async-backup-count="1"
-                     statistics-enabled="false">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
-            </hz:list>
+                     statistics-enabled="false"
+            />
             <hz:set name="testSet"
                     max-size="7777"
                     backup-count="0"
                     async-backup-count="0"
-                    statistics-enabled="false">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
-            </hz:set>
+                    statistics-enabled="false"
+            />
 
             <hz:topic name="testTopic">
                 <hz:statistics-enabled>false</hz:statistics-enabled>
@@ -520,7 +471,6 @@
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
             </hz:replicatedmap>
             <hz:listeners>
                 <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
@@ -608,8 +558,6 @@
                 <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
                 <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
             </hz:hot-restart-persistence>
-
-            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"/>
         </hz:config>
     </hz:hazelcast>
 
@@ -627,13 +575,11 @@
     <hz:list id="list" instance-ref="instance" name="list"/>
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
-    <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="instance" name="flakeIdGenerator"/>
-    <hz:atomicLong id="atomicLong" instance-ref="instance" name="testAtomicLong"/>
-    <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>
+    <hz:atomicLong id="atomicLong" instance-ref="instance" name="atomicLong"/>
+    <hz:atomicReference id="atomicReference" instance-ref="instance" name="atomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
     <hz:lock id="lock" instance-ref="instance" name="lock"/>
-    <!--<hz:cardinality-estimator id="cardinality" instance-ref="instance" name="cardinality"/>-->
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>

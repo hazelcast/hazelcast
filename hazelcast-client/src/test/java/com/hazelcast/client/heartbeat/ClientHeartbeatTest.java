@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientHeartbeatTest extends ClientTestSupport {
 
-    private static final int HEARTBEAT_TIMEOUT_MILLIS = 10000;
+    private static final int HEARTBEAT_TIMEOUT_MILLIS = 3000;
 
     private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -289,7 +289,11 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(delaySeconds));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "10000");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
 
@@ -338,7 +342,11 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     public void testAddingListenerToNewConnectionFailedBecauseOfHeartbeat() throws Exception {
         hazelcastFactory.newHazelcastInstance();
 
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "10000");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
+
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         final ClientListenerService clientListenerService = clientInstanceImpl.getListenerService();

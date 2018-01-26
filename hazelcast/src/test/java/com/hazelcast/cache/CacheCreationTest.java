@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
@@ -36,8 +34,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,23 +60,14 @@ import static org.junit.Assume.assumeFalse;
 @Category(SlowTest.class)
 public class CacheCreationTest extends HazelcastTestSupport {
 
-    private static final int THREAD_COUNT = 4;
-
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    @BeforeClass
-    public static void jsrSetup() {
-        JsrTestUtil.setup();
-    }
+    private static final int THREAD_COUNT = 4;
 
-    @AfterClass
-    public static void jsrTeardown() {
-        JsrTestUtil.cleanup();
-    }
-
+    @Before
     @After
-    public void teardown() {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.shutdownAll();
     }
 
@@ -205,10 +193,9 @@ public class CacheCreationTest extends HazelcastTestSupport {
 
     private Config createBasicConfig() {
         Config config = new Config();
-        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        joinConfig.getMulticastConfig()
+        config.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(false);
-        joinConfig.getTcpIpConfig()
+        config.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true)
                 .setMembers(singletonList("127.0.0.1"));
         return config;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public class HazelcastServerCacheManager
 
     @Override
     public void enableManagement(String cacheName, boolean enabled) {
-        ensureOpen();
+        checkIfManagerNotClosed();
         checkNotNull(cacheName, "cacheName cannot be null");
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setManagementEnabled(null, cacheNameWithPrefix, enabled);
@@ -93,7 +93,7 @@ public class HazelcastServerCacheManager
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
-        ensureOpen();
+        checkIfManagerNotClosed();
         checkNotNull(cacheName, "cacheName cannot be null");
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setStatisticsEnabled(null, cacheNameWithPrefix, enabled);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,11 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
-
-public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Boolean, Data, Data> {
-
-    private final String name;
-    private final AtomicReferenceConfig config;
-    private final SerializationService serializationService;
+public class AtomicReferenceContainer {
 
     private Data value;
-
-    public AtomicReferenceContainer(NodeEngine nodeEngine, String name) {
-        this.name = name;
-        this.config = nodeEngine.getConfig().findAtomicReferenceConfig(name);
-        this.serializationService = nodeEngine.getSerializationService();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public AtomicReferenceConfig getConfig() {
-        return config;
-    }
 
     public Data get() {
         return value;
@@ -79,26 +53,5 @@ public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Bo
 
     public boolean isNull() {
         return value == null;
-    }
-
-    @Override
-    public Data merge(SplitBrainMergeEntryView<Boolean, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
-
-        if (mergingEntry.getKey()) {
-            SplitBrainMergeEntryView<Boolean, Data> existingEntry = createSplitBrainMergeEntryView(true, value);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (newValue != null && !newValue.equals(value)) {
-                value = newValue;
-                return newValue;
-            }
-        } else {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
-            if (newValue != null) {
-                value = newValue;
-                return newValue;
-            }
-        }
-        return null;
     }
 }

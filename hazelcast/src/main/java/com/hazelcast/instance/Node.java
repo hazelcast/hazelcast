@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,6 +211,7 @@ public class Node {
             metricsRegistry.collectMetrics(nodeExtension);
             healthMonitor = new HealthMonitor(this);
 
+
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
             discoveryService = createDiscoveryService(
@@ -220,8 +221,6 @@ public class Node {
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             joiner = nodeContext.createJoiner(this);
-
-            config.setClusterService(clusterService);
         } catch (Throwable e) {
             try {
                 serverSocketChannel.close();

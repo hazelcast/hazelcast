@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
@@ -41,7 +39,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * in the cluster and its backup in another member in the cluster.
  */
 @Beta
-public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
+public class RingbufferConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value of capacity of the RingBuffer.
@@ -71,7 +69,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
-    private String quorumName;
 
     public RingbufferConfig() {
     }
@@ -103,7 +100,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         if (config.ringbufferStoreConfig != null) {
             this.ringbufferStoreConfig = new RingbufferStoreConfig(config.ringbufferStoreConfig);
         }
-        this.quorumName = config.quorumName;
     }
 
     /**
@@ -289,26 +285,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         return this;
     }
 
-    /**
-     * Returns the quorum name for operations.
-     *
-     * @return the quorum name
-     */
-    public String getQuorumName() {
-        return quorumName;
-    }
-
-    /**
-     * Sets the quorum name for operations.
-     *
-     * @param quorumName the quorum name
-     * @return the updated configuration
-     */
-    public RingbufferConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
-        return this;
-    }
-
     @Override
     public String toString() {
         return "RingbufferConfig{"
@@ -319,7 +295,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", ringbufferStoreConfig=" + ringbufferStoreConfig
-                + ", quorumName=" + quorumName
                 + '}';
     }
 
@@ -372,9 +347,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(timeToLiveSeconds);
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(ringbufferStoreConfig);
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-        }
     }
 
     @Override
@@ -386,9 +358,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         timeToLiveSeconds = in.readInt();
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         ringbufferStoreConfig = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-        }
     }
 
     @Override
@@ -420,9 +389,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
-            return false;
-        }
         return ringbufferStoreConfig != null ? ringbufferStoreConfig.equals(that.ringbufferStoreConfig)
                 : that.ringbufferStoreConfig == null;
     }
@@ -436,7 +402,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         result = 31 * result + timeToLiveSeconds;
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
         result = 31 * result + (ringbufferStoreConfig != null ? ringbufferStoreConfig.hashCode() : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -487,11 +452,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
 
         @Override
         public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
-            throw throwReadOnly();
-        }
-
-        @Override
-        public RingbufferConfig setQuorumName(String quorumName) {
             throw throwReadOnly();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
@@ -41,32 +40,33 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class AtomicLongBackupTest extends HazelcastTestSupport {
 
-    public int backupCount = 1;
+    private HazelcastInstance instance1;
+
+    private HazelcastInstance instance2;
 
     private String name = randomName();
 
-    private HazelcastInstance[] instances;
-
     private int partitionId;
+
     private IAtomicLong atomicLong;
 
     @Before
-    public void setup() {
-        Config config = new Config();
+    public void init() {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        instance1 = factory.newHazelcastInstance();
+        instance2 = factory.newHazelcastInstance();
+        warmUpPartitions(instance1, instance2);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(backupCount + 1);
-        instances = factory.newInstances(config);
-        warmUpPartitions(instances);
-
-        partitionId = instances[0].getPartitionService().getPartition(name).getPartitionId();
-        atomicLong = instances[0].getAtomicLong(name);
+        partitionId = instance1.getPartitionService().getPartition(name).getPartitionId();
+        atomicLong = instance1.getAtomicLong(name);
     }
 
     @Test
     public void testSet() {
         atomicLong.set(5);
 
-        assertAtomicLongValue(instances, 5);
+        assertAtomicLongValue(instance1, 5);
+        assertAtomicLongValue(instance2, 5);
     }
 
     @Test
@@ -74,7 +74,8 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         atomicLong.set(5);
         atomicLong.compareAndSet(5, 10);
 
-        assertAtomicLongValue(instances, 10);
+        assertAtomicLongValue(instance1, 10);
+        assertAtomicLongValue(instance2, 10);
     }
 
     @Test
@@ -82,7 +83,8 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         atomicLong.set(5);
         atomicLong.alter(new SetFunction(10));
 
-        assertAtomicLongValue(instances, 10);
+        assertAtomicLongValue(instance1, 10);
+        assertAtomicLongValue(instance2, 10);
     }
 
     @Test
@@ -90,7 +92,8 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         atomicLong.set(5);
         atomicLong.alterAndGet(new SetFunction(10));
 
-        assertAtomicLongValue(instances, 10);
+        assertAtomicLongValue(instance1, 10);
+        assertAtomicLongValue(instance2, 10);
     }
 
     @Test
@@ -98,7 +101,8 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         atomicLong.set(5);
         atomicLong.getAndAlter(new SetFunction(10));
 
-        assertAtomicLongValue(instances, 10);
+        assertAtomicLongValue(instance1, 10);
+        assertAtomicLongValue(instance2, 10);
     }
 
     @Test
@@ -106,7 +110,8 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         atomicLong.set(5);
         atomicLong.addAndGet(5);
 
-        assertAtomicLongValue(instances, 10);
+        assertAtomicLongValue(instance1, 10);
+        assertAtomicLongValue(instance2, 10);
     }
 
     @Test
@@ -114,7 +119,8 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         atomicLong.set(5);
         atomicLong.getAndAdd(5);
 
-        assertAtomicLongValue(instances, 10);
+        assertAtomicLongValue(instance1, 10);
+        assertAtomicLongValue(instance2, 10);
     }
 
     @Test
@@ -122,28 +128,28 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         atomicLong.set(5);
         atomicLong.incrementAndGet();
 
-        assertAtomicLongValue(instances, 6);
+        assertAtomicLongValue(instance1, 6);
+        assertAtomicLongValue(instance2, 6);
     }
 
     @Test
-    public void testDecrementAndGet() {
+    public void testDecremenetAndGet() {
         atomicLong.set(5);
         atomicLong.decrementAndGet();
 
-        assertAtomicLongValue(instances, 4);
+        assertAtomicLongValue(instance1, 4);
+        assertAtomicLongValue(instance2, 4);
     }
 
-    private void assertAtomicLongValue(HazelcastInstance[] instances, long value) {
-        for (HazelcastInstance instance : instances) {
-            assertEquals(value, readAtomicLongValue(instance));
-        }
+    private void assertAtomicLongValue(final HazelcastInstance instance, final long value) {
+        assertEquals(value, readAtomicLongValue(instance));
     }
 
-    private long readAtomicLongValue(HazelcastInstance instance) {
-        OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
-        AtomicLongService atomicLongService = getNodeEngineImpl(instance).getService(AtomicLongService.SERVICE_NAME);
+    private long readAtomicLongValue(final HazelcastInstance instance) {
+        final OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
+        final AtomicLongService atomicLongService = getNodeEngineImpl(instance).getService(AtomicLongService.SERVICE_NAME);
 
-        GetLongValue task = new GetLongValue(atomicLongService);
+        final GetLongValue task = new GetLongValue(atomicLongService);
         operationService.execute(task);
         assertOpenEventually(task.latch);
         return task.value;
@@ -157,7 +163,7 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
 
         long value;
 
-        GetLongValue(AtomicLongService atomicLongService) {
+        public GetLongValue(AtomicLongService atomicLongService) {
             this.atomicLongService = atomicLongService;
         }
 
@@ -178,7 +184,7 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
 
         private long value;
 
-        SetFunction(long value) {
+        public SetFunction(long value) {
             this.value = value;
         }
 
@@ -186,5 +192,7 @@ public class AtomicLongBackupTest extends HazelcastTestSupport {
         public Long apply(Long input) {
             return value;
         }
+
     }
+
 }

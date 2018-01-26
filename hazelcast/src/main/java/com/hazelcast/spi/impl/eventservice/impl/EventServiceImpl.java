@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -632,7 +632,12 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     private OnJoinRegistrationOperation getOnJoinRegistrationOperation() {
         Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
-            segment.collectRemoteRegistrations(registrations);
+            //todo: this should be moved into the Segment.
+            for (Registration reg : (Iterable<Registration>) segment.getRegistrationIdMap().values()) {
+                if (!reg.isLocalOnly()) {
+                    registrations.add(reg);
+                }
+            }
         }
         return registrations.isEmpty() ? null : new OnJoinRegistrationOperation(registrations);
     }

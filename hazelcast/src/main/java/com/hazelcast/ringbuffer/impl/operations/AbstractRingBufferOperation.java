@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -43,8 +42,8 @@ import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
  * <li>defines the factory ID for the {@link IdentifiedDataSerializable}</li>
  * </ul>
  */
-public abstract class AbstractRingBufferOperation extends Operation implements NamedOperation, IdentifiedDataSerializable,
-        PartitionAwareOperation, ServiceNamespaceAware {
+public abstract class AbstractRingBufferOperation extends Operation
+        implements IdentifiedDataSerializable, PartitionAwareOperation, ServiceNamespaceAware {
 
     protected String name;
     private RingbufferContainer ringbuffer;
@@ -59,11 +58,6 @@ public abstract class AbstractRingBufferOperation extends Operation implements N
     @Override
     public String getServiceName() {
         return SERVICE_NAME;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     /**

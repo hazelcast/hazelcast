@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,16 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 
 public class MultiMapPartitionContainer {
 
-    final ConcurrentMap<String, MultiMapContainer> containerMap = createConcurrentHashMap(1000);
+    final int partitionId;
 
     final MultiMapService service;
-    final int partitionId;
+
+    final ConcurrentMap<String, MultiMapContainer> containerMap = new ConcurrentHashMap<String, MultiMapContainer>(1000);
 
     private final ConstructorFunction<String, MultiMapContainer> containerConstructor
             = new ConstructorFunction<String, MultiMapContainer>() {
@@ -44,7 +44,7 @@ public class MultiMapPartitionContainer {
         }
     };
 
-    MultiMapPartitionContainer(MultiMapService service, int partitionId) {
+    public MultiMapPartitionContainer(MultiMapService service, int partitionId) {
         this.service = service;
         this.partitionId = partitionId;
     }
@@ -63,20 +63,13 @@ public class MultiMapPartitionContainer {
         return container;
     }
 
-    public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
-        for (MultiMapContainer container : containerMap.values()) {
-            MultiMapConfig config = container.getConfig();
-            if (config.getTotalBackupCount() < replicaIndex) {
-                continue;
-            }
-            namespaces.add(container.getObjectNamespace());
-        }
-        return namespaces;
+    // need for testing..
+    public boolean containsCollection(String name) {
+        return containerMap.containsKey(name);
     }
 
     void destroyMultiMap(String name) {
-        MultiMapContainer container = containerMap.remove(name);
+        final MultiMapContainer container = containerMap.remove(name);
         if (container != null) {
             container.destroy();
         } else {
@@ -97,10 +90,26 @@ public class MultiMapPartitionContainer {
         }
     }
 
+    public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+
+        for (MultiMapContainer container : containerMap.values()) {
+            MultiMapConfig mapConfig = container.getConfig();
+            if (mapConfig.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+
+            namespaces.add(container.getObjectNamespace());
+        }
+
+        return namespaces;
+    }
+
     void destroy() {
         for (MultiMapContainer container : containerMap.values()) {
             container.destroy();
         }
         containerMap.clear();
     }
+
 }

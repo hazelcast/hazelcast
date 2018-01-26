@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
-
-public class CollectionAddOperation extends CollectionBackupAwareOperation implements MutatingOperation {
+public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     protected Data value;
-    protected long itemId = INVALID_ITEM_ID;
+    protected long itemId = -1;
 
     public CollectionAddOperation() {
     }
@@ -44,7 +41,7 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation imple
 
     @Override
     public boolean shouldBackup() {
-        return itemId != INVALID_ITEM_ID;
+        return itemId != -1;
     }
 
     @Override
@@ -58,12 +55,12 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation imple
             CollectionContainer collectionContainer = getOrCreateContainer();
             itemId = collectionContainer.add(value);
         }
-        response = itemId != INVALID_ITEM_ID;
+        response = itemId != -1;
     }
 
     @Override
     public void afterRun() throws Exception {
-        if (itemId != INVALID_ITEM_ID) {
+        if (itemId != -1) {
             publishEvent(ItemEventType.ADDED, value);
         }
     }

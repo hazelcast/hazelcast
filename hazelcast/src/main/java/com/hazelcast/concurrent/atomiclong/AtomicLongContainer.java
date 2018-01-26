@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,9 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.serialization.SerializationService;
-
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
-
-public class AtomicLongContainer implements SplitBrainAwareDataContainer<Boolean, Long, Long> {
-
-    private final String name;
-    private final AtomicLongConfig config;
-    private final SerializationService serializationService;
+public class AtomicLongContainer {
 
     private long value;
-
-    public AtomicLongContainer(String name, NodeEngine nodeEngine) {
-        this.name = name;
-        this.config = nodeEngine.getConfig().findAtomicLongConfig(name);
-        this.serializationService = nodeEngine.getSerializationService();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public AtomicLongConfig getConfig() {
-        return config;
-    }
 
     public long get() {
         return value;
@@ -78,26 +51,5 @@ public class AtomicLongContainer implements SplitBrainAwareDataContainer<Boolean
         long tempValue = this.value;
         this.value = value;
         return tempValue;
-    }
-
-    @Override
-    public Long merge(SplitBrainMergeEntryView<Boolean, Long> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
-
-        if (mergingEntry.getKey()) {
-            SplitBrainMergeEntryView<Boolean, Long> existingEntry = createSplitBrainMergeEntryView(true, value);
-            Long newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (newValue != null && !newValue.equals(value)) {
-                value = newValue;
-                return newValue;
-            }
-        } else {
-            Long newValue = mergePolicy.merge(mergingEntry, null);
-            if (newValue != null) {
-                value = newValue;
-                return newValue;
-            }
-        }
-        return null;
     }
 }

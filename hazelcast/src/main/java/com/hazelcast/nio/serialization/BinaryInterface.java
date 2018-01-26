@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,10 +43,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Open Binary Client Protocol or in other ways which may break Hazelcast or other systems. Changing the way
  * {@code @BinaryInterface} classes are serialized will result in incompatibilities, so the following rules
  * apply to classes annotated with this annotation in the 3.x release series:
- * <p>
- * - NEVER CHANGE THEM<br>
+ *
+ * - NEVER CHANGE THEM
  * - NEVER MAKE THEM IMPLEMENT THE VERSIONED INTERFACE
- * <p>
+ *
  * For the purposes of serializable classes conventions testing, this annotation is only taken into account when
  * used on concrete classes; it does not make sense to annotate an interface or an abstract class, because serialized form
  * is only relevant in the context of a concrete class. However, it may be informative to use this annotation also on

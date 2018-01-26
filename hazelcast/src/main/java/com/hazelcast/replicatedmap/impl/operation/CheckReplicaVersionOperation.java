@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,7 @@ import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
  * Checks whether replica version is in sync with the primary.
  * If not, it will request the correct state via {@link RequestMapDataOperation}
  */
-public class CheckReplicaVersionOperation extends AbstractSerializableOperation
-        implements PartitionAwareOperation {
+public class CheckReplicaVersionOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
 
     private Map<String, Long> versions;
 
@@ -77,7 +76,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation
                 requestDataFromOwner(name);
             } else if (store.isStale(version)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Stale replica! map: " + name + " owner version: " + version
+                    logger.fine("Stale replica! map: "  + name + " owner version: " + version
                             + " replica version: " + store.getVersion() + " partitionId=" + partitionId);
                 }
 

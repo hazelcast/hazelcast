@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.projection.Projections.identity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -74,7 +73,7 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final TruePredicate<EventJournalCacheEvent<String, Integer>> TRUE_PREDICATE = truePredicate();
-    private static final Projection<EventJournalCacheEvent<String, Integer>, EventJournalCacheEvent<String, Integer>> IDENTITY_PROJECTION = identity();
+    private static final IdentityProjection<EventJournalCacheEvent<String, Integer>> IDENTITY_PROJECTION = identityProjection();
 
     protected HazelcastInstance[] instances;
     protected CacheManager cacheManager;
@@ -352,12 +351,23 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
         }
     }
 
+    private static class IdentityProjection<I> extends Projection<I, I> implements Serializable {
+        @Override
+        public I transform(I input) {
+            return input;
+        }
+    }
+
     private String randomPartitionKey() {
         return generateKeyForPartition(instances[0], partitionId);
     }
 
     private void assertJournalSize(ICache<?, ?> cache, int size) {
         assertJournalSize(partitionId, CacheService.getObjectNamespace(cache.getPrefixedName()), size);
+    }
+
+    private void assertJournalSize(int partitionId, ICache<?, ?> cache, int size) {
+        assertJournalSize(partitionId, CacheService.getObjectNamespace(cache.getName()), size);
     }
 
     private void assertJournalSize(int partitionId, ObjectNamespace namespace, int size) {
@@ -409,6 +419,10 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
 
     private static <T> TruePredicate<T> truePredicate() {
         return new TruePredicate<T>();
+    }
+
+    private static <T> IdentityProjection<T> identityProjection() {
+        return new IdentityProjection<T>();
     }
 
     public static class NewValueParityPredicate implements Predicate<EventJournalCacheEvent<String, Integer>>, Serializable {

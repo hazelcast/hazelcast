@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -234,41 +234,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSSLConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <network>\n"
-                + "        <ssl enabled=\"true\">\r\n"
-                + "          <factory-class-name>\r\n"
-                + "              com.hazelcast.nio.ssl.BasicSSLContextFactory\r\n"
-                + "          </factory-class-name>\r\n"
-                + "          <properties>\r\n"
-                + "            <property name=\"protocol\">TLS</property>\r\n"
-                + "          </properties>\r\n"
-                + "          <host-verification policy-class-name=\"com.example.Verifier\"\r\n"
-                + "              enabled-on-server=\"true\">\r\n"
-                + "            <properties>\r\n"
-                + "              <property name=\"host\">127.0.0.1</property>\r\n"
-                + "            </properties>\r\n"
-                + "          </host-verification>\r\n"
-                + "        </ssl>\r\n"
-                + "    </network>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
-        assertTrue(sslConfig.isEnabled());
-        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
-        assertEquals(1, sslConfig.getProperties().size());
-        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
-
-        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
-        assertEquals("com.example.Verifier", hostVerification.getPolicyClassName());
-        assertTrue(hostVerification.isEnabledOnServer());
-        assertEquals(1, hostVerification.getProperties().size());
-        assertEquals("127.0.0.1", hostVerification.getProperties().get("host"));
-    }
-
-    @Test
     public void readPortCount() {
         // check when it is explicitly set
         Config config = buildConfig(HAZELCAST_START_TAG
@@ -324,7 +289,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    </semaphore>"
                 + "    <semaphore name=\"custom\">\n"
                 + "        <initial-permits>10</initial-permits>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </semaphore>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -332,7 +296,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
         assertEquals(1, defaultConfig.getInitialPermits());
         assertEquals(10, customConfig.getInitialPermits());
-        assertEquals("customQuorumRule", customConfig.getQuorumName());
     }
 
     @Test
@@ -386,78 +349,14 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void readListConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "      <list name=\"myList\">"
-                + "        <statistics-enabled>true</statistics-enabled>"
-                + "        <max-size>100</max-size>"
-                + "        <backup-count>1</backup-count>"
-                + "        <async-backup-count>0</async-backup-count>"
-                + "        <item-listeners>"
-                + "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>"
-                + "        </item-listeners>"
-                + "        <merge-policy batch-size=\"4223\">PassThroughMergePolicy</merge-policy>"
-                + "    </list>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        ListConfig listConfig = config.getListConfig("myList");
-
-        assertEquals("myList", listConfig.getName());
-        assertTrue(listConfig.isStatisticsEnabled());
-        assertEquals(100, listConfig.getMaxSize());
-        assertEquals(1, listConfig.getBackupCount());
-        assertEquals(0, listConfig.getAsyncBackupCount());
-        assertTrue(listConfig.getItemListenerConfigs().size() == 1);
-
-        ItemListenerConfig listenerConfig = listConfig.getItemListenerConfigs().iterator().next();
-        assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
-
-        MergePolicyConfig mergePolicyConfig = listConfig.getMergePolicyConfig();
-        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(4223, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void readSetConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "      <set name=\"mySet\">"
-                + "        <statistics-enabled>true</statistics-enabled>"
-                + "        <max-size>100</max-size>"
-                + "        <backup-count>1</backup-count>"
-                + "        <async-backup-count>0</async-backup-count>"
-                + "        <item-listeners>"
-                + "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>"
-                + "        </item-listeners>"
-                + "        <merge-policy batch-size=\"4223\">PassThroughMergePolicy</merge-policy>"
-                + "    </set>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        SetConfig setConfig = config.getSetConfig("mySet");
-
-        assertEquals("mySet", setConfig.getName());
-        assertTrue(setConfig.isStatisticsEnabled());
-        assertEquals(100, setConfig.getMaxSize());
-        assertEquals(1, setConfig.getBackupCount());
-        assertEquals(0, setConfig.getAsyncBackupCount());
-        assertTrue(setConfig.getItemListenerConfigs().size() == 1);
-
-        ItemListenerConfig listenerConfig = setConfig.getItemListenerConfigs().iterator().next();
-        assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
-
-        MergePolicyConfig mergePolicyConfig = setConfig.getMergePolicyConfig();
-        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(4223, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
     public void readLockConfig() {
         String xml = HAZELCAST_START_TAG
                 + "  <lock name=\"default\">"
                 + "        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>"
-                + "  </lock>"
+                + "    </lock>"
                 + "  <lock name=\"custom\">"
-                + "       <quorum-ref>customQuorumRule</quorum-ref>"
-                + "  </lock>"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </lock>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -510,7 +409,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "                <property name=\"store-path\">.//tmp//bufferstore</property>"
                 + "            </properties>"
                 + "        </ringbuffer-store>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </ringbuffer>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -524,56 +422,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.RingbufferStoreImpl", ringbufferStoreConfig.getClassName());
         Properties ringbufferStoreProperties = ringbufferStoreConfig.getProperties();
         assertEquals(".//tmp//bufferstore", ringbufferStoreProperties.get("store-path"));
-        assertEquals("customQuorumRule", ringbufferConfig.getQuorumName());
-    }
-
-    @Test
-    public void readAtomicLong() {
-        String xml = HAZELCAST_START_TAG
-                + "    <atomic-long name=\"custom\">"
-                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </atomic-long>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
-        assertEquals("custom", atomicLongConfig.getName());
-        assertEquals("customQuorumRule", atomicLongConfig.getQuorumName());
-
-        MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void readAtomicReference() {
-        String xml = HAZELCAST_START_TAG
-                + "    <atomic-reference name=\"custom\">"
-                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </atomic-reference>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        AtomicReferenceConfig atomicReferenceConfig = config.getAtomicReferenceConfig("custom");
-        assertEquals("custom", atomicReferenceConfig.getName());
-        assertEquals("customQuorumRule", atomicReferenceConfig.getQuorumName());
-
-        MergePolicyConfig mergePolicyConfig = atomicReferenceConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void readCountDownLatch() {
-        String xml = HAZELCAST_START_TAG
-                + "    <count-down-latch name=\"custom\">"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </count-down-latch>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        CountDownLatchConfig countDownLatchConfig = config.getCountDownLatchConfig("custom");
-        assertEquals("custom", countDownLatchConfig.getName());
-        assertEquals("customQuorumRule", countDownLatchConfig.getQuorumName());
     }
 
     @Test
@@ -1151,21 +999,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(20, journalConfig.getTimeToLiveSeconds());
     }
 
-    @Test
-    public void testFlakeIdGeneratorConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "<flake-id-generator name='gen'>"
-                + "  <prefetch-count>3</prefetch-count>"
-                + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
-                + "</flake-id-generator>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        FlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
-        assertEquals("gen", fConfig.getName());
-        assertEquals(3, fConfig.getPrefetchCount());
-        assertEquals(10L, fConfig.getPrefetchValidityMillis());
-    }
-
     @Test(expected = InvalidConfigurationException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";
@@ -1475,39 +1308,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
     }
 
-    @Test
-    public void testCacheConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <cache name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </cache>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        CacheSimpleConfig cacheConfig = config.getCacheConfig("foobar");
-
-        // TODO -> not full config checked
-        assertFalse(config.getCacheConfigs().isEmpty());
-        assertEquals("customQuorumRule", cacheConfig.getQuorumName());
-    }
-
-    @Test
-    public void testExecutorConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <executor-service name=\"foobar\">\n"
-                + "        <pool-size>2</pool-size>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </executor-service>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ExecutorConfig executorConfig = config.getExecutorConfig("foobar");
-
-        // TODO -> not full config checked
-        assertFalse(config.getExecutorConfigs().isEmpty());
-        assertEquals(2, executorConfig.getPoolSize());
-        assertEquals("customQuorumRule", executorConfig.getQuorumName());
-    }
 
     @Test
     public void testDurableExecutorConfig() {
@@ -1516,7 +1316,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <pool-size>2</pool-size>\n"
                 + "        <durability>3</durability>\n"
                 + "        <capacity>4</capacity>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </durable-executor-service>"
                 + HAZELCAST_END_TAG;
 
@@ -1527,7 +1326,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, durableExecutorConfig.getPoolSize());
         assertEquals(3, durableExecutorConfig.getDurability());
         assertEquals(4, durableExecutorConfig.getCapacity());
-        assertEquals("customQuorumRule", durableExecutorConfig.getQuorumName());
     }
 
     @Test
@@ -1537,7 +1335,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <durability>4</durability>\n"
                 + "        <pool-size>5</pool-size>\n"
                 + "        <capacity>2</capacity>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
                 + "    </scheduled-executor-service>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1548,7 +1345,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(4, scheduledExecutorConfig.getDurability());
         assertEquals(5, scheduledExecutorConfig.getPoolSize());
         assertEquals(2, scheduledExecutorConfig.getCapacity());
-        assertEquals("customQuorumRule", scheduledExecutorConfig.getQuorumName());
     }
 
     @Test
@@ -1557,8 +1353,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <cardinality-estimator name=\"foobar\">\n"
                 + "        <backup-count>2</backup-count>\n"
                 + "        <async-backup-count>3</async-backup-count>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "        <merge-policy>com.hazelcast.spi.merge.HyperLogLogMergePolicy</merge-policy>"
                 + "    </cardinality-estimator>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1568,104 +1362,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertFalse(config.getCardinalityEstimatorConfigs().isEmpty());
         assertEquals(2, cardinalityEstimatorConfig.getBackupCount());
         assertEquals(3, cardinalityEstimatorConfig.getAsyncBackupCount());
-        assertEquals("com.hazelcast.spi.merge.HyperLogLogMergePolicy",
-                cardinalityEstimatorConfig.getMergePolicyConfig().policy);
-        assertEquals("customQuorumRule", cardinalityEstimatorConfig.getQuorumName());
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void testCardinalityEstimatorConfigWithInvalidMergePolicy() {
-        String xml = HAZELCAST_START_TAG
-                + "    <cardinality-estimator name=\"foobar\">\n"
-                + "        <backup-count>2</backup-count>\n"
-                + "        <async-backup-count>3</async-backup-count>\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "        <merge-policy>CustomMergePolicy</merge-policy>"
-                + "    </cardinality-estimator>\n"
-                + HAZELCAST_END_TAG;
-
-        buildConfig(xml);
-        fail();
-    }
-
-    @Test
-    public void testMultiMapConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <multimap name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </multimap>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MultiMapConfig multiMapConfig = config.getMultiMapConfig("foobar");
-
-        // TODO -> not full config checked
-        assertFalse(config.getMultiMapConfigs().isEmpty());
-        assertEquals("customQuorumRule", multiMapConfig.getQuorumName());
-    }
-
-    @Test
-    public void testReplicatedMapConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <replicatedmap name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </replicatedmap>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("foobar");
-
-        // TODO -> not full config checked
-        assertFalse(config.getReplicatedMapConfigs().isEmpty());
-        assertEquals("customQuorumRule", replicatedMapConfig.getQuorumName());
-    }
-
-    @Test
-    public void testListConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <list name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </list>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ListConfig listConfig = config.getListConfig("foobar");
-
-        // TODO -> not full config checked
-        assertFalse(config.getListConfigs().isEmpty());
-        assertEquals("customQuorumRule", listConfig.getQuorumName());
-    }
-
-    @Test
-    public void testSetConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <set name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </set>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        SetConfig setConfig = config.getSetConfig("foobar");
-
-        // TODO -> not full config checked
-        assertFalse(config.getSetConfigs().isEmpty());
-        assertEquals("customQuorumRule", setConfig.getQuorumName());
-    }
-
-    @Test
-    public void testMapConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "    <map name=\"foobar\">\n"
-                + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "    </map>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("foobar");
-
-        // TODO -> not full config checked
-        assertFalse(config.getMapConfigs().isEmpty());
-        assertEquals("customQuorumRule", mapConfig.getQuorumName());
     }
 
     @Test
@@ -2108,7 +1804,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void testMemberAddressProvider_classNameIsMandatory() {
+    public void testMemberAddressProvider_classnameIsMandatory() {
         String xml = HAZELCAST_START_TAG
                 + "<network> "
                 + "  <member-address-provider enabled=\"true\">"

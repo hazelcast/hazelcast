@@ -208,7 +208,7 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
         assertTrue((newMemberListVersion - memberListVersion) >= memberCount);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = IllegalStateException.class)
     public void when_310MemberJoinsWith39Mode_memberListJoinVersionCannotBeQueried() {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, V3_9.toString());
 

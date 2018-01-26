@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,11 @@ import java.util.List;
 
 public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
-    private long recordId;
-    private Data value;
-    private int index;
+    long recordId;
+
+    Data value;
+
+    int index;
 
     public PutBackupOperation() {
     }

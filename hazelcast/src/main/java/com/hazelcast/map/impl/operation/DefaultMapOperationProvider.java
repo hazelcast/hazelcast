@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,9 +184,9 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, EntryView<Data, Data> mergingEntry,
+    public MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
                                              MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        return new MergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
+        return new MergeOperation(name, dataKey, entryView, policy, disableWanReplicationEvent);
     }
 
     @Override

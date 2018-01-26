@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -35,8 +35,8 @@ public class DynamicConfigurationAwareConfigTest {
             //all other public method should be overridden by the dynamic config aware decorator
             if (!isMethodDeclaredByClass(method, DynamicConfigurationAwareConfig.class)) {
                 Class<?> declaringClass = method.getDeclaringClass();
-                fail("Method " + method + " is declared by " + declaringClass + " whilst it should be"
-                        + " declared by " + DynamicConfigurationAwareConfig.class);
+                fail("Method " + method + " is declared by " + declaringClass + " whilst it should be" +
+                        " declared by " + DynamicConfigurationAwareConfig.class);
             }
         }
     }
@@ -49,4 +49,5 @@ public class DynamicConfigurationAwareConfigTest {
         Class<?> actualDeclaringClass = method.getDeclaringClass();
         return expectedDeclaringClass.equals(actualDeclaringClass);
     }
+
 }

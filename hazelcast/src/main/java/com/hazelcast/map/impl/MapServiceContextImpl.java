@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -514,7 +514,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object toObject(Object data) {
-        return serializationService.toObject(data);
+        return nodeEngine.toObject(data);
     }
 
     @Override
@@ -524,7 +524,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Data toData(Object object) {
-        return serializationService.toData(object);
+        return nodeEngine.toData(object);
     }
 
     @Override
@@ -762,7 +762,11 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void onClusterStateChange(ClusterState newState) {
-        expirationManager.onClusterStateChange(newState);
+        if (newState == ClusterState.PASSIVE) {
+            expirationManager.stop();
+        } else {
+            expirationManager.start();
+        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.RandomPicker;
@@ -121,6 +122,12 @@ public class MulticastJoiner extends AbstractJoiner {
                         logger.fine("Ignoring merge join response, since " + targetAddress + " is already a member.");
                     }
                     continue;
+                }
+
+                if (splitBrainMsg.getMemberCount() == 1) {
+                    // if the other cluster has just single member, that may be a newly starting node instead of a split node
+                    // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
+                    Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
                 }
 
                 SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();

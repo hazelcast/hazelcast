@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,6 @@ public final class ClientProtocolErrorCodes {
     public static final int STALE_TASK = 82;
     public static final int LOCAL_MEMBER_RESET = 83;
     public static final int INDETERMINATE_OPERATION_STATE = 84;
-    public static final int FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION = 85;
 
     // These exception codes are reserved to by used by hazelcast-jet project
     public static final int JET_EXCEPTIONS_RANGE_START = 500;

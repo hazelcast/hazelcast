@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -100,7 +99,7 @@ public class ClusterHeartbeatManager {
     private volatile long lastHeartbeat;
     private volatile long lastClusterTimeDiff;
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:executablestatementcount"})
+    @SuppressWarnings("checkstyle:executablestatementcount")
     ClusterHeartbeatManager(Node node, ClusterServiceImpl clusterService, Lock lock) {
         this.node = node;
         this.clusterService = clusterService;
@@ -115,26 +114,12 @@ public class ClusterHeartbeatManager {
         heartbeatIntervalMillis = getHeartbeatInterval(hazelcastProperties);
         legacyIcmpCheckThresholdMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = node.getConfig().getNetworkConfig().getIcmpFailureDetectorConfig();
-
-        this.icmpTtl = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getInteger(GroupProperty.ICMP_TTL)
-                : icmpFailureDetectorConfig.getTtl();
-        this.icmpTimeoutMillis = icmpFailureDetectorConfig == null
-                ? (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT)
-                : icmpFailureDetectorConfig.getTimeoutMilliseconds();
-        this.icmpIntervalMillis = icmpFailureDetectorConfig == null
-                ? (int) hazelcastProperties.getMillis(GroupProperty.ICMP_INTERVAL)
-                : icmpFailureDetectorConfig.getIntervalMilliseconds();
-        this.icmpMaxAttempts = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getInteger(GroupProperty.ICMP_MAX_ATTEMPTS)
-                : icmpFailureDetectorConfig.getMaxAttempts();
-        this.icmpEnabled = icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED)
-                : icmpFailureDetectorConfig.isEnabled();
-        this.icmpParallelMode = icmpEnabled && (icmpFailureDetectorConfig == null
-                ? hazelcastProperties.getBoolean(GroupProperty.ICMP_PARALLEL_MODE)
-                : icmpFailureDetectorConfig.isParallelMode());
+        this.icmpTtl = hazelcastProperties.getInteger(GroupProperty.ICMP_TTL);
+        this.icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
+        this.icmpIntervalMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_INTERVAL);
+        this.icmpMaxAttempts = hazelcastProperties.getInteger(GroupProperty.ICMP_MAX_ATTEMPTS);
+        this.icmpEnabled = hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED);
+        this.icmpParallelMode = icmpEnabled && hazelcastProperties.getBoolean(GroupProperty.ICMP_PARALLEL_MODE);
 
         if (icmpTimeoutMillis > icmpIntervalMillis) {
             throw new IllegalStateException("ICMP timeout is set to a value greater than the ICMP interval, "
@@ -146,17 +131,7 @@ public class ClusterHeartbeatManager {
                     + MIN_ICMP_INTERVAL_MILLIS + "ms");
         }
 
-        this.icmpFailureDetector = createIcmpFailureDetectorIfNeeded(hazelcastProperties);
-        heartbeatFailureDetector = createHeartbeatFailureDetector(hazelcastProperties);
-    }
-
-    private PingFailureDetector createIcmpFailureDetectorIfNeeded(HazelcastProperties properties) {
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = node.getConfig().getNetworkConfig().getIcmpFailureDetectorConfig();
-
-        boolean icmpEchoFailFast = icmpFailureDetectorConfig == null
-                ? properties.getBoolean(GroupProperty.ICMP_ECHO_FAIL_FAST)
-                : icmpFailureDetectorConfig.isFailFastOnStartup();
-
+        boolean icmpEchoFailFast = hazelcastProperties.getBoolean(GroupProperty.ICMP_ECHO_FAIL_FAST);
         if (icmpParallelMode) {
             if (icmpEchoFailFast) {
                 logger.info("Checking that ICMP failure-detector is permitted. Attempting to create a raw-socket using JNI.");
@@ -169,10 +144,12 @@ public class ClusterHeartbeatManager {
                 logger.info("ICMP failure-detector is supported, enabling.");
             }
 
-            return new PingFailureDetector(icmpMaxAttempts);
+            this.icmpFailureDetector = new PingFailureDetector(icmpMaxAttempts);
+        } else {
+            this.icmpFailureDetector = null;
         }
 
-        return null;
+        heartbeatFailureDetector = createHeartbeatFailureDetector(hazelcastProperties);
     }
 
     private ClusterFailureDetector createHeartbeatFailureDetector(HazelcastProperties properties) {

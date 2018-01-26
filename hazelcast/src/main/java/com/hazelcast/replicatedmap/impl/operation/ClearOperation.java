@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_T
  * This operation will execute the remote clear on replicated map if
  * {@link com.hazelcast.core.ReplicatedMap#clear()} is called.
  */
-public class ClearOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
+public class ClearOperation extends AbstractSerializableOperation {
 
     private String mapName;
     private boolean replicateClear;
@@ -138,10 +137,5 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
         mapName = in.readUTF();
         replicateClear = in.readBoolean();
         version = in.readLong();
-    }
-
-    @Override
-    public String getName() {
-        return mapName;
     }
 }

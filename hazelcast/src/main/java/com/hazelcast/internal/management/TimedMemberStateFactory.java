@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -225,7 +224,7 @@ public class TimedMemberStateFactory {
                                 Collection<StatisticsAwareService> services) {
         int count = 0;
         Config config = instance.getConfig();
-        LinkedList<String> longInstanceNames = new LinkedList<String>();
+        Set<String> longInstanceNames = createHashSet(maxVisibleInstanceCount);
         for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {
@@ -273,7 +272,7 @@ public class TimedMemberStateFactory {
 
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
                                       Map<String, LocalExecutorStats> executorServices,
-                                      List<String> longInstanceNames) {
+                                      Set<String> longInstanceNames) {
 
         for (Map.Entry<String, LocalExecutorStats> entry : executorServices.entrySet()) {
             String name = entry.getKey();
@@ -290,7 +289,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps,
-                               List<String> longInstanceNames) {
+                               Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalMultiMapStats> entry : multiMaps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -306,7 +305,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleReplicatedMap(MemberStateImpl memberState, int count, Config
-            config, Map<String, LocalReplicatedMapStats> replicatedMaps, List<String> longInstanceNames) {
+            config, Map<String, LocalReplicatedMapStats> replicatedMaps, Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMaps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -322,7 +321,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleReliableTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics,
-                            List<String> longInstanceNames) {
+                            Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -338,7 +337,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics,
-                            List<String> longInstanceNames) {
+                            Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -354,7 +353,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues,
-                            List<String> longInstanceNames) {
+                            Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalQueueStats> entry : queues.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -370,7 +369,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps,
-                          List<String> longInstanceNames) {
+                          Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalMapStats> entry : maps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -386,7 +385,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans,
-                          List<String> longInstanceNames) {
+                          Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
             String schemeName = entry.getKey();
             LocalWanStats stats = entry.getValue();
@@ -398,7 +397,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics,
-                            List<String> longInstanceNames) {
+                            Set<String> longInstanceNames) {
         memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
         longInstanceNames.add("j:" + config.getNameWithPrefix());
         return ++count;

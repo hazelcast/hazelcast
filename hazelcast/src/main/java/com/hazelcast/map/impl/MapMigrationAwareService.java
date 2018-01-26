@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
@@ -167,6 +168,12 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         for (RecordStore recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
 
+            // RU_COMPAT_38
+            // Old nodes (3.8-) won't send mapIndexInfos to new nodes (3.9+) in the map-replication operation.
+            // This is the reason why we pick up the mapContainer.getIndexesToAdd() that were added by the
+            // PostJoinMapOperation and we add them to the map, before we add data
+            addPartitionIndexes(recordStore, event.getPartitionId(), mapContainer.getPartitionIndexesToAdd());
+
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.hasIndex()) {
                 continue;
@@ -187,6 +194,20 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                         indexes.saveEntryIndex(queryEntry, null);
                     }
                 }
+            }
+        }
+    }
+
+    // RU_COMPAT_38
+    private void addPartitionIndexes(RecordStore recordStore, int partitionId, Collection<IndexInfo> indexInfos) {
+        if (indexInfos == null) {
+            return;
+        }
+        MapContainer mapContainer = recordStore.getMapContainer();
+        if (!mapContainer.isGlobalIndexEnabled()) {
+            Indexes indexes = mapContainer.getIndexes(partitionId);
+            for (IndexInfo indexInfo : indexInfos) {
+                indexes.addOrGetIndex(indexInfo.getAttributeName(), indexInfo.isOrdered());
             }
         }
     }

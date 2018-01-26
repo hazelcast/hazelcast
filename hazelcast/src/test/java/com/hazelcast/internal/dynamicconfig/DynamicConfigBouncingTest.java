@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,13 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -63,12 +60,13 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
             .useTerminate()
             .build();
 
+
     public Config getConfig() {
         return new Config();
     }
 
     @Test
-    public void doNotThrowExceptionWhenMemberIsGone() {
+    public void doNotThrowExceptionWhenMemberIsGone() throws Exception {
         Runnable[] methods = new Runnable[1];
         final String mapName = randomMapName();
         final HazelcastInstance testDriver = bounceMemberRule.getNextTestDriver();
@@ -81,69 +79,72 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
     }
 
     private static MapConfig createMapConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig()
-                .setCacheLocalEntries(true)
-                .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE)
-                .setPreloaderConfig(new NearCachePreloaderConfig()
-                        .setEnabled(true));
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.getHotRestartConfig().setEnabled(true);
+        mapConfig.getHotRestartConfig().setFsync(true);
 
-        HotRestartConfig hotRestartConfig = new HotRestartConfig()
-                .setEnabled(true)
-                .setFsync(true);
+        mapConfig.setBackupCount(2);
+        mapConfig.setBackupCount(3);
 
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
-                .setSize(1000)
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE);
+        mapConfig.setTimeToLiveSeconds(12);
+        mapConfig.setMaxIdleSeconds(20);
 
-        MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setEnabled(true)
-                .setClassName("foo.bar.MapStoreDoesNotExist");
+        mapConfig.getMaxSizeConfig().setSize(1000);
+        mapConfig.getMaxSizeConfig().setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE);
+
+        mapConfig.setMapEvictionPolicy(new LFUEvictionPolicy());
+
+        mapConfig.getMapStoreConfig().setEnabled(true);
+        mapConfig.getMapStoreConfig().setClassName("foo.bar.MapStoreDoesNotExist");
+
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setCacheLocalEntries(true);
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.NATIVE);
+        nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE);
+        nearCacheConfig.getPreloaderConfig().setEnabled(true);
+        mapConfig.setNearCacheConfig(nearCacheConfig);
+
+        mapConfig.setReadBackupData(true);
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
+        mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
 
         WanReplicationRef wanRef = new WanReplicationRef("name", "foo.bar.PolicyClass",
                 Collections.<String>emptyList(), true);
+        mapConfig.setWanReplicationRef(wanRef);
 
         EntryListenerConfig classEntryListener = new EntryListenerConfig("foo.bar.ClassName", true, true);
         EntryListenerConfig entryListener = new EntryListenerConfig(new MyEntryListener(), true, true);
         EntryListenerConfig mapListener = new EntryListenerConfig(new MyEntryUpdatedListener(), true, true);
+        mapConfig.addEntryListenerConfig(classEntryListener);
+        mapConfig.addEntryListenerConfig(entryListener);
+        mapConfig.addEntryListenerConfig(mapListener);
 
-        QueryCacheConfig queryCacheConfig = new QueryCacheConfig("queryCacheName")
-                .setBatchSize(100)
-                .addIndexConfig(new MapIndexConfig("attribute", false))
-                .addEntryListenerConfig(new EntryListenerConfig("foo.bar.Classname", false, true))
-                .setInMemoryFormat(InMemoryFormat.OBJECT);
+        mapConfig.addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig("foo.bar.Classname"));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("orderAttribute", true));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("unorderedAttribute", false));
 
-        return new MapConfig(mapName)
-                .setBackupCount(2)
-                .setBackupCount(3)
-                .setTimeToLiveSeconds(12)
-                .setMaxIdleSeconds(20)
-                .setMapEvictionPolicy(new LFUEvictionPolicy())
-                .setNearCacheConfig(nearCacheConfig)
-                .setReadBackupData(true)
-                .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setHotRestartConfig(hotRestartConfig)
-                .setMaxSizeConfig(maxSizeConfig)
-                .setMapStoreConfig(mapStoreConfig)
-                .setWanReplicationRef(wanRef)
-                .addEntryListenerConfig(classEntryListener)
-                .addEntryListenerConfig(entryListener)
-                .addEntryListenerConfig(mapListener)
-                .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig("foo.bar.Classname"))
-                .addMapIndexConfig(new MapIndexConfig("orderAttribute", true))
-                .addMapIndexConfig(new MapIndexConfig("unorderedAttribute", false))
-                .addMapAttributeConfig(new MapAttributeConfig("attribute", "foo.bar.ExtractorClass"))
-                .addQueryCacheConfig(queryCacheConfig)
-                .setStatisticsEnabled(false)
-                .setPartitioningStrategyConfig(new PartitioningStrategyConfig("foo.bar.Class"))
-                .setQuorumName("quorum");
+        mapConfig.addMapAttributeConfig(new MapAttributeConfig("attribute", "foo.bar.ExtractorClass"));
+
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig("queryCacheName");
+        queryCacheConfig.setBatchSize(100);
+        queryCacheConfig.addIndexConfig(new MapIndexConfig("attribute", false));
+        queryCacheConfig.addEntryListenerConfig(new EntryListenerConfig("foo.bar.Classname", false, true));
+        queryCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        mapConfig.addQueryCacheConfig(queryCacheConfig);
+
+        mapConfig.setStatisticsEnabled(false);
+
+        mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig("foo.bar.Class"));
+        mapConfig.setQuorumName("quorum");
+
+        return mapConfig;
     }
 
     private static class MyEntryUpdatedListener implements EntryUpdatedListener, Serializable {
 
         @Override
         public void entryUpdated(EntryEvent event) {
+
         }
 
         @Override
@@ -164,26 +165,32 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
 
         @Override
         public void entryAdded(EntryEvent event) {
+
         }
 
         @Override
         public void entryUpdated(EntryEvent event) {
+
         }
 
         @Override
         public void entryRemoved(EntryEvent event) {
+
         }
 
         @Override
         public void mapCleared(MapEvent event) {
+
         }
 
         @Override
         public void mapEvicted(MapEvent event) {
+
         }
 
         @Override
         public void entryEvicted(EntryEvent event) {
+
         }
 
         @Override
@@ -201,11 +208,10 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
     }
 
     private static class SubmitDynamicMapConfig implements Runnable {
-
         private final String mapName;
         private final HazelcastInstance testDriver;
 
-        SubmitDynamicMapConfig(String mapName, HazelcastInstance testDriver) {
+        public SubmitDynamicMapConfig(String mapName, HazelcastInstance testDriver) {
             this.mapName = mapName;
             this.testDriver = testDriver;
         }

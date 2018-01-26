@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,10 @@ public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements 
             return;
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        Iterator<MultiMapRecord> iterator = coll.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getRecordId() == recordId) {
-                iterator.remove();
+        Iterator<MultiMapRecord> iter = coll.iterator();
+        while (iter.hasNext()) {
+            if (iter.next().getRecordId() == recordId) {
+                iter.remove();
                 response = true;
                 if (coll.isEmpty()) {
                     delete();
@@ -77,4 +77,5 @@ public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements 
     public int getId() {
         return MultiMapDataSerializerHook.REMOVE_BACKUP;
     }
+
 }

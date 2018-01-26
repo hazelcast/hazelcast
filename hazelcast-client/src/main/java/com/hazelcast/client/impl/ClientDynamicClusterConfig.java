@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicLongConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicReferenceConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCountDownLatchConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
@@ -30,7 +27,6 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
@@ -47,17 +43,13 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JobTrackerConfig;
@@ -106,6 +98,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into
  * a live Hazelcast cluster.
+ *
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClientDynamicClusterConfig extends Config {
@@ -200,7 +193,7 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(listConfig.getItemListenerConfigs());
         ClientMessage request = DynamicConfigAddListConfigCodec.encodeRequest(listConfig.getName(), listenerConfigs,
                 listConfig.getBackupCount(), listConfig.getAsyncBackupCount(), listConfig.getMaxSize(),
-                listConfig.isStatisticsEnabled(), listConfig.getQuorumName());
+                listConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }
@@ -210,7 +203,7 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(setConfig.getItemListenerConfigs());
         ClientMessage request = DynamicConfigAddSetConfigCodec.encodeRequest(setConfig.getName(), listenerConfigs,
                 setConfig.getBackupCount(), setConfig.getAsyncBackupCount(), setConfig.getMaxSize(),
-                setConfig.isStatisticsEnabled(), setConfig.getQuorumName());
+                setConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }
@@ -223,7 +216,7 @@ public class ClientDynamicClusterConfig extends Config {
                 multiMapConfig.getName(), multiMapConfig.getValueCollectionType().toString(),
                 listenerConfigHolders,
                 multiMapConfig.isBinary(), multiMapConfig.getBackupCount(), multiMapConfig.getAsyncBackupCount(),
-                multiMapConfig.isStatisticsEnabled(), multiMapConfig.getQuorumName());
+                multiMapConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }
@@ -235,7 +228,7 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(
                 replicatedMapConfig.getName(), replicatedMapConfig.getInMemoryFormat().name(),
                 replicatedMapConfig.isAsyncFillup(), replicatedMapConfig.isStatisticsEnabled(),
-                replicatedMapConfig.getMergePolicy(), listenerConfigHolders, replicatedMapConfig.getQuorumName());
+                replicatedMapConfig.getMergePolicy(), listenerConfigHolders);
         invoke(request);
         return this;
     }
@@ -251,7 +244,7 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddRingbufferConfigCodec.encodeRequest(
                 ringbufferConfig.getName(), ringbufferConfig.getCapacity(), ringbufferConfig.getBackupCount(),
                 ringbufferConfig.getAsyncBackupCount(), ringbufferConfig.getTimeToLiveSeconds(),
-                ringbufferConfig.getInMemoryFormat().name(), ringbufferStoreConfig, ringbufferConfig.getQuorumName());
+                ringbufferConfig.getInMemoryFormat().name(), ringbufferStoreConfig);
         invoke(request);
         return this;
     }
@@ -283,7 +276,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addExecutorConfig(ExecutorConfig executorConfig) {
         ClientMessage request = DynamicConfigAddExecutorConfigCodec.encodeRequest(
                 executorConfig.getName(), executorConfig.getPoolSize(), executorConfig.getQueueCapacity(),
-                executorConfig.isStatisticsEnabled(), executorConfig.getQuorumName());
+                executorConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }
@@ -292,8 +285,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addDurableExecutorConfig(DurableExecutorConfig durableExecutorConfig) {
         ClientMessage request = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(
                 durableExecutorConfig.getName(), durableExecutorConfig.getPoolSize(),
-                durableExecutorConfig.getDurability(), durableExecutorConfig.getCapacity(),
-                durableExecutorConfig.getQuorumName());
+                durableExecutorConfig.getDurability(), durableExecutorConfig.getCapacity());
         invoke(request);
         return this;
     }
@@ -302,8 +294,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig) {
         ClientMessage request = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(
                 scheduledExecutorConfig.getName(), scheduledExecutorConfig.getPoolSize(),
-                scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity(),
-                scheduledExecutorConfig.getQuorumName());
+                scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity());
         invoke(request);
         return this;
     }
@@ -312,7 +303,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addCardinalityEstimatorConfig(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
         ClientMessage request = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(
                 cardinalityEstimatorConfig.getName(), cardinalityEstimatorConfig.getBackupCount(),
-                cardinalityEstimatorConfig.getAsyncBackupCount(), cardinalityEstimatorConfig.getQuorumName());
+                cardinalityEstimatorConfig.getAsyncBackupCount());
         invoke(request);
         return this;
     }
@@ -321,31 +312,7 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
         ClientMessage request = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(
                 semaphoreConfig.getName(), semaphoreConfig.getInitialPermits(), semaphoreConfig.getBackupCount(),
-                semaphoreConfig.getAsyncBackupCount(), semaphoreConfig.getQuorumName());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        ClientMessage request = DynamicConfigAddAtomicReferenceConfigCodec.encodeRequest(
-                atomicReferenceConfig.getName(), atomicReferenceConfig.getQuorumName());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-        ClientMessage request = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(
-                atomicLongConfig.getName(), atomicLongConfig.getQuorumName());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        ClientMessage request = DynamicConfigAddCountDownLatchConfigCodec.encodeRequest(
-                countDownLatchConfig.getName(), countDownLatchConfig.getQuorumName());
+                semaphoreConfig.getAsyncBackupCount());
         invoke(request);
         return this;
     }
@@ -380,14 +347,6 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddEventJournalConfigCodec.encodeRequest(eventJournalConfig.getMapName(),
                 eventJournalConfig.getCacheName(), eventJournalConfig.isEnabled(), eventJournalConfig.getCapacity(),
                 eventJournalConfig.getTimeToLiveSeconds());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig flakeIdGeneratorConfig) {
-        ClientMessage request = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(flakeIdGeneratorConfig.getName(),
-                flakeIdGeneratorConfig.getPrefetchCount(), flakeIdGeneratorConfig.getPrefetchValidityMillis());
         invoke(request);
         return this;
     }
@@ -794,66 +753,6 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicReferenceConfig getAtomicReferenceConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setAtomicReferenceConfigs(Map<String, AtomicReferenceConfig> atomicReferenceConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicLongConfig getAtomicLongConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public CountDownLatchConfig findCountDownLatchConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public CountDownLatchConfig getCountDownLatchConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setCountDownLatchConfigs(Map<String, CountDownLatchConfig> countDownLatchConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
     public WanReplicationConfig getWanReplicationConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
@@ -1055,26 +954,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setUserCodeDeploymentConfig(UserCodeDeploymentConfig userCodeDeploymentConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setFlakeIdGeneratorConfigs(Map<String, FlakeIdGeneratorConfig> map) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

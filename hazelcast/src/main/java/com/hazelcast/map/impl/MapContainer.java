@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -55,6 +56,8 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -84,6 +87,17 @@ public class MapContainer {
     // on-heap indexes are global, meaning there is only one index per map, stored in the mapContainer,
     // so if globalIndexes is null it means that global index is not in use
     protected final Indexes globalIndexes;
+
+    // RU_COMPAT_38
+    /**
+     * Definitions of indexes that need to be added on partition threads
+     *
+     * @see MapIndexSynchronizer
+     * @see com.hazelcast.map.impl.operation.SynchronizeIndexesForPartitionTask
+     * @see com.hazelcast.map.impl.operation.PostJoinMapOperation
+     * @see com.hazelcast.map.impl.operation.MapReplicationStateHolder
+     */
+    protected final Set<IndexInfo> partitionIndexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
 
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -330,6 +344,7 @@ public class MapContainer {
 
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
+        partitionIndexesToAdd.clear();
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
@@ -354,6 +369,18 @@ public class MapContainer {
             }
         }
         return definitions;
+    }
+
+    public void addPartitionIndexToAdd(IndexInfo indexInfo) {
+        partitionIndexesToAdd.add(indexInfo);
+    }
+
+    public Set<IndexInfo> getPartitionIndexesToAdd() {
+        return partitionIndexesToAdd;
+    }
+
+    public void clearPartitionIndexesToAdd() {
+        partitionIndexesToAdd.clear();
     }
 
     @SerializableByConvention

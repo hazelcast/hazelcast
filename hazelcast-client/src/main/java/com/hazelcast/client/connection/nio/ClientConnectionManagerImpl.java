@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -86,9 +85,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
@@ -128,10 +126,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
     private final Credentials credentials;
+    private final AtomicLong correlationIddOfLastAuthentication = new AtomicLong(0);
     private final NioEventLoopGroup eventLoopGroup;
 
     private volatile Address ownerConnectionAddress;
-    private volatile Address previousOwnerConnectionAddress;
 
     private HeartbeatManager heartbeat;
     private volatile ClientPrincipal principal;
@@ -379,7 +377,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void setOwnerConnectionAddress(Address ownerConnectionAddress) {
-        this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
@@ -391,7 +388,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                     return connection;
                 }
                 AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
-                connection = (ClientConnection) firstCallback.get();
+                connection = (ClientConnection) firstCallback.get(connectionTimeout);
 
                 if (!asOwner) {
                     return connection;
@@ -413,13 +410,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             throw new HazelcastException("ConnectionManager is not active!");
         }
 
-        AuthenticationFuture future = new AuthenticationFuture();
-        AuthenticationFuture oldFuture = connectionsInProgress.putIfAbsent(target, future);
-        if (oldFuture == null) {
-            executionService.execute(new InitConnectionTask(target, asOwner, future));
-            return future;
+        AuthenticationFuture callback = new AuthenticationFuture();
+        AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
+        if (firstCallback == null) {
+            executionService.execute(new InitConnectionTask(target, asOwner, callback));
+            return callback;
         }
-        return oldFuture;
+        return firstCallback;
     }
 
     @Override
@@ -623,13 +620,58 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
-                              final AuthenticationFuture future) {
+                              final AuthenticationFuture callback) {
         final ClientPrincipal principal = getPrincipal();
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
-        ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
-        executionService.schedule(new TimeoutAuthenticationTask(invocationFuture), connectionTimeout, TimeUnit.MILLISECONDS);
-        invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future));
+        ClientInvocationFuture future = clientInvocation.invokeUrgent();
+        if (asOwner && clientInvocation.getSendConnection() != null) {
+            correlationIddOfLastAuthentication.set(clientInvocation.getClientMessage().getCorrelationId());
+        }
+        future.andThen(new ExecutionCallback<ClientMessage>() {
+            @Override
+            public void onResponse(ClientMessage response) {
+                ClientAuthenticationCodec.ResponseParameters result;
+                try {
+                    result = ClientAuthenticationCodec.decodeResponse(response);
+                } catch (HazelcastException e) {
+                    onFailure(e);
+                    return;
+                }
+                AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
+                switch (authenticationStatus) {
+                    case AUTHENTICATED:
+                        connection.setConnectedServerVersion(result.serverHazelcastVersion);
+                        connection.setRemoteEndpoint(result.address);
+                        if (asOwner) {
+                            if (!(correlationIddOfLastAuthentication.get() == response.getCorrelationId())) {
+                                //if not same, client already gave up on this and send another authentication.
+                                onFailure(new AuthenticationException("Owner authentication response from address "
+                                        + target + " is late. Dropping the response. Principal: " + principal));
+                                return;
+                            }
+                            connection.setIsAuthenticatedAsOwner();
+                            ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
+                            setPrincipal(principal);
+                        }
+                        onAuthenticated(target, connection);
+                        callback.onSuccess(connection);
+                        break;
+                    case CREDENTIALS_FAILED:
+                        onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
+                        break;
+                    default:
+                        onFailure(new AuthenticationException("Authentication status code not supported. status: "
+                                + authenticationStatus));
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                onAuthenticationFailed(target, connection, t);
+                callback.onFailure(t);
+            }
+        });
     }
 
     private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, ClientPrincipal principal) {
@@ -706,35 +748,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         connectionStrategy.onHeartbeatStopped((ClientConnection) connection);
     }
 
-    private class TimeoutAuthenticationTask implements Runnable {
-
-        private final ClientInvocationFuture future;
-
-        public TimeoutAuthenticationTask(ClientInvocationFuture future) {
-            this.future = future;
-        }
-
-        @Override
-        public void run() {
-            if (future.isDone()) {
-                return;
-            }
-            future.complete(new TimeoutException("Authentication response did not come back in "
-                    + connectionTimeout + " millis"));
-        }
-
-    }
-
     private class InitConnectionTask implements Runnable {
 
         private final Address target;
         private final boolean asOwner;
-        private final AuthenticationFuture future;
+        private final AuthenticationFuture callback;
 
-        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture future) {
+        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture callback) {
             this.target = target;
             this.asOwner = asOwner;
-            this.future = future;
+            this.callback = callback;
         }
 
         @Override
@@ -744,15 +767,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 connection = getConnection(target);
             } catch (Exception e) {
                 logger.finest(e);
-                future.onFailure(e);
+                callback.onFailure(e);
                 connectionsInProgress.remove(target);
                 return;
             }
 
             try {
-                authenticate(target, connection, asOwner, future);
+                authenticate(target, connection, asOwner, callback);
             } catch (Exception e) {
-                future.onFailure(e);
+                callback.onFailure(e);
                 connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
@@ -878,8 +901,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     }
 
-    Collection<Address> getPossibleMemberAddresses() {
-        LinkedHashSet<Address> addresses = new LinkedHashSet<Address>();
+    private Collection<Address> getPossibleMemberAddresses() {
+        final List<Address> addresses = new LinkedList<Address>();
 
         Collection<Member> memberList = client.getClientClusterService().getMemberList();
         for (Member member : memberList) {
@@ -887,38 +910,21 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         }
 
         if (shuffleMemberList) {
-            shuffle(addresses);
+            Collections.shuffle(addresses);
         }
 
-        LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
+        List<Address> providerAddresses = new ArrayList<Address>();
         for (AddressProvider addressProvider : addressProviders) {
             providerAddresses.addAll(addressProvider.loadAddresses());
         }
 
         if (shuffleMemberList) {
-            shuffle(providerAddresses);
+            Collections.shuffle(providerAddresses);
         }
 
         addresses.addAll(providerAddresses);
 
-        if (previousOwnerConnectionAddress != null) {
-            /*
-             * Previous owner address is moved to last item in set so that client will not try to connect to same one immediately.
-             * It could be the case that address is removed because it is healthy(it not responding to heartbeat/pings)
-             * In that case, trying other addresses first to upgrade make more sense.
-             */
-            addresses.remove(previousOwnerConnectionAddress);
-            addresses.add(previousOwnerConnectionAddress);
-        }
         return addresses;
-    }
-
-    private static <T> Set<T> shuffle(Set<T> set) {
-        List<T> shuffleMe = new ArrayList<T>(set);
-        Collections.shuffle(shuffleMe);
-        Set<T> shuffledSet = new LinkedHashSet<T>();
-        shuffledSet.addAll(shuffleMe);
-        return shuffledSet;
     }
 
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
@@ -926,57 +932,5 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         SingleExecutorThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster-");
 
         return Executors.newSingleThreadExecutor(threadFactory);
-    }
-
-    private class AuthCallback implements ExecutionCallback<ClientMessage> {
-        private final ClientConnection connection;
-        private final boolean asOwner;
-        private final Address target;
-        private final AuthenticationFuture future;
-
-        AuthCallback(ClientConnection connection, boolean asOwner, Address target,
-                     AuthenticationFuture future) {
-            this.connection = connection;
-            this.asOwner = asOwner;
-            this.target = target;
-            this.future = future;
-        }
-
-        @Override
-        public void onResponse(ClientMessage response) {
-            ClientAuthenticationCodec.ResponseParameters result;
-            try {
-                result = ClientAuthenticationCodec.decodeResponse(response);
-            } catch (HazelcastException e) {
-                onFailure(e);
-                return;
-            }
-            AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
-            switch (authenticationStatus) {
-                case AUTHENTICATED:
-                    connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                    connection.setRemoteEndpoint(result.address);
-                    if (asOwner) {
-                        connection.setIsAuthenticatedAsOwner();
-                        ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
-                        setPrincipal(principal);
-                    }
-                    onAuthenticated(target, connection);
-                    future.onSuccess(connection);
-                    break;
-                case CREDENTIALS_FAILED:
-                    onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
-                    break;
-                default:
-                    onFailure(new AuthenticationException("Authentication status code not supported. status: "
-                            + authenticationStatus));
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            onAuthenticationFailed(target, connection, t);
-            future.onFailure(t);
-        }
     }
 }

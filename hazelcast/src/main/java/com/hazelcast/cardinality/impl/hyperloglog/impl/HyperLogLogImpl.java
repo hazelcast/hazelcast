@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.cardinality.impl.hyperloglog.impl;
 
 import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -84,16 +83,6 @@ public class HyperLogLogImpl implements HyperLogLog {
     }
 
     @Override
-    public void merge(HyperLogLog other) {
-        if (!(other instanceof HyperLogLogImpl)) {
-            throw new IllegalStateException("Can't merge " + other + " into " + this);
-        }
-
-        encoder = encoder.merge(((HyperLogLogImpl) other).encoder);
-        cachedEstimate = null;
-    }
-
-    @Override
     public int getFactoryId() {
         return CardinalityEstimatorDataSerializerHook.F_ID;
     }
@@ -106,20 +95,11 @@ public class HyperLogLogImpl implements HyperLogLog {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(encoder);
-
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeInt(m);
-        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         encoder = in.readObject();
-
-
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            m = in.readInt();
-        }
     }
 
     private void convertToDenseIfNeeded() {
@@ -129,5 +109,4 @@ public class HyperLogLogImpl implements HyperLogLog {
             encoder = ((SparseHyperLogLogEncoder) encoder).asDense();
         }
     }
-
 }

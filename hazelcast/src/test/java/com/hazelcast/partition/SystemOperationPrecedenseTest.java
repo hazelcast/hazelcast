@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,9 +97,9 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         private final CountDownLatch latch;
 
-        UrgentPartitionAwareOperation(CountDownLatch completedLatch, int partitionId) {
-            this.latch = completedLatch;
+        public UrgentPartitionAwareOperation(CountDownLatch completedLatch, int partitionId) {
             setPartitionId(partitionId);
+            this.latch = completedLatch;
         }
 
         @Override
@@ -110,7 +110,7 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
     public static class NormalPartitionAwareOperation extends Operation implements PartitionAwareOperation {
 
-        NormalPartitionAwareOperation(int partitionId) {
+        public NormalPartitionAwareOperation(int partitionId) {
             setPartitionId(partitionId);
         }
 
@@ -124,7 +124,7 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         private final CountDownLatch latch;
 
-        UrgentPartitionUnawareOperation(CountDownLatch completedLatch) {
+        public UrgentPartitionUnawareOperation(CountDownLatch completedLatch) {
             this.latch = completedLatch;
         }
 
