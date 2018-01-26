@@ -38,7 +38,6 @@ public class PutResultOperation
 
     private Object result;
 
-
     public PutResultOperation() {
     }
 
