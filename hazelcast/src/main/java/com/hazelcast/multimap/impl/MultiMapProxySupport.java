@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     protected Set<Data> keySetInternal() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
 
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -128,7 +128,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     protected Map valuesInternal() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(
@@ -142,7 +142,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     protected Map entrySetInternal() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(
@@ -156,7 +156,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     protected boolean containsInternal(Data key, Data value) {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(
@@ -180,7 +180,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     public int size() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(
@@ -202,10 +202,12 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     public void clear() {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Map<Integer, Object> resultMap = nodeEngine.getOperationService().invokeOnAllPartitions(
-                    MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.CLEAR)
+            final Map<Integer, Object> resultMap
+                    = nodeEngine.getOperationService().invokeOnAllPartitions(
+                    MultiMapService.SERVICE_NAME,
+                    new MultiMapOperationFactory(name, OperationFactoryType.CLEAR)
             );
 
             int numberOfAffectedEntries = 0;
@@ -238,18 +240,18 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     private <T> T invoke(Operation operation, Data dataKey) {
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-            Future future;
-            Object result;
+            Future f;
+            Object o;
             if (config.isStatisticsEnabled()) {
                 long startTimeNanos = System.nanoTime();
-                future = nodeEngine.getOperationService()
+                f = nodeEngine.getOperationService()
                         .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-                result = future.get();
+                o = f.get();
                 if (operation instanceof PutOperation) {
-                    // TODO: @ali should we remove statics from operations?
+                    //TODO @ali should we remove statics from operations ?
                     getService().getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(System.nanoTime() - startTimeNanos);
                 } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation) {
                     getService().getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(System.nanoTime() - startTimeNanos);
@@ -257,11 +259,11 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                     getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(System.nanoTime() - startTimeNanos);
                 }
             } else {
-                future = nodeEngine.getOperationService()
+                f = nodeEngine.getOperationService()
                         .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-                result = future.get();
+                o = f.get();
             }
-            return nodeEngine.toObject(result);
+            return nodeEngine.toObject(o);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
@@ -275,4 +277,5 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     public String toString() {
         return "MultiMap{name=" + name + '}';
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,14 +32,12 @@ public class SetConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(SetConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
-                .suppress(Warning.NONFINAL_FIELDS)
-                .withPrefabValues(SetConfigReadOnly.class,
-                        new SetConfigReadOnly(new SetConfig("red")),
-                        new SetConfigReadOnly(new SetConfig("black")))
-                .withPrefabValues(MergePolicyConfig.class,
-                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                .verify();
+                      .allFieldsShouldBeUsedExcept("readOnly")
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(SetConfigReadOnly.class,
+                              new SetConfigReadOnly(new SetConfig("red")),
+                              new SetConfigReadOnly(new SetConfig("black")))
+                      .verify();
     }
+
 }

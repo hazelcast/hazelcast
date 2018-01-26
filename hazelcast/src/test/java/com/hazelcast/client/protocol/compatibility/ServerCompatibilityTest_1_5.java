@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,21 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.*;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
+import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -30,49 +43,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfEntry;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToByteArrEntry;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMember;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aNamePartitionSequenceList;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionTable;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionUuidList;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aUUID;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAddress;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anEntryView;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.arrLongs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEntryListenerConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEventDatas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.datas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.distributedObjectInfos;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.evictionConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.hotRestartConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.jobPartitionStates;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.listenerConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.longs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.mapAttributeConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.mapIndexConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.mapStoreConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.members;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.nearCacheConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheEventDatas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queueStoreConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.ringbufferStore;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strings;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.taskHandlers;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.timedExpiryPolicyFactoryConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.wanReplicationRef;
+import java.util.Arrays;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.net.UnknownHostException;
+import javax.transaction.xa.Xid;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -6106,8 +6093,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.backupCount));
                 assertTrue(isEqual(anInt, params.asyncBackupCount));
                 assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddMultiMapConfigCodec.encodeResponse( );
@@ -6128,8 +6113,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.timeToLiveSeconds));
                 assertTrue(isEqual(aString, params.inMemoryFormat));
                 assertTrue(isEqual(ringbufferStore, params.ringbufferStoreConfig));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddRingbufferConfigCodec.encodeResponse( );
@@ -6146,8 +6129,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(aString, params.name));
                 assertTrue(isEqual(anInt, params.backupCount));
                 assertTrue(isEqual(anInt, params.asyncBackupCount));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeResponse( );
@@ -6182,8 +6163,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.asyncBackupCount));
                 assertTrue(isEqual(anInt, params.maxSize));
                 assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddListConfigCodec.encodeResponse( );
@@ -6203,8 +6182,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.asyncBackupCount));
                 assertTrue(isEqual(anInt, params.maxSize));
                 assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddSetConfigCodec.encodeResponse( );
@@ -6224,8 +6201,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(aBoolean, params.statisticsEnabled));
                 assertTrue(isEqual(aString, params.mergePolicy));
                 assertTrue(isEqual(listenerConfigs, params.listenerConfigs));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddReplicatedMapConfigCodec.encodeResponse( );
@@ -6261,8 +6236,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.poolSize));
                 assertTrue(isEqual(anInt, params.queueCapacity));
                 assertTrue(isEqual(aBoolean, params.statisticsEnabled));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddExecutorConfigCodec.encodeResponse( );
@@ -6280,8 +6253,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.poolSize));
                 assertTrue(isEqual(anInt, params.durability));
                 assertTrue(isEqual(anInt, params.capacity));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddDurableExecutorConfigCodec.encodeResponse( );
@@ -6299,9 +6270,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.poolSize));
                 assertTrue(isEqual(anInt, params.durability));
                 assertTrue(isEqual(anInt, params.capacity));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
-
 }
 {
     ClientMessage clientMessage = DynamicConfigAddScheduledExecutorConfigCodec.encodeResponse( );
@@ -6319,8 +6287,6 @@ public class ServerCompatibilityTest_1_5 {
                 assertTrue(isEqual(anInt, params.initialPermits));
                 assertTrue(isEqual(anInt, params.backupCount));
                 assertTrue(isEqual(anInt, params.asyncBackupCount));
-                assertTrue(isEqual(true, params.quorumNameExist));
-                assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddSemaphoreConfigCodec.encodeResponse( );
@@ -6329,59 +6295,10 @@ public class ServerCompatibilityTest_1_5 {
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
-
 {
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddAtomicLongConfigCodec.RequestParameters params = DynamicConfigAddAtomicLongConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-    assertTrue(isEqual(aString, params.name));
-    assertTrue(isEqual(aString, params.quorumName));
-}
-{
-    ClientMessage clientMessage = DynamicConfigAddAtomicLongConfigCodec.encodeResponse( );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddAtomicReferenceConfigCodec.RequestParameters params = DynamicConfigAddAtomicReferenceConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-    assertTrue(isEqual(aString, params.name));
-    assertTrue(isEqual(aString, params.quorumName));
-}
-{
-    ClientMessage clientMessage = DynamicConfigAddAtomicReferenceConfigCodec.encodeResponse( );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddCountDownLatchConfigCodec.RequestParameters params = DynamicConfigAddCountDownLatchConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-    assertTrue(isEqual(aString, params.name));
-    assertTrue(isEqual(aString, params.quorumName));
-}
-{
-    ClientMessage clientMessage = DynamicConfigAddCountDownLatchConfigCodec.encodeResponse( );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
     DynamicConfigAddQueueConfigCodec.RequestParameters params = DynamicConfigAddQueueConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.name));
                 assertTrue(isEqual(listenerConfigs, params.listenerConfigs));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,6 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
-import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -114,7 +113,6 @@ public class NodeEngineImpl implements NodeEngine {
     private final PacketHandler packetDispatcher;
     private final QuorumServiceImpl quorumService;
     private final Diagnostics diagnostics;
-    private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -148,7 +146,6 @@ public class NodeEngineImpl implements NodeEngine {
                 new JetPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
         this.diagnostics = newDiagnostics();
-        this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
 
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
         serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
@@ -369,11 +366,6 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public MemberVersion getVersion() {
         return node.getVersion();
-    }
-
-    @Override
-    public SplitBrainMergePolicyProvider getSplitBrainMergePolicyProvider() {
-        return splitBrainMergePolicyProvider;
     }
 
     /**

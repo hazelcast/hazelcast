@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,9 +177,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 break;
             case NODEJS_CLIENT:
                 type = ClientType.NODEJS;
-                break;
-            case GO_CLIENT:
-                type = ClientType.GO;
                 break;
             case BINARY_CLIENT:
                 type = ClientType.OTHER;

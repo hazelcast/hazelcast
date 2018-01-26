@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.projection;
 
-import com.hazelcast.projection.impl.IdentityProjection;
 import com.hazelcast.projection.impl.MultiAttributeProjection;
 import com.hazelcast.projection.impl.SingleAttributeProjection;
 
 /**
- * A utility class to create basic {@link com.hazelcast.projection.Projection} instances.
+ * A utility class to create basic {@link com.hazelcast.projection.Projection} instances. <br/>
  *
  * @since 3.8
  */
@@ -31,33 +30,25 @@ public final class Projections {
     }
 
     /**
-     * Returns a projection that does no transformation.
-     * <p>
-     * If you use the returned projection in a 3.9 cluster it may cause a serialization exception.
-     *
-     * @since 3.10
-     */
-    public static <T> Projection<T, T> identity() {
-        return (IdentityProjection<T>) IdentityProjection.INSTANCE;
-    }
-
-    /**
-     * Returns a projection that extracts the value of the given {@code attributePath}.
+     * Returns a projection that extracts the value of the given attributePath
      *
      * @param attributePath single attribute path, path must not be null or empty
      * @param <O>           Output type
+     * @return a projection that extracts the value of the given attributePath
      */
     public static <I, O> Projection<I, O> singleAttribute(String attributePath) {
         return new SingleAttributeProjection<I, O>(attributePath);
     }
 
     /**
-     * Returns a projection that extracts the value of the given {@code attributePaths}.
-     * The attribute values will be returned as an {@code Object[]} array from each projection call.
+     * Returns a projection that extracts the value of the given attributePaths.
+     * The attribute values will be returned as an Object[] array from each projection call.
      *
-     * @param attributePaths attribute paths, paths must not be null or empty
+     * @param attributePath 1 to N attribute Paths, paths must not be null or empty
+     * @return a projection that extracts the value of the given attributePaths.
      */
-    public static <I> Projection<I, Object[]> multiAttribute(String... attributePaths) {
-        return new MultiAttributeProjection<I>(attributePaths);
+    public static <I> Projection<I, Object[]> multiAttribute(String... attributePath) {
+        return new MultiAttributeProjection<I>(attributePath);
     }
+
 }

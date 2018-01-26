@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,12 @@ public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
 
     private static volatile Object object;
 
-    public static final long TEST_TIMEOUT_SECONDS = 10 * 60;
     public static final int ITERATIONS = 1000000;
     public static final int PRODUCER_COUNT = 2;
     public static final int CONSUMER_COUNT = 2;
     public static final int INSTANCE_COUNT = 1;
 
-    @Test(timeout = 2 * TEST_TIMEOUT_SECONDS * 1000)
+    @Test
     public void test() {
         HazelcastInstance[] instances = createHazelcastInstanceFactory(INSTANCE_COUNT).newInstances();
         HazelcastInstance hz = instances[0];
@@ -61,8 +60,8 @@ public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
             producers[k] = thread;
         }
 
-        assertJoinable(TEST_TIMEOUT_SECONDS, producers);
-        assertJoinable(TEST_TIMEOUT_SECONDS, consumers);
+        assertJoinable(600, producers);
+        assertJoinable(600, consumers);
 
         for (TestThread consumer : consumers) {
             assertNull(consumer.throwable);

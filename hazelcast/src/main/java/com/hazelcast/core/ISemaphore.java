@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,6 @@ import java.util.concurrent.TimeUnit;
  * partition and therefore the permit counters within will diverge. When the cluster heals, Hazelcast
  * will choose one of the ISemaphores, by default this is selected from the largest partitioned cluster
  * (by number of members). If the cluster sizes are all equal then a random ISemaphore will be chosen.
- *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 
 public interface ISemaphore extends DistributedObject {

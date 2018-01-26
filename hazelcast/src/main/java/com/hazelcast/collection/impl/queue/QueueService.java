@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -67,7 +66,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -78,8 +76,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
-
-    private static final Object NULL_OBJECT = new Object();
 
     private final EntryTaskScheduler<String, Void> queueEvictionScheduler;
     private final NodeEngine nodeEngine;
@@ -92,17 +88,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         @Override
         public LocalQueueStatsImpl createNew(String key) {
             return new LocalQueueStatsImpl();
-        }
-    };
-
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(name);
-            String quorumName = queueConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
 
@@ -253,7 +238,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public void destroyDistributedObject(String name) {
         containerMap.remove(name);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
-        quorumConfigCache.remove(name);
     }
 
     public String addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
@@ -366,8 +350,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+        final QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(name);
+        return queueConfig.getQuorumName();
     }
 }

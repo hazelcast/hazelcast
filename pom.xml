@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.6.0-6</client.protocol.version>
+        <client.protocol.version>1.5.0-8</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
@@ -48,10 +48,9 @@
 
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
-        <hazelcast.serverMainClass>com.hazelcast.core.server.StartServer</hazelcast.serverMainClass>
 
         <!-- Not using 3.1 at the moment since it recompiles all classes every time -->
-        <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
+        <!-- https://jira.codehaus.org/browse/MCOMPILER-205 -->
         <!--<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>-->
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
@@ -97,8 +96,7 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
 
-        <jsr107.api.version>1.1.0</jsr107.api.version>
-        <jsr107.tck.version>1.1.0</jsr107.tck.version>
+        <jsr107.api.version>1.0.0</jsr107.api.version>
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>

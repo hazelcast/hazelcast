@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.spi.ReadonlyOperation;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.IS_NULL;
 
-public class IsNullOperation extends AbstractAtomicReferenceOperation implements ReadonlyOperation {
+public class IsNullOperation extends AbstractAtomicReferenceOperation {
 
     private boolean returnValue;
 

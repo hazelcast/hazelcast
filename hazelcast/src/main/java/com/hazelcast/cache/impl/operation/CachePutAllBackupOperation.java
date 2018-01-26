@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Map;
@@ -41,12 +42,11 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 /**
  * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
  * multiple entries.
- *
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
  */
 public class CachePutAllBackupOperation
         extends AbstractNamedOperation
-        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
+        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
 
     private Map<Data, CacheRecord> cacheRecords;
     private transient ICacheRecordStore cache;

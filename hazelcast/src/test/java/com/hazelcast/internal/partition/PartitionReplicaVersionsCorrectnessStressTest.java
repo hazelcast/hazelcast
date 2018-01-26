@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,12 +56,18 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},nodeCount:{1},nodeLeaveType:{2}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {1, 5, NodeLeaveType.SHUTDOWN},
-                {1, 5, NodeLeaveType.TERMINATE},
+                {1, 7, NodeLeaveType.SHUTDOWN},
+                {1, 7, NodeLeaveType.TERMINATE},
                 {3, 7, NodeLeaveType.SHUTDOWN},
                 {3, 7, NodeLeaveType.TERMINATE},
                 {6, 7, NodeLeaveType.SHUTDOWN},
-                {6, 7, NodeLeaveType.TERMINATE}
+                {6, 7, NodeLeaveType.TERMINATE},
+                {1, 10, NodeLeaveType.SHUTDOWN},
+                {1, 10, NodeLeaveType.TERMINATE},
+                {3, 10, NodeLeaveType.SHUTDOWN},
+                {3, 10, NodeLeaveType.TERMINATE},
+                {6, 10, NodeLeaveType.SHUTDOWN},
+                {6, 10, NodeLeaveType.TERMINATE}
         });
     }
 
@@ -98,8 +104,8 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
         Map<Integer, List<Address>> partitionReplicaAddresses = TestPartitionUtils.getAllReplicaAddresses(instances);
         Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId = getMinReplicaIndicesByPartitionId(survivingInstances);
 
-        stopInstances(terminatingInstances, nodeLeaveType, SAFE_STATE_TIMEOUT_SECONDS);
-        waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, SAFE_STATE_TIMEOUT_SECONDS);
+        stopInstances(terminatingInstances, nodeLeaveType);
+        waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, 300);
 
         validateReplicaVersions(log, numberOfNodesToStop, survivingInstances, replicaVersionsByPartitionId,
                 partitionReplicaAddresses, minSurvivingReplicaIndexByPartitionId);

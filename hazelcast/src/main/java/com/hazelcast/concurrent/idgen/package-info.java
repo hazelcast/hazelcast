@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
  * With the {@link com.hazelcast.core.IdGenerator} it is very simple to create cluster wide IDs.
  * This can also be done with the {@link com.hazelcast.core.IAtomicLong}, but this would require
  * access to the cluster for every ID generated. With the IdGenerator this is a lot more efficient
- * by claiming a whole chunk and only when the chunk is depleted, cluster access is needed.
+ * by claiming a whole check and only when the chunk is depleted, cluster access is needed.
  *
  * @since 2
  */

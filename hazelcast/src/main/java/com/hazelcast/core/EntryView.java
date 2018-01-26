@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.core;
 
 /**
- * Represents a read-only view of a data structure entry.
+ * EntryView represents a readonly view of a map entry.
  *
- * @param <K> the type of the key
- * @param <V> the type of the value
+ * @param <K> key
+ * @param <V> value
  */
 public interface EntryView<K, V> {
 
@@ -40,8 +40,11 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the cost (in bytes) of the entry.
+     * <p/>
+     * <p><b>Warning:</b></p>
      * <p>
-     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
+     * This method returns -1 if statistics is not enabled.
+     * </p>
      *
      * @return the cost in bytes of the entry
      */
@@ -49,8 +52,11 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the creation time of the entry.
+     * <p/>
+     * <p><b>Warning:</b></p>
      * <p>
-     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
+     * This method returns -1 if statistics is not enabled.
+     * </p>
      *
      * @return the creation time of the entry
      */
@@ -65,8 +71,11 @@ public interface EntryView<K, V> {
 
     /**
      * Returns number of hits of the entry.
-     * <p>
-     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
      *
      * @return number of hits of the entry
      */
@@ -74,17 +83,23 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the last access time for the entry.
-     * <p>
-     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
      *
      * @return the last access time for the entry
      */
     long getLastAccessTime();
 
     /**
-     * Returns the last time the value was flushed to its store (e.g. {@link MapStore}).
-     * <p>
-     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
+     * Returns the last time the value was flushed to mapstore.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
      *
      * @return the last store time for the value
      */
@@ -92,15 +107,18 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the last time the value was updated.
-     * <p>
-     * <b>Warning:</b> This method returns {@code -1} if statistics are not enabled or not implemented.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
      *
      * @return the last time the value was updated
      */
     long getLastUpdateTime();
 
     /**
-     * Returns the version of the entry.
+     * Returns the version of the entry
      *
      * @return the version of the entry
      */
@@ -109,7 +127,7 @@ public interface EntryView<K, V> {
     /**
      * Returns the last set time to live second.
      *
-     * @return the last set time to live second
+     * @return the last set time to live second.
      */
     long getTtl();
 }

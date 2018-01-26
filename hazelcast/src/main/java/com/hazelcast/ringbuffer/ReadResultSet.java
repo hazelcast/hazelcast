@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,19 @@ package com.hazelcast.ringbuffer;
 
 /**
  * The result of a {@link Ringbuffer#readManyAsync(long, int, int, com.hazelcast.core.IFunction)} operation.
- * <p>
- * Important:<br>
+ *
+ * Important:
  * If an item is retrieved multiple times from the result set, a new instance is returned for every invocation. This is done
  * to prevent unexpected sharing if the {@link com.hazelcast.core.ICompletableFuture} is shared between multiple threads.
  *
- * @param <E> item type
+ * @param <E>
  */
 public interface ReadResultSet<E> extends Iterable<E> {
 
     /**
      * Returns the number of items that have been read before filtering.
-     * <p>
-     * If no filter is set, then the readCount will be equal to {@link #size}. But if a filter is applied, it could be that items
+     *
+     * If no filter is set, then the readCount will be the same as size. But if a filter is applied, it could be that items
      * are read, but are filtered out. So if you are trying to make another read based on the ReadResultSet then you should
      * increment the sequence by readCount and not by size. Otherwise you will be re-reading the same filtered messages.
      *
@@ -55,7 +55,6 @@ public interface ReadResultSet<E> extends Iterable<E> {
      *
      * @param index the index
      * @return the sequence number for the ringbuffer item
-     * @throws IllegalArgumentException if index out of bounds.
      * @throws UnsupportedOperationException if the sequence IDs are not available
      * @see com.hazelcast.internal.cluster.ClusterService#getClusterVersion()
      * @since 3.9
@@ -63,7 +62,7 @@ public interface ReadResultSet<E> extends Iterable<E> {
     long getSequence(int index);
 
     /**
-     * Return the result set size. See also {@link #readCount()}.
+     * Return the result set size.
      *
      * @return the result set size
      * @since 3.9

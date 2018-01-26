@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,18 +93,5 @@ public final class ArrayUtils {
     public static <T> void concat(T[] sourceFirst, T[] sourceSecond, T[] dest) {
         System.arraycopy(sourceFirst, 0, dest, 0, sourceFirst.length);
         System.arraycopy(sourceSecond, 0, dest, sourceFirst.length, sourceSecond.length);
-    }
-
-    /**
-     * Bounds check when copying to/from a buffer
-     *
-     * @param capacity capacity of the buffer
-     * @param index    index of copying will start from/to
-     * @param length   length of the buffer that will be read/writen
-     */
-    public static void boundsCheck(int capacity, int index, int length) {
-        if (capacity < 0 || index < 0 || length < 0 || (index > (capacity - length))) {
-            throw new IndexOutOfBoundsException(String.format("index=%d, length=%d, capacity=%d", index, length, capacity));
-        }
     }
 }

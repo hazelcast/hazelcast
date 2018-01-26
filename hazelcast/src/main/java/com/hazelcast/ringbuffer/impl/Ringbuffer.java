@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,15 +47,6 @@ public interface Ringbuffer<T> {
      * @return the sequence of the tail.
      */
     long tailSequence();
-
-    /**
-     * Returns the next sequence which the tail will be at after the next
-     * item is added. Please note that there is no item in the Ringbuffer
-     * with the returned sequence at the time of the call.
-     *
-     * @return the next sequence of the tail
-     */
-    long peekNextTailSequence();
 
     /**
      * Sets the tail sequence. The tail sequence cannot be less than {@link #headSequence()} - 1.

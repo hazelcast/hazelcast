@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package com.hazelcast.cardinality.impl.operations;
 
 import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
-import com.hazelcast.spi.ReadonlyOperation;
 
 public class EstimateOperation
-        extends AbstractCardinalityEstimatorOperation implements ReadonlyOperation {
+        extends AbstractCardinalityEstimatorOperation {
 
     private long estimate;
 

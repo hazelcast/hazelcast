@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.Query;
@@ -29,6 +30,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
@@ -354,31 +356,31 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.KEY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
-        Set queryResultSet = QueryResultUtils.transformToSet(ss, queryResult,
-                predicate, IterationType.KEY, true, tx.isOriginatedFromClient());
+        Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.KEY, true);
 
+        // TODO: can't we just use the original set?
+        Set<Object> keySet = new HashSet<Object>(result);
         Extractors extractors = mapServiceContext.getExtractors(name);
-        Set<Object> returningKeySet = new HashSet<Object>(queryResultSet);
-        CachedQueryEntry cachedQueryEntry = new CachedQueryEntry();
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
-            if (entry.getValue().type == Type.REMOVED) {
-                // meanwhile remove keys which are not in txMap
-                returningKeySet.remove(toObjectIfNeeded(entry.getKey()));
-            } else {
-                Data keyData = entry.getKey();
+            Data keyData = entry.getKey();
+            if (!Type.REMOVED.equals(entry.getValue().type)) {
+                Object value = (entry.getValue().value instanceof Data)
+                        ? toObjectIfNeeded(entry.getValue().value) : entry.getValue().value;
 
-                if (predicate == TruePredicate.INSTANCE) {
-                    returningKeySet.add(toObjectIfNeeded(keyData));
-                } else {
-                    cachedQueryEntry.init(ss, keyData, entry.getValue().value, extractors);
-                    // apply predicate on txMap
-                    if (predicate.apply(cachedQueryEntry)) {
-                        returningKeySet.add(toObjectIfNeeded(keyData));
-                    }
+                QueryableEntry queryEntry = new CachedQueryEntry((InternalSerializationService) serializationService,
+                        keyData, value, extractors);
+                // apply predicate on txMap
+                if (predicate.apply(queryEntry)) {
+                    Object keyObject = serializationService.toObject(keyData);
+                    keySet.add(keyObject);
                 }
+            } else {
+                // meanwhile remove keys which are not in txMap
+                Object keyObject = serializationService.toObject(keyData);
+                keySet.remove(keyObject);
             }
         }
-        return returningKeySet;
+        return keySet;
     }
 
     @Override
@@ -398,30 +400,30 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
-        Set result = QueryResultUtils.transformToSet(ss, queryResult,
-                predicate, IterationType.ENTRY, true, true);
+        Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.ENTRY, true);
 
         // TODO: can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
-        Set<Data> keyWontBeIncluded = new HashSet<Data>();
-
+        Set<Object> keyWontBeIncluded = new HashSet<Object>();
         Extractors extractors = mapServiceContext.getExtractors(name);
-        CachedQueryEntry cachedQueryEntry = new CachedQueryEntry();
+
         // iterate over the txMap and see if the values are updated or removed
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             boolean isRemoved = Type.REMOVED.equals(entry.getValue().type);
             boolean isUpdated = Type.UPDATED.equals(entry.getValue().type);
 
+            Object keyObject = serializationService.toObject(entry.getKey());
             if (isRemoved) {
-                keyWontBeIncluded.add(entry.getKey());
+                keyWontBeIncluded.add(keyObject);
             } else {
                 if (isUpdated) {
-                    keyWontBeIncluded.add(entry.getKey());
+                    keyWontBeIncluded.add(keyObject);
                 }
                 Object entryValue = entry.getValue().value;
-                cachedQueryEntry.init(ss, entry.getKey(), entryValue, extractors);
-                if (predicate.apply(cachedQueryEntry)) {
-                    valueSet.add(toObjectIfNeeded(cachedQueryEntry.getValueData()));
+                QueryableEntry queryEntry = new CachedQueryEntry((InternalSerializationService) serializationService,
+                        entry.getKey(), entryValue, extractors);
+                if (predicate.apply(queryEntry)) {
+                    valueSet.add(queryEntry.getValue());
                 }
             }
         }
@@ -440,12 +442,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     }
 
     private void removeFromResultSet(Set<Map.Entry> queryResultSet, List<Object> valueSet,
-                                     Set<Data> keyWontBeIncluded) {
+                                     Set<Object> keyWontBeIncluded) {
         for (Map.Entry entry : queryResultSet) {
-            if (keyWontBeIncluded.contains((Data) entry.getKey())) {
+            if (keyWontBeIncluded.contains(entry.getKey())) {
                 continue;
             }
-            valueSet.add(toObjectIfNeeded(entry.getValue()));
+            valueSet.add(entry.getValue());
         }
     }
 }

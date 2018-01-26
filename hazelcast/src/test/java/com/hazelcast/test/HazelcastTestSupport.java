@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -259,21 +258,6 @@ public abstract class HazelcastTestSupport {
         return new Packet(serializationService.toBytes(operation), operation.getPartitionId())
                 .setPacketType(Packet.Type.OPERATION)
                 .setConn(connectionManager.getConnection(getAddress(remote)));
-    }
-
-    public static HazelcastInstance getFirstBackupInstance(HazelcastInstance[] instances, int partitionId) {
-        return getBackupInstance(instances, partitionId, 1);
-    }
-
-    public static HazelcastInstance getBackupInstance(HazelcastInstance[] instances, int partitionId, int replicaIndex) {
-        InternalPartition partition = getPartitionService(instances[0]).getPartition(partitionId);
-        Address backupAddress = partition.getReplicaAddress(replicaIndex);
-        for (HazelcastInstance instance : instances) {
-            if (instance.getCluster().getLocalMember().getAddress().equals(backupAddress)) {
-                return instance;
-            }
-        }
-        throw new AssertionError("Could not find backup member for partition " + partitionId);
     }
 
     // #####################################

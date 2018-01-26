@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 package com.hazelcast.spi;
 
 /**
- * An interface that can be implemented by SPI services that want to be able to resolve a split-brain.
+ * An interface that can be implemented by SPI services that want to be able to resolve a split brain.
  * <p>
  * When the two separate clusters merge, the {@link #prepareMergeRunnable()} method is called to return
- * a {@link Runnable}, that will merge the clusters.
+ * a {@link Runnable} that will merge the clusters.
  */
 public interface SplitBrainHandlerService {
 
     /**
-     * When the two separate clusters merge (resolve a split-brain), this method is called to return
-     * a {@link Runnable}, that will merge the clusters.
+     * When the two separate clusters merge (resolve a split brain), this method is called to return
+     * a {@link Runnable} that will merge the clusters.
      *
      * @return a {@link Runnable} that will merge the clusters
      */

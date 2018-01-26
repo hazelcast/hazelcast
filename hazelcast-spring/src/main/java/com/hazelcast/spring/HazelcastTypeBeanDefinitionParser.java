@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,16 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
     private final String type;
     private final String methodName;
 
-    public HazelcastTypeBeanDefinitionParser(String type) {
+    public HazelcastTypeBeanDefinitionParser(final String type) {
         this.type = type;
         this.methodName = "get" + Character.toUpperCase(type.charAt(0)) + type.substring(1);
     }
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
+        final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handle(element);
-        BeanDefinitionBuilder builder = springXmlBuilder.getBuilder();
+        final BeanDefinitionBuilder builder = springXmlBuilder.getBuilder();
         builder.setFactoryMethod(methodName);
         return builder.getBeanDefinition();
     }
@@ -49,32 +49,34 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
     private class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
-        private final BeanDefinitionBuilder builder;
 
-        SpringXmlBuilder(ParserContext parserContext) {
+        private BeanDefinitionBuilder builder;
+
+        public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastInstance.class);
         }
 
-        BeanDefinitionBuilder getBuilder() {
+        public BeanDefinitionBuilder getBuilder() {
             return this.builder;
         }
 
         public void handle(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
-            NamedNodeMap attributes = element.getAttributes();
-            if (attributes != null) {
-                Node instanceRefNode = attributes.getNamedItem("instance-ref");
+            final NamedNodeMap attrs = element.getAttributes();
+            if (attrs != null) {
+                Node instanceRefNode = attrs.getNamedItem("instance-ref");
                 if (instanceRefNode == null) {
-                    throw new IllegalStateException("'instance-ref' attribute is required for creating Hazelcast " + type);
+                    throw new IllegalStateException("'instance-ref' attribute is required for creating"
+                            + " Hazelcast " + type);
                 }
-                String instanceRef = getTextContent(instanceRefNode);
+                final String instanceRef = getTextContent(instanceRefNode);
                 builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
                 builder.addDependsOn(instanceRef);
 
-                Node nameNode = attributes.getNamedItem("name");
+                Node nameNode = attrs.getNamedItem("name");
                 if (nameNode == null) {
-                    nameNode = attributes.getNamedItem("id");
+                    nameNode = attrs.getNamedItem("id");
                 }
                 builder.addConstructorArgValue(getTextContent(nameNode));
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,19 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheRecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
-import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
-
 public class CacheMergeOperation
         extends AbstractCacheOperation
-        implements BackupAwareOperation {
+        implements BackupAwareOperation, MutatingOperation {
 
     private CacheMergePolicy mergePolicy;
     private CacheEntryView<Data, Data> mergingEntry;
@@ -48,7 +47,7 @@ public class CacheMergeOperation
 
     @Override
     public void run() throws Exception {
-        backupRecord = cache.merge(mergingEntry, mergePolicy, SOURCE_NOT_AVAILABLE, null, IGNORE_COMPLETION);
+        backupRecord = ((CacheRecordStore) cache).merge(mergingEntry, mergePolicy);
     }
 
     @Override

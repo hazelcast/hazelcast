@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,17 +130,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash) {
-        return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy, getByteOrder());
+        return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy);
     }
 
     private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy) {
-        return toBytes(obj, leftPadding, writeHash, strategy, BIG_ENDIAN);
-    }
-
-    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy,
-                           ByteOrder serializerTypeIdByteOrder) {
         checkNotNull(obj);
-        checkNotNull(serializerTypeIdByteOrder);
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
@@ -153,7 +147,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 out.writeInt(partitionHash, BIG_ENDIAN);
             }
 
-            out.writeInt(serializer.getTypeId(), serializerTypeIdByteOrder);
+            out.writeInt(serializer.getTypeId(), BIG_ENDIAN);
 
             serializer.write(out, obj);
             return out.toByteArray();

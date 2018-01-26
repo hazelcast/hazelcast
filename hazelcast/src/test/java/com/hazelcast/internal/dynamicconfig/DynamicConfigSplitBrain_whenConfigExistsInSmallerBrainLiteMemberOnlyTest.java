@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainLiteMemberOnlyTest
         extends DynamicConfigSplitBrain_whenConfigExistsInSmallerBrainOnlyTest {
+
+    private static final String MAP_NAME = "mapConfigCreatedInSmallerBrain";
 
     // start 2 data members and 1 lite member
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,13 +87,8 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int QUORUM_LISTENER_CONFIG = 45;
     public static final int CACHE_PARTITION_LOST_LISTENER_CONFIG = 46;
     public static final int SIMPLE_CACHE_ENTRY_LISTENER_CONFIG = 47;
-    public static final int FLAKE_ID_GENERATOR_CONFIG = 48;
-    public static final int ATOMIC_LONG_CONFIG = 49;
-    public static final int ATOMIC_REFERENCE_CONFIG = 50;
-    public static final int MERGE_POLICY_CONFIG = 51;
-    public static final int COUNT_DOWN_LATCH_CONFIG = 52;
 
-    private static final int LEN = COUNT_DOWN_LATCH_CONFIG + 1;
+    private static final int LEN = SIMPLE_CACHE_ENTRY_LISTENER_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -335,11 +330,11 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         };
         constructors[SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG] =
                 new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CacheSimpleConfig.ExpiryPolicyFactoryConfig();
-                    }
-                };
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheSimpleConfig.ExpiryPolicyFactoryConfig();
+            }
+        };
         constructors[SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG] =
                 new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
                     @Override
@@ -396,41 +391,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                         return new CacheSimpleEntryListenerConfig();
                     }
                 };
-        constructors[FLAKE_ID_GENERATOR_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new FlakeIdGeneratorConfig();
-                    }
-                };
-        constructors[ATOMIC_LONG_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new AtomicLongConfig();
-                    }
-                };
-        constructors[ATOMIC_REFERENCE_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new AtomicReferenceConfig();
-                    }
-                };
-        constructors[MERGE_POLICY_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new MergePolicyConfig();
-                    }
-                };
-        constructors[COUNT_DOWN_LATCH_CONFIG] =
-                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-                    @Override
-                    public IdentifiedDataSerializable createNew(Integer arg) {
-                        return new CountDownLatchConfig();
-                    }
-                };
+
 
         return new ArrayDataSerializableFactory(constructors);
     }

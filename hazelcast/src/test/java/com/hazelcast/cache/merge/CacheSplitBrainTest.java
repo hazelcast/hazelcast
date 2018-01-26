@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -36,6 +38,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -232,6 +235,26 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
                 return mergingEntry.getValue();
             }
             return null;
+        }
+    }
+
+    private static class MergeLifecycleListener implements LifecycleListener {
+
+        private final CountDownLatch latch;
+
+        MergeLifecycleListener(int mergingClusterSize) {
+            latch = new CountDownLatch(mergingClusterSize);
+        }
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                latch.countDown();
+            }
+        }
+
+        void await() {
+            assertOpenEventually(latch);
         }
     }
 }

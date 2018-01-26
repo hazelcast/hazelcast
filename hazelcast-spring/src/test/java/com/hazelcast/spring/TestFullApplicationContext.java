@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
-import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -32,12 +29,9 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
-import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
@@ -50,10 +44,8 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -107,7 +99,6 @@ import com.hazelcast.core.QueueStoreFactory;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -193,9 +184,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
-
-    @Resource(name = "flakeIdGenerator")
-    private FlakeIdGenerator flakeIdGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -412,14 +400,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMemberFlakeIdGeneratorConfig() {
-        FlakeIdGeneratorConfig c = instance.getConfig().findFlakeIdGeneratorConfig("flakeIdGenerator");
-        assertEquals(3, c.getPrefetchCount());
-        assertEquals(10L, c.getPrefetchValidityMillis());
-        assertEquals("flakeIdGenerator*", c.getName());
-    }
-
-    @Test
     public void testQueueConfig() {
         QueueConfig testQConfig = config.getQueueConfig("testQ");
         assertNotNull(testQConfig);
@@ -509,36 +489,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAtomicLongConfig() {
-        AtomicLongConfig testAtomicLong = config.getAtomicLongConfig("testAtomicLong");
-        assertNotNull(testAtomicLong);
-        assertEquals("testAtomicLong", testAtomicLong.getName());
-
-        MergePolicyConfig mergePolicyConfig = testAtomicLong.getMergePolicyConfig();
-        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(2342, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testAtomicReferenceConfig() {
-        AtomicReferenceConfig testAtomicReference = config.getAtomicReferenceConfig("testAtomicReference");
-        assertNotNull(testAtomicReference);
-        assertEquals("testAtomicReference", testAtomicReference.getName());
-
-        MergePolicyConfig mergePolicyConfig = testAtomicReference.getMergePolicyConfig();
-        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(4223, mergePolicyConfig.getBatchSize());
-    }
-
-    @Test
-    public void testCountDownLatchConfig() {
-        CountDownLatchConfig testCountDownLatch = config.getCountDownLatchConfig("testCountDownLatch");
-        assertNotNull(testCountDownLatch);
-        assertEquals("testCountDownLatch", testCountDownLatch.getName());
-        assertEquals("my-quorum", testCountDownLatch.getQuorumName());
-    }
-
-    @Test
     public void testSemaphoreConfig() {
         SemaphoreConfig testSemaphore = config.getSemaphoreConfig("testSemaphore");
         assertNotNull(testSemaphore);
@@ -591,10 +541,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1, testListConfig.getBackupCount());
         assertEquals(1, testListConfig.getAsyncBackupCount());
         assertFalse(testListConfig.isStatisticsEnabled());
-
-        MergePolicyConfig mergePolicyConfig = testListConfig.getMergePolicyConfig();
-        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test
@@ -606,10 +552,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testSetConfig.getBackupCount());
         assertEquals(0, testSetConfig.getAsyncBackupCount());
         assertFalse(testSetConfig.isStatisticsEnabled());
-
-        MergePolicyConfig mergePolicyConfig = testSetConfig.getMergePolicyConfig();
-        assertEquals("DiscardMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(2342, mergePolicyConfig.getBatchSize());
     }
 
     @Test
@@ -684,16 +626,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCardinalityEstimatorConfig() {
-        CardinalityEstimatorConfig estimatorConfig = config.getCardinalityEstimatorConfig("estimator");
-        assertNotNull(estimatorConfig);
-        assertEquals("estimator", estimatorConfig.getName());
-        assertEquals(4, estimatorConfig.getBackupCount());
-        assertEquals("DiscardMergePolicy", estimatorConfig.getMergePolicyConfig().getPolicy());
-        assertEquals(44, estimatorConfig.getMergePolicyConfig().getBatchSize());
-    }
-
-    @Test
     public void testNetworkConfig() {
         NetworkConfig networkConfig = config.getNetworkConfig();
         assertNotNull(networkConfig);
@@ -737,15 +669,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(memberAddressProviderConfig.getProperties().isEmpty());
         assertEquals("value", memberAddressProviderConfig.getProperties().getProperty("dummy.property"));
         assertEquals("value2", memberAddressProviderConfig.getProperties().getProperty("dummy.property.2"));
-
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = networkConfig.getIcmpFailureDetectorConfig();
-        assertFalse(icmpFailureDetectorConfig.isEnabled());
-        assertTrue(icmpFailureDetectorConfig.isParallelMode());
-        assertTrue(icmpFailureDetectorConfig.isFailFastOnStartup());
-        assertEquals(500, icmpFailureDetectorConfig.getTimeoutMilliseconds());
-        assertEquals(1002, icmpFailureDetectorConfig.getIntervalMilliseconds());
-        assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
-        assertEquals(1, icmpFailureDetectorConfig.getTtl());
     }
 
     private void assertAwsConfig(AwsConfig aws) {
@@ -820,7 +743,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(list);
         assertNotNull(executorService);
         assertNotNull(idGenerator);
-        assertNotNull(flakeIdGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -835,9 +757,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("flakeIdGenerator", flakeIdGenerator.getName());
-        assertEquals("testAtomicLong", atomicLong.getName());
-        assertEquals("testAtomicReference", atomicReference.getName());
+        assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }
@@ -920,15 +841,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(sslConfig.isEnabled());
         assertEquals(DummySSLContextFactory.class.getName(), sslConfig.getFactoryClassName());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
-    }
-
-    @Test
-    public void testHostVerification() {
-        HostVerificationConfig hostVerification = config.getNetworkConfig().getSSLConfig().getHostVerificationConfig();
-        assertNotNull(hostVerification);
-        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", hostVerification.getPolicyClassName());
-        assertTrue(hostVerification.isEnabledOnServer());
-        assertEquals(1, hostVerification.getProperties().size());
     }
 
     @Test

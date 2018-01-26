@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,12 @@ import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -42,15 +42,8 @@ public class MemberGroupFactoryTest {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
 
-    private InetAddress fakeAddress;
-
-    @Before
-    public void setUp() throws Exception {
-        fakeAddress = InetAddress.getLocalHost();
-    }
-
     @Test
-    public void testHostAwareMemberGroupFactoryCreateMemberGroups() {
+    public void testHostAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
         MemberGroupFactory groupFactory = new HostAwareMemberGroupFactory();
         Collection<Member> members = createMembers();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
@@ -62,7 +55,7 @@ public class MemberGroupFactoryTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testZoneAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
+    public void testZoneAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() throws Exception {
         MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
         Collection<Member> members = createMembersWithNoMetadata();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
@@ -73,16 +66,8 @@ public class MemberGroupFactoryTest {
         }
     }
 
-    private Collection<Member> createMembersWithNoMetadata() {
-        Collection<Member> members = new HashSet<Member>();
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
-        return members;
-    }
-
     @Test
-    public void testZoneMetadataAwareMemberGroupFactoryCreateMemberGroups() {
+    public void testZoneMetadataAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
         MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
         Collection<Member> members = createMembersWithZoneAwareMetadata();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
@@ -93,8 +78,68 @@ public class MemberGroupFactoryTest {
         }
     }
 
-    private Collection<Member> createMembersWithZoneAwareMetadata() {
+    @Test
+    public void testRackMetadataAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
+        MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
+        Collection<Member> members = createMembersWithRackAwareMetadata();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
+        }
+    }
+
+    @Test
+    public void testHostMetadataAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
+        MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
+        Collection<Member> members = createMembersWithHostAwareMetadata();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
+        }
+    }
+
+    @Test
+    public void testConfigMemberGroupFactoryCreateMemberGroups() throws Exception {
+        Collection<MemberGroupConfig> groupConfigs = createMemberGroupConfigs();
+        MemberGroupFactory groupFactory = new ConfigMemberGroupFactory(groupConfigs);
+        Collection<Member> members = createMembers();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 4, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+        }
+    }
+
+    private Collection<Member> createMembers() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
+        InetAddress fakeAddress = InetAddress.getLocalHost();
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), VERSION, false));
+        return members;
+    }
+
+    private Collection<Member> createMembersWithZoneAwareMetadata() throws UnknownHostException {
+        Collection<Member> members = new HashSet<Member>();
+        InetAddress fakeAddress = InetAddress.getLocalHost();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-east-1");
 
@@ -110,20 +155,9 @@ public class MemberGroupFactoryTest {
         return members;
     }
 
-    @Test
-    public void testRackMetadataAwareMemberGroupFactoryCreateMemberGroups() {
-        MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
-        Collection<Member> members = createMembersWithRackAwareMetadata();
-        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
-
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
-        for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
-        }
-    }
-
-    private Collection<Member> createMembersWithRackAwareMetadata() {
+    private Collection<Member> createMembersWithRackAwareMetadata() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
+        InetAddress fakeAddress = InetAddress.getLocalHost();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-1");
 
@@ -139,20 +173,9 @@ public class MemberGroupFactoryTest {
         return members;
     }
 
-    @Test
-    public void testHostMetadataAwareMemberGroupFactoryCreateMemberGroups() {
-        MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
-        Collection<Member> members = createMembersWithHostAwareMetadata();
-        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
-
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
-        for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
-        }
-    }
-
-    private Collection<Member> createMembersWithHostAwareMetadata() {
+    private Collection<Member> createMembersWithHostAwareMetadata() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
+        InetAddress fakeAddress = InetAddress.getLocalHost();
         MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
         member1.setStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-1");
 
@@ -168,67 +191,16 @@ public class MemberGroupFactoryTest {
         return members;
     }
 
-    /**
-     * When there is a matching {@link MemberGroupConfig} for a {@link Member}, it will be assigned to a {@link MemberGroup}.
-     * <p>
-     * In this test all members will have a matching configuration, so there will be 4 groups with 2 members each.
-     */
-    @Test
-    public void testConfigMemberGroupFactoryCreateMemberGroups() {
-        Collection<Member> members = createMembers();
-        Collection<MemberGroupConfig> groupConfigs = createMemberGroupConfigs(true);
-        MemberGroupFactory groupFactory = new ConfigMemberGroupFactory(groupConfigs);
-        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
-
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 4, memberGroups.size());
-        for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
-        }
-    }
-
-    /**
-     * When there is a matching {@link MemberGroupConfig} for a {@link Member}, it will be assigned to a {@link MemberGroup}.
-     * <p>
-     * In this test half of the members will have a matching configuration, so there will be 2 groups with 2 members each.
-     */
-    @Test
-    public void testConfigMemberGroupFactoryCreateMemberGroups_withNonMatchingMembers() {
-        Collection<Member> members = createMembers();
-        Collection<MemberGroupConfig> groupConfigs = createMemberGroupConfigs(false);
-        MemberGroupFactory groupFactory = new ConfigMemberGroupFactory(groupConfigs);
-        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
-
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 2, memberGroups.size());
-        for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
-        }
-    }
-
-    private Collection<Member> createMembers() {
+    private Collection<Member> createMembersWithNoMetadata() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
+        InetAddress fakeAddress = InetAddress.getLocalHost();
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
         members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5702), VERSION, false));
-
-        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5702), VERSION, false));
-
-        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5702), VERSION, false));
-
-        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), VERSION, false));
         return members;
     }
 
-    private Collection<MemberGroupConfig> createMemberGroupConfigs(boolean addHostnameConfigs) {
+    private Collection<MemberGroupConfig> createMemberGroupConfigs() {
         Collection<MemberGroupConfig> groupConfigs = new HashSet<MemberGroupConfig>();
 
         MemberGroupConfig group1 = new MemberGroupConfig();
@@ -245,10 +217,8 @@ public class MemberGroupFactoryTest {
 
         groupConfigs.add(group1);
         groupConfigs.add(group2);
-        if (addHostnameConfigs) {
-            groupConfigs.add(group3);
-            groupConfigs.add(group4);
-        }
+        groupConfigs.add(group3);
+        groupConfigs.add(group4);
         return groupConfigs;
     }
 }

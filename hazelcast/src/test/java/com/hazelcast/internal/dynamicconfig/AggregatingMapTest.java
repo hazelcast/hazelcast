@@ -17,6 +17,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class AggregatingMapTest extends HazelcastTestSupport {
@@ -215,4 +216,5 @@ public class AggregatingMapTest extends HazelcastTestSupport {
         Map<String, String> aggregatingMap = AggregatingMap.aggregate(map1, map2);
         aggregatingMap.remove("entry");
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.nio.Bits;
-import com.hazelcast.util.collection.ArrayUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -228,13 +227,18 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
 
     private void boundsCheck(final int index, final int length) {
         if (SHOULD_BOUNDS_CHECK) {
-            ArrayUtils.boundsCheck(capacity, index, length);
+            if (index < 0 || length < 0 || (index + length) > capacity) {
+                throw new IndexOutOfBoundsException(String.format("index=%d, length=%d, capacity=%d", index, length, capacity));
+            }
         }
     }
 
     private static void boundsCheck(final byte[] buffer, final int index, final int length) {
         if (SHOULD_BOUNDS_CHECK) {
-            ArrayUtils.boundsCheck(buffer.length, index, length);
+            final int capacity = buffer.length;
+            if (index < 0 || length < 0 || (index + length) > capacity) {
+                throw new IndexOutOfBoundsException(String.format("index=%d, length=%d, capacity=%d", index, length, capacity));
+            }
         }
     }
 }

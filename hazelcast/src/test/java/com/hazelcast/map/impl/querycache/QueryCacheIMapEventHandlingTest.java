@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         Data valueData = serializationService.toData(mergedValue);
         EntryView<Data, Data> entryView = createSimpleEntryView(keyData, valueData, Mockito.mock(Record.class));
 
-        MergeOperation mergeOperation = new MergeOperation(mapName, entryView, new PassThroughMergePolicy(), false);
+        MergeOperation mergeOperation = new MergeOperation(mapName, keyData, entryView, new PassThroughMergePolicy());
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         Future<Object> future = operationService.invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
         future.get();

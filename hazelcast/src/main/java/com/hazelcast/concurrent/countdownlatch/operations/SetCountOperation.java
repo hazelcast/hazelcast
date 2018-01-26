@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.SET_COUNT_OPERATION;
 
-public class SetCountOperation extends BackupAwareCountDownLatchOperation implements MutatingOperation {
+public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
     private int count;
     private boolean response;

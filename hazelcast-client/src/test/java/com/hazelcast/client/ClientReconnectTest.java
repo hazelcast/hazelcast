@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -29,10 +26,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -43,10 +36,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -173,113 +164,5 @@ public class ClientReconnectTest extends HazelcastTestSupport {
                 .setConnectionAttemptLimit(Integer.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         client.shutdown();
-    }
-
-    public static abstract class CustomCredentials extends UsernamePasswordCredentials {
-
-        public CustomCredentials() {
-        }
-
-        CustomCredentials(String username, String password) {
-            super(username, password);
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
-
-        @Override
-        public int getClassId() {
-            return 1;
-        }
-
-    }
-
-    public static class CustomCredentials_takesLong extends CustomCredentials {
-
-        private static AtomicInteger count = new AtomicInteger();
-
-        public CustomCredentials_takesLong() {
-        }
-
-        CustomCredentials_takesLong(String username, String password) {
-            super(username, password);
-        }
-
-        @Override
-        protected void readPortableInternal(PortableReader reader) throws IOException {
-            if (count.incrementAndGet() == 1) {
-                try {
-                    Thread.sleep(30000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            super.readPortableInternal(reader);
-        }
-    }
-
-    @Test
-    public void testClientConnected_withFirstAuthenticationTakingLong() throws InterruptedException {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new CustomCredentials_takesLong();
-            }
-        });
-
-        Config config = new Config();
-        config.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setCredentials(new CustomCredentials_takesLong("dev", "dev-pass"));
-        clientConfig.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastClient(clientConfig);
-    }
-
-    public static class CustomCredentials_retried extends CustomCredentials {
-
-        private static AtomicInteger count = new AtomicInteger();
-
-        public CustomCredentials_retried() {
-        }
-
-        CustomCredentials_retried(String username, String password) {
-            super(username, password);
-        }
-
-        @Override
-        public String getPassword() {
-            if (count.incrementAndGet() == 1) {
-                throw new HazelcastInstanceNotActiveException();
-            }
-            return super.getPassword();
-        }
-    }
-
-    @Test
-    public void testClientConnected_withFirstAuthenticationRetried() throws InterruptedException {
-        SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new CustomCredentials_retried();
-            }
-        });
-
-        Config config = new Config();
-        config.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = new ClientConfig();
-        //first authentication should be able to retried by invocation system. No need to do a second invocation.
-        //By setting attempt limit to one, we are expecting client to connect in first attempt.
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
-        clientConfig.setCredentials(new CustomCredentials_retried("dev", "dev-pass"));
-        clientConfig.setSerializationConfig(serializationConfig);
-        hazelcastFactory.newHazelcastClient(clientConfig);
     }
 }

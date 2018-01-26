@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,8 @@ import java.io.IOException;
 
 /**
  * Operation implementation for cache remove functionality.
- *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String, String, int)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String, int)
  */
 public class CacheRemoveOperation
         extends AbstractMutatingCacheOperation {
@@ -48,9 +47,9 @@ public class CacheRemoveOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.remove(key, getCallerUuid(), null, completionId);
+            response = cache.remove(key, getCallerUuid(), completionId);
         } else {
-            response = cache.remove(key, oldValue, getCallerUuid(), null, completionId);
+            response = cache.remove(key, oldValue, getCallerUuid(), completionId);
         }
     }
 

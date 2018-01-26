@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.version.Version;
 
@@ -49,7 +48,7 @@ import java.io.IOException;
  * @since 3.9
  */
 public abstract class EventJournalReadOperation<T, J> extends Operation
-        implements IdentifiedDataSerializable, PartitionAwareOperation, BlockingOperation, ReadonlyOperation {
+        implements IdentifiedDataSerializable, PartitionAwareOperation, BlockingOperation {
     protected String name;
     protected int minSize;
     protected int maxSize;

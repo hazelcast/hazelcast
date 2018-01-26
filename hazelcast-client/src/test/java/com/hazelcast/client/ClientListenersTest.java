@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
         Data key = serializationService.toData(1);
         Data value = serializationService.toData(new ClientRegressionWithMockNetworkTest.SamplePortable(1));
         EntryView entryView = EntryViews.createSimpleEntryView(key, value, Mockito.mock(Record.class));
-        MergeOperation op = new MergeOperation(map.getName(), entryView, new PassThroughMergePolicy(), false);
+        MergeOperation op = new MergeOperation(map.getName(), key, entryView, new PassThroughMergePolicy());
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
 

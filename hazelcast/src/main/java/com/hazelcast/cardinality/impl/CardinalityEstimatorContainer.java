@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,25 +21,19 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 
 import java.io.IOException;
 
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_ASYNC_BACKUP_COUNT;
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_SYNC_BACKUP_COUNT;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
-public class CardinalityEstimatorContainer
-        implements SplitBrainAwareDataContainer<String, HyperLogLog, HyperLogLog>,
-                   IdentifiedDataSerializable {
-
-    HyperLogLog hll;
+public class CardinalityEstimatorContainer implements IdentifiedDataSerializable {
 
     private int backupCount;
 
     private int asyncBackupCount;
+
+    private HyperLogLog hll;
 
     public CardinalityEstimatorContainer() {
         this(DEFAULT_SYNC_BACKUP_COUNT, DEFAULT_ASYNC_BACKUP_COUNT);
@@ -72,33 +66,6 @@ public class CardinalityEstimatorContainer
     }
 
     @Override
-    public HyperLogLog merge(SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry,
-                                               SplitBrainMergePolicy mergePolicy) {
-        String name = mergingEntry.getKey();
-        if (hll.estimate() != 0) {
-            SplitBrainMergeEntryView<String, HyperLogLog> existing =
-                    createSplitBrainMergeEntryView(name, hll);
-            HyperLogLog newValue = mergePolicy.merge(mergingEntry, existing);
-            if (newValue != null && !newValue.equals(hll)) {
-                setValue(newValue);
-                return hll;
-            }
-        } else {
-            HyperLogLog newValue = mergePolicy.merge(mergingEntry, null);
-            if (newValue != null) {
-                setValue(newValue);
-                return hll;
-            }
-        }
-
-        return null;
-    }
-
-    public void setValue(HyperLogLog hll) {
-        this.hll = hll;
-    }
-
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(hll);
         out.writeInt(backupCount);
@@ -121,24 +88,4 @@ public class CardinalityEstimatorContainer
     public int getId() {
         return CardinalityEstimatorDataSerializerHook.CARDINALITY_EST_CONTAINER;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        CardinalityEstimatorContainer that = (CardinalityEstimatorContainer) o;
-
-        return hll.equals(that.hll);
-    }
-
-    @Override
-    public int hashCode() {
-        return hll.hashCode();
-    }
-
 }

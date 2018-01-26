@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -57,7 +56,7 @@ import static java.lang.String.format;
  */
 public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferService> implements Ringbuffer<E> {
 
-    /**
+     /**
      * The maximum number of items that can be retrieved in 1 go using the {@link #readManyAsync(long, int, int, IFunction)}
      * method.
      */
@@ -86,7 +85,6 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
 
     @Override
     public long capacity() {
-        getService().ensureQuorumPresent(name, QuorumType.READ);
         return config.getCapacity();
     }
 
@@ -119,7 +117,6 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         // we don't need to make a remote call if ttl is not set since in this case the remaining
         // capacity will always be equal to the capacity.
         if (config.getTimeToLiveSeconds() == 0) {
-            getService().ensureQuorumPresent(name, QuorumType.READ);
             return config.getCapacity();
         }
 

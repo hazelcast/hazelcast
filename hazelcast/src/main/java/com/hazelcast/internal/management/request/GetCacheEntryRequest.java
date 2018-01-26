@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,15 @@ package com.hazelcast.internal.management.request;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEntryProcessorEntry;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.core.ReadOnly;
 import com.hazelcast.instance.HazelcastInstanceCacheManager;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
-import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -62,18 +56,18 @@ public class GetCacheEntryRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         InternalSerializationService serializationService = mcs.getHazelcastInstance().getSerializationService();
         HazelcastInstanceCacheManager cacheManager = mcs.getHazelcastInstance().getCacheManager();
         ICache<Object, Object> cache = cacheManager.getCache(cacheName);
         CacheEntryView cacheEntry = null;
 
         if ("string".equals(type)) {
-            cacheEntry = cache.invoke(key, ENTRY_PROCESSOR);
+            cacheEntry = cache.invoke(key, ENTRY_PROCESSOR, cacheEntry);
         } else if ("long".equals(type)) {
-            cacheEntry = cache.invoke(Long.valueOf(key), ENTRY_PROCESSOR);
+            cacheEntry = cache.invoke(Long.valueOf(key), ENTRY_PROCESSOR, cacheEntry);
         } else if ("integer".equals(type)) {
-            cacheEntry = cache.invoke(Integer.valueOf(key), ENTRY_PROCESSOR);
+            cacheEntry = cache.invoke(Integer.valueOf(key), ENTRY_PROCESSOR, cacheEntry);
         }
         JsonObject result = new JsonObject();
         if (cacheEntry != null) {
@@ -95,113 +89,42 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         key = getString(json, "key");
     }
 
-    public static class GetCacheEntryViewEntryProcessor implements EntryProcessor<Object, Object, CacheEntryView>,
-            IdentifiedDataSerializable, ReadOnly {
+    private static class GetCacheEntryViewEntryProcessor implements EntryProcessor<Object, Object, CacheEntryView> {
         @Override
         public CacheEntryView process(MutableEntry mutableEntry, Object... objects) throws EntryProcessorException {
-            CacheEntryProcessorEntry entry = (CacheEntryProcessorEntry) mutableEntry;
-            if (entry.getRecord() == null) {
-                return null;
-            }
+            final CacheEntryProcessorEntry entry = (CacheEntryProcessorEntry) mutableEntry;
+            final CacheRecord record = entry.getRecord();
+            CacheEntryView<Object, Object> cacheEntryView = new CacheEntryView<Object, Object>() {
+                //Key is defined by Management Center user
+                @Override
+                public String getKey() {
+                    return null;
+                }
+                @Override
+                public Object getValue() {
+                    return record.getValue();
+                }
+                @Override
+                public long getExpirationTime() {
+                    return record.getExpirationTime();
+                }
 
-            return new CacheBrowserEntryView(entry);
-        }
+                @Override
+                public long getCreationTime() {
+                    return record.getCreationTime();
+                }
 
-        @Override
-        public int getFactoryId() {
-            return CacheDataSerializerHook.F_ID;
-        }
+                @Override
+                public long getLastAccessTime() {
+                    return record.getLastAccessTime();
+                }
 
-        @Override
-        public int getId() {
-            return CacheDataSerializerHook.GET_CACHE_ENTRY_VIEW_PROCESSOR;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-    }
-
-    public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable {
-        private Object value;
-        private long expirationTime;
-        private long creationTime;
-        private long lastAccessTime;
-        private long accessHit;
-
-        public CacheBrowserEntryView() {
-        }
-
-        CacheBrowserEntryView(CacheEntryProcessorEntry entry) {
-            this.value = entry.getValue();
-
-            CacheRecord record = entry.getRecord();
-            this.expirationTime = record.getExpirationTime();
-            this.creationTime = record.getCreationTime();
-            this.lastAccessTime = record.getLastAccessTime();
-            this.accessHit = record.getAccessHit();
-        }
-
-        @Override
-        public Object getKey() {
-            return null;
-        }
-
-        @Override
-        public Object getValue() {
-            return value;
-        }
-
-        @Override
-        public long getExpirationTime() {
-            return expirationTime;
-        }
-
-        @Override
-        public long getCreationTime() {
-            return creationTime;
-        }
-
-        @Override
-        public long getLastAccessTime() {
-            return lastAccessTime;
-        }
-
-        @Override
-        public long getAccessHit() {
-            return accessHit;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return CacheDataSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getId() {
-            return CacheDataSerializerHook.CACHE_BROWSER_ENTRY_VIEW;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(value);
-            out.writeLong(expirationTime);
-            out.writeLong(creationTime);
-            out.writeLong(lastAccessTime);
-            out.writeLong(accessHit);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            value = in.readObject();
-            expirationTime = in.readLong();
-            creationTime = in.readLong();
-            lastAccessTime = in.readLong();
-            accessHit = in.readLong();
+                @Override
+                public long getAccessHit() {
+                    return record.getAccessHit();
+                }
+            };
+            return cacheEntryView;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -31,23 +30,17 @@ import java.util.concurrent.RejectedExecutionException;
 
 public abstract class AbstractSchedulerOperation
         extends Operation
-        implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String schedulerName;
 
-    AbstractSchedulerOperation() {
-    }
+    AbstractSchedulerOperation() { }
 
     AbstractSchedulerOperation(String schedulerName) {
         this.schedulerName = schedulerName;
     }
 
     public String getSchedulerName() {
-        return schedulerName;
-    }
-
-    @Override
-    public String getName() {
         return schedulerName;
     }
 

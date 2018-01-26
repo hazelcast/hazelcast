@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-import static com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoding.SPARSE;
-
 /**
  * 1. http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
  * 2. http://static.googleusercontent.com/media/research.google.com/en//pubs/archive/40671.pdf
@@ -35,12 +33,13 @@ import static com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncodin
 @SuppressWarnings("checkstyle:magicnumber")
 public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
 
-    private int p;
+    private double[] invPowLookup;
     private byte[] register;
-    private transient int numOfEmptyRegs;
-    private transient double[] invPowLookup;
-    private transient int m;
-    private transient long pFenseMask;
+    private int numOfEmptyRegs;
+    private int p;
+    private int m;
+
+    private long pFenseMask;
 
     public DenseHyperLogLogEncoder() {
     }
@@ -84,22 +83,6 @@ public class DenseHyperLogLogEncoder implements HyperLogLogEncoder {
     public long estimate() {
         final double raw = (1 / computeE()) * alpha() * m * m;
         return applyRangeCorrection(raw);
-    }
-
-    @Override
-    public HyperLogLogEncoder merge(HyperLogLogEncoder encoder) {
-        DenseHyperLogLogEncoder otherDense;
-        if (SPARSE.equals(encoder.getEncodingType())) {
-            otherDense = (DenseHyperLogLogEncoder) ((SparseHyperLogLogEncoder) encoder).asDense();
-        } else {
-            otherDense = (DenseHyperLogLogEncoder) encoder;
-        }
-
-        for (int i = 0; i < register.length; i++) {
-            register[i] = (byte) Math.max(register[i], otherDense.register[i]);
-        }
-
-        return this;
     }
 
     @Override

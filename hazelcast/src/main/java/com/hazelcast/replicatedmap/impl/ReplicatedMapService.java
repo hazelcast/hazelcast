@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -34,8 +33,6 @@ import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.quorum.QuorumService;
-import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
@@ -50,14 +47,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -72,21 +67,18 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
  * manages the backing {@link PartitionContainer}s that actually hold the data
  */
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
-        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats>, QuorumAwareService {
+        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats> {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;
 
     private static final int SYNC_INTERVAL_SECONDS = 30;
-
-    private static final Object NULL_OBJECT = new Object();
 
     private final Config config;
     private final NodeEngine nodeEngine;
@@ -94,7 +86,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final InternalPartitionServiceImpl partitionService;
     private final ClusterService clusterService;
     private final OperationService operationService;
-    private final QuorumService quorumService;
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
     private ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
@@ -107,17 +98,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                 }
             };
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            ReplicatedMapConfig lockConfig = nodeEngine.getConfig().findReplicatedMapConfig(name);
-            String quorumName = lockConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
-        }
-    };
-
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig();
@@ -127,7 +107,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);
         this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this, new MergePolicyProvider(nodeEngine));
-        this.quorumService = nodeEngine.getQuorumService();
     }
 
     @Override
@@ -260,7 +239,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i].destroy(objectName);
         }
-        quorumConfigCache.remove(objectName);
     }
 
     @Override
@@ -396,20 +374,5 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             mapStats.put(map, createReplicatedMapStats(map));
         }
         return mapStats;
-    }
-
-    @Override
-    public String getQuorumName(String name) {
-        // RU_COMPAT_3_9
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-            return null;
-        }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
-    }
-
-    public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
-        quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
     }
 }

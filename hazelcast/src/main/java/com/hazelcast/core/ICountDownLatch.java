@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,6 @@ import java.util.concurrent.TimeUnit;
  * If required, when using {@link ICountDownLatch} as an orchestration mechanism you should assess the state of the
  * orchestration outcome and the associated countdown actors after a split-brain heal has taken place, and take steps to
  * re-orchestrate if appropriate.
- *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
- *
  */
 public interface ICountDownLatch extends DistributedObject {
 

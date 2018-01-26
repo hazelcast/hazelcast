@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,25 +183,25 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
         private boolean newTransactionContextHolder;
         private boolean rollbackOnly;
 
-        void setRollbackOnly(boolean rollbackOnly) {
+        public void setRollbackOnly(boolean rollbackOnly) {
             this.rollbackOnly = rollbackOnly;
         }
 
-        void setTransactionContextHolder(TransactionContextHolder transactionContextHolder,
-                                         boolean newTransactionContextHolder) {
+        public void setTransactionContextHolder(TransactionContextHolder transactionContextHolder,
+                                                boolean newTransactionContextHolder) {
             this.transactionContextHolder = transactionContextHolder;
             this.newTransactionContextHolder = newTransactionContextHolder;
         }
 
-        TransactionContextHolder getTransactionContextHolder() {
+        public TransactionContextHolder getTransactionContextHolder() {
             return transactionContextHolder;
         }
 
-        boolean isNewTransactionContextHolder() {
+        public boolean isNewTransactionContextHolder() {
             return newTransactionContextHolder;
         }
 
-        boolean hasTransaction() {
+        public boolean hasTransaction() {
             return this.transactionContextHolder != null && this.transactionContextHolder.isTransactionActive();
         }
 
@@ -212,7 +212,7 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
 
         @Override
         public void flush() {
-            // do nothing here
+            //Do nothing here.
         }
     }
 }

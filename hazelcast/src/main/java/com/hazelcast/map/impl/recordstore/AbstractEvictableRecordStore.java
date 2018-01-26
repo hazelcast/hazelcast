@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,17 +82,17 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * for expiration (idle or tll) otherwise returns {@code false}.
      */
     private boolean isRecordStoreExpirable() {
-        MapConfig mapConfig = mapContainer.getMapConfig();
+        final MapConfig mapConfig = mapContainer.getMapConfig();
         return hasEntryWithCustomTTL || mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
     }
 
     @Override
     public void evictExpiredEntries(int percentage, boolean backup) {
-        long now = getNow();
-        int size = size();
-        int maxIterationCount = getMaxIterationCount(size, percentage);
-        int maxRetry = 3;
+        final long now = getNow();
+        final int size = size();
+        final int maxIterationCount = getMaxIterationCount(size, percentage);
+        final int maxRetry = 3;
         int loop = 0;
         int evictedEntryCount = 0;
         while (true) {
@@ -174,22 +174,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void markRecordStoreExpirable(long ttl) {
-        if (!isInfiniteTTL(ttl)) {
+        if (ttl > 0L && ttl < Long.MAX_VALUE) {
             hasEntryWithCustomTTL = true;
         }
-
-        if (isRecordStoreExpirable()) {
-            mapServiceContext.getExpirationManager().scheduleExpirationTask();
-        }
-    }
-
-    /**
-     * @return {@code true} if the supplied ttl doesn't not represent infinity and as a result entry should be
-     * removed after some time, otherwise return {@code false} to indicate entry should live forever.
-     */
-    // this method is overridden on ee
-    protected boolean isInfiniteTTL(long ttl) {
-        return !(ttl > 0L && ttl < Long.MAX_VALUE);
     }
 
     /**
@@ -206,7 +193,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return null;
         }
-        Data key = record.getKey();
+        final Data key = record.getKey();
         if (isLocked(key)) {
             return record;
         }
@@ -247,7 +234,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return false;
         }
         long ttl = record.getTtl();
-        // when ttl is zero or negative or Long.MAX_VALUE, entry should live forever.
+        // when ttl is zero or negative or Long.MAX_VALUE, it should remain eternally.
         if (ttl < 1L || ttl == Long.MAX_VALUE) {
             return false;
         }
@@ -317,19 +304,19 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
-        long ttlMillis = mergingEntry.getTtl();
+        final long ttlMillis = mergingEntry.getTtl();
         record.setTtl(ttlMillis);
 
-        long creationTime = mergingEntry.getCreationTime();
+        final long creationTime = mergingEntry.getCreationTime();
         record.setCreationTime(creationTime);
 
-        long lastAccessTime = mergingEntry.getLastAccessTime();
+        final long lastAccessTime = mergingEntry.getLastAccessTime();
         record.setLastAccessTime(lastAccessTime);
 
-        long lastUpdateTime = mergingEntry.getLastUpdateTime();
+        final long lastUpdateTime = mergingEntry.getLastUpdateTime();
         record.setLastUpdateTime(lastUpdateTime);
 
-        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
+        final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         setExpirationTime(record, maxIdleMillis);
 
         markRecordStoreExpirable(record.getTtl());
@@ -384,9 +371,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         private void advance() {
-            long now = this.now;
-            boolean checkExpiration = this.checkExpiration;
-            Iterator<Record> iterator = this.iterator;
+            final long now = this.now;
+            final boolean checkExpiration = this.checkExpiration;
+            final Iterator<Record> iterator = this.iterator;
 
             while (iterator.hasNext()) {
                 nextRecord = iterator.next();

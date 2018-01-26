@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -37,7 +36,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 /**
  * Puts a set of records to the replicated map.
  */
-public class PutAllOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
+public class PutAllOperation extends AbstractSerializableOperation {
 
     private String name;
     private ReplicatedMapEntries entries;
@@ -103,10 +102,5 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.PUT_ALL;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 }

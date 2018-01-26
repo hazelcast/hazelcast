@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,22 +22,20 @@
 
     1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
 
-       The config option can be set by adding the following to the java command: -Dhazelcast.config=path_to_the_hazelcast.xml.
+       The config option can be set by adding the following to the java command: - Dhazelcast.config=path_to_the_hazelcast.xml.
 
        The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
 
-    2. Otherwise it checks if there is a ’hazelcast.xml’ in the working directory.
+    2. Else it checks if there is a ’hazelcast.xml’ in the working directory.
 
     3. After that it checks if there is a ’hazelcast.xml’ in the root of the classpath.
 
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd">
-
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.10.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
         <name>dev</name>
         <password>dev-pass</password>
@@ -202,16 +200,6 @@
                 <property name="foo">bar</property>
             </properties>
         </member-address-provider>
-        <failure-detector>
-            <icmp enabled="false">
-                <timeout-milliseconds>1000</timeout-milliseconds>
-                <fail-fast-on-startup>true</fail-fast-on-startup>
-                <interval-milliseconds>1000</interval-milliseconds>
-                <max-attempts>2</max-attempts>
-                <parallel-mode>true</parallel-mode>
-                <ttl>255</ttl>
-            </icmp>
-        </failure-detector>
     </network>
     <partition-group enabled="true" group-type="CUSTOM">
         <member-group>
@@ -229,25 +217,17 @@
         <statistics-enabled>false</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>1000</queue-capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </executor-service>
     <durable-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>10</capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </durable-executor-service>
     <scheduled-executor-service name="dummy">
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>50</capacity>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </scheduled-executor-service>
-    <cardinality-estimator name="dummy">
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
-    </cardinality-estimator>
     <queue name="default">
         <statistics-enabled>false</statistics-enabled>
         <!--
@@ -463,7 +443,6 @@
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </multimap>
 
     <replicatedmap name="dummy">
@@ -475,7 +454,6 @@
         <entry-listeners>
             <entry-listener include-value="false" local="true">DummyListener</entry-listener>
         </entry-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </replicatedmap>
 
     <list name="default">
@@ -486,8 +464,6 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </list>
 
     <set name="default">
@@ -498,8 +474,6 @@
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </set>
 
     <topic name="default">
@@ -525,26 +499,11 @@
         <initial-permits>10</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </semaphore>
 
     <lock name="default">
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </lock>
-
-    <atomic-long name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-    </atomic-long>
-
-    <atomic-reference name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-    </atomic-reference>
-
-    <count-down-latch name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
-    </count-down-latch>
 
     <ringbuffer name="default">
         <capacity>25311</capacity>
@@ -552,7 +511,6 @@
         <async-backup-count>1</async-backup-count>
         <time-to-live-seconds>29</time-to-live-seconds>
         <in-memory-format>OBJECT</in-memory-format>
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </ringbuffer>
 
     <cache name="default">
@@ -596,11 +554,6 @@
             <fsync>true</fsync>
         </hot-restart>
     </cache>
-
-    <flake-id-generator name="default">
-        <prefetch-count>100</prefetch-count>
-        <prefetch-validity-millis>10000</prefetch-validity-millis>
-    </flake-id-generator>
 
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>

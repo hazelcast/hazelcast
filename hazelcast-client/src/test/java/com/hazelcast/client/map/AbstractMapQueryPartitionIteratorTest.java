@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.projection.Projection;
-import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -147,7 +146,7 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         }
 
         final Iterator<Map.Entry<String, Integer>> iterator = intMap.iterator(10, 1,
-                Projections.<Entry<String, Integer>>identity(),
+                new IdentityProjection<Entry<String, Integer>>(),
                 new EvenPredicate());
 
         final ArrayList<Map.Entry<String, Integer>> projected = collectAll(iterator);
@@ -226,6 +225,13 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         @Override
         public T transform(Map.Entry<String, T> input) {
             return input.getValue();
+        }
+    }
+
+    private static class IdentityProjection<T> extends Projection<T, T> {
+        @Override
+        public T transform(T input) {
+            return input;
         }
     }
 }

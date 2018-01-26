@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,45 +31,47 @@ import java.util.Properties;
  * <p>
  * <b>Sample bean</b>
  * <pre>
- * &lt;hz:cache-manager id="cacheManager" instance-ref="instance" name="cacheManager"/&gt;
+ * &lt;hz:cache-manager id="cacheManager" instance-ref="instance" name="cacheManager" /&gt;
  * </pre>
  */
-public class CacheManagerBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
+public class CacheManagerBeanDefinitionParser
+        extends AbstractHazelcastBeanDefinitionParser {
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(SpringHazelcastCachingProvider.class, parserContext);
+        final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(SpringHazelcastCachingProvider.class, parserContext);
         springXmlBuilder.handle(element);
-        BeanDefinitionBuilder builder = springXmlBuilder.getBuilder();
+        final BeanDefinitionBuilder builder = springXmlBuilder.getBuilder();
         return builder.getBeanDefinition();
     }
 
     private class SpringXmlBuilder extends AbstractHazelcastBeanDefinitionParser.SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
-        private final BeanDefinitionBuilder builder;
 
-        SpringXmlBuilder(Class providerClass, ParserContext parserContext) {
+        private BeanDefinitionBuilder builder;
+
+        public SpringXmlBuilder(Class providerClass, ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(providerClass);
         }
 
-        BeanDefinitionBuilder getBuilder() {
+        public BeanDefinitionBuilder getBuilder() {
             return this.builder;
         }
 
         public void handle(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
-            NamedNodeMap attributes = element.getAttributes();
+            final NamedNodeMap attrs = element.getAttributes();
 
             String uri = null;
             String instanceRef = null;
-            if (attributes != null) {
-                Node instanceRefNode = attributes.getNamedItem("instance-ref");
+            if (attrs != null) {
+                Node instanceRefNode = attrs.getNamedItem("instance-ref");
                 if (instanceRefNode != null) {
                     instanceRef = getTextContent(instanceRefNode);
                 }
-                Node uriNode = attributes.getNamedItem("uri");
+                Node uriNode = attrs.getNamedItem("uri");
                 if (uriNode != null) {
                     uri = getTextContent(uriNode);
                 }
@@ -77,16 +79,16 @@ public class CacheManagerBeanDefinitionParser extends AbstractHazelcastBeanDefin
 
             Properties properties = new Properties();
             for (Node n : childElements(element)) {
-                String nodeName = cleanNodeName(n);
+                final String nodeName = cleanNodeName(n);
                 if ("properties".equals(nodeName)) {
                     for (Node propNode : childElements(n)) {
-                        String name = cleanNodeName(propNode);
-                        String propertyName;
+                        final String name = cleanNodeName(propNode);
+                        final String propertyName;
                         if (!"property".equals(name)) {
                             continue;
                         }
                         propertyName = getTextContent(propNode.getAttributes().getNamedItem("name")).trim();
-                        String value = getTextContent(propNode);
+                        final String value = getTextContent(propNode);
                         properties.setProperty(propertyName, value);
                     }
                 }

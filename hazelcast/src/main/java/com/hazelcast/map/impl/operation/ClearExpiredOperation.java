@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,12 +49,6 @@ public class ClearExpiredOperation extends AbstractLocalOperation implements Par
 
     @Override
     public void run() throws Exception {
-        if (getNodeEngine().getLocalMember().isLiteMember()) {
-            // this operation shouldn't run on lite members. This situation can potentially be seen
-            // when converting a data-member to lite-member during merge operations.
-            return;
-        }
-
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
