@@ -695,7 +695,9 @@ https://hazelcast.org/documentation/.
             </properties>
         </queue-store>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </queue>
+
     <!--
         ===== HAZELCAST MAP CONFIGURATION =====
 

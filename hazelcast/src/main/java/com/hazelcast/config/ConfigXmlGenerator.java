@@ -455,7 +455,9 @@ public class ConfigXmlGenerator {
                         .appendProperties(storeConfig.getProperties())
                         .close();
             }
+            MergePolicyConfig mergePolicyConfig = q.getMergePolicyConfig();
             gen.node("quorum-ref", q.getQuorumName())
+                    .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
         }
     }

@@ -1073,6 +1073,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 qConfig.setQuorumName(value);
             } else if ("empty-queue-ttl".equals(nodeName)) {
                 qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value));
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                qConfig.setMergePolicyConfig(mergePolicyConfig);
             }
         }
         config.addQueueConfig(qConfig);

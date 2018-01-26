@@ -18,6 +18,7 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
+import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -47,6 +48,13 @@ public final class SplitBrainEntryViews {
         return new SimpleSplitBrainEntryView<Long, Data>()
                 .setKey(item.getItemId())
                 .setValue(item.getValue())
+                .setCreationTime(item.getCreationTime());
+    }
+
+    public static SplitBrainMergeEntryView<Long, Data> createSplitBrainMergeEntryView(QueueItem item) {
+        return new SimpleSplitBrainEntryView<Long, Data>()
+                .setKey(item.getItemId())
+                .setValue(item.getData())
                 .setCreationTime(item.getCreationTime());
     }
 

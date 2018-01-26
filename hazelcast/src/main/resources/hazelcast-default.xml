@@ -120,6 +120,8 @@
         <async-backup-count>0</async-backup-count>
 
         <empty-queue-ttl>-1</empty-queue-ttl>
+
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </queue>
     <map name="default">
         <!--

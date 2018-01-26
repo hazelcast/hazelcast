@@ -411,6 +411,29 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testQueue() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(DiscardMergePolicy.class.getSimpleName())
+                .setBatchSize(1234);
+
+        QueueConfig queueConfig = new QueueConfig()
+                .setName("testQueue")
+                .setMergePolicyConfig(mergePolicyConfig);
+
+        Config config = new Config()
+                .addQueueConfig(queueConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        QueueConfig xmlQueueConfig = xmlConfig.getQueueConfig("testQueue");
+        assertEquals("testQueue", xmlQueueConfig.getName());
+
+        MergePolicyConfig xmlMergePolicyConfig = xmlQueueConfig.getMergePolicyConfig();
+        assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
+        assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
+    }
+
+    @Test
     public void testCacheMergePolicy() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName("testCache");

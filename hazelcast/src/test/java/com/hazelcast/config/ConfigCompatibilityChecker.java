@@ -299,6 +299,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getMaxSize(), c2.getMaxSize())
                     && nullSafeEqual(c1.getEmptyQueueTtl(), c2.getEmptyQueueTtl())
                     && isCompatible(c1.getQueueStoreConfig(), c2.getQueueStoreConfig())
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName());
         }

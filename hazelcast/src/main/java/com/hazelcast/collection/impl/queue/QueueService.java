@@ -16,15 +16,19 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.queue.operations.QueueMergeOperation;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
@@ -43,9 +47,14 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -56,33 +65,39 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
 
 /**
  * Provides important services via methods for the the Queue
  * such as {@link com.hazelcast.collection.impl.queue.QueueEvictionProcessor }
  */
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
-        EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>, QuorumAwareService {
+        EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>, QuorumAwareService,
+        SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final EntryTaskScheduler<String, Void> queueEvictionScheduler;
-    private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap
             = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap
@@ -106,15 +121,22 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
     };
 
+    private final NodeEngine nodeEngine;
+    private final SerializationService serializationService;
+    private final IPartitionService partitionService;
+    private final SplitBrainMergePolicyProvider mergePolicyProvider;
     private final ILogger logger;
+    private final EntryTaskScheduler<String, Void> queueEvictionScheduler;
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.serializationService = nodeEngine.getSerializationService();
+        this.partitionService = nodeEngine.getPartitionService();
+        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
+        this.logger = nodeEngine.getLogger(QueueService.class);
         TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         QueueEvictionProcessor entryProcessor = new QueueEvictionProcessor(nodeEngine);
-        this.queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
-                globalScheduler, entryProcessor, ScheduleType.POSTPONE);
-        this.logger = nodeEngine.getLogger(QueueService.class);
+        this.queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(globalScheduler, entryProcessor, POSTPONE);
     }
 
     public void scheduleEviction(String name, long delay) {
@@ -172,14 +194,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             QueueContainer container = entry.getValue();
 
-            if (partitionId == event.getPartitionId()
-                    && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
+            if (partitionId == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
                 migrationData.put(name, container);
             }
         }
@@ -207,11 +227,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     private void clearQueuesHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
-            final Entry<String, QueueContainer> entry = iterator.next();
-            final String name = entry.getKey();
-            final QueueContainer container = entry.getValue();
+            Entry<String, QueueContainer> entry = iterator.next();
+            String name = entry.getKey();
+            QueueContainer container = entry.getValue();
             int containerPartitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             if (containerPartitionId != partitionId) {
                 continue;
@@ -227,8 +246,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.caller);
-        ItemEvent itemEvent = new DataAwareItemEvent(event.name, event.eventType, event.data,
-                member, nodeEngine.getSerializationService());
+        ItemEvent itemEvent = new DataAwareItemEvent(event.name, event.eventType, event.data, member, serializationService);
         if (member == null) {
             if (logger.isInfoEnabled()) {
                 logger.info("Dropping event " + itemEvent + " from unknown address:" + event.caller);
@@ -301,7 +319,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
-        IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
+        IPartition partition = partitionService.getPartition(partitionId, false);
 
         Address owner = partition.getOwnerOrNull();
         if (thisAddress.equals(owner)) {
@@ -322,11 +340,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
      * @return the statistics
      */
     public LocalQueueStats createLocalQueueStats(String name) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        Data keyData = serializationService.toData(name, StringPartitioningStrategy.INSTANCE);
-        int partitionId = partitionService.getPartitionId(keyData);
-        return createLocalQueueStats(name, partitionId);
+        return createLocalQueueStats(name, getPartitionId(name));
     }
 
     public LocalQueueStatsImpl getLocalQueueStatsImpl(String name) {
@@ -341,7 +355,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void rollbackTransaction(String transactionId) {
         final Set<String> queueNames = containerMap.keySet();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : queueNames) {
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -369,5 +382,131 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
                 quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        Map<Integer, Map<QueueContainer, List<QueueItem>>> itemMap = createHashMap(partitionService.getPartitionCount());
+
+        for (QueueContainer container : containerMap.values()) {
+            if (!(getMergePolicy(container) instanceof DiscardMergePolicy)) {
+                String name = container.getName();
+                int partitionId = getPartitionId(name);
+                if (partitionService.isPartitionOwner(partitionId)) {
+                    Map<QueueContainer, List<QueueItem>> containerMap = itemMap.get(partitionId);
+                    if (containerMap == null) {
+                        containerMap = new HashMap<QueueContainer, List<QueueItem>>();
+                        itemMap.put(partitionId, containerMap);
+                    }
+                    // add your owned entries to the map so they will be merged
+                    containerMap.put(container, new ArrayList<QueueItem>(container.getItemQueue()));
+                }
+            }
+
+            // clear all items either owned or backup
+            container.clear();
+        }
+        containerMap.clear();
+
+        return new Merger(itemMap);
+    }
+
+    private SplitBrainMergePolicy getMergePolicy(QueueContainer container) {
+        String mergePolicyName = container.getConfig().getMergePolicyConfig().getPolicy();
+        return mergePolicyProvider.getMergePolicy(mergePolicyName);
+    }
+
+    private int getPartitionId(String name) {
+        Data keyData = serializationService.toData(name, StringPartitioningStrategy.INSTANCE);
+        return partitionService.getPartitionId(keyData);
+    }
+
+    private class Merger implements Runnable {
+
+        private static final int TIMEOUT_FACTOR = 500;
+
+        private final Map<Integer, Map<QueueContainer, List<QueueItem>>> itemMap;
+
+        Merger(Map<Integer, Map<QueueContainer, List<QueueItem>>> itemMap) {
+            this.itemMap = itemMap;
+        }
+
+        @Override
+        public void run() {
+            final ILogger logger = nodeEngine.getLogger(CollectionService.class);
+            final Semaphore semaphore = new Semaphore(0);
+
+            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object response) {
+                    semaphore.release(1);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    logger.warning("Error while running merge operation: " + t.getMessage());
+                    semaphore.release(1);
+                }
+            };
+
+            // we cannot merge into a 3.9 cluster, since not all members may understand the QueueMergeOperation
+            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+                logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge queue instances");
+                return;
+            }
+
+            int itemCount = 0;
+            int operationCount = 0;
+            List<SplitBrainMergeEntryView<Long, Data>> mergeEntries;
+            for (Entry<Integer, Map<QueueContainer, List<QueueItem>>> partitionMap : itemMap.entrySet()) {
+                int partitionId = partitionMap.getKey();
+                Map<QueueContainer, List<QueueItem>> containerMap = partitionMap.getValue();
+                for (Entry<QueueContainer, List<QueueItem>> entry : containerMap.entrySet()) {
+                    QueueContainer container = entry.getKey();
+                    List<QueueItem> itemList = entry.getValue();
+
+                    int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container);
+                    String name = container.getName();
+
+                    mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>(batchSize);
+                    for (QueueItem item : itemList) {
+                        SplitBrainMergeEntryView<Long, Data> entryView = createSplitBrainMergeEntryView(item);
+                        mergeEntries.add(entryView);
+                        itemCount++;
+
+                        if (mergeEntries.size() == batchSize) {
+                            sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
+                            mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>(batchSize);
+                            operationCount++;
+                        }
+                    }
+                    itemList.clear();
+                    if (mergeEntries.size() > 0) {
+                        sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
+                        operationCount++;
+                    }
+                }
+            }
+            itemMap.clear();
+
+            try {
+                semaphore.tryAcquire(operationCount, itemCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                logger.finest("Interrupted while waiting for merge operation...");
+            }
+        }
+
+        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
+                               List<SplitBrainMergeEntryView<Long, Data>> mergeEntries, ExecutionCallback<Object> mergeCallback) {
+            QueueMergeOperation operation = new QueueMergeOperation(name, mergePolicy, mergeEntries);
+            try {
+                nodeEngine.getOperationService()
+                        .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                        .andThen(mergeCallback);
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        }
     }
 }

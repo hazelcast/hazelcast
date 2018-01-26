@@ -356,22 +356,27 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "            </properties>"
                 + "        </queue-store>"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
                 + "    </queue>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        QueueConfig qConfig = config.getQueueConfig("custom");
-        assertTrue(qConfig.isStatisticsEnabled());
-        assertEquals(100, qConfig.getMaxSize());
-        assertEquals(1, qConfig.getBackupCount());
-        assertEquals(0, qConfig.getAsyncBackupCount());
-        assertEquals(-1, qConfig.getEmptyQueueTtl());
+        QueueConfig queueConfig = config.getQueueConfig("custom");
+        assertTrue(queueConfig.isStatisticsEnabled());
+        assertEquals(100, queueConfig.getMaxSize());
+        assertEquals(1, queueConfig.getBackupCount());
+        assertEquals(0, queueConfig.getAsyncBackupCount());
+        assertEquals(-1, queueConfig.getEmptyQueueTtl());
 
-        assertTrue(qConfig.getItemListenerConfigs().size() == 1);
-        ItemListenerConfig listenerConfig = qConfig.getItemListenerConfigs().iterator().next();
+        MergePolicyConfig mergePolicyConfig = queueConfig.getMergePolicyConfig();
+        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(23, mergePolicyConfig.getBatchSize());
+
+        assertTrue(queueConfig.getItemListenerConfigs().size() == 1);
+        ItemListenerConfig listenerConfig = queueConfig.getItemListenerConfigs().iterator().next();
         assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
 
-        QueueStoreConfig storeConfig = qConfig.getQueueStoreConfig();
+        QueueStoreConfig storeConfig = queueConfig.getQueueStoreConfig();
         assertNotNull(storeConfig);
         assertTrue(storeConfig.isEnabled());
         assertEquals("com.hazelcast.QueueStoreImpl", storeConfig.getClassName());
@@ -382,7 +387,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("1000", storeConfigProperties.getProperty("memory-limit"));
         assertEquals("false", storeConfigProperties.getProperty("binary"));
 
-        assertEquals("customQuorumRule", qConfig.getQuorumName());
+        assertEquals("customQuorumRule", queueConfig.getQuorumName());
     }
 
     @Test
