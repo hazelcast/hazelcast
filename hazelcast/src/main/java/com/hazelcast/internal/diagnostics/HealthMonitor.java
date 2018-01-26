@@ -361,7 +361,7 @@ public class HealthMonitor {
                 sb.append("load.systemAverage").append("=n/a ");
             } else {
                 sb.append("load.systemAverage").append('=')
-                        .append(format("%.2f", osSystemLoadAverage.read())).append("%, ");
+                        .append(format("%.2f", osSystemLoadAverage.read())).append(", ");
             }
         }
 
