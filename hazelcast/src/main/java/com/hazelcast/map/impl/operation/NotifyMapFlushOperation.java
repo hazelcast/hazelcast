@@ -28,7 +28,7 @@ import java.io.IOException;
 
 /**
  * Used to notify {@link AwaitMapFlushOperation} when {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker StoreWorker}
- * managed to flush this {@link AwaitMapFlushOperation#flushSequence flushSequence}.
+ * managed to flush this {@link AwaitMapFlushOperation#sequence flushSequence}.
  *
  * @see AwaitMapFlushOperation
  */
