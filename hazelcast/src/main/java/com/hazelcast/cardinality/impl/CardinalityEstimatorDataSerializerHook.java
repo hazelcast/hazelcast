@@ -24,7 +24,7 @@ import com.hazelcast.cardinality.impl.operations.AggregateOperation;
 import com.hazelcast.cardinality.impl.operations.EstimateOperation;
 import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
-import com.hazelcast.cardinality.impl.operations.SyncBackupOperation;
+import com.hazelcast.cardinality.impl.operations.MergeBackupOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -48,7 +48,7 @@ public final class CardinalityEstimatorDataSerializerHook
     public static final int HLL_DENSE_ENC = 6;
     public static final int HLL_SPARSE_ENC = 7;
     public static final int MERGE = 8;
-    public static final int SYNC_BACKUP = 9;
+    public static final int MERGE_BACKUP = 9;
 
     @Override
     public int getFactoryId() {
@@ -79,8 +79,8 @@ public final class CardinalityEstimatorDataSerializerHook
                         return new SparseHyperLogLogEncoder();
                     case MERGE:
                         return new MergeOperation();
-                    case SYNC_BACKUP:
-                        return new SyncBackupOperation();
+                    case MERGE_BACKUP:
+                        return new MergeBackupOperation();
                     default:
                         return null;
                 }

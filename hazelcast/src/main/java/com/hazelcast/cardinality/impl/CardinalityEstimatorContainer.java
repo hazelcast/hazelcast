@@ -32,13 +32,11 @@ import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_SYNC_BACKU
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
 public class CardinalityEstimatorContainer
-        implements SplitBrainAwareDataContainer<String, HyperLogLog, HyperLogLog>,
-                   IdentifiedDataSerializable {
+        implements SplitBrainAwareDataContainer<String, HyperLogLog, HyperLogLog>, IdentifiedDataSerializable {
 
     HyperLogLog hll;
 
     private int backupCount;
-
     private int asyncBackupCount;
 
     public CardinalityEstimatorContainer() {
@@ -72,12 +70,10 @@ public class CardinalityEstimatorContainer
     }
 
     @Override
-    public HyperLogLog merge(SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry,
-                                               SplitBrainMergePolicy mergePolicy) {
+    public HyperLogLog merge(SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         String name = mergingEntry.getKey();
         if (hll.estimate() != 0) {
-            SplitBrainMergeEntryView<String, HyperLogLog> existing =
-                    createSplitBrainMergeEntryView(name, hll);
+            SplitBrainMergeEntryView<String, HyperLogLog> existing = createSplitBrainMergeEntryView(name, hll);
             HyperLogLog newValue = mergePolicy.merge(mergingEntry, existing);
             if (newValue != null && !newValue.equals(hll)) {
                 setValue(newValue);
@@ -90,7 +86,6 @@ public class CardinalityEstimatorContainer
                 return hll;
             }
         }
-
         return null;
     }
 
@@ -132,7 +127,6 @@ public class CardinalityEstimatorContainer
         }
 
         CardinalityEstimatorContainer that = (CardinalityEstimatorContainer) o;
-
         return hll.equals(that.hll);
     }
 
@@ -140,5 +134,4 @@ public class CardinalityEstimatorContainer
     public int hashCode() {
         return hll.hashCode();
     }
-
 }

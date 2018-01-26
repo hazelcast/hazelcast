@@ -20,11 +20,13 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.spi.ReadonlyOperation;
 
 public class EstimateOperation
-        extends AbstractCardinalityEstimatorOperation implements ReadonlyOperation {
+        extends AbstractCardinalityEstimatorOperation
+        implements ReadonlyOperation {
 
     private long estimate;
 
-    public EstimateOperation() { }
+    public EstimateOperation() {
+    }
 
     public EstimateOperation(String name) {
         super(name);
@@ -44,5 +46,4 @@ public class EstimateOperation
     public Object getResponse() {
         return estimate;
     }
-
 }

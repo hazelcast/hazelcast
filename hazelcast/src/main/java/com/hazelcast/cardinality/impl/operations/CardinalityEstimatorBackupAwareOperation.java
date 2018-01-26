@@ -45,5 +45,4 @@ public abstract class CardinalityEstimatorBackupAwareOperation
     public int getAsyncBackupCount() {
         return getCardinalityEstimatorContainer().getAsyncBackupCount();
     }
-
 }

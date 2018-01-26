@@ -19,8 +19,8 @@ package com.hazelcast.cardinality.impl;
 import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -56,8 +56,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
-        implements ManagedService, RemoteService, MigrationAwareService,
-                   SplitBrainHandlerService, QuorumAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
 
@@ -209,8 +208,7 @@ public class CardinalityEstimatorService
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
@@ -229,8 +227,8 @@ public class CardinalityEstimatorService
             this.snapshot = snapshot;
         }
 
-        @SuppressWarnings({"checkstyle:methodlength"})
         @Override
+        @SuppressWarnings({"checkstyle:methodlength"})
         public void run() {
             // we cannot merge into a 3.9 cluster, since not all members may understand the CollectionMergeOperation
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
@@ -257,7 +255,7 @@ public class CardinalityEstimatorService
             int operationCount = 0;
 
             try {
-                //TODO tkountis - Batching support
+                // TODO: Batching support (tkountis)
                 for (Map.Entry<String, CardinalityEstimatorContainer> entry : snapshot.entrySet()) {
                     String containerName = entry.getKey();
                     CardinalityEstimatorContainer container = entry.getValue();
@@ -269,17 +267,15 @@ public class CardinalityEstimatorService
                     MergeOperation operation = new MergeOperation(containerName, mergePolicy, container.hll);
                     try {
                         nodeEngine.getOperationService()
-                                  .invokeOnPartition(SERVICE_NAME, operation, partitionId)
-                                  .andThen(mergeCallback);
+                                .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                                .andThen(mergeCallback);
                     } catch (Throwable t) {
                         throw rethrow(t);
                     }
                     size++;
-
                 }
 
                 snapshot.clear();
-
             } catch (Exception ex) {
                 logger.warning("CardinalityEstimatorService merging didn't complete successfully.", ex);
                 throw rethrow(ex);
@@ -293,4 +289,3 @@ public class CardinalityEstimatorService
         }
     }
 }
-
