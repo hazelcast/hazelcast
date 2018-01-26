@@ -37,8 +37,8 @@ public class HyperLogLogImpl implements HyperLogLog {
     private static final int DEFAULT_P_PRIME = 25;
 
     private int m;
-    private Long cachedEstimate;
     private HyperLogLogEncoder encoder;
+    private Long cachedEstimate;
 
     public HyperLogLogImpl() {
         this(DEFAULT_P, DEFAULT_P_PRIME);
@@ -63,7 +63,6 @@ public class HyperLogLogImpl implements HyperLogLog {
         if (cachedEstimate == null) {
             cachedEstimate = encoder.estimate();
         }
-
         return cachedEstimate;
     }
 
@@ -106,7 +105,6 @@ public class HyperLogLogImpl implements HyperLogLog {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(encoder);
-
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeInt(m);
         }
@@ -115,8 +113,6 @@ public class HyperLogLogImpl implements HyperLogLog {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         encoder = in.readObject();
-
-
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             m = in.readInt();
         }
@@ -129,5 +125,4 @@ public class HyperLogLogImpl implements HyperLogLog {
             encoder = ((SparseHyperLogLogEncoder) encoder).asDense();
         }
     }
-
 }

@@ -23,21 +23,22 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class SyncBackupOperation
+public class MergeBackupOperation
         extends AbstractCardinalityEstimatorOperation {
 
     private HyperLogLog value;
 
-    public SyncBackupOperation() { }
+    public MergeBackupOperation() {
+    }
 
-    public SyncBackupOperation(String name, HyperLogLog value) {
+    public MergeBackupOperation(String name, HyperLogLog value) {
         super(name);
         this.value = value;
     }
 
     @Override
     public int getId() {
-        return CardinalityEstimatorDataSerializerHook.SYNC_BACKUP;
+        return CardinalityEstimatorDataSerializerHook.MERGE_BACKUP;
     }
 
     @Override
@@ -46,15 +47,13 @@ public class SyncBackupOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         value = in.readObject();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(value);
     }

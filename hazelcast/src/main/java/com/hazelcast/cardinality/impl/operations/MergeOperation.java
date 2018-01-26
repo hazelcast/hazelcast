@@ -28,10 +28,10 @@ import java.io.IOException;
 import static com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook.MERGE;
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
-public class MergeOperation extends CardinalityEstimatorBackupAwareOperation {
+public class MergeOperation
+        extends CardinalityEstimatorBackupAwareOperation {
 
     private SplitBrainMergePolicy mergePolicy;
-
     private HyperLogLog value;
 
     private transient HyperLogLog backupValue;
@@ -47,8 +47,7 @@ public class MergeOperation extends CardinalityEstimatorBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry =
-                createSplitBrainMergeEntryView(name, value);
+        SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry = createSplitBrainMergeEntryView(name, value);
         backupValue = getCardinalityEstimatorContainer().merge(mergingEntry, mergePolicy);
     }
 
@@ -64,20 +63,18 @@ public class MergeOperation extends CardinalityEstimatorBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new SyncBackupOperation(name, backupValue);
+        return new MergeBackupOperation(name, backupValue);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mergePolicy = in.readObject();
         value = in.readObject();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mergePolicy);
         out.writeObject(value);

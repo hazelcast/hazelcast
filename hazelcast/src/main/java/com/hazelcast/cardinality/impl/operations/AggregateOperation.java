@@ -25,11 +25,13 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
 public class AggregateOperation
-        extends CardinalityEstimatorBackupAwareOperation implements MutatingOperation {
+        extends CardinalityEstimatorBackupAwareOperation
+        implements MutatingOperation {
 
     private long hash;
 
-    public AggregateOperation() { }
+    public AggregateOperation() {
+    }
 
     public AggregateOperation(String name, long hash) {
         super(name);

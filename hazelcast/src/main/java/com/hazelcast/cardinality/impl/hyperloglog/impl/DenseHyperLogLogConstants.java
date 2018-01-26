@@ -23,9 +23,8 @@ package com.hazelcast.cardinality.impl.hyperloglog.impl;
 final class DenseHyperLogLogConstants {
 
     /**
-     * The following tables list the empirically determined thresholds & bias data,
-     * used in HLL++ implementation.
-     *
+     * The following tables list the empirically determined thresholds and bias data, used in HLL++ implementation.
+     * <p>
      * As found at https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
      */
     static final int[] THRESHOLD = {

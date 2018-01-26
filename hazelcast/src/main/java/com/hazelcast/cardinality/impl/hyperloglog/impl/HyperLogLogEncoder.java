@@ -29,7 +29,7 @@ public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
 
     /**
      * Aggregates the hash value in the HyperLogLog registers, and returns a hint if the
-     * operation migth have affected the cardinality, it is just a hint, and it relies to
+     * operation might have affected the cardinality, it is just a hint, and it relies to
      * the respective implementation.
      *
      * @param hash the value to aggregate
@@ -47,6 +47,7 @@ public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
 
     /**
      * Returns the encoding type of this instance; see: {@link HyperLogLogEncoding}
+     *
      * @return {@link HyperLogLogEncoding}
      */
     HyperLogLogEncoding getEncodingType();
