@@ -17,7 +17,6 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.wan.impl.WanEventCounter;
 
 import java.util.concurrent.ConcurrentHashMap;
 
