@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -29,7 +26,6 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -75,6 +71,7 @@ public interface ConfigurationService {
      * @return Map config or {@code null} when requested Map configuration does not exist
      */
     MapConfig findMapConfig(String name);
+
 
     /**
      * Finds existing Topic config.
@@ -131,27 +128,6 @@ public interface ConfigurationService {
      * @return Ringbuffer config or {@code null} when requested Ringbuffer configuration does not exist
      */
     RingbufferConfig findRingbufferConfig(String name);
-
-    /**
-     * Finds existing AtomicLong config.
-     *
-     * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
-     */
-    AtomicLongConfig findAtomicLongConfig(String name);
-
-    /**
-     * Finds existing AtomicReference config.
-     *
-     * @return AtomicReference Config or {@code null} when requested AtomicReference configuration does not exist
-     */
-    AtomicReferenceConfig findAtomicReferenceConfig(String name);
-
-    /**
-     * Finds existing CountDownLatch config.
-     *
-     * @return CountDownLatch Config or {@code null} when requested CountDownLatch configuration does not exist
-     */
-    CountDownLatchConfig findCountDownLatchConfig(String name);
 
     /**
      * Finds existing Lock config.
@@ -226,14 +202,6 @@ public interface ConfigurationService {
     EventJournalConfig findMapEventJournalConfig(String name);
 
     /**
-     * Finds existing FlakeIdGeneratorConfig config.
-     *
-     * @param name name of the config
-     * @return FlakeIdGenerator config or {@code null} when requested FlakeIdGenerator configuration does not exist
-     */
-    FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name);
-
-    /**
      * Returns all registered map configurations.
      *
      * @return registered map configurations
@@ -288,27 +256,6 @@ public interface ConfigurationService {
      * @return registered ringbuffer configurations
      */
     Map<String, RingbufferConfig> getRingbufferConfigs();
-
-    /**
-     * Returns all registered AtomicLong configurations.
-     *
-     * @return registered AtomicLong configurations
-     */
-    Map<String, AtomicLongConfig> getAtomicLongConfigs();
-
-    /**
-     * Returns all registered AtomicReference configurations.
-     *
-     * @return registered AtomicReference configurations
-     */
-    Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs();
-
-    /**
-     * Returns all registered CountDownLatchConfig configurations.
-     *
-     * @return registered CountDownLatchConfig configurations
-     */
-    Map<String, CountDownLatchConfig> getCountDownLatchConfigs();
 
     /**
      * Returns all registered topic configurations.
@@ -379,11 +326,4 @@ public interface ConfigurationService {
      * @return registered MapEventJournal configurations
      */
     Map<String, EventJournalConfig> getMapEventJournalConfigs();
-
-    /**
-     * Returns all registered FlakeIdGenerator configurations.
-     *
-     * @return registered FlakeIdGenerator configurations
-     */
-    Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
 }

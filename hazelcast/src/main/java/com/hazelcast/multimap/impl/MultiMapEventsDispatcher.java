@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class MultiMapEventsDispatcher {
     private final ClusterService clusterService;
     private final MultiMapService multiMapService;
 
-    MultiMapEventsDispatcher(MultiMapService multiMapService, ClusterService clusterService) {
+    public MultiMapEventsDispatcher(MultiMapService multiMapService, ClusterService clusterService) {
         this.multiMapService = multiMapService;
         this.clusterService = clusterService;
     }
@@ -59,12 +59,12 @@ class MultiMapEventsDispatcher {
     }
 
     private void dispatchMapEventData(EventData eventData, EntryListener listener) {
-        MapEventData mapEventData = (MapEventData) eventData;
-        Member member = getMemberOrNull(eventData);
+        final MapEventData mapEventData = (MapEventData) eventData;
+        final Member member = getMemberOrNull(eventData);
         if (member == null) {
             return;
         }
-        MapEvent event = createMapEvent(mapEventData, member);
+        final MapEvent event = createMapEvent(mapEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
@@ -75,16 +75,16 @@ class MultiMapEventsDispatcher {
     }
 
     private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
-        EntryEventData entryEventData = (EntryEventData) eventData;
-        Member member = getMemberOrNull(eventData);
+        final EntryEventData entryEventData = (EntryEventData) eventData;
+        final Member member = getMemberOrNull(eventData);
 
-        EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
+        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
 
     private Member getMemberOrNull(EventData eventData) {
-        Member member = clusterService.getMember(eventData.getCaller());
+        final Member member = clusterService.getMember(eventData.getCaller());
         if (member == null) {
             if (logger.isInfoEnabled()) {
                 logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());

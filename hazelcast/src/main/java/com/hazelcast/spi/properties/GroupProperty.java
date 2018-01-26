@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -417,9 +417,7 @@ public final class GroupProperty {
      * The Hazelcast master node increments the member list version for each joining member. Then, member list versions
      * are used to identify joined members with unique integers. For this algorithm to work under network partitioning scenarios
      * without generating duplicate member list join versions for different members, a mastership-claiming node increments
-     * the member list version as specified by this parameter, multiplied by its position in the member list.
-     * The value of the parameter must be bigger than the cluster size.
-     * <p>
+     * the member list version as specified by this parameter. The value of the parameter must be bigger than the cluster size.
      * Introduced in 3.10.
      */
     public static final HazelcastProperty MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT =
@@ -440,20 +438,12 @@ public final class GroupProperty {
     /**
      * If a member should be pinged when a sufficient amount of heartbeats have passed and the member has not sent any
      * heartbeats. If the member is not reachable, it will be removed.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
      */
     public static final HazelcastProperty ICMP_ENABLED
             = new HazelcastProperty("hazelcast.icmp.enabled", false);
 
     /**
      * Run ICMP detection in parallel with the Heartbeat failure detector.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
      */
     public static final HazelcastProperty ICMP_PARALLEL_MODE
             = new HazelcastProperty("hazelcast.icmp.parallel.mode", true);
@@ -461,40 +451,24 @@ public final class GroupProperty {
     /**
      * Enforce ICMP Echo Request mode for ping-detector. If OS is not supported,
      * or not configured correctly as per reference-manual, hazelcast will fail to start.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
      */
     public static final HazelcastProperty ICMP_ECHO_FAIL_FAST
             = new HazelcastProperty("hazelcast.icmp.echo.fail.fast.on.startup", true);
 
     /**
      * Ping timeout in milliseconds. This cannot be more than the interval value. Should always be smaller.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
      */
     public static final HazelcastProperty ICMP_TIMEOUT
             = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
 
     /**
      * Interval between ping attempts in milliseconds. Default and min allowed, 1 second.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
      */
     public static final HazelcastProperty ICMP_INTERVAL
             = new HazelcastProperty("hazelcast.icmp.interval", 1000, MILLISECONDS);
 
     /**
      * Max ping attempts before suspecting a member
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
      */
     public static final HazelcastProperty ICMP_MAX_ATTEMPTS
             = new HazelcastProperty("hazelcast.icmp.max.attempts", 3);
@@ -502,10 +476,6 @@ public final class GroupProperty {
     /**
      * Ping TTL, the maximum number of hops the packets should go through or 0 for the default.
      * Zero in this case means unlimited hops.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
      */
     public static final HazelcastProperty ICMP_TTL
             = new HazelcastProperty("hazelcast.icmp.ttl", 0);
@@ -544,7 +514,7 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.jmx.update.interval.seconds", 5, SECONDS);
 
     public static final HazelcastProperty MC_MAX_VISIBLE_INSTANCE_COUNT
-            = new HazelcastProperty("hazelcast.mc.max.visible.instance.count", Integer.MAX_VALUE);
+            = new HazelcastProperty("hazelcast.mc.max.visible.instance.count", 100);
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
     public static final HazelcastProperty MC_URL_CHANGE_ENABLED

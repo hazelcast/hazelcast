@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -293,39 +293,4 @@ public class TypeConverterTest {
 
         TypeConverters.BIG_DECIMAL_CONVERTER.convert(value);
     }
-
-    @Test
-    public void testCharConvert_whenPassedNumeric_thenConvertToChar() {
-        final Comparable value = 1;
-        final Comparable expectedCharacter = (char) 1;
-
-        final Comparable actualCharacter = TypeConverters.CHAR_CONVERTER.convert(value);
-
-        assertThat(actualCharacter, allOf(
-                is(instanceOf(Character.class)),
-                is(equalTo(expectedCharacter))
-        ));
-    }
-
-    @Test
-    public void testCharConvert_whenPassedString_thenConvertToChar() {
-        final Comparable value = "foo";
-        final Comparable expectedCharacter = 'f';
-
-        final Comparable actualCharacter = TypeConverters.CHAR_CONVERTER.convert(value);
-
-        assertThat(actualCharacter, allOf(
-                is(instanceOf(Character.class)),
-                is(equalTo(expectedCharacter))
-        ));
-    }
-
-    @Test
-    public void testCharConvert_whenPassedEmptyString_thenConvertToChar() {
-        final Comparable value = "";
-        thrown.expect(IllegalArgumentException.class);
-
-        TypeConverters.CHAR_CONVERTER.convert(value);
-    }
-
 }

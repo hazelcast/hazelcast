@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.projection.Projection;
-import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -135,7 +134,7 @@ public class MapQueryPartitionIteratorTest extends HazelcastTestSupport {
                 (MapProxyImpl<String, Integer>) instance.<String, Integer>getMap(randomMapName());
         fillMap(intMap, 1, 100);
         final Iterator<Map.Entry<String, Integer>> iterator = intMap.iterator(10, 1,
-                Projections.<Map.Entry<String, Integer>>identity(),
+                new IdentityProjection<Map.Entry<String, Integer>>(),
                 new EvenPredicate());
         final ArrayList<Map.Entry<String, Integer>> projected = collectAll(iterator);
 
@@ -213,6 +212,13 @@ public class MapQueryPartitionIteratorTest extends HazelcastTestSupport {
         @Override
         public T transform(Map.Entry<String, T> input) {
             return input.getValue();
+        }
+    }
+
+    private static class IdentityProjection<T> extends Projection<T, T> {
+        @Override
+        public T transform(T input) {
+            return input;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,8 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation,
-        MutatingOperation {
+public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     boolean shouldBackup;
 
@@ -67,4 +65,5 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
     public int getId() {
         return MultiMapDataSerializerHook.CLEAR;
     }
+
 }

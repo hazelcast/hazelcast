@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelTest.class})
 public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTestSupport {
 
@@ -389,7 +389,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 1));
     }
 
-    @Test(timeout = 1800000)
+    @Test(timeout = 600000)
     public void schedule_thenDisposeLeakTest() {
         Config config = new Config()
                 .addScheduledExecutorConfig(new ScheduledExecutorConfig()

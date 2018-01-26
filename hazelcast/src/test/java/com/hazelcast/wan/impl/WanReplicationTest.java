@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,22 +22,17 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -204,48 +199,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
         instance1 = factory.newHazelcastInstance(config);
 
         assertEquals(dummyWanReplication, getWanReplicationImpl(instance1));
-    }
-
-    @Test
-    public void merge_operation_generates_wan_replication_event() {
-        boolean enableWANReplicationEvent = true;
-        runMergeOpForWAN(enableWANReplicationEvent);
-
-        assertTotalQueueSize(1);
-    }
-
-    @Test
-    public void merge_operation_does_not_generate_wan_replication_event_when_disabled() {
-        boolean enableWANReplicationEvent = false;
-        runMergeOpForWAN(enableWANReplicationEvent);
-
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertTotalQueueSize(0);
-            }
-        }, 3);
-    }
-
-    private void runMergeOpForWAN(boolean enableWANReplicationEvent) {
-        // init hazelcast instances
-        String mapName = "merge_operation_generates_wan_replication_event";
-        initInstancesAndMap(mapName);
-
-        // get internal services to use in this test
-        HazelcastInstance node = instance1;
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
-        InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
-        InternalOperationService operationService = nodeEngineImpl.getOperationService();
-        SerializationService ss = nodeEngineImpl.getSerializationService();
-        MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
-        MapOperationProvider operationProvider = mapService.getMapServiceContext().getMapOperationProvider(mapName);
-
-        // prepare and send one merge operation
-        Data data = ss.toData(1);
-        SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
-        MapOperation op = operationProvider.createMergeOperation(mapName, entryView, new PassThroughMergePolicy(), !enableWANReplicationEvent);
-        operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();
     }
 
     private void initInstancesAndMap(String name) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -142,8 +143,21 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     void applyState() {
         ThreadUtil.assertRunningOnPartitionThread();
 
-        for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-            addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexInfos());
+        // the null check can be removed in 3.10+ codebase
+        if (mapIndexInfos != null) {
+            for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
+                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexInfos());
+            }
+        }
+
+        // RU_COMPAT_38
+        // Old nodes (3.8-) won't send mapIndexInfos to new nodes (3.9+) in the map-replication operation.
+        // This is the reason why we pick up the mapContainer.getIndexesToAdd() that were added by the PostJoinMapOperation
+        // and we add them to the map, before we add data
+        for (String mapName : data.keySet()) {
+            RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
+            MapContainer mapContainer = recordStore.getMapContainer();
+            addIndexes(mapName, mapContainer.getPartitionIndexesToAdd());
         }
 
         if (data != null) {
@@ -214,9 +228,13 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             out.writeBoolean(loadedEntry.getValue());
         }
 
-        out.writeInt(mapIndexInfos.size());
-        for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-            out.writeObject(mapIndexInfo);
+        // RU_COMPAT_39, the check can be removed in 3.9+ (the data should be then send unconditionally)
+        // This information is carried over only for 3.9+ cluster versions
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            out.writeInt(mapIndexInfos.size());
+            for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
+                out.writeObject(mapIndexInfo);
+            }
         }
     }
 
@@ -241,11 +259,18 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             loaded.put(in.readUTF(), in.readBoolean());
         }
 
-        int mapIndexInfosSize = in.readInt();
-        mapIndexInfos = new ArrayList<MapIndexInfo>(mapIndexInfosSize);
-        for (int i = 0; i < mapIndexInfosSize; i++) {
-            MapIndexInfo mapIndexInfo = in.readObject();
-            mapIndexInfos.add(mapIndexInfo);
+        // RU_COMPAT_39, the check can be removed in 3.9+ (the data should be then read unconditionally)
+        // This information is carried over only for 3.9+ cluster versions
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            int mapIndexInfosSize = in.readInt();
+            mapIndexInfos = new ArrayList<MapIndexInfo>(mapIndexInfosSize);
+            for (int i = 0; i < mapIndexInfosSize; i++) {
+                MapIndexInfo mapIndexInfo = in.readObject();
+                mapIndexInfos.add(mapIndexInfo);
+            }
+        } else {
+            // setting to null means we operate in 3.8- compatibility mode
+            mapIndexInfos = null;
         }
     }
 

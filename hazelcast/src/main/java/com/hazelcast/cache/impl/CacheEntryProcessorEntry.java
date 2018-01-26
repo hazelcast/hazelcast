@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,17 +167,17 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 }
                 boolean saved =
                         cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy,
-                                now, false, completionId) != null;
+                                                                now, false, completionId) != null;
                 onCreate(keyData, value, expiryPolicy, now, false, completionId, saved);
                 break;
             case LOAD:
                 saved = cacheRecordStore.createRecordWithExpiry(keyData, valueLoaded, expiryPolicy,
-                        now, true, completionId) != null;
+                                                                now, true, completionId) != null;
                 onLoad(keyData, valueLoaded, expiryPolicy, now, true, completionId, saved);
                 break;
             case UPDATE:
                 saved = cacheRecordStore.updateRecordWithExpiry(keyData, value, record,
-                        expiryPolicy, now, false, completionId);
+                                                                expiryPolicy, now, false, completionId);
                 onUpdate(keyData, value, record, expiryPolicy, now, false, completionId, saved);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
@@ -185,7 +185,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 }
                 break;
             case REMOVE:
-                boolean removed = cacheRecordStore.remove(keyData, null, null, completionId);
+                boolean removed = cacheRecordStore.remove(keyData, null, completionId);
                 onRemove(keyData, null, completionId, removed);
                 break;
             case NONE:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertThatIsNoParallelTest;
 import static java.lang.String.format;
@@ -88,6 +88,7 @@ public final class JsrTestUtil {
         setSystemProperty("CacheManagerImpl", "com.hazelcast.cache.HazelcastCacheManager");
         setSystemProperty("javax.cache.Cache", "com.hazelcast.cache.ICache");
         setSystemProperty("javax.cache.Cache.Entry", "com.hazelcast.cache.impl.CacheEntry");
+        setSystemProperty("org.jsr107.tck.management.agentId", "TCKMbeanServer");
         setSystemProperty("javax.cache.annotation.CacheInvocationContext",
                 "javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl");
     }
@@ -107,28 +108,31 @@ public final class JsrTestUtil {
      */
     public static void clearCachingProviderRegistry() {
         try {
-            // retrieve the CachingProviderRegistry instance
-            Field providerRegistryField = getProviderRegistryField();
-
-            // retrieve the map with the CachingProvider instances
-            Map<ClassLoader, Map<String, CachingProvider>> providerMap = getProviderMap(providerRegistryField);
-
-            // close all existing CachingProvider
-            for (Map<String, CachingProvider> providers : providerMap.values()) {
-                for (CachingProvider provider : providers.values()) {
-                    try {
-                        provider.close();
-                    } catch (HazelcastInstanceNotActiveException ignored) {
-                        // this is fine, since the instances can already be stopped
-                    }
+            for (CachingProvider cachingProvider : Caching.getCachingProviders()) {
+                try {
+                    cachingProvider.close();
+                } catch (HazelcastInstanceNotActiveException ignored) {
+                    // this is fine, since the instances can already be stopped
                 }
             }
 
-            // clear the CachingProvider map
-            providerMap.clear();
+            // retrieve the CachingProviderRegistry instance
+            Field providerRegistryField = Caching.class.getDeclaredField("CACHING_PROVIDERS");
+            providerRegistryField.setAccessible(true);
 
             Class<?> providerRegistryClass = providerRegistryField.getType();
             Object providerRegistryInstance = providerRegistryField.get(Caching.class);
+
+            // retrieve the map with the CachingProvider instances
+            Field providerMapField = providerRegistryClass.getDeclaredField("cachingProviders");
+            providerMapField.setAccessible(true);
+
+            Class<?> providerMapClass = providerMapField.getType();
+            Object providerMap = providerMapField.get(providerRegistryInstance);
+
+            // clear the map
+            Method clearMethod = providerMapClass.getDeclaredMethod("clear");
+            clearMethod.invoke(providerMap);
 
             // retrieve the ClassLoader of the CachingProviderRegistry
             Field classLoaderField = providerRegistryClass.getDeclaredField("classLoader");
@@ -142,32 +146,6 @@ public final class JsrTestUtil {
         }
     }
 
-    /**
-     * Returns the number of registered {@link javax.cache.spi.CachingProvider} from the static registry in {@link Caching}.
-     */
-    public static int getCachingProviderRegistrySize() {
-        try {
-            // retrieve the CachingProviderRegistry instance
-            Field providerRegistryField = getProviderRegistryField();
-
-            // retrieve the map with the CachingProvider instances
-            Map<ClassLoader, Map<String, CachingProvider>> providerMap = getProviderMap(providerRegistryField);
-
-            // count the number of existing CachingProviders
-            int count = 0;
-            for (Map<String, CachingProvider> providers : providerMap.values()) {
-                count += providers.values().size();
-            }
-
-            // return the map size
-            return count;
-        } catch (NoClassDefFoundError e) {
-            return -1;
-        } catch (Exception e) {
-            return -1;
-        }
-    }
-
     private static void setSystemProperty(String key, String value) {
         // we just want to set a System property, which has not been set already
         // this way you can always override a JSR setting manually
@@ -175,24 +153,5 @@ public final class JsrTestUtil {
             System.setProperty(key, value);
             SYSTEM_PROPERTY_REGISTRY.add(key);
         }
-    }
-
-    private static Field getProviderRegistryField() throws NoSuchFieldException {
-        Field providerRegistryField = Caching.class.getDeclaredField("CACHING_PROVIDERS");
-        providerRegistryField.setAccessible(true);
-
-        return providerRegistryField;
-    }
-
-    private static Map<ClassLoader, Map<String, CachingProvider>> getProviderMap(Field providerRegistryField) throws Exception {
-        Class<?> providerRegistryClass = providerRegistryField.getType();
-        Object providerRegistryInstance = providerRegistryField.get(Caching.class);
-
-        // retrieve the map with the CachingProvider instances
-        Field providerMapField = providerRegistryClass.getDeclaredField("cachingProviders");
-        providerMapField.setAccessible(true);
-
-        //noinspection unchecked
-        return (Map<ClassLoader, Map<String, CachingProvider>>) providerMapField.get(providerRegistryInstance);
     }
 }

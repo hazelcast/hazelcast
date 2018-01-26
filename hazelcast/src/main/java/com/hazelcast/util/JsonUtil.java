@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public final class JsonUtil {
      */
     public static int getInt(JsonObject object, String field, int defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asInt();
@@ -83,7 +83,7 @@ public final class JsonUtil {
      */
     public static long getLong(JsonObject object, String field, long defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asLong();
@@ -113,7 +113,7 @@ public final class JsonUtil {
      */
     public static double getDouble(JsonObject object, String field, double defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asDouble();
@@ -144,7 +144,7 @@ public final class JsonUtil {
      */
     public static float getFloat(JsonObject object, String field, float defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asFloat();
@@ -175,7 +175,7 @@ public final class JsonUtil {
      */
     public static String getString(JsonObject object, String field, String defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asString();
@@ -206,7 +206,7 @@ public final class JsonUtil {
      */
     public static boolean getBoolean(JsonObject object, String field, boolean defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asBoolean();
@@ -237,7 +237,7 @@ public final class JsonUtil {
      */
     public static JsonArray getArray(JsonObject object, String field, JsonArray defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asArray();
@@ -268,7 +268,7 @@ public final class JsonUtil {
      */
     public static JsonObject getObject(JsonObject object, String field, JsonObject defaultValue) {
         final JsonValue value = object.get(field);
-        if (value == null || value.isNull()) {
+        if (value == null) {
             return defaultValue;
         } else {
             return value.asObject();

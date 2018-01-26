@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,18 +66,8 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     private final LockStoreContainer[] containers;
     private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
-
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
-            String quorumName = lockConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
-        }
-    };
-
     private final long maxLeaseTimeInMillis;
 
     public LockServiceImpl(NodeEngine nodeEngine) {
@@ -166,6 +156,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         LockStoreContainer container = getLockContainer(partitionId);
         container.clearLockStore(namespace);
     }
+
 
     public LockStoreContainer getLockContainer(int partitionId) {
         return containers[partitionId];
@@ -360,7 +351,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
             });
         }
-        quorumConfigCache.remove(objectId);
     }
 
     @Override
@@ -373,9 +363,19 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     @Override
-    public String getQuorumName(String name) {
+    public String getQuorumName(final String name) {
+        // we use caching here because lock operations are often and we should avoid lock config lookup
         Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+                new ConstructorFunction<String, Object>() {
+                    @Override
+                    public Object createNew(String arg) {
+                        LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
+                        String quorumName = lockConfig.getQuorumName();
+                        // The quorumName will be null if there is no quorum defined for this data structure,
+                        // but the QuorumService is active, due to another data structure with a quorum configuration
+                        return quorumName == null ? NULL_OBJECT : quorumName;
+                    }
+                });
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }

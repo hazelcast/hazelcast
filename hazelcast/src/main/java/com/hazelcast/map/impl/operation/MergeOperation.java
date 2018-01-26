@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,16 +37,22 @@ public class MergeOperation extends BasePutOperation {
     private boolean disableWanReplicationEvent;
 
     private transient boolean merged;
+    private transient Data mergingValue;
 
-    public MergeOperation() {
+    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
+                          MapMergePolicy policy) {
+        this(name, dataKey, entryView, policy, false);
     }
 
-    public MergeOperation(String name, EntryView<Data, Data> mergingEntry,
+    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
                           MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        super(name, mergingEntry.getKey(), null);
-        this.mergingEntry = mergingEntry;
+        super(name, dataKey, null);
+        this.mergingEntry = entryView;
         this.mergePolicy = policy;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
+    }
+
+    public MergeOperation() {
     }
 
     @Override
@@ -60,14 +66,9 @@ public class MergeOperation extends BasePutOperation {
             Record record = recordStore.getRecord(dataKey);
             if (record != null) {
                 dataValue = mapServiceContext.toData(record.getValue());
-                dataMergingValue = mapServiceContext.toData(mergingEntry.getValue());
+                mergingValue = mapServiceContext.toData(mergingEntry.getValue());
             }
         }
-    }
-
-    @Override
-    protected boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
     }
 
     @Override
@@ -83,8 +84,11 @@ public class MergeOperation extends BasePutOperation {
     @Override
     public void afterRun() {
         if (merged) {
-            eventType = EntryEventType.MERGED;
-            super.afterRun();
+            mapServiceContext.interceptAfterPut(name, dataValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, dataKey, dataOldValue,
+                    dataValue, mergingValue);
+            invalidateNearCache(dataKey);
+            evict(dataKey);
         }
     }
 

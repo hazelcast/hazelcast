@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -64,12 +63,9 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
 
     @Override
     public void write(byte[] b, int off, int len) {
-        if (b == null) {
-            throw new NullPointerException();
-        } else {
-            ArrayUtils.boundsCheck(b.length, off, len);
-        }
-        if (len == 0) {
+        if ((off < 0) || (len < 0) || ((off + len) > b.length)) {
+            throw new IndexOutOfBoundsException();
+        } else if (len == 0) {
             return;
         }
         ensureAvailable(len);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class ContainsKeyOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
+public class ContainsKeyOperation extends AbstractSerializableOperation {
 
     private String name;
     private Data key;
@@ -66,10 +65,5 @@ public class ContainsKeyOperation extends AbstractNamedSerializableOperation imp
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.CONTAINS_KEY;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 }

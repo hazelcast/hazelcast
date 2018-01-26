@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,12 @@ import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation {
 
     long recordId;
     Data value;
@@ -54,10 +53,10 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation implemen
             return;
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
-        Iterator<MultiMapRecord> iterator = coll.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getRecordId() == recordId) {
-                iterator.remove();
+        Iterator<MultiMapRecord> iter = coll.iterator();
+        while (iter.hasNext()) {
+            if (iter.next().getRecordId() == recordId) {
+                iter.remove();
                 break;
             }
         }

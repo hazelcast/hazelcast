@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -244,8 +244,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
             connection.setType(ConnectionType.RUBY_CLIENT);
         } else if (ClientTypes.NODEJS.equals(type)) {
             connection.setType(ConnectionType.NODEJS_CLIENT);
-        } else if (ClientTypes.GO.equals(type)) {
-            connection.setType(ConnectionType.GO_CLIENT);
         } else {
             clientEngine.getLogger(getClass()).info("Unknown client type: " + type);
             connection.setType(ConnectionType.BINARY_CLIENT);

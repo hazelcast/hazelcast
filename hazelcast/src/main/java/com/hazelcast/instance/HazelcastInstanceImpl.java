@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -279,12 +277,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public IdGenerator getIdGenerator(String name) {
         checkNotNull(name, "Retrieving an ID-generator instance with a null name is not allowed!");
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public FlakeIdGenerator getFlakeIdGenerator(String name) {
-        checkNotNull(name, "Retrieving a Flake ID-generator instance with a null name is not allowed!");
-        return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
     }
 
     @Override

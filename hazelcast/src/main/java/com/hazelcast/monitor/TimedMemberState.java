@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,21 +24,22 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;
     MemberStateImpl memberState;
-    List<String> instanceNames;
+    Set<String> instanceNames;
     List<String> memberList;
     boolean master;
     String clusterName;
@@ -78,11 +79,11 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         return time;
     }
 
-    public List<String> getInstanceNames() {
+    public Set<String> getInstanceNames() {
         return instanceNames;
     }
 
-    public void setInstanceNames(List<String> longInstanceNames) {
+    public void setInstanceNames(Set<String> longInstanceNames) {
         this.instanceNames = longInstanceNames;
     }
 
@@ -167,8 +168,8 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         time = getLong(json, "time");
         master = getBoolean(json, "master");
         clusterName = getString(json, "clusterName");
-        instanceNames = new LinkedList<String>();
         final JsonArray jsonInstanceNames = getArray(json, "instanceNames");
+        instanceNames = createHashSet(jsonInstanceNames.size());
         for (JsonValue instanceName : jsonInstanceNames.values()) {
             instanceNames.add(instanceName.asString());
         }

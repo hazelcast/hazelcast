@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RandomPicker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -41,8 +41,9 @@ import java.util.concurrent.TimeUnit;
 public class ExpirationListenerTest extends HazelcastTestSupport {
 
     private static final int instanceCount = 3;
+    private static final Random rand = new Random();
 
-    private HazelcastInstance[] instances;
+    private static HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
 
     @Before
@@ -50,8 +51,12 @@ public class ExpirationListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         Config config = new Config();
         instances = factory.newInstances(config);
-        HazelcastInstance randomNode = instances[RandomPicker.getInt(instanceCount)];
-        map = randomNode.getMap(randomMapName());
+        HazelcastInstance node = getInstance();
+        map = node.getMap(randomMapName());
+    }
+
+    private HazelcastInstance getInstance() {
+        return instances[rand.nextInt(instanceCount)];
     }
 
     @Test

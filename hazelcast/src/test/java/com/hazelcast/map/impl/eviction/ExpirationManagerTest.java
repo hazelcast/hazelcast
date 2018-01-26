@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -42,15 +39,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_CLEANUP_OPERATION_COUNT;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_CLEANUP_PERCENTAGE;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_PRIMARY_DRIVES_BACKUP;
 import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_TASK_PERIOD_SECONDS;
-import static com.hazelcast.map.impl.eviction.ExpirationManagerStressTest.getExpirationManager;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
@@ -59,8 +52,6 @@ import static java.lang.System.getProperty;
 import static java.lang.System.setProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -70,7 +61,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void testTaskPeriodSeconds_set_viaSystemProperty() {
+    public void testTaskPeriodSeconds_set_viaSystemProperty() throws Exception {
         String previous = getProperty(PROP_TASK_PERIOD_SECONDS);
         try {
             int expectedPeriodSeconds = 12;
@@ -81,16 +72,17 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
             assertEquals(expectedPeriodSeconds, actualTaskPeriodSeconds);
         } finally {
             restoreProperty(PROP_TASK_PERIOD_SECONDS, previous);
+
         }
     }
 
     @Test
-    public void testPrimaryDrivesEvictions_set_viaSystemProperty() {
+    public void testPrimaryDrivesEvictions_set_viaSystemProperty() throws Exception {
         String previous = getProperty(PROP_PRIMARY_DRIVES_BACKUP);
         try {
             setProperty(PROP_PRIMARY_DRIVES_BACKUP, "False");
 
-            boolean primaryDrivesEviction = newExpirationManager(createHazelcastInstance()).getPrimaryDrivesEviction();
+            boolean primaryDrivesEviction = newExpirationManager(createHazelcastInstance()).isPrimaryDrivesEviction();
 
             assertEquals(false, primaryDrivesEviction);
         } finally {
@@ -122,7 +114,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCleanupPercentage_set_viaSystemProperty() {
+    public void testCleanupPercentage_set_viaSystemProperty() throws Exception {
         String previous = getProperty(PROP_CLEANUP_PERCENTAGE);
         try {
             int expectedCleanupPercentage = 77;
@@ -137,7 +129,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCleanupPercentage_throwsIllegalArgumentException_whenNotInRange() {
+    public void testCleanupPercentage_throwsIllegalArgumentException_whenNotInRange() throws Exception {
         String previous = getProperty(PROP_CLEANUP_PERCENTAGE);
         try {
             setProperty(PROP_CLEANUP_PERCENTAGE, valueOf(0));
@@ -152,7 +144,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCleanupOperationCount_set_viaSystemProperty() {
+    public void testCleanupOperationCount_set_viaSystemProperty() throws Exception {
         String previous = getProperty(PROP_CLEANUP_OPERATION_COUNT);
         try {
             int expectedCleanupOperationCount = 19;
@@ -167,7 +159,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCleanupOperationCount_throwsIllegalArgumentException_whenNotPositive() {
+    public void testCleanupOperationCount_throwsIllegalArgumentException_whenNotPositive() throws Exception {
         String previous = getProperty(PROP_CLEANUP_OPERATION_COUNT);
         try {
             setProperty(PROP_CLEANUP_OPERATION_COUNT, valueOf(0));
@@ -182,7 +174,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void gets_taskPeriodSeconds_from_config() {
+    public void gets_taskPeriodSeconds_from_config() throws Exception {
         Config config = new Config();
         String taskPeriodSeconds = "77";
         config.setProperty(PROP_TASK_PERIOD_SECONDS, taskPeriodSeconds);
@@ -193,7 +185,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void gets_cleanupPercentage_from_config() {
+    public void gets_cleanupPercentage_from_config() throws Exception {
         Config config = new Config();
         String cleanupPercentage = "99";
         config.setProperty(PROP_CLEANUP_PERCENTAGE, cleanupPercentage);
@@ -204,7 +196,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void gets_cleanupOperationCount_from_config() {
+    public void gets_cleanupOperationCount_from_config() throws Exception {
         Config config = new Config();
         String cleanupOperationCount = "777";
         config.setProperty(PROP_CLEANUP_OPERATION_COUNT, cleanupOperationCount);
@@ -215,7 +207,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void stops_running_when_clusterState_turns_passive() {
+    public void stops_running_when_clusterState_turns_passive() throws Exception {
         Config config = new Config();
         config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
         HazelcastInstance node = createHazelcastInstance(config);
@@ -242,7 +234,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void starts_running_when_clusterState_turns_active() {
+    public void starts_running_when_clusterState_turns_active() throws Exception {
         Config config = new Config();
         config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
         HazelcastInstance node = createHazelcastInstance(config);
@@ -269,153 +261,6 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
                 assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
             }
         });
-    }
-
-    @Test
-    public void stops_running_backgroundClearTask_when_lifecycleState_SHUTTING_DOWN() {
-        backgroundClearTaskStops_whenLifecycleState(SHUTTING_DOWN);
-    }
-
-    @Test
-    public void stops_running_backgroundClearTask_when_lifecycleState_MERGING() {
-        backgroundClearTaskStops_whenLifecycleState(MERGING);
-    }
-
-    @Test
-    public void restarts_running_backgroundClearTask_when_lifecycleState_turns_to_MERGED() {
-        Config config = new Config();
-        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
-        HazelcastInstance node = createHazelcastInstance(config);
-
-        final AtomicInteger expirationCounter = new AtomicInteger();
-
-        IMap map = node.getMap("test");
-        map.addEntryListener(new EntryExpiredListener() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                expirationCounter.incrementAndGet();
-            }
-        }, true);
-
-        map.put(1, 1, 3, TimeUnit.SECONDS);
-
-        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(MERGING);
-        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(MERGED);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                int expirationCount = expirationCounter.get();
-                assertEquals(format("Expecting 1 expiration but found:%d", expirationCount), 1, expirationCount);
-            }
-        });
-    }
-
-    @Test
-    public void clearExpiredRecordsTask_should_not_be_started_if_map_has_no_expirable_records() {
-        Config config = new Config();
-        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
-        final HazelcastInstance node = createHazelcastInstance(config);
-
-        IMap map = node.getMap("test");
-        map.put(1, 1);
-
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse("There should be zero ClearExpiredRecordsTask",
-                        hasClearExpiredRecordsTaskStarted(node));
-            }
-        }, 3);
-    }
-
-    @Test
-    public void clearExpiredRecordsTask_should_not_be_started_if_member_is_lite() {
-        Config liteMemberConfig = new Config();
-        liteMemberConfig.setLiteMember(true);
-        liteMemberConfig.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
-
-        Config dataMemberConfig = new Config();
-        dataMemberConfig.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        final HazelcastInstance liteMember = factory.newHazelcastInstance(liteMemberConfig);
-        final HazelcastInstance dataMember = factory.newHazelcastInstance(dataMemberConfig);
-
-        IMap map = liteMember.getMap("test");
-        map.put(1, 1, 3, TimeUnit.SECONDS);
-
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse("There should be zero ClearExpiredRecordsTask",
-                        hasClearExpiredRecordsTaskStarted(liteMember));
-            }
-        }, 3);
-    }
-
-    @Test
-    public void clearExpiredRecordsTask_should_be_started_when_mapConfig_ttl_expiry() {
-        String mapName = "test";
-
-        Config config = new Config();
-        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
-        config.getMapConfig(mapName).setTimeToLiveSeconds(2);
-        HazelcastInstance node = createHazelcastInstance(config);
-
-        IMap map = node.getMap(mapName);
-        map.put(1, 1);
-
-        assertTrue("There should be one ClearExpiredRecordsTask",
-                hasClearExpiredRecordsTaskStarted(node));
-    }
-
-    @Test
-    public void clearExpiredRecordsTask_should_be_started_when_mapConfig_has_idle_expiry() {
-        String mapName = "test";
-
-        Config config = new Config();
-        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
-        config.getMapConfig(mapName).setMaxIdleSeconds(2);
-        HazelcastInstance node = createHazelcastInstance(config);
-
-        IMap map = node.getMap(mapName);
-        map.put(1, 1);
-
-        assertTrue("There should be one ClearExpiredRecordsTask",
-                hasClearExpiredRecordsTaskStarted(node));
-    }
-
-    private boolean hasClearExpiredRecordsTaskStarted(HazelcastInstance node) {
-        return getExpirationManager(node).isScheduled();
-    }
-
-    private void backgroundClearTaskStops_whenLifecycleState(LifecycleEvent.LifecycleState lifecycleState) {
-        Config config = new Config();
-        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
-        HazelcastInstance node = createHazelcastInstance(config);
-
-        final AtomicInteger expirationCounter = new AtomicInteger();
-
-        IMap map = node.getMap("test");
-        map.addEntryListener(new EntryExpiredListener() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                expirationCounter.incrementAndGet();
-            }
-        }, true);
-
-        map.put(1, 1, 3, TimeUnit.SECONDS);
-
-        ((LifecycleServiceImpl) node.getLifecycleService()).fireLifecycleEvent(lifecycleState);
-
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                int expirationCount = expirationCounter.get();
-                assertEquals(format("Expecting no expiration but found:%d", expirationCount), 0, expirationCount);
-            }
-        }, 5);
     }
 
     private ExpirationManager newExpirationManager(HazelcastInstance node) {

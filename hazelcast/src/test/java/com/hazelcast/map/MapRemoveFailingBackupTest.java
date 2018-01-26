@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
-import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -156,7 +156,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }
     }
 
-    private static class ExceptionThrowingRemoveBackupOperation extends KeyBasedMapOperation {
+    private static class ExceptionThrowingRemoveBackupOperation extends MutatingKeyBasedMapOperation {
 
         private ExceptionThrowingRemoveBackupOperation() {
         }

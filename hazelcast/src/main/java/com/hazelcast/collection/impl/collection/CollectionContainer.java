@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -37,16 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class CollectionContainer
-        implements IdentifiedDataSerializable, SplitBrainAwareDataContainer<Long, Data, CollectionItem> {
-
-    public static final int INVALID_ITEM_ID = -1;
-
-    public static final int ID_PROMOTION_OFFSET = 100000;
+public abstract class CollectionContainer implements IdentifiedDataSerializable {
 
     protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
     protected String name;
@@ -69,22 +60,18 @@ public abstract class CollectionContainer
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    public String getName() {
-        return name;
-    }
-
     public abstract CollectionConfig getConfig();
 
-    public abstract Collection<CollectionItem> getCollection();
+    protected abstract Collection<CollectionItem> getCollection();
 
-    public abstract Map<Long, CollectionItem> getMap();
+    protected abstract Map<Long, CollectionItem> getMap();
 
     public long add(Data value) {
         final CollectionItem item = new CollectionItem(nextId(), value);
         if (getCollection().add(item)) {
             return item.getItemId();
         }
-        return INVALID_ITEM_ID;
+        return -1;
     }
 
     public void addBackup(long itemId, Data value) {
@@ -116,7 +103,7 @@ public abstract class CollectionContainer
         final Collection<CollectionItem> coll = getCollection();
         Map<Long, Data> itemIdMap = createHashMap(coll.size());
         for (CollectionItem item : coll) {
-            itemIdMap.put(item.getItemId(), item.getValue());
+            itemIdMap.put(item.getItemId(), (Data) item.getValue());
         }
         coll.clear();
         return itemIdMap;
@@ -130,7 +117,7 @@ public abstract class CollectionContainer
 
     public boolean contains(Set<Data> valueSet) {
         Collection<CollectionItem> collection = getCollection();
-        CollectionItem collectionItem = new CollectionItem(INVALID_ITEM_ID, null);
+        CollectionItem collectionItem = new CollectionItem(-1, null);
         for (Data value : valueSet) {
             collectionItem.setValue(value);
             if (!collection.contains(collectionItem)) {
@@ -170,7 +157,7 @@ public abstract class CollectionContainer
             final CollectionItem item = iterator.next();
             final boolean contains = valueSet.contains(item.getValue());
             if ((contains && !retain) || (!contains && retain)) {
-                itemIdMap.put(item.getItemId(), item.getValue());
+                itemIdMap.put(item.getItemId(), (Data) item.getValue());
                 iterator.remove();
             }
         }
@@ -178,16 +165,17 @@ public abstract class CollectionContainer
     }
 
     public List<Data> getAll() {
-        ArrayList<Data> sub = new ArrayList<Data>(size());
+        ArrayList<Data> sub = new ArrayList<Data>(getCollection().size());
         for (CollectionItem item : getCollection()) {
-            sub.add(item.getValue());
+            sub.add((Data) item.getValue());
         }
         return sub;
     }
 
     public boolean hasEnoughCapacity(int delta) {
-        return size() + delta <= getConfig().getMaxSize();
+        return getCollection().size() + delta <= getConfig().getMaxSize();
     }
+
 
     /*
      * TX methods
@@ -195,7 +183,7 @@ public abstract class CollectionContainer
      */
 
     public Long reserveAdd(String transactionId, Data value) {
-        if (value != null && getCollection().contains(new CollectionItem(INVALID_ITEM_ID, value))) {
+        if (value != null && getCollection().contains(new CollectionItem(-1, value))) {
             return null;
         }
         final long itemId = nextId();
@@ -224,7 +212,7 @@ public abstract class CollectionContainer
                 return item;
             }
         }
-        if (reservedItemId != INVALID_ITEM_ID) {
+        if (reservedItemId != -1) {
             return txMap.remove(reservedItemId);
         }
         return null;
@@ -330,7 +318,7 @@ public abstract class CollectionContainer
         return ++idGenerator;
     }
 
-    protected void setId(long itemId) {
+    void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
 
@@ -343,39 +331,6 @@ public abstract class CollectionContainer
     }
 
     protected abstract void onDestroy();
-
-    @Override
-    public CollectionItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
-
-        // try to find an existing item with the same value
-        CollectionItem existingItem = null;
-        for (CollectionItem item : getCollection()) {
-            if (mergingEntry.getValue().equals(item.getValue())) {
-                existingItem = item;
-                break;
-            }
-        }
-
-        CollectionItem mergedItem = null;
-        if (existingItem == null) {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
-            if (newValue != null) {
-                CollectionItem item = new CollectionItem(nextId(), newValue);
-                if (getCollection().add(item)) {
-                    mergedItem = item;
-                }
-            }
-        } else {
-            SplitBrainMergeEntryView<Long, Data> existingEntry = createSplitBrainMergeEntryView(existingItem);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (newValue != null && !newValue.equals(existingEntry.getValue())) {
-                existingItem.setValue(newValue);
-                mergedItem = existingItem;
-            }
-        }
-        return mergedItem;
-    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

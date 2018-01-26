@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Replicates the update happened on the partition owner to the other nodes.
  */
-public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
-        implements PartitionAwareOperation {
+public class ReplicateUpdateOperation extends AbstractSerializableOperation implements PartitionAwareOperation {
 
     VersionResponsePair response;
     boolean isRemove;
@@ -123,10 +122,5 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.REPLICATE_UPDATE;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.cluster.fd;
 
+import com.hazelcast.core.Member;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,48 +25,47 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Ping based failure detector. (OSI Layer 3)
  * This failure detector uses an absolute number of missing ping attempts.
- * After that many attempts, an endpoint is considered as dead/unavailable.
+ * After that many attempts, a member is considered as dead/unavailable.
  */
-public class PingFailureDetector<E> {
+public class PingFailureDetector {
 
     private final int maxPingAttempts;
 
-    private final ConcurrentMap<E, AtomicInteger> pingAttempts = new ConcurrentHashMap<E, AtomicInteger>();
+    private final ConcurrentMap<Member, AtomicInteger> pingAttempts = new ConcurrentHashMap<Member, AtomicInteger>();
 
     public PingFailureDetector(int maxPingAttempts) {
         this.maxPingAttempts = maxPingAttempts;
     }
 
-    public void heartbeat(E endpoint) {
-        getAttempts(endpoint).set(0);
+    public void heartbeat(Member member) {
+        getAttempts(member).set(0);
     }
 
-    public void logAttempt(E endpoint) {
-        getAttempts(endpoint).incrementAndGet();
+    public void logAttempt(Member member) {
+        getAttempts(member).incrementAndGet();
     }
 
-    public boolean isAlive(E endpoint) {
-        AtomicInteger attempts = pingAttempts.get(endpoint);
+    public boolean isAlive(Member member) {
+        AtomicInteger attempts = pingAttempts.get(member);
         return attempts != null && attempts.get() < maxPingAttempts;
     }
 
-    public void remove(E endpoint) {
-        pingAttempts.remove(endpoint);
+    public void remove(Member member) {
+        pingAttempts.remove(member);
     }
 
     public void reset() {
         pingAttempts.clear();
     }
 
-    private AtomicInteger getAttempts(E endpoint) {
-        AtomicInteger existing = pingAttempts.get(endpoint);
+    private AtomicInteger getAttempts(Member member) {
+        AtomicInteger existing = pingAttempts.get(member);
         AtomicInteger newAttempts = null;
         if (existing == null) {
             newAttempts = new AtomicInteger();
-            existing = pingAttempts.putIfAbsent(endpoint, newAttempts);
+            existing = pingAttempts.putIfAbsent(member, newAttempts);
         }
 
         return existing != null ? existing : newAttempts;
     }
 }
-

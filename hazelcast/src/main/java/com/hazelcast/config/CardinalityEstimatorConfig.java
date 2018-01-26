@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,20 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.String.format;
 
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
  */
-public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, Versioned {
+public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
 
     /**
      * The number of sync backups per estimator
@@ -46,27 +41,11 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
      */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
-    /**
-     * The default merge policy used for cardinality estimators
-     */
-    public static final MergePolicyConfig DEFAULT_MERGE_POLICY_CONFIG =
-            new MergePolicyConfig(HyperLogLogMergePolicy.class.getSimpleName(), MergePolicyConfig.DEFAULT_BATCH_SIZE);
-
-    private static final String[] ALLOWED_POLICIES = {
-            "com.hazelcast.spi.merge.HyperLogLogMergePolicy", "HyperLogLogMergePolicy",
-            "com.hazelcast.spi.merge.PutIfAbsentMergePolicy", "PutIfAbsentMergePolicy",
-            "com.hazelcast.spi.merge.DiscardMergePolicy", "DiscardMergePolicy",
-    };
-
     private String name = "default";
 
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
 
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
-
-    private String quorumName;
-
-    private MergePolicyConfig mergePolicyConfig = DEFAULT_MERGE_POLICY_CONFIG;
 
     private transient CardinalityEstimatorConfigReadOnly readOnly;
 
@@ -78,26 +57,13 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
     }
 
     public CardinalityEstimatorConfig(String name, int backupCount, int asyncBackupCount) {
-        this(name, backupCount, asyncBackupCount, DEFAULT_MERGE_POLICY_CONFIG);
-    }
-
-    public CardinalityEstimatorConfig(String name, int backupCount, int asyncBackupCount, MergePolicyConfig mergePolicyConfig) {
-        this(name, backupCount, asyncBackupCount, "", mergePolicyConfig);
-    }
-
-    public CardinalityEstimatorConfig(String name, int backupCount, int asyncBackupCount,
-                                      String quorumName, MergePolicyConfig mergePolicyConfig) {
         this.name = name;
         this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
-        this.quorumName = quorumName;
-        this.mergePolicyConfig = mergePolicyConfig;
-        validate();
     }
 
     public CardinalityEstimatorConfig(CardinalityEstimatorConfig config) {
-        this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount(),
-                config.getQuorumName(), config.getMergePolicyConfig());
+        this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount());
     }
 
     /**
@@ -120,27 +86,6 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         this.name = name;
         return this;
     }
-
-    /**
-     * Gets the {@link MergePolicyConfig} for the cardinality estimator.
-     *
-     * @return the {@link MergePolicyConfig} for the cardinality estimator
-     */
-    public MergePolicyConfig getMergePolicyConfig() {
-        return mergePolicyConfig;
-    }
-
-    /**
-     * Sets the {@link MergePolicyConfig} for the scheduler.
-     *
-     * @return this executor config instance
-     */
-    public CardinalityEstimatorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
-        validate();
-        return this;
-    }
-
 
     /**
      * Gets the number of synchronous backups.
@@ -201,32 +146,10 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         return backupCount + asyncBackupCount;
     }
 
-    /**
-     * Returns the quorum name for operations.
-     *
-     * @return the quorum name
-     */
-    public String getQuorumName() {
-        return quorumName;
-    }
-
-    /**
-     * Sets the quorum name for operations.
-     *
-     * @param quorumName the quorum name
-     * @return the updated configuration
-     */
-    public CardinalityEstimatorConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
-        return this;
-    }
-
-
     @Override
     public String toString() {
         return "CardinalityEstimatorConfig{" + "name='" + name + '\'' + ", backupCount=" + backupCount + ", asyncBackupCount="
-                + asyncBackupCount + ", readOnly=" + readOnly + ", quorumName=" + quorumName +  ", mergePolicyConfig="
-                + mergePolicyConfig + '}';
+                + asyncBackupCount + ", readOnly=" + readOnly + '}';
     }
 
     CardinalityEstimatorConfigReadOnly getAsReadOnly() {
@@ -251,10 +174,6 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         out.writeUTF(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-            out.writeObject(mergePolicyConfig);
-        }
     }
 
     @Override
@@ -262,13 +181,8 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         name = in.readUTF();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-            mergePolicyConfig = in.readObject();
-        }
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public final boolean equals(Object o) {
         if (this == o) {
@@ -285,13 +199,6 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
-            return false;
-        }
-        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
-            return false;
-        }
-
         return name.equals(that.name);
     }
 
@@ -300,16 +207,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         int result = name.hashCode();
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
-        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
-    }
-
-    public final void validate() {
-        if (!Arrays.asList(ALLOWED_POLICIES).contains(mergePolicyConfig.getPolicy())) {
-            throw new InvalidConfigurationException(format("Policy %s is not allowed as a merge-policy "
-                    + "for CardinalityEstimator.", mergePolicyConfig.getPolicy()));
-        }
     }
 
     // not private for testing
@@ -331,16 +229,6 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
 
         @Override
         public CardinalityEstimatorConfig setAsyncBackupCount(int asyncBackupCount) {
-            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
-        }
-
-        @Override
-        public CardinalityEstimatorConfig setQuorumName(String quorumName) {
-            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
-        }
-
-        @Override
-        public CardinalityEstimatorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
             throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
         }
     }

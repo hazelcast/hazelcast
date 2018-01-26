@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
+        final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handle(element);
         return springXmlBuilder.getBeanDefinition();
     }
@@ -58,16 +58,17 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
     private class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
-        private final BeanDefinitionBuilder builder;
 
-        SpringXmlBuilder(ParserContext parserContext) {
+        private BeanDefinitionBuilder builder;
+
+        public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastInstanceFactory.class);
             this.builder.setFactoryMethod("newHazelcastInstance");
             this.builder.setDestroyMethodName("shutdown");
         }
 
-        AbstractBeanDefinition getBeanDefinition() {
+        public AbstractBeanDefinition getBeanDefinition() {
             return builder.getBeanDefinition();
         }
 
@@ -75,14 +76,14 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
             handleCommonBeanAttributes(element, builder, parserContext);
             Element config = null;
             for (Node node : childElements(element)) {
-                String nodeName = cleanNodeName(node);
+                final String nodeName = cleanNodeName(node);
                 if ("config".equals(nodeName)) {
                     config = (Element) node;
                 }
             }
-            HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
-            AbstractBeanDefinition configBeanDef = configParser.parseInternal(config, parserContext);
-            builder.addConstructorArgValue(configBeanDef);
+            final HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
+            final AbstractBeanDefinition configBeanDef = configParser.parseInternal(config, parserContext);
+            this.builder.addConstructorArgValue(configBeanDef);
         }
     }
 }

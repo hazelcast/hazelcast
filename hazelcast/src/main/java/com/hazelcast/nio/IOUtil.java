@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -488,7 +488,7 @@ public final class IOUtil {
      */
     public static void copy(InputStream source, File target) {
         if (!target.exists()) {
-            throw new HazelcastException("The target file doesn't exist " + target);
+            throw new HazelcastException("The target directory doesn't exist " + target);
         }
 
         FileOutputStream out = null;

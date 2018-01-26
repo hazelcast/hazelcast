@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,7 +166,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         private void assertInFlightInvocationsWereNotGrowing() {
             assertTrue("There are no invocations to be observed!", maxInvocationCountObserved > 0);
 
-            long maximumTolerableInvocationCount = (long) (maxInvocationCountObservedDuringWarmup * 2);
+            long maximumTolerableInvocationCount = (long) (maxInvocationCountObservedDuringWarmup * 1.2);
             assertTrue("Apparently number of in-flight invocations is growing."
                     + " Max. number of in-flight invocation during first fifth of test duration: "
                     + maxInvocationCountObservedDuringWarmup

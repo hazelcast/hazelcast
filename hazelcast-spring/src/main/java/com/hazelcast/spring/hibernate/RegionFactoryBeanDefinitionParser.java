@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,13 +44,13 @@ public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionPar
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-         NamedNodeMap attributes = element.getAttributes();
+        final NamedNodeMap atts = element.getAttributes();
         String instanceRefName = "instance";
         String mode = "DISTRIBUTED";
-        if (attributes != null) {
-            for (int a = 0; a < attributes.getLength(); a++) {
-                 Node att = attributes.item(a);
-                 String name = att.getNodeName();
+        if (atts != null) {
+            for (int a = 0; a < atts.getLength(); a++) {
+                final Node att = atts.item(a);
+                final String name = att.getNodeName();
                 if ("instance-ref".equals(name)) {
                     instanceRefName = att.getTextContent();
                 } else if ("mode".equals(name)) {

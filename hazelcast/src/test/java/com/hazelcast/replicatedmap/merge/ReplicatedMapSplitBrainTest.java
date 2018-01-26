@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.replicatedmap.merge;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -32,6 +34,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -59,8 +62,6 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     private MergeLifecycleListener mergeLifecycleListener;
     private ReplicatedMap<Object, Object> replicatedMap1;
     private ReplicatedMap<Object, Object> replicatedMap2;
-    private String key1;
-    private String key2;
 
     @Override
     protected Config config() {
@@ -84,11 +85,6 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
 
         replicatedMap1 = firstBrain[0].getReplicatedMap(replicatedMapName);
         replicatedMap2 = secondBrain[0].getReplicatedMap(replicatedMapName);
-
-        // since the statistics are not replicated, we have to use keys on the same node like the proxy we are interacting with
-        String[] keys = generateKeysBelongingToSamePartitionsOwnedBy(firstBrain[0], 2);
-        key1 = keys[0];
-        key2 = keys[1];
 
         if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
             afterSplitLatestUpdateMapMergePolicy();
@@ -130,85 +126,107 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterSplitLatestUpdateMapMergePolicy() {
-        replicatedMap1.put(key1, "value1");
+        for (HazelcastInstance hz : getBrains().getFirstHalf()) {
+            ReplicatedMap<Object, Object> replicatedMap = hz.getReplicatedMap(replicatedMapName);
+            replicatedMap.put("key1", "value1");
+        }
 
         // prevent updating at the same time
         sleepAtLeastMillis(100);
 
-        replicatedMap2.put(key1, "LatestUpdatedValue1");
-        replicatedMap2.put(key2, "value2");
+        replicatedMap2.put("key1", "LatestUpdatedValue1");
+        replicatedMap2.put("key2", "value2");
 
         // prevent updating at the same time
         sleepAtLeastMillis(100);
 
-        replicatedMap1.put(key2, "LatestUpdatedValue2");
+        for (HazelcastInstance hz : getBrains().getFirstHalf()) {
+            ReplicatedMap<Object, Object> replicatedMap = hz.getReplicatedMap(replicatedMapName);
+            replicatedMap.put("key2", "LatestUpdatedValue2");
+        }
     }
 
     private void afterMergeLatestUpdateMapMergePolicy() {
-        assertEquals("LatestUpdatedValue1", replicatedMap1.get(key1));
-        assertEquals("LatestUpdatedValue1", replicatedMap2.get(key1));
+        assertEquals("LatestUpdatedValue1", replicatedMap1.get("key1"));
+        assertEquals("LatestUpdatedValue1", replicatedMap2.get("key1"));
 
-        assertEquals("LatestUpdatedValue2", replicatedMap1.get(key2));
-        assertEquals("LatestUpdatedValue2", replicatedMap2.get(key2));
+        assertEquals("LatestUpdatedValue2", replicatedMap1.get("key2"));
+        assertEquals("LatestUpdatedValue2", replicatedMap2.get("key2"));
     }
 
     private void afterSplitHigherHitsMapMergePolicy() {
-        replicatedMap1.put(key1, "higherHitsValue1");
-        replicatedMap1.put(key2, "value2");
+        // hits are not replicated and both nodes of the larger cluster can be the merge target,
+        // so we have to create the hits on both nodes
+        for (HazelcastInstance hz : getBrains().getFirstHalf()) {
+            ReplicatedMap<Object, Object> replicatedMap = hz.getReplicatedMap(replicatedMapName);
+            replicatedMap.put("key1", "higherHitsValue1");
+            replicatedMap.put("key2", "value2");
+
+            // increase hits number
+            assertEquals("higherHitsValue1", replicatedMap.get("key1"));
+            assertEquals("higherHitsValue1", replicatedMap.get("key1"));
+        }
+
+        replicatedMap2.put("key1", "value1");
+        replicatedMap2.put("key2", "higherHitsValue2");
 
         // increase hits number
-        assertEquals("higherHitsValue1", replicatedMap1.get(key1));
-        assertEquals("higherHitsValue1", replicatedMap1.get(key1));
-
-        replicatedMap2.put(key1, "value1");
-        replicatedMap2.put(key2, "higherHitsValue2");
-
-        // increase hits number
-        assertEquals("higherHitsValue2", replicatedMap2.get(key2));
-        assertEquals("higherHitsValue2", replicatedMap2.get(key2));
+        assertEquals("higherHitsValue2", replicatedMap2.get("key2"));
+        assertEquals("higherHitsValue2", replicatedMap2.get("key2"));
     }
 
     private void afterMergeHigherHitsMapMergePolicy() {
-        assertEquals("higherHitsValue1", replicatedMap1.get(key1));
-        assertEquals("higherHitsValue1", replicatedMap2.get(key1));
+        assertEquals("higherHitsValue1", replicatedMap1.get("key1"));
+        assertEquals("higherHitsValue1", replicatedMap2.get("key1"));
 
-        assertEquals("higherHitsValue2", replicatedMap1.get(key2));
-        assertEquals("higherHitsValue2", replicatedMap2.get(key2));
+        assertEquals("higherHitsValue2", replicatedMap1.get("key2"));
+        assertEquals("higherHitsValue2", replicatedMap2.get("key2"));
     }
 
     private void afterSplitPutIfAbsentMapMergePolicy() {
-        replicatedMap1.put(key1, "PutIfAbsentValue1");
+        for (HazelcastInstance hz : getBrains().getFirstHalf()) {
+            ReplicatedMap<Object, Object> replicatedMap = hz.getReplicatedMap(replicatedMapName);
+            replicatedMap.put("key1", "PutIfAbsentValue1");
+        }
 
-        replicatedMap2.put(key1, "value1");
-        replicatedMap2.put(key2, "PutIfAbsentValue2");
+        replicatedMap2.put("key1", "value1");
+        replicatedMap2.put("key2", "PutIfAbsentValue2");
     }
 
     private void afterMergePutIfAbsentMapMergePolicy() {
-        assertEquals("PutIfAbsentValue1", replicatedMap1.get(key1));
-        assertEquals("PutIfAbsentValue1", replicatedMap2.get(key1));
+        assertEquals("PutIfAbsentValue1", replicatedMap1.get("key1"));
+        assertEquals("PutIfAbsentValue1", replicatedMap2.get("key1"));
 
-        assertEquals("PutIfAbsentValue2", replicatedMap1.get(key2));
-        assertEquals("PutIfAbsentValue2", replicatedMap2.get(key2));
+        assertEquals("PutIfAbsentValue2", replicatedMap1.get("key2"));
+        assertEquals("PutIfAbsentValue2", replicatedMap2.get("key2"));
     }
 
     private void afterSplitPassThroughMapMergePolicy() {
-        replicatedMap1.put(key1, "value");
-        replicatedMap2.put(key1, "passThroughValue");
+        for (HazelcastInstance hz : getBrains().getFirstHalf()) {
+            ReplicatedMap<Object, Object> replicatedMap = hz.getReplicatedMap(replicatedMapName);
+            replicatedMap.put("key", "value");
+        }
+
+        replicatedMap2.put("key", "passThroughValue");
     }
 
     private void afterMergePassThroughMapMergePolicy() {
-        assertEquals("passThroughValue", replicatedMap1.get(key1));
-        assertEquals("passThroughValue", replicatedMap2.get(key1));
+        assertEquals("passThroughValue", replicatedMap1.get("key"));
+        assertEquals("passThroughValue", replicatedMap2.get("key"));
     }
 
     private void afterSplitCustomReplicatedMapMergePolicy() {
-        replicatedMap1.put(key1, "value");
-        replicatedMap2.put(key1, 1);
+        for (HazelcastInstance hz : getBrains().getFirstHalf()) {
+            ReplicatedMap<Object, Object> replicatedMap = hz.getReplicatedMap(replicatedMapName);
+            replicatedMap.put("key", "value");
+        }
+
+        replicatedMap2.put("key", 1);
     }
 
     private void afterMergeCustomReplicatedMapMergePolicy() {
-        assertEquals(1, replicatedMap1.get(key1));
-        assertEquals(1, replicatedMap2.get(key1));
+        assertEquals(1, replicatedMap1.get("key"));
+        assertEquals(1, replicatedMap2.get("key"));
     }
 
     private static class CustomReplicatedMergePolicy implements ReplicatedMapMergePolicy {
@@ -219,6 +237,26 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
                 return mergingEntry.getValue();
             }
             return null;
+        }
+    }
+
+    private static class MergeLifecycleListener implements LifecycleListener {
+
+        private final CountDownLatch latch;
+
+        MergeLifecycleListener(int mergingClusterSize) {
+            latch = new CountDownLatch(mergingClusterSize);
+        }
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                latch.countDown();
+            }
+        }
+
+        void await() {
+            assertOpenEventually(latch);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.util.ArrayList;
@@ -77,12 +78,13 @@ public abstract class DefaultMapProjectMessageTask<P>
         }
 
         Set result = QueryResultUtils.transformToSet(nodeEngine.getSerializationService(), combinedResult,
-                getPredicate(), IterationType.VALUE, false, true);
+                getPredicate(), IterationType.VALUE, false);
 
         List<Data> serialized = new ArrayList<Data>(result.size());
 
+        SerializationService serializationService = nodeEngine.getSerializationService();
         for (Object row : result) {
-            serialized.add((Data) row);
+            serialized.add(serializationService.toData(row));
         }
 
         return serialized;
