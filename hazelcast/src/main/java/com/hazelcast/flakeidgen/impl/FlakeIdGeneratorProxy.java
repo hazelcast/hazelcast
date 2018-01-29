@@ -115,9 +115,6 @@ public class FlakeIdGeneratorProxy
         return batcher.newId();
     }
 
-    /**
-     * @return array of: {first ID for the batch, wait time until return}
-     */
     public IdBatchAndWaitTime newIdBatch(int batchSize) {
         int nodeId = getNodeId();
 

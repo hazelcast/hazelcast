@@ -21,13 +21,23 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class FlakeIdGenerator_ClientBackpressureTest {
+
+    private static final ILogger LOGGER = Logger.getLogger(FlakeIdGenerator_ClientBackpressureTest.class);
 
     private TestHazelcastFactory factory;
     private HazelcastInstance client;
@@ -57,11 +67,11 @@ public class FlakeIdGenerator_ClientBackpressureTest {
         // after 13th call.
         long testStart = System.nanoTime();
         for (int i = 1; i <= 15; i++) {
-            System.out.println("Iteration " + i + ", elapsed since test start: " + NANOSECONDS.toMillis(System.nanoTime() - testStart) + "ms");
+            LOGGER.info("Iteration " + i + ", elapsed since test start: " + NANOSECONDS.toMillis(System.nanoTime() - testStart) + "ms");
             long start = System.nanoTime();
             generator.newId();
             long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - start);
-            System.out.println("newId call took " + elapsedMs + "ms");
+            LOGGER.info("newId call took " + elapsedMs + "ms");
             if (i < 10) {
                 assertTrue("elapsedMs=" + elapsedMs + ", i=" + i, elapsedMs < 200);
             } else if (i >= 13) {

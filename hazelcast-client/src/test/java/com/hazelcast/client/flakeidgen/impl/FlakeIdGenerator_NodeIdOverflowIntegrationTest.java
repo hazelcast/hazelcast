@@ -22,6 +22,8 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,6 +37,8 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
+
+    private static final ILogger LOGGER = Logger.getLogger(FlakeIdGenerator_NodeIdOverflowIntegrationTest.class);
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -63,7 +67,7 @@ public class FlakeIdGenerator_NodeIdOverflowIntegrationTest {
         // disable smart routing - such clients must also work reliably
         clientConfig.getNetworkConfig().setSmartRouting(false);
         for (int i = 0; i < 10; i++) {
-            System.out.println("Creating client " + i);
+            LOGGER.info("Creating client " + i);
             HazelcastInstance client = factory.newHazelcastClient(clientConfig);
             FlakeIdGenerator gen = client.getFlakeIdGenerator("gen");
             for (int j = 0; j < 100; j++) {
