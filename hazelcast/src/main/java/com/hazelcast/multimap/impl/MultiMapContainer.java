@@ -21,6 +21,10 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +33,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -36,7 +41,9 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * MultiMap container which holds a map of {@link MultiMapValue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class MultiMapContainer extends MultiMapContainerSupport {
+public class MultiMapContainer
+        extends MultiMapContainerSupport
+        implements SplitBrainAwareDataContainer<Data, MultiMapMergeContainer, MultiMapValue> {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
@@ -213,5 +220,65 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
+    }
+
+    @Override
+    public MultiMapValue merge(SplitBrainMergeEntryView<Data, MultiMapMergeContainer> mergingEntry,
+                               SplitBrainMergePolicy mergePolicy) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        mergePolicy.setSerializationService(serializationService);
+
+        Data key = mergingEntry.getKey();
+        MultiMapMergeContainer mergingContainer = mergingEntry.getValue();
+        MultiMapValue existingValue = getMultiMapValueOrNull(key);
+
+        if (existingValue == null) {
+            return mergeNewValue(mergePolicy, serializationService, key, mergingContainer);
+        }
+        return mergeExistingValue(mergePolicy, serializationService, key, mergingContainer, existingValue);
+    }
+
+    private MultiMapValue mergeNewValue(SplitBrainMergePolicy mergePolicy, SerializationService ss, Data key,
+                                        MultiMapMergeContainer mergingContainer) {
+        boolean isBinary = getConfig().isBinary();
+        MultiMapValue mergedValue = null;
+        for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
+            SplitBrainMergeEntryView<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
+            Object newValue = mergePolicy.merge(mergeEntry, null);
+            if (newValue != null) {
+                MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
+                if (mergedValue == null) {
+                    mergedValue = getOrCreateMultiMapValue(key);
+                }
+                Collection<MultiMapRecord> collection = mergedValue.getCollection(false);
+                collection.add(newRecord);
+            }
+        }
+        return mergedValue;
+    }
+
+    private MultiMapValue mergeExistingValue(SplitBrainMergePolicy mergePolicy, SerializationService ss, Data key,
+                                             MultiMapMergeContainer mergingContainer, MultiMapValue existingValue) {
+        boolean isBinary = getConfig().isBinary();
+        Collection<MultiMapRecord> existingRecords = existingValue.getCollection(false);
+        int existingHits = existingValue.getHits();
+        for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
+            SplitBrainMergeEntryView<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
+            SplitBrainMergeEntryView<Data, Object> existingEntry = null;
+            MultiMapRecord existingRecord = null;
+            for (MultiMapRecord record : existingRecords) {
+                if (record.getObject().equals(mergeRecord.getObject())) {
+                    existingEntry = createSplitBrainMergeEntryView(this, key, record, existingHits);
+                    existingRecord = record;
+                }
+            }
+            Object newValue = mergePolicy.merge(mergeEntry, existingEntry);
+            if (newValue != null && (existingRecord == null || !newValue.equals(existingRecord.getObject()))) {
+                MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
+                existingRecords.remove(existingRecord);
+                existingRecords.add(newRecord);
+            }
+        }
+        return existingValue;
     }
 }

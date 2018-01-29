@@ -490,8 +490,9 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isBinary(), c2.isBinary())
                     && nullSafeEqual(c1.getBackupCount(), c2.getBackupCount())
                     && nullSafeEqual(c1.getAsyncBackupCount(), c2.getAsyncBackupCount())
+                    && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
-                    && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
+                    && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig());
         }
 
         @Override

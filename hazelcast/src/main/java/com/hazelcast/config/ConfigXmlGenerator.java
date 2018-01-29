@@ -433,7 +433,9 @@ public class ConfigXmlGenerator {
                 }
                 gen.close();
             }
-            gen.close();
+            MergePolicyConfig mergePolicyConfig = mm.getMergePolicyConfig();
+            gen.node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .close();
         }
     }
 

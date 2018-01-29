@@ -1184,6 +1184,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 multiMapConfig.setBinary(getBooleanValue(value));
             } else if ("quorum-ref".equals(nodeName)) {
                 multiMapConfig.setQuorumName(value);
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
             }
         }
         config.addMultiMapConfig(multiMapConfig);

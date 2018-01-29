@@ -481,13 +481,13 @@
             <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
                               capacity="123" time-to-live-seconds="321"/>
 
-            <hz:multimap name="testMultimap"
-                         value-collection-type="LIST" binary="false" statistics-enabled="false">
+            <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="1234">PassThroughMergePolicy</hz:merge-policy>
             </hz:multimap>
 
             <hz:list name="testList"

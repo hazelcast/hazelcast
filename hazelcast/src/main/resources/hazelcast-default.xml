@@ -234,6 +234,7 @@
     <multimap name="default">
         <backup-count>1</backup-count>
         <value-collection-type>SET</value-collection-type>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </multimap>
 
     <list name="default">

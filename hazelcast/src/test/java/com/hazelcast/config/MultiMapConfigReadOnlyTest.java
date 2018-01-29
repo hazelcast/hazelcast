@@ -93,4 +93,9 @@ public class MultiMapConfigReadOnlyTest {
     public void setStatisticsEnabledOfReadOnlyMultiMapConfigShouldFail() {
         getReadOnlyConfig().setStatisticsEnabled(true);
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setMergePolicy() {
+        getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
+    }
 }
