@@ -895,6 +895,15 @@ public abstract class HazelcastTestSupport {
         });
     }
 
+    public static void assertCompletesEventually(final Future future, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue("Future has not completed", future.isDone());
+            }
+        }, timeoutSeconds);
+    }
+
     public static void assertSizeEventually(int expectedSize, Collection collection) {
         assertSizeEventually(expectedSize, collection, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
