@@ -18,8 +18,8 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
@@ -67,40 +67,47 @@ public final class AndPredicate
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Set<QueryableEntry> smallestIndexedResult = null;
-        List<Set<QueryableEntry>> otherIndexedResults = new LinkedList<Set<QueryableEntry>>();
-        List<Predicate> lsNoIndexPredicates = null;
+        Set<QueryableEntry> smallestResultSet = null;
+        List<Set<QueryableEntry>> otherResultSets = null;
+        List<Predicate> unindexedPredicates = null;
+
         for (Predicate predicate : predicates) {
-            boolean indexed = false;
-            if (predicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                if (iap.isIndexed(queryContext)) {
-                    indexed = true;
-                    Set<QueryableEntry> s = iap.filter(queryContext);
-                    if (smallestIndexedResult == null) {
-                        smallestIndexedResult = s;
-                    } else if (size(s) < size(smallestIndexedResult)) {
-                        otherIndexedResults.add(smallestIndexedResult);
-                        smallestIndexedResult = s;
-                    } else {
-                        otherIndexedResults.add(s);
-                    }
+            if (isIndexedPredicate(predicate, queryContext)) {
+                Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext);
+                if (smallestResultSet == null) {
+                    smallestResultSet = currentResultSet;
+                } else if (sizeOf(currentResultSet) < sizeOf(smallestResultSet)) {
+                    otherResultSets = initOrGetListOf(otherResultSets);
+                    otherResultSets.add(smallestResultSet);
+                    smallestResultSet = currentResultSet;
+                } else {
+                    otherResultSets = initOrGetListOf(otherResultSets);
+                    otherResultSets.add(currentResultSet);
                 }
-            }
-            if (!indexed) {
-                if (lsNoIndexPredicates == null) {
-                    lsNoIndexPredicates = new LinkedList<Predicate>();
-                }
-                lsNoIndexPredicates.add(predicate);
+            } else {
+                unindexedPredicates = initOrGetListOf(unindexedPredicates);
+                unindexedPredicates.add(predicate);
             }
         }
-        if (smallestIndexedResult == null) {
+
+        if (smallestResultSet == null) {
             return null;
         }
-        return new AndResultSet(smallestIndexedResult, otherIndexedResults, lsNoIndexPredicates);
+        return new AndResultSet(smallestResultSet, otherResultSets, unindexedPredicates);
     }
 
-    private int size(Set<QueryableEntry> result) {
+    private static boolean isIndexedPredicate(Predicate predicate, QueryContext queryContext) {
+        return predicate instanceof IndexAwarePredicate && ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+    }
+
+    private static <T> List<T> initOrGetListOf(List<T> list) {
+        if (list == null) {
+            list = new LinkedList<T>();
+        }
+        return list;
+    }
+
+    private static int sizeOf(Set<QueryableEntry> result) {
         // In case of AndResultSet and OrResultSet calling size() may be very expensive so quicker estimatedSize() is used
         if (result instanceof AndResultSet) {
             return ((AndResultSet) result).estimatedSize();
@@ -206,8 +213,9 @@ public final class AndPredicate
     /**
      * Visitable predicates are treated as effectively immutable, therefore callers should not make any changes to
      * the array passed as argument after is has been set.
-     * @param predicates    the array of sub-predicates for this {@code And} operator. It is not safe to make any changes to
-     *                      this array after it has been set.
+     *
+     * @param predicates the array of sub-predicates for this {@code And} operator. It is not safe to make any changes to
+     *                   this array after it has been set.
      */
     @Override
     @SuppressFBWarnings("EI_EXPOSE_REP")
