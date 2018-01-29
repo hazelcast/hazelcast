@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.PartitioningStrategy;
@@ -122,6 +123,12 @@ public class DefaultNodeExtension implements NodeExtension {
         if (securityConfig != null && securityConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Security requires Hazelcast Enterprise Edition");
+            }
+        }
+        SymmetricEncryptionConfig symmetricEncryptionConfig = node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
+        if (symmetricEncryptionConfig != null && symmetricEncryptionConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Symmetric Encryption requires Hazelcast Enterprise Edition");
             }
         }
     }
