@@ -20,6 +20,7 @@ Fixes:
 - Endianness not taken into account consistently for serializer type IDs. [#12077]
 - Hazelcast client throws "AuthenticationException: Invalid credentials after owner member left". Clients should detect when a member is gone ungracefully. [#12038]
 - Query results should be converted to OBJECT in-memory format while creating the query-result-set, if the transaction is not originated from the client. [#12050]
+- IMap's aggregate, projection, localKeySet and executeOnEntries methods throws exception when PartitionPredicate is being used. [[#11962]]
 - There is a race condition in the client's Near Cache: "File is already being used by this Hazelcast instance". This was caused by the a problem with the synchronization between Near Cache creation and the destroy inside the Near Cache manager. [#11648]
 
 Behavioral Changes:
