@@ -42,7 +42,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "executorService",
                 "durableExecutorService",
                 "scheduledExecutorService",
-                "ringBuffer",
+                "ringbuffer",
                 "cardinalityEstimator",
                 "idGenerator",
                 "flakeIdGenerator",
@@ -51,7 +51,8 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "countDownLatch",
                 "semaphore",
                 "lock",
-        };
+                "reliableTopic",
+                };
         for (String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }
