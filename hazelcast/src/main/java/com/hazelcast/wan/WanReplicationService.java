@@ -22,6 +22,7 @@ import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.wan.impl.WanEventCounter;
 
 /**
  * This is the WAN replications service API core interface. The WanReplicationService needs to
@@ -111,4 +112,19 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * Returns current status of WAN sync operation
      */
     WanSyncState getWanSyncState();
+
+    /**
+     * Returns a counter of received and processed WAN replication events.
+     */
+    WanEventCounter getReceivedEventCounter(String serviceName);
+
+    /**
+     * Returns a counter of sent and processed WAN replication events.
+     */
+    WanEventCounter getSentEventCounter(String serviceName);
+
+    /**
+     * Removes the WAN event counters for the given {@code dataStructureName}.
+     */
+    void removeWanEventCounters(String serviceName, String dataStructureName);
 }

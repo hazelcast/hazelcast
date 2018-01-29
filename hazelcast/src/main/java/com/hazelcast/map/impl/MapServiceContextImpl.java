@@ -385,6 +385,8 @@ class MapServiceContextImpl implements MapServiceContext {
         if (mapContainer == null) {
             return;
         }
+
+        nodeEngine.getWanReplicationService().removeWanEventCounters(MapService.SERVICE_NAME, mapName);
         mapContainer.getMapStoreContext().stop();
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
         destroyPartitionsAndMapContainer(mapContainer);
