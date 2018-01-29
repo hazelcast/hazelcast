@@ -11,6 +11,13 @@ Enhancements:
 
 - Ping Failure Detector for Hazelcast Java Client: Ping Failure Detector provides a quicker and more deterministic detection of hardware and other lower level events. It has been available for Hazelcast members; now, it can also be used for Hazelcast Java clients. The related PR is [#12049]. Please see the Client Ping Failure Detector section.
 
+The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
+
+- Enhancements in the WAN Diagnostics: Introduced latency tracking for WAN endpoints and 
+counters for sent and received WAN events. [[#12615]](https://github.com/hazelcast/hazelcast/pull/12165)
+- Introduced a system property to allow overriding the configured serialization byte order for better testing. [[#12145]](https://github.com/hazelcast/hazelcast/issues/12145)
+- Performed updates for JCache 1.1 compatibility. [[#12014]](https://github.com/hazelcast/hazelcast/pull/12014)
+
 
 Fixes:
 
@@ -22,6 +29,8 @@ Fixes:
 - Query results should be converted to OBJECT in-memory format while creating the query-result-set, if the transaction is not originated from the client. [#12050]
 - IMap's aggregate, projection, localKeySet and executeOnEntries methods throws exception when PartitionPredicate is being used. [[#11962]]
 - There is a race condition in the client's Near Cache: "File is already being used by this Hazelcast instance". This was caused by the a problem with the synchronization between Near Cache creation and the destroy inside the Near Cache manager. [#11648]
+- The map screen of Management Center does not show throughput info for `TransactionalMap`s. [[#11640]](https://github.com/hazelcast/hazelcast/issues/11640)
+
 
 Behavioral Changes:
 
