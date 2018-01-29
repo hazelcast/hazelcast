@@ -175,7 +175,7 @@
                 </hz:ssl>
                 <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
                                        implementation="dummySocketInterceptor"/>
-                <hz:symmetric-encryption enabled="true"
+                <hz:symmetric-encryption enabled="false"
                                          algorithm="PBEWithMD5AndDES"
                                          salt="thesalt"
                                          password="thepass"
