@@ -20,13 +20,14 @@ import com.hazelcast.cache.BuiltInCacheMergePolicies;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * A provider for {@link com.hazelcast.cache.CacheMergePolicy} instances.
@@ -34,7 +35,6 @@ import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 public final class CacheMergePolicyProvider {
 
     private final ConcurrentMap<String, CacheMergePolicy> mergePolicyMap = new ConcurrentHashMap<String, CacheMergePolicy>();
-    private final NodeEngine nodeEngine;
 
     private final ConstructorFunction<String, CacheMergePolicy> policyConstructorFunction
             = new ConstructorFunction<String, CacheMergePolicy>() {
@@ -49,8 +49,12 @@ public final class CacheMergePolicyProvider {
         }
     };
 
+    private final NodeEngine nodeEngine;
+    private final SplitBrainMergePolicyProvider policyProvider;
+
     public CacheMergePolicyProvider(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.policyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         addOutOfBoxPolicies();
     }
 
@@ -64,10 +68,26 @@ public final class CacheMergePolicyProvider {
         }
     }
 
-    public CacheMergePolicy getMergePolicy(String className) {
+    /**
+     * Returns an instance of a merge policy by its classname.
+     * <p>
+     * First tries to resolve the classname as {@link com.hazelcast.spi.SplitBrainMergePolicy},
+     * then as {@link com.hazelcast.cache.CacheMergePolicy}.
+     * <p>
+     * If no merge policy matches an {@link InvalidConfigurationException} is thrown.
+     *
+     * @param className the classname of the given merge policy
+     * @return an instance of the merge policy class
+     * @throws InvalidConfigurationException if no matching merge policy class was found
+     */
+    public Object getMergePolicy(String className) {
         if (className == null) {
             throw new InvalidConfigurationException("Class name is mandatory!");
         }
-        return ConcurrencyUtil.getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
+        try {
+            return policyProvider.getMergePolicy(className);
+        } catch (InvalidConfigurationException e) {
+            return getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
+        }
     }
 }

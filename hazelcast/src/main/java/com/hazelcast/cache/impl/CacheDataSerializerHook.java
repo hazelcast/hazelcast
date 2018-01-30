@@ -41,11 +41,13 @@ import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetInvalidationMetaDataOperation;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheLegacyMergeOperation;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheMergeOperation;
+import com.hazelcast.cache.impl.operation.CacheMergeOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheNearCacheStateHolder;
 import com.hazelcast.cache.impl.operation.CachePutAllBackupOperation;
 import com.hazelcast.cache.impl.operation.CachePutAllOperation;
@@ -124,7 +126,7 @@ public final class CacheDataSerializerHook
     public static final short REMOVE_ALL_BACKUP = 35;
     public static final short REMOVE_ALL_FACTORY = 36;
     public static final short PUT_ALL = 37;
-    public static final short MERGE = 38;
+    public static final short LEGACY_MERGE = 38;
     public static final short INVALIDATION_MESSAGE = 39;
     public static final short BATCH_INVALIDATION_MESSAGE = 40;
     public static final short ENTRY_ITERATOR = 41;
@@ -152,7 +154,10 @@ public final class CacheDataSerializerHook
     public static final int CACHE_BROWSER_ENTRY_VIEW = 62;
     public static final int GET_CACHE_ENTRY_VIEW_PROCESSOR = 63;
 
-    private static final int LEN = GET_CACHE_ENTRY_VIEW_PROCESSOR + 1;
+    public static final int MERGE_FACTORY = 64;
+    public static final int MERGE = 65;
+
+    private static final int LEN = MERGE + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -348,9 +353,9 @@ public final class CacheDataSerializerHook
                 return new CachePutAllOperation();
             }
         };
-        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[LEGACY_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheMergeOperation();
+                return new CacheLegacyMergeOperation();
             }
         };
         constructors[ENTRY_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -472,6 +477,20 @@ public final class CacheDataSerializerHook
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new GetCacheEntryRequest.GetCacheEntryViewEntryProcessor();
+                    }
+                };
+        constructors[MERGE_FACTORY] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new CacheMergeOperationFactory();
+                    }
+                };
+        constructors[MERGE] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new CacheMergeOperation();
                     }
                 };
 

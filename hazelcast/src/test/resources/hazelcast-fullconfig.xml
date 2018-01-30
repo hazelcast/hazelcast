@@ -592,11 +592,11 @@
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
             </filters>
         </wan-replication-ref>
-        <quorum-ref>dummyQuorum</quorum-ref>
+        <quorum-ref>DummyQuorum</quorum-ref>
+        <merge-policy>DummyMergePolicy</merge-policy>
         <partition-lost-listeners>
             <partition-lost-listener>DummyListener</partition-lost-listener>
         </partition-lost-listeners>
-        <merge-policy>DummyPolicy</merge-policy>
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>

@@ -104,7 +104,7 @@ public class CacheMergePolicyProviderTest extends HazelcastTestSupport {
 
     private void assertMergePolicyCorrectlyInitialised(String mergePolicyName,
                                                        Class<? extends CacheMergePolicy> expectedMergePolicyClass) {
-        CacheMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
+        Object mergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
 
         assertNotNull(mergePolicy);
         assertEquals(expectedMergePolicyClass, mergePolicy.getClass());
