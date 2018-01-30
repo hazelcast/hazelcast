@@ -18,7 +18,7 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <hadoop.version>2.3.0</hadoop.version>
+        <hadoop.version>2.8.3</hadoop.version>
     </properties>
 
     <dependencies>

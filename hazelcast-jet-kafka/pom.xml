@@ -19,7 +19,7 @@
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <scala.version>2.11</scala.version>
-        <kafka.version>0.11.0.0</kafka.version>
+        <kafka.version>1.0.0</kafka.version>
     </properties>
 
     <dependencies>

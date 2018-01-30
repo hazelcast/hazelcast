@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.core.JetTestSupport;
 import kafka.admin.AdminUtils;
+import kafka.admin.BrokerMetadata;
+import kafka.common.TopicAndPartition;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.MockTime;
@@ -35,15 +37,25 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.common.utils.Time;
 import org.junit.After;
+import scala.Option;
+import scala.collection.Seq;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.Util.entry;
+import static java.util.Collections.singleton;
 import static kafka.admin.RackAwareMode.Disabled$.MODULE$;
+import static scala.collection.JavaConversions.asScalaSet;
+import static scala.collection.JavaConversions.mapAsJavaMap;
+import static scala.collection.JavaConversions.mapAsScalaMap;
 
 public class KafkaTestSupport extends JetTestSupport {
 
@@ -111,8 +123,22 @@ public class KafkaTestSupport extends JetTestSupport {
     }
 
     public void setPartitionCount(String topicId, int numPartitions) {
+        Seq<String> topicSeq = asScalaSet(singleton(topicId)).toSeq();
+        Map<TopicAndPartition, Seq<Object>> replicaAssignments = mapAsJavaMap(
+                zkUtils.getReplicaAssignmentForTopics(topicSeq)
+        );
+        Map<Object, Seq<Object>> existingAssignment =
+                replicaAssignments.entrySet().stream()
+                                  .map(e -> entry(e.getKey().partition(), e.getValue()))
+                                  .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+
+        Seq<BrokerMetadata> brokerMetadatas =
+                AdminUtils.getBrokerMetadatas(zkUtils, null, Option.apply(zkUtils.getSortedBrokerList()));
         // doesn't actually add the given number to existing partitions, just sets to it
-        AdminUtils.addPartitions(zkUtils, topicId, numPartitions, "", true, null);
+        AdminUtils.addPartitions(
+                zkUtils, topicId, mapAsScalaMap(existingAssignment), brokerMetadatas, numPartitions, Option.empty(),
+                false
+        );
     }
 
     Future<RecordMetadata> produce(String topic, Integer key, String value) {
