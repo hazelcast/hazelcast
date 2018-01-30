@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Hazelcast, Inc..
+ * Copyright 2017-2018 Hazelcast, Inc..
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,13 @@ public interface TenantControl extends Serializable {
      *
      * @return new TenantControl instance with the saved state of the current tenant
      */
-    TenantControl saveCurrentTenant(DestroyEvent event);
+    TenantControl saveCurrentTenant(DestroyEventContext event);
 
     /**
      * Establish this tenant's thread-local context
      *
      * @param createRequestScope whether to create CDI request scope for this context
-     * @return handle to be able to close the tenant's scope.  Can be used with
-     * try-with-resources or Lombok's @Cleanup for automatic resource management
+     * @return handle to be able to close the tenant's scope.
      */
     Closeable setTenant(boolean createRequestScope);
 
@@ -66,7 +65,7 @@ public interface TenantControl extends Serializable {
     /**
      * Hook to decouple Hazelcast object from the tenant
      */
-    interface DestroyEvent extends Serializable {
+    interface DestroyEventContext extends Serializable {
         /**
          * called to decouple Hazelcast object from the tenant
          *
@@ -83,10 +82,10 @@ public interface TenantControl extends Serializable {
     }
 
     /**
-     * AutoCloseable to try-with-resources
+     * Cannot use AutoCloseable due to JDK 6 compatibility
      * Used to remove IOException checked exception, because there is no need
      */
-    interface Closeable extends AutoCloseable {
+    interface Closeable extends java.io.Closeable {
         /**
          * Remove IOException so it doesn't have to be caught
          */
@@ -100,7 +99,7 @@ public interface TenantControl extends Serializable {
      */
     class NoTenantControl implements TenantControl {
         @Override
-        public TenantControl saveCurrentTenant(DestroyEvent event) {
+        public TenantControl saveCurrentTenant(DestroyEventContext event) {
             return this;
         }
 

@@ -453,7 +453,7 @@ public abstract class AbstractHazelcastCacheManager
      * If the tenant is ever re-deployed, it will get the new configuration
      * from the remote node, or the cache will be re-created if it's not replicated
      */
-    private static class DestroyEventImpl implements TenantControl.DestroyEvent {
+    private static class DestroyEventImpl implements TenantControl.DestroyEventContext {
         private final String cacheName;
 
         public DestroyEventImpl(String cacheName) {

@@ -202,7 +202,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
                 + ", mapStore=" + mapStore + ", mapLoader=" + mapLoader + '}';
     }
 
-    private static class DestroyEventImpl implements TenantControl.DestroyEvent {
+    private static class DestroyEventImpl implements TenantControl.DestroyEventContext {
         public DestroyEventImpl(String mapName) {
             this.mapName = mapName;
         }
