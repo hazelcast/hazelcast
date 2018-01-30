@@ -49,6 +49,7 @@ enum XmlElements {
     COUNT_DOWN_LATCH("count-down-latch", true),
     LISTENERS("listeners", false),
     SERIALIZATION("serialization", false),
+    TENANT_CONTROL("tenant-control", false),
     SERVICES("services", false),
     SECURITY("security", false),
     MEMBER_ATTRIBUTES("member-attributes", false),

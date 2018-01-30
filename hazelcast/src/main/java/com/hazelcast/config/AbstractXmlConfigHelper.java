@@ -510,6 +510,18 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
+    protected TenantControlConfig parseTenantControl(final Node node) {
+        TenantControlConfig tenantControlConfig = new TenantControlConfig();
+        for (Node child : childElements(node)) {
+            final String name = cleanNodeName(child);
+            if ("class-name".equals(name)) {
+                String value = getTextContent(child);
+                tenantControlConfig.setClassName(value);
+            }
+        }
+        return tenantControlConfig;
+    }
+
     @SuppressFBWarnings("DM_BOXED_PRIMITIVE_FOR_PARSING")
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
         final NamedNodeMap atts = node.getAttributes();

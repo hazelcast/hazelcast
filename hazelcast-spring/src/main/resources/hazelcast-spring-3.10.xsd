@@ -1618,6 +1618,7 @@
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="tenant-control" type="tenant-control" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="member-attributes" minOccurs="0" maxOccurs="1">
@@ -1766,6 +1767,15 @@
     <xs:complexType name="serializer">
         <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="type-class" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="tenant-control">
+        <xs:attribute name="class-name" type="xs:string" use="optional"/>
+        <xs:annotation>
+            <xs:documentation>
+                The name of the com.hazelcast.config.TenantControl implementation class.
+            </xs:documentation>
+        </xs:annotation>
     </xs:complexType>
 
     <xs:element name="hazelcast">

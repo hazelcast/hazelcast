@@ -143,7 +143,7 @@ public class Config {
 
     private SerializationConfig serializationConfig = new SerializationConfig();
 
-    private TenantControl tenantControl = new TenantControl.NoTenantControl();
+    private TenantControlConfig tenantControlConfig = new TenantControlConfig();
 
     private ManagedContext managedContext;
 
@@ -3391,12 +3391,12 @@ public class Config {
         return this;
     }
 
-    public TenantControl getTenantControl() {
-        return tenantControl;
+    public TenantControlConfig getTenantControlConfig() {
+        return tenantControlConfig;
     }
 
-    public Config setTenantControl(TenantControl tenantControl) {
-        this.tenantControl = tenantControl;
+    public Config setTenantControlConfig(TenantControlConfig tenantControlConfig) {
+        this.tenantControlConfig = tenantControlConfig;
         return this;
     }
 

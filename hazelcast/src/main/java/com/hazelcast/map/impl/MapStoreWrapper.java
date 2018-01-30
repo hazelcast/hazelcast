@@ -82,7 +82,8 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     @Override
     public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
-        tenantControl = hazelcastInstance.getConfig().getTenantControl().saveCurrentTenant(new DestroyEventImpl(mapName));
+        tenantControl = hazelcastInstance.getConfig().getTenantControlConfig().getImplementation()
+                .saveCurrentTenant(new DestroyEventImpl(mapName));
         if (impl instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);
         }

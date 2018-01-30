@@ -141,6 +141,7 @@ public class ConfigXmlGenerator {
         cardinalityEstimatorXmlGenerator(gen, config);
         listenerXmlGenerator(gen, config);
         serializationXmlGenerator(gen, config);
+        tenantControlXmlGenerator(gen, config);
         reliableTopicXmlGenerator(gen, config);
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
@@ -303,6 +304,15 @@ public class ConfigXmlGenerator {
         }
         gen.node("check-class-def-errors", c.isCheckClassDefErrors())
                 .close();
+    }
+
+    private void tenantControlXmlGenerator(XmlGenerator gen, Config config) {
+        TenantControlConfig c = config.getTenantControlConfig();
+        if (c == null || c.getImplementation() instanceof TenantControl.NoTenantControl) {
+            return;
+        }
+        gen.open("tenant-control").node("class-name", c.getClassName());
+        gen.close();
     }
 
     private static String classNameOrClass(String className, Class clazz) {

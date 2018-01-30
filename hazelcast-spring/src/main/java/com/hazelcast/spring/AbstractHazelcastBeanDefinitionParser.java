@@ -27,6 +27,7 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.TenantControlConfig;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;
@@ -309,6 +310,17 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
             }
             configBuilder.addPropertyValue("serializationConfig", beanDefinition);
+        }
+
+        protected void handleTenantControl(Node node) {
+            BeanDefinitionBuilder tenantControlBuilder = createBeanBuilder(TenantControlConfig.class);
+            AbstractBeanDefinition beanDefinition = tenantControlBuilder.getBeanDefinition();
+            fillAttributeValues(node, tenantControlBuilder);
+            Node classNameNode = node.getAttributes().getNamedItem("class-name");
+            String className = classNameNode != null? getTextContent(classNameNode) : null;
+            if(className != null) {
+                tenantControlBuilder.addPropertyValue("className", beanDefinition);
+            }
         }
 
         protected void handleSocketInterceptorConfig(Node node, BeanDefinitionBuilder networkConfigBuilder) {

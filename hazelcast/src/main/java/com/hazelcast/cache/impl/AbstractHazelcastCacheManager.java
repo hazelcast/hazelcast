@@ -406,8 +406,8 @@ public abstract class AbstractHazelcastCacheManager
         cacheConfig.setUriString(getURI().toString());
         // associate cache config with the current thread's tenant
         // and add hook so when the tenant is destroyed, so is the cache config
-        cacheConfig.setTenantControl(hazelcastInstance.getConfig().getTenantControl()
-                .saveCurrentTenant(new DestroyEventImpl(cacheName)));
+        cacheConfig.setTenantControl(hazelcastInstance.getConfig().getTenantControlConfig()
+                .getImplementation().saveCurrentTenant(new DestroyEventImpl(cacheName)));
         return cacheConfig;
     }
 

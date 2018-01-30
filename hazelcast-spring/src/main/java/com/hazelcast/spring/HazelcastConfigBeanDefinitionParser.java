@@ -301,6 +301,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handlePartitionGroup(node);
                     } else if ("serialization".equals(nodeName)) {
                         handleSerialization(node);
+                    } else if ("tenant-control".equals(nodeName)) {
+                        handleTenantControl(node);
                     } else if ("native-memory".equals(nodeName)) {
                         handleNativeMemory(node);
                     } else if ("security".equals(nodeName)) {

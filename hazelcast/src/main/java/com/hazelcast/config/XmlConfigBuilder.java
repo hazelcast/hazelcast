@@ -102,6 +102,7 @@ import static com.hazelcast.config.XmlElements.SEMAPHORE;
 import static com.hazelcast.config.XmlElements.SERIALIZATION;
 import static com.hazelcast.config.XmlElements.SERVICES;
 import static com.hazelcast.config.XmlElements.SET;
+import static com.hazelcast.config.XmlElements.TENANT_CONTROL;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
@@ -371,6 +372,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handlePartitionGroup(node);
         } else if (SERIALIZATION.isEqual(nodeName)) {
             handleSerialization(node);
+        } else if (TENANT_CONTROL.isEqual(nodeName)) {
+            handleTenantControl(node);
         } else if (SECURITY.isEqual(nodeName)) {
             handleSecurity(node);
         } else if (MEMBER_ATTRIBUTES.isEqual(nodeName)) {
@@ -2280,6 +2283,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleSerialization(Node node) {
         SerializationConfig serializationConfig = parseSerialization(node);
         config.setSerializationConfig(serializationConfig);
+    }
+
+    private void handleTenantControl(Node node) {
+        TenantControlConfig tenantControlConfig = parseTenantControl(node);
+        config.setTenantControlConfig(tenantControlConfig);
     }
 
     private void handleManagementCenterConfig(Node node) {
