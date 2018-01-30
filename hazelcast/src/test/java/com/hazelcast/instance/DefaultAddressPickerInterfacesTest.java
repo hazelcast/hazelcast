@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,21 @@
 
 package com.hazelcast.instance;
 
-import static com.hazelcast.instance.DefaultAddressPickerInterfacesTest.NetworkInterfaceOptions.builder;
-import static com.hazelcast.instance.TestUtil.setSystemProperty;
-import static com.hazelcast.test.OverridePropertyRule.set;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
+import com.hazelcast.config.Config;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -40,22 +44,17 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.instance.DefaultAddressPickerInterfacesTest.NetworkInterfaceOptions.builder;
+import static com.hazelcast.instance.TestUtil.setSystemProperty;
+import static com.hazelcast.test.OverridePropertyRule.set;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * This class contains PowerMock driven tests which emulate different NetworkInterfaces configurations. The tests check if the
