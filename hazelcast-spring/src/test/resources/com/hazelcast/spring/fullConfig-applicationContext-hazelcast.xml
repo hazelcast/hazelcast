@@ -277,6 +277,7 @@
                            time-to-live-seconds="20">
                 <hz:ringbuffer-store enabled="true" class-name="com.hazelcast.spring.DummyRingbufferStore"/>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:merge-policy batch-size="2342">PassThroughMergePolicy</hz:merge-policy>
             </hz:ringbuffer>
 
             <hz:ringbuffer name="testRingbuffer2">

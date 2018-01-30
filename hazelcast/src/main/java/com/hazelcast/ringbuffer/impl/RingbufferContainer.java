@@ -29,6 +29,9 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -47,9 +50,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * The expirationPolicy contains the expiration policy of the items. If a time to live is set, the policy is created, otherwise
  * it is null to save space.
+ *
+ * @param <T> the type of items in the ringbuffer container
+ * @param <E> the type of items in the ringbuffer
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notifier, Versioned {
+public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, Notifier, Versioned,
+        SplitBrainAwareDataContainer<Long, E, Long> {
 
     private static final long TTL_DISABLED = 0;
 
@@ -70,7 +77,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      * <li>{@link InMemoryFormat#BINARY} or {@link InMemoryFormat#NATIVE} - the type is {@link Data}</li>
      * </ul>
      */
-    private Ringbuffer ringbuffer;
+    private Ringbuffer<E> ringbuffer;
 
     /**
      * For purposes of {@link IdentifiedDataSerializable} instance creation.
@@ -107,7 +114,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         this(namespace, partitionId);
 
         this.inMemoryFormat = config.getInMemoryFormat();
-        this.ringbuffer = new ArrayRingbuffer(config.getCapacity());
+        this.ringbuffer = new ArrayRingbuffer<E>(config.getCapacity());
 
         final long ttlMs = SECONDS.toMillis(config.getTimeToLiveSeconds());
         if (ttlMs != TTL_DISABLED) {
@@ -130,6 +137,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
                      ClassLoader configClassLoader) {
         this.config = config;
         this.serializationService = serializationService;
+        ringbuffer.setSerializationService(serializationService);
         initRingbufferStore(config, serializationService, configClassLoader);
     }
 
@@ -304,7 +312,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      */
     @SuppressWarnings("unchecked")
     public void set(long sequenceId, T item) {
-        final Object rbItem = convertToRingbufferFormat(item);
+        final E rbItem = convertToRingbufferFormat(item);
 
         // first we write the dataItem in the ring.
         ringbuffer.set(sequenceId, rbItem);
@@ -449,7 +457,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
 
     @SuppressWarnings("unchecked")
     private long addInternal(T item) {
-        final Object rbItem = convertToRingbufferFormat(item);
+        final E rbItem = convertToRingbufferFormat(item);
 
         // first we write the dataItem in the ring.
         final long tailSequence = ringbuffer.add(rbItem);
@@ -470,10 +478,10 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      * @throws HazelcastSerializationException if the ring buffer is configured to keep items
      *                                         in object format and the item could not be deserialized
      */
-    private Object convertToRingbufferFormat(Object item) {
+    private E convertToRingbufferFormat(Object item) {
         return inMemoryFormat == OBJECT
-                ? serializationService.toObject(item)
-                : serializationService.toData(item);
+                ? (E) serializationService.toObject(item)
+                : (E) serializationService.toData(item);
     }
 
     /**
@@ -556,6 +564,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         ringbuffer = new ArrayRingbuffer(capacity);
         ringbuffer.setTailSequence(tailSequence);
         ringbuffer.setHeadSequence(headSequence);
+        ringbuffer.setSerializationService(serializationService);
 
         boolean ttlEnabled = ttlMs != TTL_DISABLED;
         if (ttlEnabled) {
@@ -565,9 +574,9 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         long now = System.currentTimeMillis();
         for (long seq = headSequence; seq <= tailSequence; seq++) {
             if (inMemoryFormat == BINARY) {
-                ringbuffer.set(seq, in.readData());
+                ringbuffer.set(seq, (E) in.readData());
             } else {
-                ringbuffer.set(seq, in.readObject());
+                ringbuffer.set(seq, (E) in.readObject());
             }
 
             if (ttlEnabled) {
@@ -581,7 +590,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         return versionAware.getVersion().isGreaterOrEqual(V3_9);
     }
 
-    Ringbuffer getRingbuffer() {
+    Ringbuffer<E> getRingbuffer() {
         return ringbuffer;
     }
 
@@ -611,5 +620,10 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
     @Override
     public WaitNotifyKey getNotifiedKey() {
         return emptyRingWaitNotifyKey;
+    }
+
+    @Override
+    public Long merge(SplitBrainMergeEntryView<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        return ringbuffer.merge(mergingEntry, mergePolicy, remainingCapacity());
     }
 }

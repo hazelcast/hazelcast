@@ -31,6 +31,7 @@ import java.io.IOException;
  * the event type.
  */
 public class InternalEventJournalCacheEvent implements IdentifiedDataSerializable {
+
     protected Data dataKey;
     protected Data dataNewValue;
     protected Data dataOldValue;

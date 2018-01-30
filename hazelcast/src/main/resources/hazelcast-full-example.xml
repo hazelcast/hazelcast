@@ -1618,6 +1618,7 @@ https://hazelcast.org/documentation/.
             </properties>
         </ringbuffer-store>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
     <!--

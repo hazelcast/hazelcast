@@ -773,6 +773,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleRingbufferStoreConfig(childNode, ringbufferConfigBuilder);
                 } else if ("quorum-ref".equals(nodeName)) {
                     ringbufferConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, ringbufferConfigBuilder);
                 }
             }
             ringbufferManagedMap.put(getAttribute(node, "name"), ringbufferConfigBuilder.getBeanDefinition());
