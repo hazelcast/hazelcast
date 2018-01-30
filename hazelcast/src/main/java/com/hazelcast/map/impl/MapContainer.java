@@ -192,7 +192,7 @@ public class MapContainer {
         String wanReplicationRefName = wanReplicationRef.getName();
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
-        wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+        wanMergePolicy = mapServiceContext.getMergePolicyProvider().getLegacyMergePolicy(wanReplicationRef.getMergePolicy());
     }
 
     private PartitioningStrategy createPartitioningStrategy() {

@@ -689,6 +689,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
+                                    <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="partition-lost-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>List of partition lost listeners</xs:documentation>
@@ -878,38 +879,6 @@
                                         <xs:documentation>
                                             Valid values are: NONE (no eviction), LRU (Least Recently Used), LFU
                                             (Least Frequently Used). NONE is the default.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="merge-policy" use="optional" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            While recovering from split-brain (network partitioning), map entries in
-                                            the small cluster will merge into the bigger cluster based on the policy set
-                                            here. When an entry merge into the cluster, there might an existing entry
-                                            with the same key already. Values of these entries might be different for
-                                            that same key. Which value should be set for the key? Conflict is resolved
-                                            by the policy set here.
-                                            <p>
-                                                <br/>
-                                                There are built-in merge policies such as:
-                                                <br/>
-                                                com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if
-                                                there is no existing entry for the key.
-                                                <br/>
-                                                com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added
-                                                if
-                                                the merging entry doesn't exist in the cluster.
-                                                <br/>
-                                                com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher
-                                                hits wins.
-                                                <br/>
-                                                com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the
-                                                latest
-                                                update wins.
-                                                <br/>
-                                                Default policy is 'com.hazelcast.map.merge.PutIfAbsentMapMergePolicy'
-                                            </p>
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>

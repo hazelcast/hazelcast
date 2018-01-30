@@ -983,6 +983,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     mapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, mapConfigBuilder);
                 } else if ("query-caches".equals(nodeName)) {
                     ManagedList queryCaches = getQueryCaches(childNode);
                     mapConfigBuilder.addPropertyValue("queryCacheConfigs", queryCaches);

@@ -292,7 +292,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
         assertTrue(testMapConfig.getHotRestartConfig().isFsync());
         assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
-        assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
         for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
@@ -315,6 +314,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
             }
         }
         assertEquals("my-quorum", testMapConfig.getQuorumName());
+        MergePolicyConfig mergePolicyConfig = testMapConfig.getMergePolicyConfig();
+        assertNotNull(mergePolicyConfig);
+        assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
+        assertEquals(2342, mergePolicyConfig.getBatchSize());
 
         // test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
@@ -373,7 +376,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
-        assertEquals("LATEST_UPDATE", simpleMapConfig.getMergePolicy());
 
         // test that the simpleMapConfig does NOT have a nearCacheConfig
         assertNull(simpleMapConfig.getNearCacheConfig());

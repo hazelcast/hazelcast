@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.util.Iterator;
@@ -38,7 +39,7 @@ import java.util.Set;
 /**
  * Defines a record-store.
  */
-public interface RecordStore<R extends Record> {
+public interface RecordStore<R extends Record> extends SplitBrainAwareDataContainer<Data, Object, Boolean> {
 
     /**
      * Default TTL value of a record.
@@ -119,10 +120,9 @@ public interface RecordStore<R extends Record> {
 
     Object replace(Data dataKey, Object update);
 
-
     /**
      * Sets the value to the given updated value
-     * if {@link com.hazelcast.map.impl.record.RecordFactory#isEquals} comparison
+     * if {@link com.hazelcast.map.impl.record.RecordComparator#isEqual} comparison
      * of current value and expected value is {@code true}.
      *
      * @param dataKey key which's value is requested to be replaced.

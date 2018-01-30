@@ -19,15 +19,12 @@ package com.hazelcast.map.merge;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.HigherHitsMergePolicy;
-import com.hazelcast.spi.merge.LatestAccessMergePolicy;
-import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
-import com.hazelcast.spi.merge.PassThroughMergePolicy;
-import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -55,29 +52,27 @@ import static org.junit.Assert.assertTrue;
  * <p>
  * Most merge policies are tested with {@link InMemoryFormat#BINARY} only, since they don't check the value.
  * <p>
- * The {@link MergeIntegerValuesMergePolicy} is tested with both in-memory formats, since it's using the value to merge.
+ * The {@link CustomLegacyMergePolicy} is tested with both in-memory formats, since it's using the value to merge.
  * <p>
- * The {@link DiscardMergePolicy}, {@link PassThroughMergePolicy} and {@link PutIfAbsentMergePolicy} are also
+ * The {@link IgnoreMergingEntryMapMergePolicy}, {@link PassThroughMergePolicy} and {@link PutIfAbsentMapMergePolicy} are also
  * tested with a data structure, which is only created in the smaller cluster.
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-@SuppressWarnings("WeakerAccess")
-public class MapSplitBrainTest extends SplitBrainTestSupport {
+public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
 
     @Parameters(name = "format:{0}, mergePolicy:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {BINARY, DiscardMergePolicy.class},
-                {BINARY, HigherHitsMergePolicy.class},
-                {BINARY, LatestAccessMergePolicy.class},
-                {BINARY, LatestUpdateMergePolicy.class},
+                {BINARY, IgnoreMergingEntryMapMergePolicy.class},
+                {BINARY, HigherHitsMapMergePolicy.class},
+                {BINARY, LatestUpdateMapMergePolicy.class},
                 {BINARY, PassThroughMergePolicy.class},
-                {BINARY, PutIfAbsentMergePolicy.class},
+                {BINARY, PutIfAbsentMapMergePolicy.class},
 
-                {BINARY, MergeIntegerValuesMergePolicy.class},
-                {OBJECT, MergeIntegerValuesMergePolicy.class},
+                {BINARY, CustomLegacyMergePolicy.class},
+                {OBJECT, CustomLegacyMergePolicy.class},
         });
     }
 
@@ -85,11 +80,10 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     public InMemoryFormat inMemoryFormat;
 
     @Parameter(value = 1)
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public Class<? extends MapMergePolicy> mergePolicyClass;
 
-    protected String mapNameA = randomMapName("mapA-");
-    protected String mapNameB = randomMapName("mapB-");
-
+    private String mapNameA = randomMapName("mapA-");
+    private String mapNameB = randomMapName("mapB-");
     private IMap<Object, Object> mapA1;
     private IMap<Object, Object> mapA2;
     private IMap<Object, Object> mapB1;
@@ -109,14 +103,12 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
                 .setInMemoryFormat(inMemoryFormat)
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
-                .setAsyncBackupCount(0)
-                .setStatisticsEnabled(true);
+                .setAsyncBackupCount(0);
         config.getMapConfig(mapNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
-                .setAsyncBackupCount(0)
-                .setStatisticsEnabled(true);
+                .setAsyncBackupCount(0);
         return config;
     }
 
@@ -139,25 +131,22 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         mapA2 = secondBrain[0].getMap(mapNameA);
         mapB2 = secondBrain[0].getMap(mapNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClass == IgnoreMergingEntryMapMergePolicy.class) {
             afterSplitDiscardMergePolicy();
         }
-        if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
             afterSplitHigherHitsMergePolicy();
         }
-        if (mergePolicyClass == LatestAccessMergePolicy.class) {
-            afterSplitLatestAccessMergePolicy();
-        }
-        if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
             afterSplitLatestUpdateMergePolicy();
         }
         if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterSplitPassThroughMergePolicy();
         }
-        if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
         }
-        if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        if (mergePolicyClass == CustomLegacyMergePolicy.class) {
             afterSplitCustomMergePolicy();
         }
     }
@@ -172,25 +161,22 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         backupMapA = getBackupMap(instances, mapNameA);
         backupMapB = getBackupMap(instances, mapNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
+        if (mergePolicyClass == IgnoreMergingEntryMapMergePolicy.class) {
             afterMergeDiscardMergePolicy();
         }
-        if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
             afterMergeHigherHitsMergePolicy();
         }
-        if (mergePolicyClass == LatestAccessMergePolicy.class) {
-            afterMergeLatestAccessMergePolicy();
-        }
-        if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
             afterMergeLatestUpdateMergePolicy();
         }
         if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterMergePassThroughMergePolicy();
         }
-        if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
         }
-        if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        if (mergePolicyClass == CustomLegacyMergePolicy.class) {
             afterMergeCustomMergePolicy();
         }
     }
@@ -250,44 +236,6 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         assertEquals("higherHitsValue2", mapA1.get("key2"));
         assertEquals("higherHitsValue2", mapA2.get("key2"));
         assertEquals("higherHitsValue2", backupMapA.get("key2"));
-
-        assertEquals(2, mapA1.size());
-        assertEquals(2, mapA2.size());
-        assertEquals(2, backupMapA.size());
-    }
-
-    private void afterSplitLatestAccessMergePolicy() {
-        mapA1.put("key1", "value1");
-        // access to record
-        assertEquals("value1", mapA1.get("key1"));
-
-        // prevent updating at the same time
-        sleepAtLeastMillis(100);
-
-        mapA2.put("key1", "LatestAccessedValue1");
-        // access to record
-        assertEquals("LatestAccessedValue1", mapA2.get("key1"));
-
-        mapA2.put("key2", "value2");
-        // access to record
-        assertEquals("value2", mapA2.get("key2"));
-
-        // prevent updating at the same time
-        sleepAtLeastMillis(100);
-
-        mapA1.put("key2", "LatestAccessedValue2");
-        // access to record
-        assertEquals("LatestAccessedValue2", mapA1.get("key2"));
-    }
-
-    private void afterMergeLatestAccessMergePolicy() {
-        assertEquals("LatestAccessedValue1", mapA1.get("key1"));
-        assertEquals("LatestAccessedValue1", mapA2.get("key1"));
-        assertEquals("LatestAccessedValue1", backupMapA.get("key1"));
-
-        assertEquals("LatestAccessedValue2", mapA1.get("key2"));
-        assertEquals("LatestAccessedValue2", mapA2.get("key2"));
-        assertEquals("LatestAccessedValue2", backupMapA.get("key2"));
 
         assertEquals(2, mapA1.size());
         assertEquals(2, mapA2.size());
@@ -398,5 +346,24 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(1, mapA1.size());
         assertEquals(1, mapA2.size());
         assertEquals(1, backupMapA.size());
+    }
+
+    private static class CustomLegacyMergePolicy implements MapMergePolicy, DataSerializable {
+
+        @Override
+        public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
+            if (mergingEntry.getValue() instanceof Integer) {
+                return mergingEntry.getValue();
+            }
+            return null;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
     }
 }

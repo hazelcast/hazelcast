@@ -201,7 +201,7 @@
             com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
             com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
 
         <!--
            Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.

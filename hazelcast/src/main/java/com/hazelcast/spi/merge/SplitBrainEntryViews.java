@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -82,6 +83,34 @@ public final class SplitBrainEntryViews {
                 .setLastAccessTime(container.getLastAccessTime())
                 .setLastUpdateTime(container.getLastUpdateTime())
                 .setHits(hits);
+    }
+
+    public static SplitBrainMergeEntryView<Data, Data> createSplitBrainMergeEntryView(Record record, Data dataValue) {
+        return new SimpleSplitBrainEntryView<Data, Data>()
+                .setKey(record.getKey())
+                .setValue(dataValue)
+                .setCreationTime(record.getCreationTime())
+                .setExpirationTime(record.getExpirationTime())
+                .setHits(record.getHits())
+                .setLastAccessTime(record.getLastAccessTime())
+                .setLastStoredTime(record.getLastStoredTime())
+                .setLastUpdateTime(record.getLastUpdateTime())
+                .setVersion(record.getVersion())
+                .setTtl(record.getTtl());
+    }
+
+    public static SplitBrainMergeEntryView<Data, Object> createSplitBrainMergeEntryView(Record record) {
+        return new SimpleSplitBrainEntryView<Data, Object>()
+                .setKey(record.getKey())
+                .setValue(record.getValue())
+                .setCreationTime(record.getCreationTime())
+                .setExpirationTime(record.getExpirationTime())
+                .setHits(record.getHits())
+                .setLastAccessTime(record.getLastAccessTime())
+                .setLastStoredTime(record.getLastStoredTime())
+                .setLastUpdateTime(record.getLastUpdateTime())
+                .setVersion(record.getVersion())
+                .setTtl(record.getTtl());
     }
 
     public static <R extends CacheRecord> SplitBrainMergeEntryView<Data, Data> createSplitBrainMergeEntryView(Data key,

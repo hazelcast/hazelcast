@@ -24,6 +24,8 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 
 import java.util.List;
 import java.util.Set;
@@ -147,5 +149,8 @@ public interface MapOperationProvider {
     OperationFactory createMapSizeOperationFactory(String name);
 
     OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries);
-}
 
+    OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                 List<SplitBrainMergeEntryView<Data, Data>>[] mergeEntries,
+                                                 SplitBrainMergePolicy policy);
+}

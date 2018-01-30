@@ -910,13 +910,6 @@ https://hazelcast.org/documentation/.
             <wan-replication> element. See the <wan-replication> element above.
 
         It has the following sub-elements:
-        - <merge-policy>:
-            Policy to resolve conflicts that are occurred when target cluster already has the replicated entry key.
-            Available policies are as follows.
-            * com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
-            * com.hazelcast.map.merge.HigherHitsMapMergePolicy
-            * com.hazelcast.map.merge.PassThroughMergePolicy
-            * com.hazelcast.map.merge.LatestUpdateMapMergePolicy
         - <filters>:
             Filters to intercept WAN replication events before they are placed to WAN event replication
             queues by providing a filtering API. Just implement Hazelcast's MapWanEventFilter interface
@@ -957,7 +950,7 @@ https://hazelcast.org/documentation/.
         <max-size policy="PER_NODE">0</max-size>
         <eviction-percentage>25</eviction-percentage>
         <min-eviction-check-millis>100</min-eviction-check-millis>
-        <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <read-backup-data>false</read-backup-data>
         <hot-restart enabled="false">
             <fsync>false</fsync>
