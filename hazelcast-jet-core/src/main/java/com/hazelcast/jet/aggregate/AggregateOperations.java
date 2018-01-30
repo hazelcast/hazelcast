@@ -754,13 +754,15 @@ public final class AggregateOperations {
             @Nonnull DistributedBinaryOperator<A> combineAccValuesFn,
             @Nullable DistributedBinaryOperator<A> deductAccValueFn
     ) {
+        // workaround for spotbugs issue: https://github.com/spotbugs/spotbugs/issues/552
+        DistributedBinaryOperator<A> deductFn = deductAccValueFn;
         return AggregateOperation
                 .withCreate(() -> new MutableReference<>(emptyAccValue))
                 .andAccumulate((MutableReference<A> a, T t) ->
                         a.set(combineAccValuesFn.apply(a.get(), toAccValueFn.apply(t))))
                 .andCombine((a, b) -> a.set(combineAccValuesFn.apply(a.get(), b.get())))
                 .andDeduct(deductAccValueFn != null
-                        ? (a, b) -> a.set(deductAccValueFn.apply(a.get(), b.get()))
+                        ? (a, b) -> a.set(deductFn.apply(a.get(), b.get()))
                         : null)
                 .andFinish(MutableReference::get);
     }
