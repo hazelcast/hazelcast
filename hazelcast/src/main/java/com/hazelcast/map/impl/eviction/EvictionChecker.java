@@ -52,8 +52,8 @@ import static java.lang.String.format;
  */
 public class EvictionChecker {
 
-    private static final int MIN_SANE_PER_PARTITION_SIZE = 2;
     protected static final double ONE_HUNDRED_PERCENT = 100D;
+    private static final int MIN_SANE_PER_PARTITION_SIZE = 2;
 
     protected final ILogger logger;
     protected final MapServiceContext mapServiceContext;
@@ -125,9 +125,9 @@ public class EvictionChecker {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
         double perNodeMaxRecordStoreSize = (1D * configuredMaxSize * memberCount / partitionCount);
-        if(perNodeMaxRecordStoreSize < 1) {
+        if (perNodeMaxRecordStoreSize < 1) {
             perNodeMaxRecordStoreSize = MIN_SANE_PER_PARTITION_SIZE;
-            if(misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
+            if (misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
                 int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
                 int newSize = MIN_SANE_PER_PARTITION_SIZE * partitionCount / memberCount;
                 logger.warning(format("The max size configuration for map \"%s\" does not allow any data in the map. "
