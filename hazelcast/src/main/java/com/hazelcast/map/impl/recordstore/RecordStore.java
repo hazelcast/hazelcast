@@ -157,18 +157,6 @@ public interface RecordStore<R extends Record> extends SplitBrainAwareDataContai
      */
     Object putFromLoadBackup(Data key, Object value);
 
-    /**
-     * Puts key-value pair to map which is the result of a load from map store operation.
-     *
-     * @param key   key to put.
-     * @param value to put.
-     * @param ttl   time to live seconds.
-     * @return the previous value associated with <tt>key</tt>, or
-     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
-     */
-    Object putFromLoad(Data key, Object value, long ttl);
-
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
     R getRecord(Data key);

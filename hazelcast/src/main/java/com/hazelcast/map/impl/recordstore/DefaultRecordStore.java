@@ -906,11 +906,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return putFromLoadInternal(key, value, DEFAULT_TTL, true);
     }
 
-    @Override
-    public Object putFromLoad(Data key, Object value, long ttl) {
-        return putFromLoadInternal(key, value, ttl, false);
-    }
-
     private Object putFromLoadInternal(Data key, Object value, long ttl, boolean backup) {
         if (!isKeyAndValueLoadable(key, value)) {
             return null;
@@ -921,6 +916,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (shouldEvict()) {
             return null;
         }
+
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
