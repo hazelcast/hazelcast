@@ -48,6 +48,9 @@ public final class HdfsSinks {
      * No state is saved to snapshot for this sink. After the job is restarted,
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
+     * <p>
+     * Default local parallelism for this processor is 2 (or less if less CPUs
+     * are available).
      *
      * @param jobConf     {@code JobConf} used for output format configuration
      * @param extractKeyF   mapper to map a key to another key

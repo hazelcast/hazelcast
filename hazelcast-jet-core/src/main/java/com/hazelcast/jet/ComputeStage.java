@@ -35,6 +35,9 @@ import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
  * Represents a stage in a distributed computation {@link Pipeline
  * pipeline}. It accepts input from its upstream stages (if any) and passes
  * its output to its downstream stages.
+ * <p>
+ * Unless specified otherwise, all functions passed to member methods must
+ * be stateless.
  *
  * @param <E> the type of items coming out of this stage
  */
@@ -47,20 +50,22 @@ public interface ComputeStage<E> extends Stage {
      * nothing. Therefore this stage can be used to implement filtering
      * semantics as well.
      *
-     * @param mapFn the mapping function
+     * @param mapFn a stateless mapping function
      * @param <R> the result type of the mapping function
      * @return the newly attached stage
      */
-    <R> ComputeStage<R> map(DistributedFunction<? super E, ? extends R> mapFn);
+    @Nonnull
+    <R> ComputeStage<R> map(@Nonnull DistributedFunction<? super E, ? extends R> mapFn);
 
     /**
      * Attaches to this stage a filtering stage, one which applies the provided
      * predicate function to each input item to decide whether to pass the item
      * to the output or to discard it. Returns the newly attached stage.
      *
-     * @param filterFn the filter predicate function
+     * @param filterFn a stateless filter predicate function
      */
-    ComputeStage<E> filter(DistributedPredicate<E> filterFn);
+    @Nonnull
+    ComputeStage<E> filter(@Nonnull DistributedPredicate<E> filterFn);
 
     /**
      * Attaches to this stage a flat-mapping stage, one which applies the
@@ -71,11 +76,13 @@ public interface ComputeStage<E> extends Stage {
      * is, this operation will not attempt to emit any items after the first
      * {@code null} item.
      *
-     * @param flatMapFn the flatmapping function, whose result type is Jet's {@link Traverser}
+     * @param flatMapFn a stateless flatmapping function, whose result type is
+     *                  Jet's {@link Traverser}
      * @param <R> the type of items in the result's traversers
      * @return the newly attached stage
      */
-    <R> ComputeStage<R> flatMap(DistributedFunction<? super E, Traverser<? extends R>> flatMapFn);
+    @Nonnull
+    <R> ComputeStage<R> flatMap(@Nonnull DistributedFunction<? super E, Traverser<? extends R>> flatMapFn);
 
     /**
      * Attaches to this stage a group-by-key stage, one which will group all
@@ -90,8 +97,10 @@ public interface ComputeStage<E> extends Stage {
      * @param <A> the type of the accumulator
      * @param <R> the type of the aggregation result
      */
+    @Nonnull
     <K, A, R> ComputeStage<Entry<K, R>> groupBy(
-            DistributedFunction<? super E, ? extends K> keyFn, AggregateOperation1<? super E, A, R> aggrOp
+            @Nonnull DistributedFunction<? super E, ? extends K> keyFn,
+            @Nonnull AggregateOperation1<? super E, A, R> aggrOp
     );
 
     /**
@@ -106,8 +115,9 @@ public interface ComputeStage<E> extends Stage {
      * @param <E1_IN>     the type of {@code stage1} items
      * @param <E1>       the result type of projection on {@code stage1} items
      */
+    @Nonnull
     <K, E1_IN, E1> ComputeStage<Tuple2<E, E1>> hashJoin(
-            ComputeStage<E1_IN> stage1, JoinClause<K, E, E1_IN, E1> joinClause
+            @Nonnull ComputeStage<E1_IN> stage1, @Nonnull JoinClause<K, E, E1_IN, E1> joinClause
     );
 
     /**
@@ -127,9 +137,10 @@ public interface ComputeStage<E> extends Stage {
      * @param <E2_IN>     the type of {@code stage2} items
      * @param <E2>        the result type of projection of {@code stage2} items
      */
+    @Nonnull
     <K1, E1_IN, E1, K2, E2_IN, E2> ComputeStage<Tuple3<E, E1, E2>> hashJoin(
-            ComputeStage<E1_IN> stage1, JoinClause<K1, E, E1_IN, E1> joinClause1,
-            ComputeStage<E2_IN> stage2, JoinClause<K2, E, E2_IN, E2> joinClause2
+            @Nonnull ComputeStage<E1_IN> stage1, @Nonnull JoinClause<K1, E, E1_IN, E1> joinClause1,
+            @Nonnull ComputeStage<E2_IN> stage2, @Nonnull JoinClause<K2, E, E2_IN, E2> joinClause2
     );
 
     /**
@@ -140,6 +151,7 @@ public interface ComputeStage<E> extends Stage {
      * {@code stage.hashJoin(...)} calls should be preferred because they offer
      * more static type safety.
      */
+    @Nonnull
     default HashJoinBuilder<E> hashJoinBuilder() {
         return new HashJoinBuilder<>(this);
     }
@@ -158,10 +170,11 @@ public interface ComputeStage<E> extends Stage {
      * @param <E1>      the type of {@code stage1} items
      * @param <R>       the result type of the aggregate operation
      */
+    @Nonnull
     <K, A, E1, R> ComputeStage<Entry<K, R>> coGroup(
-            DistributedFunction<? super E, ? extends K> thisKeyFn,
-            ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
-            AggregateOperation2<? super E, ? super E1, A, R> aggrOp
+            @Nonnull DistributedFunction<? super E, ? extends K> thisKeyFn,
+            @Nonnull ComputeStage<E1> stage1, @Nonnull DistributedFunction<? super E1, ? extends K> key1Fn,
+            @Nonnull AggregateOperation2<? super E, ? super E1, A, R> aggrOp
     );
 
     /**
@@ -181,11 +194,12 @@ public interface ComputeStage<E> extends Stage {
      * @param <E2>      the type of {@code stage1} items
      * @param <R>       the result type of the aggregate operation
      */
+    @Nonnull
     <K, A, E1, E2, R> ComputeStage<Entry<K, R>> coGroup(
-            DistributedFunction<? super E, ? extends K> thisKeyFn,
-            ComputeStage<E1> stage1, DistributedFunction<? super E1, ? extends K> key1Fn,
-            ComputeStage<E2> stage2, DistributedFunction<? super E2, ? extends K> key2Fn,
-            AggregateOperation3<? super E, ? super E1, ? super E2, A, R> aggrOp
+            @Nonnull DistributedFunction<? super E, ? extends K> thisKeyFn,
+            @Nonnull ComputeStage<E1> stage1, @Nonnull DistributedFunction<? super E1, ? extends K> key1Fn,
+            @Nonnull ComputeStage<E2> stage2, @Nonnull DistributedFunction<? super E2, ? extends K> key2Fn,
+            @Nonnull AggregateOperation3<? super E, ? super E1, ? super E2, A, R> aggrOp
     );
 
     /**
@@ -199,7 +213,8 @@ public interface ComputeStage<E> extends Stage {
      * @param thisKeyFn a function that extracts the grouping key from this stage's items
      * @param <K>       the type of the grouping key
      */
-    default <K> CoGroupBuilder<K, E> coGroupBuilder(DistributedFunction<? super E, K> thisKeyFn) {
+    @Nonnull
+    default <K> CoGroupBuilder<K, E> coGroupBuilder(@Nonnull DistributedFunction<? super E, K> thisKeyFn) {
         return new CoGroupBuilder<>(this, thisKeyFn);
     }
 
@@ -227,6 +242,7 @@ public interface ComputeStage<E> extends Stage {
      * @see #peek(DistributedFunction)
      * @see #peek()
      */
+    @Nonnull
     ComputeStage<E> peek(
             @Nonnull DistributedPredicate<? super E> shouldLogFn,
             @Nonnull DistributedFunction<? super E, String> toStringFn
@@ -249,6 +265,7 @@ public interface ComputeStage<E> extends Stage {
      * @see #peek(DistributedPredicate, DistributedFunction)
      * @see #peek()
      */
+    @Nonnull
     default ComputeStage<E> peek(@Nonnull DistributedFunction<? super E, String> toStringFn) {
         return peek(alwaysTrue(), toStringFn);
     }
@@ -265,6 +282,7 @@ public interface ComputeStage<E> extends Stage {
      * @see #peek(DistributedPredicate, DistributedFunction)
      * @see #peek(DistributedFunction)
      */
+    @Nonnull
     default ComputeStage<E> peek() {
         return peek(alwaysTrue(), Object::toString);
     }
@@ -274,7 +292,8 @@ public interface ComputeStage<E> extends Stage {
      * emit any. The supplied argument specifies what to do with the received
      * data (typically push it to some outside resource).
      */
-    SinkStage drainTo(Sink<? super E> sink);
+    @Nonnull
+    SinkStage drainTo(@Nonnull Sink<? super E> sink);
 
     /**
      * Attaches to this stage a stage with a custom transform based on the
@@ -291,5 +310,6 @@ public interface ComputeStage<E> extends Stage {
      * @param procSupplier the supplier of processors
      * @param <R> the type of the output items
      */
-    <R> ComputeStage<R> customTransform(String stageName, DistributedSupplier<Processor> procSupplier);
+    @Nonnull
+    <R> ComputeStage<R> customTransform(@Nonnull String stageName, @Nonnull DistributedSupplier<Processor> procSupplier);
 }

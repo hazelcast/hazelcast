@@ -48,6 +48,9 @@ public final class KafkaSinks {
      * <p>
      * IO failures are generally handled by Kafka producer and do not cause the
      * processor to fail. Refer to Kafka documentation for details.
+     * <p>
+     * Default local parallelism for this processor is 2 (or less if less CPUs
+     * are available).
      *
      * @param properties     producer properties which should contain broker
      *                       address and key/value serializers
@@ -57,6 +60,7 @@ public final class KafkaSinks {
      * @param <K> type of the key published to Kafka
      * @param <V> type of the value published to Kafka
      */
+    @Nonnull
     public static <E, K, V> Sink<E> kafka(
             @Nonnull Properties properties,
             @Nonnull DistributedFunction<? super E, ProducerRecord<K, V>> toRecordFn
@@ -79,6 +83,7 @@ public final class KafkaSinks {
      * @param extractValueFn function that extracts the value from the stream item
 *
      */
+    @Nonnull
     public static <E, K, V> Sink<E> kafka(
             @Nonnull Properties properties,
             @Nonnull String topic,
@@ -99,6 +104,7 @@ public final class KafkaSinks {
      *                   address and key/value serializers
      * @param topic      Kafka topic name to publish to
      */
+    @Nonnull
     public static <K, V> Sink<Entry<K, V>> kafka(@Nonnull Properties properties, @Nonnull String topic) {
         return kafka(properties, topic, Entry::getKey, Entry::getValue);
     }

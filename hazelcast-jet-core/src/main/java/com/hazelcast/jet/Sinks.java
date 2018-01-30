@@ -51,6 +51,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * a sink is a transform that has no output. A pipeline stage with a sink
  * as its transform has the type {@link SinkStage} and accepts no
  * downstream stages.
+ * <p>
+ * The default local parallelism for sources in this class is typically 1,
+ * check the documentation of individual methods.
  */
 public final class Sinks {
 
@@ -60,11 +63,15 @@ public final class Sinks {
     /**
      * Returns a sink constructed directly from the given Core API processor
      * meta-supplier.
+     * <p>
+     * The default local parallelism for this source is specified by the given
+     * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
      * @param sinkName user-friendly sink name
      * @param metaSupplier the processor meta-supplier
      */
-    public static <E> Sink<E> fromProcessor(String sinkName, ProcessorMetaSupplier metaSupplier) {
+    @Nonnull
+    public static <E> Sink<E> fromProcessor(@Nonnull String sinkName, @Nonnull ProcessorMetaSupplier metaSupplier) {
         return new SinkImpl<>(sinkName, metaSupplier);
     }
 
@@ -76,8 +83,11 @@ public final class Sinks {
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
-    public static <E extends Map.Entry> Sink<E> map(String mapName) {
+    @Nonnull
+    public static <E extends Map.Entry> Sink<E> map(@Nonnull String mapName) {
         return fromProcessor("mapSink(" + mapName + ')', writeMapP(mapName));
     }
 
@@ -90,8 +100,11 @@ public final class Sinks {
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
-    public static <E extends Map.Entry> Sink<E> remoteMap(String mapName, ClientConfig clientConfig) {
+    @Nonnull
+    public static <E extends Map.Entry> Sink<E> remoteMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return fromProcessor("remoteMapSink(" + mapName + ')', writeRemoteMapP(mapName, clientConfig));
     }
 
@@ -125,6 +138,8 @@ public final class Sinks {
      * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the
      * entries no matter if they are locked or not. Use {@link #mapWithEntryProcessor}
      * if you need locking.
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param mapName   name of the map
      * @param toKeyFn   function that extracts the key from the input item
@@ -135,6 +150,7 @@ public final class Sinks {
      * @param <K> key type
      * @param <V> value type
      */
+    @Nonnull
     public static <E, K, V> Sink<E> mapWithMerging(
             @Nonnull String mapName,
             @Nonnull DistributedFunction<E, K> toKeyFn,
@@ -150,6 +166,7 @@ public final class Sinks {
      * in a remote Hazelcast cluster identified by the supplied {@code
      * ClientConfig}.
      */
+    @Nonnull
     public static <E, K, V> Sink<E> remoteMapWithMerging(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
@@ -165,6 +182,7 @@ public final class Sinks {
      * Convenience for {@link #mapWithMerging} with {@link Map.Entry} as
      * input item.
      */
+    @Nonnull
     public static <E extends Map.Entry, V> Sink<E> mapWithMerging(
             @Nonnull String mapName,
             @Nonnull DistributedBinaryOperator<V> mergeFn
@@ -177,6 +195,7 @@ public final class Sinks {
      * Convenience for {@link #remoteMapWithMerging} with {@link Map.Entry} as
      * input item.
      */
+    @Nonnull
     public static <E extends Map.Entry, V> Sink<E> remoteMapWithMerging(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
@@ -212,6 +231,8 @@ public final class Sinks {
      * <b>Note:</b> This operation is <em>NOT</em> lock-aware, it will process the entries
      * no matter if they are locked or not.
      * Use {@link #mapWithEntryProcessor} if you need locking.
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param mapName  name of the map
      * @param toKeyFn  function that extracts the key from the input item
@@ -221,6 +242,7 @@ public final class Sinks {
      * @param <K>      key type
      * @param <V>      value type
      */
+    @Nonnull
     public static <E, K, V> Sink<E> mapWithUpdating(
             @Nonnull String mapName,
             @Nonnull DistributedFunction<E, K> toKeyFn,
@@ -234,6 +256,7 @@ public final class Sinks {
      * in a remote Hazelcast cluster identified by the supplied {@code
      * ClientConfig}.
      */
+    @Nonnull
     public static <E, K, V> Sink<E> remoteMapWithUpdating(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
@@ -249,6 +272,7 @@ public final class Sinks {
      * Convenience for {@link #mapWithUpdating} with {@link Map.Entry} as
      * input item.
      */
+    @Nonnull
     public static <E extends Map.Entry, V> Sink<E> mapWithUpdating(
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<V, E, V> updateFn
@@ -261,6 +285,7 @@ public final class Sinks {
      * Convenience for {@link #remoteMapWithUpdating} with {@link Map.Entry} as
      * input item.
      */
+    @Nonnull
     public static <E extends Map.Entry, V> Sink<E> remoteMapWithUpdating(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
@@ -298,6 +323,8 @@ public final class Sinks {
      * <b>Note:</b> Unlike {@link #mapWithUpdating} and {@link #mapWithMerging},
      * this operation <em>is</em> lock-aware. If the key is locked,
      * the EntryProcessor will wait until it acquires the lock.
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param mapName  name of the map
      * @param toKeyFn  function that extracts the key from the input item
@@ -307,6 +334,7 @@ public final class Sinks {
      * @param <K> key type
      * @param <V> value type
      */
+    @Nonnull
     public static <E, K, V> Sink<E> mapWithEntryProcessor(
             @Nonnull String mapName,
             @Nonnull DistributedFunction<E, K> toKeyFn,
@@ -322,6 +350,7 @@ public final class Sinks {
      * in a remote Hazelcast cluster identified by the supplied {@code
      * ClientConfig}.
      */
+    @Nonnull
     public static <E, K, V> Sink<E> remoteMapWithEntryProcessor(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
@@ -341,8 +370,11 @@ public final class Sinks {
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
-    public static <E extends Map.Entry> Sink<E> cache(String cacheName) {
+    @Nonnull
+    public static <E extends Map.Entry> Sink<E> cache(@Nonnull String cacheName) {
         return fromProcessor("cacheSink(" + cacheName + ')', writeCacheP(cacheName));
     }
 
@@ -355,8 +387,14 @@ public final class Sinks {
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
-    public static <E extends Map.Entry> Sink<E> remoteCache(String cacheName, ClientConfig clientConfig) {
+    @Nonnull
+    public static <E extends Map.Entry> Sink<E> remoteCache(
+            @Nonnull String cacheName,
+            @Nonnull ClientConfig clientConfig
+    ) {
         return fromProcessor("remoteCacheSink(" + cacheName + ')', writeRemoteCacheP(cacheName, clientConfig));
     }
 
@@ -367,8 +405,11 @@ public final class Sinks {
      * No state is saved to snapshot for this sink. After the job is restarted,
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
-    public static <E> Sink<E> list(String listName) {
+    @Nonnull
+    public static <E> Sink<E> list(@Nonnull String listName) {
         return fromProcessor("listSink(" + listName + ')', writeListP(listName));
     }
 
@@ -380,8 +421,11 @@ public final class Sinks {
      * No state is saved to snapshot for this sink. After the job is restarted,
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
-    public static <E> Sink<E> remoteList(String listName, ClientConfig clientConfig) {
+    @Nonnull
+    public static <E> Sink<E> remoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return fromProcessor("remoteListSink(" + listName + ')', writeRemoteListP(listName, clientConfig));
     }
 
@@ -395,7 +439,10 @@ public final class Sinks {
      * No state is saved to snapshot for this sink. After the job is restarted,
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
+    @Nonnull
     public static <E> Sink<E> socket(
             @Nonnull String host,
             int port,
@@ -409,6 +456,7 @@ public final class Sinks {
      * Convenience for {@link #socket(String, int, DistributedFunction,
      * Charset)} with UTF-8 as the charset.
      */
+    @Nonnull
     public static <E> Sink<E> socket(
             @Nonnull String host,
             int port,
@@ -422,6 +470,7 @@ public final class Sinks {
      * Charset)} with {@code Object.toString} as the conversion function and
      * UTF-8 as the charset.
      */
+    @Nonnull
     public static <E> Sink<E> socket(@Nonnull String host, int port) {
         return fromProcessor("socketSink(" + host + ':' + port + ')',
                 writeSocketP(host, port, Object::toString, UTF_8));
@@ -442,6 +491,8 @@ public final class Sinks {
      * No state is saved to snapshot for this sink. After the job is restarted,
      * the items will likely be duplicated, providing an <i>at-least-once</i>
      * guarantee.
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param directoryName directory to create the files in. Will be created
      *                      if it doesn't exist. Must be the same on all members.
@@ -467,7 +518,8 @@ public final class Sinks {
      */
     @Nonnull
     public static <E> Sink<E> files(
-            @Nonnull String directoryName, @Nonnull DistributedFunction<E, String> toStringFn
+            @Nonnull String directoryName,
+            @Nonnull DistributedFunction<E, String> toStringFn
     ) {
         return files(directoryName, toStringFn, UTF_8, false);
     }
@@ -490,6 +542,8 @@ public final class Sinks {
      * The sink logs each item on whichever cluster member it happens to
      * receive it. Its primary purpose is for development use, when running Jet
      * on a local machine.
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param toStringFn a function that returns a string representation of a stream item
      * @param <E> stream item type

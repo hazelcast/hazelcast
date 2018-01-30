@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 /**
@@ -34,5 +35,6 @@ public interface Transform extends Serializable {
     /**
      * Returns the name of this transformation.
      */
+    @Nonnull
     String name();
 }

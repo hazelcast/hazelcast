@@ -60,6 +60,9 @@ import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
  * items. Prior to aggregation items may be grouped by an arbitrary key
  * and/or an event timestamp-based window. There are two main aggregation
  * setups: single-stage and two-stage.
+ * <p>
+ * Unless specified otherwise, all functions passed to member methods must
+ * be stateless.
  *
  * <h1>Single-stage aggregation</h1>
  *
@@ -656,18 +659,18 @@ public final class Processors {
      * <p>
      * This processor is stateless.
      *
-     * @param mapper the mapping function
+     * @param mapFn a stateless mapping function
      * @param <T> type of received item
      * @param <R> type of emitted item
      */
     @Nonnull
     public static <T, R> DistributedSupplier<Processor> mapP(
-            @Nonnull DistributedFunction<T, R> mapper
+            @Nonnull DistributedFunction<T, R> mapFn
     ) {
         return () -> {
             final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, R>(item -> {
-                trav.accept(mapper.apply(item));
+                trav.accept(mapFn.apply(item));
                 return trav;
             });
         };
@@ -679,7 +682,7 @@ public final class Processors {
      * <p>
      * This processor is stateless.
      *
-     * @param predicate the predicate to test each received item against
+     * @param predicate a stateless predicate to test each received item against
      * @param <T> type of received item
      */
     @Nonnull
@@ -704,7 +707,7 @@ public final class Processors {
      * <p>
      * This processor is stateless.
      *
-     * @param flatMapFn function that maps the received item to a traverser over output items
+     * @param flatMapFn a stateless function that maps the received item to a traverser over output items
      * @param <T> received item type
      * @param <R> emitted item type
      */

@@ -37,6 +37,7 @@ public final class KafkaSources {
      * WatermarkGenerationParams, String...)} wrapping the output in {@code
      * Map.Entry}.
      */
+    @Nonnull
     public static <K, V> Source<Entry<K, V>> kafka(
             @Nonnull Properties properties,
             @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams,
@@ -77,6 +78,9 @@ public final class KafkaSources {
      * snapshotting is enabled}, entire job might be blocked. This is a known
      * issue of Kafka (KAFKA-1894).
      * Refer to Kafka documentation for details.
+     * <p>
+     * Default local parallelism for this processor is 2 (or less if less CPUs
+     * are available).
      *
      * @param properties consumer properties broker address and key/value deserializers
      * @param projectionFn function to create output objects from key and value.
@@ -84,6 +88,7 @@ public final class KafkaSources {
      *                     will be filtered out.
      * @param topics     the list of topics
      */
+    @Nonnull
     public static <K, V, T> Source<T> kafka(
             @Nonnull Properties properties,
             @Nonnull DistributedBiFunction<K, V, T> projectionFn,

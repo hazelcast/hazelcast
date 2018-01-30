@@ -62,6 +62,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * The same pipeline may contain more than one source, each starting its
  * own branch. The branches may be merged with multiple-input transforms
  * such as co-group and hash-join.
+ * <p>
+ * The default local parallelism for sources in this class is 1 or 2, check the
+ * documentation of individual methods.
  */
 public final class Sources {
 
@@ -73,10 +76,14 @@ public final class Sources {
     /**
      * Returns a source constructed directly from the given Core API processor
      * meta-supplier.
+     * <p>
+     * The default local parallelism for this source is specified by the given
+     * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
      * @param sourceName user-friendly source name
      * @param metaSupplier the processor meta-supplier
      */
+    @Nonnull
     public static <T> Source<T> fromProcessor(
             @Nonnull String sourceName,
             @Nonnull ProcessorMetaSupplier metaSupplier
@@ -96,7 +103,11 @@ public final class Sources {
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
      */
+    @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> map(@Nonnull String mapName) {
         return fromProcessor("mapSource(" + mapName + ')', readMapP(mapName));
     }
@@ -130,6 +141,9 @@ public final class Sources {
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events, you may use
@@ -141,6 +155,7 @@ public final class Sources {
      *     will be filtered out.
      * @param <T> type of emitted item
      */
+    @Nonnull
     public static <K, V, T> Source<T> map(
             @Nonnull String mapName,
             @Nonnull Predicate<K, V> predicate,
@@ -153,6 +168,7 @@ public final class Sources {
      * Convenience for {@link #map(String, Predicate, Projection)}
      * which uses a {@link DistributedFunction} as the projection function.
      */
+    @Nonnull
     public static <K, V, T> Source<T> map(
             @Nonnull String mapName,
             @Nonnull Predicate<K, V> predicate,
@@ -181,6 +197,9 @@ public final class Sources {
      * The source saves the journal offset to the snapshot. If the job
      * restarts, it starts emitting from the saved offset with an
      * exactly-once guarantee (unless the journal has overflowed).
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
      *
      * @param mapName the name of the map
      * @param predicateFn the predicate to filter the events, you may use
@@ -201,7 +220,7 @@ public final class Sources {
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<T> wmGenParams
+            @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("mapJournalSource(" + mapName + ')',
                 streamMapP(mapName, predicateFn, projectionFn, initialPos, wmGenParams));
@@ -219,7 +238,7 @@ public final class Sources {
     public static <K, V> Source<Entry<K, V>> mapJournal(
             @Nonnull String mapName,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<Entry<K, V>> wmGenParams
+            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
         return mapJournal(mapName, mapPutEvents(), mapEventToEntry(), initialPos, wmGenParams);
     }
@@ -235,6 +254,8 @@ public final class Sources {
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> remoteMap(
@@ -270,6 +291,8 @@ public final class Sources {
      * If the {@code IMap} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events, you may use
@@ -281,6 +304,7 @@ public final class Sources {
      *     will be filtered out.
      * @param <T> type of emitted item
      */
+    @Nonnull
     public static <K, V, T> Source<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
@@ -295,6 +319,7 @@ public final class Sources {
      * Convenience for {@link #remoteMap(String, ClientConfig, Predicate, Projection)}
      * which use a {@link DistributedFunction} as the projection function.
      */
+    @Nonnull
     public static <K, V, T> Source<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
@@ -321,6 +346,8 @@ public final class Sources {
      * The source saves the journal offset to the snapshot. If the job
      * restarts, it starts emitting from the saved offset with an
      * exactly-once guarantee (unless the journal has overflowed).
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
@@ -345,7 +372,7 @@ public final class Sources {
             @Nonnull DistributedPredicate<EventJournalMapEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<T> wmGenParams
+            @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("remoteMapJournalSource(" + mapName + ')',
                 streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams));
@@ -364,7 +391,7 @@ public final class Sources {
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<Entry<K, V>> wmGenParams
+            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
         return remoteMapJournal(mapName, clientConfig, mapPutEvents(), mapEventToEntry(), initialPos, wmGenParams);
     }
@@ -382,6 +409,9 @@ public final class Sources {
      * If the {@code ICache} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> cache(@Nonnull String cacheName) {
@@ -408,6 +438,9 @@ public final class Sources {
      * The source saves the journal offset to the snapshot. If the job
      * restarts, it starts emitting from the saved offset with an
      * exactly-once guarantee (unless the journal has overflowed).
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
      *
      * @param cacheName the name of the cache
      * @param predicateFn the predicate to filter the events, you may use
@@ -428,7 +461,7 @@ public final class Sources {
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<T> wmGenParams
+            @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("cacheJournalSource(" + cacheName + ')',
                 streamCacheP(cacheName, predicateFn, projectionFn, initialPos, wmGenParams)
@@ -447,7 +480,7 @@ public final class Sources {
     public static <K, V> Source<Entry<K, V>> cacheJournal(
             @Nonnull String cacheName,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<Entry<K, V>> wmGenParams
+            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
         return cacheJournal(cacheName, cachePutEvents(), cacheEventToEntry(), initialPos, wmGenParams);
     }
@@ -463,6 +496,8 @@ public final class Sources {
      * If the {@code ICache} is modified while being read, or if there is a
      * cluster topology change (triggering data migration), the source may
      * miss and/or duplicate some entries.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static <K, V> Source<Map.Entry<K, V>> remoteCache(
@@ -489,6 +524,8 @@ public final class Sources {
      * The source saves the journal offset to the snapshot. If the job
      * restarts, it starts emitting from the saved offset with an
      * exactly-once guarantee (unless the journal has overflowed).
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param cacheName the name of the cache
      * @param clientConfig configuration for the client to connect to the remote cluster
@@ -511,7 +548,7 @@ public final class Sources {
             @Nonnull DistributedPredicate<EventJournalCacheEvent<K, V>> predicateFn,
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<T> wmGenParams
+            @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
         return fromProcessor("remoteCacheJournalSource(" + cacheName + ')',
                 streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, initialPos, wmGenParams));
@@ -530,7 +567,7 @@ public final class Sources {
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull JournalInitialPosition initialPos,
-            WatermarkGenerationParams<Entry<K, V>> wmGenParams
+            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams
     ) {
         return remoteCacheJournal(cacheName, clientConfig, cachePutEvents(), cacheEventToEntry(), initialPos, wmGenParams);
     }
@@ -542,6 +579,8 @@ public final class Sources {
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static <E> Source<E> list(@Nonnull String listName) {
@@ -555,6 +594,8 @@ public final class Sources {
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static <E> Source<E> remoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -575,6 +616,8 @@ public final class Sources {
      * The source does not save any state to snapshot. On job restart, it will
      * emit whichever items the server sends. The implementation uses
      * non-blocking API, the processor is cooperative.
+     * <p>
+     * The default local parallelism for this processor is 1.
      */
     @Nonnull
     public static Source<String> socket(
@@ -596,6 +639,9 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * Any {@code IOException} will cause the job to fail.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
      *
      * @param directory parent directory of the files
      * @param charset charset to use to decode the files
@@ -613,6 +659,7 @@ public final class Sources {
     /**
      * Convenience for {@link #files(String, Charset, String) readFiles(directory, UTF_8, "*")}.
      */
+    @Nonnull
     public static Source<String> files(@Nonnull String directory) {
         return files(directory, UTF_8, GLOB_WILDCARD);
     }
@@ -641,6 +688,9 @@ public final class Sources {
      * The source does not save any state to snapshot. If the job is restarted,
      * lines added after the restart will be emitted, which gives at-most-once
      * behavior.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
      *
      * <h3>Limitation on Windows</h3>
      * On Windows the {@code WatchService} is not notified of appended lines
@@ -663,6 +713,7 @@ public final class Sources {
      *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
      *             Use {@code "*"} for all files.
      */
+    @Nonnull
     public static Source<String> fileWatcher(
             @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
     ) {
@@ -675,6 +726,7 @@ public final class Sources {
      * Convenience for {@link #fileWatcher(String, Charset, String)
      * streamFiles(watchedDirectory, UTF_8, "*")}.
      */
+    @Nonnull
     public static Source<String> fileWatcher(@Nonnull String watchedDirectory) {
         return fileWatcher(watchedDirectory, UTF_8, GLOB_WILDCARD);
     }

@@ -44,6 +44,9 @@ public final class HdfsSources {
      * with Hadoop's &mdash; on each Hadoop member there should be a Jet
      * member.
      * <p>
+     * Default local parallelism for this processor is 2 (or less if less CPUs
+     * are available).
+     * <p>
      * This source does not save any state to snapshot. If the job is restarted,
      * all entries will be emitted again.
      *
