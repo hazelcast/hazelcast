@@ -83,7 +83,7 @@ public final class PacketDispatcher implements PacketHandler {
             Thread.currentThread().interrupt();
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
-            logger.severe("Failed to process:" + packet, t);
+            logger.severe("Failed to process: " + packet, t);
         }
     }
 }
